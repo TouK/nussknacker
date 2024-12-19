@@ -23,8 +23,8 @@ The main limitations of this method are:
 - Component can only add value of fixed type to ValidationContext. 
     
 Examples:                                      
-- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
-- [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala#L25)
+- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L10),
+- [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/SampleGeneratorSourceFactory.scala#L51)
 
 ### ContextTransformation
 

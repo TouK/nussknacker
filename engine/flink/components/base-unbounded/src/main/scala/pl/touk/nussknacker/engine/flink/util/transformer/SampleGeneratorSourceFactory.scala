@@ -30,8 +30,8 @@ import javax.validation.constraints.Min
 import scala.jdk.CollectionConverters._
 
 // TODO: add testing capabilities
-object PeriodicSourceFactory
-    extends PeriodicSourceFactory(
+object SampleGeneratorSourceFactory
+    extends SampleGeneratorSourceFactory(
       new StandardTimestampWatermarkHandler[AnyRef](
         WatermarkStrategy
           .forMonotonousTimestamps()
@@ -41,7 +41,7 @@ object PeriodicSourceFactory
       )
     )
 
-class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef])
+class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef])
     extends SourceFactory
     with UnboundedStreamComponent {
 
