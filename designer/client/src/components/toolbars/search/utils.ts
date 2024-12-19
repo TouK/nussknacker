@@ -1,13 +1,13 @@
 import { Edge, NodeType } from "../../../types";
-import { uniq } from "lodash";
+import { isEqual, uniq } from "lodash";
 import { useSelector } from "react-redux";
-import { isEqual } from "lodash";
 import { getScenario } from "../../../reducers/selectors/graph";
 import NodeUtils from "../../graph/NodeUtils";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ensureArray } from "../../../common/arrayUtils";
 import { SearchQuery } from "./SearchResults";
+import { getComponentGroups } from "../../../reducers/selectors/settings";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
@@ -15,7 +15,8 @@ type FilterSelector = { name: string; selector: Selector }[];
 
 const fieldsSelectors: FilterSelector = [
     {
-        name: "id",
+        name: "name",
+
         selector: (node) => node.id,
     },
     {
@@ -24,30 +25,30 @@ const fieldsSelectors: FilterSelector = [
     },
     {
         name: "type",
-        selector: (node) => node.type,
+        selector: (node) => [node.nodeType, node.ref?.typ, node.ref?.id, node.type, node.service?.id],
     },
     {
-        name: "paramValue",
+        name: "value",
         selector: (node) => node.ref?.outputVariableNames && Object.values(node.ref?.outputVariableNames),
     },
     {
-        name: "paramName",
+        name: "label",
         selector: (node) => node.ref?.outputVariableNames && Object.keys(node.ref?.outputVariableNames),
     },
     {
-        name: "paramValue",
+        name: "value",
         selector: (node) => [node.expression, node.exprVal, node.value],
     },
     {
-        name: "outputValue",
+        name: "output",
         selector: (node) => [node.outputName, node.output, node.outputVar, node.varName],
     },
     {
-        name: "paramValue",
+        name: "value",
         selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.expression),
     },
     {
-        name: "paramName",
+        name: "label",
         selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.name),
     },
 ];
@@ -79,6 +80,32 @@ const findFieldsUsingSelectorWithName = (selectorName: string, filterValues: str
     );
 };
 
+function useComponentTypes(): Set<string> {
+    const componentsGroups = useSelector(getComponentGroups);
+
+    return useMemo(() => {
+        return new Set(
+            componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
+        );
+    }, []);
+}
+
+export function useNodeTypes(): string[] {
+    const { scenarioGraph } = useSelector(getScenario);
+    const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
+    const componentsSet = useComponentTypes();
+
+    return useMemo(() => {
+        const nodeSelector = fieldsSelectors.find((selector) => selector.name == "type")?.selector;
+        const availableTypes = allNodes
+            .flatMap((node) => ensureArray(nodeSelector(node)).filter((item) => item !== undefined))
+            .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression))
+            .filter((type) => componentsSet.has(type.toLowerCase()));
+
+        return uniq(availableTypes);
+    }, [allNodes]);
+}
+
 export function useFilteredNodes(searchQuery: SearchQuery): {
     groups: string[];
     node: NodeType;
@@ -94,13 +121,13 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
 
     const displayNames = useMemo(
         () => ({
-            id: t("panels.search.field.id", "Name"),
+            name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
+            label: t("panels.search.field.label", "Label"),
+            value: t("panels.search.field.value", "Value"),
+            output: t("panels.search.field.output", "Output"),
+            edge: t("panels.search.field.edge", "Edge"),
             type: t("panels.search.field.type", "Type"),
-            paramName: t("panels.search.field.paramName", "Label"),
-            paramValue: t("panels.search.field.paramValue", "Value"),
-            outputValue: t("panels.search.field.outputValue", "Output"),
-            edgeExpression: t("panels.search.field.edgeExpression", "Edge"),
         }),
         [t],
     );
@@ -118,7 +145,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                             .filter((e) => matchFilters(e.edgeType?.condition, [searchQuery.plainQuery]));
 
                         groups = findFields([searchQuery.plainQuery], node)
-                            .concat(edges.length ? "edgeExpression" : null)
+                            .concat(edges.length ? "edge" : null)
                             .map((name) => displayNames[name])
                             .filter(Boolean);
 
@@ -129,15 +156,15 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                             .filter((e) => matchFilters(e.edgeType?.condition, [searchQuery.plainQuery]));
 
                         const groupsAux: string[] = findFields([searchQuery.plainQuery], node)
-                            .concat(edgesAux.length ? "edgeExpression" : null)
+                            .concat(edgesAux.length ? "edge" : null)
                             .map((name) => displayNames[name])
                             .filter(Boolean);
 
                         edges =
-                            "edgeExpression" in searchQuery
+                            "edge" in searchQuery
                                 ? allEdges
                                       .filter((e) => e.from === node.id)
-                                      .filter((e) => matchFilters(e.edgeType?.condition, searchQuery.edgeExpression))
+                                      .filter((e) => matchFilters(e.edgeType?.condition, searchQuery.edge))
                                 : [];
 
                         const keyNamesRelevantForFiltering = Object.keys(searchQuery).filter(
@@ -151,7 +178,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                         groups = keyNamesRelevantForFiltering
                             .map((key) => findFieldsUsingSelectorWithName(key, searchQuery[key], node))
                             .flat()
-                            .concat(edges.length ? "edgeExpression" : null)
+                            .concat(edges.length ? "edge" : null)
                             .map((name) => displayNames[name])
                             .filter(Boolean);
 
@@ -172,18 +199,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
     );
 }
 
-export function resolveSearchQuery(filterRawText: string): SearchQuery {
-    return parseRawTextToSearchQuery(filterRawText);
-}
-
-function splitString(input: string): string[] {
-    //split string by comma respecting quoted elements
-    //"a,b,c" -> ["a", "b", "c"]
-    //"a,\"b,c\",d" -> ["a", "b,c", "d"]
-    return input.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-}
-
-function parseRawTextToSearchQuery(text: string): SearchQuery {
+export function resolveSearchQuery(text: string): SearchQuery {
     const result: SearchQuery = {};
     const regex = /(\w+):\(([^)]*)\)/g;
     let match: RegExpExecArray | null;
@@ -199,4 +215,26 @@ function parseRawTextToSearchQuery(text: string): SearchQuery {
     result.plainQuery = text.slice(lastIndex).trim();
 
     return result;
+}
+
+export function searchQueryToString(query: SearchQuery): string {
+    const plainQuery = query.plainQuery;
+
+    const formattedParts = Object.entries(query)
+        .filter(([key]) => key !== "plainQuery")
+        .map(([key, value]) => {
+            if (Array.isArray(value) && !(value.length === 1 && value[0] === "")) {
+                return `${key}:(${value})`;
+            } else if (typeof value === "string" && value.length > 0) {
+                return `${key}:(${[value]})`;
+            }
+            return []; // Skip undefined or invalid values
+        })
+        .filter(Boolean) // Remove null values
+        .join(" "); // Join the formatted parts with a space
+
+    // Append plainQuery at the end without a key if it exists
+    return plainQuery
+        ? `${formattedParts} ${plainQuery}`.trim() // Ensure no trailing space
+        : formattedParts;
 }

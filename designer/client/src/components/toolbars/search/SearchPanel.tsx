@@ -5,20 +5,20 @@ import { AdvancedOptionsIcon, SearchIcon } from "../../table/SearchFilter";
 import { Focusable } from "../../themed/InputWithIcon";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { SearchResults } from "./SearchResults";
+import { SearchQuery, SearchResults } from "./SearchResults";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { Collapse } from "@mui/material";
 import { AdvancedSearchFilters } from "./AdvancedSearchFilters";
-import { SearchPanelStyled, TipPanelStyled } from "../../tips/Styled";
+import { SearchPanelStyled } from "../../tips/Styled";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
+    const [filterFields, setFilterFields] = useState<SearchQuery>({});
     const [filter, setFilter] = useState<string>("");
-    const refForm = useRef<HTMLFormElement>(null);
     const clearFilter = useCallback(() => {
         setFilter("");
-        refForm.current.reset();
+        setFilterFields({});
     }, []);
     const [advancedOptionsCollapsed, setAdvancedOptionsCollapsed] = useState(false);
 
@@ -44,7 +44,8 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
             <Collapse in={advancedOptionsCollapsed} timeout="auto" unmountOnExit={false}>
                 <SearchPanelStyled>
                     <AdvancedSearchFilters
-                        refForm={refForm}
+                        filterFields={filterFields}
+                        setFilterFields={setFilterFields}
                         filter={filter}
                         setFilter={setFilter}
                         setCollapsedHandler={setAdvancedOptionsCollapsed}

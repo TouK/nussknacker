@@ -11,13 +11,13 @@ import { resetSelection } from "../../../actions/nk";
 import { useWindows } from "../../../windowManager";
 
 export type SearchQuery = {
-    id?: string[];
+    name?: string[];
     description?: string[];
     type?: string[];
-    paramName?: string[];
-    paramValue?: string[];
-    outputValue?: string[];
-    edgeExpression?: string[];
+    label?: string[];
+    value?: string[];
+    output?: string[];
+    edge?: string[];
     plainQuery?: string;
 };
 
