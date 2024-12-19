@@ -17,7 +17,7 @@ export type ActivityType =
     | "AUTOMATIC_UPDATE"
     | "CUSTOM_ACTION";
 
-export enum PredefinedActivityType {
+export enum ActivityTypesRelatedToExecutions {
     ScenarioDeployed = "SCENARIO_DEPLOYED",
     ScenarioCanceled = "SCENARIO_CANCELED",
     PerformedSingleExecution = "PERFORMED_SINGLE_EXECUTION",

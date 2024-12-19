@@ -4,17 +4,17 @@ import HttpService from "../../../http/HttpService";
 import { DATE_FORMAT } from "../../../config";
 import { Range } from "./CountsRangesButtons";
 import moment from "moment";
-import { PredefinedActivityType } from "../../toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../../toolbars/activities/types";
 
-function displayableNameOfPredefinedActivityType(predefinedActivityType: PredefinedActivityType) {
+function displayableNameOfPredefinedActivityType(predefinedActivityType: ActivityTypesRelatedToExecutions) {
     switch (predefinedActivityType) {
-        case PredefinedActivityType.ScenarioCanceled:
+        case ActivityTypesRelatedToExecutions.ScenarioCanceled:
             return "Cancel";
-        case PredefinedActivityType.ScenarioDeployed:
+        case ActivityTypesRelatedToExecutions.ScenarioDeployed:
             return "Deployment";
-        case PredefinedActivityType.PerformedScheduledExecution:
+        case ActivityTypesRelatedToExecutions.PerformedScheduledExecution:
             return "Scheduled deployment";
-        case PredefinedActivityType.PerformedSingleExecution:
+        case ActivityTypesRelatedToExecutions.PerformedSingleExecution:
             return "Run now";
         default:
             return "Unknown activity type";
@@ -26,17 +26,17 @@ export function useActivityHistory(processName: string, processingMode: string):
     const [activities, setActivities] = useState<Range[]>([]);
 
     useEffect(() => {
-        HttpService.fetchProcessesActivities(processName)
+        HttpService.fetchActivitiesRelatedToExecutions(processName)
             .then((activities) =>
                 processingMode.includes("batch")
-                    ? activities.filter((activity) => activity.type !== PredefinedActivityType.ScenarioDeployed)
+                    ? activities.filter((activity) => activity.type !== ActivityTypesRelatedToExecutions.ScenarioDeployed)
                     : activities,
             )
             .then((activities) =>
                 activities.map((current, i, all) => {
                     const from = moment(current.date);
                     const to = all[i - 1]?.date;
-                    const isOmitted = current.type === PredefinedActivityType.ScenarioCanceled;
+                    const isOmitted = current.type === ActivityTypesRelatedToExecutions.ScenarioCanceled;
                     return {
                         from: () => from,
                         to: () => (to ? moment(to) : moment().add(1, "day").startOf("day")),

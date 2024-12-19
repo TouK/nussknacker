@@ -26,7 +26,7 @@ import {
     ActivitiesResponse,
     ActivityMetadataResponse,
     ActivityType,
-    PredefinedActivityType,
+    ActivityTypesRelatedToExecutions,
 } from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
@@ -326,21 +326,17 @@ class HttpService {
         return promise;
     }
 
-    fetchProcessesActivities(processName: string) {
+    fetchActivitiesRelatedToExecutions(processName: string) {
         return api
             .get<{ activities: { date: string; type: ActivityType }[] }>(
                 `/processes/${encodeURIComponent(processName)}/activity/activities`,
             )
             .then((res) => {
-                return res.data.activities.filter(
-                    ({ date, type }) =>
-                        type === PredefinedActivityType.ScenarioDeployed ||
-                        type === PredefinedActivityType.ScenarioCanceled ||
-                        type === PredefinedActivityType.PerformedSingleExecution ||
-                        type === PredefinedActivityType.PerformedScheduledExecution,
+                return res.data.activities.filter(({ date, type }) =>
+                    Object.values(ActivityTypesRelatedToExecutions).includes(type as ActivityTypesRelatedToExecutions),
                 );
             })
-            .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as PredefinedActivityType })));
+            .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
     fetchProcessesDeployments(processName: string) {
