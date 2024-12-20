@@ -67,7 +67,12 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                         <Overlay gridArea="top/left / top/right" position="relative">
                             {children}
                         </Overlay>
-                        <Box component={SidePanelToggleButton} type={PanelSide.Left} gridArea="bottom/left" />
+                        <Box
+                            component={SidePanelToggleButton}
+                            type={PanelSide.Left}
+                            gridArea="bottom/left"
+                            handleStyle={(isOpened) => ({ marginLeft: isOpened ? "unset" : "32px" })}
+                        />
                         <Box component={SidePanelToggleButton} type={PanelSide.Right} gridArea="bottom/right" />
                     </OverlayGrid9>
 
