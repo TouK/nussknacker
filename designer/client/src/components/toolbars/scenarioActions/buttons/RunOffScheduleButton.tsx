@@ -34,7 +34,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const available = !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (p, c) => HttpService.runOffSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
+    const action = (p, c, d) => HttpService.runOffSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
     const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");
@@ -52,7 +52,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
                         title: message,
                         kind: WindowKind.deployProcess,
                         width: ACTION_DIALOG_WIDTH,
-                        meta: { action },
+                        meta: { action, activityName: "RUN_OFF_SCHEDULE" }, // fixme: activityName, do we need this?
                     })
                 }
                 type={type}

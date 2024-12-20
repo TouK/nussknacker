@@ -33,7 +33,7 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
