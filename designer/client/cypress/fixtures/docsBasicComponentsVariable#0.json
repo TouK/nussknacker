@@ -18,7 +18,7 @@
         {
             "id": "input Kafka topic with json content",
             "ref": {
-                "typ": "periodic",
+                "typ": "sample-generator",
                 "parameters": [
                     {
                         "name": "period",

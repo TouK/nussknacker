@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientScalaFutures with Matchers with Inside {
+class SampleGeneratorSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientScalaFutures with Matchers with Inside {
 
   test("should produce results for each element in list") {
     val sinkId = "sinkId"
@@ -29,8 +29,8 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
     val scenario = ScenarioBuilder
       .streaming("test")
       .source(
-        "periodic",
-        "periodic",
+        "sample-generator",
+        "sample-generator",
         "period" -> "T(java.time.Duration).ofSeconds(1)".spel,
         "count"  -> "1".spel,
         "value"  -> s"'$input'".spel

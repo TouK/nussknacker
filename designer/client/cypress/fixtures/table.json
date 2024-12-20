@@ -17,9 +17,9 @@
     },
     "nodes": [
         {
-            "id": "periodic",
+            "id": "sample-generator",
             "ref": {
-                "typ": "periodic",
+                "typ": "sample-generator",
                 "parameters": [
                     {
                         "name": "period",
