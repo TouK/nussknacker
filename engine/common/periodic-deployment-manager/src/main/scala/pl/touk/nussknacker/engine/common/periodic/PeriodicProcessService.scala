@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.{WithConfig, WithoutConfig}
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -144,22 +143,20 @@ class PeriodicProcessService(
       processActionId: ProcessActionId,
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
+
     for {
+      inputConfigDuringExecution <- periodicDeploymentHandler.provideInputConfigDuringExecutionJson()
       deploymentWithJarData <- periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(
         processVersion,
       )
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
-        ProcessConfigEnricher.InitialScheduleData(
-          deploymentWithJarData.inputConfigDuringExecutionJson
-        )
-      )
-      enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
-        enrichedProcessConfig.inputConfigDuringExecutionJson
+        ProcessConfigEnricher.InitialScheduleData(inputConfigDuringExecution.serialized)
       )
       _ <- initialSchedule(
         scheduleProperty,
         scheduleDates,
-        enrichedDeploymentWithJarData,
+        deploymentWithJarData,
+        enrichedProcessConfig.inputConfigDuringExecutionJson,
         processActionId,
       )
     } yield ()
@@ -168,11 +165,12 @@ class PeriodicProcessService(
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentWithJarData: DeploymentWithRuntimeParams.WithConfig,
+      deploymentWithJarData: DeploymentWithRuntimeParams,
+      inputConfigDuringExecutionJson: String,
       processActionId: ProcessActionId,
   ): Future[Unit] = {
     periodicProcessesManager
-      .create(deploymentWithJarData, toApi(scheduleMap), processActionId)
+      .create(deploymentWithJarData, inputConfigDuringExecutionJson, toApi(scheduleMap), processActionId)
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
@@ -189,7 +187,7 @@ class PeriodicProcessService(
       .map(_ => ())
   }
 
-  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]] = {
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
     for {
       toBeDeployed <- periodicProcessesManager.findToBeDeployed.flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
@@ -203,8 +201,8 @@ class PeriodicProcessService(
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   // TODO: we show allow to deploy scenarios with different scheduleName to be deployed simultaneous
   private def checkIfNotRunning(
-      toDeploy: PeriodicProcessDeployment[WithConfig]
-  ): Future[Option[PeriodicProcessDeployment[WithConfig]]] = {
+      toDeploy: PeriodicProcessDeployment
+  ): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager
       .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(
@@ -350,7 +348,7 @@ class PeriodicProcessService(
   }
 
   private def nextRunAt(
-      deployment: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithoutConfig],
+      deployment: PeriodicProcessDeployment,
       clock: Clock
   ): Either[String, Option[LocalDateTime]] =
     (fromApi(deployment.periodicProcess.scheduleProperty), deployment.scheduleName.value) match {
@@ -369,7 +367,7 @@ class PeriodicProcessService(
   }
 
   private def handleFailedDeployment(
-      deployment: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig],
+      deployment: PeriodicProcessDeployment,
       state: Option[StatusDetails]
   ): Future[Unit] = {
     def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
@@ -414,7 +412,7 @@ class PeriodicProcessService(
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
 
   private def deactivateAction(
-      process: PeriodicProcess[DeploymentWithRuntimeParams.WithoutConfig]
+      process: PeriodicProcess
   ): Future[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
     for {
@@ -434,7 +432,7 @@ class PeriodicProcessService(
         .map(_ => ())
     }
 
-  def deploy(deployment: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]): Future[Unit] = {
+  def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
     // TODO: set status before deployment?
     val id = deployment.id
     val deploymentData = DeploymentData(
@@ -454,23 +452,27 @@ class PeriodicProcessService(
       )
       processName = deploymentWithJarData.processVersion.processName
       versionId   = deploymentWithJarData.processVersion.versionId
-      canonicalProcessOrError <- periodicProcessesManager.fetchCanonicalProcess(processName, versionId)
-      canonicalProcess = canonicalProcessOrError.getOrElse {
+      canonicalProcessOpt <- periodicProcessesManager.fetchCanonicalProcess(processName, versionId)
+      canonicalProcess = canonicalProcessOpt.getOrElse {
         throw new PeriodicProcessException(
           s"Could not fetch CanonicalProcess for processName=$processName, versionId=$versionId"
         )
       }
-      enrichedProcessConfig <- processConfigEnricher.onDeploy(
-        ProcessConfigEnricher.DeployData(
-          deploymentWithJarData.inputConfigDuringExecutionJson,
-          deployment,
-        )
+      inputConfigDuringExecutionJsonOpt <- periodicProcessesManager.fetchInputConfigDuringExecutionJson(
+        processName,
+        versionId,
       )
-      enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
-        enrichedProcessConfig.inputConfigDuringExecutionJson
+      inputConfigDuringExecutionJson = inputConfigDuringExecutionJsonOpt.getOrElse {
+        throw new PeriodicProcessException(
+          s"Could not fetch inputConfigDuringExecutionJson for processName=${processName}, versionId=${versionId}"
+        )
+      }
+      enrichedProcessConfig <- processConfigEnricher.onDeploy(
+        ProcessConfigEnricher.DeployData(inputConfigDuringExecutionJson, deployment)
       )
       externalDeploymentId <- periodicDeploymentHandler.deployWithRuntimeParams(
-        enrichedDeploymentWithJarData,
+        deploymentWithJarData,
+        enrichedProcessConfig.inputConfigDuringExecutionJson,
         deploymentData,
         canonicalProcess,
       )
@@ -652,7 +654,7 @@ class PeriodicProcessService(
   }
 
   private def scheduledExecutionStatusAndDateFinished(
-      entity: PeriodicProcessDeployment[WithoutConfig],
+      entity: PeriodicProcessDeployment,
   ): Option[FinishedScheduledExecutionMetadata] = {
     for {
       status <- entity.state.status match {

@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 
 import scala.concurrent.Future
 
@@ -11,10 +12,13 @@ trait PeriodicDeploymentHandler {
 
   def prepareDeploymentWithRuntimeParams(
       processVersion: ProcessVersion,
-  ): Future[DeploymentWithRuntimeParams.WithConfig]
+  ): Future[DeploymentWithRuntimeParams]
+
+  def provideInputConfigDuringExecutionJson(): Future[InputConfigDuringExecution]
 
   def deployWithRuntimeParams(
-      deploymentWithJarData: DeploymentWithRuntimeParams.WithConfig,
+      deploymentWithJarData: DeploymentWithRuntimeParams,
+      inputConfigDuringExecutionJson: String,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
   ): Future[Option[ExternalDeploymentId]]

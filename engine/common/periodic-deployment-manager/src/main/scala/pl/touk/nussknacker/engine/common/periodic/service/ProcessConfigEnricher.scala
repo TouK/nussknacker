@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.common.periodic.service
 
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithConfig
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.common.periodic.service.ProcessConfigEnricher.{
   DeployData,
@@ -43,7 +42,7 @@ object ProcessConfigEnricher {
 
   case class DeployData(
       inputConfigDuringExecutionJson: String,
-      deployment: PeriodicProcessDeployment[WithConfig]
+      deployment: PeriodicProcessDeployment
   ) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)

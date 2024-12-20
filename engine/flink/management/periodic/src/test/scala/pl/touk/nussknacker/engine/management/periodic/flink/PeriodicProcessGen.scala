@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic.flink
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager.CronScheduleProperty
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithConfig
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -12,12 +11,11 @@ import java.time.LocalDateTime
 
 object PeriodicProcessGen {
 
-  def apply(): PeriodicProcess[WithConfig] = {
+  def apply(): PeriodicProcess = {
     PeriodicProcess(
       id = PeriodicProcessId(42),
-      deploymentData = DeploymentWithRuntimeParams.WithConfig(
+      deploymentData = DeploymentWithRuntimeParams(
         processVersion = ProcessVersion.empty,
-        inputConfigDuringExecutionJson = "{}",
         runtimeParams = RuntimeParams(Map("jarFileName" -> "jar-file-name.jar"))
       ),
       scheduleProperty = CronScheduleProperty("0 0 * * * ?"),

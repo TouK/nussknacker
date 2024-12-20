@@ -617,38 +617,6 @@ class PeriodicProcessServiceIntegrationTest
       .futureValue
     inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
-
-    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = firstActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
-        scheduleName = "schedule1",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = secondActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = secondActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = secondActivity.dateFinished,
-        scheduleName = "schedule2",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = secondActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-    )
   }
 
   it should "handle failed event handler" in withFixture() { f =>

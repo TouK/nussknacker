@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment.periodic.model
 
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithoutConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -35,7 +34,7 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
 // For most operations it will contain only one latest deployment but for purpose of statuses of historical deployments
 // it has list instead of one element.
 // This structure should contain SingleScheduleProperty as well. See note above
-case class ScheduleData(process: PeriodicProcess[WithoutConfig], latestDeployments: List[ScheduleDeploymentData])
+case class ScheduleData(process: PeriodicProcess, latestDeployments: List[ScheduleDeploymentData])
 
 // To identify schedule we need scheduleName - None for SingleScheduleProperty and Some(key) for MultipleScheduleProperty keys
 // Also we need PeriodicProcessId to distinguish between active schedules and some inactive from the past for the same PeriodicProcessId
@@ -53,9 +52,9 @@ case class ScheduleDeploymentData(
 ) {
 
   def toFullDeploymentData(
-      process: PeriodicProcess[DeploymentWithRuntimeParams.WithoutConfig],
+      process: PeriodicProcess,
       scheduleName: ScheduleName
-  ): PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithoutConfig] =
+  ): PeriodicProcessDeployment =
     PeriodicProcessDeployment(id, process, createdAt, runAt, scheduleName, retriesLeft, nextRetryAt, state)
 
   def display = s"deploymentId=$id"
@@ -64,6 +63,6 @@ case class ScheduleDeploymentData(
 
 // These below are temporary structures, see notice next to SchedulesState
 case class PeriodicProcessScheduleData(
-    process: PeriodicProcess[DeploymentWithRuntimeParams.WithoutConfig],
-    deployments: List[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithoutConfig]]
+    process: PeriodicProcess,
+    deployments: List[PeriodicProcessDeployment]
 )

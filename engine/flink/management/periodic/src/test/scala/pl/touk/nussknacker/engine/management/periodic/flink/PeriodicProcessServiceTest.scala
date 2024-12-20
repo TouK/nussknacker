@@ -8,7 +8,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithConfig
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.{
   PeriodicProcessDeployment,
@@ -95,7 +94,7 @@ class PeriodicProcessServiceTest
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
 
         override def prepareAdditionalData(
-            runDetails: PeriodicProcessDeployment[WithConfig]
+            runDetails: PeriodicProcessDeployment
         ): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
 
@@ -396,7 +395,7 @@ class PeriodicProcessServiceTest
     val deploymentEntity = f.manager.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Deployed
     ConfigFactory
-      .parseString(f.periodicDeploymentHandlerStub.lastDeploymentWithRuntimeParams.value.inputConfigDuringExecutionJson)
+      .parseString(f.periodicDeploymentHandlerStub.lastInputConfigDuringExecutionJson.value)
       .getString("runAt") shouldBe deploymentEntity.runAt.toString
 
     val expectedDetails =

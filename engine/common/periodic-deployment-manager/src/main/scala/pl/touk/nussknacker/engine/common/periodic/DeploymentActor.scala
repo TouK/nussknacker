@@ -20,8 +20,8 @@ object DeploymentActor {
   }
 
   private[engine] def props(
-      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]],
-      deploy: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig] => Future[Unit],
+      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
+      deploy: PeriodicProcessDeployment => Future[Unit],
       interval: FiniteDuration
   ) = {
     Props(new DeploymentActor(findToBeDeployed, deploy, interval))
@@ -29,14 +29,14 @@ object DeploymentActor {
 
   private[engine] case object CheckToBeDeployed
 
-  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]])
+  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment])
 
   private case object DeploymentCompleted
 }
 
 class DeploymentActor(
-    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]],
-    deploy: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig] => Future[Unit],
+    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
+    deploy: PeriodicProcessDeployment => Future[Unit],
     interval: FiniteDuration
 ) extends Actor
     with Timers
@@ -73,7 +73,7 @@ class DeploymentActor(
   }
 
   private def receiveOngoingDeployment(
-      runDetails: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]
+      runDetails: PeriodicProcessDeployment
   ): Receive = {
     case CheckToBeDeployed =>
       logger.debug(s"Still waiting for ${runDetails.display} to be deployed")

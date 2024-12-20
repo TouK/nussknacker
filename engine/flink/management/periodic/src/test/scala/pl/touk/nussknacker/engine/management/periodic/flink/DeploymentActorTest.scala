@@ -6,7 +6,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithConfig
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.common.periodic.DeploymentActor
 import pl.touk.nussknacker.engine.common.periodic.DeploymentActor.CheckToBeDeployed
@@ -34,11 +33,11 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
   }
 
   private def shouldFindToBeDeployedScenarios(
-      result: Future[Seq[PeriodicProcessDeployment[WithConfig]]]
+      result: Future[Seq[PeriodicProcessDeployment]]
   ): Unit = {
     val probe   = TestProbe()
     var counter = 0
-    def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[WithConfig]]] = {
+    def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
       counter += 1
       probe.ref ! s"invoked $counter"
       result
@@ -55,14 +54,14 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
   }
 
   test("should deploy found scenario") {
-    val probe                                                    = TestProbe()
-    val waitingDeployment                                        = PeriodicProcessDeploymentGen()
-    var toBeDeployed: Seq[PeriodicProcessDeployment[WithConfig]] = Seq(waitingDeployment)
-    var actor: ActorRef                                          = null
-    def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[WithConfig]]] = {
+    val probe                                        = TestProbe()
+    val waitingDeployment                            = PeriodicProcessDeploymentGen()
+    var toBeDeployed: Seq[PeriodicProcessDeployment] = Seq(waitingDeployment)
+    var actor: ActorRef                              = null
+    def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
       Future.successful(toBeDeployed)
     }
-    def deploy(deployment: PeriodicProcessDeployment[WithConfig]): Future[Unit] = {
+    def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
       probe.ref ! deployment
       // Simulate periodic check for waiting scenarios while deploying a scenario.
       actor ! CheckToBeDeployed
