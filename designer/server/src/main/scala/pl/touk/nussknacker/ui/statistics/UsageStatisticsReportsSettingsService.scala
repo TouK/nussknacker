@@ -48,7 +48,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       processService
         .getLatestProcessesWithDetails(
           ScenarioQuery.unarchived,
-          GetScenarioWithDetailsOptions.withsScenarioGraph.withFetchState
+          GetScenarioWithDetailsOptions.withScenarioGraph.withFetchState
         )(user)
         .map { scenariosDetails =>
           Right(
