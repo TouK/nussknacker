@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.util.loader
 
 import com.typesafe.scalalogging.LazyLogging
 
-import java.io.File
+import java.io.{Closeable, File}
 import java.net.{URI, URL, URLClassLoader}
 import java.nio.file.Path
 
-case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) {
+case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) extends LazyLogging {
 
   override def toString: String = s"ModelClassLoader(${toString(classLoader)})"
 
@@ -14,6 +14,16 @@ case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) 
     case null                => "null"
     case url: URLClassLoader => url.getURLs.mkString("URLClassLoader(List(", ", ", s"), ${toString(url.getParent)})")
     case other               => s"${other.toString}(${toString(other.getParent)})"
+  }
+
+  def close(): Unit = {
+    classLoader match {
+      case closeable: Closeable =>
+        logger.debug(s"$toString: Closing Closeable classloader")
+        closeable.close()
+      case _ =>
+        logger.debug(s"$toString: Classloader ${classLoader.getClass.getName} is not Closeable, skipping close")
+    }
   }
 
 }
@@ -67,10 +77,12 @@ object ModelClassLoader extends LazyLogging {
       jarExtension: String = defaultJarExtension
   ): ModelClassLoader = {
     val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension)
-    ModelClassLoader(
+    val cl = ModelClassLoader(
       new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
       postProcessedURLs.toList
     )
+    logger.debug(s"$cl created")
+    cl
   }
 
 }
