@@ -21,6 +21,7 @@ export const StickyNoteElementView = dia.ElementView.extend({
     events: {
         "click textarea": "stopPropagation",
         "keydown textarea": "selectAll",
+        "blur textarea": "onChange",
         "focusout textarea": "onChange",
         "dblclick .sticky-note-content": "showEditor",
     },
@@ -46,6 +47,7 @@ export const StickyNoteElementView = dia.ElementView.extend({
 
     onChange: function (evt) {
         this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
+        console.log(evt);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, true);
     },

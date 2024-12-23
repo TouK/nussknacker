@@ -49,6 +49,8 @@ import { handleGraphEvent } from "./utils/graphUtils";
 import { StickyNote } from "../../common/StickyNote";
 import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
 import { STICKY_NOTE_CONSTRAINTS } from "./EspNode/stickyNote";
+import { NotificationActions } from "../../http/HttpService";
+import i18next from "i18next";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -65,6 +67,7 @@ type Props = GraphProps & {
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
+    notifications: NotificationActions;
 };
 
 export const nuGraphNamespace = {
@@ -233,6 +236,15 @@ export class Graph extends React.Component<Props> {
                 }
                 if (isStickyNoteElement(cell.model)) {
                     this.processGraphPaper.hideTools();
+                    if (!this.props.isPristine) {
+                        this.props.notifications.warn(
+                            i18next.t(
+                                "notification.warn.cannotDeleteOnUnsavedVersion",
+                                "Save scenario before making any changes to sticky notes",
+                            ),
+                        );
+                        return;
+                    }
                     cell.showTools();
                     const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell.model);
                     if (!updatedStickyNote) return;
@@ -382,6 +394,7 @@ export class Graph extends React.Component<Props> {
             if (this.props.isFragment === true) return;
             this.processGraphPaper.hideTools();
             if (isStickyNoteElement(cellView.model)) {
+                if (!this.props.isPristine) return;
                 showStickyNoteTools(cellView);
             }
             if (this.props.nodeSelectionEnabled) {
@@ -469,6 +482,12 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_RESIZED, (cell: dia.Element) => {
             if (isStickyNoteElement(cell)) {
+                if (!this.props.isPristine) {
+                    this.props.notifications.warn(
+                        i18next.t("notification.warn.cannotDeleteOnUnsavedVersion", "Save scenario before resizing sticky note"),
+                    );
+                    return;
+                }
                 const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
                 if (!updatedStickyNote) return;
                 const position = cell.get("position");
@@ -490,6 +509,12 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_CONTENT_UPDATED, (cell: dia.Element, content: string) => {
             if (isStickyNoteElement(cell)) {
+                if (!this.props.isPristine) {
+                    this.props.notifications.warn(
+                        i18next.t("notification.warn.cannotDeleteOnUnsavedVersion", "Save scenario before updating sticky note"),
+                    );
+                    return;
+                }
                 const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
                 if (!updatedStickyNote) return;
                 if (updatedStickyNote.content == content) return;
@@ -500,6 +525,12 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_DELETED, (cell: dia.Element) => {
             if (isStickyNoteElement(cell)) {
+                if (!this.props.isPristine) {
+                    this.props.notifications.warn(
+                        i18next.t("notification.warn.cannotDeleteOnUnsavedVersion", "Save scenario before deleting sticky note"),
+                    );
+                    return;
+                }
                 const noteId = Number(cell.get("noteId"));
                 this.deleteStickyNote(this.props.scenario.name, noteId);
             }
