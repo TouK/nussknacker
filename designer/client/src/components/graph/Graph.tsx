@@ -557,6 +557,7 @@ export class Graph extends React.Component<Props> {
         const processChanged =
             !isEqual(this.props.scenario.scenarioGraph, nextProps.scenario.scenarioGraph) ||
             !isEqual(this.props.scenario.validationResult, nextProps.scenario.validationResult) ||
+            !isEqual(this.props.stickyNotes, nextProps.stickyNotes) ||
             !isEqual(this.props.layout, nextProps.layout) ||
             !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData);
         if (processChanged) {
