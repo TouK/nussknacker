@@ -201,7 +201,6 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 borderColor: "Transparent",
                 whiteSpace: "pre-line",
                 overflow: "hidden",
-                clipPath: "xywh(0 0px 100% 100% round 0 0 16% 0)",
             },
             ".sticky-note-markdown-editor:focus": {
                 outline: "none",

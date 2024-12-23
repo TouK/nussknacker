@@ -79,7 +79,7 @@ const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
     return singleMarkupNode as MarkupNodeJSON;
 };
 
-export const stickyNotePath = "M 0 0 L 10 0 C 10 2.6667 10 5.3333 10 8 C 10 10 9 10 8 10 L 0 10 L 0 0";
+export const stickyNotePath = "M 0 0 L 19 0 L 19 19 L 0 19 L 0 0";
 
 const defaults = (theme: Theme) =>
     util.defaultsDeep(
