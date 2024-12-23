@@ -126,9 +126,10 @@ export type ComponentUsageType = {
     lastAction: ProcessActionType;
 };
 
-type NotificationActions = {
+export type NotificationActions = {
     success(message: string): void;
     error(message: string, error: string, showErrorText: boolean): void;
+    warn(message: string): void;
 };
 
 export interface TestProcessResponse {
