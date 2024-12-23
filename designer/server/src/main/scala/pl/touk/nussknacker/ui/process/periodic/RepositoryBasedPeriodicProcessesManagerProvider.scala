@@ -8,11 +8,9 @@ class RepositoryBasedPeriodicProcessesManagerProvider(
 ) extends PeriodicProcessesManagerProvider {
 
   override def provide(
-      deploymentManagerName: String,
       processingType: String
   ): PeriodicProcessesManager = {
     new RepositoryBasedPeriodicProcessesManager(
-      deploymentManagerName,
       processingType,
       periodicProcessesRepository
     )

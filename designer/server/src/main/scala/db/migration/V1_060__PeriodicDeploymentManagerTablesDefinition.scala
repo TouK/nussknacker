@@ -90,19 +90,15 @@ object V1_060__PeriodicDeploymentManagerTablesDefinition {
 
     class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_processes") {
 
-      def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+      def periodicProcessId: Rep[Long] = column[Long]("id", O.Unique, O.AutoInc)
+
+      def processId: Rep[Option[Long]] = column[Option[Long]]("process_id")
 
       def processName: Rep[String] = column[String]("process_name", NotNull)
 
       def processVersionId: Rep[Long] = column[Long]("process_version_id", NotNull)
 
       def processingType: Rep[String] = column[String]("processing_type", NotNull)
-
-      def inputConfigDuringExecutionJson: Rep[String] = column[String]("input_config_during_execution", NotNull)
-
-      // This is a legacy column left after migrating periodic processes to core
-      // The periodic deployment manager is now decoupled from Flink, and its runtime params are stored in runtime_params column
-      def jarFileName: Rep[Option[String]] = column[Option[String]]("jar_file_name")
 
       def runtimeParams: Rep[String] = column[String]("runtime_params")
 
@@ -114,75 +110,36 @@ object V1_060__PeriodicDeploymentManagerTablesDefinition {
 
       def processActionId: Rep[Option[UUID]] = column[Option[UUID]]("process_action_id")
 
+      def inputConfigDuringExecutionJson: Rep[String] = column[String]("input_config_during_execution", NotNull)
+
       override def * : ProvenShape[PeriodicProcessEntity] = (
-        id,
+        periodicProcessId,
+        processId,
         processName,
         processVersionId,
         processingType,
-        inputConfigDuringExecutionJson,
-        jarFileName,
         runtimeParams,
         scheduleProperty,
         active,
         createdAt,
-        processActionId
-      ) <> (
-        tuple =>
-          PeriodicProcessEntity(
-            id = tuple._1,
-            processName = tuple._2,
-            processVersionId = tuple._3,
-            processingType = tuple._4,
-            inputConfigDuringExecutionJson = tuple._5,
-            runtimeParams = tuple._7,
-            scheduleProperty = tuple._8,
-            active = tuple._9,
-            createdAt = tuple._10,
-            processActionId = tuple._11,
-          ),
-        (e: PeriodicProcessEntity) =>
-          PeriodicProcessEntity.unapply(e).map {
-            case (
-                  id,
-                  processName,
-                  versionId,
-                  processingType,
-                  inputConfigDuringExecutionJson,
-                  runtimeParams,
-                  scheduleProperty,
-                  active,
-                  createdAt,
-                  processActionId
-                ) =>
-              (
-                id,
-                processName,
-                versionId,
-                processingType,
-                inputConfigDuringExecutionJson,
-                None,
-                runtimeParams,
-                scheduleProperty,
-                active,
-                createdAt,
-                processActionId
-              )
-          }
-      )
+        processActionId,
+        inputConfigDuringExecutionJson,
+      ) <> (PeriodicProcessEntity.apply _ tupled, PeriodicProcessEntity.unapply)
 
     }
 
     case class PeriodicProcessEntity(
         id: Long,
+        processId: Option[Long],
         processName: String,
         processVersionId: Long,
         processingType: String,
-        inputConfigDuringExecutionJson: String,
         runtimeParams: String,
         scheduleProperty: String,
         active: Boolean,
         createdAt: LocalDateTime,
-        processActionId: Option[UUID]
+        processActionId: Option[UUID],
+        inputConfigDuringExecutionJson: String,
     )
 
   }

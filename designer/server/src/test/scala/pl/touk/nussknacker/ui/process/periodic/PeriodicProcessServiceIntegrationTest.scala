@@ -105,7 +105,6 @@ class PeriodicProcessServiceIntegrationTest
 
     def periodicProcessService(
         currentTime: Instant,
-        deploymentManagerName: String = "testPeriodicDeploymentManager",
         processingType: String = processingType
     ) =
       new PeriodicProcessService(
@@ -113,7 +112,7 @@ class PeriodicProcessServiceIntegrationTest
         periodicDeploymentHandler = periodicDeploymentHandlerStub,
         periodicProcessesManager = new RepositoryBasedPeriodicProcessesManagerProvider(
           new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, fixedClock(currentTime))
-        ).provide(deploymentManagerName, processingType),
+        ).provide(processingType),
         periodicProcessListener = new PeriodicProcessListener {
 
           override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {

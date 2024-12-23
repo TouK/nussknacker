@@ -12,7 +12,6 @@ import java.time.LocalDateTime
 import scala.concurrent.Future
 
 class RepositoryBasedPeriodicProcessesManager(
-    deploymentManagerName: String,
     processingType: String,
     periodicProcessesRepository: PeriodicProcessesRepository,
 ) extends PeriodicProcessesManager {
