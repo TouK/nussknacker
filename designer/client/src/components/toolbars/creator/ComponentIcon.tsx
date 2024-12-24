@@ -7,6 +7,7 @@ import { NodeType, ProcessDefinitionData } from "../../../types";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";
 import { createRoot } from "react-dom/client";
+import { StickyNoteType } from "../../../types/stickyNote";
 
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
@@ -21,6 +22,11 @@ const preloadBeImage = memoize((src: string): string | null => {
     document.body.appendChild(div);
     return `#${id}`;
 });
+
+export const stickyNoteIconSrc = `/assets/components/${StickyNoteType}.svg`;
+export function stickyNoteIcon(): string | null {
+    return preloadBeImage(stickyNoteIconSrc);
+}
 
 export function getComponentIconSrc(node: NodeType, { components }: ProcessDefinitionData): string | null {
     // missing type means that node is the fake properties component
