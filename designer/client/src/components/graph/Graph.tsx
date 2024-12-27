@@ -239,7 +239,7 @@ export class Graph extends React.Component<Props> {
                     if (!this.props.isPristine) {
                         this.props.notifications.warn(
                             i18next.t(
-                                "notification.warn.cannotDeleteOnUnsavedVersion",
+                                "notification.warn.cannotMoveOnUnsavedVersion",
                                 "Save scenario before making any changes to sticky notes",
                             ),
                         );
@@ -484,7 +484,7 @@ export class Graph extends React.Component<Props> {
             if (isStickyNoteElement(cell)) {
                 if (!this.props.isPristine) {
                     this.props.notifications.warn(
-                        i18next.t("notification.warn.cannotDeleteOnUnsavedVersion", "Save scenario before resizing sticky note"),
+                        i18next.t("notification.warn.cannotResizeOnUnsavedVersion", "Save scenario before resizing sticky note"),
                     );
                     return;
                 }
@@ -511,7 +511,7 @@ export class Graph extends React.Component<Props> {
             if (isStickyNoteElement(cell)) {
                 if (!this.props.isPristine) {
                     this.props.notifications.warn(
-                        i18next.t("notification.warn.cannotDeleteOnUnsavedVersion", "Save scenario before updating sticky note"),
+                        i18next.t("notification.warn.cannotUpdateOnUnsavedVersion", "Save scenario before updating sticky note"),
                     );
                     return;
                 }
