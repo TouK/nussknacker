@@ -693,9 +693,10 @@ class HttpService {
             color: STICKY_NOTE_DEFAULT_COLOR, //TODO add config for default sticky note color? For now this is default.
             dimensions: dimensions,
         });
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToAddStickyNote", "Failed to add sticky note to scenario"), error, true),
-        );
+        promise.catch((error) => {
+            const errorMsg: string = error?.response?.data;
+            this.#addError("Failed to add sticky note" + (errorMsg ? ": " + errorMsg : ""), error, true);
+        });
         return promise;
     }
 
@@ -720,13 +721,10 @@ class HttpService {
             color: stickyNote.color,
             dimensions: stickyNote.dimensions,
         });
-        promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToUpdateStickyNote", "Failed to update sticky note for scenario"),
-                error,
-                true,
-            ),
-        );
+        promise.catch((error) => {
+            const errorMsg = error?.response?.data;
+            this.#addError("Failed to update sticky note" + errorMsg ? ": " + errorMsg : "", error, true);
+        });
         return promise;
     }
 
