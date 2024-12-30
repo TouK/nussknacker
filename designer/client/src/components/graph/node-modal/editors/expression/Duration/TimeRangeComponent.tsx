@@ -65,7 +65,7 @@ export default function TimeRangeComponent(props: Props) {
             <input
                 readOnly={readOnly}
                 value={value[component.fieldName] || ""}
-                onChange={(event) => onChange(component.fieldName, parseInt(event.target.value))}
+                onChange={(event) => onChange(component.fieldName, event.target.value)}
                 className={cx([
                     nodeInput,
                     "time-range-input",
@@ -73,7 +73,6 @@ export default function TimeRangeComponent(props: Props) {
                     isMarked && "marked",
                     readOnly && "read-only",
                 ])}
-                type={"number"}
             />
             <span className={"time-range-component-label"}>{component.label}</span>
         </div>
