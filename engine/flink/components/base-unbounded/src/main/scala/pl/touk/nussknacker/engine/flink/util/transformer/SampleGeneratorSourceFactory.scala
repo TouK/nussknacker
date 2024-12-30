@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -24,6 +25,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetec
 import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
 
 import java.time.Duration
+import java.time.temporal.ChronoUnit
 import java.{util => jul}
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
@@ -50,7 +52,15 @@ class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[
   @silent("deprecated")
   @MethodToInvoke
   def create(
-      @ParamName("period") period: Duration,
+      @ParamName("period")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(
+          `type` = SimpleEditorType.DURATION_EDITOR,
+          timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
+        ),
+        defaultMode = DualEditorMode.SIMPLE
+      )
+      period: Duration,
       // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
       @ParamName("value") value: LazyParameter[AnyRef]
