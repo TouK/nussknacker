@@ -477,6 +477,27 @@ def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
   files.filterNot { case (file, _) => devConfigFiles.contains(file.getName) }
 }
 
+Test / testListeners += new TestReportListener {
+
+  override def testEvent(event: TestEvent): Unit = {
+    event.result.foreach {
+      case TestResult.Failed => {
+        import java.lang.management.ManagementFactory
+
+        println("Test failed! Generating thread dump...")
+        val threadDump = ManagementFactory.getThreadMXBean.dumpAllThreads(true, true)
+        threadDump.foreach { thread =>
+          println(thread.toString)
+        }
+      }
+    }
+  }
+
+  override def startGroup(name: String): Unit                   = ()
+  override def endGroup(name: String, t: Throwable): Unit       = ()
+  override def endGroup(name: String, result: TestResult): Unit = ()
+}
+
 lazy val distribution: Project = sbt
   .Project("dist", file("nussknacker-dist"))
   .settings(commonSettings)
