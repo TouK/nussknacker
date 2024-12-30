@@ -22,7 +22,12 @@ import {
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
-import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
+import {
+    ActivitiesResponse,
+    ActivityMetadataResponse,
+    ActivityType,
+    ActivityTypesRelatedToExecutions,
+} from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { BackendNotification } from "../containers/Notifications";
@@ -321,17 +326,17 @@ class HttpService {
         return promise;
     }
 
-    fetchProcessesDeployments(processName: string) {
+    fetchActivitiesRelatedToExecutions(processName: string) {
         return api
-            .get<
-                {
-                    performedAt: string;
-                    actionName: ActionName;
-                }[]
-            >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) =>
-                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
-            );
+            .get<{ activities: { date: string; type: ActivityType }[] }>(
+                `/processes/${encodeURIComponent(processName)}/activity/activities`,
+            )
+            .then((res) => {
+                return res.data.activities.filter(({ date, type }) =>
+                    Object.values(ActivityTypesRelatedToExecutions).includes(type as ActivityTypesRelatedToExecutions),
+                );
+            })
+            .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
     deploy(

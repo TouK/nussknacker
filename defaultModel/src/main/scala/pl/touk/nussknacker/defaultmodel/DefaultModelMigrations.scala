@@ -10,7 +10,8 @@ class DefaultModelMigrations extends ProcessMigrations {
       GroupByMigration,
       SinkExpressionMigration,
       RequestResponseSinkValidationModeMigration,
-      DecisionTableParameterNamesMigration
+      DecisionTableParameterNamesMigration,
+      PeriodicToSampleGeneratorMigration
     )
     .processMigrations
 
