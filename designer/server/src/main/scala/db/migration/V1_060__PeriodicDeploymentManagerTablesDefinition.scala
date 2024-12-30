@@ -35,7 +35,7 @@ object V1_060__PeriodicDeploymentManagerTablesDefinition {
     val periodicProcessDeploymentsTable = TableQuery[PeriodicProcessDeploymentsTable]
 
     class PeriodicProcessDeploymentsTable(tag: Tag)
-        extends Table[PeriodicProcessDeploymentEntity](tag, "periodic_process_deployments") {
+        extends Table[PeriodicProcessDeploymentEntity](tag, "periodic_scenario_deployments") {
 
       def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
@@ -88,7 +88,7 @@ object V1_060__PeriodicDeploymentManagerTablesDefinition {
 
     val periodicProcessesTable = TableQuery[PeriodicProcessesTable]
 
-    class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_processes") {
+    class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_scenarios") {
 
       def periodicProcessId: Rep[Long] = column[Long]("id", O.Unique, O.AutoInc)
 

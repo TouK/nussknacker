@@ -38,7 +38,7 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
     )
 
   abstract class PeriodicProcessesTable[ENTITY <: PeriodicProcessEntity](tag: Tag)
-      extends Table[ENTITY](tag, "periodic_processes") {
+      extends Table[ENTITY](tag, "periodic_scenarios") {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 
