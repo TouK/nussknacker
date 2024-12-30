@@ -477,7 +477,7 @@ def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
   files.filterNot { case (file, _) => devConfigFiles.contains(file.getName) }
 }
 
-Test / testListeners += new TestReportListener {
+ThisBuild / Test / testListeners += new TestReportListener {
 
   override def testEvent(event: TestEvent): Unit = {
     event.result.foreach {
