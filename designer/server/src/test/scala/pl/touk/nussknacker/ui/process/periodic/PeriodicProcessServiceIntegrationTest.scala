@@ -504,7 +504,7 @@ class PeriodicProcessServiceIntegrationTest
     toDeploy should have length 2
 
     val deployment = toDeploy.find(_.scheduleName.value.contains(firstSchedule)).value
-    service.deploy(deployment)
+    service.deploy(deployment).futureValue
     f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Running, Some(deployment.id))
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue

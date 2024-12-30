@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.engine.common.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig

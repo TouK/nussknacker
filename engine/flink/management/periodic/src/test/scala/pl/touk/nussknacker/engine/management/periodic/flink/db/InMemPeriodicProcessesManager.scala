@@ -28,8 +28,8 @@ object InMemPeriodicProcessesRepository {
 
 class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProcessesManager {
 
-  var processEntities: mutable.ListBuffer[PeriodicProcessEntity]              = ListBuffer.empty
-  var deploymentEntities: mutable.ListBuffer[PeriodicProcessDeploymentEntity] = ListBuffer.empty
+  var processEntities: mutable.ListBuffer[TestPeriodicProcessEntity]              = ListBuffer.empty
+  var deploymentEntities: mutable.ListBuffer[TestPeriodicProcessDeploymentEntity] = ListBuffer.empty
 
   private def canonicalProcess(processName: ProcessName) = {
     ScenarioBuilder
@@ -67,7 +67,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
       processActionId: Option[ProcessActionId] = None
   ): PeriodicProcessId = {
     val id = PeriodicProcessId(ProcessIdSequence.incrementAndGet())
-    val entity = PeriodicProcessEntity(
+    val entity = TestPeriodicProcessEntity(
       id = id,
       processId = None,
       processName = processName,
@@ -93,7 +93,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
       deployedAt: Option[LocalDateTime] = None,
   ): PeriodicProcessDeploymentId = {
     val id = PeriodicProcessDeploymentId(DeploymentIdSequence.incrementAndGet())
-    val entity = PeriodicProcessDeploymentEntity(
+    val entity = TestPeriodicProcessDeploymentEntity(
       id = id,
       periodicProcessId = periodicProcessId,
       createdAt = LocalDateTime.now(),
@@ -135,7 +135,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
       processActionId: ProcessActionId,
   ): Future[PeriodicProcess] = Future.successful {
     val id = PeriodicProcessId(Random.nextLong())
-    val periodicProcess = PeriodicProcessEntity(
+    val periodicProcess = TestPeriodicProcessEntity(
       id = id,
       processId = deploymentWithRuntimeParams.processId,
       processName = deploymentWithRuntimeParams.processName,
@@ -210,7 +210,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
   }
 
   private def getLatestDeploymentsForPeriodicProcesses(
-      processes: Seq[PeriodicProcessEntity],
+      processes: Seq[TestPeriodicProcessEntity],
       deploymentsPerScheduleMaxCount: Int
   ): SchedulesState = {
     SchedulesState((for {
@@ -249,12 +249,12 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
     } yield createPeriodicProcessDeployment(p, d)).head
   }
 
-  private def processEntities(processName: ProcessName): Seq[PeriodicProcessEntity] =
+  private def processEntities(processName: ProcessName): Seq[TestPeriodicProcessEntity] =
     processEntities
       .filter(process => process.processName == processName && process.processingType == processingType)
       .toSeq
 
-  private def allProcessEntities: Map[ProcessName, Seq[PeriodicProcessEntity]] =
+  private def allProcessEntities: Map[ProcessName, Seq[TestPeriodicProcessEntity]] =
     processEntities
       .filter(process => process.processingType == processingType)
       .toSeq
@@ -299,7 +299,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
       runAt: LocalDateTime,
       deployMaxRetries: Int,
   ): Future[PeriodicProcessDeployment] = Future.successful {
-    val deploymentEntity = PeriodicProcessDeploymentEntity(
+    val deploymentEntity = TestPeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
       createdAt = LocalDateTime.now(),
@@ -318,7 +318,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
 
   private def update(
       id: PeriodicProcessDeploymentId
-  )(action: PeriodicProcessDeploymentEntity => PeriodicProcessDeploymentEntity): Unit = {
+  )(action: TestPeriodicProcessDeploymentEntity => TestPeriodicProcessDeploymentEntity): Unit = {
     deploymentEntities.zipWithIndex
       .find { case (deployment, _) => deployment.id == id }
       .foreach { case (deployment, index) =>
@@ -366,7 +366,7 @@ object InMemPeriodicProcessesManager {
   private val ProcessIdSequence    = new AtomicLong(0)
   private val DeploymentIdSequence = new AtomicLong(0)
 
-  final case class PeriodicProcessEntity(
+  final case class TestPeriodicProcessEntity(
       id: PeriodicProcessId,
       processId: Option[ProcessId],
       processName: ProcessName,
@@ -380,7 +380,7 @@ object InMemPeriodicProcessesManager {
       processActionId: Option[ProcessActionId]
   )
 
-  case class PeriodicProcessDeploymentEntity(
+  case class TestPeriodicProcessDeploymentEntity(
       id: PeriodicProcessDeploymentId,
       periodicProcessId: PeriodicProcessId,
       createdAt: LocalDateTime,
@@ -394,8 +394,8 @@ object InMemPeriodicProcessesManager {
   )
 
   def createPeriodicProcessDeployment(
-      processEntity: PeriodicProcessEntity,
-      processDeploymentEntity: PeriodicProcessDeploymentEntity
+      processEntity: TestPeriodicProcessEntity,
+      processDeploymentEntity: TestPeriodicProcessDeploymentEntity
   ): PeriodicProcessDeployment = {
     val process = createPeriodicProcessWithJson(processEntity)
     PeriodicProcessDeployment(
@@ -411,7 +411,7 @@ object InMemPeriodicProcessesManager {
   }
 
   def createPeriodicDeploymentState(
-      processDeploymentEntity: PeriodicProcessDeploymentEntity
+      processDeploymentEntity: TestPeriodicProcessDeploymentEntity
   ): PeriodicProcessDeploymentState = {
     PeriodicProcessDeploymentState(
       processDeploymentEntity.deployedAt,
@@ -421,7 +421,7 @@ object InMemPeriodicProcessesManager {
   }
 
   def createPeriodicProcessWithJson(
-      processEntity: PeriodicProcessEntity
+      processEntity: TestPeriodicProcessEntity
   ): PeriodicProcess = {
     val scheduleProperty = prepareScheduleProperty(processEntity)
     PeriodicProcess(
@@ -440,7 +440,7 @@ object InMemPeriodicProcessesManager {
   }
 
   def createPeriodicProcessWithoutJson(
-      processEntity: PeriodicProcessEntity
+      processEntity: TestPeriodicProcessEntity
   ): PeriodicProcess = {
     val scheduleProperty = prepareScheduleProperty(processEntity)
     PeriodicProcess(
@@ -458,14 +458,14 @@ object InMemPeriodicProcessesManager {
     )
   }
 
-  private def prepareScheduleProperty(processEntity: PeriodicProcessEntity) = {
+  private def prepareScheduleProperty(processEntity: TestPeriodicProcessEntity) = {
     val scheduleProperty = io.circe.parser
       .decode[ScheduleProperty](processEntity.scheduleProperty)
       .fold(e => throw new IllegalArgumentException(e), identity)
     scheduleProperty
   }
 
-  private def scheduleDeploymentData(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
+  private def scheduleDeploymentData(deployment: TestPeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
       deployment.createdAt,
