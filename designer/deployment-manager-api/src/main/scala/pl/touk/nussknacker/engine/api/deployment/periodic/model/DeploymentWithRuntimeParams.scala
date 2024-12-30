@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment.periodic.model
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 final case class DeploymentWithRuntimeParams(
-    processVersion: ProcessVersion,
+    processId: Option[ProcessId],
+    processName: ProcessName,
+    versionId: VersionId,
     runtimeParams: RuntimeParams,
 )
 

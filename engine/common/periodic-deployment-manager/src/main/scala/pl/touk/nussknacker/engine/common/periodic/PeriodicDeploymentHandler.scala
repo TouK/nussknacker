@@ -21,6 +21,7 @@ trait PeriodicDeploymentHandler {
       inputConfigDuringExecutionJson: String,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
+      processVersion: ProcessVersion,
   ): Future[Option[ExternalDeploymentId]]
 
   def cleanAfterDeployment(

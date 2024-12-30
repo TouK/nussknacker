@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.ui.process.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.periodic.{PeriodicProcessesManager, PeriodicProcessesManagerProvider}
-import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
+
+import scala.concurrent.Future
 
 class RepositoryBasedPeriodicProcessesManagerProvider(
     periodicProcessesRepository: PeriodicProcessesRepository,
+    fetchingProcessRepository: FetchingProcessRepository[Future],
 ) extends PeriodicProcessesManagerProvider {
 
   override def provide(
@@ -12,7 +15,8 @@ class RepositoryBasedPeriodicProcessesManagerProvider(
   ): PeriodicProcessesManager = {
     new RepositoryBasedPeriodicProcessesManager(
       processingType,
-      periodicProcessesRepository
+      periodicProcessesRepository,
+      fetchingProcessRepository,
     )
   }
 

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment.periodic.model
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager.ScheduleProperty
 
@@ -15,6 +14,4 @@ case class PeriodicProcess(
     active: Boolean,
     createdAt: LocalDateTime,
     processActionId: Option[ProcessActionId]
-) {
-  val processVersion: ProcessVersion = deploymentData.processVersion
-}
+)

@@ -88,7 +88,7 @@ class PeriodicProcessService(
         scenarioActivityId = ScenarioActivityId(DeterministicUUIDFromLong.longUUID(deployment.id.value)),
         user = ScenarioUser.internalNuUser,
         date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
-        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
+        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.deploymentData.versionId)),
         scheduledExecutionStatus = metadata.status,
         dateFinished = metadata.dateFinished,
         scheduleName = deployment.scheduleName.display,
@@ -217,7 +217,7 @@ class PeriodicProcessService(
       toDeploy: PeriodicProcessDeployment
   ): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager
-      .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
+      .getProcessStates(toDeploy.periodicProcess.deploymentData.processName)(DataFreshnessPolicy.Fresh)
       .map(
         _.value
           .map(_.status)
@@ -461,14 +461,17 @@ class PeriodicProcessService(
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {
       _ <- Future.successful(
-        logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id)
+        logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData, id)
       )
-      processName = deploymentWithJarData.processVersion.processName
-      versionId   = deploymentWithJarData.processVersion.versionId
-      canonicalProcessOpt <- periodicProcessesManager.fetchCanonicalProcess(processName, versionId)
-      canonicalProcess = canonicalProcessOpt.getOrElse {
+      processName = deploymentWithJarData.processName
+      versionId   = deploymentWithJarData.versionId
+      canonicalProcessWithVersionOpt <- periodicProcessesManager.fetchCanonicalProcessWithVersion(
+        processName,
+        versionId
+      )
+      canonicalProcessWithVersion = canonicalProcessWithVersionOpt.getOrElse {
         throw new PeriodicProcessException(
-          s"Could not fetch CanonicalProcess for processName=$processName, versionId=$versionId"
+          s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
         )
       }
       inputConfigDuringExecutionJsonOpt <- periodicProcessesManager.fetchInputConfigDuringExecutionJson(
@@ -487,12 +490,13 @@ class PeriodicProcessService(
         deploymentWithJarData,
         enrichedProcessConfig.inputConfigDuringExecutionJson,
         deploymentData,
-        canonicalProcess,
+        canonicalProcessWithVersion._1,
+        canonicalProcessWithVersion._2,
       )
     } yield externalDeploymentId
     deploymentAction
       .flatMap { externalDeploymentId =>
-        logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
+        logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData, id)
         // TODO: add externalDeploymentId??
         periodicProcessesManager
           .markDeployed(id)

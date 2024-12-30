@@ -56,7 +56,12 @@ class FlinkPeriodicDeploymentManagerProvider
         val clock                                                      = Clock.systemDefaultZone()
         val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
         val repository = new SlickLegacyPeriodicProcessesRepository(db, dbProfile, clock)
-        (processingType: String) => new LegacyRepositoryBasedPeriodicProcessesManager(processingType, repository)
+        (processingType: String) =>
+          new LegacyRepositoryBasedPeriodicProcessesManager(
+            processingType,
+            repository,
+            dependencies.periodicProcessesManagerProvider.provide(processingType)
+          )
     }
   }
 

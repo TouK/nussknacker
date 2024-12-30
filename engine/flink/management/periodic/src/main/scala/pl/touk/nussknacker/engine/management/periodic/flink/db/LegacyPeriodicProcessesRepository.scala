@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -58,13 +57,14 @@ object LegacyPeriodicProcessesRepository {
   def createPeriodicProcess(
       processEntity: PeriodicProcessEntity
   ): PeriodicProcess = {
-    val processVersion   = createProcessVersion(processEntity)
     val scheduleProperty = prepareScheduleProperty(processEntity)
     PeriodicProcess(
       processEntity.id,
       DeploymentWithRuntimeParams(
-        processVersion = processVersion,
-        runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam + "a" -> processEntity.jarFileName)),
+        processId = None,
+        processName = processEntity.processName,
+        versionId = processEntity.processVersionId,
+        runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam -> processEntity.jarFileName)),
       ),
       toApi(scheduleProperty),
       processEntity.active,
@@ -77,10 +77,6 @@ object LegacyPeriodicProcessesRepository {
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty)
       .fold(e => throw new IllegalArgumentException(e), identity)
     scheduleProperty
-  }
-
-  private def createProcessVersion(processEntity: PeriodicProcessEntity): ProcessVersion = {
-    ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
   }
 
 }
@@ -219,12 +215,16 @@ class SlickLegacyPeriodicProcessesRepository(
       processActionId: ProcessActionId,
       processingType: String,
   ): Action[PeriodicProcess] = {
+    val jarFileName = deploymentWithRuntimeParams.runtimeParams.params.getOrElse(
+      jarFileNameRuntimeParam,
+      throw new RuntimeException(s"jarFileName runtime param not present")
+    )
     val processEntity = PeriodicProcessEntityWithJson(
       id = PeriodicProcessId(-1),
-      processName = deploymentWithRuntimeParams.processVersion.processName,
-      processVersionId = deploymentWithRuntimeParams.processVersion.versionId,
+      processName = deploymentWithRuntimeParams.processName,
+      processVersionId = deploymentWithRuntimeParams.versionId,
       processingType = processingType,
-      jarFileName = deploymentWithRuntimeParams.runtimeParams.params(jarFileNameRuntimeParam),
+      jarFileName = jarFileName,
       scheduleProperty = fromApi(scheduleProperty).asJson.noSpaces,
       active = true,
       createdAt = now(),

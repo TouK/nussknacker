@@ -17,7 +17,7 @@ case class PeriodicProcessDeployment(
 ) {
 
   def display: String =
-    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=$id"
+    s"Process with id=${periodicProcess.deploymentData.processId}, name=${periodicProcess.deploymentData.processName}, versionId=${periodicProcess.deploymentData.versionId}, scheduleName=${scheduleName.display} and deploymentId=$id"
 
 }
 

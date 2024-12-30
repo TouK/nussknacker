@@ -25,10 +25,10 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsC
 import pl.touk.nussknacker.ui.config.{
   AttachmentsConfig,
   ComponentLinksConfigExtractor,
+  DesignerConfig,
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
 }
-import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
@@ -65,10 +65,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.periodic.{
-  RepositoryBasedPeriodicProcessesManager,
-  RepositoryBasedPeriodicProcessesManagerProvider
-}
+import pl.touk.nussknacker.ui.process.periodic.RepositoryBasedPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
@@ -134,12 +131,20 @@ class AkkaHttpBasedRouteProvider(
       deploymentRepository        = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
       scenarioActivityRepository  = DbScenarioActivityRepository.create(dbRef, designerClock)
       periodicProcessesRepository = new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, designerClock)
-      dbioRunner                  = DBIOActionRunner(dbRef)
+      actionReadOnlyRepository    = DbScenarioActionReadOnlyRepository.create(dbRef)
+      scenarioLabelsRepository    = new ScenarioLabelsRepository(dbRef)
+      futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(
+        dbRef,
+        actionReadOnlyRepository,
+        scenarioLabelsRepository
+      )
+      dbioRunner = DBIOActionRunner(dbRef)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
         scenarioActivityRepository,
         periodicProcessesRepository,
+        futureProcessRepository,
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
@@ -178,8 +183,6 @@ class AkkaHttpBasedRouteProvider(
       val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository =
-        DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
       val writeProcessRepository =
         ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
@@ -711,6 +714,7 @@ class AkkaHttpBasedRouteProvider(
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
       periodicProcessesRepository: PeriodicProcessesRepository,
+      fetchingProcessRepository: FetchingProcessRepository[Future],
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig
@@ -729,11 +733,11 @@ class AkkaHttpBasedRouteProvider(
               actionServiceProvider,
               scenarioActivityRepository,
               periodicProcessesRepository,
-                dbioActionRunner,
-                sttpBackend,
-                _
-              ),
-
+              fetchingProcessRepository,
+              dbioActionRunner,
+              sttpBackend,
+              _
+            ),
           )
           new ReloadableProcessingTypeDataProvider(laodProcessingTypeDataIO)
         }
@@ -747,6 +751,7 @@ class AkkaHttpBasedRouteProvider(
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
       periodicProcessesRepository: PeriodicProcessesRepository,
+      fetchingProcessRepository: FetchingProcessRepository[Future],
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
@@ -762,7 +767,7 @@ class AkkaHttpBasedRouteProvider(
         scenarioActivityRepository,
         dbioActionRunner,
       ),
-      new RepositoryBasedPeriodicProcessesManagerProvider(periodicProcessesRepository),
+      new RepositoryBasedPeriodicProcessesManagerProvider(periodicProcessesRepository, fetchingProcessRepository),
       system.dispatcher,
       system,
       sttpBackend,

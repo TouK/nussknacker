@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.management.periodic.flink.{DeploymentManagerSt
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithPostgresDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -93,6 +94,16 @@ class PeriodicProcessServiceIntegrationTest
       executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig(),
       maxFetchedPeriodicScenarioActivities: Option[Int] = None,
   )(testCode: Fixture => Any): Unit = {
+    val repositoryBasedProvider = (currentTime: Instant) =>
+      new RepositoryBasedPeriodicProcessesManagerProvider(
+        new SlickPeriodicProcessesRepository(
+          testDbRef.db,
+          testDbRef.profile,
+          fixedClock(currentTime),
+        ),
+        TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+      )
+
     val postgresConfig = ConfigFactory.parseMap(
       Map(
         "user"     -> container.username,
@@ -117,7 +128,11 @@ class PeriodicProcessServiceIntegrationTest
         new PeriodicProcessesManagerProvider {
           override def provide(processingType: String): PeriodicProcessesManager = {
             val repository = new SlickLegacyPeriodicProcessesRepository(db, dbProfile, fixedClock(currentTime))
-            new LegacyRepositoryBasedPeriodicProcessesManager(processingType, repository)
+            new LegacyRepositoryBasedPeriodicProcessesManager(
+              processingType,
+              repository,
+              repositoryBasedProvider(currentTime).provide(processingType)
+            )
           }
         }
       try {
@@ -129,12 +144,15 @@ class PeriodicProcessServiceIntegrationTest
       }
     }
 
-    def runTestCodeWithNuDb() = {
-      val provider = (currentTime: Instant) =>
-        new RepositoryBasedPeriodicProcessesManagerProvider(
-          new SlickPeriodicProcessesRepository(testDbRef.db, testDbRef.profile, fixedClock(currentTime))
+    def runTestCodeWithNuDb(): Unit = {
+      testCode(
+        new Fixture(
+          repositoryBasedProvider,
+          deploymentRetryConfig,
+          executionConfig,
+          maxFetchedPeriodicScenarioActivities
         )
-      testCode(new Fixture(provider, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities))
+      )
     }
 
     def testHeader(str: String) = "\n\n" + "*" * 100 + s"\n***** $str\n" + "*" * 100 + "\n"
@@ -259,7 +277,7 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterSchedule should have size 1
     val afterSchedule = stateAfterSchedule.firstScheduleData
 
-    afterSchedule.process.processVersion.processName shouldBe processName
+    afterSchedule.process.deploymentData.processName shouldBe processName
     afterSchedule.latestDeployments.head.state shouldBe PeriodicProcessDeploymentState(
       None,
       None,
@@ -272,9 +290,9 @@ class PeriodicProcessServiceIntegrationTest
 
     val allToDeploy = service.findToBeDeployed.futureValue
     allToDeploy.map(
-      _.periodicProcess.processVersion.processName
+      _.periodicProcess.deploymentData.processName
     ) should contain only (processName, every30MinutesProcessName)
-    val toDeploy = allToDeploy.find(_.periodicProcess.processVersion.processName == processName).value
+    val toDeploy = allToDeploy.find(_.periodicProcess.deploymentData.processName == processName).value
     service.deploy(toDeploy).futureValue
     otherProcessingTypeService.deploy(otherProcessingTypeService.findToBeDeployed.futureValue.loneElement).futureValue
 
@@ -299,7 +317,7 @@ class PeriodicProcessServiceIntegrationTest
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
-    toDeployAfterFinish.map(_.periodicProcess.processVersion.processName) should contain only every30MinutesProcessName
+    toDeployAfterFinish.map(_.periodicProcess.deploymentData.processName) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
     val inactiveStates = service
@@ -440,7 +458,7 @@ class PeriodicProcessServiceIntegrationTest
 
     val allToDeploy = service.findToBeDeployed.futureValue
     allToDeploy should have length 4
-    val toDeploy = allToDeploy.filter(_.periodicProcess.processVersion.processName == processName)
+    val toDeploy = allToDeploy.filter(_.periodicProcess.deploymentData.processName == processName)
     toDeploy should have length 2
     toDeploy.head.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
     toDeploy.head.scheduleName.value shouldBe Some(scheduleMinute5)

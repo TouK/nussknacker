@@ -6,7 +6,6 @@ import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -57,12 +56,13 @@ object PeriodicProcessesRepository {
   def createPeriodicProcess(
       processEntity: PeriodicProcessEntity
   ): PeriodicProcess = {
-    val processVersion   = createProcessVersion(processEntity)
     val scheduleProperty = prepareScheduleProperty(processEntity)
     PeriodicProcess(
       processEntity.id,
       DeploymentWithRuntimeParams(
-        processVersion = processVersion,
+        processId = processEntity.processId,
+        processName = processEntity.processName,
+        versionId = processEntity.processVersionId,
         runtimeParams = processEntity.runtimeParams,
       ),
       toApi(scheduleProperty),
@@ -76,10 +76,6 @@ object PeriodicProcessesRepository {
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty)
       .fold(e => throw new IllegalArgumentException(e), identity)
     scheduleProperty
-  }
-
-  private def createProcessVersion(processEntity: PeriodicProcessEntity): ProcessVersion = {
-    ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
   }
 
 }
@@ -166,11 +162,6 @@ trait PeriodicProcessesRepository {
       deployMaxRetries: Int
   ): Action[PeriodicProcessDeployment]
 
-  def fetchCanonicalProcess(
-      processName: ProcessName,
-      versionId: VersionId,
-  ): Action[Option[CanonicalProcess]]
-
   def fetchInputConfigDuringExecutionJson(
       processName: ProcessName,
       versionId: VersionId
@@ -186,8 +177,6 @@ class SlickPeriodicProcessesRepository(
     extends PeriodicProcessesRepository
     with PeriodicProcessesTableFactory
     with PeriodicProcessDeploymentsTableFactory
-    with ProcessVersionEntityFactory
-    with ProcessEntityFactory
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -220,9 +209,9 @@ class SlickPeriodicProcessesRepository(
   ): Action[PeriodicProcess] = {
     val processEntity = PeriodicProcessEntityWithInputConfigJson(
       id = PeriodicProcessId(-1),
-      processId = Some(deploymentWithRuntimeParams.processVersion.processId),
-      processName = deploymentWithRuntimeParams.processVersion.processName,
-      processVersionId = deploymentWithRuntimeParams.processVersion.versionId,
+      processId = deploymentWithRuntimeParams.processId,
+      processName = deploymentWithRuntimeParams.processName,
+      processVersionId = deploymentWithRuntimeParams.versionId,
       processingType = processingType,
       runtimeParams = deploymentWithRuntimeParams.runtimeParams,
       scheduleProperty = fromApi(scheduleProperty).asJson.noSpaces,
@@ -509,17 +498,6 @@ class SlickPeriodicProcessesRepository(
     } yield p.active
     val update = q.update(false)
     update.map(_ => ())
-  }
-
-  def fetchCanonicalProcess(processName: ProcessName, versionId: VersionId): Action[Option[CanonicalProcess]] = {
-    processesTable
-      .filter(_.name === processName)
-      .join(processVersionsTable)
-      .on((process, version) => process.id === version.processId)
-      .filter { case (_, version) => version.id === versionId }
-      .result
-      .headOption
-      .map(_.flatMap(_._2.json))
   }
 
   def fetchInputConfigDuringExecutionJson(processName: ProcessName, versionId: VersionId): Action[Option[String]] =

@@ -57,7 +57,9 @@ class FlinkPeriodicDeploymentHandler(
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithRuntimeParams(
-        processVersion = processVersion,
+        processId = Some(processVersion.processId),
+        processName = processVersion.processName,
+        versionId = processVersion.versionId,
         runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam -> jarFileName))
       )
     }
@@ -81,12 +83,12 @@ class FlinkPeriodicDeploymentHandler(
       inputConfigDuringExecutionJson: String,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
+      processVersion: ProcessVersion,
   ): Future[Option[ExternalDeploymentId]] = {
-    val processVersion = deployment.processVersion
     deployment.runtimeParams.params.get(jarFileNameRuntimeParam) match {
       case Some(jarFileName) =>
         logger.info(
-          s"Deploying scenario ${processVersion.processName}, version id: ${processVersion.versionId} and jar: $jarFileName"
+          s"Deploying scenario ${deployment.processName}, version id: ${deployment.versionId} and jar: $jarFileName"
         )
         val jarFile = jarsDir.resolve(jarFileName).toFile
         val args = FlinkDeploymentManager.prepareProgramArgs(
@@ -104,7 +106,7 @@ class FlinkPeriodicDeploymentHandler(
         )
       case None =>
         logger.error(
-          s"Cannot deploy scenario ${processVersion.processName}, version id: ${processVersion.versionId}: jar file name not present"
+          s"Cannot deploy scenario ${deployment.processName}, version id: ${deployment.versionId}: jar file name not present"
         )
         Future.successful(None)
     }

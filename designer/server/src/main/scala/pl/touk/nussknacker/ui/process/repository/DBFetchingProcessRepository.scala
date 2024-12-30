@@ -5,8 +5,10 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
@@ -29,12 +31,13 @@ object DBFetchingProcessRepository {
 
   def createFutureRepository(
       dbRef: DbRef,
-      actionRepository: ScenarioActionRepository,
+      actionReadOnlyRepository: ScenarioActionReadOnlyRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(
       implicit ec: ExecutionContext
   ) =
-    new DBFetchingProcessRepository[Future](dbRef, actionRepository, scenarioLabelsRepository) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbRef, actionReadOnlyRepository, scenarioLabelsRepository)
+      with BasicRepository
 
 }
 
@@ -43,13 +46,29 @@ object DBFetchingProcessRepository {
 //       to the resource on the services side
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
-    actionRepository: ScenarioActionRepository,
+    actionRepository: ScenarioActionReadOnlyRepository,
     scenarioLabelsRepository: ScenarioLabelsRepository,
 )(protected implicit val ec: ExecutionContext)
     extends FetchingProcessRepository[F]
     with LazyLogging {
 
   import api._
+
+  override def getCanonicalProcessWithVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  )(
+      implicit user: LoggedUser,
+  ): F[Option[(CanonicalProcess, ProcessVersion)]] = {
+    val result = for {
+      processId <- OptionT(fetchProcessId(processName))
+      details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
+    } yield (
+      details.json,
+      details.toEngineProcessVersion,
+    )
+    result.value
+  }
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery

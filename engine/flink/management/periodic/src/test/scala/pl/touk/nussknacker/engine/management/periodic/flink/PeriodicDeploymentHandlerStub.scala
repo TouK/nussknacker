@@ -21,7 +21,9 @@ class PeriodicDeploymentHandlerStub extends PeriodicDeploymentHandler {
   ): Future[DeploymentWithRuntimeParams] = {
     Future.successful(
       DeploymentWithRuntimeParams(
-        processVersion = processVersion,
+        processId = Some(processVersion.processId),
+        processName = processVersion.processName,
+        versionId = processVersion.versionId,
         runtimeParams = RuntimeParams(Map("jarFileName" -> ""))
       )
     )
@@ -35,6 +37,7 @@ class PeriodicDeploymentHandlerStub extends PeriodicDeploymentHandler {
       inputConfigDuringExecutionJson: String,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
+      processVersion: ProcessVersion,
   ): Future[Option[ExternalDeploymentId]] = {
     lastDeploymentWithRuntimeParams = Some(deploymentWithJarData)
     lastInputConfigDuringExecutionJson = Some(inputConfigDuringExecutionJson)

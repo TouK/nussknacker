@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.flink.db
 
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -13,6 +14,7 @@ import scala.concurrent.Future
 class LegacyRepositoryBasedPeriodicProcessesManager(
     processingType: String,
     periodicProcessesRepository: LegacyPeriodicProcessesRepository,
+    underlyingPeriodicProcessesManager: PeriodicProcessesManager,
 ) extends PeriodicProcessesManager {
 
   import periodicProcessesRepository._
@@ -123,16 +125,16 @@ class LegacyRepositoryBasedPeriodicProcessesManager(
     .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(expectedDeploymentStatuses, processingType)
     .run
 
-  override def fetchCanonicalProcess(
-      processName: ProcessName,
-      versionId: VersionId
-  ): Future[Option[CanonicalProcess]] =
-    periodicProcessesRepository.fetchCanonicalProcess(processName, versionId).run
-
   override def fetchInputConfigDuringExecutionJson(
       processName: ProcessName,
       versionId: VersionId
   ): Future[Option[String]] =
     periodicProcessesRepository.fetchInputConfigDuringExecutionJson(processName, versionId).run
+
+  override def fetchCanonicalProcessWithVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] =
+    underlyingPeriodicProcessesManager.fetchCanonicalProcessWithVersion(processName, versionId)
 
 }

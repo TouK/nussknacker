@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
@@ -69,6 +69,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
     val id = PeriodicProcessId(ProcessIdSequence.incrementAndGet())
     val entity = PeriodicProcessEntity(
       id = id,
+      processId = None,
       processName = processName,
       processVersionId = VersionId.initialVersionId,
       processingType = processingType,
@@ -136,8 +137,9 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
       id = id,
-      processName = deploymentWithRuntimeParams.processVersion.processName,
-      processVersionId = deploymentWithRuntimeParams.processVersion.versionId,
+      processId = deploymentWithRuntimeParams.processId,
+      processName = deploymentWithRuntimeParams.processName,
+      processVersionId = deploymentWithRuntimeParams.versionId,
       processingType = processingType,
       inputConfigDuringExecutionJson = inputConfigDuringExecutionJson,
       runtimeParams = deploymentWithRuntimeParams.runtimeParams,
@@ -344,10 +346,12 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
     Future.successful(deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now)))
   }
 
-  override def fetchCanonicalProcess(
+  override def fetchCanonicalProcessWithVersion(
       processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[CanonicalProcess]] = Future.successful(Some(canonicalProcess(processName)))
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = Future.successful {
+    Some(canonicalProcess(processName), ProcessVersion.empty)
+  }
 
   override def fetchInputConfigDuringExecutionJson(
       processName: ProcessName,
@@ -364,6 +368,7 @@ object InMemPeriodicProcessesManager {
 
   final case class PeriodicProcessEntity(
       id: PeriodicProcessId,
+      processId: Option[ProcessId],
       processName: ProcessName,
       processVersionId: VersionId,
       processingType: String,
@@ -418,12 +423,13 @@ object InMemPeriodicProcessesManager {
   def createPeriodicProcessWithJson(
       processEntity: PeriodicProcessEntity
   ): PeriodicProcess = {
-    val processVersion   = createProcessVersion(processEntity)
     val scheduleProperty = prepareScheduleProperty(processEntity)
     PeriodicProcess(
       processEntity.id,
       DeploymentWithRuntimeParams(
-        processVersion = processVersion,
+        processId = processEntity.processId,
+        processName = processEntity.processName,
+        versionId = processEntity.processVersionId,
         runtimeParams = processEntity.runtimeParams,
       ),
       toApi(scheduleProperty),
@@ -436,12 +442,13 @@ object InMemPeriodicProcessesManager {
   def createPeriodicProcessWithoutJson(
       processEntity: PeriodicProcessEntity
   ): PeriodicProcess = {
-    val processVersion   = createProcessVersion(processEntity)
     val scheduleProperty = prepareScheduleProperty(processEntity)
     PeriodicProcess(
       processEntity.id,
       DeploymentWithRuntimeParams(
-        processVersion = processVersion,
+        processId = processEntity.processId,
+        processName = processEntity.processName,
+        versionId = processEntity.processVersionId,
         runtimeParams = processEntity.runtimeParams,
       ),
       toApi(scheduleProperty),
@@ -456,10 +463,6 @@ object InMemPeriodicProcessesManager {
       .decode[ScheduleProperty](processEntity.scheduleProperty)
       .fold(e => throw new IllegalArgumentException(e), identity)
     scheduleProperty
-  }
-
-  private def createProcessVersion(processEntity: PeriodicProcessEntity): ProcessVersion = {
-    ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
   }
 
   private def scheduleDeploymentData(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {

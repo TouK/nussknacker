@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, NussknackerInternalUser}
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
@@ -14,6 +16,7 @@ import scala.concurrent.Future
 class RepositoryBasedPeriodicProcessesManager(
     processingType: String,
     periodicProcessesRepository: PeriodicProcessesRepository,
+    fetchingProcessRepository: FetchingProcessRepository[Future]
 ) extends PeriodicProcessesManager {
 
   import periodicProcessesRepository._
@@ -123,11 +126,13 @@ class RepositoryBasedPeriodicProcessesManager(
     .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(expectedDeploymentStatuses, processingType)
     .run
 
-  override def fetchCanonicalProcess(
+  override def fetchCanonicalProcessWithVersion(
       processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[CanonicalProcess]] =
-    periodicProcessesRepository.fetchCanonicalProcess(processName, versionId).run
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = {
+    implicit val user: AdminUser = NussknackerInternalUser.instance
+    fetchingProcessRepository.getCanonicalProcessWithVersion(processName, versionId)
+  }
 
   override def fetchInputConfigDuringExecutionJson(
       processName: ProcessName,

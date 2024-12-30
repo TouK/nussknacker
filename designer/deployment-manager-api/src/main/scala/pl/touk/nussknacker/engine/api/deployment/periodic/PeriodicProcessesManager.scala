@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment.periodic
 
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager.ScheduleProperty
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -79,10 +80,10 @@ trait PeriodicProcessesManager {
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
   ): Future[SchedulesState]
 
-  def fetchCanonicalProcess(
+  def fetchCanonicalProcessWithVersion(
       processName: ProcessName,
-      versionId: VersionId,
-  ): Future[Option[CanonicalProcess]]
+      versionId: VersionId
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]]
 
   def fetchInputConfigDuringExecutionJson(
       processName: ProcessName,
@@ -172,10 +173,10 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
   ): Future[SchedulesState] = notImplemented
 
-  override def fetchCanonicalProcess(
+  override def fetchCanonicalProcessWithVersion(
       processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[CanonicalProcess]] = notImplemented
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = notImplemented
 
   override def fetchInputConfigDuringExecutionJson(
       processName: ProcessName,
