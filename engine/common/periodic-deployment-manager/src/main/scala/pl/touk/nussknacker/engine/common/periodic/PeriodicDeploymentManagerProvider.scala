@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManagerProvider
 import pl.touk.nussknacker.engine.common.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.engine.common.periodic.service._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -38,6 +39,11 @@ abstract class PeriodicDeploymentManagerProvider(
       config: Config,
   ): PeriodicDeploymentHandler
 
+  protected def createPeriodicProcessesManagerProvider(
+      dependencies: DeploymentManagerDependencies,
+      periodicBatchConfig: PeriodicBatchConfig,
+  ): PeriodicProcessesManagerProvider = dependencies.periodicProcessesManagerProvider
+
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
@@ -49,7 +55,8 @@ abstract class PeriodicDeploymentManagerProvider(
       delegateDeploymentManager =>
         import net.ceedubs.ficus.Ficus._
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-        val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
+        val periodicBatchConfig              = config.as[PeriodicBatchConfig]("deploymentManager")
+        val periodicProcessesManagerProvider = createPeriodicProcessesManagerProvider(dependencies, periodicBatchConfig)
 
         PeriodicDeploymentManager(
           delegate = delegateDeploymentManager,
@@ -61,7 +68,7 @@ abstract class PeriodicDeploymentManagerProvider(
           EmptyPeriodicProcessListenerFactory,
           DefaultAdditionalDeploymentDataProvider,
           dependencies,
-          dependencies.periodicProcessesManagerProvider.provide(periodicBatchConfig.processingType)
+          periodicProcessesManagerProvider.provide(periodicBatchConfig.processingType)
         )
     }
 

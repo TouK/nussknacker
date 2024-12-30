@@ -131,6 +131,7 @@ class PeriodicDeploymentManager private[engine] (
         .schedule(
           scheduleProperty,
           processVersion,
+          canonicalProcess,
           deploymentData.deploymentId.toActionIdOpt.getOrElse(
             throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
           ),

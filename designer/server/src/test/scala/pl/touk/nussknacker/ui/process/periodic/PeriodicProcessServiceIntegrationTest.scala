@@ -5,6 +5,7 @@ import com.cronutils.builder.CronBuilder
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.field.expression.FieldExpressionFactory.{on, questionMark}
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.LoneElement._
 import org.scalatest.OptionValues
@@ -12,9 +13,9 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
+import pl.touk.nussknacker.engine.api.deployment.periodic.{PeriodicProcessesManager, PeriodicProcessesManagerProvider}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
@@ -23,13 +24,17 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.engine.common.periodic.service._
+import pl.touk.nussknacker.engine.management.periodic.flink.db.{
+  LegacyDbInitializer,
+  LegacyRepositoryBasedPeriodicProcessesManager,
+  SlickLegacyPeriodicProcessesRepository
+}
 import pl.touk.nussknacker.engine.management.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentHandlerStub}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithPostgresDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
-import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
@@ -37,12 +42,15 @@ import pl.touk.nussknacker.ui.process.repository.{
   SlickPeriodicProcessesRepository
 }
 import pl.touk.nussknacker.ui.security.api.AdminUser
+import slick.jdbc
+import slick.jdbc.JdbcProfile
 
 import java.time._
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 //Integration test with both in-memory hsql and postgres from test containers
 class PeriodicProcessServiceIntegrationTest
@@ -68,6 +76,8 @@ class PeriodicProcessServiceIntegrationTest
 
   private val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
 
+  private val sampleProcess = CanonicalProcess(MetaData(processName.value, StreamMetaData()), Nil)
+
   private val startTime = Instant.parse("2021-04-06T13:18:00Z")
 
   // we truncate to millis, as HSQL stores with that precision...
@@ -83,17 +93,64 @@ class PeriodicProcessServiceIntegrationTest
       executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig(),
       maxFetchedPeriodicScenarioActivities: Option[Int] = None,
   )(testCode: Fixture => Any): Unit = {
-    def runTestCodeWithDbConfig = {
-      testCode(
-        new Fixture(testDbRef, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
-      )
+    val postgresConfig = ConfigFactory.parseMap(
+      Map(
+        "user"     -> container.username,
+        "password" -> container.password,
+        "url"      -> container.jdbcUrl,
+        "driver"   -> "org.postgresql.Driver",
+        "schema"   -> UUID.randomUUID().toString
+      ).asJava
+    )
+
+    val hsqlConfig = ConfigFactory.parseMap(
+      Map(
+        "url"      -> s"jdbc:hsqldb:mem:periodic-${UUID.randomUUID().toString};sql.syntax_ora=true",
+        "user"     -> "SA",
+        "password" -> ""
+      ).asJava
+    )
+
+    def runWithLegacyRepository(dbConfig: Config): Unit = {
+      val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(dbConfig)
+      val provider = (currentTime: Instant) =>
+        new PeriodicProcessesManagerProvider {
+          override def provide(processingType: String): PeriodicProcessesManager = {
+            val repository = new SlickLegacyPeriodicProcessesRepository(db, dbProfile, fixedClock(currentTime))
+            new LegacyRepositoryBasedPeriodicProcessesManager(processingType, repository)
+          }
+        }
+      try {
+        testCode(
+          new Fixture(provider, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
+        )
+      } finally {
+        db.close()
+      }
     }
-    logger.debug("Running test with database")
-    runTestCodeWithDbConfig
+
+    def runTestCodeWithNuDb() = {
+      val provider = (currentTime: Instant) =>
+        new RepositoryBasedPeriodicProcessesManagerProvider(
+          new SlickPeriodicProcessesRepository(testDbRef.db, testDbRef.profile, fixedClock(currentTime))
+        )
+      testCode(new Fixture(provider, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities))
+    }
+
+    def testHeader(str: String) = "\n\n" + "*" * 100 + s"\n***** $str\n" + "*" * 100 + "\n"
+    logger.info(testHeader("Running test with legacy hsql-based repository"))
+    runWithLegacyRepository(hsqlConfig)
+    cleanDB()
+    logger.info(testHeader("Running test with legacy postgres-based repository"))
+    runWithLegacyRepository(postgresConfig)
+    cleanDB()
+    logger.info(testHeader("Running test with Nu database"))
+    runTestCodeWithNuDb()
+    cleanDB()
   }
 
   class Fixture(
-      dbRef: DbRef,
+      periodicProcessesManagerProvider: Instant => PeriodicProcessesManagerProvider,
       deploymentRetryConfig: DeploymentRetryConfig,
       executionConfig: PeriodicExecutionConfig,
       maxFetchedPeriodicScenarioActivities: Option[Int],
@@ -110,9 +167,7 @@ class PeriodicProcessServiceIntegrationTest
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
         periodicDeploymentHandler = periodicDeploymentHandlerStub,
-        periodicProcessesManager = new RepositoryBasedPeriodicProcessesManagerProvider(
-          new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, fixedClock(currentTime))
-        ).provide(processingType),
+        periodicProcessesManager = periodicProcessesManagerProvider(currentTime).provide(processingType),
         periodicProcessListener = new PeriodicProcessListener {
 
           override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
@@ -131,7 +186,7 @@ class PeriodicProcessServiceIntegrationTest
         Map.empty,
       )
 
-    def writeProcessRepository: DBProcessRepository = newWriteProcessRepository(dbRef, clock)
+    def writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef, clock)
 
     def prepareProcess(processName: ProcessName): DB[ProcessIdWithName] = {
       val canonicalProcess = CanonicalProcess(MetaData(processName.value, StreamMetaData()), Nil)
@@ -164,12 +219,14 @@ class PeriodicProcessServiceIntegrationTest
     def otherProcessingTypeService = f.periodicProcessService(currentTime, processingType = "other")
     val otherProcessName           = ProcessName("other")
 
-    val processIdWithName = f.prepareProcess(processName).dbioActionValues
+    val processIdWithName      = f.prepareProcess(processName).dbioActionValues
+    val otherProcessIdWithName = f.prepareProcess(otherProcessName).dbioActionValues
 
     service
       .schedule(
         cronEveryHour,
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -177,6 +234,7 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEvery30Minutes,
         ProcessVersion.empty.copy(processName = every30MinutesProcessName),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -184,13 +242,15 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEvery4Hours,
         ProcessVersion.empty.copy(processName = every4HoursProcessName),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
     otherProcessingTypeService
       .schedule(
         cronEveryHour,
-        ProcessVersion.empty.copy(processName = otherProcessName),
+        ProcessVersion.empty.copy(processName = otherProcessIdWithName.name),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -206,7 +266,7 @@ class PeriodicProcessServiceIntegrationTest
       PeriodicProcessDeploymentStatus.Scheduled
     )
     afterSchedule.latestDeployments.head.runAt shouldBe localTime(expectedScheduleTime)
-    service.getLatestDeploymentsForActiveSchedules(otherProcessName).futureValue shouldBe empty
+    service.getLatestDeploymentsForActiveSchedules(otherProcessIdWithName.name).futureValue shouldBe empty
 
     currentTime = timeToTriggerCheck
 
@@ -288,6 +348,7 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEveryHour,
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -346,6 +407,7 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -360,6 +422,7 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = ProcessName("other")),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -412,6 +475,7 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -545,6 +609,7 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue
@@ -638,6 +703,7 @@ class PeriodicProcessServiceIntegrationTest
       service.schedule(
         cronEveryHour,
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
     }
@@ -669,6 +735,7 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEveryHour,
         ProcessVersion(VersionId(1), processIdWithName.name, processIdWithName.id, List.empty, "testUser", None),
+        sampleProcess,
         randomProcessActionId,
       )
       .futureValue

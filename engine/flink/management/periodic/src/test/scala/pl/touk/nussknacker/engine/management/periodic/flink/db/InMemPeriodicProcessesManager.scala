@@ -129,6 +129,7 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
   override def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
+      canonicalProcess: CanonicalProcess,
       scheduleProperty: PeriodicProcessesManager.ScheduleProperty,
       processActionId: ProcessActionId,
   ): Future[PeriodicProcess] = Future.successful {

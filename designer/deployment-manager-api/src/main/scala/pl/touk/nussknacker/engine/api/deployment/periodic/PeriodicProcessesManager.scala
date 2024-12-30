@@ -15,6 +15,7 @@ trait PeriodicProcessesManager {
   def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
+      canonicalProcess: CanonicalProcess,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
   ): Future[PeriodicProcess]
@@ -107,6 +108,7 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
   override def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
+      canonicalProcess: CanonicalProcess,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
   ): Future[PeriodicProcess] = notImplemented

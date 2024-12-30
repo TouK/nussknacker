@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.{
   DeploymentStatus,
   EngineStatusesToReschedule,
@@ -105,12 +106,15 @@ class PeriodicProcessService(
   def schedule(
       schedule: ScheduleProperty,
       processVersion: ProcessVersion,
+      canonicalProcess: CanonicalProcess,
       processActionId: ProcessActionId,
       beforeSchedule: => Future[Unit] = Future.unit
   ): Future[Unit] = {
     prepareInitialScheduleDates(schedule) match {
       case Right(scheduleDates) =>
-        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, scheduleDates, processActionId))
+        beforeSchedule.flatMap(_ =>
+          scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates, processActionId)
+        )
       case Left(error) =>
         Future.failed(error)
     }
@@ -139,6 +143,7 @@ class PeriodicProcessService(
   private def scheduleWithInitialDates(
       scheduleProperty: ScheduleProperty,
       processVersion: ProcessVersion,
+      canonicalProcess: CanonicalProcess,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
       processActionId: ProcessActionId,
   ): Future[Unit] = {
@@ -156,6 +161,7 @@ class PeriodicProcessService(
         scheduleProperty,
         scheduleDates,
         deploymentWithJarData,
+        canonicalProcess,
         enrichedProcessConfig.inputConfigDuringExecutionJson,
         processActionId,
       )
@@ -166,11 +172,18 @@ class PeriodicProcessService(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
       deploymentWithJarData: DeploymentWithRuntimeParams,
+      canonicalProcess: CanonicalProcess,
       inputConfigDuringExecutionJson: String,
       processActionId: ProcessActionId,
   ): Future[Unit] = {
     periodicProcessesManager
-      .create(deploymentWithJarData, inputConfigDuringExecutionJson, toApi(scheduleMap), processActionId)
+      .create(
+        deploymentWithJarData,
+        inputConfigDuringExecutionJson,
+        canonicalProcess,
+        toApi(scheduleMap),
+        processActionId
+      )
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>

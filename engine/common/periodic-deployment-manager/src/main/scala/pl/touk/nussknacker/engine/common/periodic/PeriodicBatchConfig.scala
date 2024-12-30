@@ -16,7 +16,7 @@ import scala.concurrent.duration._
   * @param maxFetchedPeriodicScenarioActivities Optional limit of number of latest periodic-related Scenario Activities that are returned by Periodic DM.
   */
 case class PeriodicBatchConfig(
-    db: Config,
+    db: Option[Config],
     processingType: String,
     rescheduleCheckInterval: FiniteDuration = 13 seconds,
     deployInterval: FiniteDuration = 17 seconds,

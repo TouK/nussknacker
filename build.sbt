@@ -644,6 +644,7 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
       Seq(
+        "org.flywaydb"        % "flyway-core"                     % flywayV,
         "com.typesafe.slick" %% "slick-hikaricp"                  % slickV               % "provided, test",
         "org.hsqldb"          % "hsqldb"                          % hsqldbV              % Test,
         "com.typesafe.akka"  %% "akka-testkit"                    % akkaV                % Test,
@@ -1791,7 +1792,7 @@ lazy val commonPeriodicDeploymentManager = (project in engine("common/periodic-d
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka"      %% "akka-actor" % akkaV,
-        "org.typelevel"          %% "cats-core"  % catsV % Provided,
+        "org.typelevel"          %% "cats-core"  % catsV,
         "com.cronutils"           % "cron-utils" % cronParserV,
         "com.softwaremill.retry" %% "retry"      % retryV,
         "com.github.tminglei"    %% "slick-pg"   % slickPgV,

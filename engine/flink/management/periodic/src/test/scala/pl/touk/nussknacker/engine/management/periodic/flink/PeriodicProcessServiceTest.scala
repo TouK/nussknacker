@@ -62,6 +62,11 @@ class PeriodicProcessServiceTest
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
   private val cronInPast   = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
 
+  private val canonicalProcess = ScenarioBuilder
+    .streaming(processName.value)
+    .source("start", "source")
+    .emptySink("end", "KafkaSink")
+
   private val processVersion = ProcessVersion(
     versionId = VersionId(1),
     processName = processName,
@@ -341,7 +346,7 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     f.periodicProcessService
-      .schedule(CronScheduleProperty("0 0 * * * ?"), processVersion, randomProcessActionId)
+      .schedule(CronScheduleProperty("0 0 * * * ?"), processVersion, canonicalProcess, randomProcessActionId)
       .futureValue
 
     val processEntity = f.manager.processEntities.loneElement
@@ -429,7 +434,7 @@ class PeriodicProcessServiceTest
 
     def tryToSchedule(schedule: ScheduleProperty): Unit =
       f.periodicProcessService
-        .schedule(schedule, processVersion, randomProcessActionId)
+        .schedule(schedule, processVersion, canonicalProcess, randomProcessActionId)
         .futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())

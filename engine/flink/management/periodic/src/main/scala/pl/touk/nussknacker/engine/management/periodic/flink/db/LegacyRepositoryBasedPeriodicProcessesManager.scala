@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.periodic
+package pl.touk.nussknacker.engine.management.periodic.flink.db
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
@@ -6,14 +6,13 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessD
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
 
-class RepositoryBasedPeriodicProcessesManager(
+class LegacyRepositoryBasedPeriodicProcessesManager(
     processingType: String,
-    periodicProcessesRepository: PeriodicProcessesRepository,
+    periodicProcessesRepository: LegacyPeriodicProcessesRepository,
 ) extends PeriodicProcessesManager {
 
   import periodicProcessesRepository._
@@ -29,6 +28,7 @@ class RepositoryBasedPeriodicProcessesManager(
       .create(
         deploymentWithRuntimeParams,
         inputConfigDuringExecutionJson,
+        canonicalProcess,
         scheduleProperty,
         processActionId,
         processingType
