@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -63,10 +64,10 @@ class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[
         val stream = env
           .addSource(new PeriodicFunction(period))
           .map(_ => Context(processName.value))
-          .flatMap(value)(ctx)
+          .flatMap(new ContextMultiplierPerCountFunction(count))
+          .flatMap(ctx.lazyParameterHelper.lazyMapFunction(value))
           .flatMap(
-            (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) =>
-              1.to(count).map(_ => value.value).foreach(out.collect),
+            (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) => out.collect(value.value),
             TypeInformationDetection.instance.forType[AnyRef](value.returnType)
           )
 
@@ -86,6 +87,14 @@ class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[
       override val returnType: typing.TypingResult = value.returnType
 
     }
+  }
+
+  class ContextMultiplierPerCountFunction(count: Int) extends FlatMapFunction[Context, Context] with Serializable {
+
+    override def flatMap(context: Context, out: Collector[Context]): Unit = {
+      1.to(count).foreach(_ => out.collect(context))
+    }
+
   }
 
 }
