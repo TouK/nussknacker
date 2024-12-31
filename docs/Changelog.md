@@ -34,8 +34,11 @@
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
 * Changes to `periodic` component (renamed to `sample-generator`):
-    * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
-    * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
+  * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
+  * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
+  * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
+    and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
+    generated and emitted 5 times. Now in one count batch each value is evaluated separately.
 
 ## 1.18
 

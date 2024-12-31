@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -9,13 +10,15 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ProcessName, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableTimestampWatermarkHandlerSource,
   FlinkContextInitializingFunction,
   FlinkCustomNodeContext,
-  FlinkSource
+  FlinkSource,
+  StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
@@ -43,7 +46,7 @@ object SampleGeneratorSourceFactory
       )
     )
 
-class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef])
+class SampleGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[AnyRef])
     extends SourceFactory
     with UnboundedStreamComponent {
 
@@ -65,36 +68,34 @@ class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
       @ParamName("value") value: LazyParameter[AnyRef]
   ): Source = {
-    new FlinkSource with ReturningType {
+    new StandardFlinkSource[AnyRef] with ReturningType with CustomizableTimestampWatermarkHandlerSource[AnyRef] {
 
-      override def contextStream(env: StreamExecutionEnvironment, ctx: FlinkCustomNodeContext): DataStream[Context] = {
-        val count       = Option(nullableCount).map(_.toInt).getOrElse(1)
-        val processName = ctx.metaData.name
-        val stream = env
+      override protected def sourceStream(
+          env: StreamExecutionEnvironment,
+          flinkNodeContext: FlinkCustomNodeContext
+      ): DataStream[AnyRef] = {
+        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        // Parameter evaluation requires context, so here we create an empty context just to evaluate the `value` param.
+        // Later the evaluated value is extracted from this temporary context and proper context is initialized.
+        env
           .addSource(new PeriodicFunction(period))
-          .map(_ => Context(processName.value))
-          .flatMap(value)(ctx)
           .flatMap(
-            (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) =>
-              1.to(count).map(_ => value.value).foreach(out.collect),
-            TypeInformationDetection.instance.forType[AnyRef](value.returnType)
+            (_: Unit, out: Collector[Context]) => {
+              val temporaryContextForEvaluation = Context(flinkNodeContext.metaData.name.value)
+              (1 to count).foreach(_ => out.collect(temporaryContextForEvaluation))
+            },
+            TypeInformationDetection.instance.forClass[Context]
           )
-
-        val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
-
-        rawSourceWithTimestamp
-          .map(
-            new FlinkContextInitializingFunction[AnyRef](
-              new BasicContextInitializer[AnyRef](Unknown),
-              ctx.nodeId,
-              ctx.convertToEngineRuntimeContext
-            ),
-            ctx.contextTypeInfo
+          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
+          .flatMap(
+            (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) => out.collect(value.value),
+            TypeInformationDetection.instance.forType[AnyRef](value.returnType)
           )
       }
 
-      override val returnType: typing.TypingResult = value.returnType
+      override def timestampAssigner: Option[TimestampWatermarkHandler[AnyRef]] = Some(customTimestampAssigner)
 
+      override val returnType: typing.TypingResult = value.returnType
     }
   }
 
