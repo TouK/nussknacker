@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.test.mock
 
+import cats.data.OptionT
 import cats.instances.future._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
@@ -42,6 +44,19 @@ class MockFetchingProcessRepository private (
 )(protected implicit val ec: ExecutionContext)
     extends FetchingProcessRepository[Future]
     with BasicRepository {
+
+  override def getCanonicalProcessWithVersion(processName: ProcessName, versionId: VersionId)(
+      implicit user: LoggedUser
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = {
+    val result = for {
+      processId <- OptionT(fetchProcessId(processName))
+      details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
+    } yield (
+      details.json,
+      details.toEngineProcessVersion,
+    )
+    result.value
+  }
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
@@ -91,8 +106,8 @@ class MockFetchingProcessRepository private (
     val shapeStrategy: ScenarioShapeFetchStrategy[PS] = implicitly[ScenarioShapeFetchStrategy[PS]]
 
     shapeStrategy match {
-      case NotFetch       => process.copy(json = ().asInstanceOf[PS])
-      case FetchCanonical => process.asInstanceOf[ScenarioWithDetailsEntity[PS]]
+      case NotFetch       => process.copy(json = ())
+      case FetchCanonical => process
       case FetchScenarioGraph =>
         process
           .mapScenario(canonical => CanonicalProcessConverter.toScenarioGraph(canonical))

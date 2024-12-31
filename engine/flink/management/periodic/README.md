@@ -23,7 +23,7 @@ scenario is scheduled to be run again according to the schedule.
 
 Use `deploymentManager` with the following properties:
 
-- `db` - Nussknacker db configuration.
+- `db` - optional configuration of the legacy, custom Periodic DM database; deprecated and will be removed in the future; when config not present, then the default Nu database will be used
 - `processingType` - processing type of scenarios to be managed by this instance of the periodic engine.
 - `rescheduleCheckInterval` - frequency of checking finished scenarios to be rescheduled. Optional.
 - `deployInterval` - frequency of checking scenarios to be deployed on Flink cluster. Optional.
