@@ -16,12 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.restmodel.{
-  CustomActionRequest,
-  CustomActionResponse,
-  RunOffScheduleRequest,
-  RunOffScheduleResponse
-}
+import pl.touk.nussknacker.restmodel.{RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -256,23 +251,6 @@ class ManagementResources(
                   }
                 }
               }
-            }
-          }
-        } ~
-        path("customAction" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[CustomActionRequest])) { (processIdWithName, req) =>
-            complete {
-              deploymentService
-                .processCommand(
-                  CustomActionCommand(
-                    commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
-                    actionName = req.actionName,
-                    params = req.params
-                  )
-                )
-                .flatMap(actionResult =>
-                  toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
-                )
             }
           }
         } ~ path(("runOffSchedule" | "performSingleExecution") / ProcessNameSegment) {

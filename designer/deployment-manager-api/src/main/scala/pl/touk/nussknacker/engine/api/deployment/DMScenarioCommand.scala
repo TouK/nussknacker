@@ -53,18 +53,6 @@ case class DMStopDeploymentCommand(
     user: User
 ) extends DMScenarioCommand[SavepointResult]
 
-// TODO: Custom is a bad name. We should expose in the name the fact that it is for the purpose of commands that leveraging
-//       the power of our "generic" Parameter's concept that allows to change FE side without need to write
-//       a dedicated code on the FE side. Not every new command need to be a custom scenario command.
-//       We should also describe it in some scaladoc
-case class DMCustomActionCommand(
-    actionName: ScenarioActionName,
-    processVersion: ProcessVersion,
-    canonicalProcess: CanonicalProcess,
-    user: User,
-    params: Map[String, String]
-) extends DMScenarioCommand[CustomActionResult]
-
 // TODO Commands below will be legacy in some future because they operate on the scenario level instead of deployment level -
 //      we should replace them by commands operating on deployment
 case class DMTestScenarioCommand(
