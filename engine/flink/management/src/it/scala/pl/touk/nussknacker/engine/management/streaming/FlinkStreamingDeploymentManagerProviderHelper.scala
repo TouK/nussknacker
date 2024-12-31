@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import _root_.sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import akka.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManagerProvider

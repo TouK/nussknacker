@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import _root_.db.util.DBIOActionInstances
+import db.util.DBIOActionInstances
 import cats.Monad
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.process.periodic
 
-import _root_.db.util.DBIOActionInstances.DB
 import com.cronutils.builder.CronBuilder
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.field.expression.FieldExpressionFactory.{on, questionMark}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import db.util.DBIOActionInstances.DB
 import org.scalatest.LoneElement._
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
