@@ -1,5 +1,6 @@
 import { ReturnedType } from "../../../../types";
 import { EditorType } from "./expression/Editor";
+import { EditorMode } from "./expression/types";
 
 export type ParamType = {
     name: string;
@@ -11,8 +12,8 @@ export type ParamType = {
         type: `${EditorType}`;
     }[];
     defaultValue: {
-        language: "spel";
-        expression: "";
+        language: EditorMode;
+        expression: string;
     };
     additionalVariables: Record<string, unknown>;
     variablesToHide: unknown[];
