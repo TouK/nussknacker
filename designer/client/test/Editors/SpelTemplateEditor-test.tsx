@@ -19,7 +19,6 @@ const store = mockStore({
             componentsConfig: {},
             additionalPropertiesConfig: {},
             edgesForNodes: [],
-            customActions: [],
             defaultAsyncInterpretation: true,
         },
     },

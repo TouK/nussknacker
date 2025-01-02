@@ -567,7 +567,7 @@ Configuration allows to templating params like:
 
 * `name` - available only on Buttons
 * `title`- available on Panels and Buttons
-* `url` - available only on CustomLink and CustomAction buttons
+* `url` - available only on CustomLink buttons
 * `icon`- available only on Buttons
 
 Right now we allow to template two elements:

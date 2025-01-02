@@ -101,9 +101,6 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.processUnarchive: {
             return EventTrackingSelector.ScenarioUnarchive;
         }
-        case CustomButtonTypes.customAction: {
-            return EventTrackingSelector.ScenarioCustomAction;
-        }
         case CustomButtonTypes.customLink: {
             return EventTrackingSelector.ScenarioCustomLink;
         }

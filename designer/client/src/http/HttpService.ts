@@ -138,11 +138,6 @@ export interface PropertiesValidationRequest {
     additionalFields: ProcessAdditionalFields;
 }
 
-export interface CustomActionValidationRequest {
-    actionName: string;
-    params: Record<string, string>;
-}
-
 export interface ExpressionSuggestionRequest {
     expression: Expression;
     caretPosition2d: CaretPosition2d;
@@ -390,33 +385,6 @@ class HttpService {
             });
     }
 
-    customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
-        const data = {
-            actionName: actionName,
-            comment: comment,
-            params: params,
-        };
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
-            .then((res) => {
-                const msg = res.data.msg;
-                this.#addInfo(msg);
-                return {
-                    isSuccess: res.data.isSuccess,
-                    msg: msg,
-                };
-            })
-            .catch((error) => {
-                const msg = error.response.data.msg || error.response.data;
-                const result = {
-                    isSuccess: false,
-                    msg: msg,
-                };
-                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                return result;
-            });
-    }
-
     cancel(processName, comment?) {
         return api.post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment).catch((error) => {
             if (error?.response?.status != 400) {
@@ -620,20 +588,6 @@ class HttpService {
             .catch((error) => {
                 this.#addError(
                     i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-                    error,
-                    true,
-                );
-                return;
-            });
-    }
-
-    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
-            .then((res) => res.data)
-            .catch((error) => {
-                this.#addError(
-                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
                     error,
                     true,
                 );

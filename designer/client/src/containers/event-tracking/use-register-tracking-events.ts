@@ -54,7 +54,6 @@ enum ClickEventsSelector {
     ScenarioRunOffSchedule = "SCENARIO_RUN_OFF_SCHEDULE",
     ScenarioArchiveToggle = "SCENARIO_ARCHIVE_TOGGLE",
     ScenarioUnarchive = "SCENARIO_UNARCHIVE",
-    ScenarioCustomAction = "SCENARIO_CUSTOM_ACTION",
     ScenarioCustomLink = "SCENARIO_CUSTOM_LINK",
     ScenarioActivitiesAddAttachment = "SCENARIO_ACTIVITIES_ADD_ATTACHMENT",
     ScenarioActivitiesAddComment = "SCENARIO_ACTIVITIES_ADD_COMMENT",
