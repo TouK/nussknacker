@@ -130,7 +130,7 @@ class ProcessesResourcesSpec
   }
 
   test("/api/processes should return lighter details without ProcessAction's additional fields") {
-    createDeployedWithCustomActionScenario(processName, category = Category1)
+    createDeployedScenario(processName, category = Category1)
     Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val loadedProcess = responseAs[List[ScenarioWithDetails]]
