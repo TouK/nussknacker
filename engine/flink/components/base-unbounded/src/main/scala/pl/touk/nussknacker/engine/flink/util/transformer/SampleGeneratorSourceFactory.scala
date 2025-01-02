@@ -65,11 +65,14 @@ class SampleGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHa
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[AnyRef] = {
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        // Parameter evaluation requires context, so here we create an empty context just to evaluate the `value` param.
+        // Later the evaluated value is extracted from this temporary context and proper context is initialized.
         env
           .addSource(new PeriodicFunction(period))
           .flatMap(
             (_: Unit, out: Collector[Context]) => {
-              1.to(count).foreach(_ => out.collect(Context(flinkNodeContext.metaData.name.value)))
+              val temporaryContextForEvaluation = Context(flinkNodeContext.metaData.name.value)
+              (1 to count).foreach(_ => out.collect(temporaryContextForEvaluation))
             },
             TypeInformationDetection.instance.forClass[Context]
           )
