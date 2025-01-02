@@ -98,7 +98,6 @@ export const lightModePalette: PaletteOptions = {
         },
         windows: {
             compareVersions: { backgroundColor: "#1ba1af", color: "white" },
-            customAction: { backgroundColor: "white", color: "black" },
             editProperties: {
                 backgroundColor: "#46ca94",
                 color: "white",

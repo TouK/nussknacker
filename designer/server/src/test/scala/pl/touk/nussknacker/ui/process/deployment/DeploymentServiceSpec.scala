@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
@@ -934,61 +934,6 @@ class DeploymentServiceSpec
 
     assertThrowsWithParent[FragmentStateException] {
       deploymentService.getProcessState(id, Some(initialVersionId)).futureValue
-    }
-  }
-
-  test("should fail invoking custom action when action validation fails") {
-
-    val processName: ProcessName = generateProcessName
-    val processIdWithName        = prepareProcess(processName).dbioActionValues
-    val actionName               = ScenarioActionName("has-params")
-    val wrongParams              = Map("testParam" -> "")
-
-    val result =
-      deploymentService
-        .processCommand(CustomActionCommand(CommonCommandData(processIdWithName, None, user), actionName, wrongParams))
-        .failed
-        .futureValue
-
-    result shouldBe a[CustomActionValidationError]
-    result.getMessage.trim shouldBe s"Validation failed for: ${actionName}"
-  }
-
-  test("should register custom action and comment in repository") {
-    val processName: ProcessName = generateProcessName
-    val processIdWithName        = prepareProcess(processName).dbioActionValues
-    val actionName               = ScenarioActionName("hello")
-    val nonEmptyCommentContent   = "not empty comment"
-    val comments = List(
-      Comment.from(nonEmptyCommentContent),
-      Comment.from(""),
-      Comment.from(" "),
-    )
-
-    val results = comments.map { comment =>
-      deploymentService
-        .processCommand(
-          CustomActionCommand(CommonCommandData(processIdWithName, comment, user), actionName, Map.empty)
-        )
-        .futureValue
-    }
-
-    eventually {
-      all(results) shouldBe CustomActionResult("Hi")
-      val actions =
-        actionRepository
-          .getFinishedProcessActions(processIdWithName.id, Some(Set(actionName)))
-          .dbioActionValues
-          .sortBy(_.createdAt)
-
-      actions.size shouldBe 3
-      all(actions.map(_.state)) shouldBe ProcessActionState.Finished
-      actions.map(_.comment) shouldBe List(
-        Some(nonEmptyCommentContent),
-        None,
-        None,
-      )
-      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 3
     }
   }
 

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 
@@ -95,8 +94,6 @@ trait DeploymentManager extends AutoCloseable {
   ): Future[ProcessState]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
-
-  def customActionsDefinitions: List[CustomActionDefinition]
 
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())

@@ -50,8 +50,8 @@ trait WithAccessControlCheckingConfigScenarioHelper {
     rawScenarioHelper.createDeployedCanceledExampleScenario(scenarioName, category.stringify, isFragment = false)
   }
 
-  def createDeployedWithCustomActionScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
-    rawScenarioHelper.createDeployedWithCustomActionScenario(scenarioName, category.stringify, isFragment = false)
+  def createDeployedScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createDeployedScenario(scenarioName, category.stringify, isFragment = false)
   }
 
 }
