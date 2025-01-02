@@ -64,6 +64,8 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
+  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+
   override def close(): Unit = {}
 
 }

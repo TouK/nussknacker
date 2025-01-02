@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManagerProvider
 import pl.touk.nussknacker.engine.api.deployment._
 import sttp.client3.SttpBackend
 
@@ -12,7 +11,6 @@ case class DeploymentManagerDependencies(
     deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
     actionService: ProcessingTypeActionService,
     scenarioActivityManager: ScenarioActivityManager,
-    periodicProcessesManagerProvider: PeriodicProcessesManagerProvider,
     executionContext: ExecutionContext,
     actorSystem: ActorSystem,
     sttpBackend: SttpBackend[Future, Any],

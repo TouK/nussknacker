@@ -71,6 +71,8 @@ class FlinkRestManager(
 
     }
 
+  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+
   private def getAllProcessesStatesFromFlink()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {

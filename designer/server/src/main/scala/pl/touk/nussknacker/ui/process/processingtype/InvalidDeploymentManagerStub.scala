@@ -57,5 +57,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
+  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+
   override def close(): Unit = ()
 }

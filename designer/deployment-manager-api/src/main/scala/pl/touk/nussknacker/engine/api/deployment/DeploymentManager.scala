@@ -49,6 +49,8 @@ trait DeploymentManager extends AutoCloseable {
 
   def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport
 
+  def periodicExecutionSupport: PeriodicExecutionSupport
+
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
   final def getProcessState(
@@ -135,3 +137,11 @@ trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSuppor
 }
 
 case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport
+
+sealed trait PeriodicExecutionSupport
+
+trait PeriodicExecutionSupported extends PeriodicExecutionSupport {
+  def periodicDeploymentHandler: PeriodicDeploymentHandler
+}
+
+case object NoPeriodicExecutionSupport extends PeriodicExecutionSupport

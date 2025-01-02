@@ -8,10 +8,6 @@ import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.deployment.periodic.{
-  NoOpPeriodicProcessesManager,
-  NoOpPeriodicProcessesManagerProvider
-}
 import pl.touk.nussknacker.engine.api.deployment.{
   NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
@@ -143,7 +139,6 @@ object TestFactory {
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
-      NoOpPeriodicProcessesManagerProvider,
       actorSystem.dispatcher,
       actorSystem,
       SttpBackendStub.asynchronousFuture

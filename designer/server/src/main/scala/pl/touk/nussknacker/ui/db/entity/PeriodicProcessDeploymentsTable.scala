@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.ui.process.periodic.model.{
   PeriodicProcessDeploymentId,
   PeriodicProcessDeploymentStatus,
   PeriodicProcessId

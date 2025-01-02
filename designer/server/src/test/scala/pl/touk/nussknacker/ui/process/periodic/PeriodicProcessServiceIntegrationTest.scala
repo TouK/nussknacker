@@ -14,28 +14,31 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.deployment.periodic.{PeriodicProcessesManager, PeriodicProcessesManagerProvider}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.engine.common.periodic._
-import pl.touk.nussknacker.engine.common.periodic.service._
-import pl.touk.nussknacker.engine.management.periodic.flink.db.{
-  LegacyDbInitializer,
-  LegacyRepositoryBasedPeriodicProcessesManager,
-  SlickLegacyPeriodicProcessesRepository
-}
-import pl.touk.nussknacker.engine.management.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentHandlerStub}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithPostgresDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
+import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentHandlerStub}
+import pl.touk.nussknacker.ui.process.periodic.legacy.db.{
+  LegacyDbInitializer,
+  LegacyRepositoryBasedPeriodicProcessesManager,
+  SlickLegacyPeriodicProcessesRepository
+}
+import pl.touk.nussknacker.ui.process.periodic.model._
+import pl.touk.nussknacker.ui.process.periodic.service.{
+  DefaultAdditionalDeploymentDataProvider,
+  PeriodicProcessEvent,
+  PeriodicProcessListener,
+  ProcessConfigEnricher
+}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,

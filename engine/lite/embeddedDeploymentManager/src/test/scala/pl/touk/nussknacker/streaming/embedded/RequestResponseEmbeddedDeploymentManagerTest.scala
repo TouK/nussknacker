@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
-import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -46,7 +45,6 @@ class RequestResponseEmbeddedDeploymentManagerTest
       new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
-      NoOpPeriodicProcessesManagerProvider,
       as.dispatcher,
       as,
       SttpBackendStub.asynchronousFuture

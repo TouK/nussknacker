@@ -389,6 +389,7 @@ class K8sDeploymentManager(
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
+  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
 }
 
 object K8sDeploymentManager {

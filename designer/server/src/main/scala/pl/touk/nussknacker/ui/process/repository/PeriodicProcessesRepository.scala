@@ -6,15 +6,25 @@ import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.api.deployment.periodic.model._
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
-import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
+import pl.touk.nussknacker.ui.process.periodic.model.{
+  PeriodicProcess,
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentState,
+  PeriodicProcessDeploymentStatus,
+  PeriodicProcessId,
+  ScheduleData,
+  ScheduleDeploymentData,
+  ScheduleId,
+  ScheduleName,
+  SchedulesState
+}
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository.createPeriodicProcess
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
@@ -65,7 +75,7 @@ object PeriodicProcessesRepository {
         versionId = processEntity.processVersionId,
         runtimeParams = processEntity.runtimeParams,
       ),
-      toApi(scheduleProperty),
+      scheduleProperty,
       processEntity.active,
       processEntity.createdAt,
       processEntity.processActionId
@@ -102,7 +112,7 @@ trait PeriodicProcessesRepository {
   def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
-      scheduleProperty: PeriodicProcessesManager.ScheduleProperty,
+      scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
       processingType: String,
   ): Action[PeriodicProcess]
@@ -203,7 +213,7 @@ class SlickPeriodicProcessesRepository(
   override def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
-      scheduleProperty: PeriodicProcessesManager.ScheduleProperty,
+      scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
       processingType: String,
   ): Action[PeriodicProcess] = {
@@ -214,7 +224,7 @@ class SlickPeriodicProcessesRepository(
       processVersionId = deploymentWithRuntimeParams.versionId,
       processingType = processingType,
       runtimeParams = deploymentWithRuntimeParams.runtimeParams,
-      scheduleProperty = fromApi(scheduleProperty).asJson.noSpaces,
+      scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
       createdAt = now(),
       Some(processActionId),

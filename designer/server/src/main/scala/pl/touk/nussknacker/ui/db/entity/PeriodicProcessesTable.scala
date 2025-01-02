@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.db.entity
 
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.RuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{PeriodicProcessId, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessId
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
