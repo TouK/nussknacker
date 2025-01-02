@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -82,7 +82,6 @@ class DeploymentService(
       case command: RunDeploymentCommand  => runDeployment(command)
       case command: CancelScenarioCommand => cancelScenario(command)
       case command: RunOffScheduleCommand => runOffSchedule(command)
-      case command: CustomActionCommand   => processCustomAction(command)
     }
   }
 
@@ -191,15 +190,13 @@ class DeploymentService(
         processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
         processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
         // 1.3 fetch action definition
-        actionDefinitionOpt = getActionDefinitions(processDetails.processingType).find(_.actionName == actionName)
+        actionDefinitionOpt = getActionDefinitions.find(_ == actionName)
         actionDefinition <- existsOrFail(
           actionDefinitionOpt,
           CustomActionNonExistingError(
             s"Couldn't find definition of action ${actionName.value} for scenario ${processId.name}"
           )
         )
-        // 1.4. action command validation
-        _ <- validateActionParameters(actionParameters, actionDefinition)
         // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
         versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
         buildInfoProcessingType    = getBuildInfoProcessingType(processDetails)
@@ -287,42 +284,21 @@ class DeploymentService(
       actionName: ScenarioActionName,
       processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState
-  )(implicit user: LoggedUser): Unit = {
-    val allowedActions = allowedActionsForState(processDetails, ps)
+  ): Unit = {
+    val allowedActions = allowedActionsForState(ps)
     if (!allowedActions.contains(actionName)) {
       logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
       throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActions)
     }
   }
 
-  private def allowedActionsForState[PS: ScenarioShapeFetchStrategy](
-      processDetails: ScenarioWithDetailsEntity[PS],
-      ps: ProcessState
-  )(implicit user: LoggedUser): Set[ScenarioActionName] = {
-    val actionsDefinedInState = ps.allowedActions.toSet
-    val actionsDefinedInCustomActions = dispatcher
-      .deploymentManagerUnsafe(processDetails.processingType)
-      .customActionsDefinitions
-      .collect {
-        case a if a.allowedStateStatusNames.contains(ps.status.name) => a.actionName
-      }
-      .toSet
-    actionsDefinedInState ++ actionsDefinedInCustomActions
+  private def allowedActionsForState(ps: ProcessState): Set[ScenarioActionName] = {
+    ps.allowedActions.toSet
   }
 
   // TODO: provide better action definitions for deploy and cancel, not as CustomACtion
-  private def getActionDefinitions(
-      processingType: ProcessingType
-  )(implicit user: LoggedUser): List[CustomActionDefinition] = {
-    val fixedActionDefinitions = List(
-      CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
-      CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None),
-      CustomActionDefinition(ScenarioActionName.RunOffSchedule, Nil, Nil, None)
-    )
-    val actionsDefinedInCustomActions = dispatcher
-      .deploymentManagerUnsafe(processingType)
-      .customActionsDefinitions
-    fixedActionDefinitions ++ actionsDefinedInCustomActions
+  private def getActionDefinitions: List[ScenarioActionName] = {
+    List(ScenarioActionName.Deploy, ScenarioActionName.Cancel, ScenarioActionName.RunOffSchedule)
   }
 
   protected def prepareDeployedScenarioData(
@@ -857,22 +833,6 @@ class DeploymentService(
     )
   }
 
-  private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
-    processAction(
-      command = command,
-      actionName = command.actionName,
-      actionParams = command.params,
-      dmCommandCreator = ctx =>
-        DMCustomActionCommand(
-          command.actionName,
-          ctx.latestScenarioDetails.toEngineProcessVersion,
-          ctx.latestScenarioDetails.json,
-          command.commonData.user.toManagerUser,
-          command.params
-        )
-    )
-  }
-
   // TODO: further changes
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
   //       - better comment validation
@@ -903,15 +863,6 @@ class DeploymentService(
           .processCommand(dmCommand)
       }
     } yield actionResult
-  }
-
-  private def validateActionParameters(actionParameters: Map[String, String], customAction: CustomActionDefinition) = {
-    val validator        = new CustomActionValidator(customAction)
-    val validationResult = validator.validateCustomActionParams(actionParameters)
-    validationResult match {
-      case Validated.Valid(_) => DBIOAction.successful(())
-      case _ => DBIOAction.failed(CustomActionValidationError(s"Validation failed for: ${customAction.actionName}"))
-    }
   }
 
 }

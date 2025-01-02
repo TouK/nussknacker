@@ -82,8 +82,6 @@ const extendWithHelpers = (custom: CustomPalette) => ({
             case WindowKind.compareVersions:
             case WindowKind.calculateCounts:
                 return this.windows.compareVersions;
-            case WindowKind.customAction:
-                return this.windows.customAction;
             default:
                 return this.windows.default;
         }

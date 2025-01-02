@@ -20,9 +20,6 @@ const CountsDialog = loadable(() => import("../components/modals/CalculateCounts
 const CompareVersionsDialog = loadable(() => import("../components/modals/CompareVersionsDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
-    fallback: <LoaderSpinner show />,
-});
 const AdhocTestingDialog = loadable(() => import("../components/modals/AdhocTesting/AdhocTestingDialog"), {
     fallback: <LoaderSpinner show />,
 });
@@ -75,8 +72,6 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <GenerateDataAndTestDialog {...props} />;
         case WindowKind.compareVersions:
             return <CompareVersionsDialog {...props} />;
-        case WindowKind.customAction:
-            return <CustomActionDialog {...props} />;
         case WindowKind.adhocTesting:
             return <AdhocTestingDialog {...props} />;
         case WindowKind.confirm:

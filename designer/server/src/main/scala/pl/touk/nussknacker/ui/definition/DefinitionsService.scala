@@ -113,7 +113,6 @@ class DefinitionsService(
         }
       },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
-      customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
   }
 

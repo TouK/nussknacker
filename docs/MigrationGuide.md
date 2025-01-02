@@ -21,6 +21,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
             * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String]` - allows to define custom tooltips for actions, if not defined the default is still used
         * modified method:
             * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions
+* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
+  If there were any custom actions defined in some custom DeploymentManager implementation,
+  they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 
 ## In version 1.18.0
 

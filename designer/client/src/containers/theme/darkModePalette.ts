@@ -103,10 +103,6 @@ export const darkModePalette: PaletteOptions = {
                 backgroundColor: "#1ba1af",
                 color: "white",
             },
-            customAction: {
-                backgroundColor: "white",
-                color: "black",
-            },
             default: {
                 backgroundColor: "#2D8E54",
                 color: "white",

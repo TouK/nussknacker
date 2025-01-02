@@ -12,14 +12,13 @@ import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName, ScenarioActivity}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails._
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
@@ -419,75 +418,6 @@ class ManagementResourcesSpec
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
-    }
-  }
-
-  test("execute valid custom action") {
-    createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(
-      ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("hello"))
-    ) ~> check {
-      status shouldBe StatusCodes.OK
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
-    }
-  }
-
-  test("execute non existing custom action") {
-    createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(
-      ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("non-existing"))
-    ) ~> check {
-      status shouldBe StatusCodes.NotFound
-      responseAs[
-        String
-      ] shouldBe s"Couldn't find definition of action non-existing for scenario ${ProcessTestData.sampleProcessName}"
-    }
-  }
-
-  test("execute not implemented custom action") {
-    createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(
-      ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("not-implemented"))
-    ) ~> check {
-      status shouldBe StatusCodes.NotImplemented
-      responseAs[String] shouldBe "an implementation is missing"
-    }
-  }
-
-  test("execute custom action with not allowed process status") {
-    createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(
-      ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("invalid-status"))
-    ) ~> check {
-      // TODO: "conflict" is coherrent with "canceled process can't be canceled again" above, consider changing to Forbidden
-      status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe "Action: invalid-status is not allowed in scenario (fooProcess) state: NOT_DEPLOYED, allowed actions: not-implemented,ARCHIVE,DEPLOY,RENAME,hello."
-    }
-  }
-
-  test("should return 403 when execute custom action on archived process") {
-    createArchivedProcess(ProcessTestData.sampleProcessName)
-    customAction(
-      ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("hello"))
-    ) ~> check {
-      // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
-      status shouldBe StatusCodes.Conflict
-    }
-  }
-
-  test("should return 403 when execute custom action on fragment") {
-    createEmptyProcess(ProcessTestData.sampleProcessName, isFragment = true)
-    customAction(
-      ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("hello"))
-    ) ~> check {
-      // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
-      status shouldBe StatusCodes.Conflict
     }
   }
 

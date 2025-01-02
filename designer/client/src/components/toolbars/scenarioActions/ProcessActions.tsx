@@ -2,11 +2,9 @@ import i18next from "i18next";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { getCustomActions } from "../../../reducers/selectors/settings";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import { Box, Typography } from "@mui/material";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
@@ -14,7 +12,6 @@ import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 
 const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPanelProps) => {
-    const customActions = useSelector((state: RootState) => getCustomActions(state));
     const scenario = useSelector((state: RootState) => getScenario(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
 
@@ -30,13 +27,7 @@ const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPane
                     {description}
                 </Typography>
             </Box>
-            <ToolbarButtons variant={buttonsVariant}>
-                {children}
-                {customActions.map((action) => (
-                    //TODO: to be replaced by toolbar config
-                    <ActionButton name={action.name} key={action.name} />
-                ))}
-            </ToolbarButtons>
+            <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>
         </ToolbarWrapper>
     );
 });

@@ -12,7 +12,6 @@ export enum WindowKind {
     generateTestData,
     generateDataAndTest,
     compareVersions,
-    customAction,
     adhocTesting,
     survey,
     scenarioDetails,
