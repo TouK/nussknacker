@@ -9,14 +9,9 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionResult,
-  DeploymentData,
-  ExternalDeploymentId
-}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
@@ -42,7 +37,10 @@ abstract class FlinkDeploymentManager(
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     for {
       actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
@@ -50,7 +48,12 @@ abstract class FlinkDeploymentManager(
         statusDetails,
         actionAfterPostprocessOpt.orElse(lastStateAction)
       )
-    } yield processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
+    } yield processStateDefinitionManager.processState(
+      engineStateResolvedWithLastAction,
+      latestVersionId,
+      deployedVersionId,
+      currentlyPresentedVersionId,
+    )
   }
 
   // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
@@ -113,7 +116,7 @@ abstract class FlinkDeploymentManager(
         }
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
         testRunner.test(canonicalProcess, scenarioTestData)
-      case command: DMCustomActionCommand => processCustomAction(command)
+      case _: DMRunOffScheduleCommand => notImplemented
     }
 
   private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
@@ -196,8 +199,6 @@ abstract class FlinkDeploymentManager(
       currentlyDeployedJobsIds: List[ExternalDeploymentId]
   ): Future[Unit]
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
-
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
       action: ExternalDeploymentId => Future[T]
   ): Future[T] = {
@@ -239,8 +240,6 @@ abstract class FlinkDeploymentManager(
       _ <- cancelFlinkJob(deploymentId)
     } yield savepointPath
   }
-
-  protected def processCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] = notImplemented
 
   protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit]
 

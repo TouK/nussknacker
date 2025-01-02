@@ -38,9 +38,6 @@
     "Aggregate": {
         "name": "Aggregate"
     },
-    "Properties": {
-        "name": "Properties"
-    },
     "CustomNode": {
         "name": "CustomNode"
     },

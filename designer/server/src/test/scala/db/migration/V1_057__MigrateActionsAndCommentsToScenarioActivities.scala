@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -123,7 +122,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = WithContent("Deployment with scenario fix", user.name, date),
+            comment = ScenarioComment.from("Deployment with scenario fix", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -139,7 +138,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = WithContent("I'm canceling this scenario, it causes problems", user.name, date),
+            comment = ScenarioComment.from("I'm canceling this scenario, it causes problems", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -183,7 +182,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = WithContent("Paused because marketing campaign is paused for now", user.name, date),
+            comment = ScenarioComment.from("Paused because marketing campaign is paused for now", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -230,7 +229,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     }
     "migrate custom action 'run now' with comment to scenario_activities table" in {
       testMigratingActionWithComment(
-        scenarioActionName = InstantBatchCustomAction.name,
+        scenarioActionName = ScenarioActionName.RunOffSchedule,
         actionComment = Some("Run now: Deployed at the request of business"),
         expectedActivity = (sid, sad, user, date, sv) =>
           ScenarioActivity.PerformedSingleExecution(
@@ -239,7 +238,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = WithContent("Deployed at the request of business", user.name, date),
+            comment = ScenarioComment.from("Deployed at the request of business", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -256,7 +255,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             date = date,
             scenarioVersionId = sv,
             actionName = "special action",
-            comment = WithContent("Special action needed to be executed", user.name, date),
+            comment = ScenarioComment.from("Special action needed to be executed", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -281,7 +280,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
           scenarioVersionId = Some(ScenarioVersionId(processVersionId)),
-          comment = WithContent("ABC1", UserName(user), now.toInstant)
+          comment = ScenarioComment.from("ABC1", UserName(user), now.toInstant)
         ),
         ScenarioActivity.CommentAdded(
           scenarioId = ScenarioId(process.id.value),
@@ -289,7 +288,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
           scenarioVersionId = Some(ScenarioVersionId(processVersionId)),
-          comment = WithContent("ABC2", UserName(user), now.toInstant)
+          comment = ScenarioComment.from("ABC2", UserName(user), now.toInstant)
         )
       )
     }

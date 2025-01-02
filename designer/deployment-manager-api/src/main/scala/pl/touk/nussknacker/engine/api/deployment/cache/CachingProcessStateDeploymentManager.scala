@@ -4,8 +4,7 @@ import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
@@ -15,7 +14,8 @@ import scala.concurrent.duration._
 class CachingProcessStateDeploymentManager(
     delegate: DeploymentManager,
     cacheTTL: FiniteDuration,
-    override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport
+    override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport,
+    override val stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport,
 ) extends DeploymentManager {
 
   private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
@@ -26,9 +26,19 @@ class CachingProcessStateDeploymentManager(
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] =
-    delegate.resolve(idWithName, statusDetails, lastStateAction)
+    delegate.resolve(
+      idWithName,
+      statusDetails,
+      lastStateAction,
+      latestVersionId,
+      deployedVersionId,
+      currentlyPresentedVersionId
+    )
 
   override def getProcessStates(
       name: ProcessName
@@ -56,8 +66,6 @@ class CachingProcessStateDeploymentManager(
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = delegate.customActionsDefinitions
-
   override def close(): Unit = delegate.close()
 
 }
@@ -71,7 +79,12 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
     scenarioStateCacheTTL
       .map { cacheTTL =>
         logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
-        new CachingProcessStateDeploymentManager(delegate, cacheTTL, delegate.deploymentSynchronisationSupport)
+        new CachingProcessStateDeploymentManager(
+          delegate,
+          cacheTTL,
+          delegate.deploymentSynchronisationSupport,
+          delegate.stateQueryForAllScenariosSupport
+        )
       }
       .getOrElse {
         logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")

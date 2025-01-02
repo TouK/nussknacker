@@ -13,6 +13,7 @@ import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
 import { SettingsProvider } from "../settings/SettingsProvider";
+import { resolveRefClazzName } from "./utils";
 
 interface ItemProps {
     index: number;
@@ -36,7 +37,7 @@ export function Item(props: ItemProps): JSX.Element {
     const [isMarked] = useDiffMark();
     const getCurrentOption = useCallback(
         (typ: ReturnedType | undefined) => {
-            const fallbackValue = { label: typ?.refClazzName, value: typ?.refClazzName };
+            const fallbackValue = { label: resolveRefClazzName(typ?.refClazzName), value: resolveRefClazzName(typ?.refClazzName) };
             const foundValue = options.find((item) => isEqual(typ?.refClazzName, item.value));
             return foundValue || fallbackValue;
         },
@@ -70,7 +71,7 @@ export function Item(props: ItemProps): JSX.Element {
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
-                    fieldErrors={getValidationErrorsForField(errors, `type`)}
+                    fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$typ`)}
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>

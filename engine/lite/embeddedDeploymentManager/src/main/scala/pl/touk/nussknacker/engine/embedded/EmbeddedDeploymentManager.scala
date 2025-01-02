@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProv
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.newdeployment
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -98,6 +100,7 @@ class EmbeddedDeploymentManager(
       case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, updateStrategy) =>
         Future {
           ensureReplaceDeploymentUpdateStrategy(updateStrategy)
+          ensureAdditionalComponentsConfigsAreEmpty(deploymentData)
           deployScenarioClosingOldIfNeeded(
             processVersion,
             deploymentData,
@@ -109,7 +112,7 @@ class EmbeddedDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMStopDeploymentCommand | _: DMStopScenarioCommand | _: DMMakeScenarioSavepointCommand |
-          _: DMCustomActionCommand =>
+          _: DMRunOffScheduleCommand =>
         notImplemented
     }
 
@@ -118,6 +121,16 @@ class EmbeddedDeploymentManager(
       case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
       case DeploymentUpdateStrategy.DontReplaceDeployment =>
         throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+    }
+  }
+
+  // We make sure that we don't let deploy a scenario when any component was modified by AdditionalUIConfigProvider
+  // as it could potentially result in failure during compilation before execution
+  private def ensureAdditionalComponentsConfigsAreEmpty(deploymentData: DeploymentData): Unit = {
+    if (deploymentData.additionalModelConfigs.additionalConfigsFromProvider.nonEmpty) {
+      throw new IllegalArgumentException(
+        "Component config modification by AdditionalUIConfigProvider is not supported for Lite engine"
+      )
     }
   }
 
@@ -241,6 +254,8 @@ class EmbeddedDeploymentManager(
         )
 
     }
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 

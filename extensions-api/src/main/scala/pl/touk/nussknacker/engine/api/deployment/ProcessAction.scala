@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
@@ -70,8 +70,23 @@ object ScenarioActionName {
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
   val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
   val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
+  // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
+  //       In the future it can be changed to better name, according to convention, but that would require database migration
+  //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
+  val RunOffSchedule: ScenarioActionName = ScenarioActionName("run now")
 
   val DefaultActions: List[ScenarioActionName] = Nil
 
   val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
+
+  def serialize(name: ScenarioActionName): String = name match {
+    case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"
+    case other                             => other.value
+  }
+
+  def deserialize(str: String): ScenarioActionName = str match {
+    case "RUN_OFF_SCHEDULE" => ScenarioActionName.RunOffSchedule
+    case other              => ScenarioActionName(other)
+  }
+
 }

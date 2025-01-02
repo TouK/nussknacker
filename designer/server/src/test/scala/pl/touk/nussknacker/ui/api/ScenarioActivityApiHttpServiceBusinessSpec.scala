@@ -403,8 +403,8 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 date = clock.instant(),
                 scenarioVersionId = None,
                 actionName = "Custom action handled by deployment manager",
-                comment = ScenarioComment.WithContent(
-                  comment = "Executed on custom deployment manager",
+                comment = ScenarioComment.from(
+                  content = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
@@ -417,8 +417,8 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 date = clock.instant(),
                 scenarioVersionId = None,
                 actionName = "Custom action handled by deployment manager",
-                comment = ScenarioComment.WithContent(
-                  comment = "Executed on custom deployment manager",
+                comment = ScenarioComment.from(
+                  content = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
@@ -481,8 +481,8 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                comment = ScenarioComment.WithContent(
-                  comment = "Immediate execution",
+                comment = ScenarioComment.from(
+                  content = "Immediate execution",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),

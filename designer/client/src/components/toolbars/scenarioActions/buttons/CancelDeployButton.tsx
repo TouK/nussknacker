@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, isCancelPossible } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { WindowKind, useWindows } from "../../../../windowManager";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -18,11 +18,12 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
     const cancelPossible = useSelector(isCancelPossible);
     const processName = useSelector(getProcessName);
+    const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const available = !disabled && cancelPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processName)));
+    const action = (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
     const message = t("panels.actions.deploy-canel.dialog", "Cancel scenario {{name}}", { name: processName });
 
     return (

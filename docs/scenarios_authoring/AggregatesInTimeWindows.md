@@ -14,6 +14,9 @@ Nussknacker implements 3 types of time windows - tumbling, sliding and session w
 
 Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only).
 
+Finally, understanding watermarks and problems caused by idle sources will clarify why in certain situations aggregate events or results of joins are not generated. A good description of the problem can be found [here](https://medium.com/@ipolyzos_/understanding-watermarks-in-apache-flink-c8793a50fbb8).
+
+
 
 ## Common behavior
 
@@ -78,6 +81,10 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 * Set - the result is a set of inputs received by the aggregator. Can be very ineffective for large sets, try to use ApproximateSetCardinality in this case
 * CountWhen - accepts boolean values, returns how many of them are true
 * Average - computes average of values
+* StddevPop - computes population standard deviation
+* StddevSamp - computes sample standard deviation
+* VarPop - computes population variance
+* VarSamp - computes sample variance
 * ApproximateSetCardinality - computes approximate cardinality of a set using [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog) algorithm. Please note that this aggregator treats null as a unique value. If this is undesirable and the set passed to ApproximateSetCardinality aggregator contained null (this can be tested with safe navigation in [SpEL](./Spel.md#safe-navigation)), subtract 1 from the obtained result.
 
 If you need to count events in a window, use the CountWhen aggregate function and aggregate by fixed `true` expression - see the table with examples below. Subsequent sections use the Count function on the diagrams as an example for the **aggregator** - it is the easiest function to use in the examples. Please note, however, that technically, we provide an indirect implementation of this aggregator.

@@ -13,13 +13,14 @@ import org.springframework.expression.spel.{
   SpelParserConfiguration,
   standard
 }
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
@@ -31,6 +32,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompil
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
 
 /**
@@ -51,11 +53,24 @@ final case class ParsedSpelExpression(
     parser: () => ValidatedNel[ExpressionParseError, Expression],
     initial: Expression
 ) extends LazyLogging {
-  @volatile var parsed: Expression = initial
+  @volatile var parsed: Expression        = initial
+  private val firstInterpretationFinished = new AtomicBoolean()
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
-    def value(): T = parsed.getValue(context, desiredResultType).asInstanceOf[T]
-
+    def value(): T = {
+      // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
+      // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
+      // isn't finished yet. Due to this problem an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
+      if (!firstInterpretationFinished.get()) {
+        synchronized {
+          val valueToReturn = parsed.getValue(context, desiredResultType).asInstanceOf[T]
+          firstInterpretationFinished.set(true)
+          valueToReturn
+        }
+      } else {
+        parsed.getValue(context, desiredResultType).asInstanceOf[T]
+      }
+    }
     try {
       value()
     } catch {
@@ -107,7 +122,28 @@ class SpelExpression(
       return SpelExpressionRepr(parsed.parsed, ctx, globals, original).asInstanceOf[T]
     }
     val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, globals)
-    parsed.getValue[T](evaluationContext, expectedClass)
+    flavour match {
+      case SpelExpressionParser.Standard =>
+        parsed.getValue[T](evaluationContext, expectedClass)
+      case SpelExpressionParser.Template =>
+        val parts = renderTemplateExpressionParts(evaluationContext)
+        TemplateEvaluationResult(parts).asInstanceOf[T]
+    }
+  }
+
+  private def renderTemplateExpressionParts(evaluationContext: EvaluationContext): List[TemplateRenderedPart] = {
+    def renderExpression(expression: Expression): List[TemplateRenderedPart] = expression match {
+      case literal: LiteralExpression => List(RenderedLiteral(literal.getExpressionString))
+      case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
+        // TODO: Should we use the same trick with re-parsing after ClassCastException as we use in ParsedSpelExpression?
+        List(RenderedSubExpression(spelExpr.getValue[String](evaluationContext, classOf[String])))
+      case composite: CompositeStringExpression => composite.getExpressions.toList.flatMap(renderExpression)
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unsupported expression type: ${other.getClass.getName} for a template expression"
+        )
+    }
+    renderExpression(parsed.parsed)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {

@@ -13,12 +13,12 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{Comment, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -1055,7 +1055,7 @@ class ProcessesResourcesSpec
   }
 
   test("should provide the same proper scenario state when fetching all scenarios and one scenario") {
-    createDeployedWithCustomActionScenario(processName, category = Category1)
+    createDeployedScenario(processName, category = Category1)
 
     Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
@@ -1063,7 +1063,7 @@ class ProcessesResourcesSpec
 
       loadedProcess.head.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
             ) =>
       }
       loadedProcess.head.lastStateAction should matchPattern {
@@ -1084,7 +1084,7 @@ class ProcessesResourcesSpec
 
       loadedProcess.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
             ) =>
       }
       loadedProcess.lastStateAction should matchPattern {
@@ -1223,9 +1223,9 @@ class ProcessesResourcesSpec
       toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
-          ToolbarPanel(SearchPanel, None, None, None),
-          ToolbarPanel(TipsPanel, None, None, None),
-          ToolbarPanel(CreatorPanel, None, None, None)
+          ToolbarPanel(SearchPanel, None, None, None, None),
+          ToolbarPanel(TipsPanel, None, None, None, None),
+          ToolbarPanel(CreatorPanel, None, None, None, None)
         ),
         List(),
         List(
@@ -1246,7 +1246,8 @@ class ProcessesResourcesSpec
                   disabled = false
                 )
               )
-            )
+            ),
+            None
           )
         ),
         List()

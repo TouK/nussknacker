@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.defaultVisibleActions
 import pl.touk.nussknacker.engine.api.deployment.{
   OverridingProcessStateDefinitionManager,
   ProcessStateDefinitionManager,
+  ScenarioActionName,
   StateStatus
 }
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{DeploymentStatus, PeriodicProcessStatus}
@@ -13,6 +15,8 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
       statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
       customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
+      customVisibleActions = Some(defaultVisibleActions ::: ScenarioActionName.RunOffSchedule :: Nil),
+      customActionTooltips = Some(PeriodicStateStatus.customActionTooltips),
       delegate = delegate
     ) {
 

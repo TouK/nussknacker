@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 
 trait ScenarioActivityRepository {
 
@@ -22,6 +22,7 @@ trait ScenarioActivityRepository {
 
   def findActivities(
       scenarioId: ProcessId,
+      after: Option[Instant] = None,
   ): DB[Seq[ScenarioActivity]]
 
   def addActivity(
@@ -41,8 +42,8 @@ trait ScenarioActivityRepository {
         user = user.scenarioUser,
         date = now,
         scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
-        comment = ScenarioComment.WithContent(
-          comment = comment,
+        comment = ScenarioComment.from(
+          content = comment,
           lastModifiedByUserName = UserName(user.username),
           lastModifiedAt = now,
         )

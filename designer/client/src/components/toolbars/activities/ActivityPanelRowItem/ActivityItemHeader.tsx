@@ -25,6 +25,10 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
     color: theme.palette.primary.main,
+    svg: {
+        width: "16px",
+        height: "16px",
+    },
 }));
 
 const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
@@ -33,13 +37,13 @@ const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
     gap: theme.spacing(0.5),
 }));
 
-const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunning: boolean; isActiveFound: boolean }>(
-    ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
+const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isDeploymentActive: boolean; isActiveFound: boolean }>(
+    ({ theme, isHighlighted, isDeploymentActive, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 0, 0.5, 0.75),
+        padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
         borderRadius: theme.spacing(0.5),
-        ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
+        ...getHeaderColors(theme, isHighlighted, isDeploymentActive, isActiveFound),
     }),
 );
 
@@ -149,6 +153,8 @@ const HeaderActivity = ({
                     scenarioActivityId={scenarioActivityId}
                     activityType={activityType}
                     activityAction={activityAction}
+                    title={t("panels.actions.addComment.title", "Add comment")}
+                    confirmButtonText={t("panels.actions.addComment.confirmButton", "Add")}
                     {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddCommentToActivity })}
                 />
             );
@@ -161,7 +167,7 @@ const HeaderActivity = ({
 
 interface Props {
     activity: ItemActivity;
-    isRunning: boolean;
+    isDeploymentActive: boolean;
     isActiveFound: boolean;
     isFound: boolean;
     searchQuery: string;
@@ -224,7 +230,7 @@ const WithOpenVersion = ({
     );
 };
 
-const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searchQuery }: Props) => {
+const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFound, searchQuery }: Props) => {
     const scenario = useSelector(getScenario);
     const { processVersionId } = scenario || {};
 
@@ -273,7 +279,7 @@ const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searc
     ]);
 
     return (
-        <StyledActivityItemHeader isHighlighted={isHighlighted} isRunning={isRunning} isActiveFound={isActiveFound}>
+        <StyledActivityItemHeader isHighlighted={isHighlighted} isDeploymentActive={isDeploymentActive} isActiveFound={isActiveFound}>
             <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
             <StyledHeaderActionRoot>

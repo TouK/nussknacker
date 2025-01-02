@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.{DMScenarioCommand, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.RunOffScheduleResult
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -28,11 +28,9 @@ case class RunDeploymentCommand(
     nodesDeploymentData: NodesDeploymentData
 ) extends ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 
-case class CustomActionCommand(
+case class RunOffScheduleCommand(
     commonData: CommonCommandData,
-    actionName: ScenarioActionName,
-    params: Map[String, String],
-) extends ScenarioCommand[CustomActionResult]
+) extends ScenarioCommand[RunOffScheduleResult]
 
 // TODO CancelScenarioCommand will be legacy in some future because it operates on the scenario level instead of deployment level -
 //      we should replace it by command operating on deployment

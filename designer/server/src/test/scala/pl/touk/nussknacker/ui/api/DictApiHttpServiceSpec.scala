@@ -16,17 +16,40 @@ class DictApiHttpServiceSpec
     with RestAssuredVerboseLoggingIfValidationFails {
 
   "The endpoint for listing available dictionaries of expected type should" - {
+
+    "return proper empty list for expected type Integer - check subclassing" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+            | "expectedType" : {
+            |     "type" : "TypedClass",
+            |     "refClazzName" : "java.lang.Integer",
+            |     "params":[]
+            |     }
+            |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""[
+             |  {
+             |    "id" : "integer_dict",
+             |    "label" : "integer_dict"
+             |  }
+             |]""".stripMargin
+        )
+    }
+
     "return proper list for expected type String" in {
       given()
         .when()
         .basicAuthAllPermUser()
         .jsonBody("""{
                     |  "expectedType" : {
-                    |    "value" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.String",
                     |      "params" : []
-                    |    }
                     |  }
                     |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
@@ -56,11 +79,9 @@ class DictApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody("""{
                     |  "expectedType" : {
-                    |    "value" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
                     |      "params" : []
-                    |    }
                     |  }
                     |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
@@ -68,6 +89,39 @@ class DictApiHttpServiceSpec
         .statusCode(200)
         .equalsJsonBody(
           s"""[
+             |  {
+             |    "id": "integer_dict",
+             |    "label": "integer_dict"
+             |  },
+             |  {
+             |    "id" : "long_dict",
+             |    "label" : "long_dict"
+             |  }
+             |]""".stripMargin
+        )
+    }
+
+    "return proper list for expected type BigInteger" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+                    |  "expectedType" : {
+                    |      "type" : "TypedClass",
+                    |      "refClazzName" : "java.math.BigInteger",
+                    |      "params" : []
+                    |  }
+                    |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""[
+             |
+             |  {
+             |    "id": "integer_dict",
+             |    "label": "integer_dict"
+             |  },
              |  {
              |    "id" : "long_dict",
              |    "label" : "long_dict"
@@ -95,11 +149,9 @@ class DictApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody("""{
                     |  "expectedType" : {
-                    |    "value" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
                     |      "params" : []
-                    |    }
                     |  }
                     |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/thisProcessingTypeDoesNotExist/dicts")

@@ -3,13 +3,14 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
@@ -29,18 +30,21 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     namingStrategy: NamingStrategy,
-    componentUseCase: ComponentUseCase
+    componentUseCase: ComponentUseCase,
+    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
       namingStrategy,
       componentUseCase,
+      configsFromProviderWithDictionaryEditor
     ) {
 
   override protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
-      definitionContext: ComponentDefinitionContext
+      definitionContext: ComponentDefinitionContext,
+      classDefinitions: Set[ClassDefinition]
   ): ModelDefinition = {
     val usedSourceIds = process.allStartNodes
       .map(_.head.data)
@@ -59,7 +63,8 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     }
 
     val fragmentParametersDefinitionExtractor = new FragmentParametersDefinitionExtractor(
-      definitionContext.userCodeClassLoader
+      definitionContext.userCodeClassLoader,
+      classDefinitions
     )
     val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       fragmentParametersDefinitionExtractor

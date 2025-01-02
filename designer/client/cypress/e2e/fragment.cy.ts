@@ -66,7 +66,7 @@ describe("Fragment", () => {
         cy.get("[data-testid='settings:4']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:4']")
-            .contains(/Add list item/i)
+            .contains(/Suggested values/i)
             .siblings()
             .eq(0)
             .find("[data-testid='form-helper-text']")
@@ -157,6 +157,11 @@ describe("Fragment", () => {
             .eq(0)
             .click();
         cy.get("[id$='option-1']").click({ force: true });
+
+        // Provide String Fixed value inputMode
+        cy.get("@window").contains("+").click();
+        cy.get("[data-testid='fieldsRow:8']").find("[placeholder='Field name']").type("generic_type");
+        cy.get("[data-testid='fieldsRow:8']").contains("String").click().type("List[String]{enter}");
 
         cy.get("@window")
             .contains(/^apply$/i)
@@ -281,7 +286,7 @@ describe("Fragment", () => {
         cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible").as("window");
         cy.get("@window").contains("+").click();
-        cy.get("[data-testid='fieldsRow:8']").find("[placeholder='Field name']").type("test5");
+        cy.get("[data-testid='fieldsRow:9']").find("[placeholder='Field name']").type("test5");
         cy.get("@window")
             .contains(/^apply$/i)
             .click();

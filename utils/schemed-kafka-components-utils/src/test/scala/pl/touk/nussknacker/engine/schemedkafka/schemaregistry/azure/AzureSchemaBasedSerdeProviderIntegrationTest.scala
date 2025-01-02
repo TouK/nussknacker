@@ -29,7 +29,12 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
       "schema.group"          -> "test-group",
       "auto.register.schemas" -> "true",
     )
-    val kafkaConfig = KafkaConfig(Some(config), None, avroKryoGenericRecordSchemaIdSerialization = Some(false))
+    val kafkaConfig = KafkaConfig(
+      Some(config),
+      None,
+      avroKryoGenericRecordSchemaIdSerialization = Some(false),
+      showTopicsWithoutSchema = false
+    )
     val schema = AvroUtils.parseSchema("""{
         |    "type": "record",
         |    "namespace": "pl.touk.nussknacker",

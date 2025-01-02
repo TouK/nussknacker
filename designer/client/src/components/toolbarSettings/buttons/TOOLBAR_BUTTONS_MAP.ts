@@ -15,7 +15,6 @@ import PDFButton from "../../toolbars/process/buttons/PDFButton";
 import SaveButton from "../../toolbars/process/buttons/SaveButton";
 import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton";
 import { LinkButton } from "./LinkButton";
-import { ActionButton } from "./ActionButton";
 import CancelDeployButton from "../../toolbars/scenarioActions/buttons/CancelDeployButton";
 import DeployButton from "../../toolbars/scenarioActions/buttons/DeployButton";
 import PropertiesButton from "../../toolbars/scenarioActions/buttons/PropertiesButton";
@@ -31,6 +30,7 @@ import { ZoomOutButton } from "../../toolbars/view/buttons/ZoomOutButton";
 import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
 import { ToolbarButton, ToolbarButtonTypes } from "./types";
+import RunOffScheduleButton from "../../toolbars/scenarioActions/buttons/RunOffScheduleButton";
 
 export type PropsOfButton<T> = ToolbarButton & {
     type: T;
@@ -44,6 +44,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.processSave]: SaveButton,
     [BuiltinButtonTypes.processDeploy]: DeployButton,
     [BuiltinButtonTypes.processCancel]: CancelDeployButton,
+    [BuiltinButtonTypes.processRunOffSchedule]: RunOffScheduleButton,
     [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
     [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
     [BuiltinButtonTypes.viewReset]: ResetViewButton,
@@ -66,7 +67,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.testGenerate]: GenerateButton,
     [BuiltinButtonTypes.testCounts]: CountsButton,
     [BuiltinButtonTypes.testHide]: HideButton,
-    [CustomButtonTypes.customAction]: ActionButton,
     [CustomButtonTypes.customLink]: LinkButton,
     [CustomButtonTypes.adhocTesting]: AdhocTestingButton,
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,

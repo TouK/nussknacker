@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{ProcessStatus, defaultVisibleActions}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
 
@@ -37,19 +39,37 @@ trait ProcessStateDefinitionManager {
     stateDefinitions(stateStatus.name).icon
 
   /**
+   * Actions that are applicable to scenario in general. They may be available only in particular states, as defined by `def statusActions`
+   */
+  def visibleActions: List[ScenarioActionName] = defaultVisibleActions
+
+  /**
+   * Custom tooltips for actions
+   */
+  def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] = Map.empty
+
+  /**
     * Allowed transitions between states.
     */
-  def statusActions(stateStatus: StateStatus): List[ScenarioActionName]
+  def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]
 
   /**
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
     */
-  def processState(statusDetails: StatusDetails): ProcessState = {
+  def processState(
+      statusDetails: StatusDetails,
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
+  ): ProcessState = {
+    val status = ProcessStatus(statusDetails.status, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
     ProcessState(
       statusDetails.externalDeploymentId,
       statusDetails.status,
       statusDetails.version,
-      statusActions(statusDetails.status),
+      visibleActions,
+      statusActions(status),
+      actionTooltips(status),
       statusIcon(statusDetails.status),
       statusTooltip(statusDetails.status),
       statusDescription(statusDetails.status),
@@ -58,5 +78,35 @@ trait ProcessStateDefinitionManager {
       statusDetails.errors
     )
   }
+
+}
+
+object ProcessStateDefinitionManager {
+
+  /**
+   * ProcessStatus contains status of the scenario, it is used as argument of ProcessStateDefinitionManager methods
+   *
+   * @param stateStatus       current scenario state
+   * @param latestVersionId   latest saved versionId for the scenario
+   * @param deployedVersionId currently deployed versionId of the scenario
+   */
+  final case class ProcessStatus(
+      stateStatus: StateStatus,
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
+  )
+
+  /**
+   * Actions, that are applicable in standard use-cases for most deployment managers.
+   */
+  val defaultVisibleActions: List[ScenarioActionName] = List(
+    ScenarioActionName.Cancel,
+    ScenarioActionName.Deploy,
+    ScenarioActionName.Pause,
+    ScenarioActionName.Archive,
+    ScenarioActionName.UnArchive,
+    ScenarioActionName.Rename,
+  )
 
 }

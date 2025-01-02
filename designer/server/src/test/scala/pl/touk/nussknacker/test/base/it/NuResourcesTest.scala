@@ -18,15 +18,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -40,10 +37,10 @@ import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -120,7 +117,8 @@ trait NuResourcesTest
       scenarioResolverByProcessingType,
       processChangeListener,
       None,
-      deploymentCommentSettings
+      deploymentCommentSettings,
+      mapProcessingTypeDataProvider()
     )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
@@ -148,12 +146,13 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-      new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(testConfig)))
-    )
+    val designerConfig = DesignerConfig.from(testConfig)
     ProcessingTypeDataProvider(
-      processingTypeDataReader
-        .loadProcessingTypeData(_ => modelDependencies, _ => deploymentManagerDependencies)
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+        .loadProcessingTypeData(
+          _ => modelDependencies,
+          _ => deploymentManagerDependencies
+        )
         .unsafeRunSync()
     )
   }
@@ -364,10 +363,6 @@ trait NuResourcesTest
       Permission.Deploy,
       Permission.Read
     )
-
-  protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
-    Post(s"/processManagement/customAction/$processName", reqPayload.toJsonRequestEntity()) ~>
-      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)

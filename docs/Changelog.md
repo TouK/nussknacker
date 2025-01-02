@@ -1,17 +1,79 @@
 # Changelog
 
+## 1.19
+
+#### Highlights
+
+##### End-user
+
+##### Administrator
+
+### 1.19.0 (Not released yet)
+
+* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+* [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
+* [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
+  expression parts used in SpEL template
+* async-http-client and Netty dependency cleanups
+  * [#7257](https://github.com/TouK/nussknacker/pull/7257) `components-api` module: Replaced wide dependency to `async-http-client-backend-future`
+    by the narrowest possible dependency to sttp's core
+  * [#7259](https://github.com/TouK/nussknacker/pull/7259) `flink-executor` and `lite-runtime` modules: Added compile-time
+    dependency to `http-utils` (which depends on `async-http-client-backend-future` and indirectly on Netty)
+* [#7066](https://github.com/TouK/nussknacker/pull/7066) Kafka source and sink can now operate with schemaless topics. They accept any json. Data will not be validated with schema.
+* [#7165](https://github.com/TouK/nussknacker/pull/7165) Added PerformSingleExecution scenario action
+    * Added support for PerformSingleExecution action in DeploymentManager and in GUI
+    * Improved scenario state management to include information about current and deployed versions and allow more customization
+* [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
+* [#7323](https://github.com/TouK/nussknacker/pull/7323) Improve Periodic DeploymentManager db queries
+* [#7332](https://github.com/TouK/nussknacker/pull/7332) Handle scenario names with spaces when performing migration tests, they were ignored
+* [#7346](https://github.com/TouK/nussknacker/pull/7346) OpenAPI enricher: ability to configure common secret for any security scheme
+* [#7307](https://github.com/TouK/nussknacker/pull/7307) Added StddevPop, StddevSamp, VarPop and VarSamp aggregators
+* [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
+* [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
+  this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
+* [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
+* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
+
 ## 1.18
 
 #### Highlights
 
-(Not available yet)
+##### End-user
 
-### 1.18.0 (Not released yet)
+* New Activities panel, replacing Versions, Comments and Attachments panels. Now you can browse all scenario activities on one chronological list.
+* Added scenario labels. You can now organize your scenarios and find different groups of scenarios more easily.
+* SpEL: added navigation through fields inside variables typed as Unknown. You can now access the data inside a variable, even if Nussknacker doesn't know its exact type during scenario authoring.
+* SpEL: added conversion methods to cast or convert between data types (e.g. `String` to `Integer`).
+* SpEL: various enhancements, like `#CONV.toJson` and `#CONV.toJsonString` methods, new `#BASE64` helper, possibility to treat arrays as lists, and more.
+* Various UX improvements, including new UI for aggregation definitions and better validation handling in ad-hoc tests.
 
-* [6944](https://github.com/TouK/nussknacker/pull/6944) Changes around adhoc testing feature
+##### Administrator
+
+* Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
+* Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
+
+### 1.18.1 (9 December 2024)
+
+* [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
+* [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
+* [#7240](https://github.com/TouK/nussknacker/pull/7240) Fixed race condition problem during SpEL expression evaluation
+* [#7269](https://github.com/TouK/nussknacker/pull/7269) Fixed focus scrolling in expression editor
+* [#7270](https://github.com/TouK/nussknacker/pull/7270) Savepoint deserialization fixup - some taken savepoints (e.g. for scenarios with async enrichers) were not deserializable which led to errors during redeployments on Flink
+* [#7279](https://github.com/TouK/nussknacker/pull/7279) Fixed Flink TaskManager and Designer containers restarts in installation example
+* [#7283](https://github.com/TouK/nussknacker/pull/7283) Fix deployment status indicator for periodic scenarios type
+* [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix “Maximum update depth exceeded” issue when node details window is open and size of the window changed
+* [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix manual window size change
+* [#7290](https://github.com/TouK/nussknacker/pull/7290) Update swagger-parser (2.1.22 -> 2.1.24) to fix shading issue (https://github.com/swagger-api/swagger-parser/issues/2126)
+  * [#7299](https://github.com/TouK/nussknacker/pull/7299) Cursor rendering optimization
+
+### 1.18.0 (22 November 2024)
+
+* [#6944](https://github.com/TouK/nussknacker/pull/6944) [#7166](https://github.com/TouK/nussknacker/pull/7166) Changes around adhoc testing feature
   * `test-with-form` button was renamed to `adhoc-testing`
   * Improved form validators inside adhoc tests (validation was moved to backend)
   * Moved `testInfo/*` endpoints to `scenarioTesting/` path and rewrite then using Tapir
+  * Fix method `assignUserFriendlyEditor` not to change all String parameter editors to simple `StringParameterEditor` 
 * Batch processing mode related improvements:
   * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
     are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
@@ -27,7 +89,7 @@
     in table source and sink components in `Table` parameter
   * [#6950](https://github.com/TouK/nussknacker/pull/6950) Fix for testing mechanism for table sources: using full, model classpath instead of only flinkTable.jar
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
-* [#6695](https://github.com/TouK/nussknacker/pull/6695) [7032](https://github.com/TouK/nussknacker/pull/7032) From now on, arrays on UI are visible as lists but on a background they are stored as it is.
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) [#7032](https://github.com/TouK/nussknacker/pull/7032) From now on, arrays on UI are visible as lists but on a background they are stored as it is.
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
@@ -73,13 +135,29 @@
 * [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
 * [#7010](https://github.com/TouK/nussknacker/pull/7010) Dynamic access allowed via indexer operator (`[]`) on expressions typed as `Unknown`
 * [#7063](https://github.com/TouK/nussknacker/pull/7063) Introduce conversion extension methods in SpeL:
-  * is(className)/to(className)/toOrNull(className)
-  * isBoolean/toBoolean/toBooleanOrNull
-  * isLong/toLong/toLongOrNull
-  * isDouble/toDouble/toDoubleOrNull
-  * isBigDecimal/toBigDecimal/toBigDecimalOrNull
-  * isList/toList/toListOrNull
-  * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
+  * canBe(className)/to(className)/toOrNull(className)
+  * canBeBoolean/toBoolean/toBooleanOrNull
+  * canBeLong/toLong/toLongOrNull
+  * canBeDouble/toDouble/toDoubleOrNull
+  * canBeBigDecimal/toBigDecimal/toBigDecimalOrNull
+  * canBeList/toList/toListOrNull
+  * canBeMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
+* [#7106](https://github.com/TouK/nussknacker/pull/7106) Fix an issue where pressing the “Esc” key did not remove focus from input fields in dialogs, which prevented the dialog window from closing
+* [#7002](https://github.com/TouK/nussknacker/pull/7002) Resolve an issue with union nodes output expression when nodes were copied and pasted
+* [#6994](https://github.com/TouK/nussknacker/pull/6994) Fix styling issues for form checkboxes in Firefox
+* [#6721](https://github.com/TouK/nussknacker/pull/6721) Provide a popover to display additional information about count
+* [#7099](https://github.com/TouK/nussknacker/pull/7099) Provide an option to embedded video to the markdown
+* [#7102](https://github.com/TouK/nussknacker/pull/7102) Introduce a new UI to defining aggregations within nodes
+* [#7147](https://github.com/TouK/nussknacker/pull/7147) Fix redundant "ParameterName(...)" wrapper string in exported PDFs in nodes details 
+* [#7182](https://github.com/TouK/nussknacker/pull/7182) Provide an unique validation message to the scenario labels
+* [#7178](https://github.com/TouK/nussknacker/pull/7178) Remove autocompletion from markdown editors
+* [#7159](https://github.com/TouK/nussknacker/pull/7159) Fix running scenario tests with provided fragment input validation 
+* [#7193](https://github.com/TouK/nussknacker/pull/7193) Provide tooltips to the scenarios list and scenario details elements
+* [#7187](https://github.com/TouK/nussknacker/pull/7187) Fix "Failed to get node validation" when using literal lists that mixes different types of elements
+* [#7183](https://github.com/TouK/nussknacker/pull/7183) Hide categories from a scenarios list and more scenario details when only one category is available
+* [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
+* [#7190](https://github.com/TouK/nussknacker/pull/7190) Fix "Failed to get node validation" when opening fragment node details for referencing non-existing fragment 
+* [#7215](https://github.com/TouK/nussknacker/pull/7215) Change typing text to spinner during validation and provide delayed adding on enter until validation finishes in a scenario labels and fragment input
 
 ## 1.17
 
@@ -622,7 +700,7 @@
 * [#4254](https://github.com/TouK/nussknacker/pull/4254) Add simple spel expression suggestions endpoint to BE
 * [#4323](https://github.com/TouK/nussknacker/pull/4323) Improved code suggestions with Typer
 * [#4406](https://github.com/TouK/nussknacker/pull/4406) `backendCodeSuggestions` set to `true`, so by default Nussknacker will use new suggestion mechanism
-* [#4299](https://github.com/TouK/nussknacker/pull/4299)[4322](https://github.com/TouK/nussknacker/pull/4322) `StateStatus` is identified by its name.
+* [#4299](https://github.com/TouK/nussknacker/pull/4299)[#4322](https://github.com/TouK/nussknacker/pull/4322) `StateStatus` is identified by its name.
   `ProcessState` serialization uses this name as serialized state value. For compatibility reasons, it is still represented as a nested object with one `name` field.
 * [#4312](https://github.com/TouK/nussknacker/pull/4312) Fix for losing unsaved changes in designer after cancel/deploy
 * [#4332](https://github.com/TouK/nussknacker/pull/4332) Improvements: Don't fetch state for fragments at /api/processes/status
@@ -878,7 +956,7 @@
 * [#3264](https://github.com/TouK/nussknacker/pull/3264) Added support for generic functions
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
-* [#3071](https://github.com/TouK/nussknacker/pull/3071) [3379](https://github.com/TouK/nussknacker/pull/3379) More strict Avro schema validation: include optional fields validation,
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) [#3379](https://github.com/TouK/nussknacker/pull/3379) More strict Avro schema validation: include optional fields validation,
   handling some invalid cases like putting long to int field, strict union types validation, reduced number of validation modes to lax | strict.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id

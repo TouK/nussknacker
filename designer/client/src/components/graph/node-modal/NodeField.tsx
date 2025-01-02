@@ -3,7 +3,7 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError, UINodeType } from "../../../types";
+import { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { cx } from "@emotion/css";
 
@@ -14,7 +14,7 @@ type NodeFieldProps<N extends string, V> = {
     fieldName: N;
     fieldType: FieldType;
     isEditMode?: boolean;
-    node: UINodeType;
+    node: NodeOrPropertiesType;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;

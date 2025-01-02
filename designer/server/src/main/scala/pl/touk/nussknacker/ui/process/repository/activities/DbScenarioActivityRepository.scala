@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.repository.activities
 import cats.implicits.catsSyntaxEitherId
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
@@ -44,8 +45,9 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   def findActivities(
       scenarioId: ProcessId,
+      after: Option[Instant],
   ): DB[Seq[ScenarioActivity]] = {
-    doFindActivities(scenarioId).map(_.map(_._2))
+    doFindActivities(scenarioId, after).map(_.map(_._2))
   }
 
   def addActivity(
@@ -198,7 +200,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     for {
       attachmentEntities <- findAttachments(processId)
       attachments = attachmentEntities.map(toDto)
-      activities <- doFindActivities(processId)
+      activities <- doFindActivities(processId, after = None)
       comments = activities.flatMap { case (id, activity) => toComment(id, activity) }
     } yield Legacy.ProcessActivity(
       comments = comments.toList,
@@ -220,9 +222,11 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private def doFindActivities(
       scenarioId: ProcessId,
+      after: Option[Instant],
   ): DB[Seq[(Long, ScenarioActivity)]] = {
     scenarioActivityTable
       .filter(_.scenarioId === scenarioId)
+      .filterOpt(after)((table, after) => table.createdAt > Timestamp.from(after))
       // ScenarioActivity in domain represents a single, immutable event, so we interpret only finished operations as ScenarioActivities
       .filter { entity =>
         entity.state.isEmpty ||
@@ -292,8 +296,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         toComment(
           id,
           activity,
-          ScenarioComment
-            .WithContent(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
+          ScenarioComment.from(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
           None
         )
       case activity: ScenarioActivity.CommentAdded =>
@@ -306,8 +309,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         toComment(
           id,
           activity,
-          ScenarioComment.WithContent(
-            comment = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
+          ScenarioComment.from(
+            content = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -323,8 +326,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         toComment(
           id,
           activity,
-          ScenarioComment.WithContent(
-            comment = s"Migrations applied: ${activity.changes}",
+          ScenarioComment.from(
+            content = s"Migrations applied: ${activity.changes}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -434,11 +437,13 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
   private def doEditComment(comment: String)(
       entity: ScenarioActivityEntityData
   )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    val now = clock.instant()
     entity.copy(
       comment = Some(comment),
       lastModifiedByUserName = Some(user.username),
+      lastModifiedAt = Some(Timestamp.from(now)),
       additionalProperties = entity.additionalProperties.withProperty(
-        key = s"comment_replaced_by_${user.username}_at_${clock.instant()}",
+        key = s"comment_replaced_by_${user.username}_at_$now",
         value = entity.comment.getOrElse(""),
       )
     )
@@ -505,8 +510,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
-      case ScenarioComment.WithContent(comment, _, _) if comment.nonEmpty => Some(comment.value)
-      case _                                                              => None
+      case ScenarioComment.WithContent(comment, _, _) => Some(comment.content)
+      case ScenarioComment.WithoutContent(_, _)       => None
     }
   }
 
@@ -676,21 +681,11 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     for {
       lastModifiedByUserName <- entity.lastModifiedByUserName.toRight("Missing lastModifiedByUserName field")
       lastModifiedAt         <- entity.lastModifiedAt.toRight("Missing lastModifiedAt field")
-    } yield {
-      entity.comment match {
-        case Some(comment) if comment.nonEmpty =>
-          ScenarioComment.WithContent(
-            comment = comment,
-            lastModifiedByUserName = UserName(lastModifiedByUserName),
-            lastModifiedAt = lastModifiedAt.toInstant
-          )
-        case Some(_) | None =>
-          ScenarioComment.WithoutContent(
-            lastModifiedByUserName = UserName(lastModifiedByUserName),
-            lastModifiedAt = lastModifiedAt.toInstant
-          )
-      }
-    }
+    } yield ScenarioComment.from(
+      content = entity.comment.flatMap(Comment.from),
+      lastModifiedByUserName = UserName(lastModifiedByUserName),
+      lastModifiedAt = lastModifiedAt.toInstant
+    )
   }
 
   private def attachmentFromEntity(entity: ScenarioActivityEntityData): Either[String, ScenarioAttachment] = {

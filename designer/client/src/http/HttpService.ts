@@ -22,7 +22,12 @@ import {
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
-import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
+import {
+    ActivitiesResponse,
+    ActivityMetadataResponse,
+    ActivityType,
+    ActivityTypesRelatedToExecutions,
+} from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { BackendNotification } from "../containers/Notifications";
@@ -133,11 +138,6 @@ export interface PropertiesValidationRequest {
     additionalFields: ProcessAdditionalFields;
 }
 
-export interface CustomActionValidationRequest {
-    actionName: string;
-    params: Record<string, string>;
-}
-
 export interface ExpressionSuggestionRequest {
     expression: Expression;
     caretPosition2d: CaretPosition2d;
@@ -180,8 +180,9 @@ class HttpService {
         this.#notificationActions = na;
     }
 
-    loadBackendNotifications(): Promise<BackendNotification[]> {
-        return api.get<BackendNotification[]>("/notifications").then((d) => {
+    loadBackendNotifications(scenarioName: string | undefined): Promise<BackendNotification[]> {
+        const path = scenarioName !== undefined ? `/notifications?scenarioName=${scenarioName}` : `/notifications`;
+        return api.get<BackendNotification[]>(path).then((d) => {
             return d.data;
         });
     }
@@ -314,23 +315,23 @@ class HttpService {
         return promise;
     }
 
-    fetchProcessState(processName: ProcessName) {
-        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status`);
+    fetchProcessState(processName: ProcessName, processVersionId: number) {
+        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status?currentlyPresentedVersionId=${processVersionId}`);
         promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
     }
 
-    fetchProcessesDeployments(processName: string) {
+    fetchActivitiesRelatedToExecutions(processName: string) {
         return api
-            .get<
-                {
-                    performedAt: string;
-                    actionName: ActionName;
-                }[]
-            >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) =>
-                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
-            );
+            .get<{ activities: { date: string; type: ActivityType }[] }>(
+                `/processes/${encodeURIComponent(processName)}/activity/activities`,
+            )
+            .then((res) => {
+                return res.data.activities.filter(({ date, type }) =>
+                    Object.values(ActivityTypesRelatedToExecutions).includes(type as ActivityTypesRelatedToExecutions),
+                );
+            })
+            .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
     deploy(
@@ -359,14 +360,12 @@ class HttpService {
             });
     }
 
-    customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
+    runOffSchedule(processName: string, comment?: string) {
         const data = {
-            actionName: actionName,
             comment: comment,
-            params: params,
         };
         return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
+            .post(`/processManagement/runOffSchedule/${encodeURIComponent(processName)}`, data)
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
@@ -541,8 +540,13 @@ class HttpService {
 
     validateAdhocTestParameters(
         scenarioName: string,
-        validationRequest: TestAdhocValidationRequest,
+        sourceParameters: SourceWithParametersTest,
+        scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<ValidationData>> {
+        const validationRequest: TestAdhocValidationRequest = {
+            sourceParameters,
+            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+        };
         const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(
@@ -584,20 +588,6 @@ class HttpService {
             .catch((error) => {
                 this.#addError(
                     i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-                    error,
-                    true,
-                );
-                return;
-            });
-    }
-
-    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
-            .then((res) => res.data)
-            .catch((error) => {
-                this.#addError(
-                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
                     error,
                     true,
                 );
@@ -854,13 +844,7 @@ class HttpService {
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
-                expectedType: {
-                    value: {
-                        type: type,
-                        refClazzName,
-                        params: [],
-                    },
-                },
+                expectedType: { type: type, refClazzName, params: [] },
             })
             .catch((error) =>
                 Promise.reject(

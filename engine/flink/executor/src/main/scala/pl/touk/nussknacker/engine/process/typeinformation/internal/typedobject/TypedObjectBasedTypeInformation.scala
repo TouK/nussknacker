@@ -4,6 +4,7 @@ import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.IntermediateCompatibilityResult
 import org.apache.flink.api.common.typeutils.{
   CompositeTypeSerializerUtil,
   TypeSerializer,
@@ -11,7 +12,6 @@ import org.apache.flink.api.common.typeutils.{
   TypeSerializerSnapshot
 }
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedObjectBasedTypeInformation.BuildIntermediateSchemaCompatibilityResult
 
 import scala.reflect.ClassTag
 
@@ -55,15 +55,6 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
   override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
 
   def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
-}
-
-object TypedObjectBasedTypeInformation {
-
-  type BuildIntermediateSchemaCompatibilityResult = (
-      Array[TypeSerializer[_]],
-      Array[TypeSerializerSnapshot[_]]
-  ) => CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing]
-
 }
 
 //We use Array instead of List here, as we need access by index, which is faster for array
@@ -132,17 +123,13 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
 
   def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
 
-  def buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
 }
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {
 
-  protected var serializersSnapshots: Array[(String, TypeSerializerSnapshot[_])] = _
+  private val constructIntermediateCompatibilityResultMethodName = "constructIntermediateCompatibilityResult"
 
-  def this(serializers: Array[(String, TypeSerializerSnapshot[_])]) = {
-    this()
-    this.serializersSnapshots = serializers
-  }
+  protected var serializersSnapshots: Array[(String, TypeSerializerSnapshot[_])] = _
 
   override def getCurrentVersion: Int = 1
 
@@ -182,10 +169,10 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newKeys              = newSerializers.map(_._1)
       val commons              = currentKeys.intersect(newKeys)
 
-      val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
-      val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
+      val newSerializersToUse: Array[(String, TypeSerializer[_])] = newSerializers.filter(k => commons.contains(k._1))
+      val snapshotsToUse = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = buildIntermediateSchemaCompatibilityResult(
+      val fieldsCompatibility = constructIntermediateCompatibilityResultProxied(
         newSerializersToUse.map(_._2),
         snapshotsToUse.map(_._2)
       )
@@ -237,7 +224,33 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     }
   }
 
-  val buildIntermediateSchemaCompatibilityResult: BuildIntermediateSchemaCompatibilityResult
+  private def constructIntermediateCompatibilityResultProxied(
+      newNestedSerializers: Array[TypeSerializer[_]],
+      nestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
+  ): IntermediateCompatibilityResult[_] = {
+    // signature of CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult has been changed between flink 1.18/1.19
+    // Because of contract of serialization/deserialization of TypeSerializerSnapshot in can't be easily provided by TypeInformationDetection SPI mechanism
+    try {
+      val newMethod = classOf[CompositeTypeSerializerUtil].getMethod(
+        constructIntermediateCompatibilityResultMethodName,
+        classOf[Array[TypeSerializerSnapshot[_]]],
+        classOf[Array[TypeSerializerSnapshot[_]]]
+      )
+      newMethod
+        .invoke(null, newNestedSerializers.map(_.snapshotConfiguration()), nestedSerializerSnapshots)
+        .asInstanceOf[IntermediateCompatibilityResult[_]]
+    } catch {
+      case _: NoSuchMethodException =>
+        val oldMethod = classOf[CompositeTypeSerializerUtil].getMethod(
+          constructIntermediateCompatibilityResultMethodName,
+          classOf[Array[TypeSerializer[_]]],
+          classOf[Array[TypeSerializerSnapshot[_]]]
+        )
+        oldMethod
+          .invoke(null, newNestedSerializers, nestedSerializerSnapshots)
+          .asInstanceOf[IntermediateCompatibilityResult[_]]
+    }
+  }
 
   override def restoreSerializer(): TypeSerializer[T] = restoreSerializer(serializersSnapshots.map {
     case (k, snapshot) => (k, snapshot.restoreSerializer())

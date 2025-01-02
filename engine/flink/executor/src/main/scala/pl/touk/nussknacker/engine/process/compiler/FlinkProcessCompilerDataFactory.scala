@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -36,6 +36,7 @@ class FlinkProcessCompilerDataFactory(
     modelConfig: Config,
     namingStrategy: NamingStrategy,
     componentUseCase: ComponentUseCase,
+    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 ) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
@@ -47,6 +48,7 @@ class FlinkProcessCompilerDataFactory(
     modelData.modelConfig,
     modelData.namingStrategy,
     componentUseCase = ComponentUseCase.EngineRuntime,
+    modelData.additionalConfigsFromProvider
   )
 
   def prepareCompilerData(
@@ -119,12 +121,11 @@ class FlinkProcessCompilerDataFactory(
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
-      // additionalConfigsFromProvider aren't provided, as it's not needed to run the process on flink
       extractModelDefinition(
         userCodeClassLoader,
         modelDependencies,
         id => DesignerWideComponentId(id.toString),
-        Map.empty
+        configsFromProviderWithDictionaryEditor
       )
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
@@ -136,13 +137,18 @@ class FlinkProcessCompilerDataFactory(
       modelDefinitionWithTypes.modelDefinition.expressionConfig,
       modelDefinitionWithTypes.classDefinitions
     )
-    val adjustedDefinitions = adjustDefinitions(modelDefinitionWithTypes.modelDefinition, definitionContext)
+    val adjustedDefinitions = adjustDefinitions(
+      modelDefinitionWithTypes.modelDefinition,
+      definitionContext,
+      modelDefinitionWithTypes.classDefinitions.all
+    )
     (ModelDefinitionWithClasses(adjustedDefinitions), dictRegistry)
   }
 
   protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
-      definitionContext: ComponentDefinitionContext
+      definitionContext: ComponentDefinitionContext,
+      classDefinitions: Set[ClassDefinition]
   ): ModelDefinition = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {

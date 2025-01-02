@@ -85,9 +85,6 @@ export const darkModePalette: PaletteOptions = {
             Aggregate: {
                 fill: "#e892bd",
             },
-            Properties: {
-                fill: "#46ca94",
-            },
             CustomNode: {
                 fill: "#19A49D",
             },
@@ -103,9 +100,9 @@ export const darkModePalette: PaletteOptions = {
                 backgroundColor: "#1ba1af",
                 color: "white",
             },
-            customAction: {
-                backgroundColor: "white",
-                color: "black",
+            editProperties: {
+                backgroundColor: "#46ca94",
+                color: "white",
             },
             default: {
                 backgroundColor: "#2D8E54",

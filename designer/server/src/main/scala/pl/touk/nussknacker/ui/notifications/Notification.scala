@@ -3,9 +3,15 @@ package pl.touk.nussknacker.ui.notifications
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentRelatedActivity,
+  ProcessActionState,
+  ScenarioActionName,
+  ScenarioActivity
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
+import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
@@ -48,7 +54,7 @@ object Notification {
       Some(name),
       s"${displayableActionName(actionName)} finished",
       None,
-      List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
+      List(DataToRefresh.activity, DataToRefresh.state)
     )
   }
 
@@ -64,7 +70,25 @@ object Notification {
       Some(name),
       s"${displayableActionName(actionName)} execution finished",
       None,
-      List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
+      List(DataToRefresh.activity, DataToRefresh.state)
+    )
+  }
+
+  def scenarioStateUpdateNotification(
+      activity: ScenarioActivity,
+      name: ProcessName
+  ): Notification = {
+    val toRefresh = activity match {
+      case _: DeploymentRelatedActivity => List(DataToRefresh.activity, DataToRefresh.state)
+      case _                            => List(DataToRefresh.activity)
+    }
+    Notification(
+      id = s"${activity.scenarioActivityId.value.toString}_${activity.lastModifiedAt.toEpochMilli}",
+      scenarioName = Some(name),
+      message = activity.activityType.entryName,
+      // We don't want to display this notification, because it causes the activities toolbar to refresh
+      `type` = None,
+      toRefresh = toRefresh
     )
   }
 
@@ -92,5 +116,5 @@ object DataToRefresh extends Enumeration {
   implicit val typeDecoder: Decoder[DataToRefresh.Value] = Decoder.decodeEnumeration(DataToRefresh)
 
   type DataToRefresh = Value
-  val versions, activity, state = Value
+  val activity, state = Value
 }

@@ -1,4 +1,8 @@
 taskmanager.numberOfTaskSlots: 8
+# Nu requires a little bit more metaspace than Flink default allocate based on process size
+taskmanager.memory.process.size: 1500m
+taskmanager.memory.jvm-metaspace.size: 400m
+
 state.backend.type: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
 state.savepoints.dir: file:///opt/flink/data/savepoints

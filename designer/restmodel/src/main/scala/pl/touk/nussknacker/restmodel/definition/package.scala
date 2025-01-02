@@ -5,9 +5,7 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -26,7 +24,6 @@ package object definition {
       classes: List[TypingResult],
       scenarioProperties: UiScenarioProperties,
       edgesForNodes: List[UINodeEdges],
-      customActions: List[UICustomAction]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
@@ -50,8 +47,10 @@ package object definition {
       branchParam: Boolean,
       hintText: Option[String],
       label: String,
-      // This attribute is used only by external project
-      requiredParam: Boolean,
+      // This attribute is in use only by the external project and was introduced in the 1.18 version
+      // The option is for decoder backward compatibility to decode responses from older versions
+      // The option can be removed in future releases
+      requiredParam: Option[Boolean],
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
@@ -138,25 +137,5 @@ package object definition {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
       deriveConfiguredDecoder[UIParameter]
   }
-
-  object UICustomAction {
-
-    def apply(action: CustomActionDefinition): UICustomAction = UICustomAction(
-      name = action.actionName,
-      allowedStateStatusNames = action.allowedStateStatusNames,
-      icon = action.icon,
-      parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
-    )
-
-  }
-
-  @JsonCodec final case class UICustomAction(
-      name: ScenarioActionName,
-      allowedStateStatusNames: List[String],
-      icon: Option[URI],
-      parameters: List[UICustomActionParameter]
-  )
-
-  @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
 }

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.exception
 
-import org.apache.flink.api.common.functions.{RichFunction, RuntimeContext}
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RichFunction, RuntimeContext}
 
 /**
   * Helper for using exception handler.
@@ -15,7 +14,7 @@ trait WithExceptionHandler {
 
   protected var exceptionHandler: ExceptionHandler = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
   }
 

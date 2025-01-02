@@ -72,21 +72,30 @@ class PeriodicDeploymentManagerTest
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
+      maxFetchedPeriodicScenarioActivities = None,
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone(),
-      new ProcessingTypeActionServiceStub
+      new ProcessingTypeActionServiceStub,
+      Map.empty
     )
 
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,
+      repository = repository,
       schedulePropertyExtractor = CronSchedulePropertyExtractor(),
-      EmptyPeriodicCustomActionsProvider,
       toClose = () => ()
     )
 
-    def getAllowedActions(statusDetails: StatusDetails): List[ScenarioActionName] = {
-      periodicDeploymentManager.processStateDefinitionManager.processState(statusDetails).allowedActions
+    def getAllowedActions(
+        statusDetails: StatusDetails,
+        latestVersionId: VersionId,
+        deployedVersionId: Option[VersionId],
+        currentlyPresentedVersionId: Option[VersionId],
+    ): List[ScenarioActionName] = {
+      periodicDeploymentManager.processStateDefinitionManager
+        .processState(statusDetails, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
+        .allowedActions
     }
 
     def getMergedStatusDetails: StatusDetails =
@@ -123,9 +132,18 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel,
+      ScenarioActionName.Deploy
+    )
     f.periodicDeploymentManager
-      .getProcessState(idWithName, None)
+      .getProcessState(
+        idWithName,
+        None,
+        processVersion.versionId,
+        Some(processVersion.versionId),
+        Some(processVersion.versionId)
+      )
       .futureValue
       .value
       .status shouldBe a[ScheduledStatus]
@@ -134,11 +152,14 @@ class PeriodicDeploymentManagerTest
   test("getProcessState - should be scheduled when scenario scheduled and job finished on Flink") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel,
+      ScenarioActionName.Deploy
+    )
   }
 
   test("getProcessState - should be finished when scenario finished and job finished on Flink") {
@@ -149,10 +170,14 @@ class PeriodicDeploymentManagerTest
       PeriodicProcessDeploymentStatus.Finished,
       LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
     )
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
     f.periodicProcessService.deactivate(processName).futureValue
 
-    val state = f.periodicDeploymentManager.getProcessState(idWithName, None).futureValue.value
+    val state =
+      f.periodicDeploymentManager
+        .getProcessState(idWithName, None, processVersion.versionId, None, Some(processVersion.versionId))
+        .futureValue
+        .value
 
     state.status shouldBe SimpleStateStatus.Finished
     state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
@@ -161,21 +186,25 @@ class PeriodicDeploymentManagerTest
   test("getProcessState - should be running when scenario deployed and job running on Flink") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Running, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe SimpleStateStatus.Running
-    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("getProcessState - should be waiting for reschedule if job finished on Flink but scenario is still deployed") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe WaitingForScheduleStatus
-    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("getProcessState - should be failed after unsuccessful deployment") {
@@ -184,7 +213,9 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("deploy - should fail for invalid periodic property") {
@@ -265,20 +296,27 @@ class PeriodicDeploymentManagerTest
   test("should get status of failed job") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("should redeploy failed scenario") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
     val statusDetailsBeforeRedeploy = f.getMergedStatusDetails
     statusDetailsBeforeRedeploy.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetailsBeforeRedeploy) shouldBe List(
+    f.getAllowedActions(
+      statusDetailsBeforeRedeploy,
+      processVersion.versionId,
+      None,
+      Some(processVersion.versionId)
+    ) shouldBe List(
       ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
@@ -301,7 +339,15 @@ class PeriodicDeploymentManagerTest
     val statusDetailsAfterRedeploy = f.getMergedStatusDetails
     // Previous job is still visible as Failed.
     statusDetailsAfterRedeploy.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetailsAfterRedeploy) shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
+    f.getAllowedActions(
+      statusDetailsAfterRedeploy,
+      processVersion.versionId,
+      None,
+      Some(processVersion.versionId)
+    ) shouldBe List(
+      ScenarioActionName.Cancel,
+      ScenarioActionName.Deploy
+    )
   }
 
   test("should redeploy scheduled scenario") {
@@ -329,9 +375,9 @@ class PeriodicDeploymentManagerTest
   test("should redeploy running scenario") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Running, Some(deploymentId))
     val statusDetails = f.getMergedStatusDetails
-    f.getAllowedActions(statusDetails) shouldBe List(
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
@@ -356,9 +402,9 @@ class PeriodicDeploymentManagerTest
   test("should redeploy finished scenario") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
     val statusDetails = f.getMergedStatusDetails
-    f.getAllowedActions(statusDetails) shouldBe List(
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
@@ -378,35 +424,12 @@ class PeriodicDeploymentManagerTest
       PeriodicProcessDeploymentStatus.Finished,
       PeriodicProcessDeploymentStatus.Scheduled
     )
-
-    val activities = f.periodicDeploymentManager match {
-      case manager: ManagerSpecificScenarioActivitiesStoredByManager =>
-        manager.managerSpecificScenarioActivities(idWithName).futureValue
-      case _ =>
-        List.empty
-    }
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = firstActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
-        scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-    )
   }
 
   test("should cancel failed job after RescheduleActor handles finished") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     // this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
@@ -421,36 +444,12 @@ class PeriodicDeploymentManagerTest
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
 
     f.getMergedStatusDetails.status shouldEqual SimpleStateStatus.Canceled
-
-    val activities = f.periodicDeploymentManager match {
-      case manager: ManagerSpecificScenarioActivitiesStoredByManager =>
-        manager.managerSpecificScenarioActivities(idWithName).futureValue
-      case _ =>
-        List.empty
-    }
-    val headActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = headActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = headActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = headActivity.dateFinished,
-        scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
-        createdAt = headActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      )
-    )
-
   }
 
   test("should reschedule failed job after RescheduleActor handles finished when configured") {
     val f            = new Fixture(executionConfig = PeriodicExecutionConfig(rescheduleOnFailure = true))
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     // this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
@@ -466,7 +465,7 @@ class PeriodicDeploymentManagerTest
   test("should cancel failed job before RescheduleActor handles finished") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     f.periodicDeploymentManager.processCommand(DMCancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
@@ -478,13 +477,13 @@ class PeriodicDeploymentManagerTest
   test("should cancel failed scenario after disappeared from Flink console") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     // this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
 
     // after some time Flink stops returning job status
-    f.delegateDeploymentManagerStub.jobStatus = None
+    f.delegateDeploymentManagerStub.jobStatus = Map.empty
 
     f.getMergedStatusDetails.status shouldEqual ProblemStateStatus.Failed
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed

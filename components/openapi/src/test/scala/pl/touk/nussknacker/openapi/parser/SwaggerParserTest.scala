@@ -107,7 +107,7 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
     errorsFor("noResponseType") shouldBe List("No response with application/json or */* media types found")
     errorsFor("unhandledSecurity") shouldBe List(
-      "No security requirement can be met because: there is no security config for scheme name \"headerConfig\""
+      "No security requirement can be met because: there is no security secret configured for scheme name \"headerConfig\""
     )
     errorsFor("unhandledFormat") shouldBe List("Type 'number' in format 'decimal' is not supported")
 

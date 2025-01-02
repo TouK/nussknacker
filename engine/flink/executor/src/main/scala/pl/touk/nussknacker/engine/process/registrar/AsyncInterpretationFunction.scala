@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.OpenContext
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
@@ -35,8 +35,8 @@ private[registrar] class AsyncInterpretationFunction(
 
   private var serviceExecutionContext: ServiceExecutionContext = _
 
-  override def open(parameters: Configuration): Unit = {
-    super.open(parameters)
+  override def open(openContext: OpenContext): Unit = {
+    super.open(openContext)
 
     getRuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent(
       "closeAsyncExecutionContext",

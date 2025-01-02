@@ -12,3 +12,4 @@ export * from "./ui/layout";
 export * from "./zoom";
 export * from "./nodeDetails";
 export * from "./loadProcessToolbarsConfiguration";
+export * from "./editProperties";

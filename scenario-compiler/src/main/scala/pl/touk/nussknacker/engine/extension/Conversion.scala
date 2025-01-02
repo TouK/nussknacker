@@ -3,48 +3,44 @@ package pl.touk.nussknacker.engine.extension
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import org.springframework.util.NumberUtils
-import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition, StaticMethodDefinition}
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
+import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
 
 import java.lang.{
   Boolean => JBoolean,
   Byte => JByte,
+  Double => JDouble,
   Float => JFloat,
   Integer => JInteger,
+  Long => JLong,
   Number => JNumber,
   Short => JShort
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.util.{Collection => JCollection}
+import scala.reflect.{ClassTag, classTag}
 import scala.util.{Success, Try}
 
-trait Conversion {
-  type ResultType >: Null <: AnyRef
-  val resultTypeClass: Class[ResultType]
+abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
+  private[extension] val numberClass  = classOf[JNumber]
+  private[extension] val stringClass  = classOf[String]
+  private[extension] val unknownClass = classOf[Object]
 
-  def convertEither(value: Any): Either[Throwable, ResultType]
+  val resultTypeClass: Class[T]  = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+  val typingResult: TypingResult = Typed.typedClass(resultTypeClass)
+  val typingFunction: TypingResult => ValidatedNel[GenericFunctionTypingError, TypingResult] =
+    _ => typingResult.validNel
+
+  def convertEither(value: Any): Either[Throwable, T]
   def appliesToConversion(clazz: Class[_]): Boolean
-
   def canConvert(value: Any): JBoolean = convertEither(value).isRight
-
-  def convert(value: Any): ResultType = convertEither(value) match {
-    case Right(value) => value
-    case Left(ex)     => throw ex
-  }
-
-  def convertOrNull(value: Any): ResultType = convertEither(value) match {
-    case Right(value) => value
-    case Left(_)      => null
-  }
-
-  def typingResult: TypingResult = Typed.typedClass(resultTypeClass)
-  def typingFunction(invocationTarget: TypingResult): ValidatedNel[GenericFunctionTypingError, TypingResult] =
-    typingResult.validNel
 }
 
-object Conversion {
+abstract class ToNumericConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {
+  override def appliesToConversion(clazz: Class[_]): Boolean =
+    clazz != resultTypeClass && (clazz.isAOrChildOf(numberClass) || clazz == stringClass || clazz == unknownClass)
 
   private[extension] def toNumberEither(stringOrNumber: Any): Either[Throwable, JNumber] = stringOrNumber match {
     case s: CharSequence =>
@@ -69,136 +65,132 @@ object Conversion {
 
 }
 
-trait ConversionExt extends ExtensionMethodsHandler with Conversion {
-  private lazy val definitionsByName = definitions().groupBy(_.name)
+object ToBigDecimalConversion extends ToNumericConversion[JBigDecimal] {
 
-  def definitions(): List[MethodDefinition] = {
-    val targetTypeSimpleName = resultTypeClass.simpleName()
-    List(
-      definition(
-        Typed.typedClass[JBoolean],
-        s"is$targetTypeSimpleName",
-        Some(s"Check whether the value can be convert to a $targetTypeSimpleName")
-      ),
-      definition(
-        typingResult,
-        s"to$targetTypeSimpleName",
-        Some(s"Convert the value to $targetTypeSimpleName or throw exception in case of failure")
-      ),
-      definition(
-        typingResult,
-        s"to${targetTypeSimpleName}OrNull",
-        Some(s"Convert the value to $targetTypeSimpleName or null in case of failure")
-      ),
-    )
+  override def convertEither(value: Any): Either[Throwable, JBigDecimal] =
+    value match {
+      case v: JBigDecimal => Right(BigDecimalScaleEnsurer.ensureBigDecimalScale(v))
+      case v: JBigInteger => Right(BigDecimalScaleEnsurer.ensureBigDecimalScale(new JBigDecimal(v)))
+      case v: Number      => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
+      case v: String =>
+        Try({
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(new JBigDecimal(v))
+        }).toEither
+      case _ => Left(new IllegalArgumentException(s"Cannot convert: $value to BigDecimal"))
+    }
+
+}
+
+object ToBooleanConversion extends Conversion[JBoolean] {
+  private val cannotConvertException = (value: Any) =>
+    new IllegalArgumentException(s"Cannot convert: $value to Boolean")
+  private val allowedClassesForConversion: Set[Class[_]] = Set(stringClass, unknownClass)
+
+  override def appliesToConversion(clazz: Class[_]): Boolean = allowedClassesForConversion.contains(clazz)
+
+  override def convertEither(value: Any): Either[Throwable, JBoolean] = value match {
+    case b: JBoolean => Right(b)
+    case s: String   => stringToBoolean(s).toRight(cannotConvertException(value))
+    case _           => Left(cannotConvertException(value))
   }
 
-  // Conversion extension should be available for every class in a runtime
-  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
-
-  override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
-    if (appliesToConversion(clazz)) {
-      definitionsByName
+  private def stringToBoolean(value: String): Option[JBoolean] =
+    if ("true".equalsIgnoreCase(value)) {
+      Some(true)
+    } else if ("false".equalsIgnoreCase(value)) {
+      Some(false)
     } else {
-      Map.empty
+      None
+    }
+
+}
+
+object ToDoubleConversion extends ToNumericConversion[JDouble] {
+
+  override def convertEither(value: Any): Either[Throwable, JDouble] = {
+    value match {
+      case v: Number => Right(NumberUtils.convertNumberToTargetClass(v, resultTypeClass))
+      case v: String => toNumberEither(v).flatMap(convertEither)
+      case _         => Left(new IllegalArgumentException(s"Cannot convert: $value to Double"))
     }
   }
 
-  private[extension] def definition(result: TypingResult, methodName: String, desc: Option[String]) =
-    StaticMethodDefinition(
-      signature = MethodTypeInfo.noArgTypeInfo(result),
-      name = methodName,
-      description = desc
-    )
+}
+
+object ToLongConversion extends ToNumericConversion[JLong] {
+
+  override def convertEither(value: Any): Either[Throwable, JLong] = {
+    value match {
+      case v: Number => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
+      case v: String => toNumberEither(v).flatMap(convertEither)
+      case _         => Left(new IllegalArgumentException(s"Cannot convert: $value to Long"))
+    }
+  }
 
 }
 
-object ToStringConversion extends Conversion {
-  override type ResultType = String
-  override val resultTypeClass: Class[ResultType]                   = classOf[String]
-  override def appliesToConversion(clazz: Class[_]): Boolean        = clazz == classOf[Object]
+object ToStringConversion extends Conversion[String] {
+  override def appliesToConversion(clazz: Class[_]): Boolean        = clazz == unknownClass
   override def convertEither(value: Any): Either[Throwable, String] = Right(value.toString)
 }
 
-trait ToCollectionConversion extends Conversion {
-  private val unknownClass    = classOf[Object]
-  private val collectionClass = classOf[JCollection[_]]
-
-  override def appliesToConversion(clazz: Class[_]): Boolean =
-    clazz != resultTypeClass && (clazz.isAOrChildOf(collectionClass) || clazz == unknownClass || clazz.isArray)
-}
-
-trait ToNumericConversion extends Conversion {
-  private val numberClass  = classOf[JNumber]
-  private val stringClass  = classOf[String]
-  private val unknownClass = classOf[Object]
-
-  override def appliesToConversion(clazz: Class[_]): Boolean =
-    clazz != resultTypeClass && (clazz.isAOrChildOf(numberClass) || clazz == stringClass || clazz == unknownClass)
-}
-
-object ToByteConversion extends ToNumericConversion {
-  override type ResultType = JByte
-  override val resultTypeClass: Class[JByte] = classOf[JByte]
+object ToByteConversion extends ToNumericConversion[JByte] {
 
   override def convertEither(value: Any): Either[Throwable, JByte] = value match {
     case v: JByte   => Right(v)
     case v: JNumber => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
-    case v: String  => Conversion.toNumberEither(v).flatMap(convertEither)
+    case v: String  => toNumberEither(v).flatMap(convertEither)
     case _          => Left(new IllegalArgumentException(s"Cannot convert: $value to Byte"))
   }
 
 }
 
-object ToShortConversion extends ToNumericConversion {
-  override type ResultType = JShort
-  override val resultTypeClass: Class[JShort] = classOf[JShort]
+object ToShortConversion extends ToNumericConversion[JShort] {
 
   override def convertEither(value: Any): Either[Throwable, JShort] = value match {
     case v: JShort  => Right(v)
     case v: JNumber => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
-    case v: String  => Conversion.toNumberEither(v).flatMap(convertEither)
+    case v: String  => toNumberEither(v).flatMap(convertEither)
     case _          => Left(new IllegalArgumentException(s"Cannot convert: $value to Short"))
   }
 
 }
 
-object ToIntegerConversion extends ToNumericConversion {
-  override type ResultType = JInteger
-  override val resultTypeClass: Class[JInteger] = classOf[JInteger]
+object ToIntegerConversion extends ToNumericConversion[JInteger] {
 
   override def convertEither(value: Any): Either[Throwable, JInteger] = value match {
     case v: JInteger => Right(v)
     case v: JNumber  => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
-    case v: String   => Conversion.toNumberEither(v).flatMap(convertEither)
+    case v: String   => toNumberEither(v).flatMap(convertEither)
     case _           => Left(new IllegalArgumentException(s"Cannot convert: $value to Integer"))
   }
 
 }
 
-object ToFloatConversion extends ToNumericConversion {
-  override type ResultType = JFloat
-  override val resultTypeClass: Class[JFloat] = classOf[JFloat]
+object ToFloatConversion extends ToNumericConversion[JFloat] {
 
   override def convertEither(value: Any): Either[Throwable, JFloat] = value match {
     case v: JFloat  => Right(v)
     case v: JNumber => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
-    case v: String  => Conversion.toNumberEither(v).flatMap(convertEither)
+    case v: String  => toNumberEither(v).flatMap(convertEither)
     case _          => Left(new IllegalArgumentException(s"Cannot convert: $value to Float"))
   }
 
 }
 
-object ToBigIntegerConversion extends ToNumericConversion {
-  override type ResultType = JBigInteger
-  override val resultTypeClass: Class[JBigInteger] = classOf[JBigInteger]
+object ToBigIntegerConversion extends ToNumericConversion[JBigInteger] {
 
   override def convertEither(value: Any): Either[Throwable, JBigInteger] = value match {
     case v: JBigInteger => Right(v)
     case v: JBigDecimal => Right(v.toBigInteger)
     case v: JNumber     => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
-    case v: String      => Conversion.toNumberEither(v).flatMap(convertEither)
+    case v: String      => toNumberEither(v).flatMap(convertEither)
     case _              => Left(new IllegalArgumentException(s"Cannot convert: $value to BigInteger"))
   }
 
+}
+
+final class FromStringConversion[T >: Null <: AnyRef: ClassTag](convert: String => T) extends Conversion[T] {
+  override def convertEither(value: Any): Either[Throwable, T] = Try(convert(value.asInstanceOf[String])).toEither
+  override def appliesToConversion(clazz: Class[_]): Boolean   = clazz == stringClass || clazz == unknownClass
 }

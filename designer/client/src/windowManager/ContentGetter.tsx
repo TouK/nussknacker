@@ -8,6 +8,7 @@ import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
 import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
+import RemoteModuleDialog from "../components/RemoteModuleDialog";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -18,9 +19,6 @@ const DescriptionDialog = loadable(() => import("../components/graph/node-modal/
 });
 const CountsDialog = loadable(() => import("../components/modals/CalculateCounts"), { fallback: <LoaderSpinner show /> });
 const CompareVersionsDialog = loadable(() => import("../components/modals/CompareVersionsDialog"), {
-    fallback: <LoaderSpinner show />,
-});
-const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const AdhocTestingDialog = loadable(() => import("../components/modals/AdhocTesting/AdhocTestingDialog"), {
@@ -53,7 +51,11 @@ const AddCommentDialog = loadable(() => import("../components/modals/AddCommentD
     fallback: <LoaderSpinner show />,
 });
 
-const ModifyExistingCommentDialog = loadable(() => import("../components/modals/ModifyExistingCommentDialog"), {
+const ModifyActivityCommentDialog = loadable(() => import("../components/modals/ModifyActivityCommentDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
+const PropertiesDialog = loadable(() => import("../components/modals/PropertiesDialog"), {
     fallback: <LoaderSpinner show />,
 });
 
@@ -75,8 +77,6 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <GenerateDataAndTestDialog {...props} />;
         case WindowKind.compareVersions:
             return <CompareVersionsDialog {...props} />;
-        case WindowKind.customAction:
-            return <CustomActionDialog {...props} />;
         case WindowKind.adhocTesting:
             return <AdhocTestingDialog {...props} />;
         case WindowKind.confirm:
@@ -93,14 +93,18 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <DescriptionDialog {...props} />;
         case WindowKind.survey:
             return <FrameDialog {...props} />;
+        case WindowKind.remote:
+            return <RemoteModuleDialog {...props} />;
         case WindowKind.scenarioDetails:
             return <ScenarioDetailsDialog {...props} />;
         case WindowKind.addComment:
             return <AddCommentDialog {...props} />;
-        case WindowKind.modifyComment:
-            return <ModifyExistingCommentDialog {...props} />;
+        case WindowKind.modifyActivityComment:
+            return <ModifyActivityCommentDialog {...props} />;
         case WindowKind.addAttachment:
             return <AddAttachmentDialog {...props} />;
+        case WindowKind.editProperties:
+            return <PropertiesDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>

@@ -6,7 +6,10 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
-import pl.touk.nussknacker.engine.schemedkafka.{AllTopicsSelectionStrategy, TopicPatternSelectionStrategy}
+import pl.touk.nussknacker.engine.schemedkafka.{
+  TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
+  TopicsWithExistingSubjectSelectionStrategy
+}
 
 import java.util.regex.Pattern
 
@@ -21,8 +24,8 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   private lazy val confluentClient = schemaRegistryClientFactory.create(kafkaConfig)
 
   test("all topic strategy test") {
-    val strategy = new AllTopicsSelectionStrategy()
-    strategy.getTopics(confluentClient).toList.map(_.toSet) shouldBe List(
+    val strategy = new TopicsWithExistingSubjectSelectionStrategy()
+    strategy.getTopics(confluentClient, kafkaConfig).toList.map(_.toSet) shouldBe List(
       Set(
         RecordTopic,
         RecordTopicWithKey,
@@ -37,8 +40,10 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("topic filtering strategy test") {
-    val strategy = new TopicPatternSelectionStrategy(Pattern.compile(".*Record.*"))
-    strategy.getTopics(confluentClient).toList shouldBe List(List(ArrayOfRecordsTopic, RecordTopic, RecordTopicWithKey))
+    val strategy = new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile(".*Record.*"))
+    strategy.getTopics(confluentClient, kafkaConfig).toList shouldBe List(
+      List(ArrayOfRecordsTopic, RecordTopic, RecordTopicWithKey)
+    )
   }
 
   test("show how to override topic selection strategy") {
@@ -48,7 +53,8 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       testModelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     ) {
-      override def topicSelectionStrategy = new TopicPatternSelectionStrategy(Pattern.compile("test-.*"))
+      override def topicSelectionStrategy =
+        new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile("test-.*"))
     }
   }
 

@@ -187,20 +187,21 @@ object PrettyValidationErrors {
         )
       case UnsupportedFixedValuesType(paramName, typ, _) =>
         node(
-          message = s"Fixed values list can only be be provided for type String or Boolean, found: $typ",
+          message = s"Fixed values list can only be be provided for type String, Integer, Long or Boolean, found: $typ",
           description = "Please check component definition",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case UnsupportedDictParameterEditorType(paramName, typ, _) =>
         node(
-          s"Dictionary parameter editor can only be used for parameters of type String, Long or Boolean, found: $typ",
-          "Please check component definition",
+          message =
+            s"Dictionary parameter editor can only be used for parameters of type String, Integer, Long or Boolean, found: $typ",
+          description = "Please check component definition",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
-      case RequireValueFromEmptyFixedList(paramName, _) =>
+      case EmptyFixedListForRequiredField(paramName, _) =>
         node(
-          s"Required parameter '${paramName.value}' cannot be a member of an empty fixed list",
-          description = "Please check component definition",
+          message = s"Non-empty fixed list of values have to be declared for required parameter",
+          description = "Please add a value to the list of possible values",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>

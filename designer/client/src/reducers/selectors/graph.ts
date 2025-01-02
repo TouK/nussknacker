@@ -56,11 +56,16 @@ export const isDeployedVersion = createSelector(
     [getProcessVersionId, createSelector(getScenario, (scenario) => scenario?.lastDeployedAction?.processVersionId)],
     (visibleVersion, deployedVersion) => visibleVersion === deployedVersion,
 );
+export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
+export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));
+export const isRunOffSchedulePossible = createSelector(
+    [hasError, getProcessState, isFragment],
+    (error, state, fragment) => !fragment && !error && ProcessStateUtils.canRunOffSchedule(state),
+);
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
     (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
 );
-export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isArchivePossible = createSelector(
     [getProcessState, isFragment],
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),

@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -125,10 +124,16 @@ class FlinkKafkaSource[T](
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): T = {
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
+    val removedValue = if (unflattenedParams.size == 1) {
+      unflattenedParams.head match {
+        case ("Value", inner) => inner
+        case _                => unflattenedParams
+      }
+    } else unflattenedParams
     deserializeTestData(
       formatter.parseRecord(
         topics.head,
-        testParametersInfo.createTestRecord(unflattenedParams)
+        testParametersInfo.createTestRecord(removedValue)
       )
     )
   }
@@ -160,9 +165,9 @@ class FlinkKafkaConsumerHandlingExceptions[T](
 
   protected var exceptionPurposeContextIdGenerator: ContextIdGenerator = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     patchRestoredState()
-    super.open(parameters)
+    super.open(openContext)
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
     exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
     deserializationSchema.setExceptionHandlingData(exceptionHandler, exceptionPurposeContextIdGenerator, nodeId)

@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.common.typeutils.base.array.StringArraySerializer
 import org.apache.flink.api.common.typeutils.base.{
@@ -23,10 +23,12 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.CustomTypedObject
 
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.jdk.CollectionConverters._
 
 @silent("deprecated")
@@ -216,6 +218,26 @@ class TypingResultAwareTypeInformationDetectionSpec
     oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isCompatibleAfterMigration shouldBe true
   }
 
+  test("return type info for LocalDate, LocalTime and LocalDateTime even if type info registration is disabled") {
+    withFlinkTypeInfoRegistrationDisabled {
+      TypeInformationDetection.instance.forClass[LocalDate] shouldBe Types.LOCAL_DATE
+      TypeInformationDetection.instance.forClass[LocalTime] shouldBe Types.LOCAL_TIME
+      TypeInformationDetection.instance.forClass[LocalDateTime] shouldBe Types.LOCAL_DATE_TIME
+    }
+  }
+
+  private def withFlinkTypeInfoRegistrationDisabled[T](f: => T): T = {
+    val stateBeforeChange = FlinkTypeInfoRegistrar.isFlinkTypeInfoRegistrationEnabled
+    FlinkTypeInfoRegistrar.disableFlinkTypeInfoRegistration()
+    try {
+      f
+    } finally {
+      if (stateBeforeChange) {
+        FlinkTypeInfoRegistrar.enableFlinkTypeInfoRegistration()
+      }
+    }
+  }
+
   // We have to compare it this way because context can contains arrays
   private def checkContextAreSame(givenContext: Context, expectedContext: Context): Unit = {
     givenContext.id shouldEqual expectedContext.id
@@ -242,20 +264,17 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   private def assertNested(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_] => Assertion)*): Unit = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) {
-      case TypedScalaMapSerializer(array, _) =>
-        array.zipAll(nested.toList, null, null).foreach {
-          case ((name, serializer), (expectedName, expectedSerializer)) =>
-            name shouldBe expectedName
-            expectedSerializer(serializer)
-        }
+    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
+      array.zipAll(nested.toList, null, null).foreach { case ((name, serializer), (expectedName, expectedSerializer)) =>
+        name shouldBe expectedName
+        expectedSerializer(serializer)
+      }
     }
   }
 
   private def assertMapSerializers(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_])*) = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) {
-      case TypedScalaMapSerializer(array, _) =>
-        array.toList shouldBe nested.toList
+    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
+      array.toList shouldBe nested.toList
     }
   }
 

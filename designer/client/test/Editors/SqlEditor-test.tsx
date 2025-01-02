@@ -20,7 +20,6 @@ const store = mockStore({
             componentsConfig: {},
             additionalPropertiesConfig: {},
             edgesForNodes: [],
-            customActions: [],
         },
     },
     graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },

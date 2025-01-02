@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.api.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichStringList
@@ -38,8 +39,14 @@ trait TypeInformationDetection extends Serializable {
     forClass(klass)
   }
 
-  def forClass[T](klass: Class[T]): TypeInformation[T] =
-    forType[T](Typed.typedClass(klass))
+  def forClass[T](klass: Class[T]): TypeInformation[T] = {
+    // Typed.typedClass doesn't support Any
+    if (klass == classOf[Any]) {
+      Types.GENERIC(klass)
+    } else {
+      forType[T](Typed.typedClass(klass))
+    }
+  }
 
   def forType[T](typingResult: TypingResult): TypeInformation[T]
 
@@ -52,7 +59,7 @@ object TypeInformationDetection {
   // We use SPI to provide implementation of TypeInformationDetection because we don't want to make
   // implementation classes available in flink-components-api module.
   val instance: TypeInformationDetection = {
-    FlinkTypeInfoRegistrar.ensureBaseTypesAreRegistered()
+    FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
 
     val classloader = Thread.currentThread().getContextClassLoader
     ServiceLoader

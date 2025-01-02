@@ -9,6 +9,8 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{
   ComponentUiConfigMode,
@@ -113,7 +115,6 @@ class DefinitionsService(
         }
       },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
-      customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
   }
 
@@ -162,7 +163,7 @@ object DefinitionsService {
   def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(
       name = parameter.name.value,
-      typ = parameter.typ,
+      typ = toUIType(parameter.typ),
       editor = parameter.finalEditor,
       defaultValue = parameter.finalDefaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
@@ -170,8 +171,12 @@ object DefinitionsService {
       branchParam = parameter.branchParam,
       hintText = parameter.hintText,
       label = parameter.label,
-      requiredParam = !parameter.isOptional,
+      requiredParam = Some(!parameter.isOptional),
     )
+  }
+
+  private def toUIType(typingResult: TypingResult): TypingResult = {
+    if (typingResult == Typed[TemplateEvaluationResult]) Typed[String] else typingResult
   }
 
   def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {

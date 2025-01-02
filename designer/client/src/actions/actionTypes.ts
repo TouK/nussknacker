@@ -10,8 +10,6 @@ export type ActionTypes =
     | "DELETE_NODES"
     | "NODES_CONNECTED"
     | "NODES_DISCONNECTED"
-    | "NODE_ADDED"
-    | "NODES_WITH_EDGES_ADDED"
     | "VALIDATION_RESULT"
     | "COPY_SELECTION"
     | "CUT_SELECTION"
@@ -41,4 +39,5 @@ export type ActionTypes =
     | "PROCESS_VERSIONS_LOADED"
     | "UPDATE_BACKEND_NOTIFICATIONS"
     | "MARK_BACKEND_NOTIFICATION_READ"
-    | "ARCHIVED";
+    | "ARCHIVED"
+    | "EDIT_PROPERTIES";

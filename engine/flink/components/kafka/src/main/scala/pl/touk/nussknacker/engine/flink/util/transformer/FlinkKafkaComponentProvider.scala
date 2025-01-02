@@ -9,14 +9,13 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentType,
   NussknackerVersion
 }
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
+import pl.touk.nussknacker.engine.schemedkafka.FlinkUniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
-  UniversalSchemaBasedSerdeProvider,
-  UniversalSchemaRegistryClientFactory
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
@@ -31,12 +30,13 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val overriddenDependencies = TemporaryKafkaConfigMapping.prepareDependencies(config, dependencies)
-    val docsConfig: DocsConfig = DocsConfig(config)
+    val overriddenDependencies     = TemporaryKafkaConfigMapping.prepareDependencies(config, dependencies)
+    val finalComponentDependencies = dependenciesWithDisabledNamespacingIfApplicable(config, overriddenDependencies)
+    val docsConfig: DocsConfig     = DocsConfig(config)
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+    val universalSerdeProvider = FlinkUniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
     List(
       ComponentDefinition(
@@ -44,7 +44,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          overriddenDependencies,
+          finalComponentDependencies,
           new FlinkKafkaSourceImplFactory(None)
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
@@ -53,7 +53,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          overriddenDependencies,
+          finalComponentDependencies,
           FlinkKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))
@@ -63,6 +63,18 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
   override def isAutoLoaded: Boolean = false
+
+  private def dependenciesWithDisabledNamespacingIfApplicable(
+      config: Config,
+      dependencies: ProcessObjectDependencies
+  ): ProcessObjectDependencies = {
+    val disableNamespacePath = "disableNamespace"
+    if (config.hasPath(disableNamespacePath) && config.getBoolean(disableNamespacePath)) {
+      dependencies.copy(namingStrategy = NamingStrategy(None))
+    } else {
+      dependencies
+    }
+  }
 
 }
 

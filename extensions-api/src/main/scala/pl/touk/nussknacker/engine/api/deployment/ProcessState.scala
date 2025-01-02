@@ -4,6 +4,7 @@ import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
@@ -26,7 +27,9 @@ import java.net.URI
     externalDeploymentId: Option[ExternalDeploymentId],
     status: StateStatus,
     version: Option[ProcessVersion],
+    visibleActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
+    actionTooltips: Map[ScenarioActionName, String],
     icon: URI,
     tooltip: String,
     description: String,
@@ -36,8 +39,21 @@ import java.net.URI
 )
 
 object ProcessState {
-  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
-  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
+  implicit val uriEncoder: Encoder[URI]                             = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI]                             = Decoder.decodeString.map(URI.create)
+  implicit val scenarioVersionIdEncoder: Encoder[ScenarioVersionId] = Encoder.encodeLong.contramap(_.value)
+  implicit val scenarioVersionIdDecoder: Decoder[ScenarioVersionId] = Decoder.decodeLong.map(ScenarioVersionId.apply)
+
+  implicit val scenarioActionNameEncoder: Encoder[ScenarioActionName] =
+    Encoder.encodeString.contramap(ScenarioActionName.serialize)
+  implicit val scenarioActionNameDecoder: Decoder[ScenarioActionName] =
+    Decoder.decodeString.map(ScenarioActionName.deserialize)
+
+  implicit val scenarioActionNameKeyDecoder: KeyDecoder[ScenarioActionName] =
+    (key: String) => Some(ScenarioActionName.deserialize(key))
+  implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = (name: ScenarioActionName) =>
+    ScenarioActionName.serialize(name)
+
 }
 
 object StateStatus {

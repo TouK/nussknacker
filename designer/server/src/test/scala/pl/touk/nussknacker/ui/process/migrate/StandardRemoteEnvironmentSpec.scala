@@ -56,7 +56,7 @@ class StandardRemoteEnvironmentSpec
           request: MessageEntity,
           header: Seq[HttpHeader]
       ): Future[HttpResponse] = {
-        if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
+        if (path == baseUri.withPath(baseUri.path + "/processes/a%20b%20c") && method == HttpMethods.GET) {
           Marshal(
             ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
               wrapGraphWithScenarioDetailsEntity(name, scenarioGraph),
@@ -68,7 +68,7 @@ class StandardRemoteEnvironmentSpec
               HttpResponse(StatusCodes.OK, entity = entity)
             }
         } else {
-          throw new AssertionError(s"Not expected $path")
+          throw new AssertionError(s"Not expected ${method.value} $path")
         }
       }
     }
@@ -91,7 +91,7 @@ class StandardRemoteEnvironmentSpec
           request: MessageEntity,
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
-        if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
+        if (path == baseUri.withPath(baseUri.path + "/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
           Marshal(
             ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
               wrapGraphWithScenarioDetailsEntity(name, scenarioGraph),
@@ -338,7 +338,7 @@ class StandardRemoteEnvironmentSpec
       object GetProcessesDetails {
         def unapply(arg: (Uri, HttpMethod)): Option[Set[ProcessName]] = {
           val uri = arg._1
-          if (uri.toString().startsWith(s"$baseUri/processesDetails") && uri
+          if (uri.withQuery(Uri.Query.Empty) == baseUri.withPath(baseUri.path + "/processesDetails") && uri
               .query()
               .get("isArchived")
               .contains("false") && arg._2 == HttpMethods.GET) {

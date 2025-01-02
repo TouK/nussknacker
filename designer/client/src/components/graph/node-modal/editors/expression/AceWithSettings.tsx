@@ -41,23 +41,20 @@ export default forwardRef(function AceWithSettings(
         const editor = editorRef.current?.editor;
         const selection = editor?.session.selection;
 
-        // before setting cursor position ensure all position calculations are actual
-        const prepare = () => editor?.renderer.updateFull(true);
-
         const scrollToView = throttle(
             () => {
-                document.activeElement.scrollIntoView({ block: "nearest", inline: "nearest" });
+                if (!editor.isFocused()) return;
+                // before setting cursor position ensure all position calculations are actual
+                editor?.renderer.updateFull(true);
+                const activeElement = editor.container.querySelector(".ace_cursor") || document.activeElement;
+                activeElement.scrollIntoView({ block: "nearest", inline: "nearest" });
             },
             150,
             { leading: false },
         );
 
-        editor?.addEventListener("mousedown", prepare);
-        editor?.addEventListener("mouseup", scrollToView);
         selection?.on("changeCursor", scrollToView);
         return () => {
-            editor?.removeEventListener("mousedown", prepare);
-            editor?.removeEventListener("mouseup", scrollToView);
             selection?.off("changeCursor", scrollToView);
         };
     }, []);

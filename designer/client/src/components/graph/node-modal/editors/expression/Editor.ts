@@ -4,7 +4,7 @@ import { SqlEditor } from "./SqlEditor";
 import { StringEditor } from "./StringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionObj } from "./types";
-import React, { ForwardRefExoticComponent, LegacyRef } from "react";
+import React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
 import { DurationEditor } from "./Duration/DurationEditor";
@@ -26,7 +26,7 @@ export type EditorProps = {
     className?: string;
     fieldErrors: FieldError[];
     formatter?: Formatter;
-    expressionInfo?: string;
+    expressionInfo?: ReactNode;
     expressionObj: ExpressionObj;
     readOnly?: boolean;
     showSwitch?: boolean;

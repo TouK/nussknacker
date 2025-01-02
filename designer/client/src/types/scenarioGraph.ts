@@ -1,9 +1,8 @@
-import { EditorProps } from "../components/graph/node-modal/editors/expression/Editor";
 import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup } from "./component";
-import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
+import { ScenarioPropertyConfig } from "../components/properties/ScenarioProperty";
 
 export type ScenarioGraphWithName = {
     processName: string;
@@ -23,18 +22,6 @@ export type ProcessAdditionalFields = {
     properties: { [key: string]: string };
     metaDataType: string;
     showDescription?: boolean;
-};
-
-export type CustomAction = {
-    name: string;
-    allowedStateStatusNames: Array<string>;
-    icon?: string;
-    parameters?: Array<CustomActionParameter>;
-};
-
-export type CustomActionParameter = {
-    name: string;
-    editor: EditorProps;
 };
 
 export interface UiScenarioProperties {
@@ -64,7 +51,6 @@ export interface ProcessDefinitionData {
     componentGroups?: ComponentGroup[];
     scenarioProperties?: UiScenarioProperties;
     edgesForNodes?: EdgesForNode[];
-    customActions?: Array<CustomAction>;
 }
 
 export type EdgesForNode = {

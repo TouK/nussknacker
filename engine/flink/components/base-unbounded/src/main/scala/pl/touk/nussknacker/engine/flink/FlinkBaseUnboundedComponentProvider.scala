@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
   TumblingAggregateTransformer
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{PeriodicSourceFactory, UnionWithMemoTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.{SampleGeneratorSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkBaseUnboundedComponentProvider extends ComponentProvider {
@@ -39,7 +39,9 @@ object FlinkBaseUnboundedComponentProvider {
 
     // When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
     val statelessComponents = List(
-      ComponentDefinition("periodic", PeriodicSourceFactory).withRelativeDocs("DataSourcesAndSinks#periodic"),
+      ComponentDefinition("sample-generator", SampleGeneratorSourceFactory).withRelativeDocs(
+        "DataSourcesAndSinks#sample-generator"
+      ),
     )
 
     val statefulComponents = List(

@@ -16,6 +16,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     typ: ReturnedType;
     name: string;
     initialValue: FixedValuesOption;
+    userDefinedListInputLabel: string;
 }
 
 export function FixedValuesSetting({
@@ -30,11 +31,20 @@ export function FixedValuesSetting({
     typ,
     name,
     initialValue,
+    userDefinedListInputLabel,
 }: FixedValuesSetting) {
     return (
         <>
             {fixedValuesType === FixedValuesType.ValueInputWithDictEditor && (
-                <DictSelect typ={typ} name={name} dictId={dictId} readOnly={readOnly} onChange={onChange} path={path} errors={errors} />
+                <DictSelect
+                    typ={{ ...typ, refClazzName: "java.lang." + typ.refClazzName } as ReturnedType}
+                    name={name}
+                    dictId={dictId}
+                    readOnly={readOnly}
+                    onChange={onChange}
+                    path={path}
+                    errors={errors}
+                />
             )}
             {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided && (
                 <UserDefinedListInput
@@ -44,9 +54,10 @@ export function FixedValuesSetting({
                     onChange={onChange}
                     path={path}
                     errors={errors}
-                    typ={typ}
+                    typ={{ ...typ, refClazzName: "java.lang." + typ.refClazzName } as ReturnedType}
                     name={name}
                     initialValue={initialValue}
+                    inputLabel={userDefinedListInputLabel}
                 />
             )}
         </>
