@@ -33,6 +33,7 @@
 * [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
+* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
 
 ## 1.18
 
