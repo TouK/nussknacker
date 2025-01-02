@@ -9,13 +9,15 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ProcessName, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableTimestampWatermarkHandlerSource,
   FlinkContextInitializingFunction,
   FlinkCustomNodeContext,
-  FlinkSource
+  FlinkSource,
+  StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
@@ -42,7 +44,7 @@ object SampleGeneratorSourceFactory
       )
     )
 
-class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef])
+class SampleGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[AnyRef])
     extends SourceFactory
     with UnboundedStreamComponent {
 
@@ -56,45 +58,32 @@ class SampleGeneratorSourceFactory(timestampAssigner: TimestampWatermarkHandler[
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
       @ParamName("value") value: LazyParameter[AnyRef]
   ): Source = {
-    new FlinkSource with ReturningType {
+    new StandardFlinkSource[AnyRef] with ReturningType with CustomizableTimestampWatermarkHandlerSource[AnyRef] {
 
-      override def contextStream(env: StreamExecutionEnvironment, ctx: FlinkCustomNodeContext): DataStream[Context] = {
-        val count       = Option(nullableCount).map(_.toInt).getOrElse(1)
-        val processName = ctx.metaData.name
-        val stream = env
+      override protected def sourceStream(
+          env: StreamExecutionEnvironment,
+          flinkNodeContext: FlinkCustomNodeContext
+      ): DataStream[AnyRef] = {
+        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        env
           .addSource(new PeriodicFunction(period))
-          .map(_ => Context(processName.value))
-          .flatMap(new ContextMultiplierPerCountFunction(count))
-          .flatMap(ctx.lazyParameterHelper.lazyMapFunction(value))
+          .flatMap(
+            (_: Unit, out: Collector[Context]) => {
+              1.to(count).foreach(_ => out.collect(Context(flinkNodeContext.metaData.name.value)))
+            },
+            TypeInformationDetection.instance.forClass[Context]
+          )
+          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .flatMap(
             (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) => out.collect(value.value),
             TypeInformationDetection.instance.forType[AnyRef](value.returnType)
           )
-
-        val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
-
-        rawSourceWithTimestamp
-          .map(
-            new FlinkContextInitializingFunction[AnyRef](
-              new BasicContextInitializer[AnyRef](Unknown),
-              ctx.nodeId,
-              ctx.convertToEngineRuntimeContext
-            ),
-            ctx.contextTypeInfo
-          )
       }
 
+      override def timestampAssigner: Option[TimestampWatermarkHandler[AnyRef]] = Some(customTimestampAssigner)
+
       override val returnType: typing.TypingResult = value.returnType
-
     }
-  }
-
-  class ContextMultiplierPerCountFunction(count: Int) extends FlatMapFunction[Context, Context] with Serializable {
-
-    override def flatMap(context: Context, out: Collector[Context]): Unit = {
-      1.to(count).foreach(_ => out.collect(context))
-    }
-
   }
 
 }
