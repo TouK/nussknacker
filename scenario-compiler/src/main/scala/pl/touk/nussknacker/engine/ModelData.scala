@@ -275,6 +275,11 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   final def close(): Unit = {
     designerDictServices.close()
+    if (shouldCloseClassLoader) {
+      modelClassLoader.close()
+    }
   }
+
+  protected def shouldCloseClassLoader: Boolean = true
 
 }
