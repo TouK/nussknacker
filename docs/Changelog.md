@@ -39,6 +39,7 @@
   * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
     and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
     generated and emitted 5 times. Now in one count batch each value is evaluated separately.
+* [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 
 ## 1.18
 
