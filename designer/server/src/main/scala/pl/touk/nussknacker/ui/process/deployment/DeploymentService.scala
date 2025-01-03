@@ -473,9 +473,9 @@ class DeploymentService(
             case process =>
               val prefetchedState = for {
                 prefetchedStatesForProcessingType <- prefetchedStates.get(process.processingType)
-                // State is prefetched for the given processing type.
-                // If there is no information available for a specific scenario name in that prefetched data,
-                // then it means that DM is not aware of this scenario and we should fallback to List.empty.
+                // State is prefetched for all scenarios for the given processing type.
+                // If there is no information available for a specific scenario name,
+                // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
                 prefetchedState = prefetchedStatesForProcessingType.getOrElse(process.name, List.empty)
               } yield prefetchedState
               prefetchedState match {
