@@ -211,7 +211,7 @@ class PeriodicDeploymentManager private[periodic] (
       currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val statusDetails = statusDetailsList match {
-      case ::(head, _) =>
+      case head :: _ =>
         head
       case Nil =>
         val status = PeriodicProcessStatus(List.empty, List.empty)

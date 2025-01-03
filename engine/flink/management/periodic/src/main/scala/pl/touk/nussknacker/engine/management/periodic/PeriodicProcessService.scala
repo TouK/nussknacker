@@ -507,9 +507,7 @@ class PeriodicProcessService(
               allStatusDetailsInDelegate <- supported.getAllProcessesStates()
               allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
               result = allStatusDetailsInPeriodic.map { case (name, status) => (name, List(status)) }
-            } yield
-              if (allStatusDetailsInDelegate.cached) WithDataFreshnessStatus.cached(result)
-              else WithDataFreshnessStatus.fresh(result)
+            } yield allStatusDetailsInDelegate.map(_ => result)
           }
 
         }
