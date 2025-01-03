@@ -503,13 +503,13 @@ class PeriodicProcessService(
           override def getAllProcessesStates()(
               implicit freshnessPolicy: DataFreshnessPolicy
           ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
-            supported.getAllProcessesStates().flatMap { statusesWithFreshness =>
-              mergeStatusWithDeployments(statusesWithFreshness.value).map { statusDetails =>
-                statusesWithFreshness.map(_.flatMap { case (name, _) =>
-                  statusDetails.get(name).map(statusDetails => (name, List(statusDetails)))
-                })
-              }
-            }
+            for {
+              allStatusDetailsInDelegate <- supported.getAllProcessesStates()
+              allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
+              result = allStatusDetailsInPeriodic.map { case (name, status) => (name, List(status)) }
+            } yield
+              if (allStatusDetailsInDelegate.cached) WithDataFreshnessStatus.cached(result)
+              else WithDataFreshnessStatus.fresh(result)
           }
 
         }
