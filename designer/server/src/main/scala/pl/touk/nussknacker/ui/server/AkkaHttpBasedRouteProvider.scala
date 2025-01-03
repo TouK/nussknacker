@@ -43,7 +43,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
-import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
+import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
@@ -94,8 +94,8 @@ import pl.touk.nussknacker.ui.validation.{
 }
 import sttp.client3.SttpBackend
 
-import java.time.Clock
-import java.util.concurrent.atomic.AtomicReference
+import java.time.{Clock, Duration, Instant}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.function.Supplier
 import scala.concurrent.Future
 import scala.io.Source
@@ -130,6 +130,8 @@ class AkkaHttpBasedRouteProvider(
       deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
       dbioRunner                 = DBIOActionRunner(dbRef)
+      // 1 hour is the delay to propagate all global notifications for all users
+      globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
@@ -137,6 +139,7 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
+        globalNotificationRepository
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -325,6 +328,7 @@ class AkkaHttpBasedRouteProvider(
       val notificationService = new NotificationServiceImpl(
         fetchScenarioActivityService,
         actionRepository,
+        globalNotificationRepository,
         dbioRunner,
         notificationsConfig
       )
@@ -699,7 +703,8 @@ class AkkaHttpBasedRouteProvider(
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
-      featureTogglesConfig: FeatureTogglesConfig
+      featureTogglesConfig: FeatureTogglesConfig,
+      globalNotificationRepository: InMemoryTimeseriesRepository[Notification]
   ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
@@ -719,7 +724,14 @@ class AkkaHttpBasedRouteProvider(
               _
             ),
           )
-          new ReloadableProcessingTypeDataProvider(laodProcessingTypeDataIO)
+          val firstConfigurationLoad = new AtomicBoolean(true)
+          val loadAndNotifyIO = laodProcessingTypeDataIO.map { state =>
+            if (!firstConfigurationLoad.compareAndSet(true, false)) {
+              globalNotificationRepository.saveEntry(Notification.configurationReloaded)
+            }
+            state
+          }
+          new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(
         release = _.close()

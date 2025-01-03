@@ -42,7 +42,7 @@ class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy {
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
         KafkaUtils.usingAdminClient(kafkaConfig) {
-          _.listTopics(new ListTopicsOptions().timeoutMs(5000))
+          _.listTopics(new ListTopicsOptions().timeoutMs(kafkaConfig.topicsWithoutSchemaFetchTimeout.toMillis.toInt))
             .names()
             .get()
             .asScala
