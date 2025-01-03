@@ -1,3 +1,4 @@
+import { isNil } from "lodash";
 import { Expression, ReturnedType } from "../../../../../types";
 import { resolveRefClazzName } from "./utils";
 
@@ -78,7 +79,7 @@ export function isAnyValueWithSuggestionsParameter(item: PermittedTypeParameterV
 }
 
 export function isAnyValueParameter(item: PermittedTypeParameterVariant): item is AnyValueParameterVariant {
-    return item.valueEditor === null;
+    return isNil(item.valueEditor);
 }
 
 const permittedTypesMapping = {
