@@ -32,8 +32,10 @@
 * [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
 * [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
-* [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
+* Changes to `periodic` component (renamed to `sample-generator`):
+    * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
+    * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
 
 ## 1.18
 
