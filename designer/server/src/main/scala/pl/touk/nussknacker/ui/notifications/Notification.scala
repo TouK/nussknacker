@@ -15,6 +15,8 @@ import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
+import java.util.UUID
+
 @derive(encoder, decoder, schema)
 final case class Notification(
     id: String,
@@ -92,6 +94,15 @@ object Notification {
     )
   }
 
+  def configurationReloaded: Notification =
+    Notification(
+      id = UUID.randomUUID().toString,
+      scenarioName = None,
+      message = "Configuration reloaded",
+      `type` = Some(NotificationType.info),
+      toRefresh = List(DataToRefresh.creator)
+    )
+
   private def displayableActionName(actionName: ScenarioActionName): String =
     actionName match {
       case ScenarioActionName.Deploy => "Deployment"
@@ -116,5 +127,5 @@ object DataToRefresh extends Enumeration {
   implicit val typeDecoder: Decoder[DataToRefresh.Value] = Decoder.decodeEnumeration(DataToRefresh)
 
   type DataToRefresh = Value
-  val activity, state = Value
+  val activity, state, creator = Value
 }
