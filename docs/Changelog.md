@@ -36,6 +36,7 @@
 * Changes to `periodic` component (renamed to `sample-generator`):
     * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
     * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
+* [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 
 ## 1.18
 
