@@ -1,5 +1,5 @@
 import React from "react";
-import { onChangeType, FragmentInputParameter, isPermittedTypeVariant, toPermittedTypeVariant } from "../item";
+import { onChangeType, FragmentInputParameter, isPermittedTypeVariant, toFullRefClazzName } from "../item";
 import { NodeValidationError, VariableTypes } from "../../../../../types";
 import { DefaultVariant, PermittedTypeVariant } from "./variants";
 
@@ -14,7 +14,7 @@ interface Settings {
 
 export function Settings(props: Settings) {
     if (isPermittedTypeVariant(props.item)) {
-        const item = toPermittedTypeVariant(props.item);
+        const item = toFullRefClazzName(props.item);
         return <PermittedTypeVariant {...props} item={item} />;
     }
     return <DefaultVariant {...props} item={props.item} />;

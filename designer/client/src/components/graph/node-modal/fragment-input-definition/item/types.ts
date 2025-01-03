@@ -95,14 +95,14 @@ export function isPermittedTypeVariant(item: FragmentInputParameter): item is Pe
     return permittedTypes.includes(clazzName);
 }
 
-export function toPermittedTypeVariant(item: FragmentInputParameter): FragmentInputParameter {
+export function toFullRefClazzName(item: PermittedTypeParameterVariant): PermittedTypeParameterVariant {
     const refClazzName = item.typ.refClazzName;
     if (isPermittedTypeVariant(item) && permittedTypes.includes(refClazzName)) {
         // Internals like dictionary API require the full class name
         // In new fragments the param type is set to a simple name (e.g. String)
         // old fragments can still contain params in the full name format (e.g java.lang.String)
         const mappedClazzName = permittedTypesMapping[refClazzName];
-        return { ...item, typ: { ...item.typ, refClazzName: mappedClazzName } } as FragmentInputParameter;
+        return { ...item, typ: { ...item.typ, refClazzName: mappedClazzName } } as PermittedTypeParameterVariant;
     }
     return item;
 }
