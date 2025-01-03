@@ -77,12 +77,18 @@ object ScenarioWithDetails {
 
   import io.circe.generic.semiauto._
 
+  // TODO: We remove null values from json to make response payload lighter.
+  // The target solution would be to introduce pagination to the /api/processes endpoint.
   implicit val encoder: Encoder[ScenarioWithDetails] =
-    deriveEncoder[ScenarioWithDetails]
-      .contramap[ScenarioWithDetails](_.copy(processId = None))
+    deepDropNulls(
+      deriveEncoder[ScenarioWithDetails]
+        .contramap[ScenarioWithDetails](_.copy(processId = None))
+    )
 
   implicit val decoder: Decoder[ScenarioWithDetails] =
     deriveDecoder[ScenarioWithDetails]
+
+  private def deepDropNulls[A](encoder: Encoder[A]): Encoder[A] = encoder.mapJson(_.deepDropNullValues)
 
 }
 
