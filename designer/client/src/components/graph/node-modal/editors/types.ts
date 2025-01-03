@@ -1,6 +1,6 @@
 import { ReturnedType } from "../../../../types";
 import { EditorType } from "./expression/Editor";
-import { EditorMode } from "./expression/types";
+import { EditorMode, ExpressionLang } from "./expression/types";
 
 export type ParamType = {
     name: string;
@@ -10,6 +10,7 @@ export type ParamType = {
     };
     editors: {
         type: `${EditorType}`;
+        language: ExpressionLang | string;
     }[];
     defaultValue: {
         language: EditorMode;

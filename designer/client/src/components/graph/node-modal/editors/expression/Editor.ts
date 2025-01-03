@@ -33,6 +33,7 @@ export type EditorProps = {
     showValidation?: boolean;
     variableTypes?: VariableTypes;
     ref?: LegacyRef<unknown>;
+    rows?: number;
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> =
