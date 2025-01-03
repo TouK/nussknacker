@@ -36,6 +36,28 @@ class NotificationApiHttpServiceBusinessSpec
           equalTo("[]")
         )
     }
+    "return notification when processing type data are reloaded" in {
+      given()
+        .when()
+        .applicationState {
+          reloadConfiguration()
+        }
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/notifications")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""[{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": "info",
+               |  "toRefresh": [ "creator" ]
+               |}]""".stripMargin
+          )
+        )
+    }
     "return a list of notifications" in {
       val scenarioName = ProcessName("canceled-scenario-01")
       given()
@@ -62,6 +84,13 @@ class NotificationApiHttpServiceBusinessSpec
                |   "message": "Cancel finished",
                |   "type": null,
                |   "toRefresh": [ "activity", "state" ]
+               |},
+               |{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": "info",
+               |  "toRefresh": [ "creator" ]
                |}]""".stripMargin
           )
         )
@@ -79,6 +108,15 @@ class NotificationApiHttpServiceBusinessSpec
           )
         )
     }
+  }
+
+  private def reloadConfiguration(): Unit = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+      .Then()
+      .statusCode(204)
   }
 
 }
