@@ -471,11 +471,14 @@ class DeploymentService(
           .map {
             case process if process.isFragment => DBIO.successful(process)
             case process =>
-              val prefetchedStatusDetails = for {
-                prefetchedStatusDetailsForProcessingTypes <- prefetchedStates.get(process.processingType)
-                prefetchedStatusDetails                   <- prefetchedStatusDetailsForProcessingTypes.get(process.name)
-              } yield prefetchedStatusDetails
-              prefetchedStatusDetails match {
+              val prefetchedState = for {
+                prefetchedStatesForProcessingType <- prefetchedStates.get(process.processingType)
+                // State is prefetched for all scenarios for the given processing type.
+                // If there is no information available for a specific scenario name,
+                // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
+                prefetchedState = prefetchedStatesForProcessingType.getOrElse(process.name, List.empty)
+              } yield prefetchedState
+              prefetchedState match {
                 case Some(prefetchedStatusDetails) =>
                   getProcessStateUsingPrefetchedStatus(
                     process.toEntity,
@@ -490,7 +493,6 @@ class DeploymentService(
                     None,
                   ).map(state => process.copy(state = Some(state)))
               }
-
           }
           .sequence[DB, ScenarioWithDetails]
       } yield processesWithState
