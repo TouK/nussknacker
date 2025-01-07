@@ -78,7 +78,7 @@ class NussknackerAppFactory(
         logger.debug(
           s"Found custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName}: ${factory.getClass.getName}. Using it for configuration loading"
         )
-        factory.create(designerConfig.configLoaderConfig, sttpBackend)
+        factory.create(designerConfig.configLoaderConfig, designerConfig.processingTypeConfigsRaw.resolved, sttpBackend)
       }
       .getOrElse {
         logger.debug(

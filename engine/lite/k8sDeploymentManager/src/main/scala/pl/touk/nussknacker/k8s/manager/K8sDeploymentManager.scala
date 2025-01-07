@@ -114,7 +114,7 @@ class K8sDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand | _: DMStopScenarioCommand |
-          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand | _: DMRunOffScheduleCommand =>
+          _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand =>
         notImplemented
     }
 
@@ -386,6 +386,8 @@ class K8sDeploymentManager(
   //      when nothing important is changed (e.g. deploymentId is changed). We should rethink if we want to handle multiple deployments
   //      for each scenario in this case and where store the deploymentId
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
 }
 

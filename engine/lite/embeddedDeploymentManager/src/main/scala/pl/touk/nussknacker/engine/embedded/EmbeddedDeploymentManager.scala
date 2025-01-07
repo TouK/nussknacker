@@ -112,7 +112,7 @@ class EmbeddedDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMStopDeploymentCommand | _: DMStopScenarioCommand | _: DMMakeScenarioSavepointCommand |
-          _: DMCustomActionCommand | _: DMRunOffScheduleCommand =>
+          _: DMRunOffScheduleCommand =>
         notImplemented
     }
 
@@ -254,6 +254,8 @@ class EmbeddedDeploymentManager(
         )
 
     }
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 

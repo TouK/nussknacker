@@ -22,7 +22,12 @@ import {
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
-import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
+import {
+    ActivitiesResponse,
+    ActivityMetadataResponse,
+    ActivityType,
+    ActivityTypesRelatedToExecutions,
+} from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { BackendNotification } from "../containers/Notifications";
@@ -131,11 +136,6 @@ export interface TestProcessResponse {
 export interface PropertiesValidationRequest {
     name: string;
     additionalFields: ProcessAdditionalFields;
-}
-
-export interface CustomActionValidationRequest {
-    actionName: string;
-    params: Record<string, string>;
 }
 
 export interface ExpressionSuggestionRequest {
@@ -321,17 +321,17 @@ class HttpService {
         return promise;
     }
 
-    fetchProcessesDeployments(processName: string) {
+    fetchActivitiesRelatedToExecutions(processName: string) {
         return api
-            .get<
-                {
-                    performedAt: string;
-                    actionName: ActionName;
-                }[]
-            >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) =>
-                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
-            );
+            .get<{ activities: { date: string; type: ActivityType }[] }>(
+                `/processes/${encodeURIComponent(processName)}/activity/activities`,
+            )
+            .then((res) => {
+                return res.data.activities.filter(({ date, type }) =>
+                    Object.values(ActivityTypesRelatedToExecutions).includes(type as ActivityTypesRelatedToExecutions),
+                );
+            })
+            .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
     deploy(
@@ -366,33 +366,6 @@ class HttpService {
         };
         return api
             .post(`/processManagement/runOffSchedule/${encodeURIComponent(processName)}`, data)
-            .then((res) => {
-                const msg = res.data.msg;
-                this.#addInfo(msg);
-                return {
-                    isSuccess: res.data.isSuccess,
-                    msg: msg,
-                };
-            })
-            .catch((error) => {
-                const msg = error.response.data.msg || error.response.data;
-                const result = {
-                    isSuccess: false,
-                    msg: msg,
-                };
-                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                return result;
-            });
-    }
-
-    customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
-        const data = {
-            actionName: actionName,
-            comment: comment,
-            params: params,
-        };
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
@@ -615,20 +588,6 @@ class HttpService {
             .catch((error) => {
                 this.#addError(
                     i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-                    error,
-                    true,
-                );
-                return;
-            });
-    }
-
-    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
-            .then((res) => res.data)
-            .catch((error) => {
-                this.#addError(
-                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
                     error,
                     true,
                 );

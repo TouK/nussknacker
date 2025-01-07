@@ -5,12 +5,16 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkRestManager.ParsedJobConfig
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.BaseJobStatusCounts
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.{
+  WithDataFreshnessStatusMapOps,
+  WithDataFreshnessStatusOps
+}
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -33,37 +37,7 @@ class FlinkRestManager(
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    val preparedName = modelData.namingStrategy.prepareName(name.value)
-
-    client
-      .getJobsOverviews()
-      .flatMap(result =>
-        Future
-          .sequence(
-            result.value
-              .filter(_.name == preparedName)
-              .map(job =>
-                withParsedJobConfig(job.jid, name).map { jobConfig =>
-                  // TODO: return error when there's no correct version in process
-                  // currently we're rather lax on this, so that this change is backward-compatible
-                  // we log debug here for now, since it's invoked v. often
-                  if (jobConfig.isEmpty) {
-                    logger.debug(s"No correct job details in deployed scenario: ${job.name}")
-                  }
-                  StatusDetails(
-                    SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(job.state, job.tasks)),
-                    jobConfig.flatMap(_.deploymentId),
-                    Some(ExternalDeploymentId(job.jid)),
-                    version = jobConfig.map(_.version),
-                    startTime = Some(job.`start-time`),
-                    attributes = Option.empty,
-                    errors = List.empty
-                  )
-                }
-              )
-          )
-          .map(WithDataFreshnessStatus(_, cached = result.cached)) // TODO: How to do it nicer?
-      )
+    getAllProcessesStatesFromFlink().map(_.getOrElse(name, List.empty))
   }
 
   override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
@@ -87,6 +61,62 @@ class FlinkRestManager(
       }
 
     }
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    new StateQueryForAllScenariosSupported {
+
+      override def getAllProcessesStates()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = getAllProcessesStatesFromFlink()
+
+    }
+
+  private def getAllProcessesStatesFromFlink()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+    client
+      .getJobsOverviews()
+      .flatMap { result =>
+        statusDetailsFromJobOverviews(result.value).map(
+          WithDataFreshnessStatus(_, cached = result.cached)
+        ) // TODO: How to do it nicer?
+      }
+  }
+
+  private def statusDetailsFromJobOverviews(
+      jobOverviews: List[JobOverview]
+  ): Future[Map[ProcessName, List[StatusDetails]]] = Future
+    .sequence {
+      jobOverviews
+        .groupBy(_.name)
+        .flatMap { case (name, jobs) =>
+          modelData.namingStrategy.decodeName(name).map(decoded => (ProcessName(decoded), jobs))
+        }
+        .map { case (name, jobs) =>
+          val statusDetails = jobs.map { job =>
+            withParsedJobConfig(job.jid, name).map { jobConfig =>
+              // TODO: return error when there's no correct version in process
+              // currently we're rather lax on this, so that this change is backward-compatible
+              // we log debug here for now, since it's invoked v. often
+              if (jobConfig.isEmpty) {
+                logger.debug(s"No correct job details in deployed scenario: ${job.name}")
+              }
+              StatusDetails(
+                SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(job.state, job.tasks)),
+                jobConfig.flatMap(_.deploymentId),
+                Some(ExternalDeploymentId(job.jid)),
+                version = jobConfig.map(_.version),
+                startTime = Some(job.`start-time`),
+                attributes = Option.empty,
+                errors = List.empty
+              )
+            }
+          }
+          Future.sequence(statusDetails).map((name, _))
+        }
+
+    }
+    .map(_.toMap)
 
   // NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def toDeploymentStatus(jobState: String, jobStatusCounts: BaseJobStatusCounts): DeploymentStatus = {

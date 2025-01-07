@@ -45,28 +45,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val customActionAfterRunning = CustomActionDefinition(AfterRunningActionName, List(Running.name))
-
-  private val customActionPreparingResources =
-    deployment.CustomActionDefinition(
-      PreparingResourcesActionName,
-      List(NotDeployed.name, Canceled.name),
-      List(
-        CustomActionParameter("mandatoryString", StringParameterEditor, List(MandatoryParameterValidator)),
-        CustomActionParameter("paramInt", StringParameterEditor, List(LiteralIntegerValidator)),
-        CustomActionParameter("paramDate", DateParameterEditor, Nil),
-      )
-    )
-
-  private val customActionTest =
-    deployment.CustomActionDefinition(TestActionName, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
-
-  private val customActionStatusMapping = Map(
-    customActionAfterRunning       -> AfterRunningStatus,
-    customActionPreparingResources -> PreparingResourcesStatus,
-    customActionTest               -> TestStatus
-  )
-
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random                                      = new scala.util.Random()
 
@@ -102,7 +80,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
       // TODO: cancelling specific deployment
       cancelScenario(DMCancelScenarioCommand(name, user))
     case command: DMCancelScenarioCommand  => cancelScenario(command)
-    case command: DMCustomActionCommand    => invokeCustomAction(command)
     case command: DMRunOffScheduleCommand  => runOffSchedule(command)
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
     case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
@@ -167,22 +144,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = customActionStatusMapping.keys.toList
-
-  private def invokeCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] = {
-    val processName = command.processVersion.processName
-    val statusOpt = customActionStatusMapping
-      .collectFirst { case (customAction, status) if customAction.actionName == command.actionName => status }
-
-    statusOpt match {
-      case Some(newStatus) =>
-        asyncChangeState(processName, newStatus)
-        Future.successful(CustomActionResult(s"Done ${command.actionName}"))
-      case _ =>
-        Future.failed(new NotImplementedError())
-    }
-  }
-
   private def runOffSchedule(command: DMRunOffScheduleCommand): Future[RunOffScheduleResult] = {
     notImplemented
   }
@@ -228,6 +189,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {

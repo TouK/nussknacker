@@ -22,4 +22,3 @@ export const getWritableCategories = createSelector(getLoggedUser, getCategories
     categories.filter((c) => user.canWrite(c)),
 );
 export const getMetricsSettings = createSelector(getFeatureSettings, (settings) => settings?.metrics || ({} as MetricsType));
-export const getCustomActions = createSelector(getProcessDefinitionData, (def) => def.customActions || []);

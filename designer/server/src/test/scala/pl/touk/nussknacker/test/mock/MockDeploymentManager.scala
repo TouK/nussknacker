@@ -242,39 +242,6 @@ class MockDeploymentManager(
       deploymentId: Option[newdeployment.DeploymentId]
   ): Future[Option[ExternalDeploymentId]] = ???
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = {
-    import SimpleStateStatus._
-    List(
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("hello"),
-        allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
-      ),
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("not-implemented"),
-        allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
-      ),
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("invalid-status"),
-        allowedStateStatusNames = Nil
-      ),
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("has-params"),
-        allowedStateStatusNames = Nil,
-        parameters = CustomActionParameter(
-          "testParam",
-          StringParameterEditor,
-          NotBlankParameterValidator :: NotNullParameterValidator :: Nil
-        ) :: Nil
-      )
-    )
-  }
-
-  override protected def processCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] =
-    command.actionName.value match {
-      case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
-      case _                          => Future.failed(new NotImplementedError())
-    }
-
   override def close(): Unit = {}
 
   override def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = Future.successful(())
@@ -297,6 +264,8 @@ class MockDeploymentManager(
     }
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
 }
 

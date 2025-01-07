@@ -35,7 +35,6 @@ object ToolbarButtonConfigType extends Enumeration {
   type ToolbarButtonType = Value
 
   private lazy val customButtons: List[ToolbarButtonType] = List(
-    CustomAction,
     CustomLink
   )
 
@@ -77,8 +76,7 @@ object ToolbarButtonConfigType extends Enumeration {
   val ViewZoomOut: Value = Value("view-zoom-out")
   val ViewReset: Value   = Value("view-reset")
 
-  val CustomLink: Value   = Value("custom-link")
-  val CustomAction: Value = Value("custom-action")
+  val CustomLink: Value = Value("custom-link")
 
   def requiresNameParam(`type`: ToolbarButtonType): Boolean =
     customButtons.contains(`type`)

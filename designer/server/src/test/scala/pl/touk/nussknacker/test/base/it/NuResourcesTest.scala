@@ -24,7 +24,6 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -364,10 +363,6 @@ trait NuResourcesTest
       Permission.Deploy,
       Permission.Read
     )
-
-  protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
-    Post(s"/processManagement/customAction/$processName", reqPayload.toJsonRequestEntity()) ~>
-      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)

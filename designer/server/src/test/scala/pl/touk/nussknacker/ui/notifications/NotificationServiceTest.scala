@@ -113,7 +113,6 @@ class NotificationServiceTest
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
-      when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
         .processCommand(
           RunDeploymentCommand(
@@ -167,7 +166,6 @@ class NotificationServiceTest
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
-      when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
         .processCommand(
           RunDeploymentCommand(
@@ -239,7 +237,6 @@ class NotificationServiceTest
         Future.fromTry(givenDeployResult)
       }
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
-      when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
         .processCommand(
           RunDeploymentCommand(

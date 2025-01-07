@@ -15,7 +15,6 @@ import PDFButton from "../../toolbars/process/buttons/PDFButton";
 import SaveButton from "../../toolbars/process/buttons/SaveButton";
 import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton";
 import { LinkButton } from "./LinkButton";
-import { ActionButton } from "./ActionButton";
 import CancelDeployButton from "../../toolbars/scenarioActions/buttons/CancelDeployButton";
 import DeployButton from "../../toolbars/scenarioActions/buttons/DeployButton";
 import PropertiesButton from "../../toolbars/scenarioActions/buttons/PropertiesButton";
@@ -68,7 +67,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.testGenerate]: GenerateButton,
     [BuiltinButtonTypes.testCounts]: CountsButton,
     [BuiltinButtonTypes.testHide]: HideButton,
-    [CustomButtonTypes.customAction]: ActionButton,
     [CustomButtonTypes.customLink]: LinkButton,
     [CustomButtonTypes.adhocTesting]: AdhocTestingButton,
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,

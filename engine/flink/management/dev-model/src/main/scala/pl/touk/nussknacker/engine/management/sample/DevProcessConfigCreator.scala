@@ -242,6 +242,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         BusinessConfigDictionary.id -> BusinessConfigDictionary.definition,
         BooleanDictionary.id -> BooleanDictionary.definition, // not available through global variables, but still available through DictParameterEditor
         LongDictionary.id -> LongDictionary.definition, // not available through global variables, but still available through DictParameterEditor
+        IntegerDictionary.id -> IntegerDictionary.definition // not available through global variables, but still available through DictParameterEditor
       )
     )
   }

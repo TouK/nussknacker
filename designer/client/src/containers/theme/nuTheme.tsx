@@ -84,8 +84,6 @@ const extendWithHelpers = (custom: CustomPalette) => ({
                 return this.windows.compareVersions;
             case WindowKind.editProperties:
                 return this.windows.editProperties;
-            case WindowKind.customAction:
-                return this.windows.customAction;
             default:
                 return this.windows.default;
         }
