@@ -325,7 +325,11 @@ class SlickPeriodicProcessesRepository(
     getLatestDeploymentsForEachSchedule(
       processesHavingDeploymentsWithMatchingStatus,
       deploymentsPerScheduleMaxCount = 1
-    ).map(_.values.headOption.getOrElse(SchedulesState(Map.empty)))
+    ).map(schedulesForProcessNames =>
+      SchedulesState(
+        schedulesForProcessNames.values.map(_.schedules).foldLeft(Map.empty[ScheduleId, ScheduleData])(_ ++ _)
+      )
+    )
   }
 
   override def getLatestDeploymentsForActiveSchedules(
