@@ -5,6 +5,7 @@ import { Option, TypeSelect } from "../../fragment-input-definition/TypeSelect";
 import { ParamType } from "../types";
 import { FieldError, PossibleValue } from "../Validators";
 import { VariableTypes } from "../../../../../types";
+import { Box } from "@mui/material";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -37,17 +38,21 @@ export const MultipleEditors = (props: Props) => {
     const availableEditorsOption = availableEditorsOptions.find(({ value }) => value === selectedEditor.type) || availableEditorsOptions[0];
 
     return (
-        <>
-            <Editor {...props} rows={1} />
-            <TypeSelect
-                onChange={(value) => {
-                    const selectedEditor = param.editors.find((editor) => editor.type === value);
-                    onValueChange({ ...props.expressionObj, language: selectedEditor.language });
-                    setSelectedEditor(selectedEditor);
-                }}
-                value={availableEditorsOption}
-                options={availableEditorsOptions}
-            />
-        </>
+        <Box display="flex" flexDirection={"row"} flexBasis={"80%"} width={"100%"} gap={1}>
+            <Box component={Editor} {...props} rows={1} sx={{ flexBasis: "unset !important", width: "100% !important" }} />
+            <Box>
+                <Box
+                    component={TypeSelect}
+                    sx={{ width: "170px !important" }}
+                    onChange={(value) => {
+                        const selectedEditor = param.editors.find((editor) => editor.type === value);
+                        onValueChange({ ...props.expressionObj, language: selectedEditor.language });
+                        setSelectedEditor(selectedEditor);
+                    }}
+                    value={availableEditorsOption}
+                    options={availableEditorsOptions}
+                />
+            </Box>
+        </Box>
     );
 };
