@@ -26,7 +26,6 @@ interface Option {
     label: string;
     value: string;
     icon: string | null;
-    hintText: string | null;
 }
 
 function getOptions(values: FixedValuesOption[]): Option[] {
@@ -34,7 +33,6 @@ function getOptions(values: FixedValuesOption[]): Option[] {
         value: value.expression,
         label: value.label,
         icon: value.icon,
-        hintText: value.hintText,
     }));
 }
 
@@ -47,7 +45,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
-            (expressionObj && { value: expressionObj.expression, label: expressionObj.expression, icon: null, hintText: null }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
+            (expressionObj && { value: expressionObj.expression, label: expressionObj.expression, icon: null }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
             null
         ); // just leave undefined and let the user explicitly select one
     };
@@ -74,7 +72,6 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                     return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
                 })}
             </RadioGroup>
-            {currentOption.hintText ? <Typography sx={{ width: "100%" }}>{currentOption.hintText}</Typography> : null}
         </div>
     ) : (
         <div className={cx(className)}>
