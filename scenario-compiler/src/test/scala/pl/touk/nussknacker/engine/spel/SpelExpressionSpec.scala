@@ -868,11 +868,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
-  // TODO_PAWEL
-  test("sth") {
-    val a = parse[Any]("""{a: 5}.![{key: #this.key, value: #this.value}].toMap[0]""")
-    val b = parse[Any]("""{a: 5}[0]""")
-    val c = "adsf"
+  test("should not validate map indexing if index cannot be converted to map key type") {
+    parse[Any]("""{{key: "a", value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap["0"]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1.toLong, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0.toLong]""") shouldBe Symbol("valid")
   }
 
   test("validate ternary operator") {

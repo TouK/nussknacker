@@ -190,6 +190,7 @@ private[spel] class Typer(
       }
     }
 
+    // TODO_PAWEL to tutaj typuje indexerowanie na rekordzie
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
       withTypedChildren {
         case TypedObjectWithValue(_, indexString: String) :: Nil =>
@@ -217,8 +218,13 @@ private[spel] class Typer(
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           withTypedChildren(_ => valid(param))
+        // TODO_PAWEL tutaj ten isAsignableFrom to chyba na wyrost, albo jak juz odwrotnie, albo rownosc niech bedzie
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
-          withTypedChildren(_ => valid(valueParam))
+          withTypedChildren {
+            // TODO_PAWEL czy na pewno tak? trzeba zajrzec jakie konwersje sie robi w runtime
+            case indexKey :: Nil if indexKey.canBeConvertedTo(keyParam) => valid(valueParam)
+            case _                                                      => invalid(IllegalIndexingOperation)
+          }
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
