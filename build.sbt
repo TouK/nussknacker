@@ -2070,8 +2070,6 @@ lazy val designer = (project in file("designer/server"))
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
         "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
-//        "org.apache.kafka"               % "kafka-clients"                   % kafkaV,
-//        "org.apache.flink"               % "flink-streaming-java"            % flinkV,
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(
@@ -2088,9 +2086,6 @@ lazy val designer = (project in file("designer/server"))
     security,
     deploymentManagerApi,
     componentsApi,
-    requestResponseComponentsApi,
-    liteComponentsApi,
-    flinkComponentsApi,
     restmodel,
     listenerApi,
     defaultHelpers                    % Test,

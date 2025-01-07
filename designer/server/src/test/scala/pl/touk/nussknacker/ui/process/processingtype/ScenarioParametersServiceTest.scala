@@ -16,13 +16,12 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.process.processingtype.loader.{
-  DeploymentManagersClassLoader,
-  ProcessingTypesConfigBasedProcessingTypeDataLoader
-}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import cats.effect.unsafe.implicits.global
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 
 import java.nio.file.Path
@@ -32,6 +31,7 @@ class ScenarioParametersServiceTest
     extends AnyFunSuite
     with Matchers
     with ValidatedValuesDetailedMessage
+    with WithTestDeploymentManagerClassLoader
     with OptionValues
     with LazyLogging {
 
@@ -288,7 +288,7 @@ class ScenarioParametersServiceTest
       new LoadableConfigBasedNussknackerConfig(IO.pure {
         ConfigWithUnresolvedVersion(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
       }),
-      DeploymentManagersClassLoader.create(List.empty).allocated.map(_._1).unsafeRunSync()
+      deploymentManagersClassLoader
     )
 
     val processingTypeData = processingTypeDataReader

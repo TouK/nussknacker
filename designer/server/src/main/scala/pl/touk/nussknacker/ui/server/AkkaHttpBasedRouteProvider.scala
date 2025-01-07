@@ -434,7 +434,7 @@ class AkkaHttpBasedRouteProvider(
           (
             processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
             processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
-            processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
+            processingTypeData.designerModelData.modelData.modelClassLoader
           )
         }
       )

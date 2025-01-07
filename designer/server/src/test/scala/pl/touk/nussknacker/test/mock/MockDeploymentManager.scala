@@ -2,8 +2,10 @@ package pl.touk.nussknacker.test.mock
 
 import _root_.sttp.client3.testing.SttpBackendStub
 import akka.actor.ActorSystem
+import cats.effect.unsafe.implicits.global
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
+import cats.effect.IO
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
@@ -19,6 +21,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
@@ -36,18 +39,38 @@ object MockDeploymentManager {
   val savepointPath     = "savepoints/123-savepoint"
   val stopSavepointPath = "savepoints/246-stop-savepoint"
   val maxParallelism    = 10
+
+  def create(
+      defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
+      deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
+        new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+      actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
+      scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager
+  ): MockDeploymentManager = {
+    import cats.effect.unsafe.implicits.global
+    new MockDeploymentManager(
+      defaultProcessStateStatus,
+      deployedScenariosProvider,
+      actionService,
+      scenarioActivityManager,
+      DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
+    )
+  }
+
 }
 
-class MockDeploymentManager(
+class MockDeploymentManager private (
     defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
     deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
     scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
+    deploymentManagersClassLoader: (DeploymentManagersClassLoader, IO[Unit]),
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-        TestFactory.modelDependencies
+        TestFactory.modelDependencies,
+        deploymentManagersClassLoader._1
       ),
       DeploymentManagerDependencies(
         deployedScenariosProvider,
@@ -275,7 +298,9 @@ class MockDeploymentManager(
       case _                          => Future.failed(new NotImplementedError())
     }
 
-  override def close(): Unit = {}
+  override def close(): Unit = {
+    deploymentManagersClassLoader._2.unsafeRunSync()
+  }
 
   override def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = Future.successful(())
 
@@ -300,7 +325,7 @@ class MockDeploymentManager(
 
 }
 
-class MockManagerProvider(deploymentManager: DeploymentManager = new MockDeploymentManager())
+class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentManager.create())
     extends FlinkStreamingDeploymentManagerProvider {
 
   override def createDeploymentManager(

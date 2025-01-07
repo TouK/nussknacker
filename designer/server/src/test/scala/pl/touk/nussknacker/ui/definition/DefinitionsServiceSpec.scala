@@ -315,7 +315,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ),
       fragmentPropertiesConfig = Map.empty,
       scenarioPropertiesConfig = Map.empty,
-      deploymentManager = new MockDeploymentManager,
+      deploymentManager = MockDeploymentManager.create(),
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),

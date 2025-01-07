@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import akka.actor.ActorSystem
+import cats.effect.IO
+import cats.effect.kernel.Resource
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
@@ -11,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
   DeploymentManagerDependencies,
@@ -24,6 +27,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
 
   def createDeploymentManager(
       processingTypeConfig: ConfigWithUnresolvedVersion,
+      deploymentManagerClassLoader: DeploymentManagersClassLoader
   ): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(processingTypeConfig)
     val modelData = ModelData(
@@ -34,7 +38,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         workingDirectoryOpt = None,
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
-      )
+      ),
+      deploymentManagerClassLoader
     )
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend     = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
@@ -54,6 +59,16 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         None
       )
       .valueOr(err => throw new IllegalStateException(s"Invalid Deployment Manager: ${err.toList.mkString(", ")}"))
+  }
+
+  def createDeploymentManager(
+      processingTypeConfig: ConfigWithUnresolvedVersion,
+  ): Resource[IO, DeploymentManager] = {
+    DeploymentManagersClassLoader
+      .create(List.empty)
+      .map { deploymentManagerClassLoader =>
+        createDeploymentManager(processingTypeConfig, deploymentManagerClassLoader)
+      }
   }
 
 }

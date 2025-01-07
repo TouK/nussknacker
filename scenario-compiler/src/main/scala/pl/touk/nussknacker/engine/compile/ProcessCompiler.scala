@@ -327,7 +327,7 @@ object ProcessValidator {
       modelData.modelDefinitionWithClasses,
       modelData.designerDictServices.dictRegistry,
       modelData.customProcessValidator,
-      modelData.modelClassLoader.classLoader
+      modelData.modelClassLoader
     )
   }
 

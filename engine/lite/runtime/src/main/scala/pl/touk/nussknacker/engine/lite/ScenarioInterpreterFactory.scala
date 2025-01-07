@@ -88,7 +88,7 @@ object ScenarioInterpreterFactory {
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
-        modelData.modelClassLoader.classLoader,
+        modelData.modelClassLoader,
         resultCollector,
         componentUseCase,
         modelData.customProcessValidator

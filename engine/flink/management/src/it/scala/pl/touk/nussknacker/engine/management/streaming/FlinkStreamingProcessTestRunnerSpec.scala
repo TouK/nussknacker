@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.Json
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -12,6 +14,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
 
 import java.util.UUID
@@ -22,7 +25,8 @@ class FlinkStreamingProcessTestRunnerSpec
     extends AnyFlatSpec
     with Matchers
     with VeryPatientScalaFutures
-    with WithConfig {
+    with WithConfig
+    with BeforeAndAfterAll {
 
   private val classPath: List[String] = ClassPaths.scalaClasspath
 
@@ -44,10 +48,18 @@ class FlinkStreamingProcessTestRunnerSpec
     List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere")))
   )
 
-  it should "run scenario in test mode" in {
-    val deploymentManager =
-      FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
+  private lazy val (deploymentManager, releaseDeploymentMangerResources) =
+    FlinkStreamingDeploymentManagerProviderHelper
+      .createDeploymentManager(ConfigWithUnresolvedVersion(config))
+      .allocated
+      .unsafeRunSync()
 
+  override protected def afterAll(): Unit = {
+    releaseDeploymentMangerResources.unsafeRunSync()
+    super.afterAll()
+  }
+
+  it should "run scenario in test mode" in {
     val processName    = ProcessName(UUID.randomUUID().toString)
     val processVersion = ProcessVersion.empty.copy(processName = processName)
 
@@ -70,9 +82,6 @@ class FlinkStreamingProcessTestRunnerSpec
       .streaming(processName.value)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
-
-    val deploymentManager =
-      FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
