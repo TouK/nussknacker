@@ -45,9 +45,11 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLo
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
 
 import java.net.URI
+import scala.annotation.tailrec
 
 class DefaultComponentServiceSpec
     extends AnyFlatSpec
@@ -73,12 +75,15 @@ class DefaultComponentServiceSpec
   private val editLinkId   = "edit"
   private val filterLinkId = "filter"
 
+  private val invokePermission: GlobalPermission = "InvokePermissionExample"
+
   private val linkConfigs = List(
     createLinkConfig(
       usagesLinkId,
       s"Usages of $ComponentNameTemplate",
       s"/assets/components/links/usages.svg",
       s"https://list-of-usages.com/$ComponentIdTemplate/",
+      None,
       None
     ),
     createLinkConfig(
@@ -86,21 +91,24 @@ class DefaultComponentServiceSpec
       s"Invoke component $ComponentNameTemplate",
       s"/assets/components/links/invoke.svg",
       s"https://components.com/$ComponentIdTemplate/Invoke",
-      Some(List(Service))
+      Some(List(Service)),
+      Some(invokePermission),
     ),
     createLinkConfig(
       editLinkId,
       s"Edit component $ComponentNameTemplate",
       "/assets/components/links/edit.svg",
       s"https://components.com/$ComponentIdTemplate/",
-      Some(List(CustomComponent, Service))
+      Some(List(CustomComponent, Service)),
+      None,
     ),
     createLinkConfig(
       filterLinkId,
       s"Custom link $ComponentNameTemplate",
       "https://other-domain.com/assets/components/links/filter.svg",
       s"https://components.com/$ComponentIdTemplate/filter",
-      Some(List(BuiltIn))
+      Some(List(BuiltIn)),
+      None,
     ),
   )
 
@@ -113,13 +121,14 @@ class DefaultComponentServiceSpec
         ${linkConfigs
           .map { link =>
             s"""{
-           | id: "${link.id}",
-           | title: "${link.title}",
-           | url: "${link.url}",
-           | icon: "${link.icon}",
+           | id: "${link.id}"
+           | title: "${link.title}"
+           | url: "${link.url}"
+           | icon: "${link.icon}"
            | ${link.supportedComponentTypes
                 .map(types => s"""supportedComponentTypes: [${types.mkString(",")}]""")
                 .getOrElse("")}
+           | ${link.requiredPermission.map(permission => s"""requiredPermission: "$permission"""").getOrElse("")}
            | }""".stripMargin
           }
           .mkString(",\n")}
@@ -224,7 +233,7 @@ class DefaultComponentServiceSpec
        |}
        |""".stripMargin)
 
-  private val baseComponents: List[ComponentListElement] =
+  private def baseComponents(implicit user: LoggedUser): List[ComponentListElement] =
     List(
       baseComponent(BuiltInComponentId.Filter, overriddenIcon, BaseGroupName, AllCategories),
       baseComponent(BuiltInComponentId.Split, SplitIcon, BaseGroupName, AllCategories),
@@ -360,7 +369,7 @@ class DefaultComponentServiceSpec
     )
   }
 
-  private val fragmentMarketingComponents: List[ComponentListElement] = {
+  private def fragmentMarketingComponents(implicit loggedUser: LoggedUser): List[ComponentListElement] = {
     val cat                     = CategoryMarketing
     val componentId             = ComponentId(Fragment, cat)
     val designerWideComponentId = cid(ProcessingTypeStreaming, componentId)
@@ -381,7 +390,7 @@ class DefaultComponentServiceSpec
     )
   }
 
-  private val fragmentFraudComponents: List[ComponentListElement] = {
+  private def fragmentFraudComponents(implicit loggedUser: LoggedUser): List[ComponentListElement] = {
     val cat                     = CategoryFraud
     val componentId             = ComponentId(Fragment, cat)
     val designerWideComponentId = cid(ProcessingTypeFraud, componentId)
@@ -469,7 +478,7 @@ class DefaultComponentServiceSpec
       icon: String,
       componentGroupName: ComponentGroupName,
       categories: List[String]
-  ): ComponentListElement = {
+  )(implicit loggedUser: LoggedUser): ComponentListElement = {
     val designerWideComponentId = bid(componentId)
     val docsLinks               = if (componentId.name == BuiltInComponentId.Filter.name) List(filterDocsLink) else Nil
     val links                   = docsLinks ++ createLinks(designerWideComponentId, componentId)
@@ -489,9 +498,9 @@ class DefaultComponentServiceSpec
   private def createLinks(
       determineDesignerWideId: DesignerWideComponentId,
       componentId: ComponentId
-  ): List[ComponentLink] =
+  )(implicit loggedUser: LoggedUser): List[ComponentLink] =
     linkConfigs
-      .filter(_.isAvailable(componentId.`type`))
+      .filter(_.isAvailable(componentId.`type`, loggedUser))
       .map(_.toComponentLink(determineDesignerWideId, componentId.name))
 
   private def componentCount(determineDesignerWideId: DesignerWideComponentId, user: LoggedUser) = {
@@ -527,7 +536,8 @@ class DefaultComponentServiceSpec
   private val fraudUser = RealLoggedUser(
     id = "1",
     username = "fraudUser",
-    categoryPermissions = Map(CategoryFraud -> Set(Permission.Read))
+    categoryPermissions = Map(CategoryFraud -> Set(Permission.Read)),
+    globalPermissions = List(invokePermission)
   )
 
   private val providerComponents =
@@ -561,9 +571,10 @@ class DefaultComponentServiceSpec
 
   def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
     prepareComponents(user)
-      .map(c => c -> categories.intersect(c.categories))
-      .filter(seq => seq._2.nonEmpty)
-      .map(seq => seq._1.copy(categories = seq._2))
+      .collect {
+        case component if categories.intersect(component.categories).nonEmpty =>
+          component.copy(categories = categories)
+      }
 
   private val expectedAdminComponents     = prepareComponents(admin)
   private val expectedMarketingComponents = filterUserComponents(marketingUser, List(CategoryMarketing))
@@ -625,7 +636,7 @@ class DefaultComponentServiceSpec
         returnedCounts should contain theSameElementsAs expectedCounts
 
         forAll(Table("returnedComponents", returnedComponentsWithUsages: _*)) { returnedComponent =>
-          checkLinks(returnedComponent)
+          checkLinks(returnedComponent, user)
 
           // Components should contain only user categories
           (returnedComponent.categories diff possibleCategories) shouldBe empty
@@ -636,10 +647,11 @@ class DefaultComponentServiceSpec
     }
   }
 
-  private def checkLinks(returnedComponent: ComponentListElement): Unit = {
+  private def checkLinks(returnedComponent: ComponentListElement, loggedUser: LoggedUser): Unit = {
     // See linksConfig
     val availableLinksId = returnedComponent.componentId match {
-      case ComponentId(Service, _)         => List(usagesLinkId, invokeLinkId, editLinkId)
+      case ComponentId(Service, _) =>
+        List(usagesLinkId, editLinkId) ++ List(invokeLinkId).filter(_ => hasPermission(loggedUser, invokePermission))
       case ComponentId(CustomComponent, _) => List(usagesLinkId, editLinkId)
       case ComponentId(BuiltIn, _)         => List(usagesLinkId, filterLinkId)
       case _                               => List(usagesLinkId)
@@ -891,8 +903,19 @@ class DefaultComponentServiceSpec
       title: String,
       icon: String,
       url: String,
-      supportedComponentTypes: Option[List[ComponentType]]
+      supportedComponentTypes: Option[List[ComponentType]],
+      requiredPermission: Option[GlobalPermission],
   ): ComponentLinkConfig =
-    ComponentLinkConfig(id, title, URI.create(icon), URI.create(url), supportedComponentTypes)
+    ComponentLinkConfig(id, title, URI.create(icon), URI.create(url), supportedComponentTypes, requiredPermission)
+
+  @tailrec
+  private def hasPermission(loggedUser: LoggedUser, permission: GlobalPermission): Boolean = loggedUser match {
+    case user: RealLoggedUser =>
+      user match {
+        case CommonUser(_, _, _, globalPermissions) => globalPermissions.contains(permission)
+        case _: AdminUser                           => true
+      }
+    case ImpersonatedUser(impersonatedUser, _) => hasPermission(impersonatedUser, permission)
+  }
 
 }
