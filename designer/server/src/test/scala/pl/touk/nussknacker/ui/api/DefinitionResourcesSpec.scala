@@ -168,13 +168,11 @@ class DefinitionResourcesSpec
         .parse("""{"possibleValues" : [
                    |    {
                    |      "expression" : "",
-                   |      "label" : "",
-                   |      "hintText" : null
+                   |      "label" : ""
                    |    },
                    |    {
                    |      "expression" : "'someValue'",
-                   |      "label" : "someValue",
-                   |      "hintText" : null
+                   |      "label" : "someValue"
                    |    }
                    |  ],
                    |  "mode" : "LIST",

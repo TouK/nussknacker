@@ -22,21 +22,21 @@ public class AggregateHelper implements Serializable {
 
     public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(
             JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
-                    FixedExpressionValue$.MODULE$.apply("#AGG.first", "First"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.last", "Last"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.countWhen", "CountWhen"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.average", "Average"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.stddevPop", "StddevPop"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.stddevSamp", "StddevSamp"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.varPop", "VarPop"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.varSamp", "VarSamp"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.median", "Median"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.min", "Min"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.max", "Max"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.sum", "Sum"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.list", "List"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.set", "Set"),
-                    FixedExpressionValue$.MODULE$.apply("#AGG.approxCardinality", "ApproximateSetCardinality")
+                    new FixedExpressionValue("#AGG.first", "First"),
+                    new FixedExpressionValue("#AGG.last", "Last"),
+                    new FixedExpressionValue("#AGG.countWhen", "CountWhen"),
+                    new FixedExpressionValue("#AGG.average", "Average"),
+                    new FixedExpressionValue("#AGG.stddevPop", "StddevPop"),
+                    new FixedExpressionValue("#AGG.stddevSamp", "StddevSamp"),
+                    new FixedExpressionValue("#AGG.varPop", "VarPop"),
+                    new FixedExpressionValue("#AGG.varSamp", "VarSamp"),
+                    new FixedExpressionValue("#AGG.median", "Median"),
+                    new FixedExpressionValue("#AGG.min", "Min"),
+                    new FixedExpressionValue("#AGG.max", "Max"),
+                    new FixedExpressionValue("#AGG.sum", "Sum"),
+                    new FixedExpressionValue("#AGG.list", "List"),
+                    new FixedExpressionValue("#AGG.set", "Set"),
+                    new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality")
             )).asScala().toList(),
             FixedValuesEditorMode.LIST
     );
