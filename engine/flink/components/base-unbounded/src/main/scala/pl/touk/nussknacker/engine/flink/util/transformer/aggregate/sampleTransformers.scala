@@ -45,6 +45,7 @@ object sampleTransformers {
               new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
               new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
               new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+              new LabeledExpression(label = "Median", expression = "#AGG.median"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -102,6 +103,7 @@ object sampleTransformers {
               new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
               new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
               new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+              new LabeledExpression(label = "Median", expression = "#AGG.median"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -163,6 +165,7 @@ object sampleTransformers {
               new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
               new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
               new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+              new LabeledExpression(label = "Median", expression = "#AGG.median"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
