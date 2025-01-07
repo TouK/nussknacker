@@ -155,7 +155,7 @@ class DefaultComponentService(
   private def createComponents(
       componentsDefinition: List[ComponentDefinitionWithImplementation],
       category: String,
-  ): List[ComponentListElement] = {
+  )(implicit loggedUser: LoggedUser): List[ComponentListElement] = {
     componentsDefinition
       .map { definition =>
         val designerWideId = definition.designerWideId
@@ -212,9 +212,9 @@ class DefaultComponentService(
   private def createComponentLinks(
       designerWideId: DesignerWideComponentId,
       component: ComponentDefinitionWithImplementation
-  ): List[ComponentLink] = {
+  )(implicit loggedUser: LoggedUser): List[ComponentLink] = {
     val componentLinks = componentLinksConfig
-      .filter(_.isAvailable(component.componentType))
+      .filter(_.isAvailable(component.componentType, loggedUser))
       .map(_.toComponentLink(designerWideId, component.name))
 
     // If component configuration contains documentation link then we add base link
