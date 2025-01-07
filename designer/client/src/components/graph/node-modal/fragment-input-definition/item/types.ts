@@ -27,7 +27,6 @@ export interface FixedValuesOption {
     expression: string;
     label: string;
     icon?: string;
-    hintText?: string;
 }
 
 export interface GenericParameterVariant {

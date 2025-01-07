@@ -66,40 +66,6 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
           "Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
         )
       ),
-      "exampleFixedRadio" -> ParameterConfig(
-        defaultValue = Some("Restart"),
-        editor = Some(
-          FixedValuesParameterEditor(
-            List(
-              FixedExpressionValue(
-                "Continue",
-                "Continue",
-                Some("Resumes reading data where it previously stopped.")
-              ),
-              FixedExpressionValue("Reset", "Reset", Some("Starts reading new events only.")),
-              FixedExpressionValue("Restart", "Restart", Some("Rewinds reading from the earliest event.")),
-            ),
-            FixedValuesEditorMode.RADIO
-          )
-        ),
-        validators = None,
-        label = Some("Example fixed radio"),
-        hintText = Some("Hint text for example fixed radio")
-      ),
-      "exampleFixedList" -> ParameterConfig(
-        defaultValue = None,
-        editor = Some(
-          FixedValuesParameterEditor(
-            List(
-              FixedExpressionValue("Item 1", "First item", Some("Hint text for item 1")),
-              FixedExpressionValue("Item 2", "Second item", Some("Hint text for item 2")),
-            ),
-          )
-        ),
-        validators = None,
-        label = Some("Example fixed list"),
-        hintText = Some("Hint text for example fixed list")
-      ),
     )
   }
 
