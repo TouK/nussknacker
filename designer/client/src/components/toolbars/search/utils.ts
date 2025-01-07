@@ -7,7 +7,6 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ensureArray } from "../../../common/arrayUtils";
 import { SearchQuery } from "./SearchResults";
-import { getComponentGroups } from "../../../reducers/selectors/settings";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
@@ -16,7 +15,6 @@ type FilterSelector = { name: string; selector: Selector }[];
 const fieldsSelectors: FilterSelector = [
     {
         name: "name",
-
         selector: (node) => node.id,
     },
     {
@@ -58,7 +56,7 @@ function matchFilters(value: SelectorResult, filterValues: string[]): boolean {
     return filterValues.length && filterValues.some((filter) => filter != "" && resolved?.toLowerCase().includes(filter.toLowerCase()));
 }
 
-export const findFields = (filterValues: string[], node: NodeType) => {
+const findFields = (filterValues: string[], node: NodeType) => {
     return uniq(
         fieldsSelectors.flatMap(({ name, selector }) =>
             ensureArray(selector(node))
@@ -70,41 +68,17 @@ export const findFields = (filterValues: string[], node: NodeType) => {
 
 const findFieldsUsingSelectorWithName = (selectorName: string, filterValues: string[], node: NodeType) => {
     return uniq(
-        fieldsSelectors
-            .filter((selector) => selector.name == selectorName)
-            .flatMap(({ name, selector }) =>
-                ensureArray(selector(node))
-                    .filter((v) => matchFilters(v, filterValues))
-                    .map(() => name),
-            ),
+        selectorByName(selectorName).flatMap(({ name, selector }) =>
+            ensureArray(selector(node))
+                .filter((v) => matchFilters(v, filterValues))
+                .map(() => name),
+        ),
     );
 };
 
-function useComponentTypes(): Set<string> {
-    const componentsGroups = useSelector(getComponentGroups);
-
-    return useMemo(() => {
-        return new Set(
-            componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
-        );
-    }, []);
-}
-
-export function useNodeTypes(): string[] {
-    const { scenarioGraph } = useSelector(getScenario);
-    const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
-    const componentsSet = useComponentTypes();
-
-    return useMemo(() => {
-        const nodeSelector = fieldsSelectors.find((selector) => selector.name == "type")?.selector;
-        const availableTypes = allNodes
-            .flatMap((node) => ensureArray(nodeSelector(node)).filter((item) => item !== undefined))
-            .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression))
-            .filter((type) => componentsSet.has(type.toLowerCase()));
-
-        return uniq(availableTypes);
-    }, [allNodes]);
-}
+export const selectorByName = (selectorName: string): FilterSelector => {
+    return fieldsSelectors.filter((selector) => selector.name == selectorName);
+};
 
 export function useFilteredNodes(searchQuery: SearchQuery): {
     groups: string[];
@@ -121,7 +95,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
 
     const displayNames = useMemo(
         () => ({
-            name: t("panels.search.field.id", "Name"),
+            name: t("panels.search.field.name", "Name"),
             description: t("panels.search.field.description", "Description"),
             label: t("panels.search.field.label", "Label"),
             value: t("panels.search.field.value", "Value"),
