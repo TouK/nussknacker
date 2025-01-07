@@ -97,6 +97,26 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.TABLE_EDITOR]: TableEditor,
 };
 
+export const editorNames: Record<EditorType, { displayName: string; icon?: string }> = {
+    [EditorType.BOOL_PARAMETER_EDITOR]: { displayName: "Boolean" },
+    [EditorType.CRON_EDITOR]: { displayName: "Cron" },
+    [EditorType.DATE]: { displayName: "Date" },
+    [EditorType.DATE_TIME]: { displayName: "Datetime" },
+    [EditorType.DURATION_EDITOR]: { displayName: "Duration" },
+    [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: { displayName: "Fixed Values" },
+    [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: { displayName: "Fixed Values" },
+    [EditorType.JSON_PARAMETER_EDITOR]: { displayName: "Json" },
+    [EditorType.PERIOD_EDITOR]: { displayName: "Period" },
+    [EditorType.RAW_PARAMETER_EDITOR]: { displayName: "SpEL" },
+    [EditorType.STRING_PARAMETER_EDITOR]: { displayName: "String" },
+    [EditorType.TEXTAREA_PARAMETER_EDITOR]: { displayName: "Textarea" },
+    [EditorType.TIME]: { displayName: "Time" },
+    [EditorType.SQL_PARAMETER_EDITOR]: { displayName: "SQL" },
+    [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: { displayName: "SpEL Template" },
+    [EditorType.DICT_PARAMETER_EDITOR]: { displayName: "Dictionary" },
+    [EditorType.TABLE_EDITOR]: { displayName: "Table" },
+};
+
 export type OnValueChange = {
     (expression: ExpressionObj | string): void;
 };

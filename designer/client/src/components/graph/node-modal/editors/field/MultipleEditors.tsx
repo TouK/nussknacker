@@ -1,6 +1,6 @@
 import React, { ReactNode, useState } from "react";
-import { editors } from "./Editor";
-import { ExpressionObj } from "./types";
+import { editorNames, editors } from "../expression/Editor";
+import { ExpressionObj } from "../expression/types";
 import { Option, TypeSelect } from "../../fragment-input-definition/TypeSelect";
 import { ParamType } from "../types";
 import { FieldError, PossibleValue } from "../Validators";
@@ -30,11 +30,12 @@ export const MultipleEditors = (props: Props) => {
     );
     const Editor = editors[selectedEditor.type];
     const availableEditorsOptions: Option[] = param.editors.map((editor) => ({
-        label: editor.type,
+        label: editorNames[editor.type].displayName,
         value: editor.type,
         isDisabled: false,
     }));
     const availableEditorsOption = availableEditorsOptions.find(({ value }) => value === selectedEditor.type) || availableEditorsOptions[0];
+
     return (
         <>
             <Editor {...props} rows={1} />

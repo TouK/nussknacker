@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { MultipleEditors } from "./MultipleEditors";
-import { EditorMode, ExpressionLang } from "./types";
+import { EditorMode, ExpressionLang } from "../expression/types";
 import * as React from "react";
 import { ParamType } from "../types";
-import { EditorType } from "./Editor";
+import { EditorType } from "../expression/Editor";
 import configureMockStore from "redux-mock-store/lib";
 import { NuThemeProvider } from "../../../../../containers/theme/nuThemeProvider";
 import { Provider } from "react-redux";
@@ -84,7 +84,7 @@ describe("MultipleEditors", () => {
             </ComponentWrapper>,
         );
 
-        expect(screen.getByText("SpelTemplateParameterEditor")).toBeInTheDocument();
+        expect(screen.getByText("SpEL Template")).toBeInTheDocument();
     });
     it("Should set selected editor as first available when expression exists and each editors have the same language", () => {
         const onValueChangeMock = jest.fn();
@@ -108,6 +108,6 @@ describe("MultipleEditors", () => {
             </ComponentWrapper>,
         );
 
-        expect(screen.getByText("RawParameterEditor")).toBeInTheDocument();
+        expect(screen.getByText("SpEL")).toBeInTheDocument();
     });
 });
