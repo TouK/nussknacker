@@ -5,9 +5,6 @@ import { EditorMode, ExpressionLang } from "./expression/types";
 export type ParamType = {
     name: string;
     typ: ReturnedType;
-    editor: {
-        type: `${EditorType}`;
-    };
     editors: {
         type: `${EditorType}`;
         language: ExpressionLang | string;

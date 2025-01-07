@@ -33,7 +33,7 @@ export interface ReturnedType {
     display: string;
     type: string;
     refClazzName: string;
-    params: [];
+    params: unknown[];
 }
 
 export interface ComponentDefinition {

@@ -10,7 +10,7 @@ import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
-import MultipleEditors from "./expression/MultipleEditors";
+import { MultipleEditors } from "./expression/MultipleEditors";
 
 interface Props {
     expressionObj: ExpressionObj;

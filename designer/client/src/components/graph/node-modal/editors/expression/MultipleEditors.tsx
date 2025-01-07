@@ -8,7 +8,6 @@ import { VariableTypes } from "../../../../../types";
 
 interface Props {
     expressionObj: ExpressionObj;
-    showSwitch?: boolean;
     fieldLabel?: string;
     readOnly?: boolean;
     valueClassName?: string;
@@ -17,16 +16,18 @@ interface Props {
     isMarked?: boolean;
     showValidation?: boolean;
     onValueChange: (value: string | ExpressionObj) => void;
-    fieldErrors?: FieldError[];
+    fieldErrors: FieldError[];
     variableTypes: VariableTypes;
     validationLabelInfo?: ReactNode;
     placeholder?: string;
 }
 
-const MultipleEditors = (props: Props) => {
+export const MultipleEditors = (props: Props) => {
     const { param, onValueChange } = props;
 
-    const [selectedEditor, setSelectedEditor] = useState(param.editors[0]);
+    const [selectedEditor, setSelectedEditor] = useState(
+        param.editors.filter((editor) => editor.language === props.expressionObj.language)?.[0] ?? param.editors[0],
+    );
     const Editor = editors[selectedEditor.type];
     const availableEditorsOptions: Option[] = param.editors.map((editor) => ({
         label: editor.type,
@@ -36,7 +37,7 @@ const MultipleEditors = (props: Props) => {
     const availableEditorsOption = availableEditorsOptions.find(({ value }) => value === selectedEditor.type) || availableEditorsOptions[0];
     return (
         <>
-            <Editor {...props} onValueChange={(value) => onValueChange(value)} fieldErrors={[]} rows={1} />
+            <Editor {...props} rows={1} />
             <TypeSelect
                 onChange={(value) => {
                     const selectedEditor = param.editors.find((editor) => editor.type === value);
@@ -49,5 +50,3 @@ const MultipleEditors = (props: Props) => {
         </>
     );
 };
-
-export default MultipleEditors;

@@ -1,5 +1,7 @@
-import {ExtendedEditor, isExtendedEditor, OnValueChange, SimpleEditor } from "./Editor";
+import { DualEditorMode, editors, EditorType, ExtendedEditor, isExtendedEditor, OnValueChange, SimpleEditor } from "./Editor";
 import React, { useCallback, useMemo, useState } from "react";
+import { ExpressionObj } from "./types";
+import { RawEditor } from "./RawEditor";
 import { VariableTypes } from "../../../../../types";
 import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
@@ -8,6 +10,13 @@ import { FieldError } from "../Validators";
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
 
 type Props = {
+    editorConfig: {
+        simpleEditor: {
+            type: EditorType;
+        };
+        defaultMode: DualEditorMode;
+    };
+    expressionObj: ExpressionObj;
     readOnly?: boolean;
     valueClassName?: string;
     fieldErrors: FieldError[];
@@ -17,28 +26,29 @@ type Props = {
     className: string;
     variableTypes: VariableTypes;
     showSwitch?: boolean;
-    BasicEditor: SimpleEditor | ExtendedEditor;
-    ExpressionEditor: SimpleEditor | ExtendedEditor;
 };
 
 export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
-    const { BasicEditor, ExpressionEditor, readOnly, valueClassName, expressionObj } = props;
+    const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 
-    console.log('BasicEditor', BasicEditor)
-    console.log('ExpressionEditor', ExpressionEditor)
-    const showSwitch = useMemo(() => props.showSwitch && BasicEditor, [BasicEditor, props.showSwitch]);
+    const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
+
+    const showSwitch = useMemo(() => props.showSwitch && Editor, [Editor, props.showSwitch]);
 
     const simpleEditorAllowsSwitch = useMemo(
-        () => isExtendedEditor(BasicEditor) && BasicEditor.isSwitchableTo(expressionObj, ExpressionEditor.displayName),
-        [BasicEditor, ExpressionEditor.displayName, expressionObj],
+        () => isExtendedEditor(Editor) && Editor.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
+        [Editor, editorConfig.simpleEditor, expressionObj],
     );
 
-    const isExpressionEditorVisible = isExtendedEditor(BasicEditor)
-        ? BasicEditor?.getExpressionMode?.(expressionObj).language === expressionObj.language
+    const isExpressionEditorVisible = isExtendedEditor(Editor)
+        ? Editor?.getExpressionMode?.(expressionObj).language === expressionObj.language
         : false;
 
-    const initialDisplaySimple = useMemo(() => true, []);
+    const initialDisplaySimple = useMemo(
+        () => editorConfig.defaultMode === DualEditorMode.SIMPLE && simpleEditorAllowsSwitch && !isExpressionEditorVisible,
+        [editorConfig.defaultMode, isExpressionEditorVisible, simpleEditorAllowsSwitch],
+    );
 
     const [displayRawEditor, setDisplayRawEditor] = useState(!initialDisplaySimple);
     const toggleRawEditor = useCallback(() => setDisplayRawEditor((v) => !v), []);
@@ -57,16 +67,16 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
             return t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode");
         }
 
-        if (!isExtendedEditor(BasicEditor)) {
+        if (!isExtendedEditor(Editor)) {
             return;
         }
 
         if (simpleEditorAllowsSwitch) {
-            return BasicEditor?.switchableToHint();
+            return Editor?.switchableToHint();
         }
 
-        return BasicEditor?.notSwitchableToHint();
-    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, BasicEditor, t]);
+        return Editor?.notSwitchableToHint();
+    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, Editor, t]);
 
     const editorProps = useMemo(
         () => ({
@@ -77,16 +87,16 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
     );
 
     const editorExpressionObj = useMemo(() => {
-        if (isExtendedEditor(ExpressionEditor) && ExpressionEditor?.getExpressionMode) {
+        if (isExtendedEditor(Editor) && Editor?.getExpressionMode) {
             if (displayRawEditor) {
-                return ExpressionEditor?.getExpressionMode?.(props.expressionObj);
+                return Editor?.getExpressionMode?.(props.expressionObj);
             } else {
-                return ExpressionEditor?.getBasicMode?.(props.expressionObj);
+                return Editor?.getBasicMode?.(props.expressionObj);
             }
         }
 
         return props.expressionObj;
-    }, [ExpressionEditor, displayRawEditor, props.expressionObj]);
+    }, [Editor, displayRawEditor, props.expressionObj]);
 
     const onValueChangeWithExpressionValue = useCallback(
         (expression: string) => props.onValueChange({ expression, language: editorExpressionObj.language }),
@@ -102,13 +112,18 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
             })}
         >
             {displayRawEditor ? (
-                <ExpressionEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
+                <RawEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
             ) : (
-                <BasicEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
+                <Editor
+                    {...editorProps}
+                    editorConfig={editorConfig.simpleEditor}
+                    expressionObj={editorExpressionObj}
+                    onValueChange={onValueChangeWithExpressionValue}
+                />
             )}
             {showSwitch ? (
                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
-                    {displayRawEditor ? <SimpleEditorIcon type={BasicEditor.displayName} /> : <RawEditorIcon />}
+                    {displayRawEditor ? <SimpleEditorIcon type={editorConfig.simpleEditor.type} /> : <RawEditorIcon />}
                 </SwitchButton>
             ) : null}
         </div>
