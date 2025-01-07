@@ -148,10 +148,11 @@ componentLinks: [
     icon: "/assets/components/CustomNode.svg"
     url: "https://myCustom.com/dataSource/$componentName" 
     supportedComponentTypes: ["service"]
+    requiredPermission: "ServicePermission"
   }
 ]
 ```
-Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$componentName` which are replaced by component data. Param `supportedComponentTypes` means component's types which can support links.
+Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$componentName` which are replaced by component data. Param `supportedComponentTypes` means component's types which can support links. Optional param `requiredPermission` allows link access to users with a given permission.
 
 ### Component group mapping
 
