@@ -236,18 +236,15 @@ class TestingApiHttpServiceSpec
              |                    "possibleValues": [
              |                        {
              |                            "expression": "",
-             |                            "label": "",
-             |                            "hintText" : null
+             |                            "label": ""
              |                        },
              |                        {
              |                            "expression": "'uno'",
-             |                            "label": "uno",
-             |                            "hintText" : null
+             |                            "label": "uno"
              |                        },
              |                        {
              |                            "expression": "'due'",
-             |                            "label": "due",
-             |                            "hintText" : null
+             |                            "label": "due"
              |                        }
              |                    ],
              |                    "mode" : "LIST",
