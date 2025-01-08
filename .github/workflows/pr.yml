@@ -42,6 +42,10 @@ jobs:
         with:
           fetch-depth: 100
       - uses: sbt/setup-sbt@v1
+      - name: TEST sbt
+        run: |
+          sbt/bin/sbt version
+          sbt version
       - uses: dorny/paths-filter@v2
         id: filter
         with:
