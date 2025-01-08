@@ -30,7 +30,7 @@ object NussknackerAppFactory {
   def create(designerConfigLoader: DesignerConfigLoader): Resource[IO, NussknackerAppFactory] = {
     for {
       designerConfig               <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      managersDirs                 <- Resource.eval(IO(designerConfig.managersDirs()))
+      managersDirs                 <- Resource.eval(IO.delay(designerConfig.managersDirs()))
       deploymentManagerClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
     } yield new NussknackerAppFactory(
       designerConfig,

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.config
 
-import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
@@ -18,6 +17,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion) {
 
   import net.ceedubs.ficus.Ficus._
+  import DesignerConfig._
 
   def processingTypeConfigs: ProcessingTypeConfigs =
     ProcessingTypeConfigs(processingTypeConfigsRaw.asMap.mapValuesNow(ProcessingTypeConfig.read))
@@ -26,7 +26,7 @@ final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion)
     rawConfig
       .getConfigOpt("scenarioTypes")
       .getOrElse {
-        throw new RuntimeException("No scenario types configuration provided")
+        throw ConfigurationMalformedException("No scenario types configuration provided")
       }
 
   def configLoaderConfig: Config = rawConfig.resolved.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
@@ -58,5 +58,7 @@ object DesignerConfig {
   def from(config: Config): DesignerConfig = {
     DesignerConfig(ConfigWithUnresolvedVersion(config))
   }
+
+  final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
 
 }

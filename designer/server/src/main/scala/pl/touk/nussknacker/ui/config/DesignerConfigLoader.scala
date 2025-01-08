@@ -12,8 +12,6 @@ trait DesignerConfigLoader {
 
 }
 
-final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
-
 /**
   * This class handles two parts of ui config loading:
   * 1. Parsing of "base" config passed via nussknacker.config.locations system property (without resolution)
