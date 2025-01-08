@@ -28,8 +28,8 @@ abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
   def appliesToConversion(clazz: Class[_]): Boolean
   def canConvert(value: Any): JBoolean = convertEither(value).isRight
 
-  def invokeUnderlyingToMethod(underlyingMethod: ExtensionMethod[_], targetTypeName: String) = {
-    NoArg(target => underlyingMethod.invoke(target, targetTypeName).asInstanceOf[T])
+  def invokeUnderlyingToMethod(underlyingMethodToMethod: ExtensionMethod[_], targetTypeName: String) = {
+    NoArg(target => underlyingMethodToMethod.invoke(target, targetTypeName).asInstanceOf[T])
   }
 }
 
