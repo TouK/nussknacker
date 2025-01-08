@@ -48,12 +48,13 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     );
 
     if (availableEditors.length === 1) {
-        const Editor = editors[availableEditors[0].type];
+        const singleEditor = availableEditors[0];
+        const Editor = editors[singleEditor.type];
         return (
             <Editor
                 {...props}
                 ref={ref}
-                editorConfig={param?.editor}
+                editorConfig={singleEditor}
                 className={`${valueClassName ? valueClassName : nodeValue}`}
                 fieldErrors={fieldErrors}
                 formatter={formatter}
@@ -63,7 +64,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     }
 
     if (availableEditors.length > 1) {
-        return <MultipleEditors {...props} />;
+        return <MultipleEditors {...props} fieldErrors={fieldErrors} />;
     }
 });
 

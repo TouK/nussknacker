@@ -21,7 +21,7 @@ interface Props {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     fieldErrors: FieldError[];
-    param: ParamType;
+    editorConfig: $TodoType;
     showValidation: boolean;
     readOnly: boolean;
 }
@@ -29,11 +29,12 @@ interface Props {
 export const DictParameterEditor: ExtendedEditor<Props> = ({
     fieldErrors,
     expressionObj,
-    param,
+    editorConfig,
     onValueChange,
     showValidation,
     readOnly,
 }: Props) => {
+    console.log("editorConfig", editorConfig);
     const scenario = useSelector(getScenario);
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
@@ -50,7 +51,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
 
-    const dictId = param.editor.dictId || param.editor?.simpleEditor?.dictId;
+    const dictId = editorConfig.dictId;
 
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {

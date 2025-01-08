@@ -2,7 +2,7 @@ import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup } from "./component";
-import { ScenarioPropertyConfig } from "../components/properties/ScenarioProperty";
+import { ParamType } from "../components/graph/node-modal/editors/types";
 
 export type ScenarioGraphWithName = {
     processName: string;
@@ -25,7 +25,7 @@ export type ProcessAdditionalFields = {
 };
 
 export interface UiScenarioProperties {
-    propertiesConfig: { [key: string]: ScenarioPropertyConfig };
+    propertiesConfig: { [key: string]: ParamType };
     docsUrl?: string;
 }
 //"ReturnType" is builtin type alias
@@ -33,7 +33,7 @@ export interface ReturnedType {
     display: string;
     type: string;
     refClazzName: string;
-    params: unknown[];
+    params: TypingResult[];
 }
 
 export interface ComponentDefinition {

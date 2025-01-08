@@ -39,7 +39,13 @@ export const MultipleEditors = (props: Props) => {
 
     return (
         <Box display="flex" flexDirection={"row"} flexBasis={"80%"} width={"100%"} gap={1}>
-            <Box component={Editor} {...props} rows={1} sx={{ flexBasis: "unset !important", width: "100% !important" }} />
+            <Box
+                {...props}
+                component={Editor}
+                rows={1}
+                editorConfig={selectedEditor}
+                sx={{ flexBasis: "unset !important", width: "100% !important" }}
+            />
             <Box>
                 <Box
                     component={TypeSelect}

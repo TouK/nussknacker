@@ -1,5 +1,7 @@
 //types from pl.touk.nussknacker.ui.definition
 
+import { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
+
 interface TypingResultBase {
     value?: string | number | boolean;
     type: string;
@@ -30,7 +32,7 @@ type TypedTaggedValue = (TypedObjectTypingResult | TypedDict | TypedClass) & {
 type SingleTypingResult = TypingResultBase & (TypedObjectTypingResult | TypedDict | TypedClass | TypedTaggedValue);
 
 interface UnknownTyping extends TypingResultBase {
-    params: Array<TypingResult>;
+    params: TypingResult[];
 }
 
 interface UnionTyping extends TypingResultBase {
@@ -39,12 +41,14 @@ interface UnionTyping extends TypingResultBase {
 
 export type TypingResult = UnknownTyping | SingleTypingResult | UnionTyping;
 
+//TODO: Fixme, maybe we can use designer/client/src/components/graph/node-modal/editors/types.ts ?
 export interface UIParameter {
     name: string;
     typ: TypingResult;
     editor: $TodoType;
+    editors?: $TodoType;
     defaultValue: {
-        language: string;
+        language: ExpressionLang | string;
         expression: string;
     };
     additionalVariables: TypingInfo;

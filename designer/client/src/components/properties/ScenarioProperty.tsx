@@ -4,19 +4,13 @@ import React, { useCallback } from "react";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { NodeValidationError, PropertiesType } from "../../types";
-
-export interface ScenarioPropertyConfig {
-    editor: any;
-    label: string;
-    defaultValue: string | null;
-    hintText: string | null;
-}
+import { ParamType } from "../graph/node-modal/editors/types";
 
 interface Props {
     showSwitch: boolean;
     showValidation: boolean;
     propertyName: string;
-    propertyConfig: ScenarioPropertyConfig;
+    propertyConfig: ParamType;
     editedNode: PropertiesType;
     onChange: <K extends keyof PropertiesType["additionalFields"]["properties"]>(
         property: K,

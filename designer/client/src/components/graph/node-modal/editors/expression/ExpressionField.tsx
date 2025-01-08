@@ -46,7 +46,7 @@ function ExpressionField(props: Props): JSX.Element {
     const exprTextPath = `${exprPath}.expression`;
     const exprLanguagePath = `${exprPath}.language`;
     const expressionObj = get(editedNode, exprPath);
-    const editor = parameterDefinition?.editor || {};
+    const editors = parameterDefinition?.editors || [];
 
     const onValueChange: OnValueChange = useCallback(
         (value: ExpressionObj | string) => {
@@ -59,7 +59,13 @@ function ExpressionField(props: Props): JSX.Element {
         [exprLanguagePath, exprTextPath, setNodeDataAt],
     );
 
-    if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR || editor.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR) {
+    if (
+        editors.some(
+            (editor) =>
+                editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR ||
+                editor.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR,
+        )
+    ) {
         return (
             <EditableEditor
                 fieldLabel={fieldLabel}

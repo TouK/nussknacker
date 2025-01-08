@@ -1,4 +1,4 @@
-import React, { ForwardedRef, forwardRef, useMemo } from "react";
+import React, { ForwardedRef, forwardRef, ReactNode, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
@@ -16,7 +16,7 @@ export type RawEditorProps = {
     cols?: number;
     className?: string;
     variableTypes: VariableTypes;
-    validationLabelInfo?: string;
+    validationLabelInfo?: ReactNode;
     editorMode?: EditorMode;
     placeholder?: string;
 };

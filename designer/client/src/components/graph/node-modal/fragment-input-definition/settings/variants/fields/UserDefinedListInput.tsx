@@ -13,11 +13,11 @@ import { useSelector } from "react-redux";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
 import { debounce } from "lodash";
-import { EditorType } from "../../../../editors/expression/Editor";
 import { useSettings } from "../../SettingsProvider";
 import { Box, Button, CircularProgress, FormControl, Stack } from "@mui/material";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { IAceEditor } from "react-ace/lib/types";
+import { RawEditor } from "../../../../editors/expression/RawEditor";
 
 const ENTER_VALUE_COMMAND = "addValueOnEnter";
 
@@ -184,7 +184,7 @@ export const UserDefinedListInput = ({
             <SettingLabelStyled>{inputLabel}</SettingLabelStyled>
             <Box width={"80%"} flex={1}>
                 <Stack direction="row" paddingY={1} spacing={1} justifyContent={"space-between"} alignItems={"start"}>
-                    <EditableEditor
+                    <RawEditor
                         validationLabelInfo={
                             temporaryValuesTyping && <CircularProgress size={"1rem"} sx={(theme) => ({ marginTop: theme.spacing(0.5) })} />
                         }
@@ -204,7 +204,6 @@ export const UserDefinedListInput = ({
                                 ref.editor.commands.addCommand(aceEditorEnterCommand);
                             }
                         }}
-                        param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
                         fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
                         showValidation
                     />
