@@ -2,22 +2,19 @@ package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 
 import java.nio.file.{Files, Path, Paths}
-
-import java.nio.file.{Files, Path, Paths}
-import pl.touk.nussknacker.engine.util.StringUtils._
-
 import scala.jdk.CollectionConverters._
 
 // TODO: We should extract a class for all configuration options that should be available to designer instead of returning raw hocon config.
 //       Thanks to that it will be easier to split processing type config from rest of configs and use this interface programmatically
 final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion) {
 
-  import net.ceedubs.ficus.Ficus._
   import DesignerConfig._
+  import net.ceedubs.ficus.Ficus._
 
   def processingTypeConfigs: ProcessingTypeConfigs =
     ProcessingTypeConfigs(processingTypeConfigsRaw.asMap.mapValuesNow(ProcessingTypeConfig.read))

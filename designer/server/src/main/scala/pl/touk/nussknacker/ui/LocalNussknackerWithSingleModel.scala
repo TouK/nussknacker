@@ -4,7 +4,7 @@ import cats.effect.{IO, Resource}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
-import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
+import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader, SimpleConfigLoadingDesignerConfigLoader}
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 
@@ -53,7 +53,7 @@ object LocalNussknackerWithSingleModel {
       // This map is ignored but must exist
       appConfig.withValue("scenarioTypes", ConfigValueFactory.fromMap(Map.empty[String, ConfigValue].asJava))
     )
-    val designerConfigLoader = DesignerConfigLoader.fromConfig(designerConfig.rawConfig.resolved)
+    val designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(designerConfig.rawConfig.resolved)
     val appFactory           = new NussknackerAppFactory(designerConfig, designerConfigLoader, _ => local)
     appFactory.createApp()
   }

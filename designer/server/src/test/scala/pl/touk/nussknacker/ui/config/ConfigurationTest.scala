@@ -6,10 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import cats.effect.unsafe.implicits.global
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
-
 
 import java.net.URI
 import java.nio.file.Files

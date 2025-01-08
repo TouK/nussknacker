@@ -704,7 +704,7 @@ class AkkaHttpBasedRouteProvider(
     Resource
       .make(
         acquire = IO {
-          val laodProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
+          val loadProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
             getModelDependencies(
               additionalUIConfigProvider,
               _,
@@ -719,7 +719,7 @@ class AkkaHttpBasedRouteProvider(
               _
             ),
           )
-          new ReloadableProcessingTypeDataProvider(laodProcessingTypeDataIO)
+          new ReloadableProcessingTypeDataProvider(loadProcessingTypeDataIO)
         }
       )(
         release = _.close()
