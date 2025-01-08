@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 
 import scala.concurrent.Future
@@ -51,9 +50,9 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   }
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
-
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
   override def close(): Unit = ()
 }

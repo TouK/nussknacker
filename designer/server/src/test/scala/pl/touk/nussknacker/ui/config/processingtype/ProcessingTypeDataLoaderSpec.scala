@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui
+package pl.touk.nussknacker.ui.config.processingtype
 
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Ref}
@@ -6,9 +6,10 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
+import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigsLoader
 
-class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
+class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
@@ -31,7 +32,7 @@ class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
       .resolve()
 
     intercept[typesafe.config.ConfigException] {
-      loadableConfigBasedNussknackerConfig(config)
+      staticConfigBasedProcessingTypeConfigsLoader(config)
         .loadProcessingTypeConfigs()
         .unsafeRunSync()
     }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
@@ -47,14 +48,14 @@ class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
       .resolve()
 
     intercept[RuntimeException] {
-      loadableConfigBasedNussknackerConfig(config)
+      staticConfigBasedProcessingTypeConfigsLoader(config)
         .loadProcessingTypeConfigs()
         .unsafeRunSync()
     }.getMessage should include("No scenario types configuration provided")
   }
 
   test("should load the second config when reloaded") {
-    val nussknackerConfig = loadDifferentConfigPerInvocationNussknackerConfig(
+    val processingTypeConfigsLoader = loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(
       config1 = ConfigFactory
         .parseString(
           """
@@ -103,39 +104,37 @@ class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
         .resolve()
     )
 
-    val processingTypes1 = nussknackerConfig
+    val processingTypes1 = processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
       .unsafeRunSync()
 
-    processingTypes1.keys.toSet shouldBe Set("streaming")
+    processingTypes1.configByProcessingType.keys.toSet shouldBe Set("streaming")
 
-    val processingTypes2 = nussknackerConfig
+    val processingTypes2 = processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
       .unsafeRunSync()
 
-    processingTypes2.keys.toSet shouldBe Set("streaming", "streaming2")
+    processingTypes2.configByProcessingType.keys.toSet shouldBe Set("streaming", "streaming2")
   }
 
-  private def loadableConfigBasedNussknackerConfig(config: Config): LoadableConfigBasedNussknackerConfig = {
-    loadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(config)))
+  private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = { () =>
+    DesignerConfigLoader.fromConfig(config).loadDesignerConfig().map(_.processingTypeConfigs)
   }
 
-  private def loadableConfigBasedNussknackerConfig(
-      loadConfig: IO[ConfigWithUnresolvedVersion]
-  ): LoadableConfigBasedNussknackerConfig = {
-    new LoadableConfigBasedNussknackerConfig(loadConfig)
-  }
-
-  private def loadDifferentConfigPerInvocationNussknackerConfig(config1: Config, config2: Config, configs: Config*) = {
+  private def loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(
+      config1: Config,
+      config2: Config,
+      configs: Config*
+  ): ProcessingTypeConfigsLoader = {
     val ref        = Ref.unsafe[IO, Int](0)
     val allConfigs = config1 :: config2 :: configs.toList
-    val loadConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
+    val loadDesignerConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
       allConfigs.lift(idx) match {
-        case Some(config) => IO.pure(ConfigWithUnresolvedVersion(config))
+        case Some(config) => IO.pure(DesignerConfig.from(config))
         case None         => IO.raiseError(throw new IllegalStateException(s"Cannot load the config more than [$idx]"))
       }
     }
-    loadableConfigBasedNussknackerConfig(loadConfig)
+    () => loadDesignerConfig.map(_.processingTypeConfigs)
   }
 
 }

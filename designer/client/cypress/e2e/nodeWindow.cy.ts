@@ -13,13 +13,13 @@ describe("Node window", () => {
         cy.viewport(1600, 800);
     });
 
-    it("should display periodic source", () => {
+    it("should display sample-generator source", () => {
         cy.visitNewProcess(NAME).as("processName");
         cy.contains(/^sources$/)
             .should("exist")
             .scrollIntoView();
         cy.layoutScenario();
-        cy.get("[data-testid='component:periodic']")
+        cy.get("[data-testid='component:sample-generator']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
@@ -29,7 +29,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("periodic").dblclick();
+        cy.getNode("sample-generator").dblclick();
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");

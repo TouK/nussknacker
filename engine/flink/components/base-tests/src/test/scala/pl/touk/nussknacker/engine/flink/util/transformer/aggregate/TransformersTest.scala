@@ -6,6 +6,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
@@ -74,6 +76,33 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateOk("#AGG.average", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
     validateOk("#AGG.average", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
 
+    validateOk("#AGG.stddevPop", "1", Typed[Double])
+    validateOk("#AGG.stddevSamp", "1", Typed[Double])
+    validateOk("#AGG.varPop", "1", Typed[Double])
+    validateOk("#AGG.varSamp", "1", Typed[Double])
+
+    validateOk("#AGG.stddevPop", "1.5", Typed[Double])
+    validateOk("#AGG.stddevSamp", "1.5", Typed[Double])
+    validateOk("#AGG.varPop", "1.5", Typed[Double])
+    validateOk("#AGG.varSamp", "1.5", Typed[Double])
+
+    validateOk("#AGG.stddevPop", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.stddevSamp", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.varPop", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.varSamp", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
+
+    validateOk("#AGG.stddevPop", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.stddevSamp", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.varPop", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.varSamp", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
+
+    validateOk("#AGG.median", """#input.eId""", Typed[Double])
+    validateOk("#AGG.median", """1""", Typed[Double])
+    validateOk("#AGG.median", """1.5""", Typed[Double])
+
+    validateOk("#AGG.median", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
+    validateOk("#AGG.median", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
+
     validateOk("#AGG.set", "#input.str", Typed.fromDetailedType[java.util.Set[String]])
     validateOk(
       "#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
@@ -84,6 +113,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")
     validateError("#AGG.countWhen", "#input.str", "Invalid aggregate type: String, should be: Boolean")
     validateError("#AGG.average", "#input.str", "Invalid aggregate type: String, should be: Number")
+    validateError("#AGG.median", "#input.str", "Invalid aggregate type: String, should be: Number")
+
+    validateError("#AGG.stddevPop", "#input.str", "Invalid aggregate type: String, should be: Number")
+    validateError("#AGG.stddevSamp", "#input.str", "Invalid aggregate type: String, should be: Number")
+    validateError("#AGG.varPop", "#input.str", "Invalid aggregate type: String, should be: Number")
+    validateError("#AGG.varSamp", "#input.str", "Invalid aggregate type: String, should be: Number")
+
     validateError(
       "#AGG.map({f1: #AGG.set, f2: #AGG.set})",
       "{f1: #input.str}",
@@ -140,6 +176,42 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
+  }
+
+  test("median aggregate") {
+    val id = "1"
+
+    val model =
+      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
+    val testProcess = sliding("#AGG.median", "#input.eId", emitWhenEventLeft = false)
+
+    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+    aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
+  }
+
+  test("standard deviation and average aggregates") {
+    val table = Table(
+      ("aggregate", "secondValue"),
+      ("#AGG.stddevPop", Math.sqrt(0.25)),
+      ("#AGG.stddevSamp", Math.sqrt(0.5)),
+      ("#AGG.varPop", 0.25),
+      ("#AGG.varSamp", 0.5)
+    )
+
+    forAll(table) { (aggregationName, secondValue) =>
+      val id = "1"
+
+      val model =
+        modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
+      val testProcess = sliding(aggregationName, "#input.eId", emitWhenEventLeft = false)
+
+      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+      val mapped = aggregateVariables
+        .map(e => e.asInstanceOf[Double])
+      mapped.size shouldBe 2
+      mapped(0) shouldBe 0.0 +- 0.0001
+      mapped(1) shouldBe secondValue +- 0.0001
+    }
   }
 
   test("sliding aggregate should emit context of variables") {
@@ -399,7 +471,45 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables.length shouldEqual (2)
     aggregateVariables(0) shouldEqual 1.0
-    require((aggregateVariables(1).asInstanceOf[Double].isNaN))
+    aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+  }
+
+  test("emit aggregate for extra window when no data come for median aggregator for return type double") {
+    val id = "1"
+
+    val model =
+      modelData(List(TestRecordHours(id, 0, 1, "a")))
+    val testProcess = tumbling("#AGG.median", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+
+    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+    aggregateVariables.length shouldEqual (2)
+    aggregateVariables(0) shouldEqual 1.0
+    aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+  }
+
+  test(
+    "emit aggregate for extra window when no data come for standard deviation and variance aggregator for return type double"
+  ) {
+    val table = Table(
+      "aggregatorExpression",
+      "#AGG.stddevPop",
+      "#AGG.stddevSamp",
+      "#AGG.varPop",
+      "#AGG.varSamp"
+    )
+
+    forAll(table) { aggregatorName =>
+      val id = "1"
+
+      val model =
+        modelData(List(TestRecordHours(id, 0, 1, "a")))
+      val testProcess = tumbling(aggregatorName, "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+
+      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+      aggregateVariables.length shouldEqual (2)
+      aggregateVariables(0) shouldEqual 0.0
+      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+    }
   }
 
   test("emit aggregate for extra window when no data come for average aggregator for return type BigDecimal") {
@@ -412,6 +522,46 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
+  }
+
+  test("emit aggregate for extra window when no data come for median aggregator for return type BigDecimal") {
+    val id = "1"
+
+    val model =
+      modelData(List(TestRecordHours(id, 0, 1, "a")))
+    val testProcess =
+      tumbling("#AGG.median", """T(java.math.BigDecimal).ONE""", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+
+    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+    aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
+  }
+
+  test(
+    "emit aggregate for extra window when no data come for standard deviation and variance aggregator for return type BigDecimal"
+  ) {
+    val table = Table(
+      "aggregatorExpression",
+      "#AGG.stddevPop",
+      "#AGG.stddevSamp",
+      "#AGG.varPop",
+      "#AGG.varSamp"
+    )
+
+    forAll(table) { aggregatorName =>
+      val id = "1"
+
+      val model =
+        modelData(List(TestRecordHours(id, 0, 1, "a")))
+      val testProcess =
+        tumbling(
+          aggregatorName,
+          """T(java.math.BigDecimal).ONE""",
+          emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow
+        )
+
+      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+      aggregateVariables shouldEqual List(new java.math.BigDecimal("0"), null)
+    }
   }
 
   test("emit aggregate for extra window when no data come - out of order elements") {

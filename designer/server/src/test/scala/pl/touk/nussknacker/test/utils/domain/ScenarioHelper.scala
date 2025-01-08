@@ -105,7 +105,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     } yield id).futureValue
   }
 
-  def createDeployedWithCustomActionScenario(
+  def createDeployedScenario(
       scenarioName: ProcessName,
       category: String,
       isFragment: Boolean
@@ -113,7 +113,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
       _  <- prepareDeploy(id, processingTypeBy(category))
-      _  <- prepareCustomAction(id)
     } yield id).futureValue
   }
 
@@ -152,14 +151,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
     val comment    = Comment.from("Cancel comment")
-    dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
-    )
-  }
-
-  private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
-    val actionName = ScenarioActionName("Custom")
-    val comment    = Comment.from("Execute custom action")
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
     )

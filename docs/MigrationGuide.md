@@ -28,7 +28,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
             * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions
 * [#7347](https://github.com/TouK/nussknacker/pull/7347) All calls to `org.apache.flink.api.common.functions.RichFunction.open(Configuration)`,
   which is deprecated, were replaced with calls to `org.apache.flink.api.common.functions.RichFunction.open(OpenContext)`
+* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism. 
+  If there were any custom actions defined in some custom DeploymentManager implementation, 
+  they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
+
+### Code API changes
+* [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
 
 ## In version 1.18.0
 

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
@@ -77,13 +78,10 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
   @tailrec
   override def convertEither(value: Any): Either[Throwable, JMap[_, _]] =
     value match {
-      case m: JMap[_, _] => Right(m)
-      case a: Array[_]   => convertEither(ConversionHandler.convertArrayToList(a))
-      case c: JCollection[JMap[_, _] @unchecked] if canConvertToMap(c) =>
-        val map = new JHashMap[Any, Any]()
-        c.forEach(e => map.put(e.get(keyName), e.get(valueName)))
-        Right(map)
-      case x => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
+      case m: JMap[_, _]                           => Right(m)
+      case a: Array[_]                             => convertEither(ConversionHandler.convertArrayToList(a))
+      case c: JCollection[_] if canConvertToMap(c) => Right(convertToMap(c))
+      case x                                       => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
     }
 
   // We could leave underlying method using convertEither as well but this implementation is faster
@@ -94,12 +92,26 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
     case _                 => false
   }
 
-  private def canConvertToMap(c: JCollection[_]): Boolean = c.isEmpty || c
+  private def canConvertToMap(c: JCollection[_]): Boolean = c
     .stream()
     .allMatch {
-      case m: JMap[_, _] => m.keySet().containsAll(keyAndValueNames)
-      case _             => false
+      case m: JMap[_, _]       => m.keySet().containsAll(keyAndValueNames)
+      case _: JMap.Entry[_, _] => true
+      case _                   => false
     }
+
+  private def convertToMap(c: JCollection[_]): JMap[_, _] = {
+    val map = new JHashMap[Any, Any]()
+    c.forEach {
+      case e: JMap[_, _]       => map.put(e.get(keyName), e.get(valueName))
+      case e: JMap.Entry[_, _] => map.put(e.getKey, e.getValue)
+      case e =>
+        throw new IllegalArgumentException(
+          s"Trying convert to map entry element of class ${if (e != null) e.getClass else "null"}"
+        )
+    }
+    map
+  }
 
   override def appliesToConversion(clazz: Class[_]): Boolean =
     clazz != resultTypeClass && (clazz.isAOrChildOf(collectionClass) || clazz == unknownClass || clazz.isArray)

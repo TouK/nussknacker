@@ -495,6 +495,27 @@ class PeriodicProcessService(
     }
   }
 
+  def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    delegateDeploymentManager.stateQueryForAllScenariosSupport match {
+      case supported: StateQueryForAllScenariosSupported =>
+        new StateQueryForAllScenariosSupported {
+
+          override def getAllProcessesStates()(
+              implicit freshnessPolicy: DataFreshnessPolicy
+          ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+            for {
+              allStatusDetailsInDelegate <- supported.getAllProcessesStates()
+              allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
+              result = allStatusDetailsInPeriodic.map { case (name, status) => (name, List(status)) }
+            } yield allStatusDetailsInDelegate.map(_ => result)
+          }
+
+        }
+
+      case NoStateQueryForAllScenariosSupport =>
+        NoStateQueryForAllScenariosSupport
+    }
+
   private def mergeStatusWithDeployments(
       name: ProcessName,
       runtimeStatuses: List[StatusDetails]
@@ -528,11 +549,54 @@ class PeriodicProcessService(
     }
   }
 
+  private def mergeStatusWithDeployments(
+      runtimeStatuses: Map[ProcessName, List[StatusDetails]]
+  ): Future[Map[ProcessName, StatusDetails]] = {
+    def toDeploymentStatuses(processName: ProcessName, schedulesState: SchedulesState) =
+      schedulesState.schedules.toList
+        .flatMap { case (scheduleId, scheduleData) =>
+          scheduleData.latestDeployments.map { deployment =>
+            DeploymentStatus(
+              deployment.id,
+              scheduleId,
+              deployment.createdAt,
+              deployment.runAt,
+              deployment.state.status,
+              scheduleData.process.active,
+              runtimeStatuses.getOrElse(processName, List.empty).getStatus(deployment.id)
+            )
+          }
+        }
+        .sorted(DeploymentStatus.ordering.reverse)
+
+    for {
+      activeSchedules   <- getLatestDeploymentsForActiveSchedules(MaxDeploymentsStatus)
+      inactiveSchedules <- getLatestDeploymentsForLatestInactiveSchedules(MaxDeploymentsStatus, MaxDeploymentsStatus)
+    } yield {
+      val allProcessNames = activeSchedules.keySet ++ inactiveSchedules.keySet
+      allProcessNames.map { processName =>
+        val activeSchedulesForProcess   = activeSchedules.getOrElse(processName, SchedulesState(Map.empty))
+        val inactiveSchedulesForProcess = inactiveSchedules.getOrElse(processName, SchedulesState(Map.empty))
+        val status = PeriodicProcessStatus(
+          toDeploymentStatuses(processName, activeSchedulesForProcess),
+          toDeploymentStatuses(processName, inactiveSchedulesForProcess)
+        )
+        val mergedStatus = status.mergedStatusDetails.copy(status = status)
+        (processName, mergedStatus)
+      }.toMap
+    }
+  }
+
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int = 1
   ): Future[SchedulesState] =
     scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount).run
+
+  def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int
+  ): Future[Map[ProcessName, SchedulesState]] =
+    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount).run
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
@@ -542,6 +606,17 @@ class PeriodicProcessService(
     scheduledProcessesRepository
       .getLatestDeploymentsForLatestInactiveSchedules(
         processName,
+        inactiveProcessesMaxCount,
+        deploymentsPerScheduleMaxCount
+      )
+      .run
+
+  def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  ): Future[Map[ProcessName, SchedulesState]] =
+    scheduledProcessesRepository
+      .getLatestDeploymentsForLatestInactiveSchedules(
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount
       )

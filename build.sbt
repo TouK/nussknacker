@@ -1,15 +1,15 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
-import pl.project13.scala.sbt.JmhPlugin._
-import sbt.Keys._
-import sbt._
+import pl.project13.scala.sbt.JmhPlugin.*
+import sbt.*
+import sbt.Keys.*
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations.*
 
 import scala.language.postfixOps
-import scala.sys.process._
+import scala.sys.process.*
 import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
@@ -1148,7 +1148,7 @@ lazy val mathUtils = (project in utils("math-utils"))
       "org.springframework" % "spring-expression" % springV,
     )
   )
-  .dependsOn(componentsApi, testUtils % Test)
+  .dependsOn(commonUtils, componentsApi, testUtils % Test)
 
 lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(commonSettings)
@@ -1930,6 +1930,18 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   )
   .dependsOn(extensionsApi)
 
+lazy val configLoaderApi = (project in file("designer/config-loader-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-config-loader-api",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-effect" % catsEffectV
+      )
+    }
+  )
+  .dependsOn(extensionsApi)
+
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
   .settings(
@@ -2018,21 +2030,21 @@ lazy val designer = (project in file("designer/server"))
     assembly / assemblyMergeStrategy := designerMergeStrategy,
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-http"            % akkaHttpV,
-        "com.typesafe.akka"             %% "akka-slf4j"           % akkaV,
-        "com.typesafe.akka"             %% "akka-stream"          % akkaV,
-        "com.typesafe.akka"             %% "akka-http-testkit"    % akkaHttpV % Test,
-        "com.typesafe.akka"             %% "akka-testkit"         % akkaV     % Test,
-        "de.heikoseeberger"             %% "akka-http-circe"      % akkaHttpCirceV,
-        "com.softwaremill.sttp.client3" %% "akka-http-backend"    % sttpV,
-        "ch.qos.logback"                 % "logback-core"         % logbackV,
-        "ch.qos.logback"                 % "logback-classic"      % logbackV,
-        "ch.qos.logback.contrib"         % "logback-json-classic" % logbackJsonV,
-        "ch.qos.logback.contrib"         % "logback-jackson"      % logbackJsonV,
-        "com.fasterxml.jackson.core"     % "jackson-databind"     % jacksonV,
-        "org.slf4j"                      % "log4j-over-slf4j"     % slf4jV,
-        "com.carrotsearch"               % "java-sizeof"          % "0.0.5",
-        "org.typelevel"                 %% "case-insensitive"     % "1.4.0",
+        "com.typesafe.akka"             %% "akka-http"                      % akkaHttpV,
+        "com.typesafe.akka"             %% "akka-slf4j"                     % akkaV,
+        "com.typesafe.akka"             %% "akka-stream"                    % akkaV,
+        "com.typesafe.akka"             %% "akka-http-testkit"              % akkaHttpV % Test,
+        "com.typesafe.akka"             %% "akka-testkit"                   % akkaV     % Test,
+        "de.heikoseeberger"             %% "akka-http-circe"                % akkaHttpCirceV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % sttpV,
+        "ch.qos.logback"                 % "logback-core"                   % logbackV,
+        "ch.qos.logback"                 % "logback-classic"                % logbackV,
+        "ch.qos.logback.contrib"         % "logback-json-classic"           % logbackJsonV,
+        "ch.qos.logback.contrib"         % "logback-jackson"                % logbackJsonV,
+        "com.fasterxml.jackson.core"     % "jackson-databind"               % jacksonV,
+        "org.slf4j"                      % "log4j-over-slf4j"               % slf4jV,
+        "com.carrotsearch"               % "java-sizeof"                    % "0.0.5",
+        "org.typelevel"                 %% "case-insensitive"               % "1.4.0",
 
         // It's needed by flinkDeploymentManager which has disabled includingScala
         "org.scala-lang"                 % "scala-compiler"                  % scalaVersion.value,
@@ -2088,6 +2100,7 @@ lazy val designer = (project in file("designer/server"))
     componentsApi,
     restmodel,
     listenerApi,
+    configLoaderApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
@@ -2218,6 +2231,7 @@ lazy val modules = List[ProjectReference](
   httpUtils,
   restmodel,
   listenerApi,
+  configLoaderApi,
   deploymentManagerApi,
   designer,
   sqlComponents,

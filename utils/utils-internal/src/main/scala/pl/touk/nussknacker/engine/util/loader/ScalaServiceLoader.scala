@@ -42,6 +42,17 @@ object ScalaServiceLoader extends LazyLogging {
     }
   }
 
+  def loadOne[T: ClassTag](classLoader: ClassLoader): Option[T] = {
+    load[T](classLoader) match {
+      case Nil =>
+        None
+      case one :: Nil =>
+        Some(one)
+      case _ =>
+        throw new IllegalStateException(s"More than one ${classTag[T].runtimeClass.getSimpleName} found")
+    }
+  }
+
   def load[T: ClassTag](classLoader: ClassLoader): List[T] = {
     val interface: Class[T] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     val loadedClasses = ServiceLoader

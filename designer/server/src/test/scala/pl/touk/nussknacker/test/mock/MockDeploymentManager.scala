@@ -2,18 +2,13 @@ package pl.touk.nussknacker.test.mock
 
 import _root_.sttp.client3.testing.SttpBackendStub
 import akka.actor.ActorSystem
-import cats.effect.unsafe.implicits.global
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.definition.{
-  NotBlankParameterValidator,
-  NotNullParameterValidator,
-  StringParameterEditor
-}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -29,7 +24,6 @@ import shapeless.syntax.typeable.typeableOps
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
@@ -45,16 +39,17 @@ object MockDeploymentManager {
       deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
-      scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager
+      scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
+      customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None
   ): MockDeploymentManager = {
-    import cats.effect.unsafe.implicits.global
     new MockDeploymentManager(
       defaultProcessStateStatus,
       deployedScenariosProvider,
       actionService,
       scenarioActivityManager,
-      DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
-    )
+      customProcessStateDefinitionManager,
+      DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()(IORuntime.global)
+    )(ExecutionContext.global, IORuntime.global)
   }
 
 }
@@ -65,8 +60,10 @@ class MockDeploymentManager private (
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
     scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
+    customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     deploymentManagersClassLoader: (DeploymentManagersClassLoader, IO[Unit]),
-) extends FlinkDeploymentManager(
+)(implicit executionContext: ExecutionContext, IORuntime: IORuntime)
+    extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestFactory.modelDependencies,
@@ -98,6 +95,12 @@ class MockDeploymentManager private (
 
   // Pass correct deploymentId
   private def fallbackDeploymentId = DeploymentId(UUID.randomUUID().toString)
+
+  override def processStateDefinitionManager: ProcessStateDefinitionManager =
+    customProcessStateDefinitionManager match {
+      case Some(manager) => manager
+      case None          => super.processStateDefinitionManager
+    }
 
   override def getProcessStates(
       name: ProcessName
@@ -265,39 +268,6 @@ class MockDeploymentManager private (
       deploymentId: Option[newdeployment.DeploymentId]
   ): Future[Option[ExternalDeploymentId]] = ???
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = {
-    import SimpleStateStatus._
-    List(
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("hello"),
-        allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
-      ),
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("not-implemented"),
-        allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
-      ),
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("invalid-status"),
-        allowedStateStatusNames = Nil
-      ),
-      deployment.CustomActionDefinition(
-        actionName = ScenarioActionName("has-params"),
-        allowedStateStatusNames = Nil,
-        parameters = CustomActionParameter(
-          "testParam",
-          StringParameterEditor,
-          NotBlankParameterValidator :: NotNullParameterValidator :: Nil
-        ) :: Nil
-      )
-    )
-  }
-
-  override protected def processCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] =
-    command.actionName.value match {
-      case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
-      case _                          => Future.failed(new NotImplementedError())
-    }
-
   override def close(): Unit = {
     deploymentManagersClassLoader._2.unsafeRunSync()
   }
@@ -322,6 +292,8 @@ class MockDeploymentManager private (
     }
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
 }
 

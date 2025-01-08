@@ -192,9 +192,9 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       ),
       new MockManagerProvider(
-        new MockDeploymentManager() {
-          override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
-        }
+        MockDeploymentManager.create(
+          customProcessStateDefinitionManager = Some(stateDefinitionManager)
+        )
       ),
       TestFactory.deploymentManagerDependencies,
       deploymentConfig = ConfigFactory.empty(),
