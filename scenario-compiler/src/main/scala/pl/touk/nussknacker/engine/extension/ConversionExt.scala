@@ -30,7 +30,8 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
     for {
       mappedMethodName <- mapMethodName(methodName)
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
-      resultMethod = NoArg(target => underlyingMethod.invoke(target, targetTypeName))
+      // TODO_PAWEL tutaj shackowane pod jeden test, by byl ten java.util.Map a nie any
+      resultMethod = NoArg(target => underlyingMethod.invoke(target, targetTypeName).asInstanceOf[java.util.Map[_, _]])
     } yield resultMethod
 
   private def mapMethodName(methodName: String): Option[String] = methodName match {
