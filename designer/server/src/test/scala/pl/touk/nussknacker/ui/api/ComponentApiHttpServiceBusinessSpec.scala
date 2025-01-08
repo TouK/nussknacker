@@ -157,6 +157,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-echoenumservice",
     "streaming-service-enricher",
     "streaming-service-enrichernullresult",
+    "streaming-service-env",
     "streaming-service-listreturnobjectservice",
     "streaming-service-log",
     "streaming-service-meetingservice",
