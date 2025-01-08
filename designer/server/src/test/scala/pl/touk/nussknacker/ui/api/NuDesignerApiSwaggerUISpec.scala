@@ -17,6 +17,8 @@ class NuDesignerApiSwaggerUISpec
   "Swagger UI should be visible and achievable" in {
     given()
       .when()
+      .redirects()
+      .follow(true)
       .get(s"$nuDesignerHttpAddress/api/docs")
       .Then()
       .statusCode(200)

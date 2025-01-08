@@ -68,8 +68,6 @@ object NuRuntimeApp extends IOApp with LazyLogging {
       release = _ => IO.delay(logger.info("Closing NuRuntimeApp"))
     )
 
-  Resource.eval(IO.delay {})
-
   private def loadRuntimeConfig() = {
     Resource.eval(IO.delay {
       val configLocationsProperty: String = "nussknacker.config.locations"
@@ -94,11 +92,14 @@ object NuRuntimeApp extends IOApp with LazyLogging {
       scenario: CanonicalProcess
   ) = {
     for {
-      _                   <- Resource.eval(IO.delay(logger.info("Creating RunnableScenarioInterpreter")))
+      _                   <- Resource.eval(IO.delay(logger.info("Preparing RunnableScenarioInterpreter")))
       scenarioInterpreter <- prepareScenarioInterpreter(scenario, runtimeConfig, deploymentConfig, system)
       _ <- Resource
         .make(
-          acquire = IO.fromFuture(IO(scenarioInterpreter.run()))
+          acquire = for {
+            _ <- IO.delay(logger.info("Running RunnableScenarioInterpreter"))
+            _ <- IO.delay(scenarioInterpreter.run())
+          } yield ()
         )(
           release = _ => IO.delay(logger.info("Closing RunnableScenarioInterpreter"))
         )
