@@ -66,6 +66,17 @@ trait KafkaUtils extends LazyLogging {
     Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
   }
 
+  def setOffsetToEarliest(topic: String, groupId: String, config: KafkaConfig): Unit = {
+    val timeoutMillis = readTimeoutForTempConsumer(config)
+    logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
+    val consumerAfterWork = Future {
+      doWithTempKafkaConsumer(config, Some(groupId)) { consumer =>
+        setOffsetToEarliest(topic, consumer)
+      }
+    }
+    Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
+  }
+
   def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
     val props: Properties = new Properties
     props.put("key.serializer", classOf[ByteArraySerializer])
@@ -168,6 +179,16 @@ trait KafkaUtils extends LazyLogging {
     consumer.assign(partitions.asJava)
     consumer.seekToEnd(partitions.asJava)
     partitions.foreach(p => consumer.position(p)) // `seekToEnd` is lazy, we have to invoke `position` to change offset
+    consumer.commitSync()
+  }
+
+  private def setOffsetToEarliest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
+    val partitions = consumer.partitionsFor(topic).asScala.map { partition =>
+      new TopicPartition(partition.topic(), partition.partition())
+    }
+    consumer.assign(partitions.asJava)
+    consumer.seekToBeginning(partitions.asJava)
+    partitions.foreach(p => consumer.position(p))
     consumer.commitSync()
   }
 
