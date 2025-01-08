@@ -10,7 +10,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.nio.file.{Files, Path, Paths}
 import pl.touk.nussknacker.engine.util.StringUtils._
 
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 
 // TODO: We should extract a class for all configuration options that should be available to designer instead of returning raw hocon config.
 //       Thanks to that it will be easier to split processing type config from rest of configs and use this interface programmatically
