@@ -1693,6 +1693,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     result shouldBe java.util.Map.of("a", "A", "b", "B")
   }
 
+  test("should be able to run indexer on created with toMap map") {
+    evaluate[Int]("""{{key: 1, value: 5}}.toMap[1]""") shouldBe 5
+  }
+
   test("should return error msg if record in map project does not contain required fields") {
     parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
       case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
