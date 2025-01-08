@@ -41,6 +41,10 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
+  OFFSET_RESET_STRATEGY_PARAM_NAME,
+  OffsetResetStrategy
+}
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
@@ -80,24 +84,29 @@ class FlinkKafkaSource[T](
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
-  private val OFFSET_RESET_STRATEGY_PARAM_NAME = "offsetResetStrategy"
+  private val defaultOffsetResetStrategy =
+    if (kafkaConfig.forceLatestRead.contains(true)) OffsetResetStrategy.Reset else OffsetResetStrategy.Continue
 
   override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
-    val defaultValue = if (kafkaConfig.forceLatestRead.contains(true)) Some("LATEST") else Some("NONE")
-    val editor = Some(
-      FixedValuesParameterEditor(
-        List(
-          FixedExpressionValue("LATEST", "LATEST"),
-          FixedExpressionValue("EARLIEST", "EARLIEST"),
-          FixedExpressionValue("NONE", "NONE"),
-        )
-      )
-    )
     Map(
       ScenarioActionName.Deploy.value -> Map(
         OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
-          defaultValue = defaultValue,
-          editor = editor,
+          defaultValue = Some(defaultOffsetResetStrategy.toString),
+          editor = Some(
+            FixedValuesParameterEditor(
+              List(
+                FixedExpressionValue(
+                  OffsetResetStrategy.Continue.toString,
+                  "Resume reading data where it previously stopped (continue)."
+                ),
+                FixedExpressionValue(OffsetResetStrategy.Reset.toString, "Start reading new events only (reset)."),
+                FixedExpressionValue(
+                  OffsetResetStrategy.Restart.toString,
+                  "Rewinds reading from the earliest event (restart)."
+                ),
+              )
+            )
+          ),
           validators = None,
           label = None,
           hintText = None
@@ -111,10 +120,20 @@ class FlinkKafkaSource[T](
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
-    // TODO: use deployment parameters -> offsetResetStrategy
     val offsetResetStrategy =
-      flinkNodeContext.nodeDeploymentData.flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME)).getOrElse()
-    topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
+      flinkNodeContext.nodeDeploymentData
+        .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME))
+        .map(OffsetResetStrategy.withName)
+        .getOrElse(defaultOffsetResetStrategy)
+
+    offsetResetStrategy match {
+      case OffsetResetStrategy.Reset =>
+        topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaConfig))
+      case OffsetResetStrategy.Restart =>
+        topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaConfig))
+      case _ => ()
+    }
+
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
@@ -178,6 +197,16 @@ class FlinkKafkaSource[T](
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
     val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
     namingStrategy.prepareName(baseName)
+  }
+
+}
+
+object FlinkKafkaSource {
+  val OFFSET_RESET_STRATEGY_PARAM_NAME = "offsetResetStrategy"
+
+  object OffsetResetStrategy extends Enumeration {
+    type OffsetResetStrategy = Value
+    val Continue, Reset, Restart = Value
   }
 
 }
