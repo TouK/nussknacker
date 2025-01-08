@@ -9,6 +9,13 @@ import java.util
 import scala.collection.concurrent.TrieMap
 import scala.reflect.{ClassTag, classTag}
 
+class Sth(val underlying: ExtensionMethod[_]) extends ExtensionMethod[java.util.Map[_,_]] {
+
+  override val argsSize: Int = underlying.argsSize
+
+  override def invoke(target: Any, args: Object*): util.Map[_, _] = underlying.invoke(target, args).asInstanceOf[java.util.Map[_, _]]
+}
+
 class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends MethodResolver {
   private val executorsCache = new TrieMap[(String, Class[_]), Option[MethodExecutor]]()
 
@@ -32,7 +39,12 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
           _.findMethod(targetClass, methodName, argumentTypes.size(), classDefinitionSet)
         ) match {
           case Nil           => None
-          case method :: Nil => Some(createExecutor(method))
+          case method :: Nil => {
+            val sth = method.returnType
+            // TODO_PAWEL to trzeba gdzies glebiej zalatac.
+            val modifiedMethod = new Sth(method)
+            Some(createExecutor(modifiedMethod))
+          }
           case _ => throw new IllegalStateException(s"Found too many methods for method with name: '$methodName'")
         }
       }
