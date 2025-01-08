@@ -25,7 +25,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
     val designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(adjustNuTestConfig())
     releaseAppResources = NussknackerAppFactory
       .create(designerConfigLoader)
-      .map(_.createApp(clock = clock))
+      .flatMap(_.createApp(clock = clock))
       .allocated
       .unsafeRunSync()
       ._2
