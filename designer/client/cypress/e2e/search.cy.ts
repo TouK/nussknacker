@@ -46,7 +46,7 @@ describe("Search Panel View", () => {
         cy.get("[data-testid=search-panel]").find("input[name='type']").should("have.value", "sink");
 
         cy.get("[data-testid=search-panel]").find("input[name='type']").click();
-        cy.realType(",processor");
+        cy.realType(",dynamicService");
 
         cy.get("[data-testid=search-panel]").find("button[type='submit']").click();
 
@@ -61,13 +61,13 @@ describe("Search Panel View", () => {
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
         cy.get("[data-testid=search-panel]").find("input[name='type']").click();
 
-        cy.realType("sink,processor");
+        cy.realType("sink,dynamicSe");
 
         cy.get("[data-testid=search-panel]").find("button[type='submit']").click();
 
         cy.get("[data-testid=search-panel]")
             .find("input[data-selector='NODES_IN_SCENARIO']")
-            .should("have.value", "type:(sink,processor) se");
+            .should("have.value", "type:(sink,dynamicSe) se");
 
         cy.get("[data-testid=search-panel]").contains("dynamicService");
         cy.get("[data-testid=search-panel]").contains("sendSms");
@@ -76,7 +76,7 @@ describe("Search Panel View", () => {
     it("should filter nodes when setting up multiple selectors using form", () => {
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
 
-        cy.get("[data-testid=search-panel]").find("input[name='id']").click();
+        cy.get("[data-testid=search-panel]").find("input[name='name']").click();
         cy.realType("bounded,dynamic,send,enricher");
 
         cy.get("[data-testid=search-panel]").find("input[name='type']").click();
@@ -86,7 +86,7 @@ describe("Search Panel View", () => {
 
         cy.get("[data-testid=search-panel]")
             .find("input[data-selector='NODES_IN_SCENARIO']")
-            .should("have.value", "id:(bounded,dynamic,send,enricher) type:(sink,enricher) ");
+            .should("have.value", "name:(bounded,dynamic,send,enricher) type:(sink,enricher)");
 
         cy.get("[data-testid=search-panel]").contains("enricher");
         cy.get("[data-testid=search-panel]").contains("sendSms");
