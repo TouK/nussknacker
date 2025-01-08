@@ -5,18 +5,10 @@ import cats.implicits.catsSyntaxValidatedId
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.extension.ExtensionMethod.NoArg
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
-import java.lang.{
-  Boolean => JBoolean,
-  Byte => JByte,
-  Double => JDouble,
-  Float => JFloat,
-  Integer => JInteger,
-  Long => JLong,
-  Number => JNumber,
-  Short => JShort
-}
+import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong, Number => JNumber, Short => JShort}
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.util.{Collection => JCollection}
 import scala.reflect.{ClassTag, classTag}
@@ -35,6 +27,10 @@ abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
   def convertEither(value: Any): Either[Throwable, T]
   def appliesToConversion(clazz: Class[_]): Boolean
   def canConvert(value: Any): JBoolean = convertEither(value).isRight
+
+  def invokeUnderlyingToMethod(underlyingMethod: ExtensionMethod[_], targetTypeName: String) = {
+    NoArg(target => underlyingMethod.invoke(target, targetTypeName).asInstanceOf[T])
+  }
 }
 
 abstract class ToNumericConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {
