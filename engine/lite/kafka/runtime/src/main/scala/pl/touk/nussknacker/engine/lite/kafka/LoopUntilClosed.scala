@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import cats.data.NonEmptyList
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
@@ -44,15 +45,9 @@ class TaskRunner(
     new LoopUntilClosed(taskId, () => singleRun(taskId), waitAfterFailureDelay, metricsProviderForScenario)
   }.toList
 
-  @volatile private var runningTasks: List[Future[Unit]] = _
-
-  def run(implicit ec: ExecutionContext): Future[Unit] = Future {
-    synchronized {
-      if (runningTasks == null) {
-        runningTasks = runAllTasks()
-      }
-    }
-  }
+  def run(implicit ec: ExecutionContext): IO[Nothing] = IO.fromFuture {
+    IO(Future.sequence(runAllTasks()).map(_ => ()))
+  }.foreverM
 
   /*
     This is a bit tricky, we split the run method as we have to use two different ExecutionContextes:
@@ -70,7 +65,6 @@ class TaskRunner(
 
   override def close(): Unit = {
     tasks.foreach(_.close())
-    runningTasks = null
     logger.debug("Tasks notified of closure, closing thread pool...")
     threadPool.shutdownNow()
     val terminatedSuccessfully = threadPool.awaitTermination(terminationTimeout.toSeconds, TimeUnit.SECONDS)

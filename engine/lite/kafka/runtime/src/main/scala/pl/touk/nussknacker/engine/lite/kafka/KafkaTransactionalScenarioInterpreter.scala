@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import akka.http.scaladsl.server.Route
 import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.lite.{
   ScenarioInterpreterFactory,
   TestRunner
 }
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -98,7 +100,8 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
     modelData: ModelData,
     engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
 )(implicit ec: ExecutionContext)
-    extends RunnableScenarioInterpreter {
+    extends RunnableScenarioInterpreter
+    with LazyLogging {
 
   override def status(): TaskStatus = taskRunner.status()
 
@@ -126,7 +129,16 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
     for {
       _ <- IO.delay(sourceMetrics.registerOwnMetrics(context.metricsProvider))
       _ <- IO.delay(interpreter.open(context))
-      _ <- IO.fromFuture(IO(taskRunner.run(ec)))
+      _ <- IO.delay {
+        implicit val adapter: ExecutionContextWithIORuntimeAdapter = ExecutionContextWithIORuntimeAdapter.createFrom(ec)
+        taskRunner
+          .run(adapter)
+          .unsafeRunAsync {
+            case Left(ex) =>
+              logger.error("Task runner failed", ex)
+            case Right(_) =>
+          }(adapter.ioRuntime)
+      }
     } yield ()
   }
 
