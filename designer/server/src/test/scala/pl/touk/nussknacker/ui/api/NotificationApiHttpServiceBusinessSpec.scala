@@ -52,7 +52,7 @@ class NotificationApiHttpServiceBusinessSpec
                |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
                |  "scenarioName": null,
                |  "message": "Configuration reloaded",
-               |  "type": "info",
+               |  "type": null,
                |  "toRefresh": [ "creator" ]
                |}]""".stripMargin
           )
@@ -89,7 +89,7 @@ class NotificationApiHttpServiceBusinessSpec
                |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
                |  "scenarioName": null,
                |  "message": "Configuration reloaded",
-               |  "type": "info",
+               |  "type": null,
                |  "toRefresh": [ "creator" ]
                |}]""".stripMargin
           )

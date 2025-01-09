@@ -99,17 +99,9 @@ object Notification {
       id = UUID.randomUUID().toString,
       scenarioName = None,
       message = "Configuration reloaded",
-      `type` = Some(NotificationType.info),
+      // We don't want to show this notification to other users because they might be not interested, and it can only introduce a confusion
+      `type` = None,
       toRefresh = List(DataToRefresh.creator)
-    )
-
-  def configurationReloadFailed: Notification =
-    Notification(
-      id = UUID.randomUUID().toString,
-      scenarioName = None,
-      message = "Configuration reload failed",
-      `type` = Some(NotificationType.error),
-      toRefresh = List.empty
     )
 
   private def displayableActionName(actionName: ScenarioActionName): String =

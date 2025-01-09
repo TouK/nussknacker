@@ -732,7 +732,6 @@ class AkkaHttpBasedRouteProvider(
               }
               state
             }
-            .onError(_ => IO(globalNotificationRepository.saveEntry(Notification.configurationReloadFailed)))
           new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(
