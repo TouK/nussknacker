@@ -81,7 +81,82 @@ class StickyNotesApiHttpServiceBusinessSpec
         .equalsJsonBody("[]")
     }
 
-    // TODO more tests
+    "return sticky notes for scenarioVersion=2" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          val updatedProcess = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
+          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get))
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/stickyNotes?scenarioVersionId=2")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""[
+              {
+                  "noteId": 1,
+                  "content": "",
+                  "layoutData": {
+                      "x": 0,
+                      "y": 1
+                  },
+                  "color": "#aabbcc",
+                  "dimensions": {
+                      "width": 300,
+                      "height": 200
+                  },
+                  "targetEdge": null,
+                  "editedBy": "admin",
+                  "editedAt": "${regexes.zuluDateRegex}"
+              }
+          ]""".stripMargin
+          )
+        )
+
+    }
+
+    "return sticky notes for scenarioVersion=2 even if more for scenarioVersion=3 were added" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          val updatedProcess = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
+          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get))
+          val updatedProcessOnceMore = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
+          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcessOnceMore.newVersion.get))
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/stickyNotes?scenarioVersionId=2")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState()
+        .body(
+          matchJsonWithRegexValues(
+            s"""[
+              {
+                  "noteId": 1,
+                  "content": "",
+                  "layoutData": {
+                      "x": 0,
+                      "y": 1
+                  },
+                  "color": "#aabbcc",
+                  "dimensions": {
+                      "width": 300,
+                      "height": 200
+                  },
+                  "targetEdge": null,
+                  "editedBy": "admin",
+                  "editedAt": "${regexes.zuluDateRegex}"
+              }
+          ]""".stripMargin
+          )
+        )
+
+    }
 
   }
 

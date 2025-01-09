@@ -1,6 +1,7 @@
 import { LayoutData } from "../types";
 
 export type Dimensions = { width: number; height: number };
+export type ColorValueHex = `#${string}`;
 
 export interface StickyNote {
     id?: string;
@@ -8,7 +9,7 @@ export interface StickyNote {
     content: string;
     layoutData: LayoutData;
     dimensions: Dimensions;
-    color: string;
+    color: ColorValueHex;
     targetEdge?: string;
     editedBy: string;
     editedAt: string;
