@@ -13,7 +13,7 @@ import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 
-import { useActivityCapabilities } from "../../../modals/GenericAction/useActivityCapabilities";
+import { useActionCapabilities } from "../../../modals/GenericAction/useActionCapabilities";
 
 export default function DeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
@@ -26,7 +26,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
 
     // TODO: find better place to reload activity capabilities and properties
-    useActivityCapabilities();
+    useActionCapabilities();
 
     const available = !disabled && deployPossible && capabilities.deploy;
 
