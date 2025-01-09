@@ -30,6 +30,7 @@
 * [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
 * [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
+* [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 
 ### 1.18.2 (Not released)
 * [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
