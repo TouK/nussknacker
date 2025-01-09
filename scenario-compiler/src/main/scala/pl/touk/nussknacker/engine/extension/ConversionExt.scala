@@ -31,9 +31,9 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
       mappedMethodName <- mapMethodName(methodName)
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
       resultMethod <- methodName match {
-        case `canBeMethodName`    => Some(conversion.invokeUnderlyingCanConvertMethod(underlyingMethod, targetTypeName))
-        case `toMethodName`       => Some(conversion.invokeUnderlyingToMethod(underlyingMethod, targetTypeName))
-        case `toOrNullMethodName` => Some(conversion.invokeUnderlyingToMethod(underlyingMethod, targetTypeName))
+        case `canBeMethodName`    => Some(conversion.convertUnderlyingCanConvertMethod(underlyingMethod, targetTypeName))
+        case `toMethodName`       => Some(conversion.convertUnderlyingToMethod(underlyingMethod, targetTypeName))
+        case `toOrNullMethodName` => Some(conversion.convertUnderlyingToMethod(underlyingMethod, targetTypeName))
         case _                    => None
       }
     } yield resultMethod

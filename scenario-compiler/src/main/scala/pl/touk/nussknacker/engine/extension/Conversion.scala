@@ -37,14 +37,13 @@ abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
   def appliesToConversion(clazz: Class[_]): Boolean
   def canConvert(value: Any): JBoolean = convertEither(value).isRight
 
-  def invokeUnderlyingToMethod(underlyingMethodToMethod: ExtensionMethod[_], targetTypeName: String) = {
-    NoArg(target => underlyingMethodToMethod.invoke(target, targetTypeName).asInstanceOf[T])
+  def convertUnderlyingToMethod(underlyingToMethod: ExtensionMethod[_], targetTypeName: String) = {
+    NoArg(target => underlyingToMethod.invoke(target, targetTypeName).asInstanceOf[T])
   }
 
-  def invokeUnderlyingCanConvertMethod(underlyingMethodCanConvertMethod: ExtensionMethod[_], targetTypeName: String) = {
-    NoArg(target => underlyingMethodCanConvertMethod.invoke(target, targetTypeName).asInstanceOf[Boolean])
+  def convertUnderlyingCanConvertMethod(underlyingCanConvertMethod: ExtensionMethod[_], targetTypeName: String) = {
+    NoArg(target => underlyingCanConvertMethod.invoke(target, targetTypeName).asInstanceOf[Boolean])
   }
-
 }
 
 abstract class ToNumericConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {

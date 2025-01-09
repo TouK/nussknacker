@@ -1673,7 +1673,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     result shouldBe java.util.Map.of("a", "A", "b", "B")
   }
 
-  // TODO_PAWEL pirwszy fail
   test("should be able to convert list of map entries into map") {
     val result = evaluate[Any]("""
                                  |{
@@ -1921,7 +1920,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  // TODO_PAWEL drugi fail
   test("should check if unknown can be converted to a given type") {
     val map        = Map("a" -> "b").asJava
     val list       = List("a").asJava
