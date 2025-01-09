@@ -13,10 +13,7 @@ export function success(message: string): Action {
     });
 }
 
-// TODO This method is incomplete. I've added error and showErrorText params to show what is missing.
-// Message should be `message={showErrorText && error ? error : message}` but we agreed not to change it since
-// some endpoints are using it but do not return meaningful error responses.
-export function error(message: string, error?: string, showErrorText?: boolean): Action {
+export function error(message: string): Action {
     return Notifications.error({
         autoDismiss: 10,
         children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={message} />,

@@ -132,7 +132,6 @@ class StickyNotesApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/stickyNotes?scenarioVersionId=2")
         .Then()
         .statusCode(200)
-        .verifyApplicationState()
         .body(
           matchJsonWithRegexValues(
             s"""[

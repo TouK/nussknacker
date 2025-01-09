@@ -70,7 +70,7 @@ export function makeStickyNoteElement(
                     attributes: {
                         d: "M 4 0 L 4 4 L 0 4 L 0 5 L 5 5 L 5 0 L 4 0",
                         stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).light,
-                        cursor: "pointer",
+                        cursor: "se-resize",
                     },
                 },
                 {
