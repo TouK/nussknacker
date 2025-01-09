@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import cats.effect.IO
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -25,7 +26,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
@@ -278,7 +279,7 @@ class KafkaTransactionalScenarioInterpreterTest
         new Task {
           override def init(): Unit = original.init()
 
-          override def run(): Unit = original.run()
+          override def run(): IO[Unit] = IO.delay(original.run())
 
           override def close(): Unit = {
             original.close()

@@ -44,8 +44,14 @@ class TaskRunner(
     new LoopUntilClosed(taskId, () => singleRun(taskId), waitAfterFailureDelay, metricsProviderForScenario)
   }.toList
 
-  def run(implicit ec: ExecutionContext): Future[Unit] = {
-    Future.sequence(runAllTasks()).map(_ => ())
+  @volatile private var runningTasks: List[Future[Unit]] = _
+
+  def run(implicit ec: ExecutionContext): Future[Unit] = Future {
+    synchronized {
+      if (runningTasks == null) {
+        runningTasks = runAllTasks()
+      }
+    }
   }
 
   /*
@@ -64,6 +70,7 @@ class TaskRunner(
 
   override def close(): Unit = {
     tasks.foreach(_.close())
+    runningTasks = null
     logger.debug("Tasks notified of closure, closing thread pool...")
     threadPool.shutdownNow()
     val terminatedSuccessfully = threadPool.awaitTermination(terminationTimeout.toSeconds, TimeUnit.SECONDS)

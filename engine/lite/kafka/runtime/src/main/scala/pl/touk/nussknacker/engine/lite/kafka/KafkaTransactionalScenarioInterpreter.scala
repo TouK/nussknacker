@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import akka.http.scaladsl.server.Route
+import cats.effect.IO
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
@@ -121,10 +122,12 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
     context.metricsProvider
   )
 
-  override def run(): Future[Unit] = {
-    sourceMetrics.registerOwnMetrics(context.metricsProvider)
-    interpreter.open(context)
-    taskRunner.run(ec)
+  override def run(): IO[Unit] = {
+    for {
+      _ <- IO.delay(sourceMetrics.registerOwnMetrics(context.metricsProvider))
+      _ <- IO.delay(interpreter.open(context))
+      _ <- IO.fromFuture(IO(taskRunner.run(ec)))
+    } yield ()
   }
 
   override def close(): Unit = {

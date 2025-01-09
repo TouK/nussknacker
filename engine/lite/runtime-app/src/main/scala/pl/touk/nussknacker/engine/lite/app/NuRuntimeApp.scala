@@ -98,7 +98,7 @@ object NuRuntimeApp extends IOApp with LazyLogging {
         .make(
           acquire = for {
             _ <- IO.delay(logger.info("Running RunnableScenarioInterpreter"))
-            _ <- IO.delay(scenarioInterpreter.run())
+            _ <- scenarioInterpreter.run()
           } yield ()
         )(
           release = _ => IO.delay(logger.info("Closing RunnableScenarioInterpreter"))
