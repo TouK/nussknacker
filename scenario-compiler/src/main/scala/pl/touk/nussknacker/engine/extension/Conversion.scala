@@ -8,7 +8,16 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.extension.ExtensionMethod.NoArg
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
-import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong, Number => JNumber, Short => JShort}
+import java.lang.{
+  Boolean => JBoolean,
+  Byte => JByte,
+  Double => JDouble,
+  Float => JFloat,
+  Integer => JInteger,
+  Long => JLong,
+  Number => JNumber,
+  Short => JShort
+}
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.util.{Collection => JCollection}
 import scala.reflect.{ClassTag, classTag}
@@ -31,6 +40,11 @@ abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
   def invokeUnderlyingToMethod(underlyingMethodToMethod: ExtensionMethod[_], targetTypeName: String) = {
     NoArg(target => underlyingMethodToMethod.invoke(target, targetTypeName).asInstanceOf[T])
   }
+
+  def invokeUnderlyingCanConvertMethod(underlyingMethodCanConvertMethod: ExtensionMethod[_], targetTypeName: String) = {
+    NoArg(target => underlyingMethodCanConvertMethod.invoke(target, targetTypeName).asInstanceOf[Boolean])
+  }
+
 }
 
 abstract class ToNumericConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {

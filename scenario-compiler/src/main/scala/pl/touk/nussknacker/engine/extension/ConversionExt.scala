@@ -30,7 +30,12 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
     for {
       mappedMethodName <- mapMethodName(methodName)
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
-      resultMethod = conversion.invokeUnderlyingToMethod(underlyingMethod, targetTypeName)
+      resultMethod <- methodName match {
+        case `canBeMethodName`    => Some(conversion.invokeUnderlyingCanConvertMethod(underlyingMethod, targetTypeName))
+        case `toMethodName`       => Some(conversion.invokeUnderlyingToMethod(underlyingMethod, targetTypeName))
+        case `toOrNullMethodName` => Some(conversion.invokeUnderlyingToMethod(underlyingMethod, targetTypeName))
+        case _                    => None
+      }
     } yield resultMethod
 
   private def mapMethodName(methodName: String): Option[String] = methodName match {
