@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../actions/nk";
 import { PromptContent } from "../../windowManager";
+import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
 import {
     getScenarioGraph,
@@ -17,10 +18,9 @@ import HttpService from "../../http/HttpService";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
-import { ActivityCommentTextField } from "./ActivityCommentTextField";
-import { ActivityHeader } from "./ActivityHeader";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const location = useLocation();
@@ -71,7 +71,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.ok", "Apply"), action: () => confirmAction() },
+            { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
     );
@@ -79,8 +79,16 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 600 }))}>
-                <ActivityHeader title={props.data.title} />
-                <ActivityCommentTextField onChange={(e) => setState(e.target.value)} autoFocus />
+                <Typography variant={"h3"}>{props.data.title}</Typography>
+                <CommentInput
+                    onChange={(e) => setState(e.target.value)}
+                    value={comment}
+                    className={css({
+                        minWidth: 600,
+                        minHeight: 80,
+                    })}
+                    autoFocus
+                />
             </div>
         </PromptContent>
     );
