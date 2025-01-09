@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class ModelDataActivityInfoProvider(modelData: ModelData)
+class ModelDataActionInfoProvider(modelData: ModelData)
     extends CommonModelDataInfoProvider(modelData)
     with ActionInfoProvider {
 
@@ -22,15 +22,15 @@ class ModelDataActivityInfoProvider(modelData: ModelData)
       val nodeToActivityToParameters = collectAllSources(scenario)
         .map(source => source.id -> getActivityParameters(source, jobData))
         .toMap
-      groupByActivity(nodeToActivityToParameters)
+      groupByAction(nodeToActivityToParameters)
     }
   }
 
-  private def groupByActivity(
-      nodeToActivityToParameters: Map[String, Map[String, Map[String, ParameterConfig]]]
+  private def groupByAction(
+      nodeToActionToParameters: Map[String, Map[String, Map[String, ParameterConfig]]]
   ): Map[String, Map[String, Map[String, ParameterConfig]]] = {
     val activityToNodeToParameters = for {
-      (node, activityToParams) <- nodeToActivityToParameters.toList
+      (node, activityToParams) <- nodeToActionToParameters.toList
       (activity, params)       <- activityToParams.toList
     } yield (activity, node -> params)
     activityToNodeToParameters
