@@ -64,7 +64,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     title: message,
                     kind: WindowKind.deployProcess,
                     width: ACTION_DIALOG_WIDTH,
-                    meta: { action, activityName: "DEPLOY", displayWarnings: true },
+                    meta: { action, displayWarnings: true },
                 })
             }
             onMouseOver={deployMouseOver}

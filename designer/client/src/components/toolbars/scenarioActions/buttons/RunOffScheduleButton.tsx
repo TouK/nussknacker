@@ -53,7 +53,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
                         title: message,
                         kind: WindowKind.deployProcess,
                         width: ACTION_DIALOG_WIDTH,
-                        meta: { action, activityName: "RUN_OFF_SCHEDULE" }, // fixme: activityName, do we need this?
+                        meta: { action },
                     })
                 }
                 type={type}

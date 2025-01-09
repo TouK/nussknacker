@@ -16,14 +16,7 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
             paddingLeft: theme.custom.spacing.baseUnit * 6,
             paddingRight: theme.custom.spacing.baseUnit * 6,
         });
-        return {
-            footer: css({
-                justifyContent: "flex-end",
-                backgroundColor: "#1D2734",
-            }),
-            ...props.classnames,
-            content,
-        };
+        return { ...props.classnames, content };
     }, [props.classnames, theme.custom.spacing.baseUnit]);
 
     const components = useMemo(
