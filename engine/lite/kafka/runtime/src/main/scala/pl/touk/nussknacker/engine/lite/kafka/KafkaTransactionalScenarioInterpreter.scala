@@ -129,16 +129,19 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
     for {
       _ <- IO.delay(sourceMetrics.registerOwnMetrics(context.metricsProvider))
       _ <- IO.delay(interpreter.open(context))
-      _ <- IO.delay {
-        implicit val adapter: ExecutionContextWithIORuntimeAdapter = ExecutionContextWithIORuntimeAdapter.createFrom(ec)
-        taskRunner
-          .run(adapter)
-          .unsafeRunAsync {
-            case Left(ex) =>
-              logger.error("Task runner failed", ex)
-            case Right(_) =>
-          }(adapter.ioRuntime)
-      }
+      _ <- ExecutionContextWithIORuntimeAdapter
+        .createFrom(ec)
+        .use { adapter =>
+          IO.delay {
+            taskRunner
+              .run(adapter)
+              .unsafeRunAsync {
+                case Left(ex) =>
+                  logger.error("Task runner failed", ex)
+                case Right(_) =>
+              }(adapter.ioRuntime)
+          }
+        }
     } yield ()
   }
 

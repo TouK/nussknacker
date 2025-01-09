@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.embedded.streaming
 
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.lite.TaskStatus
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -36,14 +38,24 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
       )
     )
     interpreterTry.flatMap { interpreter =>
+      val ecWithRuntime = ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(ec)
       val runTry = Try {
-        val result = interpreter.run()
-        result.handleError(exception => handleUnexpectedError(jobData.processVersion, exception))
+        interpreter
+          .run()
+          .handleErrorWith { exception =>
+            handleUnexpectedError(jobData.processVersion, exception)
+            interpreter.close()
+            IO.raiseError(exception)
+          }
+          .unsafeRunSync()(ecWithRuntime.ioRuntime)
       }
       runTry.transform(
-        _ => Success(new StreamingDeployment(interpreter)),
+        _ => {
+          ecWithRuntime.close()
+          Success(new StreamingDeployment(interpreter))
+        },
         ex => {
-          interpreter.close()
+          ecWithRuntime.close()
           Failure(ex)
         }
       )

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
+import cats.effect.{IO, Resource}
 import cats.effect.unsafe.{IORuntime, IORuntimeConfig}
 
 import java.util.concurrent.Executors
@@ -23,20 +24,35 @@ class ExecutionContextWithIORuntimeAdapter private (executionContext: ExecutionC
   )
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
-
-    override def run(): Unit = {
-      ioRuntime.shutdown()
-      cachedThreadPool.shutdown()
-    }
-
+    override def run(): Unit = close()
   })
 
   override def execute(runnable: Runnable): Unit = executionContext.execute(runnable)
 
   override def reportFailure(cause: Throwable): Unit = executionContext.reportFailure(cause)
+
+  @volatile private var closed = false
+
+  def close(): Unit = {
+    synchronized {
+      if (!closed) {
+        ioRuntime.shutdown()
+        cachedThreadPool.shutdown()
+        closed = true
+      }
+    }
+  }
+
 }
 
 object ExecutionContextWithIORuntimeAdapter {
-  def createFrom(executionContext: ExecutionContext): ExecutionContextWithIORuntimeAdapter =
+
+  def createFrom(executionContext: ExecutionContext): Resource[IO, ExecutionContextWithIORuntimeAdapter] = {
+    Resource.make(IO.delay(new ExecutionContextWithIORuntimeAdapter(executionContext)))(ec => IO.delay(ec.close()))
+  }
+
+  def unsafeCreateFrom(executionContext: ExecutionContext): ExecutionContextWithIORuntimeAdapter = {
     new ExecutionContextWithIORuntimeAdapter(executionContext)
+  }
+
 }

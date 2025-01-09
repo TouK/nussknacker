@@ -53,9 +53,9 @@ class NussknackerAppFactory(
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      system <- createActorSystem(alreadyLoadedConfig.rawConfig)
-      executionContextWithIORuntime = ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
-      ioSttpBackend <- AsyncHttpClientCatsBackend.resource[IO]()
+      system                        <- createActorSystem(alreadyLoadedConfig.rawConfig)
+      executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
+      ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
       processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
         alreadyLoadedConfig,
         ioSttpBackend
