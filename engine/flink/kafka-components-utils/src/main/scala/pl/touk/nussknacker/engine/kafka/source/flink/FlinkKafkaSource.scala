@@ -66,7 +66,8 @@ class FlinkKafkaSource[T](
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
     with TestWithParametersSupport[T]
-    with WithActivityParameters {
+    with WithActivityParameters
+    with LazyLogging {
 
   @silent("deprecated")
   override def sourceStream(
@@ -97,9 +98,12 @@ class FlinkKafkaSource[T](
               List(
                 FixedExpressionValue(
                   OffsetResetStrategy.Continue.toString,
-                  "Resume reading data where it previously stopped (continue)."
+                  s"Resume reading data where it previously stopped (continue)."
                 ),
-                FixedExpressionValue(OffsetResetStrategy.Reset.toString, "Start reading new events only (reset)."),
+                FixedExpressionValue(
+                  OffsetResetStrategy.Reset.toString,
+                  "Start reading new events only (reset)."
+                ),
                 FixedExpressionValue(
                   OffsetResetStrategy.Restart.toString,
                   "Rewinds reading from the earliest event (restart)."
@@ -108,7 +112,7 @@ class FlinkKafkaSource[T](
             )
           ),
           validators = None,
-          label = None,
+          label = Some("Offset reset strategy"),
           hintText = None
         ),
       )
@@ -125,6 +129,9 @@ class FlinkKafkaSource[T](
         .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME))
         .map(OffsetResetStrategy.withName)
         .getOrElse(defaultOffsetResetStrategy)
+    logger.info(
+      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} forceLatestRead=${kafkaConfig.forceLatestRead}, offsetResetStrategy=${offsetResetStrategy}"
+    )
 
     offsetResetStrategy match {
       case OffsetResetStrategy.Reset =>
