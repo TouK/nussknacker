@@ -694,14 +694,14 @@ class HttpService {
         return promise;
     }
 
-    getActivityParameters(processName: string, scenarioGraph: ScenarioGraph) {
+    getActionParameters(processName: string, scenarioGraph: ScenarioGraph) {
         const promise = api.post(
-            `/activityInfo/${encodeURIComponent(processName)}/activityParameters`,
+            `/actionInfo/${encodeURIComponent(processName)}/actionParameters`,
             this.#sanitizeScenarioGraph(scenarioGraph),
         );
         promise.catch((error) =>
             this.#addError(
-                i18next.t("notification.error.failedToGetTestParameters", "Failed to get activity parameters definition"),
+                i18next.t("notification.error.failedToGetActionParameters", "Failed to get action parameters definition"),
                 error,
                 true,
             ),

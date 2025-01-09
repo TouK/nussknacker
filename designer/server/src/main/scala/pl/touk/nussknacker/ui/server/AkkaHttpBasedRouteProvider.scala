@@ -60,7 +60,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.newactivity.{ActivityInfoService, ActivityService}
+import pl.touk.nussknacker.ui.process.newactivity.{ActionInfoService, ActivityService}
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationConfig,
   DeploymentsStatusesSynchronizationScheduler,
@@ -226,7 +226,7 @@ class AkkaHttpBasedRouteProvider(
           )
       }
       val scenarioActivityService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
-        new ActivityInfoService(
+        new ActionInfoService(
           new ModelDataActivityInfoProvider(modelData),
           processResolver
         )
@@ -531,7 +531,7 @@ class AkkaHttpBasedRouteProvider(
               )
             }
           ),
-          new ActivityInfoResources(processService, scenarioActivityService),
+          new ActionInfoResources(processService, scenarioActivityService),
           new StatusResources(stateDefinitionService),
         )
 

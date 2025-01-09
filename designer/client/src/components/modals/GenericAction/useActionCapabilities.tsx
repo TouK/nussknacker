@@ -1,14 +1,14 @@
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useEffect } from "react";
-import { fetchActivityParameters } from "../../../actions/nk";
-export function useActivityCapabilities() {
+import { fetchActionParameters } from "../../../actions/nk";
+export function useActionCapabilities() {
     const dispatch = useDispatch();
 
     const scenarioName = useSelector(getProcessName);
     const scenarioGraph = useSelector(getScenarioGraph);
 
     useEffect(() => {
-        dispatch(fetchActivityParameters(scenarioName, scenarioGraph));
+        dispatch(fetchActionParameters(scenarioName, scenarioGraph));
     }, [dispatch, scenarioName, scenarioGraph]);
 }
