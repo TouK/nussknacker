@@ -7,8 +7,9 @@ import pl.touk.nussknacker.engine.extension.ExtensionMethod.NoArg
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
 import java.lang.{Boolean => JBoolean}
+import scala.reflect.ClassTag
 
-class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinition {
+class ConversionExt[T >: Null <: AnyRef: ClassTag](conversion: Conversion[T]) extends ExtensionMethodsDefinition {
 
   private lazy val definitionsByName = definitions().groupBy(_.name)
   private lazy val targetTypeName    = conversion.resultTypeClass.simpleName()
@@ -30,8 +31,31 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
     for {
       mappedMethodName <- mapMethodName(methodName)
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
-      resultMethod = NoArg(target => underlyingMethod.invoke(target, targetTypeName))
+      resultMethod = methodName match {
+        case `canBeMethodName`    => canBeWrappedMethod(underlyingMethod)
+        case `toMethodName`       => toWrappedMethod(underlyingMethod)
+        case `toOrNullMethodName` => toWrappedMethod(underlyingMethod)
+        // TODO_PAWEL what if not found?
+      }
     } yield resultMethod
+
+  private def canBeWrappedMethod(underlyingMethod: ExtensionMethod[_]): ExtensionMethod[_] = {
+    new ExtensionMethod[Boolean] {
+      override val argsSize: Int = 0
+      override def invoke(target: Any, args: Object*): Boolean =
+        underlyingMethod.invoke(target, targetTypeName).asInstanceOf[Boolean]
+      override def returnType: Class[Boolean] = classOf[Boolean]
+    }
+  }
+
+  private def toWrappedMethod(underlyingMethod: ExtensionMethod[_]): ExtensionMethod[_] = {
+    new ExtensionMethod[T] {
+      override val argsSize: Int = 0
+      override def invoke(target: Any, args: Object*): T =
+        underlyingMethod.invoke(target, targetTypeName).asInstanceOf[T]
+      override def returnType: Class[T] = conversion.resultTypeClass
+    }
+  }
 
   private def mapMethodName(methodName: String): Option[String] = methodName match {
     case `canBeMethodName`    => Some(CastOrConversionExt.canBeMethodName)
@@ -79,6 +103,6 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
 
 object ConversionExt {
 
-  def apply(conversion: Conversion[_]): ConversionExt = new ConversionExt(conversion)
+  def apply[T >: Null <: AnyRef: ClassTag](conversion: Conversion[T]): ConversionExt[T] = new ConversionExt(conversion)
 
 }
