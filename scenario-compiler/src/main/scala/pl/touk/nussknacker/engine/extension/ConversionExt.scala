@@ -31,11 +31,11 @@ class ConversionExt[T >: Null <: AnyRef: ClassTag](conversion: Conversion[T]) ex
     for {
       mappedMethodName <- mapMethodName(methodName)
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
-      resultMethod = methodName match {
-        case `canBeMethodName`    => canBeWrappedMethod(underlyingMethod)
-        case `toMethodName`       => toWrappedMethod(underlyingMethod)
-        case `toOrNullMethodName` => toWrappedMethod(underlyingMethod)
-        // TODO_PAWEL what if not found?
+      resultMethod <- methodName match {
+        case `canBeMethodName`    => Some(canBeWrappedMethod(underlyingMethod))
+        case `toMethodName`       => Some(toWrappedMethod(underlyingMethod))
+        case `toOrNullMethodName` => Some(toWrappedMethod(underlyingMethod))
+        case _                    => None: Option[ExtensionMethod[_]]
       }
     } yield resultMethod
 
