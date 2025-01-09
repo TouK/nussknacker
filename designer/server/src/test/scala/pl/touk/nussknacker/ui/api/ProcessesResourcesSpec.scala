@@ -129,27 +129,40 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("/api/processes should return lighter details without ProcessAction's additional fields") {
+  test("/api/processes should return lighter details without ProcessAction's additional fields and null values") {
+    def hasNullAttributes(json: Json): Boolean = {
+      json.fold(
+        jsonNull = true, // null found
+        jsonBoolean = _ => false,
+        jsonNumber = _ => false,
+        jsonString = _ => false,
+        jsonArray = _.exists(hasNullAttributes),
+        jsonObject = _.values.exists(hasNullAttributes)
+      )
+    }
     createDeployedScenario(processName, category = Category1)
     Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      val loadedProcess = responseAs[List[ScenarioWithDetails]]
-
-      loadedProcess.head.lastAction should matchPattern {
+      // verify that unnecessary fields were omitted
+      val decodedScenarios = responseAs[List[ScenarioWithDetails]]
+      decodedScenarios.head.lastAction should matchPattern {
         case Some(
               ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
             ) if buildInfo.isEmpty =>
       }
-      loadedProcess.head.lastStateAction should matchPattern {
+      decodedScenarios.head.lastStateAction should matchPattern {
         case Some(
               ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
             ) if buildInfo.isEmpty =>
       }
-      loadedProcess.head.lastDeployedAction should matchPattern {
+      decodedScenarios.head.lastDeployedAction should matchPattern {
         case Some(
               ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
             ) if buildInfo.isEmpty =>
       }
+      // verify that null values were not present in JSON response
+      val rawFetchedScenarios = responseAs[Json]
+      hasNullAttributes(rawFetchedScenarios) shouldBe false
     }
   }
 
