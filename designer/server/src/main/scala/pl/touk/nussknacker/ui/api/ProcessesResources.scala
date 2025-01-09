@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  SkipAdditionalFields,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -81,7 +82,7 @@ class ProcessesResources(
             complete {
               processService.getLatestProcessesWithDetails(
                 query,
-                GetScenarioWithDetailsOptions.detailsOnly.withFetchState
+                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
               )
             }
           }
@@ -232,12 +233,12 @@ class ProcessesResources(
                 thisVersion <- processService.getProcessWithDetails(
                   processId,
                   thisVersion,
-                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
                 otherVersion <- processService.getProcessWithDetails(
                   processId,
                   otherVersion,
-                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
               } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
