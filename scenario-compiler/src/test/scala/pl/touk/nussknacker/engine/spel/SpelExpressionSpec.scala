@@ -1733,6 +1733,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should convert value to given type with correct return type") {
+    evaluate[Int]("'1'.to('Integer')") shouldBe 1
+    evaluate[Int]("'1'.toOrNull('Integer')") shouldBe 1
+  }
+
   test("should convert value to a given type") {
     val map                         = Map("a" -> "b").asJava
     val emptyMap                    = Map().asJava
