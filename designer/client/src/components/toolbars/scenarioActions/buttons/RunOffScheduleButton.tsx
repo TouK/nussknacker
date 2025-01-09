@@ -7,7 +7,7 @@ import HttpService, {NodesDeploymentData} from "../../../../http/HttpService";
 import { getProcessName, isRunOffSchedulePossible, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
+import { ToggleProcessActionModalData } from "../../../modals/DeployWithParametersDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
