@@ -38,10 +38,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
     interpreterTry.flatMap { interpreter =>
       val runTry = Try {
         val result = interpreter.run()
-        result.onComplete {
-          case Failure(exception) => handleUnexpectedError(jobData.processVersion, exception)
-          case Success(_)         => // closed without problems
-        }
+        result.handleError(exception => handleUnexpectedError(jobData.processVersion, exception))
       }
       runTry.transform(
         _ => Success(new StreamingDeployment(interpreter)),
