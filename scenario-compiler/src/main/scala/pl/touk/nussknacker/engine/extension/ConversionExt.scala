@@ -27,16 +27,18 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
       argsSize: Int,
       set: ClassDefinitionSet
   ): Option[ExtensionMethod[_]] =
-    for {
+    (for {
       mappedMethodName <- mapMethodName(methodName)
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
-      resultMethod <- methodName match {
-        case `canBeMethodName`    => Some(conversion.convertUnderlyingCanConvertMethod(underlyingMethod, targetTypeName))
-        case `toMethodName`       => Some(conversion.convertUnderlyingToMethod(underlyingMethod, targetTypeName))
-        case `toOrNullMethodName` => Some(conversion.convertUnderlyingToMethod(underlyingMethod, targetTypeName))
-        case _                    => None
-      }
-    } yield resultMethod
+    } yield underlyingMethod)
+      .flatMap(underlyingMethod =>
+        methodName match {
+          case `canBeMethodName` => Some(conversion.convertUnderlyingCanConvertMethod(underlyingMethod, targetTypeName))
+          case `toMethodName`    => Some(conversion.convertUnderlyingToMethod(underlyingMethod, targetTypeName))
+          case `toOrNullMethodName` => Some(conversion.convertUnderlyingToMethod(underlyingMethod, targetTypeName))
+          case _                    => None
+        }
+      )
 
   private def mapMethodName(methodName: String): Option[String] = methodName match {
     case `canBeMethodName`    => Some(CastOrConversionExt.canBeMethodName)
