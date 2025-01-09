@@ -182,7 +182,7 @@ class AppApiHttpService(
     processService
       .getLatestProcessesWithDetails(
         ScenarioQuery.unarchivedProcesses,
-        GetScenarioWithDetailsOptions.withsScenarioGraph.withValidation
+        GetScenarioWithDetailsOptions.withScenarioGraph.withValidation
       )
       .map { processes =>
         processes
