@@ -14,7 +14,7 @@ import {
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
+import { ToggleProcessActionModalData } from "../../../modals/DeployWithParametersDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
@@ -62,7 +62,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
             onClick={() =>
                 open<ToggleProcessActionModalData>({
                     title: message,
-                    kind: WindowKind.deployProcess,
+                    kind: WindowKind.deployWithParameters,
                     width: ACTION_DIALOG_WIDTH,
                     meta: { action, displayWarnings: true },
                 })
