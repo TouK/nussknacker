@@ -16,11 +16,12 @@ export const TimeRangeStyled = styled("div")(
         }
 
         .time-range-input {
-            width: 45px !important;
+            width: 4em;
             border: none !important;
             background-color: ${theme.palette.background.paper};
             text-align: center;
-            padding-left: 12px;
+            padding-left: 0;
+            padding-right: 0;
             height: 35px;
         }
 
