@@ -42,6 +42,9 @@
 * [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 * [#7360](https://github.com/TouK/nussknacker/pull/7360) Added Median aggregator
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
+* [#7387](https://github.com/TouK/nussknacker/pull/7387) Improvements around configuration reloading mechanism:
+  * Added notifications about configuration reload
+  * Creator panel is automatically reloaded after configuration reload - page refresh is not needed now
 
 ## 1.18
 
