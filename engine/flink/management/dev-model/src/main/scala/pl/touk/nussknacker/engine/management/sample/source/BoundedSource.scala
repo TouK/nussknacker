@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStrea
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
-import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActivityParameters}
+import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActionParameters}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
@@ -29,9 +29,9 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
 
   @MethodToInvoke
   def source(@ParamName("elements") elements: java.util.List[Any]) =
-    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActivityParameters {
+    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActionParameters {
 
-      override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
+      override def actionParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
         Map(
           ScenarioActionName.Deploy.value -> deployActivityParameters
         )

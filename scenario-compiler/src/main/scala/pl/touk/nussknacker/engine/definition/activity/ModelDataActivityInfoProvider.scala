@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.activity
 import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.process.WithActivityParameters
+import pl.touk.nussknacker.engine.api.process.WithActionParameters
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ModelDataActivityInfoProvider(modelData: ModelData)
     extends CommonModelDataInfoProvider(modelData)
-    with ActivityInfoProvider {
+    with ActionInfoProvider {
 
-  override def getActivityParameters(
+  override def getActionParameters(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
   ): Map[String, Map[String, Map[String, ParameterConfig]]] = {
@@ -45,8 +45,8 @@ class ModelDataActivityInfoProvider(modelData: ModelData)
     modelData.withThisAsContextClassLoader {
       val compiledSource = prepareSourceObj(source)(jobData, NodeId(source.id))
       compiledSource match {
-        case Valid(s: WithActivityParameters) => s.activityParametersDefinition
-        case _                                => Map.empty
+        case Valid(s: WithActionParameters) => s.actionParametersDefinition
+        case _                              => Map.empty
       }
     }
   }

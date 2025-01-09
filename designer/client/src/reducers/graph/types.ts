@@ -1,7 +1,7 @@
 import { Layout, RefreshData } from "../../actions/nk";
 import { Scenario } from "../../components/Process/types";
 import { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
-import { ActivityParameters } from "../../types/activity";
+import { ActionParameters } from "../../types/action";
 import { StickyNote } from "../../common/StickyNote";
 
 export interface NodeCounts {
@@ -18,7 +18,7 @@ export type GraphState = {
     stickyNotes?: StickyNote[];
     selectionState?: string[];
     layout: Layout;
-    activityParameters?: ActivityParameters;
+    actionParameters?: ActionParameters;
     testCapabilities?: TestCapabilities;
     testFormParameters?: TestFormParameters[];
     testResults: TestResults;

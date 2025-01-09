@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getActivityParameters, getProcessName } from "../../reducers/selectors/graph";
+import { getActionParameters, getProcessName } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { ProcessName } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
@@ -11,11 +11,11 @@ import CommentInput from "../comment/CommentInput";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import { FormHelperText, Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { ActivityNodeParameters } from "../../types/activity";
+import { ActionNodeParameters } from "../../types/action";
 import { AdvancedParametersSection } from "./AdvancedParametersSection";
 import { mapValues } from "lodash";
 import { NodesDeploymentData } from "../../http/HttpService";
-import { ActivityProperty } from "./ActivityProperty";
+import { ActionParameter } from "./ActionParameter";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 
 export type ToggleProcessActionModalData = {
@@ -23,7 +23,7 @@ export type ToggleProcessActionModalData = {
     displayWarnings?: boolean;
 };
 
-function initialNodesData(params: ActivityNodeParameters[]) {
+function initialNodesData(params: ActionNodeParameters[]) {
     return params.reduce(
         (paramObj, { nodeId, parameters }) => ({
             ...paramObj,
@@ -40,8 +40,8 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     } = props.data;
     const processName = useSelector(getProcessName);
 
-    const activityParameters = useSelector(getActivityParameters);
-    const activityNodeParameters = activityParameters["DEPLOY"] || ([] as ActivityNodeParameters[]);
+    const activityParameters = useSelector(getActionParameters);
+    const activityNodeParameters = activityParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
     const initialValues = useMemo(() => initialNodesData(activityNodeParameters), [activityNodeParameters]);
     const [values, setValues] = useState(initialValues);
 
@@ -90,12 +90,12 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 <FormHelperText title={validationError} error>
                     {validationError}
                 </FormHelperText>
-                {activityNodeParameters.map((anp: ActivityNodeParameters) => (
+                {activityNodeParameters.map((anp: ActionNodeParameters) => (
                     <AdvancedParametersSection key={anp.nodeId} nodeId={anp.nodeId}>
                         <NodeTable>
                             {Object.entries(anp.parameters).map(([paramName, paramConfig]) => {
                                 return (
-                                    <ActivityProperty
+                                    <ActionParameter
                                         key={paramName}
                                         nodeName={anp.nodeId}
                                         propertyName={paramName}

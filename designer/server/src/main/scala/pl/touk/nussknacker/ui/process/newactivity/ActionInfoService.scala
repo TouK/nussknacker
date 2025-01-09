@@ -6,31 +6,30 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.RawParameterEditor
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.activity.ActivityInfoProvider
-import pl.touk.nussknacker.restmodel.definition.UiActivityParameterConfig
-import pl.touk.nussknacker.ui.process.newactivity.ActivityInfoService.{ActivityName, UiActivityNodeParameters}
+import pl.touk.nussknacker.engine.definition.activity.ActionInfoProvider
+import pl.touk.nussknacker.restmodel.definition.UiActionParameterConfig
+import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService.{ActivityName, UiActionNodeParameters}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
-// TODO: move to ActivityService? execute node compilation only once with ScenarioTestService?
-class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
+class ActionInfoService(activityInfoProvider: ActionInfoProvider, processResolver: UIProcessResolver) {
 
-  def getActivityParameters(
+  def getActionParameters(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
   )(
       implicit user: LoggedUser
-  ): Map[ActivityName, List[UiActivityNodeParameters]] = {
+  ): Map[ActivityName, List[UiActionNodeParameters]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     activityInfoProvider
-      .getActivityParameters(processVersion, canonical)
+      .getActionParameters(processVersion, canonical)
       .map { case (activityName, nodeParamsMap) =>
         activityName -> nodeParamsMap.map { case (nodeId, params) =>
-          UiActivityNodeParameters(
+          UiActionNodeParameters(
             NodeId(nodeId),
             params.map { case (name, value) =>
-              name -> UiActivityParameterConfig(
+              name -> UiActionParameterConfig(
                 value.defaultValue,
                 value.editor.getOrElse(RawParameterEditor),
                 value.label,
@@ -53,7 +52,7 @@ class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processRes
 
 }
 
-object ActivityInfoService {
+object ActionInfoService {
   type ActivityName = String
-  @JsonCodec case class UiActivityNodeParameters(nodeId: NodeId, parameters: Map[String, UiActivityParameterConfig])
+  @JsonCodec case class UiActionNodeParameters(nodeId: NodeId, parameters: Map[String, UiActionParameterConfig])
 }

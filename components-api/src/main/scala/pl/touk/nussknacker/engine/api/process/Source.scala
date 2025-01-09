@@ -54,8 +54,8 @@ trait TestWithParametersSupport[+T] { self: Source =>
  * e.g.
  *   {"DEPLOY": { "parametername": ...parameter configuration... }
  */
-trait WithActivityParameters { self: Source =>
-  def activityParametersDefinition: Map[String, Map[String, ParameterConfig]]
+trait WithActionParameters { self: Source =>
+  def actionParametersDefinition: Map[String, Map[String, ParameterConfig]]
 }
 
 /**

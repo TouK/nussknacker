@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OffsetRese
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OffsetResetStrategy.OffsetResetStrategy
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 
 class KafkaSourceWithDeploymentParametersSpec extends KafkaSourceFactoryProcessMixin {
 

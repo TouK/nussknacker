@@ -6,15 +6,15 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps.ScenarioWithDetailsOps
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.newactivity.ActivityInfoService
+import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class ActivityInfoResources(
+class ActionInfoResources(
     protected val processService: ProcessService,
-    activityInfoService: ProcessingTypeDataProvider[ActivityInfoService, _]
+    actionInfoService: ProcessingTypeDataProvider[ActionInfoService, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -23,14 +23,14 @@ class ActivityInfoResources(
     with LazyLogging {
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    pathPrefix("activityInfo" / ProcessNameSegment) { processName =>
+    pathPrefix("actionInfo" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { processDetails =>
         entity(as[ScenarioGraph]) { scenarioGraph =>
-          path("activityParameters") {
+          path("actionParameters") {
             complete {
-              activityInfoService
+              actionInfoService
                 .forProcessingTypeUnsafe(processDetails.processingType)
-                .getActivityParameters(
+                .getActionParameters(
                   scenarioGraph,
                   processDetails.processVersionUnsafe,
                   processDetails.isFragment
