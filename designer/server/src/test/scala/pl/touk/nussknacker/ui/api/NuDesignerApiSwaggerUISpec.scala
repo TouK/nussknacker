@@ -19,7 +19,7 @@ class NuDesignerApiSwaggerUISpec
       .when()
       .redirects()
       .follow(true)
-      .get(s"$nuDesignerHttpAddress/api/docs")
+      .get(s"$nuDesignerHttpAddress/api/docs/")
       .Then()
       .statusCode(200)
       .header("Content-Type", "text/html")
