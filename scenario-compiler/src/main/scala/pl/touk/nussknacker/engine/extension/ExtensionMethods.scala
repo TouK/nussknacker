@@ -77,17 +77,17 @@ object ExtensionMethods {
 abstract class ExtensionMethod[R: ClassTag] {
   val argsSize: Int
   def invoke(target: Any, args: Object*): R
-  def returnType: Class[R] = classTag[R].runtimeClass.asInstanceOf[Class[R]]
+  def returnType: Class[_] = classTag[R].runtimeClass
 }
 
 object ExtensionMethod {
 
-  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] = new ExtensionMethod {
+  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] = new ExtensionMethod[R] {
     override val argsSize: Int                         = 0
     override def invoke(target: Any, args: Object*): R = method(target)
   }
 
-  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] = new ExtensionMethod {
+  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] = new ExtensionMethod[R] {
     override val argsSize: Int                         = 1
     override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
   }

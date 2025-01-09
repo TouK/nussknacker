@@ -42,6 +42,7 @@
 * [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 * [#7360](https://github.com/TouK/nussknacker/pull/7360) Added Median aggregator
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
+* [#7403](https://github.com/TouK/nussknacker/pull/7403) Method get on array types returns array's component type instead of Unknown
 
 ## 1.18
 
