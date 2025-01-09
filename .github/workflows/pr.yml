@@ -546,7 +546,6 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.11.0.17
-      - uses: sbt/setup-sbt@v1
       - name: Cache ivy packages
         uses: actions/cache@v3
         with:
@@ -587,7 +586,8 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo rm -rf /usr/local/lib/android 
+          sudo rm -rf /usr/local/lib/android
+      - uses: sbt/setup-sbt@v1
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
         env:
