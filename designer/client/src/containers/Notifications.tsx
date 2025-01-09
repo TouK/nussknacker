@@ -52,7 +52,7 @@ const handleRefresh =
         currentIsFragment: boolean,
     ): ThunkAction =>
     (dispatch) => {
-        if (!scenarioName || scenarioName !== currentScenarioName) {
+        if (scenarioName && scenarioName !== currentScenarioName) {
             return;
         }
         toRefresh.forEach((data) => {
@@ -62,7 +62,6 @@ const handleRefresh =
                 case "state":
                     return dispatch(loadProcessState(scenarioName, processVersionId));
                 case "creator":
-                    // FIXME
                     return dispatch(fetchProcessDefinition(currentProcessingType, currentIsFragment));
             }
         });

@@ -725,12 +725,14 @@ class AkkaHttpBasedRouteProvider(
             ),
           )
           val firstConfigurationLoad = new AtomicBoolean(true)
-          val loadAndNotifyIO = laodProcessingTypeDataIO.map { state =>
-            if (!firstConfigurationLoad.compareAndSet(true, false)) {
-              globalNotificationRepository.saveEntry(Notification.configurationReloaded)
+          val loadAndNotifyIO = laodProcessingTypeDataIO
+            .map { state =>
+              if (!firstConfigurationLoad.compareAndSet(true, false)) {
+                globalNotificationRepository.saveEntry(Notification.configurationReloaded)
+              }
+              state
             }
-            state
-          }
+            .onError(_ => IO(globalNotificationRepository.saveEntry(Notification.configurationReloadFailed)))
           new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(

@@ -103,6 +103,15 @@ object Notification {
       toRefresh = List(DataToRefresh.creator)
     )
 
+  def configurationReloadFailed: Notification =
+    Notification(
+      id = UUID.randomUUID().toString,
+      scenarioName = None,
+      message = "Configuration reload failed",
+      `type` = Some(NotificationType.error),
+      toRefresh = List.empty
+    )
+
   private def displayableActionName(actionName: ScenarioActionName): String =
     actionName match {
       case ScenarioActionName.Deploy => "Deployment"
