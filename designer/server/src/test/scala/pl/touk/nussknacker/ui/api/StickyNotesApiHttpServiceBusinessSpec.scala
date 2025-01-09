@@ -39,8 +39,8 @@ class StickyNotesApiHttpServiceBusinessSpec
     .source("sourceId", "barSource")
     .emptySink("sinkId", "barSink")
 
-  private def stickyNoteToAdd(versionId: VersionId): StickyNoteAddRequest =
-    StickyNoteAddRequest(versionId, "", LayoutData(0, 1), "#aabbcc", Dimensions(300, 200), None)
+  private def stickyNoteToAdd(versionId: VersionId, content: String): StickyNoteAddRequest =
+    StickyNoteAddRequest(versionId, content, LayoutData(0, 1), "#aabbcc", Dimensions(300, 200), None)
 
   "The GET stickyNotes for scenario" - {
     "return no notes if nothing was created" in {
@@ -71,7 +71,7 @@ class StickyNotesApiHttpServiceBusinessSpec
         .applicationState {
           createSavedScenario(exampleScenario)
           val updatedProcess = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
-          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get))
+          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get, ""))
         }
         .when()
         .basicAuthAllPermUser()
@@ -86,7 +86,7 @@ class StickyNotesApiHttpServiceBusinessSpec
         .applicationState {
           createSavedScenario(exampleScenario)
           val updatedProcess = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
-          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get))
+          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get, "title1"))
         }
         .when()
         .basicAuthAllPermUser()
@@ -97,8 +97,8 @@ class StickyNotesApiHttpServiceBusinessSpec
           matchJsonWithRegexValues(
             s"""[
               {
-                  "noteId": 1,
-                  "content": "",
+                  "noteId": "${regexes.digitsRegex}",
+                  "content": "title1",
                   "layoutData": {
                       "x": 0,
                       "y": 1
@@ -123,9 +123,12 @@ class StickyNotesApiHttpServiceBusinessSpec
         .applicationState {
           createSavedScenario(exampleScenario)
           val updatedProcess = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
-          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get))
+          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcess.newVersion.get, "sticky 1"))
           val updatedProcessOnceMore = updateScenario(ProcessName(exampleScenarioName), exampleScenario)
-          addStickyNote(ProcessName(exampleScenarioName), stickyNoteToAdd(updatedProcessOnceMore.newVersion.get))
+          addStickyNote(
+            ProcessName(exampleScenarioName),
+            stickyNoteToAdd(updatedProcessOnceMore.newVersion.get, "sticky 2")
+          )
         }
         .when()
         .basicAuthAllPermUser()
@@ -136,8 +139,8 @@ class StickyNotesApiHttpServiceBusinessSpec
           matchJsonWithRegexValues(
             s"""[
               {
-                  "noteId": 1,
-                  "content": "",
+                  "noteId": "${regexes.digitsRegex}",
+                  "content": "sticky 1",
                   "layoutData": {
                       "x": 0,
                       "y": 1
