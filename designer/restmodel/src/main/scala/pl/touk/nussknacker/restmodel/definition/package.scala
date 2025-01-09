@@ -133,7 +133,7 @@ package object definition {
       hintText: Option[String]
   )
 
-  @JsonCodec final case class UiActivityParameterConfig(
+  @JsonCodec final case class UiActionParameterConfig(
       defaultValue: Option[String],
       editor: ParameterEditor,
       label: Option[String],

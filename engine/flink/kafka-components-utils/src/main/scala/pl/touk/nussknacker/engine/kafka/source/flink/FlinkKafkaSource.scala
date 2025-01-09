@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ContextInitializer,
   TestWithParametersSupport,
   TopicName,
-  WithActivityParameters
+  WithActionParameters
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -66,7 +66,7 @@ class FlinkKafkaSource[T](
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
     with TestWithParametersSupport[T]
-    with WithActivityParameters
+    with WithActionParameters
     with LazyLogging {
 
   @silent("deprecated")
@@ -88,7 +88,7 @@ class FlinkKafkaSource[T](
   private val defaultOffsetResetStrategy =
     if (kafkaConfig.forceLatestRead.contains(true)) OffsetResetStrategy.Reset else OffsetResetStrategy.Continue
 
-  override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
+  override def actionParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
     Map(
       ScenarioActionName.Deploy.value -> Map(
         OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(

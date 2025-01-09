@@ -20,7 +20,7 @@ import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { ProcessName, ProcessVersionId } from "../../../Process/types";
 
-import { useActivityCapabilities } from "../../../modals/GenericAction/useActivityCapabilities";
+import { useActionCapabilities } from "../../../modals/GenericAction/useActionCapabilities";
 
 export default function DeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
@@ -33,7 +33,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
 
     // TODO: find better place to reload activity capabilities and properties
-    useActivityCapabilities();
+    useActionCapabilities();
 
     const available = validationResultPresent && !disabled && deployPossible && capabilities.deploy;
     const { t } = useTranslation();

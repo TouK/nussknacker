@@ -40,12 +40,12 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
         );
 }
 
-export function fetchActivityParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
+export function fetchActionParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getActivityParameters(processName, scenarioGraph).then(({ data }) => {
+        HttpService.getActionParameters(processName, scenarioGraph).then(({ data }) => {
             dispatch({
-                type: "UPDATE_ACTIVITY_PARAMETERS",
-                activityParameters: data,
+                type: "UPDATE_ACTION_PARAMETERS",
+                actionParameters: data,
             });
         });
 }
