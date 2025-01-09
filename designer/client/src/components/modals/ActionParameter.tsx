@@ -2,7 +2,7 @@ import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import React, { useCallback } from "react";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
-import { ActivityNodeParameters, ActivityParameterConfig } from "../../types/activity";
+import { ActionNodeParameters, ActionParameterConfig } from "../../types/action";
 import { NodesDeploymentData } from "../../http/HttpService";
 import { NodeValidationError } from "../../types";
 import { default as EditableEditor } from "../graph/node-modal/editors/EditableEditor";
@@ -10,18 +10,18 @@ import { default as EditableEditor } from "../graph/node-modal/editors/EditableE
 interface Props {
     nodeName: string;
     propertyName: string;
-    propertyConfig: ActivityParameterConfig;
+    propertyConfig: ActionParameterConfig;
     nodesData: NodesDeploymentData;
-    onChange: <K extends keyof ActivityNodeParameters["parameters"]>(
+    onChange: <K extends keyof ActionNodeParameters["parameters"]>(
         nodeId: string,
         property: K,
-        newValue: ActivityNodeParameters["parameters"][K],
-        defaultValue?: ActivityNodeParameters["parameters"][K],
+        newValue: ActionNodeParameters["parameters"][K],
+        defaultValue?: ActionNodeParameters["parameters"][K],
     ) => void;
     errors: NodeValidationError[];
 }
 
-export function ActivityProperty(props: Props): JSX.Element {
+export function ActionParameter(props: Props): JSX.Element {
     const { nodeName, propertyName, propertyConfig, errors, nodesData, onChange } = props;
 
     const current = nodesData[nodeName][propertyName] || "";
