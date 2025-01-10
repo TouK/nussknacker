@@ -90,6 +90,18 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 <FormHelperText title={validationError} error>
                     {validationError}
                 </FormHelperText>
+                {activityNodeParameters && activityNodeParameters.length > 0 ? (
+                    <Typography
+                        sx={(theme) => ({
+                            color: theme.palette.primary.main,
+                            pt: "1em",
+                            textTransform: "uppercase",
+                            textDecoration: "none",
+                        })}
+                    >
+                        Advanced parameters
+                    </Typography>
+                ) : null}
                 {activityNodeParameters.map((anp: ActionNodeParameters) => (
                     <AdvancedParametersSection key={anp.nodeId} nodeId={anp.nodeId}>
                         <NodeTable>

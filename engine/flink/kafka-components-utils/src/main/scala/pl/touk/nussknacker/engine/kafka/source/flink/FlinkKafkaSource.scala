@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{
@@ -108,7 +109,8 @@ class FlinkKafkaSource[T](
                   OffsetResetStrategy.Restart.toString,
                   "Rewinds reading from the earliest event (restart)."
                 ),
-              )
+              ),
+              mode = FixedValuesEditorMode.RADIO
             )
           ),
           validators = None,

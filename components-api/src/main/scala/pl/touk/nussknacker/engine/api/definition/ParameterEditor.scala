@@ -119,18 +119,13 @@ object FixedValuesParameterEditor {
   implicit val fixedValuesParameterEditorEncoder: Encoder[FixedValuesParameterEditor] =
     deriveEncoder[FixedValuesParameterEditor]
 
-  implicit val fixedValuesParameterEditorDecoder: Decoder[FixedValuesParameterEditor] = { (c: HCursor) =>
-    {
-      for {
-        possibleValues <- c.downField("possibleValues").as[List[FixedExpressionValue]]
-        modeOpt        <- c.downField("mode").as[Option[String]]
-      } yield {
-        FixedValuesParameterEditor(
-          possibleValues,
-          modeOpt.map(FixedValuesEditorMode.fromName).getOrElse(FixedValuesEditorMode.LIST)
+  implicit val fixedValuesParameterEditorDecoder: Decoder[FixedValuesParameterEditor] =
+    Decoder
+      .forProduct2("possibleValues", "mode")(FixedValuesParameterEditor.apply)
+      .or(
+        Decoder.forProduct1("possibleValues")((p: List[FixedExpressionValue]) =>
+          FixedValuesParameterEditor(p, FixedValuesEditorMode.LIST)
         )
-      }
-    }
-  }
+      )
 
 }
