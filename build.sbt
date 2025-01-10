@@ -114,27 +114,6 @@ def designerMergeStrategy: String => MergeStrategy = {
   // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
     MergeStrategy.singleOrError
-  // related to flink netty shaded libs
-  case PathList(
-        "META-INF",
-        "native-image",
-        "io.netty",
-        "netty-codec",
-        "generated",
-        "handlers",
-        "reflect-config.json"
-      ) =>
-    MergeStrategy.first
-  case PathList(
-        "META-INF",
-        "native-image",
-        "io.netty",
-        "netty-handler",
-        "generated",
-        "handlers",
-        "reflect-config.json"
-      ) =>
-    MergeStrategy.first
   case x                                                                            =>
     defaultMergeStrategy(x)
 }
@@ -2314,11 +2293,7 @@ prepareDev := {
     (distribution / componentArtifacts).value ++
       (distribution / devArtifacts).value ++
       developmentTestsDeployManagerArtifacts.value ++
-      Def
-        .taskDyn(
-          if (addManagerArtifacts) distribution / deploymentManagerArtifacts else Def.task[List[(File, String)]](Nil)
-        )
-        .value ++
+      (distribution / deploymentManagerArtifacts).value ++
       (flinkExecutor / additionalBundledArtifacts).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
