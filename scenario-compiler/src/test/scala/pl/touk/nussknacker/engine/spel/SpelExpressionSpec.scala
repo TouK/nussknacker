@@ -897,6 +897,46 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
+  // TODO_PAWEL usun
+  test("asdf2") {
+    // to dziala
+    val sth = evaluate[Any]("""#someMap["1"]""", Context("abc").withVariable("someMap", Map("1" -> 2).asJava))
+    val a = 5
+  }
+
+  // TODO_PAWEL usun
+  test("asdf3") {
+    // to nie dziala, integer cannot be cast to string, powiedzmy ze rozumiem, bo nie zna generycznego typu i probuje go zgadnac, i zgaduje ze ma byc stringiem, i tutaj zle zgadl
+    val sth = evaluate[Any]("""#someMap[1]""", Context("abc").withVariable("someMap", Map(1 -> 2).asJava))
+    val a = 5
+  }
+
+  test("asdf") {
+    evaluate[Int]("""{{key: 1.toLong, value: 5}}.toMap[1]""") shouldBe 5
+  }
+
+  test("asdffsadf2") {
+    evaluate[Int]("""{{key: 1, value: 5}}.toMap[1.toLong]""") shouldBe 5
+  }
+
+  test("asdf222") {
+    evaluate[Int]("""{{key: 1.toLong, value: 5}}.toMap.get(1)""") shouldBe 5
+  }
+
+  test("asdffsadf2222") {
+    evaluate[Int]("""{{key: 1, value: 5}}.toMap.get(1.toLong)""") shouldBe 5
+  }
+
+  // TODO_PAWEL lepszy test w ktorym jeszcz esprawdzam co sie zaselektuje
+  test("should not validate map indexing if index cannot be converted to map key type") {
+    parse[Any]("""{{key: "a", value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap["0"]""") shouldBe Symbol("invalid")
+    // TODO_PAWEL no dobra, ale czy to spel zrobi dobrze? chyba ma za malo type info
+    parse[Any]("""{{key: 1.toLong, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0.toLong]""") shouldBe Symbol("valid")
+  }
+
   test("validate ternary operator") {
     parse[Long]("'d'? 3 : 4", ctx) should not be Symbol("valid")
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be Symbol("valid")

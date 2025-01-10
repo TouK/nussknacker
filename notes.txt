@@ -1,0 +1,17 @@
+notes
+
+Indexer linia 154 tam jest ta konwersja typow zdaje sie
+
+teraz ten problem z tym, ze indeksowanie mapy w spelu rzuca wyjatkiem.
+w Indekser przy indeksowaniu mapy wyrazenie "targetDescriptor.getMapKeyTypeDescriptor()"
+rzuca wyjatkiem, bo chyba tam jest typ "object" a nie mapa.
+(co ciekawe jak wsadzilem mape <string, int> z kontekstu zbudowanego w scali
+to ten "targetDescriptor.getMapKeyTypeDescriptor()" zwracal null, co oznacza, ze chyba zwykle nie bedzie konwertowac wcale
+tych kluczy.
+
+ExtensionMethodResolver
+tam gdzies jest returnType dostepna metoda "returnType", i ona debuggerem widze, ze zwrocila wlasnie object. Wiec cos jest nie teges
+
+kurcze, jest problem, nie jest znany typ klucza wiec nie robi konwersji ten indekser
+w tym Indexer jest sprawdzenie czy da sie wybrac ten typ klucza, by sie dalo to trzeba zbudowac dobry ten TypeDetail
+a do tego trzeba TypeDetail.map() metody uzyc
