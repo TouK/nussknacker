@@ -31,7 +31,9 @@
 * [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
-* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
+* [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
+
+## 1.18
 
 ### 1.18.2 (Not released)
 * [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
