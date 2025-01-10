@@ -36,6 +36,7 @@ import { AuthenticationSettings } from "../reducers/settings";
 import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import { handleAxiosError } from "../devHelpers";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -715,8 +716,14 @@ class HttpService {
         );
         promise
             .then((response) => FileSaver.saveAs(response.data, `${processName}-testData`))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true),
+            .catch((error: AxiosError) =>
+                this.#addError(
+                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data due to: {{axiosError}}", {
+                        axiosError: handleAxiosError(error),
+                    }),
+                    error,
+                    true,
+                ),
             );
         return promise;
     }
@@ -796,7 +803,15 @@ class HttpService {
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
         const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
-        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
         return promise;
     }
 
@@ -812,7 +827,15 @@ class HttpService {
         };
 
         const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
-        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
         return promise;
     }
 
@@ -825,8 +848,14 @@ class HttpService {
             `/processManagement/generateAndTest/${processName}/${testSampleSize}`,
             this.#sanitizeScenarioGraph(scenarioGraph),
         );
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"), error, true),
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
         );
         return promise;
     }
