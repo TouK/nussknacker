@@ -129,6 +129,43 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("/api/processes should return lighter details without ProcessAction's additional fields and null values") {
+    def hasNullAttributes(json: Json): Boolean = {
+      json.fold(
+        jsonNull = true, // null found
+        jsonBoolean = _ => false,
+        jsonNumber = _ => false,
+        jsonString = _ => false,
+        jsonArray = _.exists(hasNullAttributes),
+        jsonObject = _.values.exists(hasNullAttributes)
+      )
+    }
+    createDeployedScenario(processName, category = Category1)
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      // verify that unnecessary fields were omitted
+      val decodedScenarios = responseAs[List[ScenarioWithDetails]]
+      decodedScenarios.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      decodedScenarios.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      decodedScenarios.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      // verify that null values were not present in JSON response
+      val rawFetchedScenarios = responseAs[Json]
+      hasNullAttributes(rawFetchedScenarios) shouldBe false
+    }
+  }
+
   test("return single process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(

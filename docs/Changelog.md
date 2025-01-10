@@ -43,6 +43,7 @@
 * [#7360](https://github.com/TouK/nussknacker/pull/7360) Added Median aggregator
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
 * [#7400](https://github.com/TouK/nussknacker/pull/7400) Deploy and cancel buttons are not shown for fragments
+* [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 
 ## 1.18
 
