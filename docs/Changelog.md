@@ -42,6 +42,7 @@
 * [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
 * [#7360](https://github.com/TouK/nussknacker/pull/7360) Added Median aggregator
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
+* [#7387](https://github.com/TouK/nussknacker/pull/7387) Creator panel is automatically reloaded after configuration reload - page refresh is not needed now
 * [#7400](https://github.com/TouK/nussknacker/pull/7400) Deploy and cancel buttons are not shown for fragments
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 * [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method

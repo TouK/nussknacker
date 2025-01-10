@@ -38,7 +38,17 @@ class NotificationApiHttpServiceSecuritySpec
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
           .statusCode(200)
-          .equalsJsonBody("[]")
+          .body(
+            matchJsonWithRegexValues(
+              s"""[{
+                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |  "scenarioName": null,
+                 |  "message": "Configuration reloaded",
+                 |  "type": null,
+                 |  "toRefresh": [ "creator" ]
+                 |}]""".stripMargin
+            )
+          )
       }
     }
     "not authenticated should" - {
@@ -64,7 +74,17 @@ class NotificationApiHttpServiceSecuritySpec
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
           .statusCode(200)
-          .equalsJsonBody("[]")
+          .body(
+            matchJsonWithRegexValues(
+              s"""[{
+                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |  "scenarioName": null,
+                 |  "message": "Configuration reloaded",
+                 |  "type": null,
+                 |  "toRefresh": [ "creator" ]
+                 |}]""".stripMargin
+            )
+          )
       }
     }
   }
