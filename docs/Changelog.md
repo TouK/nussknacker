@@ -43,7 +43,7 @@
 * [#7360](https://github.com/TouK/nussknacker/pull/7360) Added Median aggregator
 * [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
-* [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods and array.get extension method
+* [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
 
 ## 1.18
 
