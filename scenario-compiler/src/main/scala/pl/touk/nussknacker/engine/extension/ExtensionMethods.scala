@@ -78,26 +78,30 @@ object ExtensionMethods {
 abstract class ExtensionMethod[R: ClassTag] {
   val argsSize: Int
   def invoke(target: Any, args: Object*): R
+  // This method gets the same arguments as passed to invoke
   def returnType(args: Object*): Class[_] = classTag[R].runtimeClass.asInstanceOf[Class[R]]
 }
 
 object ExtensionMethod {
 
-  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] = new ExtensionMethod {
-    override val argsSize: Int                         = 0
-    override def invoke(target: Any, args: Object*): R = method(target)
-  }
+  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 0
+      override def invoke(target: Any, args: Object*): R = method(target)
+    }
 
-  def NoArg[R: ClassTag](method: Any => R, clazzProvider: () => Class[_]): ExtensionMethod[R] = new ExtensionMethod {
-    override val argsSize: Int                         = 0
-    override def invoke(target: Any, args: Object*): R = method(target)
-    override def returnType(args: Object*): Class[_]   = clazzProvider()
-  }
+  def NoArg[R: ClassTag](method: Any => R, returnTypeClass: Class[_]): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 0
+      override def invoke(target: Any, args: Object*): R = method(target)
+      override def returnType(args: Object*): Class[_]   = returnTypeClass
+    }
 
-  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] = new ExtensionMethod {
-    override val argsSize: Int                         = 1
-    override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
-  }
+  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 1
+      override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
+    }
 
   def SingleArg[T, R: ClassTag](method: (Any, T) => R, clazzProvider: T => Class[_]): ExtensionMethod[R] =
     new ExtensionMethod[R] {

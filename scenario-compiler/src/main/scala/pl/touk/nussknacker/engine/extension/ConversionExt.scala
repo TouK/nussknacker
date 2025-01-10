@@ -32,7 +32,7 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
       underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
       resultMethod = NoArg(
         target => underlyingMethod.invoke(target, targetTypeName),
-        () => underlyingMethod.returnType(targetTypeName)
+        underlyingMethod.returnType(targetTypeName)
       )
     } yield resultMethod
 
