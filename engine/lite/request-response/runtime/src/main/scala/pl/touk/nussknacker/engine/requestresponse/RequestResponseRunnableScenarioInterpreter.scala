@@ -45,9 +45,7 @@ class RequestResponseRunnableScenarioInterpreter(
     }
     .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
-  override def run(): IO[Unit] = {
-    IO.unit
-  }
+  override def run(): IO[Unit] = IO.unit
 
   override def status(): TaskStatus = TaskStatus.Running
 

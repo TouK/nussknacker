@@ -4,6 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
+import pl.touk.nussknacker.ui.config.DesignerConfig.ConfigurationMalformedException
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 
 import java.nio.file.{Files, Path, Paths}
@@ -57,5 +58,4 @@ object DesignerConfig {
   }
 
   final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
-
 }
