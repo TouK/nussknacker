@@ -11,12 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionResult,
-  DeploymentData,
-  ExternalDeploymentId
-}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
@@ -121,8 +116,7 @@ abstract class FlinkDeploymentManager(
         }
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
         testRunner.test(canonicalProcess, scenarioTestData)
-      case command: DMCustomActionCommand => processCustomAction(command)
-      case _: DMRunOffScheduleCommand     => notImplemented
+      case _: DMRunOffScheduleCommand => notImplemented
     }
 
   private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
@@ -205,8 +199,6 @@ abstract class FlinkDeploymentManager(
       currentlyDeployedJobsIds: List[ExternalDeploymentId]
   ): Future[Unit]
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
-
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
       action: ExternalDeploymentId => Future[T]
   ): Future[T] = {
@@ -248,8 +240,6 @@ abstract class FlinkDeploymentManager(
       _ <- cancelFlinkJob(deploymentId)
     } yield savepointPath
   }
-
-  protected def processCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] = notImplemented
 
   protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit]
 

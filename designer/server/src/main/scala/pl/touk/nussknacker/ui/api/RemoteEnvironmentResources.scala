@@ -51,7 +51,7 @@ class RemoteEnvironmentResources(
             for {
               processes <- processService.getLatestProcessesWithDetails(
                 ScenarioQuery.unarchived,
-                GetScenarioWithDetailsOptions.withsScenarioGraph
+                GetScenarioWithDetailsOptions.withScenarioGraph
               )
               comparison <- compareProcesses(processes)
             } yield NuDesignerErrorToHttp.toResponseEither(comparison)
@@ -137,7 +137,7 @@ class RemoteEnvironmentResources(
       .getProcessWithDetails(
         processIdWithName,
         version,
-        GetScenarioWithDetailsOptions.withsScenarioGraph
+        GetScenarioWithDetailsOptions.withScenarioGraph
       )
       .flatMap(fun)
       .map(NuDesignerErrorToHttp.toResponseEither[T])

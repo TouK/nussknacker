@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
-import cats.implicits.catsSyntaxValidatedId
+import cats.implicits.{catsSyntaxOptionId, catsSyntaxValidatedId}
 import org.apache.commons.lang3.LocaleUtils
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo, Parameter}
@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{
+  booleanClass,
   canBeMethodName,
   getConversion,
   toMethodName,
@@ -29,11 +30,12 @@ import scala.util.Try
 class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
-  private val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
-    canBeMethodName    -> SingleArg(canBe),
-    toMethodName       -> SingleArg(to),
-    toOrNullMethodName -> SingleArg(toOrNull),
-  )
+  def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = (methodName match {
+    case `canBeMethodName`    => SingleArg(canBe, (_: String) => booleanClass).some
+    case `toMethodName`       => SingleArg(to, getReturnTypeClassOrThrow).some
+    case `toOrNullMethodName` => SingleArg(toOrNull, getReturnTypeClassOrThrow).some
+    case _                    => None
+  }).filter(_.argsSize == argsSize)
 
   private def canBe(target: Any, className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||
@@ -68,10 +70,13 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
       case r @ Right(_) => r
     }
 
+  private def getReturnTypeClassOrThrow(className: String): Class[_] =
+    getClass(className).getOrElse(throw new IllegalArgumentException(s"Cannot find class with name: $className"))
 }
 
 object CastOrConversionExt extends ExtensionMethodsDefinition {
   private val stringClass                   = classOf[String]
+  private val booleanClass                  = classOf[JBoolean]
   private[extension] val canBeMethodName    = "canBe"
   private[extension] val toMethodName       = "to"
   private[extension] val orNullSuffix       = "OrNull"
@@ -129,7 +134,7 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
       argsSize: Int,
       set: ClassDefinitionSet
   ): Option[ExtensionMethod[_]] =
-    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()).methodRegistry
+    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
       .findMethod(methodName, argsSize)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {

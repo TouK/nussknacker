@@ -13,12 +13,12 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{Comment, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -126,6 +126,43 @@ class ProcessesResourcesSpec
       forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
         every(processes.map(_.history)) shouldBe empty
       }
+    }
+  }
+
+  test("/api/processes should return lighter details without ProcessAction's additional fields and null values") {
+    def hasNullAttributes(json: Json): Boolean = {
+      json.fold(
+        jsonNull = true, // null found
+        jsonBoolean = _ => false,
+        jsonNumber = _ => false,
+        jsonString = _ => false,
+        jsonArray = _.exists(hasNullAttributes),
+        jsonObject = _.values.exists(hasNullAttributes)
+      )
+    }
+    createDeployedScenario(processName, category = Category1)
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      // verify that unnecessary fields were omitted
+      val decodedScenarios = responseAs[List[ScenarioWithDetails]]
+      decodedScenarios.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      decodedScenarios.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      decodedScenarios.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      // verify that null values were not present in JSON response
+      val rawFetchedScenarios = responseAs[Json]
+      hasNullAttributes(rawFetchedScenarios) shouldBe false
     }
   }
 
@@ -1055,7 +1092,7 @@ class ProcessesResourcesSpec
   }
 
   test("should provide the same proper scenario state when fetching all scenarios and one scenario") {
-    createDeployedWithCustomActionScenario(processName, category = Category1)
+    createDeployedScenario(processName, category = Category1)
 
     Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
@@ -1063,7 +1100,7 @@ class ProcessesResourcesSpec
 
       loadedProcess.head.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
             ) =>
       }
       loadedProcess.head.lastStateAction should matchPattern {
@@ -1084,7 +1121,7 @@ class ProcessesResourcesSpec
 
       loadedProcess.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
             ) =>
       }
       loadedProcess.lastStateAction should matchPattern {

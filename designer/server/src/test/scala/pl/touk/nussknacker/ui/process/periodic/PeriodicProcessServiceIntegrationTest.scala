@@ -319,6 +319,7 @@ class PeriodicProcessServiceIntegrationTest
     )
     service.handleFinished.futureValue
 
+    // here we check that scenarios that not fired are still on the "toDeploy" list and finished are not on the list
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish.map(_.periodicProcess.deploymentData.processName) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
@@ -352,6 +353,58 @@ class PeriodicProcessServiceIntegrationTest
         nextRetryAt = None
       ),
     )
+  }
+
+  it should "handleFinished for all finished periodic scenarios waiting for reschedule" in withFixture() { f =>
+    val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
+    var currentTime        = startTime
+    def service            = f.periodicProcessService(currentTime)
+
+    service
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = ProcessName("first")),
+        sampleProcess,
+        randomProcessActionId
+      )
+      .futureValue
+    service
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = ProcessName("second")),
+        sampleProcess,
+        randomProcessActionId
+      )
+      .futureValue
+
+    currentTime = timeToTriggerCheck
+
+    // deploy all
+    service.findToBeDeployed.futureValue
+      .foreach(pp => service.deploy(pp).futureValue)
+
+    val stateAfterDeploy = service.getLatestDeploymentsForActiveSchedules(1).futureValue
+    stateAfterDeploy should have size 2
+
+    // finish all
+    stateAfterDeploy.values.foreach(schedulesState => {
+      val deployment = schedulesState.firstScheduleData.latestDeployments.head
+      f.delegateDeploymentManagerStub.setStateStatus(
+        processName,
+        SimpleStateStatus.Finished,
+        Some(deployment.id)
+      )
+    })
+    service.handleFinished.futureValue
+
+    // check all are rescheduled for next run
+    val stateAfterFinish = service.getLatestDeploymentsForActiveSchedules(1).futureValue
+    stateAfterFinish.values.foreach(schedulesState => {
+      val deployment = schedulesState.firstScheduleData.latestDeployments.head
+      deployment.state should matchPattern {
+        case PeriodicProcessDeploymentState(_, _, PeriodicProcessDeploymentStatus.Scheduled) =>
+      }
+    })
   }
 
   it should "redeploy scenarios that failed on deploy" in withFixture(deploymentRetryConfig =

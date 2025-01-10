@@ -3,7 +3,11 @@ package pl.touk.nussknacker.ui.process.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
@@ -16,8 +20,28 @@ import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, Deployment
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus._
-import pl.touk.nussknacker.ui.process.periodic.model.{PeriodicProcess, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessScheduleData, ScheduleDeploymentData, ScheduleId, ScheduleName, SchedulesState}
-import pl.touk.nussknacker.ui.process.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedOnDeployEvent, FailedOnRunEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
+import pl.touk.nussknacker.ui.process.periodic.model.{
+  PeriodicProcess,
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentStatus,
+  PeriodicProcessScheduleData,
+  ScheduleDeploymentData,
+  ScheduleId,
+  ScheduleName,
+  SchedulesState
+}
+import pl.touk.nussknacker.ui.process.periodic.service.{
+  AdditionalDeploymentDataProvider,
+  DeployedEvent,
+  FailedOnDeployEvent,
+  FailedOnRunEvent,
+  FinishedEvent,
+  PeriodicProcessEvent,
+  PeriodicProcessListener,
+  ProcessConfigEnricher,
+  ScheduledEvent
+}
 import pl.touk.nussknacker.ui.process.periodic.utils.DeterministicUUIDFromLong
 
 import java.time.chrono.ChronoLocalDateTime
@@ -531,13 +555,11 @@ class PeriodicProcessService(
           override def getAllProcessesStates()(
               implicit freshnessPolicy: DataFreshnessPolicy
           ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
-            supported.getAllProcessesStates().flatMap { statusesWithFreshness =>
-              mergeStatusWithDeployments(statusesWithFreshness.value).map { statusDetails =>
-                statusesWithFreshness.map(_.flatMap { case (name, _) =>
-                  statusDetails.get(name).map(statusDetails => (name, List(statusDetails)))
-                })
-              }
-            }
+            for {
+              allStatusDetailsInDelegate <- supported.getAllProcessesStates()
+              allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
+              result = allStatusDetailsInPeriodic.map { case (name, status) => (name, List(status)) }
+            } yield allStatusDetailsInDelegate.map(_ => result)
           }
 
         }
@@ -851,12 +873,13 @@ object PeriodicProcessService {
 
   object PeriodicDeploymentStatus {
 
-    implicit val ordering: Ordering[PeriodicDeploymentStatus] = (self: PeriodicDeploymentStatus, that: PeriodicDeploymentStatus) => {
-      self.runAt.compareTo(that.runAt) match {
-        case 0 => self.createdAt.compareTo(that.createdAt)
-        case a => a
+    implicit val ordering: Ordering[PeriodicDeploymentStatus] =
+      (self: PeriodicDeploymentStatus, that: PeriodicDeploymentStatus) => {
+        self.runAt.compareTo(that.runAt) match {
+          case 0 => self.createdAt.compareTo(that.createdAt)
+          case a => a
+        }
       }
-    }
 
   }
 

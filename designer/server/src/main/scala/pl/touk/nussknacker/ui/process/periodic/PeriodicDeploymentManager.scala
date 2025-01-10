@@ -7,10 +7,14 @@ import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId, RunOffScheduleResult}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.ui.process.periodic.Utils._
-import pl.touk.nussknacker.ui.process.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
+import pl.touk.nussknacker.ui.process.periodic.service.{
+  AdditionalDeploymentDataProvider,
+  PeriodicProcessListenerFactory,
+  ProcessConfigEnricherFactory
+}
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
@@ -99,7 +103,7 @@ class PeriodicDeploymentManager private[periodic] (
       case command: DMStopScenarioCommand     => stopScenario(command)
       case command: DMRunOffScheduleCommand   => actionInstantBatch(command)
       case _: DMTestScenarioCommand | _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand |
-          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
+          _: DMMakeScenarioSavepointCommand =>
         delegate.processCommand(command)
     }
 
@@ -189,7 +193,13 @@ class PeriodicDeploymentManager private[periodic] (
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
-    val statusDetails = statusDetailsList.head
+    val statusDetails = statusDetailsList match {
+      case head :: _ =>
+        head
+      case Nil =>
+        val status = PeriodicProcessStatus(List.empty, List.empty)
+        status.mergedStatusDetails.copy(status = status)
+    }
     // TODO: add "real" presentation of deployments in GUI
     val mergedStatus = processStateDefinitionManager
       .processState(
@@ -211,8 +221,6 @@ class PeriodicDeploymentManager private[periodic] (
     toClose()
     delegate.close()
   }
-
-  override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
   // TODO We don't handle deployment synchronization on periodic DM because it currently uses it's own deployments and
   //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)

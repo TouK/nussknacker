@@ -43,7 +43,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
-import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
+import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
@@ -75,7 +75,7 @@ import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, Sc
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources}
-import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
+import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{
   FingerprintService,
@@ -94,7 +94,7 @@ import pl.touk.nussknacker.ui.validation.{
 }
 import sttp.client3.SttpBackend
 
-import java.time.Clock
+import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.Future
@@ -130,6 +130,8 @@ class AkkaHttpBasedRouteProvider(
       deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
       dbioRunner                 = DBIOActionRunner(dbRef)
+      // 1 hour is the delay to propagate all global notifications for all users
+      globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
@@ -137,6 +139,7 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
+        globalNotificationRepository
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -325,6 +328,7 @@ class AkkaHttpBasedRouteProvider(
       val notificationService = new NotificationServiceImpl(
         fetchScenarioActivityService,
         actionRepository,
+        globalNotificationRepository,
         dbioRunner,
         notificationsConfig
       )
@@ -373,12 +377,6 @@ class AkkaHttpBasedRouteProvider(
           new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
           dbioRunner
         )
-      )
-
-      val managementApiHttpService = new ManagementApiHttpService(
-        authManager = authManager,
-        dispatcher = dmDispatcher,
-        processService = processService
       )
 
       val notificationApiHttpService = new NotificationApiHttpService(
@@ -596,7 +594,6 @@ class AkkaHttpBasedRouteProvider(
           componentsApiHttpService,
           dictApiHttpService,
           deploymentHttpService,
-          managementApiHttpService,
           migrationApiHttpService,
           nodesApiHttpService,
           testingApiHttpService,
@@ -706,7 +703,8 @@ class AkkaHttpBasedRouteProvider(
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
-      featureTogglesConfig: FeatureTogglesConfig
+      featureTogglesConfig: FeatureTogglesConfig,
+      globalNotificationRepository: InMemoryTimeseriesRepository[Notification]
   ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
@@ -726,7 +724,12 @@ class AkkaHttpBasedRouteProvider(
               _
             ),
           )
-          new ReloadableProcessingTypeDataProvider(laodProcessingTypeDataIO)
+          val loadAndNotifyIO = laodProcessingTypeDataIO
+            .map { state =>
+              globalNotificationRepository.saveEntry(Notification.configurationReloaded)
+              state
+            }
+          new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(
         release = _.close()

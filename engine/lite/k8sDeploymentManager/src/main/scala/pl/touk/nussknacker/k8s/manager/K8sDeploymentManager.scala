@@ -114,7 +114,7 @@ class K8sDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand | _: DMStopScenarioCommand |
-          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand | _: DMRunOffScheduleCommand =>
+          _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand =>
         notImplemented
     }
 

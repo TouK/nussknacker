@@ -6,6 +6,7 @@ import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsSco
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioActionRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 
 import java.time.{Clock, Instant}
 import scala.concurrent.duration.FiniteDuration
@@ -43,6 +44,7 @@ object NotificationService {
 class NotificationServiceImpl(
     fetchScenarioActivityService: FetchScenarioActivityService,
     scenarioActionRepository: ScenarioActionRepository,
+    globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
     dbioRunner: DBIOActionRunner,
     config: NotificationConfig,
     clock: Clock = Clock.systemUTC()
@@ -53,14 +55,19 @@ class NotificationServiceImpl(
   )(implicit ec: ExecutionContext): Future[List[Notification]] = {
     val now   = clock.instant()
     val limit = now.minusMillis(config.duration.toMillis)
+    def fetchUserAndGlobalNotifications(user: LoggedUser) =
+      for {
+        notificationsForUserActions <- notificationsForUserActions(user, limit)
+        globalNotifications = fetchGlobalNotificationsAndTriggerEviction(limit)
+      } yield notificationsForUserActions ++ globalNotifications
     scope match {
       case NotificationsScope.NotificationsForLoggedUser(user) =>
-        notificationsForUserActions(user, limit)
+        fetchUserAndGlobalNotifications(user)
       case NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName) =>
         for {
-          notificationsForUserActions        <- notificationsForUserActions(user, limit)
+          userAndGlobalNotifications         <- fetchUserAndGlobalNotifications(user)
           notificationsForScenarioActivities <- notificationsForScenarioActivities(user, processName, limit)
-        } yield notificationsForUserActions ++ notificationsForScenarioActivities
+        } yield userAndGlobalNotifications ++ notificationsForScenarioActivities
     }
 
   }
@@ -105,6 +112,12 @@ class NotificationServiceImpl(
         Notification.scenarioStateUpdateNotification(activity, processName)
       }
     } yield notificationsForScenarioActivities
+  }
+
+  private def fetchGlobalNotificationsAndTriggerEviction(limit: Instant) = {
+    val globalNotifications = globalNotificationRepository.fetchEntries(limit)
+    globalNotificationRepository.evictOldEntries()
+    globalNotifications
   }
 
 }

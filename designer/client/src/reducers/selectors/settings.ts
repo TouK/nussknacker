@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 import { MetricsType } from "../../actions/nk";
 import { DynamicTabData } from "../../containers/DynamicTab";
-import { ProcessDefinitionData } from "../../types";
+import { ComponentGroup, ProcessDefinitionData } from "../../types";
 import { RootState } from "../index";
 import { AuthenticationSettings, SettingsState } from "../settings";
 import { uniqBy } from "lodash";
@@ -17,9 +17,9 @@ export const getSurveySettings = createSelector(getFeatureSettings, (s) => s?.su
 export const getLoggedUser = createSelector(getSettings, (s) => s.loggedUser);
 export const getLoggedUserId = createSelector(getLoggedUser, (s) => s.id);
 export const getProcessDefinitionData = createSelector(getSettings, (s) => s.processDefinitionData || ({} as ProcessDefinitionData));
+export const getComponentGroups = createSelector(getProcessDefinitionData, (p) => p.componentGroups || ({} as ComponentGroup[]));
 export const getCategories = createSelector(getLoggedUser, (u) => u.categories || []);
 export const getWritableCategories = createSelector(getLoggedUser, getCategories, (user, categories) =>
     categories.filter((c) => user.canWrite(c)),
 );
 export const getMetricsSettings = createSelector(getFeatureSettings, (settings) => settings?.metrics || ({} as MetricsType));
-export const getCustomActions = createSelector(getProcessDefinitionData, (def) => def.customActions || []);

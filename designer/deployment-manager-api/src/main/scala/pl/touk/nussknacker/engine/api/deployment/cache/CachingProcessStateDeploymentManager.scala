@@ -5,7 +5,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
@@ -67,8 +66,6 @@ class CachingProcessStateDeploymentManager(
     delegate.processCommand(command)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
-
-  override def customActionsDefinitions: List[CustomActionDefinition] = delegate.customActionsDefinitions
 
   override def close(): Unit = delegate.close()
 

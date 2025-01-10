@@ -32,7 +32,20 @@
 * [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
 * [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
-* [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
+* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
+* Changes to `periodic` component (renamed to `sample-generator`):
+  * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
+  * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
+  * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
+    and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
+    generated and emitted 5 times. Now in one count batch each value is evaluated separately.
+* [#7386](https://github.com/TouK/nussknacker/pull/7386) Improve Periodic DeploymentManager db queries, continuation of [#7323](https://github.com/TouK/nussknacker/pull/7323)
+* [#7360](https://github.com/TouK/nussknacker/pull/7360) Added Median aggregator
+* [#7388](https://github.com/TouK/nussknacker/pull/7388) Ability to configure a required permission for component links
+* [#7387](https://github.com/TouK/nussknacker/pull/7387) Creator panel is automatically reloaded after configuration reload - page refresh is not needed now
+* [#7400](https://github.com/TouK/nussknacker/pull/7400) Deploy and cancel buttons are not shown for fragments
+* [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
+* [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
 
 ## 1.18
 

@@ -36,6 +36,7 @@ import { AuthenticationSettings } from "../reducers/settings";
 import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import { handleAxiosError } from "../devHelpers";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -136,11 +137,6 @@ export interface TestProcessResponse {
 export interface PropertiesValidationRequest {
     name: string;
     additionalFields: ProcessAdditionalFields;
-}
-
-export interface CustomActionValidationRequest {
-    actionName: string;
-    params: Record<string, string>;
 }
 
 export interface ExpressionSuggestionRequest {
@@ -390,33 +386,6 @@ class HttpService {
             });
     }
 
-    customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
-        const data = {
-            actionName: actionName,
-            comment: comment,
-            params: params,
-        };
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
-            .then((res) => {
-                const msg = res.data.msg;
-                this.#addInfo(msg);
-                return {
-                    isSuccess: res.data.isSuccess,
-                    msg: msg,
-                };
-            })
-            .catch((error) => {
-                const msg = error.response.data.msg || error.response.data;
-                const result = {
-                    isSuccess: false,
-                    msg: msg,
-                };
-                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                return result;
-            });
-    }
-
     cancel(processName, comment?) {
         return api.post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment).catch((error) => {
             if (error?.response?.status != 400) {
@@ -627,20 +596,6 @@ class HttpService {
             });
     }
 
-    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
-        return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
-            .then((res) => res.data)
-            .catch((error) => {
-                this.#addError(
-                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
-                    error,
-                    true,
-                );
-                return;
-            });
-    }
-
     getNodeAdditionalInfo(processName: string, node: NodeType, controller?: AbortController): Promise<AdditionalInfo | null> {
         return api
             .post<AdditionalInfo>(`/nodes/${encodeURIComponent(processName)}/additionalInfo`, node, {
@@ -715,8 +670,14 @@ class HttpService {
         );
         promise
             .then((response) => FileSaver.saveAs(response.data, `${processName}-testData`))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true),
+            .catch((error: AxiosError) =>
+                this.#addError(
+                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data due to: {{axiosError}}", {
+                        axiosError: handleAxiosError(error),
+                    }),
+                    error,
+                    true,
+                ),
             );
         return promise;
     }
@@ -796,7 +757,15 @@ class HttpService {
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
         const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
-        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
         return promise;
     }
 
@@ -812,7 +781,15 @@ class HttpService {
         };
 
         const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
-        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
         return promise;
     }
 
@@ -825,8 +802,14 @@ class HttpService {
             `/processManagement/generateAndTest/${processName}/${testSampleSize}`,
             this.#sanitizeScenarioGraph(scenarioGraph),
         );
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"), error, true),
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
         );
         return promise;
     }
