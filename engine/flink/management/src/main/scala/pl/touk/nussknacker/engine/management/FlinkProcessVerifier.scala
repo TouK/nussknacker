@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 class FlinkProcessVerifier(modelData: ModelData)
     extends StaticMethodRunner(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain",
       "run"
     )

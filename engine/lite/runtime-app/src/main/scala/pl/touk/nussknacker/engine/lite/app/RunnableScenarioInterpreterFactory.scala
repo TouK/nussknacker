@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.lite.app
 
 import akka.actor.ActorSystem
+import cats.effect.IO
+import cats.effect.kernel.Resource
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -22,19 +24,27 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
       runtimeConfig: Config,
       deploymentConfig: Config,
       system: ActorSystem
-  ): RunnableScenarioInterpreter = {
-    val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
-    val modelData = ModelData.duringExecution(
-      ModelConfigs(modelConfig),
-      ModelClassLoader(modelConfig.as[List[String]]("classPath"), workingDirectoryOpt = None),
-      resolveConfigs = true
-    )
-    val metricRegistry = prepareMetricRegistry(runtimeConfig)
-    val preparer       = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
-    // TODO Pass correct ProcessVersion and DeploymentData
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+  ): Resource[IO, RunnableScenarioInterpreter] = {
+    Resource
+      .make(
+        acquire = IO.delay {
+          val modelConfig = runtimeConfig.getConfig("modelConfig")
+          val urls        = modelConfig.as[List[String]]("classPath")
+          val modelData = ModelData.duringExecution(
+            ModelConfigs(modelConfig),
+            ModelClassLoader(urls, workingDirectoryOpt = None),
+            resolveConfigs = true
+          )
+          val metricRegistry = prepareMetricRegistry(runtimeConfig)
+          val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+          // TODO Pass correct ProcessVersion and DeploymentData
+          val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
-    prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
+          prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
+        }
+      )(
+        release = scenarioInterpreter => IO.delay(scenarioInterpreter.close())
+      )
   }
 
   private def prepareScenarioInterpreter(

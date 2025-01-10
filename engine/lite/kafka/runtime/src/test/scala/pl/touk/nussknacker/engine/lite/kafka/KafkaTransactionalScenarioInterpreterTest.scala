@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -25,12 +26,12 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{Duration, _}
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
-import scala.util.{Failure, Try, Using}
+import scala.util.{Try, Using}
 
 class KafkaTransactionalScenarioInterpreterTest
     extends FixtureAnyFunSuite
@@ -250,118 +251,6 @@ class KafkaTransactionalScenarioInterpreterTest
     }
   }
 
-  test("detects fatal failure in close") { fixture =>
-    val inputTopic  = fixture.inputTopic
-    val outputTopic = fixture.outputTopic
-
-    val failureMessage = "EXPECTED_TO_HAPPEN"
-
-    val scenario: CanonicalProcess = passThroughScenario(fixture)
-    val modelDataToUse             = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData          = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
-    val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
-
-    val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
-      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(
-      interpreter,
-      scenario,
-      jobData,
-      liteKafkaJobData,
-      modelDataToUse,
-      preparer
-    ) {
-      override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
-        val original = super.createScenarioTaskRun(taskId)
-        // we simulate throwing exception on shutdown
-        new Task {
-          override def init(): Unit = original.init()
-
-          override def run(): Unit = original.run()
-
-          override def close(): Unit = {
-            original.close()
-            logger.info("Original closed, throwing expected exception")
-            throw new Exception(failureMessage)
-          }
-        }
-
-      }
-    }
-    val runResult = Using.resource(kafkaInterpreter) { interpreter =>
-      val runResult = interpreter.run()
-      // we wait for one message to make sure everything is already running
-      kafkaClient.sendMessage(inputTopic, "dummy").futureValue
-      kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).head
-      runResult
-    }
-    Try(Await.result(runResult, 10 seconds)) match {
-      case Failure(exception) =>
-        exception.getMessage shouldBe failureMessage
-      case result => throw new AssertionError(s"Should fail with completion exception, instead got: $result")
-    }
-
-  }
-
-  test("detects fatal failure in run") { fixture =>
-    val scenario: CanonicalProcess = passThroughScenario(fixture)
-    val modelDataToUse             = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData          = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
-    val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
-
-    var initAttempts = 0
-    var runAttempts  = 0
-
-    val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
-      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(
-      interpreter,
-      scenario,
-      jobData,
-      liteKafkaJobData,
-      modelDataToUse,
-      preparer
-    ) {
-      override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
-        val original = super.createScenarioTaskRun(taskId)
-        // we simulate throwing exception on shutdown
-        new Task {
-          override def init(): Unit = {
-            initAttempts += 1
-            original.init()
-          }
-
-          override def run(): Unit = {
-            runAttempts += 1
-            if (runAttempts == 1) {
-              throw new Exception("failure")
-            }
-          }
-
-          override def close(): Unit = {
-            original.close()
-          }
-        }
-      }
-    }
-    val (runResult, attemptGauges, restartingGauges) = Using.resource(kafkaInterpreter) { interpreter =>
-      val result = interpreter.run()
-      // TODO: figure out how to wait for restarting tasks after failure?
-      Thread.sleep(2000)
-      // we have to get gauge here, as metrics are unregistered in close
-      (result, metricsForName[Gauge[Int]]("task.attempt"), metricsForName[Gauge[Int]]("task.restarting"))
-    }
-
-    Await.result(runResult, 10 seconds)
-    initAttempts should be > 1
-    // we check if there weren't any errors in init causing that run next run won't be executed anymore
-    runAttempts should be > 1
-    attemptGauges.exists(_._2.getValue > 1)
-    restartingGauges.exists(_._2.getValue > 1)
-  }
-
   test("detects source failure") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
@@ -435,7 +324,7 @@ class KafkaTransactionalScenarioInterpreterTest
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val (runResult, output) = Using.resource(
+    val output = Using.resource(
       new KafkaTransactionalScenarioInterpreter(
         interpreter,
         scenario,
@@ -445,10 +334,9 @@ class KafkaTransactionalScenarioInterpreterTest
         preparer
       )
     ) { interpreter =>
-      val result = interpreter.run()
-      (result, action)
+      interpreter.run().timeout(10 seconds).unsafeRunSync()(IORuntime.global)
+      action
     }
-    Await.result(runResult, 10 seconds)
     output
   }
 

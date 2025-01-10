@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.util.loader
 import com.typesafe.scalalogging.LazyLogging
 
 import java.io.File
-import java.net.{URI, URL, URLClassLoader}
+import java.net.{URI, URL}
 import java.nio.file.Path
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
-case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) {
+case class ModelClassLoader private (val urls: List[URL], parent: ClassLoader) extends URLClassLoader(urls, parent) {
 
-  override def toString: String = s"ModelClassLoader(${toString(classLoader)})"
+  override def toString: String = s"ModelClassLoader(${toString(this)})"
 
   private def toString(classLoader: ClassLoader): String = classLoader match {
     case null                => "null"
@@ -20,9 +21,8 @@ case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) 
 
 object ModelClassLoader extends LazyLogging {
   // for e.g. testing in process module
-  val empty: ModelClassLoader = ModelClassLoader(getClass.getClassLoader, List())
-
-  val defaultJarExtension = ".jar"
+  val empty: ModelClassLoader = new ModelClassLoader(List.empty, getClass.getClassLoader)
+  val defaultJarExtension     = ".jar"
 
   private def expandFiles(urls: Iterable[URL], jarExtension: String): Iterable[URL] = {
     urls.flatMap {
@@ -67,10 +67,7 @@ object ModelClassLoader extends LazyLogging {
       jarExtension: String = defaultJarExtension
   ): ModelClassLoader = {
     val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension)
-    ModelClassLoader(
-      new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
-      postProcessedURLs.toList
-    )
+    new ModelClassLoader(postProcessedURLs.toList, this.getClass.getClassLoader)
   }
 
 }

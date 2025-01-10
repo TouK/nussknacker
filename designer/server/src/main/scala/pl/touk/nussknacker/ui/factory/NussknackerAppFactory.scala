@@ -9,7 +9,11 @@ import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.engine.util.{
+  ExecutionContextWithIORuntimeAdapter,
+  JavaClassVersionChecker,
+  SLF4JBridgeHandlerRegistrar
+}
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -19,7 +23,7 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
-import pl.touk.nussknacker.ui.util.{ActorSystemBasedExecutionContextWithIORuntime, IOToFutureSttpBackendConverter}
+import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
@@ -32,10 +36,10 @@ class NussknackerAppFactory(
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      designerConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      system         <- createActorSystem(designerConfig.rawConfig)
-      executionContextWithIORuntime = ActorSystemBasedExecutionContextWithIORuntime.createFrom(system)
-      ioSttpBackend <- AsyncHttpClientCatsBackend.resource[IO]()
+      designerConfig                <- Resource.eval(designerConfigLoader.loadDesignerConfig())
+      system                        <- createActorSystem(designerConfig.rawConfig)
+      executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
+      ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
       processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
         designerConfig,
         ioSttpBackend
@@ -120,11 +124,13 @@ class NussknackerAppFactory(
 
 object NussknackerAppFactory {
 
-  def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
-    new NussknackerAppFactory(
-      designerConfigLoader,
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_)
-    )
+  def create(designerConfigLoader: DesignerConfigLoader): Resource[IO, NussknackerAppFactory] = {
+    Resource.pure[IO, NussknackerAppFactory] {
+      new NussknackerAppFactory(
+        designerConfigLoader,
+        new ProcessingTypesConfigBasedProcessingTypeDataLoader(_)
+      )
+    }
   }
 
 }

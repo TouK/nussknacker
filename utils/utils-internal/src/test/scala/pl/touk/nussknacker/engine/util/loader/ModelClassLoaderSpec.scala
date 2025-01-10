@@ -26,7 +26,7 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
       nonFileUrl
     )
     loader.urls.toSet shouldBe expected
-    loader.classLoader.asInstanceOf[URLClassLoader].getURLs.toSet shouldBe expected
+    loader.asInstanceOf[URLClassLoader].getURLs.toSet shouldBe expected
   }
 
   test("should resolve classpath using working directory when defined") {

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.config
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
+import pl.touk.nussknacker.ui.config.DesignerConfig.ConfigurationMalformedException
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 
 // TODO: We should extract a class for all configuration options that should be available to designer instead of returning raw hocon config.
@@ -18,7 +19,7 @@ final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion)
     rawConfig
       .getConfigOpt("scenarioTypes")
       .getOrElse {
-        throw new RuntimeException("No scenario types configuration provided")
+        throw ConfigurationMalformedException("No scenario types configuration provided")
       }
 
   def configLoaderConfig: Config = rawConfig.resolved.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
@@ -31,4 +32,5 @@ object DesignerConfig {
     DesignerConfig(ConfigWithUnresolvedVersion(config))
   }
 
+  final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
 }

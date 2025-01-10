@@ -70,7 +70,7 @@ object ExpressionCompiler {
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.designerDictServices.dictRegistry,
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithClasses.classDefinitions,

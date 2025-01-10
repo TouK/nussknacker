@@ -107,7 +107,7 @@ object TestDataPreparer {
 
   def apply(modelData: ModelData, jobData: JobData): TestDataPreparer =
     new TestDataPreparer(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.modelDefinition.expressionConfig,
       modelData.engineDictRegistry,
       modelData.modelDefinitionWithClasses.classDefinitions,
