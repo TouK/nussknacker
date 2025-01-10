@@ -68,7 +68,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
         <div className={cx(className)}>
             <RadioGroup value={currentOption.value} onChange={(event) => onValueChange(event.target.value)}>
                 {options.map((option: Option) => {
-                    const label = option.value === "" ? `${option.value} (default)` : option.value;
+                    const label = option.value === "" ? `${option.label} (default)` : option.label;
                     return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
                 })}
             </RadioGroup>
