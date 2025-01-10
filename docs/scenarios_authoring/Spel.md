@@ -277,6 +277,7 @@ List of built-in functions:
 - `canBe(className)`/`to(className)`/`toOrNull(className)`
 - `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
 - `canBeLong`/`toLong`/`toLongOrNull`
+- `canBeInteger`/`toInteger`/`toIntegerOrNull`
 - `canBeDouble`/`toDouble`/`toDoubleOrNull`
 - `canBeBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
 - `canBeList`/`toList`/`toListOrNull`
@@ -462,4 +463,3 @@ On the other hand, formatter created using `#DATE_FORMAT.formatter()` method wil
 - `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
 
 For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
-
