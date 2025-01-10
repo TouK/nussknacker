@@ -1,14 +1,7 @@
 import { ActionName, PredefinedActionName, ProcessStateType, Scenario } from "./types";
-import {
-    descriptionProcessArchived,
-    descriptionFragment,
-    descriptionFragmentArchived,
-    unknownDescription,
-    unknownTooltip,
-} from "./messages";
+import { descriptionProcessArchived, unknownDescription, unknownTooltip } from "./messages";
 
 export const unknownIcon = "/assets/states/status-unknown.svg";
-const fragmentIcon = "/assets/process/fragment.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
 class ProcessStateUtils {
@@ -22,37 +15,25 @@ class ProcessStateUtils {
 
     public canRunOffSchedule = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.RunOffSchedule);
 
-    getStateDescription({ isArchived, isFragment }: Scenario, processState: ProcessStateType): string {
+    getStateDescription({ isArchived }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
-            return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
-        }
-
-        if (isFragment) {
-            return descriptionFragment();
+            return descriptionProcessArchived();
         }
 
         return processState?.description || unknownDescription();
     }
 
-    getStatusIcon({ isArchived, isFragment, state }: Scenario, processState: ProcessStateType): string {
+    getStatusIcon({ isArchived, state }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
             return archivedIcon;
-        }
-
-        if (isFragment) {
-            return fragmentIcon;
         }
 
         return processState?.icon || state?.icon || unknownIcon;
     }
 
-    getStatusTooltip({ isArchived, isFragment, state }: Scenario, processState: ProcessStateType): string {
+    getStatusTooltip({ isArchived, state }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
-            return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
-        }
-
-        if (isFragment) {
-            return descriptionFragment();
+            return descriptionProcessArchived();
         }
 
         return processState?.tooltip || state?.tooltip || unknownTooltip();
