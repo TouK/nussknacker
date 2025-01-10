@@ -672,7 +672,9 @@ class HttpService {
             .then((response) => FileSaver.saveAs(response.data, `${processName}-testData`))
             .catch((error: AxiosError) =>
                 this.#addError(
-                    i18next.t("notification.error.failedToGenerateTestData", `Failed to generate test data ${handleAxiosError(error)}`),
+                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data {{axiosError}}", {
+                        axiosError: handleAxiosError(error),
+                    }),
                     error,
                     true,
                 ),
@@ -756,7 +758,13 @@ class HttpService {
 
         const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
         promise.catch((error: AxiosError) =>
-            this.#addError(i18next.t("notification.error.failedToTest", `Failed to test due to: ${handleAxiosError(error)}`), error, true),
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
         );
         return promise;
     }
@@ -774,7 +782,13 @@ class HttpService {
 
         const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
         promise.catch((error: AxiosError) =>
-            this.#addError(i18next.t("notification.error.failedToTest", `Failed to test due to: ${handleAxiosError(error)}`), error, true),
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
         );
         return promise;
     }
@@ -790,7 +804,9 @@ class HttpService {
         );
         promise.catch((error: AxiosError) =>
             this.#addError(
-                i18next.t("notification.error.failedToGenerateAndTest", `Failed to generate and test due to: ${handleAxiosError(error)}`),
+                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
                 error,
                 true,
             ),
