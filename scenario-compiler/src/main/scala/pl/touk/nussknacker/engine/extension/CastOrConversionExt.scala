@@ -30,12 +30,12 @@ import scala.util.Try
 class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
-  def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = methodName match {
-    case `canBeMethodName`    => SingleArg(canBe, _ => booleanClass).some
+  def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = (methodName match {
+    case `canBeMethodName`    => SingleArg(canBe, (_: String) => booleanClass).some
     case `toMethodName`       => SingleArg(to, getReturnTypeClassOrThrow).some
     case `toOrNullMethodName` => SingleArg(toOrNull, getReturnTypeClassOrThrow).some
     case _                    => None
-  }
+  }).filter(_.argsSize == argsSize)
 
   private def canBe(target: Any, className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||

@@ -99,20 +99,12 @@ object ExtensionMethod {
     override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
   }
 
-  def SingleArg[T, R: ClassTag](method: (Any, T) => R, clazzProvider: String => Class[_]): ExtensionMethod[R] =
+  def SingleArg[T, R: ClassTag](method: (Any, T) => R, clazzProvider: T => Class[_]): ExtensionMethod[R] =
     new ExtensionMethod[R] {
       override val argsSize: Int                         = 1
       override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
-      override def returnType(args: Object*): Class[_]   = clazzProvider(args.head.asInstanceOf[String])
+      override def returnType(args: Object*): Class[_]   = clazzProvider(args.head.asInstanceOf[T])
     }
-
-  implicit class FindMethodExtension(private val registry: Map[String, ExtensionMethod[_]]) extends AnyVal {
-
-    def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = registry
-      .get(methodName)
-      .filter(_.argsSize == argsSize)
-
-  }
 
 }
 

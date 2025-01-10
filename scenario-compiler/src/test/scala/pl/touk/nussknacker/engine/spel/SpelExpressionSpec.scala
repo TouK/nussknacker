@@ -1507,11 +1507,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should allow using list methods on array projection") {
     evaluate[Any]("'a,b'.split(',').![#this].isEmpty()") shouldBe false
+    evaluate[String]("'a,b'.split(',').![#this].get(0)") shouldBe "a"
   }
 
   test("should allow using list methods on array") {
     evaluate[Any]("#array.isEmpty()") shouldBe false
     evaluate[Any]("#intArray.isEmpty()") shouldBe false
+    evaluate[String]("#array.get(0)") shouldBe "a"
   }
 
   test("should allow using list methods on nested arrays") {
@@ -1743,6 +1745,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     evaluate[Long]("'1'.toLong") shouldBe 1
     evaluate[Long]("'1'.toLongOrNull") shouldBe 1
     evaluate[JBoolean]("'1'.canBe('Integer')") shouldBe true
+  }
+
+  test("should be able to run indexer on created with toMap map") {
+    evaluate[Int]("{{key: 1, value: 5}}.toMap[1]") shouldBe 5
+  }
+
+  test("should be able to run indexer on created with toMapOrNull map") {
+    evaluate[Int]("{{key: 1, value: 5}}.toMapOrNull[1]") shouldBe 5
   }
 
   test("should convert value to a given type") {
