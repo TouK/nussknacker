@@ -55,16 +55,16 @@ const handleRefresh =
         if (scenarioName && scenarioName !== currentScenarioName) {
             return;
         }
-        toRefresh.forEach((data) => {
-            switch (data) {
-                case "activity":
-                    return dispatch(getScenarioActivities(scenarioName));
-                case "state":
-                    return dispatch(loadProcessState(scenarioName, processVersionId));
-                case "creator":
-                    return dispatch(fetchProcessDefinition(currentProcessingType, currentIsFragment));
-            }
-        });
+        if (toRefresh.indexOf("activity") >= 0 && currentScenarioName) {
+            dispatch(getScenarioActivities(currentScenarioName));
+        }
+        if (toRefresh.indexOf("state") >= 0 && currentScenarioName && processVersionId) {
+            dispatch(loadProcessState(currentScenarioName, processVersionId));
+        }
+        if (toRefresh.indexOf("creator") >= 0 && currentProcessingType && currentIsFragment != null) {
+            dispatch(fetchProcessDefinition(currentProcessingType, currentIsFragment));
+        }
+        return;
     };
 
 const prepareNotifications =

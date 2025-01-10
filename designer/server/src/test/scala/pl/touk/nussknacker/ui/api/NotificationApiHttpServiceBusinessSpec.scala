@@ -25,7 +25,8 @@ class NotificationApiHttpServiceBusinessSpec
     with PatientScalaFutures {
 
   "The endpoint for getting notifications should" - {
-    "return empty list if no notifications are present" in {
+    // We can't easily recognize if configuration was changed between restarts so just in case we send this notification
+    "return initial notification about configuration reload just after start of application" in {
       given()
         .when()
         .basicAuthAdmin()
@@ -33,7 +34,15 @@ class NotificationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(
-          equalTo("[]")
+          matchJsonWithRegexValues(
+            s"""[{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
+               |}]""".stripMargin
+          )
         )
     }
     "return notification when processing type data are reloaded" in {
@@ -49,6 +58,13 @@ class NotificationApiHttpServiceBusinessSpec
         .body(
           matchJsonWithRegexValues(
             s"""[{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
+               |},
+               |{
                |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
                |  "scenarioName": null,
                |  "message": "Configuration reloaded",
@@ -84,6 +100,13 @@ class NotificationApiHttpServiceBusinessSpec
                |   "message": "Cancel finished",
                |   "type": null,
                |   "toRefresh": [ "activity", "state" ]
+               |},
+               |{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
                |},
                |{
                |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",

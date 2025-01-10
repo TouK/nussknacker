@@ -25,10 +25,10 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsC
 import pl.touk.nussknacker.ui.config.{
   AttachmentsConfig,
   ComponentLinksConfigExtractor,
+  DesignerConfig,
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
 }
-import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
@@ -94,8 +94,8 @@ import pl.touk.nussknacker.ui.validation.{
 }
 import sttp.client3.SttpBackend
 
-import java.time.{Clock, Duration, Instant}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.time.{Clock, Duration}
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.Future
 import scala.io.Source
@@ -724,12 +724,9 @@ class AkkaHttpBasedRouteProvider(
               _
             ),
           )
-          val firstConfigurationLoad = new AtomicBoolean(true)
           val loadAndNotifyIO = laodProcessingTypeDataIO
             .map { state =>
-              if (!firstConfigurationLoad.compareAndSet(true, false)) {
-                globalNotificationRepository.saveEntry(Notification.configurationReloaded)
-              }
+              globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state
             }
           new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)

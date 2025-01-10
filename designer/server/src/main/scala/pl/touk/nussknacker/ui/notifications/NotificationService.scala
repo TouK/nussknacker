@@ -55,18 +55,19 @@ class NotificationServiceImpl(
   )(implicit ec: ExecutionContext): Future[List[Notification]] = {
     val now   = clock.instant()
     val limit = now.minusMillis(config.duration.toMillis)
+    def fetchUserAndGlobalNotifications(user: LoggedUser) =
+      for {
+        notificationsForUserActions <- notificationsForUserActions(user, limit)
+        globalNotifications = fetchGlobalNotificationsAndTriggerEviction(limit)
+      } yield notificationsForUserActions ++ globalNotifications
     scope match {
       case NotificationsScope.NotificationsForLoggedUser(user) =>
-        for {
-          notificationsForUserActions <- notificationsForUserActions(user, limit)
-          globalNotifications = fetchGlobalNotificationsAndTriggerEviction(limit)
-        } yield notificationsForUserActions ++ globalNotifications
+        fetchUserAndGlobalNotifications(user)
       case NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName) =>
         for {
-          notificationsForUserActions <- notificationsForUserActions(user, limit)
-          globalNotifications = fetchGlobalNotificationsAndTriggerEviction(limit)
+          userAndGlobalNotifications         <- fetchUserAndGlobalNotifications(user)
           notificationsForScenarioActivities <- notificationsForScenarioActivities(user, processName, limit)
-        } yield notificationsForUserActions ++ notificationsForScenarioActivities ++ globalNotifications
+        } yield userAndGlobalNotifications ++ notificationsForScenarioActivities
     }
 
   }
