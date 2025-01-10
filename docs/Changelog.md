@@ -45,8 +45,7 @@
 * [#7400](https://github.com/TouK/nussknacker/pull/7400) Deploy and cancel buttons are not shown for fragments
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 * [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
-  // TODO_PAWEL change number
-* [#7404](https://github.com/TouK/nussknacker/pull/7404) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
+* [#7420](https://github.com/TouK/nussknacker/pull/7420) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
 
 ## 1.18
 
