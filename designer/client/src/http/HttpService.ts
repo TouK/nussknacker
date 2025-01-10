@@ -672,7 +672,7 @@ class HttpService {
             .then((response) => FileSaver.saveAs(response.data, `${processName}-testData`))
             .catch((error: AxiosError) =>
                 this.#addError(
-                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data {{axiosError}}", {
+                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data due to: {{axiosError}}", {
                         axiosError: handleAxiosError(error),
                     }),
                     error,
