@@ -987,6 +987,16 @@
           }
         }
       ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -1481,6 +1491,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1996,6 +2016,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -2531,6 +2561,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -3852,6 +3892,16 @@
           }
         }
       ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "doubleValue": [
         {
           "name": "doubleValue",
@@ -4080,6 +4130,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4388,6 +4448,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4806,6 +4876,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -5513,6 +5593,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -6403,6 +6493,16 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
