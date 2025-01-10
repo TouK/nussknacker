@@ -259,6 +259,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[java.math.BigDecimal],
       classOf[LocalDate],
       classOf[ChronoLocalDate],
+      classOf[Locale],
+      classOf[Charset],
+      classOf[Currency],
       classOf[SampleValue],
       classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
