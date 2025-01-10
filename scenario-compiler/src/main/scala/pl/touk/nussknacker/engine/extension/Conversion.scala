@@ -19,7 +19,6 @@ import java.lang.{
   Short => JShort
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
-import java.util.{Collection => JCollection}
 import scala.reflect.{ClassTag, classTag}
 import scala.util.{Success, Try}
 
