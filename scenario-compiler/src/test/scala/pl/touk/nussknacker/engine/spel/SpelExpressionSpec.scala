@@ -1744,7 +1744,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     evaluate[JBoolean]("'1'.canBe('Integer')") shouldBe true
     evaluate[Long]("'1'.toLong") shouldBe 1
     evaluate[Long]("'1'.toLongOrNull") shouldBe 1
-    evaluate[JBoolean]("'1'.canBe('Integer')") shouldBe true
+    evaluate[JBoolean]("'1'.canBeLong") shouldBe true
   }
 
   test("should be able to run indexer on created with toMap map") {
@@ -1940,6 +1940,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDouble.value.toLong()", longTyping, 1),
         ("#unknownDoubleString.value.toLong()", longTyping, 1),
         ("#unknownBoolean.value.toLongOrNull()", longTyping, null),
+        ("1L.toInteger()", integerTyping, 1),
+        ("1.1.toInteger()", integerTyping, 1),
+        ("'1'.toInteger()", integerTyping, 1),
+        ("1L.toIntegerOrNull()", integerTyping, 1),
+        ("1.1.toIntegerOrNull()", integerTyping, 1),
+        ("'1'.toIntegerOrNull()", integerTyping, 1),
+        ("'a'.toIntegerOrNull()", integerTyping, null),
+        ("#unknownLong.value.toInteger()", integerTyping, 11),
+        ("#unknownLongString.value.toInteger()", integerTyping, 11),
+        ("#unknownDouble.value.toInteger()", integerTyping, 1),
+        ("#unknownDoubleString.value.toInteger()", integerTyping, 1),
+        ("#unknownBoolean.value.toIntegerOrNull()", integerTyping, null),
         ("1.toDouble()", doubleTyping, 1.0),
         ("'1'.toDouble()", doubleTyping, 1.0),
         ("1.toDoubleOrNull()", doubleTyping, 1.0),
@@ -2070,6 +2082,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownLong.value.canBeLong", true),
         ("#unknownLongString.value.canBeLong", true),
         ("#unknownString.value.canBeLong", false),
+        ("#unknownInteger.value.canBeInteger", true),
+        ("#unknownIntegerString.value.canBeInteger", true),
+        ("#unknownString.value.canBeInteger", false),
         ("#unknownDouble.value.canBeDouble", true),
         ("#unknownDoubleString.value.canBeDouble", true),
         ("#unknownString.value.canBeDouble", false),
@@ -2102,6 +2117,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "#unknownString.value.toBoolean()",
       "#unknownString.value.toLong()",
       "#unknownBoolean.value.toLong()",
+      "#unknownString.value.toInteger()",
+      "#unknownBoolean.value.toInteger()",
       "#unknownString.value.toDouble()",
       "#unknownBoolean.value.toDouble()",
       "#unknownBoolean.value.toBigDecimal()",

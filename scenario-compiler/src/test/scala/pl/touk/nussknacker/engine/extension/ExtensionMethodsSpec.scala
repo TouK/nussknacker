@@ -43,11 +43,12 @@ class ExtensionMethodsSpec extends AnyFunSuite with Matchers {
         "canBeDouble",
         "toDouble",
         "toDoubleOrNull",
-        // TODO_PAWEL tu tez
         "canBeLong",
-        // TODO_PAWEL tu tez
         "toLong",
         "toLongOrNull",
+        "canBeInteger",
+        "toInteger",
+        "toIntegerOrNull",
         "toUpperCase",
         "canBe",
         "to",
@@ -63,11 +64,12 @@ class ExtensionMethodsSpec extends AnyFunSuite with Matchers {
         "canBeDouble",
         "toDouble",
         "toDoubleOrNull",
-        // TODO_PAWEL tu tez
         "canBeLong",
-        // TODO_PAWEL tez
         "toLong",
         "toLongOrNull",
+        "canBeInteger",
+        "toInteger",
+        "toIntegerOrNull",
         "toString",
         "canBe",
         "to",
