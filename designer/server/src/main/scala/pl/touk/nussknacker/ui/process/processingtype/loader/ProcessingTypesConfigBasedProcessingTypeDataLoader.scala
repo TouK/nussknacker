@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigs, ProcessingTypeConfigsLoader}
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionSupportForManager
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -18,16 +19,25 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      periodicExecutionSupportForManager: PeriodicExecutionSupportForManager,
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
-      .map(createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies))
+      .map(
+        createProcessingTypeData(
+          _,
+          getModelDependencies,
+          getDeploymentManagerDependencies,
+          periodicExecutionSupportForManager
+        )
+      )
   }
 
   private def createProcessingTypeData(
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
-      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      periodicExecutionSupportForManager: PeriodicExecutionSupportForManager,
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
@@ -47,15 +57,23 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
         logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
         val modelDependencies = getModelDependencies(processingType)
+        val periodicExecutionSupport = periodicExecutionSupportForManager match {
+          case PeriodicExecutionSupportForManager.Available(dbRef, clock)
+              if processingTypeConfig.supportsPeriodicExecution =>
+            PeriodicExecutionSupportForManager.Available(dbRef, clock)
+          case _ =>
+            PeriodicExecutionSupportForManager.NotAvailable
+        }
         val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
           ModelData(processingTypeConfig, modelDependencies),
           deploymentManagerProvider,
+          periodicExecutionSupport,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
           processingTypeConfig.deploymentConfig,
           processingTypeConfig.category,
-          modelDependencies.componentDefinitionExtractionMode
+          modelDependencies.componentDefinitionExtractionMode,
         )
         processingType -> processingTypeData
       }

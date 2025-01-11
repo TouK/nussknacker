@@ -46,6 +46,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionSupportForManager
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -135,6 +136,7 @@ trait NuResourcesTest
         Streaming.stringify,
         modelData,
         deploymentManagerProvider,
+        PeriodicExecutionSupportForManager.NotAvailable,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
@@ -151,7 +153,8 @@ trait NuResourcesTest
       new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
         .loadProcessingTypeData(
           _ => modelDependencies,
-          _ => deploymentManagerDependencies
+          _ => deploymentManagerDependencies,
+          PeriodicExecutionSupportForManager.Available(testDbRef, clock),
         )
         .unsafeRunSync()
     )

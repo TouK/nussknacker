@@ -39,6 +39,7 @@ class RepositoryBasedPeriodicProcessesManager(
       .create(
         deploymentWithRuntimeParams,
         inputConfigDuringExecutionJson,
+        canonicalProcess,
         scheduleProperty,
         processActionId,
         processingType

@@ -41,6 +41,7 @@ import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionSupportForManager
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
@@ -854,6 +855,7 @@ class DefaultComponentServiceSpec
           processingType,
           modelData,
           new MockManagerProvider,
+          PeriodicExecutionSupportForManager.NotAvailable,
           TestFactory.deploymentManagerDependencies,
           EngineSetupName("Mock"),
           deploymentConfig = ConfigFactory.empty(),

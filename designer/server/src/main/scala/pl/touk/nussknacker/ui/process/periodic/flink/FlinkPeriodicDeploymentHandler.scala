@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -8,26 +9,38 @@ import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{Depl
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
-import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkModelJarProvider, FlinkStreamingRestManager}
+import pl.touk.nussknacker.engine.management.{
+  FlinkConfig,
+  FlinkDeploymentManager,
+  FlinkModelJarProvider,
+  FlinkStreamingRestManager
+}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
+import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
+import pl.touk.nussknacker.ui.process.periodic.PeriodicBatchConfig
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkPeriodicDeploymentHandler.jarFileNameRuntimeParam
-import sttp.client3.SttpBackend
 
 import java.nio.file.{Files, Path, Paths}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-private[periodic] object FlinkPeriodicDeploymentHandler {
+object FlinkPeriodicDeploymentHandler {
 
   val jarFileNameRuntimeParam = "jarFileName"
 
-  def apply(flinkConfig: FlinkConfig, jarsDir: String, modelData: BaseModelData)(
-      implicit backend: SttpBackend[Future, Any],
-      ec: ExecutionContext
+  def create(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      config: Config
   ): PeriodicDeploymentHandler = {
+    import dependencies._
+    import net.ceedubs.ficus.Ficus._
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+    val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
+    val flinkConfig         = config.rootAs[FlinkConfig]
     new FlinkPeriodicDeploymentHandler(
       flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
-      jarsDir = Paths.get(jarsDir),
+      jarsDir = Paths.get(periodicBatchConfig.jarsDir),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
     )

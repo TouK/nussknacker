@@ -27,11 +27,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessReposito
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentHandlerStub}
-import pl.touk.nussknacker.ui.process.periodic.legacy.db.{
-  LegacyDbInitializer,
-  LegacyRepositoryBasedPeriodicProcessesManager,
-  SlickLegacyPeriodicProcessesRepository
-}
+import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.periodic.service.{
   DefaultAdditionalDeploymentDataProvider,
@@ -95,15 +91,6 @@ class PeriodicProcessServiceIntegrationTest
       executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig(),
       maxFetchedPeriodicScenarioActivities: Option[Int] = None,
   )(testCode: Fixture => Any): Unit = {
-    val repositoryBasedProvider = (currentTime: Instant) =>
-      new RepositoryBasedPeriodicProcessesManagerProvider(
-        new SlickPeriodicProcessesRepository(
-          testDbRef.db,
-          testDbRef.profile,
-          fixedClock(currentTime),
-        ),
-        TestFactory.newFutureFetchingScenarioRepository(testDbRef)
-      )
 
     val postgresConfig = ConfigFactory.parseMap(
       Map(
@@ -126,16 +113,14 @@ class PeriodicProcessServiceIntegrationTest
     def runWithLegacyRepository(dbConfig: Config): Unit = {
       val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(dbConfig)
       val provider = (currentTime: Instant) =>
-        new PeriodicProcessesManagerProvider {
-          override def provide(processingType: String): PeriodicProcessesManager = {
-            val repository = new SlickLegacyPeriodicProcessesRepository(db, dbProfile, fixedClock(currentTime))
-            new LegacyRepositoryBasedPeriodicProcessesManager(
-              processingType,
-              repository,
-              repositoryBasedProvider(currentTime).provide(processingType)
-            )
-          }
-        }
+        new RepositoryBasedPeriodicProcessesManagerProvider(
+          new SlickLegacyPeriodicProcessesRepository(
+            db,
+            dbProfile,
+            fixedClock(currentTime),
+          ),
+          TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+        )
       try {
         testCode(
           new Fixture(provider, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
@@ -146,6 +131,15 @@ class PeriodicProcessServiceIntegrationTest
     }
 
     def runTestCodeWithNuDb(): Unit = {
+      val repositoryBasedProvider = (currentTime: Instant) =>
+        new RepositoryBasedPeriodicProcessesManagerProvider(
+          new SlickPeriodicProcessesRepository(
+            testDbRef.db,
+            testDbRef.profile,
+            fixedClock(currentTime),
+          ),
+          TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+        )
       testCode(
         new Fixture(
           repositoryBasedProvider,

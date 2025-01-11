@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.process.periodic.model.{
   ScheduleName,
   SchedulesState
 }
+import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -92,107 +93,12 @@ object LegacyPeriodicProcessesRepository {
 
 }
 
-trait LegacyPeriodicProcessesRepository {
-
-  type Action[_]
-
-  implicit def monad: Monad[Action]
-
-  implicit class RunOps[T](action: Action[T]) {
-    def run: Future[T] = LegacyPeriodicProcessesRepository.this.run(action)
-  }
-
-  def run[T](action: Action[T]): Future[T]
-
-  def markInactive(processId: PeriodicProcessId): Action[Unit]
-
-  def getSchedulesState(
-      scenarioName: ProcessName,
-      after: Option[LocalDateTime],
-  ): Action[SchedulesState]
-
-  def create(
-      deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
-      inputConfigDuringExecutionJson: String,
-      canonicalProcess: CanonicalProcess,
-      scheduleProperty: ScheduleProperty,
-      processActionId: ProcessActionId,
-      processingType: String,
-  ): Action[PeriodicProcess]
-
-  def getLatestDeploymentsForActiveSchedules(
-      processName: ProcessName,
-      deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
-  ): Action[SchedulesState]
-
-  def getLatestDeploymentsForActiveSchedules(
-      deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
-  ): Action[Map[ProcessName, SchedulesState]]
-
-  def getLatestDeploymentsForLatestInactiveSchedules(
-      processName: ProcessName,
-      inactiveProcessesMaxCount: Int,
-      deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
-  ): Action[SchedulesState]
-
-  def getLatestDeploymentsForLatestInactiveSchedules(
-      inactiveProcessesMaxCount: Int,
-      deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
-  ): Action[Map[ProcessName, SchedulesState]]
-
-  def findToBeDeployed(processingType: String): Action[Seq[PeriodicProcessDeployment]]
-
-  def findToBeRetried(processingType: String): Action[Seq[PeriodicProcessDeployment]]
-
-  def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
-      expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
-      processingType: String,
-  ): Action[SchedulesState]
-
-  def findProcessData(id: PeriodicProcessDeploymentId): Action[PeriodicProcessDeployment]
-
-  def markDeployed(id: PeriodicProcessDeploymentId): Action[Unit]
-
-  def markFinished(id: PeriodicProcessDeploymentId): Action[Unit]
-
-  def markFailedOnDeployWithStatus(
-      id: PeriodicProcessDeploymentId,
-      status: PeriodicProcessDeploymentStatus,
-      deployRetries: Int,
-      retryAt: Option[LocalDateTime]
-  ): Action[Unit]
-
-  def markFailed(id: PeriodicProcessDeploymentId): Action[Unit]
-
-  def schedule(
-      id: PeriodicProcessId,
-      scheduleName: ScheduleName,
-      runAt: LocalDateTime,
-      deployMaxRetries: Int
-  ): Action[PeriodicProcessDeployment]
-
-  def fetchCanonicalProcess(
-      processName: ProcessName,
-      versionId: VersionId,
-  ): Action[Option[CanonicalProcess]]
-
-  def fetchInputConfigDuringExecutionJson(
-      processName: ProcessName,
-      versionId: VersionId
-  ): Action[Option[String]]
-
-}
-
 class SlickLegacyPeriodicProcessesRepository(
     db: JdbcBackend.DatabaseDef,
     override val profile: JdbcProfile,
     clock: Clock,
 )(implicit ec: ExecutionContext)
-    extends LegacyPeriodicProcessesRepository
+    extends PeriodicProcessesRepository
     with LegacyPeriodicProcessesTableFactory
     with LegacyPeriodicProcessDeploymentsTableFactory
     with LazyLogging {

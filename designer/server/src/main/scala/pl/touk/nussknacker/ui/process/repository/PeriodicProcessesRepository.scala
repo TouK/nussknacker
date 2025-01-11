@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.Deplo
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.model.{
@@ -112,6 +113,7 @@ trait PeriodicProcessesRepository {
   def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
+      canonicalProcess: CanonicalProcess,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
       processingType: String,
@@ -213,6 +215,7 @@ class SlickPeriodicProcessesRepository(
   override def create(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       inputConfigDuringExecutionJson: String,
+      canonicalProcess: CanonicalProcess,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
       processingType: String,

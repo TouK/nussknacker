@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 case class ProcessingTypeConfig(
     deploymentManagerType: String,
+    supportsPeriodicExecution: Boolean,
     engineSetupName: Option[EngineSetupName],
     classPath: List[String],
     deploymentConfig: Config,
@@ -18,8 +19,14 @@ object ProcessingTypeConfig {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def read(config: ConfigWithUnresolvedVersion): ProcessingTypeConfig = {
+    val supportsPeriodicExecution = if (config.resolved.hasPath("deploymentConfig.supportsPeriodicExecution")) {
+      config.resolved.getBoolean("deploymentConfig.supportsPeriodicExecution")
+    } else {
+      false
+    }
     ProcessingTypeConfig(
       config.resolved.getString("deploymentConfig.type"),
+      supportsPeriodicExecution,
       config.resolved.getAs[EngineSetupName]("deploymentConfig.engineSetupName"),
       config.resolved.as[List[String]]("modelConfig.classPath"),
       config.resolved.getConfig("deploymentConfig"),

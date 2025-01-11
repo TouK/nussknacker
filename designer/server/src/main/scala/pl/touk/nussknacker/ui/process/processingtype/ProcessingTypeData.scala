@@ -13,8 +13,12 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerProvider
+import pl.touk.nussknacker.ui.process.periodic.flink.FlinkPeriodicDeploymentHandler
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
+import java.time.Clock
 import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
@@ -53,6 +57,7 @@ object ProcessingTypeData {
       name: ProcessingType,
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
+      periodicExecutionSupportForManager: PeriodicExecutionSupportForManager,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       deploymentConfig: Config,
@@ -64,11 +69,12 @@ object ProcessingTypeData {
       val deploymentData =
         createDeploymentData(
           deploymentManagerProvider,
+          periodicExecutionSupportForManager,
           deploymentManagerDependencies,
           engineSetupName,
           modelData,
           deploymentConfig,
-          metaDataInitializer
+          metaDataInitializer,
         )
 
       val designerModelData =
@@ -90,22 +96,54 @@ object ProcessingTypeData {
 
   private def createDeploymentData(
       deploymentManagerProvider: DeploymentManagerProvider,
+      periodicExecutionSupportForManager: PeriodicExecutionSupportForManager,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
       deploymentConfig: Config,
-      metaDataInitializer: MetaDataInitializer
+      metaDataInitializer: MetaDataInitializer,
   ) = {
     val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(deploymentConfig)
 
-    val validDeploymentManager =
-      deploymentManagerProvider.createDeploymentManager(
+    val validDeploymentManager = for {
+      deploymentManager <- deploymentManagerProvider.createDeploymentManager(
         modelData,
         deploymentManagerDependencies,
         deploymentConfig,
         scenarioStateCacheTTL
       )
-    val scenarioProperties =
+      decoratedDeploymentManager = periodicExecutionSupportForManager match {
+        case PeriodicExecutionSupportForManager.Available(dbRef, clock) =>
+          val deploymentManagerTypesWithPeriodicSupport = Map(
+            "flinkStreaming" ->
+              (() => FlinkPeriodicDeploymentHandler.create(modelData, deploymentManagerDependencies, deploymentConfig))
+          )
+          val handlerProvider = deploymentManagerTypesWithPeriodicSupport.getOrElse(
+            deploymentManagerProvider.name,
+            throw new IllegalStateException(
+              s"Nussknacker does not support periodic execution for ${deploymentManagerProvider.name}"
+            )
+          )
+          new PeriodicDeploymentManagerProvider(
+            underlying = deploymentManager,
+            handler = handlerProvider(),
+            deploymentConfig = deploymentConfig,
+            dependencies = deploymentManagerDependencies,
+            dbRef = dbRef,
+            clock = clock,
+          ).provide()
+        case PeriodicExecutionSupportForManager.NotAvailable =>
+          deploymentManager
+      }
+    } yield decoratedDeploymentManager
+
+    val additionalScenarioProperties = periodicExecutionSupportForManager match {
+      case PeriodicExecutionSupportForManager.Available(_, _) =>
+        PeriodicDeploymentManagerProvider.additionalScenarioProperties(deploymentConfig)
+      case PeriodicExecutionSupportForManager.NotAvailable =>
+        Map.empty[String, ScenarioPropertyConfig]
+    }
+    val scenarioProperties = additionalScenarioProperties ++
       deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
         .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
     val fragmentProperties = modelData.modelConfig
@@ -161,6 +199,13 @@ object ProcessingTypeData {
           Some(createStaticDefinitions(_.basicComponentsUnsafe))
       }
     )
+  }
+
+  sealed trait PeriodicExecutionSupportForManager
+
+  object PeriodicExecutionSupportForManager {
+    final case class Available(dbRef: DbRef, clock: Clock) extends PeriodicExecutionSupportForManager
+    case object NotAvailable                               extends PeriodicExecutionSupportForManager
   }
 
 }
