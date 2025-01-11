@@ -15,7 +15,19 @@ import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{Depl
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkPeriodicDeploymentHandler.jarFileNameRuntimeParam
-import pl.touk.nussknacker.ui.process.periodic.model.{ PeriodicProcess, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, PeriodicProcessId, ScheduleData, ScheduleDeploymentData, ScheduleId, ScheduleName, SchedulesState}
+import pl.touk.nussknacker.ui.process.periodic.model.{
+  PeriodicProcess,
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentState,
+  PeriodicProcessDeploymentStatus,
+  PeriodicProcessId,
+  ScheduleData,
+  ScheduleDeploymentData,
+  ScheduleId,
+  ScheduleName,
+  SchedulesState
+}
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -331,7 +343,11 @@ class SlickLegacyPeriodicProcessesRepository(
       processesHavingDeploymentsWithMatchingStatus,
       deploymentsPerScheduleMaxCount = 1,
       processingType = processingType,
-    ).map(_.values.headOption.getOrElse(SchedulesState(Map.empty)))
+    ).map(schedulesForProcessNames =>
+      SchedulesState(
+        schedulesForProcessNames.values.map(_.schedules).foldLeft(Map.empty[ScheduleId, ScheduleData])(_ ++ _)
+      )
+    )
   }
 
   override def getLatestDeploymentsForActiveSchedules(

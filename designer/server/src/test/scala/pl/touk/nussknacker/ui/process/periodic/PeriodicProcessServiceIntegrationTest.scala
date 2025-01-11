@@ -78,8 +78,6 @@ class PeriodicProcessServiceIntegrationTest
 
   private val processName = ProcessName("test")
 
-  private val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
-
   private val sampleProcess = CanonicalProcess(MetaData(processName.value, StreamMetaData()), Nil)
 
   private val startTime = Instant.parse("2021-04-06T13:18:00Z")
@@ -356,14 +354,23 @@ class PeriodicProcessServiceIntegrationTest
   }
 
   it should "handleFinished for all finished periodic scenarios waiting for reschedule" in withFixture() { f =>
-    val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
-    var currentTime        = startTime
-    def service            = f.periodicProcessService(currentTime)
+    val timeToTriggerCheck      = startTime.plus(2, ChronoUnit.HOURS)
+    var currentTime             = startTime
+    def service                 = f.periodicProcessService(currentTime)
+    val firstProcessIdWithName  = f.prepareProcess(ProcessName("first")).dbioActionValues
+    val secondProcessIdWithName = f.prepareProcess(ProcessName("second")).dbioActionValues
 
     service
       .schedule(
         cronEveryHour,
-        ProcessVersion.empty.copy(processName = ProcessName("first")),
+        ProcessVersion(
+          VersionId(1),
+          firstProcessIdWithName.name,
+          firstProcessIdWithName.id,
+          List.empty,
+          "testUser",
+          None
+        ),
         sampleProcess,
         randomProcessActionId
       )
@@ -371,7 +378,14 @@ class PeriodicProcessServiceIntegrationTest
     service
       .schedule(
         cronEveryHour,
-        ProcessVersion.empty.copy(processName = ProcessName("second")),
+        ProcessVersion(
+          VersionId(1),
+          secondProcessIdWithName.name,
+          secondProcessIdWithName.id,
+          List.empty,
+          "testUser",
+          None
+        ),
         sampleProcess,
         randomProcessActionId
       )
@@ -596,7 +610,9 @@ class PeriodicProcessServiceIntegrationTest
 
   it should "handle multiple one time schedules" in withFixture() { f =>
     handleMultipleOneTimeSchedules(f)
-    def service        = f.periodicProcessService(startTime)
+    def service           = f.periodicProcessService(startTime)
+    val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
+
     val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
@@ -634,7 +650,9 @@ class PeriodicProcessServiceIntegrationTest
     maxFetchedPeriodicScenarioActivities = Some(1)
   ) { f =>
     handleMultipleOneTimeSchedules(f)
-    def service       = f.periodicProcessService(startTime)
+    def service           = f.periodicProcessService(startTime)
+    val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
+
     val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
