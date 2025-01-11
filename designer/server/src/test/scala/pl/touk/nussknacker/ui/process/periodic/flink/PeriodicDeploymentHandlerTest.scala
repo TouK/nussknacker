@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler
 import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.management.FlinkModelJarProvider
+import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkPeriodicDeploymentHandler}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 
