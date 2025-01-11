@@ -12,7 +12,6 @@ import scala.concurrent.duration._
   * @param rescheduleCheckInterval {@link RescheduleFinishedActor} check interval.
   * @param deployInterval {@link DeploymentActor} check interval.
   * @param deploymentRetry {@link DeploymentRetryConfig}  for deployment failure recovery.
-  * @param jarsDir Directory for jars storage.
   * @param maxFetchedPeriodicScenarioActivities Optional limit of number of latest periodic-related Scenario Activities that are returned by Periodic DM.
   */
 case class PeriodicBatchConfig(
@@ -22,7 +21,6 @@ case class PeriodicBatchConfig(
     deployInterval: FiniteDuration = 17 seconds,
     deploymentRetry: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
-    jarsDir: String,
     maxFetchedPeriodicScenarioActivities: Option[Int] = Some(200),
 )
 

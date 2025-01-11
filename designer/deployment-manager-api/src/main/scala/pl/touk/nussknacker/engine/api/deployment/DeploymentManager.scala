@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
@@ -138,7 +139,13 @@ case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisation
 sealed trait PeriodicExecutionSupport
 
 trait PeriodicExecutionSupported extends PeriodicExecutionSupport {
-  def periodicDeploymentHandler: PeriodicDeploymentHandler
+
+  def periodicDeploymentHandler(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      config: Config,
+  ): PeriodicDeploymentHandler
+
 }
 
 case object NoPeriodicExecutionSupport extends PeriodicExecutionSupport

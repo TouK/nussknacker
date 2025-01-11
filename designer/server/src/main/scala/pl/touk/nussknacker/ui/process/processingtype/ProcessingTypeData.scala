@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
+import pl.touk.nussknacker.engine.api.deployment.{NoPeriodicExecutionSupport, PeriodicExecutionSupported}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.{
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerProvider
-import pl.touk.nussknacker.ui.process.periodic.flink.FlinkPeriodicDeploymentHandler
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 import java.time.Clock
@@ -114,19 +114,17 @@ object ProcessingTypeData {
       )
       decoratedDeploymentManager = periodicExecutionSupportForManager match {
         case PeriodicExecutionSupportForManager.Available(dbRef, clock) =>
-          val deploymentManagerTypesWithPeriodicSupport = Map(
-            "flinkStreaming" ->
-              (() => FlinkPeriodicDeploymentHandler.create(modelData, deploymentManagerDependencies, deploymentConfig))
-          )
-          val handlerProvider = deploymentManagerTypesWithPeriodicSupport.getOrElse(
-            deploymentManagerProvider.name,
-            throw new IllegalStateException(
-              s"Nussknacker does not support periodic execution for ${deploymentManagerProvider.name}"
-            )
-          )
+          val handler = deploymentManager.periodicExecutionSupport match {
+            case supported: PeriodicExecutionSupported =>
+              supported.periodicDeploymentHandler(modelData, deploymentManagerDependencies, deploymentConfig)
+            case NoPeriodicExecutionSupport =>
+              throw new IllegalStateException(
+                s"DeploymentManager ${deploymentManagerProvider.name} does not support periodic execution"
+              )
+          }
           new PeriodicDeploymentManagerProvider(
             underlying = deploymentManager,
-            handler = handlerProvider(),
+            handler = handler,
             deploymentConfig = deploymentConfig,
             dependencies = deploymentManagerDependencies,
             dbRef = dbRef,
