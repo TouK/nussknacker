@@ -349,77 +349,8 @@ class DbScenarioActionRepository private (
     run(scenarioActivityTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  private def toFinishedProcessAction(
-      activityEntity: ScenarioActivityEntityData
-  ): Option[ProcessAction] = actionName(activityEntity.activityType).flatMap { actionName =>
-    (for {
-      processVersionId <- activityEntity.scenarioVersion
-        .map(_.value)
-        .map(VersionId.apply)
-        .toRight(s"Process version not available for finished action: $activityEntity")
-      performedAt = activityEntity.finishedAt.getOrElse(activityEntity.createdAt).toInstant
-      state <- activityEntity.state
-        .toRight(s"State not available for finished action: $activityEntity")
-    } yield ProcessAction(
-      id = ProcessActionId(activityEntity.activityId.value),
-      processId = ProcessId(activityEntity.scenarioId.value),
-      processVersionId = processVersionId,
-      createdAt = activityEntity.createdAt.toInstant,
-      performedAt = performedAt,
-      user = activityEntity.userName.value,
-      actionName = actionName,
-      state = state,
-      failureMessage = activityEntity.errorMessage,
-      commentId = activityEntity.comment.map(_ => activityEntity.id),
-      comment = activityEntity.comment.map(_.value),
-      buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
-    )).left.map { error =>
-      logger.error(s"Could not interpret ScenarioActivity entity as ProcessAction: [$error]")
-      error
-    }.toOption
-  }
-
   private def activityId(actionId: ProcessActionId) =
     ScenarioActivityId(actionId.value)
-
-  private def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
-    activityType match {
-      case ScenarioActivityType.ScenarioCreated =>
-        None
-      case ScenarioActivityType.ScenarioArchived =>
-        Some(ScenarioActionName.Archive)
-      case ScenarioActivityType.ScenarioUnarchived =>
-        Some(ScenarioActionName.UnArchive)
-      case ScenarioActivityType.ScenarioDeployed =>
-        Some(ScenarioActionName.Deploy)
-      case ScenarioActivityType.ScenarioPaused =>
-        Some(ScenarioActionName.Pause)
-      case ScenarioActivityType.ScenarioCanceled =>
-        Some(ScenarioActionName.Cancel)
-      case ScenarioActivityType.ScenarioModified =>
-        None
-      case ScenarioActivityType.ScenarioNameChanged =>
-        Some(ScenarioActionName.Rename)
-      case ScenarioActivityType.CommentAdded =>
-        None
-      case ScenarioActivityType.AttachmentAdded =>
-        None
-      case ScenarioActivityType.ChangedProcessingMode =>
-        None
-      case ScenarioActivityType.IncomingMigration =>
-        None
-      case ScenarioActivityType.OutgoingMigration =>
-        None
-      case ScenarioActivityType.PerformedSingleExecution =>
-        Some(ScenarioActionName.RunOffSchedule)
-      case ScenarioActivityType.PerformedScheduledExecution =>
-        None
-      case ScenarioActivityType.AutomaticUpdate =>
-        None
-      case ScenarioActivityType.CustomAction(name) =>
-        Some(ScenarioActionName(name))
-    }
-  }
 
 }
 
@@ -562,7 +493,7 @@ class DbScenarioActionReadOnlyRepository(
     )
   }
 
-  private def toFinishedProcessAction(
+  protected def toFinishedProcessAction(
       activityEntity: ScenarioActivityEntityData
   ): Option[ProcessAction] = actionName(activityEntity.activityType).flatMap { actionName =>
     (for {
@@ -592,10 +523,7 @@ class DbScenarioActionReadOnlyRepository(
     }.toOption
   }
 
-  private def activityId(actionId: ProcessActionId) =
-    ScenarioActivityId(actionId.value)
-
-  private def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
+  protected def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
     activityType match {
       case ScenarioActivityType.ScenarioCreated =>
         None
