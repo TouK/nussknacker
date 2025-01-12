@@ -2,6 +2,10 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.periodic.{
+  PeriodicDeploymentEngineHandler,
+  PeriodicDeploymentManagerDecorator
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
@@ -140,11 +144,26 @@ sealed trait PeriodicExecutionSupport
 
 trait PeriodicExecutionSupported extends PeriodicExecutionSupport {
 
-  def periodicDeploymentHandler(
+  def engineHandler(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       config: Config,
-  ): PeriodicDeploymentHandler
+  ): PeriodicDeploymentEngineHandler
+
+}
+
+object PeriodicExecutionSupported {
+  sealed trait Mode
+
+  object Mode {
+
+    case object UseDefaultPeriodicDeploymentManager extends Mode
+
+    final case class UseCustomPeriodicDeploymentManager(
+        decorator: PeriodicDeploymentManagerDecorator
+    ) extends Mode
+
+  }
 
 }
 

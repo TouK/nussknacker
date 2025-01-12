@@ -6,7 +6,7 @@ import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.DeploymentWithRuntimeParams
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}

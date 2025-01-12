@@ -10,11 +10,15 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentHandlerStub}
+import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentEngineHandlerStub}
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
+import pl.touk.nussknacker.ui.process.periodic.service.{
+  DefaultAdditionalDeploymentDataProvider,
+  EmptyListener,
+  ProcessConfigEnricher
+}
 
 import java.time.Clock
 import java.util.UUID
@@ -38,12 +42,12 @@ class PeriodicProcessesFetchingTest
     val processingType                = "testProcessingType"
     val periodicProcessesManager      = new InMemPeriodicProcessesManager(processingType)
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val periodicDeploymentHandlerStub = new PeriodicDeploymentHandlerStub
+    val engineHandlerStub             = new PeriodicDeploymentEngineHandlerStub
     val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
-      periodicDeploymentHandler = periodicDeploymentHandlerStub,
+      engineHandler = engineHandlerStub,
       periodicProcessesManager = periodicProcessesManager,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,

@@ -2,15 +2,15 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 
 import scala.concurrent.Future
 
-class PeriodicDeploymentHandlerStub extends PeriodicDeploymentHandler {
+class PeriodicDeploymentEngineHandlerStub extends PeriodicDeploymentEngineHandler {
 
   var deployWithJarFuture: Future[Option[ExternalDeploymentId]]            = Future.successful(None)
   var lastDeploymentWithRuntimeParams: Option[DeploymentWithRuntimeParams] = None

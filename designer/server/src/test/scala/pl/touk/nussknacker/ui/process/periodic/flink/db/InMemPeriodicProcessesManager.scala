@@ -2,7 +2,10 @@ package pl.touk.nussknacker.ui.process.periodic.flink.db
 
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{
+  DeploymentWithRuntimeParams,
+  RuntimeParams
+}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder

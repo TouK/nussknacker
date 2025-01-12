@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
@@ -23,7 +24,7 @@ object PeriodicDeploymentManager {
 
   def apply(
       delegate: DeploymentManager,
-      periodicDeploymentHandler: PeriodicDeploymentHandler,
+      engineHandler: PeriodicDeploymentEngineHandler,
       schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
       processConfigEnricherFactory: ProcessConfigEnricherFactory,
       periodicBatchConfig: PeriodicBatchConfig,
@@ -40,7 +41,7 @@ object PeriodicDeploymentManager {
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
     val service = new PeriodicProcessService(
       delegate,
-      periodicDeploymentHandler,
+      engineHandler,
       periodicProcessesManager,
       listener,
       additionalDeploymentDataProvider,

@@ -4,11 +4,11 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.management.FlinkPeriodicDeploymentHandler.jarFileNameRuntimeParam
+import pl.touk.nussknacker.engine.management.FlinkPeriodicDeploymentEngineHandler.jarFileNameRuntimeParam
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies,
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
 
-object FlinkPeriodicDeploymentHandler {
+object FlinkPeriodicDeploymentEngineHandler {
 
   val jarFileNameRuntimeParam = "jarFileName"
 
@@ -25,12 +25,12 @@ object FlinkPeriodicDeploymentHandler {
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       config: Config,
-  ): PeriodicDeploymentHandler = {
+  ): PeriodicDeploymentEngineHandler = {
     import dependencies._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     val flinkConfig = config.rootAs[FlinkConfig]
-    new FlinkPeriodicDeploymentHandler(
+    new FlinkPeriodicDeploymentEngineHandler(
       flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
       jarsDir = Paths.get(config.getString("deploymentManager.jarsDir")),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
@@ -41,12 +41,12 @@ object FlinkPeriodicDeploymentHandler {
 }
 
 // Used by [[PeriodicProcessService]].
-class FlinkPeriodicDeploymentHandler(
+class FlinkPeriodicDeploymentEngineHandler(
     flinkClient: FlinkClient,
     jarsDir: Path,
     inputConfigDuringExecution: InputConfigDuringExecution,
     modelJarProvider: FlinkModelJarProvider
-) extends PeriodicDeploymentHandler
+) extends PeriodicDeploymentEngineHandler
     with LazyLogging {
 
   import scala.concurrent.ExecutionContext.Implicits.global

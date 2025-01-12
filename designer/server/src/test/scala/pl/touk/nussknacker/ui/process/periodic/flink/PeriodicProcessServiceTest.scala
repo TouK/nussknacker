@@ -65,7 +65,7 @@ class PeriodicProcessServiceTest
   class Fixture {
     val manager                       = new InMemPeriodicProcessesManager(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val periodicDeploymentHandlerStub = new PeriodicDeploymentHandlerStub
+    val engineHandlerStub             = new PeriodicDeploymentEngineHandlerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
 
@@ -73,7 +73,7 @@ class PeriodicProcessServiceTest
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
-      periodicDeploymentHandler = periodicDeploymentHandlerStub,
+      engineHandler = engineHandlerStub,
       periodicProcessesManager = manager,
       new PeriodicProcessListener {
 
@@ -386,7 +386,7 @@ class PeriodicProcessServiceTest
     val deploymentEntity = f.manager.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Deployed
     ConfigFactory
-      .parseString(f.periodicDeploymentHandlerStub.lastInputConfigDuringExecutionJson.value)
+      .parseString(f.engineHandlerStub.lastInputConfigDuringExecutionJson.value)
       .getString("runAt") shouldBe deploymentEntity.runAt.toString
 
     val expectedDetails =
@@ -398,7 +398,7 @@ class PeriodicProcessServiceTest
   test("deploy - should handle failed deployment") {
     val f = new Fixture
     f.manager.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    f.periodicDeploymentHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.engineHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     val toSchedule = createPeriodicProcessDeployment(
       f.manager.processEntities.loneElement,
       f.manager.deploymentEntities.loneElement,

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.model
 
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.DeploymentWithRuntimeParams
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 

@@ -114,9 +114,9 @@ object ProcessingTypeData {
       )
       decoratedDeploymentManager = periodicExecutionSupportForManager match {
         case PeriodicExecutionSupportForManager.Available(dbRef, clock) =>
-          val handler = deploymentManager.periodicExecutionSupport match {
+          val engineHandler = deploymentManager.periodicExecutionSupport match {
             case supported: PeriodicExecutionSupported =>
-              supported.periodicDeploymentHandler(modelData, deploymentManagerDependencies, deploymentConfig)
+              supported.engineHandler(modelData, deploymentManagerDependencies, deploymentConfig)
             case NoPeriodicExecutionSupport =>
               throw new IllegalStateException(
                 s"DeploymentManager ${deploymentManagerProvider.name} does not support periodic execution"
@@ -124,7 +124,7 @@ object ProcessingTypeData {
           }
           new PeriodicDeploymentManagerProvider(
             underlying = deploymentManager,
-            handler = handler,
+            engineHandler = engineHandler,
             deploymentConfig = deploymentConfig,
             dependencies = deploymentManagerDependencies,
             dbRef = dbRef,

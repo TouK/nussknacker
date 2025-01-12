@@ -19,7 +19,11 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledSta
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
+import pl.touk.nussknacker.ui.process.periodic.service.{
+  DefaultAdditionalDeploymentDataProvider,
+  EmptyListener,
+  ProcessConfigEnricher
+}
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -59,12 +63,12 @@ class PeriodicDeploymentManagerTest
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val manager                       = new InMemPeriodicProcessesManager(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val periodicDeploymentHandlerStub = new PeriodicDeploymentHandlerStub
+    val engineHandlerStub             = new PeriodicDeploymentEngineHandlerStub
     val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
-      periodicDeploymentHandler = periodicDeploymentHandlerStub,
+      engineHandler = engineHandlerStub,
       periodicProcessesManager = manager,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,

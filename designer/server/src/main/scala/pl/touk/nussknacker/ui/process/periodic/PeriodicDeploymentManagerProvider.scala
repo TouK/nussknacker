@@ -5,7 +5,8 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, PeriodicDeploymentHandler}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
@@ -27,7 +28,7 @@ import java.time.Clock
 
 class PeriodicDeploymentManagerProvider(
     underlying: DeploymentManager,
-    handler: PeriodicDeploymentHandler,
+    engineHandler: PeriodicDeploymentEngineHandler,
     deploymentConfig: Config,
     dependencies: DeploymentManagerDependencies,
     dbRef: DbRef,
@@ -38,12 +39,10 @@ class PeriodicDeploymentManagerProvider(
     logger.info("Decorating DM with periodic functionality")
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    val periodicBatchConfig              = deploymentConfig.as[PeriodicBatchConfig]("deploymentManager")
-    val periodicProcessesManagerProvider = createPeriodicProcessesManagerProvider(periodicBatchConfig)
-
+    val periodicBatchConfig = deploymentConfig.as[PeriodicBatchConfig]("deploymentManager")
     PeriodicDeploymentManager(
       delegate = underlying,
-      periodicDeploymentHandler = handler,
+      engineHandler = engineHandler,
       schedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
       processConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
       periodicBatchConfig = periodicBatchConfig,
@@ -51,13 +50,14 @@ class PeriodicDeploymentManagerProvider(
       EmptyPeriodicProcessListenerFactory,
       DefaultAdditionalDeploymentDataProvider,
       dependencies,
-      periodicProcessesManagerProvider.provide(periodicBatchConfig.processingType)
+      createPeriodicProcessesManager(periodicBatchConfig.processingType, periodicBatchConfig)
     )
   }
 
-  private def createPeriodicProcessesManagerProvider(
+  private def createPeriodicProcessesManager(
+      processingType: String,
       periodicBatchConfig: PeriodicBatchConfig,
-  ): PeriodicProcessesManagerProvider = {
+  ): PeriodicProcessesManager = {
     import dependencies._
     val actionRepository =
       DbScenarioActionReadOnlyRepository.create(dbRef)
@@ -74,13 +74,11 @@ class PeriodicDeploymentManagerProvider(
         val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
         new SlickLegacyPeriodicProcessesRepository(db, dbProfile, clock)
     }
-
-    (processingType: String) =>
-      new RepositoryBasedPeriodicProcessesManager(
-        processingType,
-        periodicProcessesRepository,
-        processRepository,
-      )
+    new RepositoryBasedPeriodicProcessesManager(
+      processingType,
+      periodicProcessesRepository,
+      processRepository,
+    )
   }
 
 }

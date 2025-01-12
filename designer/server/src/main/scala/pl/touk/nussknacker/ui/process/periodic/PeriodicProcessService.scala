@@ -8,9 +8,10 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.DeploymentWithRuntimeParams
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -52,7 +53,7 @@ import scala.util.control.NonFatal
 
 class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
-    periodicDeploymentHandler: PeriodicDeploymentHandler,
+    engineHandler: PeriodicDeploymentEngineHandler,
     periodicProcessesManager: PeriodicProcessesManager,
     periodicProcessListener: PeriodicProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
@@ -163,8 +164,8 @@ class PeriodicProcessService(
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
 
     for {
-      inputConfigDuringExecution <- periodicDeploymentHandler.provideInputConfigDuringExecutionJson()
-      deploymentWithJarData <- periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(
+      inputConfigDuringExecution <- engineHandler.provideInputConfigDuringExecutionJson()
+      deploymentWithJarData <- engineHandler.prepareDeploymentWithRuntimeParams(
         processVersion,
       )
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
@@ -445,7 +446,7 @@ class PeriodicProcessService(
       _ <- periodicProcessesManager.markInactive(process.id)
       // we want to delete jars only after we successfully mark process as inactive. It's better to leave jar garbage than
       // have process without jar
-    } yield () => periodicDeploymentHandler.cleanAfterDeployment(process.deploymentData.runtimeParams)
+    } yield () => engineHandler.cleanAfterDeployment(process.deploymentData.runtimeParams)
   }
 
   private def markProcessActionExecutionFinished(
@@ -499,7 +500,7 @@ class PeriodicProcessService(
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
         ProcessConfigEnricher.DeployData(inputConfigDuringExecutionJson, deployment)
       )
-      externalDeploymentId <- periodicDeploymentHandler.deployWithRuntimeParams(
+      externalDeploymentId <- engineHandler.deployWithRuntimeParams(
         deploymentWithJarData,
         enrichedProcessConfig.inputConfigDuringExecutionJson,
         deploymentData,

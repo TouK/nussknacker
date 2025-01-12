@@ -26,7 +26,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentHandlerStub}
+import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentEngineHandlerStub}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.periodic.service.{
@@ -112,8 +112,9 @@ class PeriodicProcessServiceIntegrationTest
 
     def runWithLegacyRepository(dbConfig: Config): Unit = {
       val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(dbConfig)
-      val provider = (currentTime: Instant) =>
-        new RepositoryBasedPeriodicProcessesManagerProvider(
+      val creator = (processingType: String, currentTime: Instant) =>
+        new RepositoryBasedPeriodicProcessesManager(
+          processingType,
           new SlickLegacyPeriodicProcessesRepository(
             db,
             dbProfile,
@@ -123,7 +124,7 @@ class PeriodicProcessServiceIntegrationTest
         )
       try {
         testCode(
-          new Fixture(provider, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
+          new Fixture(creator, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
         )
       } finally {
         db.close()
@@ -131,8 +132,9 @@ class PeriodicProcessServiceIntegrationTest
     }
 
     def runTestCodeWithNuDb(): Unit = {
-      val repositoryBasedProvider = (currentTime: Instant) =>
-        new RepositoryBasedPeriodicProcessesManagerProvider(
+      val creator = (processingType: String, currentTime: Instant) =>
+        new RepositoryBasedPeriodicProcessesManager(
+          processingType,
           new SlickPeriodicProcessesRepository(
             testDbRef.db,
             testDbRef.profile,
@@ -141,12 +143,7 @@ class PeriodicProcessServiceIntegrationTest
           TestFactory.newFutureFetchingScenarioRepository(testDbRef)
         )
       testCode(
-        new Fixture(
-          repositoryBasedProvider,
-          deploymentRetryConfig,
-          executionConfig,
-          maxFetchedPeriodicScenarioActivities
-        )
+        new Fixture(creator, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
       )
     }
 
@@ -163,13 +160,13 @@ class PeriodicProcessServiceIntegrationTest
   }
 
   class Fixture(
-      periodicProcessesManagerProvider: Instant => PeriodicProcessesManagerProvider,
+      periodicProcessesManagerCreator: (String, Instant) => PeriodicProcessesManager,
       deploymentRetryConfig: DeploymentRetryConfig,
       executionConfig: PeriodicExecutionConfig,
       maxFetchedPeriodicScenarioActivities: Option[Int],
   ) {
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val periodicDeploymentHandlerStub = new PeriodicDeploymentHandlerStub
+    val engineHandlerStub             = new PeriodicDeploymentEngineHandlerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
 
@@ -179,8 +176,8 @@ class PeriodicProcessServiceIntegrationTest
     ) =
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
-        periodicDeploymentHandler = periodicDeploymentHandlerStub,
-        periodicProcessesManager = periodicProcessesManagerProvider(currentTime).provide(processingType),
+        engineHandler = engineHandlerStub,
+        periodicProcessesManager = periodicProcessesManagerCreator(processingType, currentTime),
         periodicProcessListener = new PeriodicProcessListener {
 
           override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
@@ -420,7 +417,7 @@ class PeriodicProcessServiceIntegrationTest
   ) { f =>
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
     var currentTime        = startTime
-    f.periodicDeploymentHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.engineHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
 
     def service = f.periodicProcessService(currentTime)
 
@@ -812,7 +809,7 @@ class PeriodicProcessServiceIntegrationTest
     val timeToTriggerCheck = startTime.plus(1, ChronoUnit.HOURS)
     var currentTime        = startTime
 
-    f.periodicDeploymentHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.engineHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     def service = f.periodicProcessService(currentTime)
 
     val processIdWithName = f.prepareProcess(processName).dbioActionValues

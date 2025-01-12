@@ -5,17 +5,17 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler
-import pl.touk.nussknacker.engine.api.deployment.PeriodicDeploymentHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkPeriodicDeploymentHandler}
+import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkPeriodicDeploymentEngineHandler}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
 
-class PeriodicDeploymentHandlerTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
+class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
 
   private val processName      = "test"
   private val processVersionId = 5
@@ -32,14 +32,14 @@ class PeriodicDeploymentHandlerTest extends AnyFunSuite with Matchers with Scala
 
   private val currentModelUrls = List(currentModelJarFile.toURI.toURL)
 
-  private val periodicDeploymentHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
+  private val engineHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
 
   private def createPeriodicDeploymentHandler(
       jarsDir: Path,
       modelJarProvider: FlinkModelJarProvider = new FlinkModelJarProvider(currentModelUrls)
-  ): PeriodicDeploymentHandler = {
+  ): PeriodicDeploymentEngineHandler = {
 
-    new FlinkPeriodicDeploymentHandler(
+    new FlinkPeriodicDeploymentEngineHandler(
       flinkClient = new FlinkClientStub,
       jarsDir = jarsDir,
       inputConfigDuringExecution = InputConfigDuringExecution(ConfigFactory.empty()),
@@ -48,7 +48,7 @@ class PeriodicDeploymentHandlerTest extends AnyFunSuite with Matchers with Scala
   }
 
   test("prepareDeploymentWithJar - should copy to local dir") {
-    val result = periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(processVersion)
+    val result = engineHandler.prepareDeploymentWithRuntimeParams(processVersion)
 
     val copiedJarFileName = result.futureValue.runtimeParams.params("jarFileName")
     copiedJarFileName should fullyMatch regex s"^$processName-$processVersionId-\\d+\\.jar$$"
@@ -59,7 +59,7 @@ class PeriodicDeploymentHandlerTest extends AnyFunSuite with Matchers with Scala
 
   test("prepareDeploymentWithJar - should handle disappearing model JAR") {
     val modelJarProvider          = new FlinkModelJarProvider(currentModelUrls)
-    val periodicDeploymentHandler = createPeriodicDeploymentHandler(jarsDir, modelJarProvider)
+    val engineHandler = createPeriodicDeploymentHandler(jarsDir, modelJarProvider)
 
     def verifyAndDeleteJar(result: Future[DeploymentWithRuntimeParams]): Unit = {
       val copiedJarFile = jarsDir.resolve(result.futureValue.runtimeParams.params("jarFileName"))
@@ -68,21 +68,21 @@ class PeriodicDeploymentHandlerTest extends AnyFunSuite with Matchers with Scala
       Files.delete(copiedJarFile)
     }
 
-    verifyAndDeleteJar(periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(processVersion))
+    verifyAndDeleteJar(engineHandler.prepareDeploymentWithRuntimeParams(processVersion))
 
     modelJarProvider.getJobJar().delete() shouldBe true
 
-    verifyAndDeleteJar(periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(processVersion))
+    verifyAndDeleteJar(engineHandler.prepareDeploymentWithRuntimeParams(processVersion))
   }
 
   test("prepareDeploymentWithJar - should create jars dir if not exists") {
     val tmpDir                    = System.getProperty("java.io.tmpdir")
     val jarsDir                   = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
-    val periodicDeploymentHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
+    val engineHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
 
     Files.exists(jarsDir) shouldBe false
 
-    val result = periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(processVersion)
+    val result = engineHandler.prepareDeploymentWithRuntimeParams(processVersion)
 
     val copiedJarFileName = result.futureValue.runtimeParams.params("jarFileName")
     Files.exists(jarsDir) shouldBe true
@@ -94,14 +94,14 @@ class PeriodicDeploymentHandlerTest extends AnyFunSuite with Matchers with Scala
     val jarPath     = jarsDir.resolve(jarFileName)
     Files.copy(currentModelJarFile.toPath, jarPath)
 
-    periodicDeploymentHandler.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> jarFileName))).futureValue
+    engineHandler.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> jarFileName))).futureValue
 
     Files.exists(jarPath) shouldBe false
   }
 
   test("deleteJar - should handle not existing file") {
     val result =
-      periodicDeploymentHandler.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> "unknown.jar"))).futureValue
+      engineHandler.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> "unknown.jar"))).futureValue
 
     result shouldBe (())
   }
