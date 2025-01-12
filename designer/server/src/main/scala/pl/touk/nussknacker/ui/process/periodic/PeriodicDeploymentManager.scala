@@ -5,17 +5,17 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
+import pl.touk.nussknacker.engine.api.deployment.periodic.{
+  AdditionalDeploymentDataProvider,
+  PeriodicDeploymentEngineHandler,
+  PeriodicProcessListenerFactory,
+  ProcessConfigEnricherFactory
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.ui.process.periodic.Utils._
-import pl.touk.nussknacker.ui.process.periodic.service.{
-  AdditionalDeploymentDataProvider,
-  PeriodicProcessListenerFactory,
-  ProcessConfigEnricherFactory
-}
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}

@@ -2,10 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.deployment.periodic.{
-  PeriodicDeploymentEngineHandler,
-  PeriodicDeploymentManagerDecorator
-}
+import pl.touk.nussknacker.engine.api.deployment.periodic._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
@@ -147,23 +144,16 @@ trait PeriodicExecutionSupported extends PeriodicExecutionSupport {
   def engineHandler(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      config: Config,
+      deploymentConfig: Config,
   ): PeriodicDeploymentEngineHandler
 
-}
+  def customSchedulePropertyExtractorFactory: Option[PeriodicSchedulePropertyExtractorFactory]
 
-object PeriodicExecutionSupported {
-  sealed trait Mode
+  def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]
 
-  object Mode {
+  def customPeriodicProcessListenerFactory: Option[PeriodicProcessListenerFactory]
 
-    case object UseDefaultPeriodicDeploymentManager extends Mode
-
-    final case class UseCustomPeriodicDeploymentManager(
-        decorator: PeriodicDeploymentManagerDecorator
-    ) extends Mode
-
-  }
+  def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]
 
 }
 

@@ -1,13 +1,8 @@
-package pl.touk.nussknacker.ui.process.periodic.service
+package pl.touk.nussknacker.engine.api.deployment.periodic
 
 import com.typesafe.config.{Config, ConfigFactory}
-import ProcessConfigEnricher.{
-  DeployData,
-  EnrichedProcessConfig,
-  InitialScheduleData
-}
+import pl.touk.nussknacker.engine.api.deployment.periodic.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeployment
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,9 +36,11 @@ object ProcessConfigEnricher {
   case class InitialScheduleData(inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
 
   case class DeployData(
-      inputConfigDuringExecutionJson: String,
-      deployment: PeriodicProcessDeployment
-  ) extends ProcessConfigEnricherInputData
+      processDetails: PeriodicProcessDetails,
+      deploymentDetails: PeriodicProcessDeploymentDetails,
+  ) extends ProcessConfigEnricherInputData {
+    override def inputConfigDuringExecutionJson: String = processDetails.inputConfigDuringExecutionJson
+  }
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
 

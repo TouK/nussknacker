@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerProvider
+import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 import java.time.Clock
@@ -114,22 +114,23 @@ object ProcessingTypeData {
       )
       decoratedDeploymentManager = periodicExecutionSupportForManager match {
         case PeriodicExecutionSupportForManager.Available(dbRef, clock) =>
-          val engineHandler = deploymentManager.periodicExecutionSupport match {
+          deploymentManager.periodicExecutionSupport match {
             case supported: PeriodicExecutionSupported =>
-              supported.engineHandler(modelData, deploymentManagerDependencies, deploymentConfig)
+              PeriodicDeploymentManagerDecorator.decorate(
+                underlying = deploymentManager,
+                periodicExecutionSupported = supported,
+                modelData = modelData,
+                deploymentConfig = deploymentConfig,
+                dependencies = deploymentManagerDependencies,
+                dbRef = dbRef,
+                clock = clock,
+              )
             case NoPeriodicExecutionSupport =>
               throw new IllegalStateException(
                 s"DeploymentManager ${deploymentManagerProvider.name} does not support periodic execution"
               )
           }
-          new PeriodicDeploymentManagerProvider(
-            underlying = deploymentManager,
-            engineHandler = engineHandler,
-            deploymentConfig = deploymentConfig,
-            dependencies = deploymentManagerDependencies,
-            dbRef = dbRef,
-            clock = clock,
-          ).provide()
+
         case PeriodicExecutionSupportForManager.NotAvailable =>
           deploymentManager
       }
@@ -137,7 +138,7 @@ object ProcessingTypeData {
 
     val additionalScenarioProperties = periodicExecutionSupportForManager match {
       case PeriodicExecutionSupportForManager.Available(_, _) =>
-        PeriodicDeploymentManagerProvider.additionalScenarioProperties(deploymentConfig)
+        PeriodicDeploymentManagerDecorator.additionalScenarioProperties
       case PeriodicExecutionSupportForManager.NotAvailable =>
         Map.empty[String, ScenarioPropertyConfig]
     }

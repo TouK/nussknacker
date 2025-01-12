@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicPr
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentEngineHandlerStub}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
-import pl.touk.nussknacker.ui.process.periodic.service.{
+import pl.touk.nussknacker.engine.api.deployment.periodic.{
   DefaultAdditionalDeploymentDataProvider,
   PeriodicProcessEvent,
   PeriodicProcessListener,

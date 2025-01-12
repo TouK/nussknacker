@@ -8,6 +8,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.periodic.ProcessConfigEnricher.EnrichedProcessConfig
+import pl.touk.nussknacker.engine.api.deployment.periodic._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
@@ -18,10 +20,8 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicPr
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager.createPeriodicProcessDeployment
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.ui.process.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
-import pl.touk.nussknacker.ui.process.periodic.service._
 
 import java.time.temporal.ChronoField
 import java.time.{Clock, LocalDate, LocalDateTime}
@@ -85,9 +85,9 @@ class PeriodicProcessServiceTest
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
 
         override def prepareAdditionalData(
-            runDetails: PeriodicProcessDeployment
+            runDetails: PeriodicProcessDeploymentDetails
         ): Map[String, String] =
-          additionalData + ("runId" -> runDetails.id.value.toString)
+          additionalData + ("runId" -> runDetails.id.toString)
 
       },
       DeploymentRetryConfig(),
@@ -114,7 +114,7 @@ class PeriodicProcessServiceTest
           Future.successful(
             EnrichedProcessConfig(
               deployData.inputConfigDuringExecution
-                .withValue("runAt", ConfigValueFactory.fromAnyRef(deployData.deployment.runAt.toString))
+                .withValue("runAt", ConfigValueFactory.fromAnyRef(deployData.deploymentDetails.runAt.toString))
             )
           )
         }
@@ -184,7 +184,10 @@ class PeriodicProcessServiceTest
 
     val finished :: scheduled :: Nil =
       f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
-    f.events.toList shouldBe List(FinishedEvent(finished, None), ScheduledEvent(scheduled, firstSchedule = false))
+    f.events.toList shouldBe List(
+      FinishedEvent(finished.toDetails, None),
+      ScheduledEvent(scheduled.toDetails, firstSchedule = false)
+    )
   }
 
   // Flink job could not be available in Flink console if checked too quickly after submit.
@@ -237,8 +240,11 @@ class PeriodicProcessServiceTest
     val finished :: scheduled :: Nil =
       f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
     f.events.toList shouldBe List(
-      FinishedEvent(finished, f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)),
-      ScheduledEvent(scheduled, firstSchedule = false)
+      FinishedEvent(
+        finished.toDetails,
+        f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+      ),
+      ScheduledEvent(scheduled.toDetails, firstSchedule = false)
     )
   }
 
@@ -284,7 +290,7 @@ class PeriodicProcessServiceTest
         f.manager.deploymentEntities.loneElement,
       )
     f.events.loneElement shouldBe FinishedEvent(
-      event,
+      event.toDetails,
       f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
     )
   }
@@ -345,7 +351,7 @@ class PeriodicProcessServiceTest
 
     f.events.toList shouldBe List(
       ScheduledEvent(
-        createPeriodicProcessDeployment(processEntity, deploymentEntity),
+        createPeriodicProcessDeployment(processEntity, deploymentEntity).toDetails,
         firstSchedule = true
       )
     )
@@ -367,7 +373,7 @@ class PeriodicProcessServiceTest
       createPeriodicProcessDeployment(processEntity, f.manager.deploymentEntities.head)
     f.events.toList shouldBe List(
       FailedOnRunEvent(
-        expectedDetails,
+        expectedDetails.toDetails,
         f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
       )
     )
@@ -391,7 +397,7 @@ class PeriodicProcessServiceTest
 
     val expectedDetails =
       createPeriodicProcessDeployment(f.manager.processEntities.loneElement, deploymentEntity)
-    f.events.toList shouldBe List(DeployedEvent(expectedDetails, None))
+    f.events.toList shouldBe List(DeployedEvent(expectedDetails.toDetails, None))
 
   }
 
@@ -412,7 +418,7 @@ class PeriodicProcessServiceTest
       f.manager.processEntities.loneElement,
       f.manager.deploymentEntities.loneElement,
     )
-    f.events.toList shouldBe List(FailedOnDeployEvent(expectedDetails, None))
+    f.events.toList shouldBe List(FailedOnDeployEvent(expectedDetails.toDetails, None))
   }
 
   test("Schedule new scenario only if at least one date in the future") {

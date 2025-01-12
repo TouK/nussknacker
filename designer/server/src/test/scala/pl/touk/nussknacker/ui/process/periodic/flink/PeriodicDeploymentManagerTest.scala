@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledSta
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.service.{
+import pl.touk.nussknacker.engine.api.deployment.periodic.{
   DefaultAdditionalDeploymentDataProvider,
   EmptyListener,
   ProcessConfigEnricher

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, Per
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.service.{
+import pl.touk.nussknacker.engine.api.deployment.periodic.{
   DefaultAdditionalDeploymentDataProvider,
   EmptyListener,
   ProcessConfigEnricher

@@ -1,6 +1,15 @@
 package pl.touk.nussknacker.ui.process.periodic.model
 
-import PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.periodic.{PeriodicDeployStatus, PeriodicProcessDeploymentDetails}
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.{
+  Deployed,
+  Failed,
+  FailedOnDeploy,
+  Finished,
+  PeriodicProcessDeploymentStatus,
+  RetryingDeploy,
+  Scheduled
+}
 
 import java.time.LocalDateTime
 
@@ -18,6 +27,26 @@ case class PeriodicProcessDeployment(
 
   def display: String =
     s"Process with id=${periodicProcess.deploymentData.processId}, name=${periodicProcess.deploymentData.processName}, versionId=${periodicProcess.deploymentData.versionId}, scheduleName=${scheduleName.display} and deploymentId=$id"
+
+  def toDetails: PeriodicProcessDeploymentDetails =
+    PeriodicProcessDeploymentDetails(
+      id = id.value,
+      processName = periodicProcess.deploymentData.processName,
+      versionId = periodicProcess.deploymentData.versionId,
+      scheduleName = scheduleName.value,
+      createdAt = createdAt,
+      runAt = runAt,
+      deployedAt = state.deployedAt,
+      completedAt = state.completedAt,
+      status = state.status match {
+        case Scheduled      => PeriodicDeployStatus.Scheduled
+        case Deployed       => PeriodicDeployStatus.Deployed
+        case Finished       => PeriodicDeployStatus.Finished
+        case Failed         => PeriodicDeployStatus.Failed
+        case RetryingDeploy => PeriodicDeployStatus.RetryingDeploy
+        case FailedOnDeploy => PeriodicDeployStatus.FailedOnDeploy
+      },
+    )
 
 }
 
