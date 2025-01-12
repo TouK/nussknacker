@@ -57,6 +57,10 @@ object V1_060__PeriodicDeploymentManagerTablesDefinition {
 
       def status: Rep[String] = column[String]("status", NotNull)
 
+      def periodicProcessIdIndex = index("periodic_scenario_deployments_periodic_process_id_idx", periodicProcessId)
+      def createdAtIndex         = index("periodic_scenario_deployments_created_at_idx", createdAt)
+      def runAtIndex             = index("periodic_scenario_deployments_run_at_idx", runAt)
+
       override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (
         id,
         periodicProcessId,
@@ -111,6 +115,8 @@ object V1_060__PeriodicDeploymentManagerTablesDefinition {
       def processActionId: Rep[Option[UUID]] = column[Option[UUID]]("process_action_id")
 
       def inputConfigDuringExecutionJson: Rep[String] = column[String]("input_config_during_execution", NotNull)
+
+      def processNameAndActiveIndex = index("periodic_scenarios_process_name_active_idx", (processName, active))
 
       override def * : ProvenShape[PeriodicProcessEntity] = (
         periodicProcessId,

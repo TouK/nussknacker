@@ -14,16 +14,13 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngi
 import pl.touk.nussknacker.engine.api.deployment.periodic._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus._
-import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.{
-  PeriodicProcessDeploymentStatus,
-  _
-}
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.periodic.utils.DeterministicUUIDFromLong
 
@@ -186,7 +183,7 @@ class PeriodicProcessService(
             periodicProcessesManager
               .schedule(process.id, name, date, deploymentRetryConfig.deployMaxRetries)
               .flatMap { data =>
-                handleEvent(ScheduledEvent(deploymentDetails(data), firstSchedule = true))
+                handleEvent(ScheduledEvent(data.toDetails, firstSchedule = true))
               }
           case (name, None) =>
             logger.warn(s"Schedule $name does not have date to schedule")
@@ -329,7 +326,7 @@ class PeriodicProcessService(
             val action = periodicProcessesManager
               .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
               .flatMap { data =>
-                handleEvent(ScheduledEvent(deploymentDetails(data), firstSchedule = false))
+                handleEvent(ScheduledEvent(data.toDetails, firstSchedule = false))
               }
             Some(action)
           case Right(None) =>
@@ -372,7 +369,7 @@ class PeriodicProcessService(
     for {
       _            <- periodicProcessesManager.markFinished(deployment.id)
       currentState <- periodicProcessesManager.findProcessData(deployment.id)
-    } yield handleEvent(FinishedEvent(deploymentDetails(currentState), state))
+    } yield handleEvent(FinishedEvent(currentState.toDetails, state))
   }
 
   private def handleFailedDeployment(
@@ -399,7 +396,7 @@ class PeriodicProcessService(
     for {
       _ <- periodicProcessesManager.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt)
       currentState <- periodicProcessesManager.findProcessData(deployment.id)
-    } yield handleEvent(FailedOnDeployEvent(deploymentDetails(currentState), state))
+    } yield handleEvent(FailedOnDeployEvent(currentState.toDetails, state))
   }
 
   private def markFailedAction(
@@ -410,7 +407,7 @@ class PeriodicProcessService(
     for {
       _            <- periodicProcessesManager.markFailed(deployment.id)
       currentState <- periodicProcessesManager.findProcessData(deployment.id)
-    } yield handleEvent(FailedOnRunEvent(deploymentDetails(currentState), state))
+    } yield handleEvent(FailedOnRunEvent(currentState.toDetails, state))
   }
 
   def deactivate(processName: ProcessName): Future[Iterable[DeploymentId]] =
@@ -447,7 +444,7 @@ class PeriodicProcessService(
     val deploymentData = DeploymentData(
       DeploymentId(id.toString),
       DeploymentData.systemUser,
-      additionalDeploymentDataProvider.prepareAdditionalData(deploymentDetails(deployment)),
+      additionalDeploymentDataProvider.prepareAdditionalData(deployment.toDetails),
       // TODO: in the future we could allow users to specify nodes data during schedule requesting
       NodesDeploymentData.empty,
       AdditionalModelConfigs(
@@ -486,7 +483,7 @@ class PeriodicProcessService(
             processMetaData = canonicalProcessWithVersion._1.metaData,
             inputConfigDuringExecutionJson = inputConfigDuringExecutionJson
           ),
-          deploymentDetails(deployment)
+          deployment.toDetails
         )
       )
       externalDeploymentId <- engineHandler.deployWithRuntimeParams(
@@ -504,7 +501,7 @@ class PeriodicProcessService(
         periodicProcessesManager
           .markDeployed(id)
           .flatMap(_ => periodicProcessesManager.findProcessData(id))
-          .flatMap(afterChange => handleEvent(DeployedEvent(deploymentDetails(afterChange), externalDeploymentId)))
+          .flatMap(afterChange => handleEvent(DeployedEvent(afterChange.toDetails, externalDeploymentId)))
       }
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
@@ -708,26 +705,6 @@ class PeriodicProcessService(
   private def localDateTimeAtSystemDefaultZone(instant: Instant): LocalDateTime = {
     instant.atZone(clock.getZone).toLocalDateTime
   }
-
-  private def deploymentDetails(deployment: PeriodicProcessDeployment) =
-    PeriodicProcessDeploymentDetails(
-      deployment.id.value,
-      deployment.periodicProcess.deploymentData.processName,
-      deployment.periodicProcess.deploymentData.versionId,
-      deployment.scheduleName.value,
-      deployment.createdAt,
-      deployment.runAt,
-      deployment.state.deployedAt,
-      deployment.state.completedAt,
-      deployment.state.status match {
-        case Scheduled      => PeriodicDeployStatus.Scheduled
-        case Deployed       => PeriodicDeployStatus.Deployed
-        case Finished       => PeriodicDeployStatus.Finished
-        case Failed         => PeriodicDeployStatus.Failed
-        case RetryingDeploy => PeriodicDeployStatus.RetryingDeploy
-        case FailedOnDeploy => PeriodicDeployStatus.FailedOnDeploy
-      },
-    )
 
 }
 
