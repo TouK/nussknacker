@@ -4,9 +4,10 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
-import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActionParameters}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
@@ -25,15 +26,15 @@ object BoundedSource extends SourceFactory with UnboundedStreamComponent {
 
 object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamComponent {
 
-  val OFFSET_PARAMETER_NAME = "offset"
+  val OFFSET_PARAMETER_NAME: ParameterName = ParameterName("offset")
 
   @MethodToInvoke
   def source(@ParamName("elements") elements: java.util.List[Any]) =
-    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActionParameters {
+    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActionParametersSupport {
 
-      override def actionParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
+      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
         Map(
-          ScenarioActionName.Deploy.value -> deployActivityParameters
+          ScenarioActionName.Deploy -> deployActivityParameters
         )
       }
 
@@ -44,7 +45,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
       ): DataStreamSource[T] = {
         val offsetOpt =
           flinkNodeContext.nodeDeploymentData
-            .flatMap(_.get(OFFSET_PARAMETER_NAME))
+            .flatMap(_.get(OFFSET_PARAMETER_NAME.value))
             .flatMap(s => Try(s.toInt).toOption)
         val elementsWithOffset = offsetOpt match {
           case Some(offset) => list.drop(offset)
@@ -55,7 +56,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
 
     }
 
-  private def deployActivityParameters: Map[String, ParameterConfig] = {
+  private def deployActivityParameters: Map[ParameterName, ParameterConfig] = {
     Map(
       OFFSET_PARAMETER_NAME -> ParameterConfig(
         defaultValue = None,
