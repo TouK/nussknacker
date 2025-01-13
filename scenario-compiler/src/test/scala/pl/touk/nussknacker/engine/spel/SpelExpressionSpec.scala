@@ -2032,6 +2032,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownBoolean", ContainerOfUnknown(true))
       .withVariable("unknownBooleanString", ContainerOfUnknown("false"))
       .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownInteger", ContainerOfUnknown(1))
+      .withVariable("unknownIntegerString", ContainerOfUnknown("1"))
       .withVariable("unknownLongString", ContainerOfUnknown("11"))
       .withVariable("unknownDouble", ContainerOfUnknown(1.1))
       .withVariable("unknownDoubleString", ContainerOfUnknown("1.1"))
