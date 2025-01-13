@@ -45,3 +45,4 @@ const Root = () => (
 );
 
 root.render(<Root />);
+console.log("test");
