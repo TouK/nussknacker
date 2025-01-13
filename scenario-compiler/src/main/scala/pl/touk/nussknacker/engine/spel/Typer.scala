@@ -214,11 +214,10 @@ private[spel] class Typer(
     def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
       typingResult match {
         case TypedClass(clazz, param :: Nil)
-            if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
+            if classOf[java.util.List[_]].isAssignableFrom(clazz) || classOf[Array[Object]].isAssignableFrom(clazz) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           withTypedChildren(_ => valid(param))
-        // TODO_PAWEL tutaj ten isAsignableFrom to chyba na wyrost, albo jak juz odwrotnie, albo rownosc niech bedzie
-        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
+        case TypedClass(clazz, keyParam :: valueParam :: Nil) if classOf[java.util.Map[_, _]].isAssignableFrom(clazz) =>
           withTypedChildren {
             // Spel implementation of map indexer (in class org.springframework.expression.spel.ast.Indexer, line 154) tries to convert
             // indexer to key type of map, but this conversion can be accomplished only if key type of map is known.
