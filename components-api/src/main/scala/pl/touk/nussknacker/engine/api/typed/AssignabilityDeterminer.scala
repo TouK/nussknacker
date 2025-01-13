@@ -32,7 +32,7 @@ object AssignabilityDeterminer {
   def isAssignableStrict(from: TypingResult, to: TypingResult): ValidatedNel[String, Unit] =
     isAssignable(from, to, StrictConversionChecker)
 
-  def isAssignableNoConversion(from: TypingResult, to: TypingResult): ValidatedNel[String, Unit] =
+  def isAssignableWithNoConversion(from: TypingResult, to: TypingResult): ValidatedNel[String, Unit] =
     isAssignable(from, to, NoConversionConversionChecker)
 
   private def isAssignable(from: TypingResult, to: TypingResult, conversionChecker: ConversionChecker) = {

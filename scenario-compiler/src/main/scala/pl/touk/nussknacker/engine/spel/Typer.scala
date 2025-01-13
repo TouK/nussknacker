@@ -220,15 +220,13 @@ private[spel] class Typer(
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if classOf[java.util.Map[_, _]].isAssignableFrom(clazz) =>
           withTypedChildren {
             // Spel implementation of map indexer (in class org.springframework.expression.spel.ast.Indexer, line 154) tries to convert
-            // indexer to key type of map, but this conversion can be accomplished only if key type of map is known.
+            // indexer to key type of map, but this conversion can be accomplished only if key type of map is known to spel.
             // Currently .asMap extension is implemented in such a way, that spel does not know key type of the resulting map
             // (that is when spel evaluates this expression it only knows that it got map, but does not know its type parameters).
-            // It would be hard to change implementation of .asMap extension so we partially turn off this feature of key conversion
+            // It would be hard to change implementation of .asMap extension so we partially turn off this feature of indexer conversion
             // by allowing in typing only situations when map key type and indexer type are the same (though we have to allow
             // indexing with unknown type)
-            case indexKey :: Nil if indexKey.canBeConvertedWithNoConversionTo(keyParam) => {
-              valid(valueParam)
-            }
+            case indexKey :: Nil if indexKey.canBeConvertedWithNoConversionTo(keyParam) => valid(valueParam)
             case _ => invalid(IllegalIndexingOperation)
           }
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
