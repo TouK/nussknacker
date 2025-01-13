@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.definition.activity
 import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.process.WithActionParameters
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
@@ -16,37 +17,37 @@ class ModelDataActionInfoProvider(modelData: ModelData)
   override def getActionParameters(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Map[String, Map[String, Map[String, ParameterConfig]]] = {
+  ): Map[ScenarioActionName, Map[NodeId, Map[ParameterName, ParameterConfig]]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     modelData.withThisAsContextClassLoader {
       val nodeToActivityToParameters = collectAllSources(scenario)
-        .map(source => source.id -> getActivityParameters(source, jobData))
+        .map(source => NodeId(source.id) -> getActionParameters(source, jobData))
         .toMap
       groupByAction(nodeToActivityToParameters)
     }
   }
 
   private def groupByAction(
-      nodeToActionToParameters: Map[String, Map[String, Map[String, ParameterConfig]]]
-  ): Map[String, Map[String, Map[String, ParameterConfig]]] = {
-    val activityToNodeToParameters = for {
-      (node, activityToParams) <- nodeToActionToParameters.toList
-      (activity, params)       <- activityToParams.toList
-    } yield (activity, node -> params)
-    activityToNodeToParameters
+      nodeToActionToParameters: Map[NodeId, Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]]
+  ): Map[ScenarioActionName, Map[NodeId, Map[ParameterName, ParameterConfig]]] = {
+    val actionToNodeToParameters = for {
+      (node, actionToParams) <- nodeToActionToParameters.toList
+      (actionName, params)   <- actionToParams.toList
+    } yield (actionName, node -> params)
+    actionToNodeToParameters
       .groupBy(_._1)
       .mapValuesNow(_.map(_._2).toMap)
   }
 
-  private def getActivityParameters(
+  private def getActionParameters(
       source: SourceNodeData,
       jobData: JobData
-  ): Map[String, Map[String, ParameterConfig]] = {
+  ): Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
     modelData.withThisAsContextClassLoader {
       val compiledSource = prepareSourceObj(source)(jobData, NodeId(source.id))
       compiledSource match {
-        case Valid(s: WithActionParameters) => s.actionParametersDefinition
-        case _                              => Map.empty
+        case Valid(s: WithActionParametersSupport) => s.actionParametersDefinition
+        case _                                     => Map.empty
       }
     }
   }

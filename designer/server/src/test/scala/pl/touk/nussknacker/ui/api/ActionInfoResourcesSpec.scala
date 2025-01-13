@@ -11,7 +11,7 @@ import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil
 
-class ActivityInfoResourcesSpec
+class ActionInfoResourcesSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithSimplifiedDesignerConfig
@@ -20,8 +20,8 @@ class ActivityInfoResourcesSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails {
 
-  "The scenario activity info endpoint when" - {
-    "return activity parameters when defined" in {
+  "The scenario action info endpoint when" - {
+    "return action parameters when defined" in {
       val scenario = ScenarioBuilder
         .streaming("scenarioWithSourceWithDeployParameters")
         .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
@@ -34,7 +34,7 @@ class ActivityInfoResourcesSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/activityInfo/${scenario.name.value}/activityParameters")
+        .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
         .Then()
         .statusCode(200)
         .body(
@@ -45,7 +45,7 @@ class ActivityInfoResourcesSpec
         )
     }
 
-    "return empty map when no activity parameters" in {
+    "return empty map when no action parameters" in {
       val scenario = ScenarioBuilder
         .streaming("scenarioWithoutParameters")
         .source("sourceNoParamsId", "boundedSource", "elements" -> "{'one', 'two', 'three'}".spel)
@@ -58,7 +58,7 @@ class ActivityInfoResourcesSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/activityInfo/${scenario.name.value}/activityParameters")
+        .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -76,7 +76,7 @@ class ActivityInfoResourcesSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/activityInfo/${scenario.name.value}/activityParameters")
+        .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
         .Then()
         .statusCode(404)
         .equalsPlainBody(

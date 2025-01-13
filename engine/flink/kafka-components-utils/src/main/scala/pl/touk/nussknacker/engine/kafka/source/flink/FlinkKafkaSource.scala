@@ -12,16 +12,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{
-  ContextInitializer,
-  TestWithParametersSupport,
-  TopicName,
-  WithActionParameters
-}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -67,7 +62,7 @@ class FlinkKafkaSource[T](
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
     with TestWithParametersSupport[T]
-    with WithActionParameters
+    with WithActionParametersSupport
     with LazyLogging {
 
   @silent("deprecated")
@@ -89,9 +84,9 @@ class FlinkKafkaSource[T](
   private val defaultOffsetResetStrategy =
     if (kafkaConfig.forceLatestRead.contains(true)) OffsetResetStrategy.Reset else OffsetResetStrategy.Continue
 
-  override def actionParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
+  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
     Map(
-      ScenarioActionName.Deploy.value -> Map(
+      ScenarioActionName.Deploy -> Map(
         OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
           defaultValue = Some(defaultOffsetResetStrategy.toString),
           editor = Some(
@@ -128,7 +123,7 @@ class FlinkKafkaSource[T](
   ): SourceFunction[T] = {
     val offsetResetStrategy =
       flinkNodeContext.nodeDeploymentData
-        .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME))
+        .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
         .map(OffsetResetStrategy.withName)
         .getOrElse(defaultOffsetResetStrategy)
     logger.info(
@@ -211,7 +206,7 @@ class FlinkKafkaSource[T](
 }
 
 object FlinkKafkaSource {
-  val OFFSET_RESET_STRATEGY_PARAM_NAME = "offsetResetStrategy"
+  val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
 
   object OffsetResetStrategy extends Enumeration {
     type OffsetResetStrategy = Value

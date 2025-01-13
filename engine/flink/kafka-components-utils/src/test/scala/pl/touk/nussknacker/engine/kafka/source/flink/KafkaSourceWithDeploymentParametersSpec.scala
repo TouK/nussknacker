@@ -81,7 +81,7 @@ class KafkaSourceWithDeploymentParametersSpec extends KafkaSourceFactoryProcessM
         NodesDeploymentData(dataByNodeId =
           Map(
             NodeId("procSource") -> Map(
-              FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME -> offsetResetStrategy.toString
+              FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME.value -> offsetResetStrategy.toString
             )
           )
         )
