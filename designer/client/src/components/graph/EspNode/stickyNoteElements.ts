@@ -56,7 +56,8 @@ export function makeStickyNoteElement(
             rotate: true,
             x: stickyNote.dimensions.width - 20,
             y: "0%",
-            offset: { x: 10, y: 10 },
+            offset: { x: 0, y: 20 },
+            className: "sticky-note-remove-tool",
             action: function () {
                 stickyNoteModel.trigger(Events.CELL_DELETED, stickyNoteModel);
             },
