@@ -2767,7 +2767,6 @@
     }
   },
   {
-    // TODO_PAWEL tutaj gdzies jest popiepszone bo tutaj long nie ma to long, trzeba wiec dokladniej sie przyjrzec. Also w dokumentacji trzeba tabelke uzupelnic co na co konwertuje sie
     "clazzName": {"refClazzName": "java.lang.Long"},
     "methods": {
       "byteValue": [
