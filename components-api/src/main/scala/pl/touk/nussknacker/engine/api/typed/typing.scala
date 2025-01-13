@@ -71,6 +71,8 @@ object typing {
   case class TypedObjectTypingResult protected (
       // Order is important because we base on it in case of Flink's table-api Row serialization, see TypingResultAwareTypeInformationDetection
       fields: ListMap[String, TypingResult],
+      // TODO_PAWEL to tutaj sie wskakuje jako java.util.map z uzupelnnionymi generycznymi parametrami.
+      // na tej podstawie moze zadzialac nasz get z tego co rozumiem
       runtimeObjType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
@@ -417,8 +419,11 @@ object typing {
       }
     }
 
-    def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult =
-      TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+    def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult = {
+      val sth =
+        TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+      sth
+    }
 
     def record(
         fields: Iterable[(String, TypingResult)],
@@ -431,7 +436,8 @@ object typing {
 
   private[api] def mapBasedRecordUnderlyingType[T: ClassTag](fields: Iterable[(String, TypingResult)]): TypedClass = {
     val valueType = superTypeOfTypes(fields.map(_._2))
-    Typed.genericTypeClass[T](List(Typed[String], valueType))
+    val sth       = Typed.genericTypeClass[T](List(Typed[String], valueType))
+    sth
   }
 
   private def supertypeOfElementTypes(list: List[_]): TypingResult = {
