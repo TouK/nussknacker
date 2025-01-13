@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, Source, VersionId}
 
 import java.time.Instant
 import java.util.UUID
@@ -57,6 +59,13 @@ object ProcessActionState extends Enumeration {
 
 final case class ScenarioActionName(value: String) extends AnyVal {
   override def toString: String = value
+}
+
+/**
+ * Used to define Source parameters for each action
+ */
+trait WithActionParametersSupport { self: Source =>
+  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }
 
 object ScenarioActionName {
