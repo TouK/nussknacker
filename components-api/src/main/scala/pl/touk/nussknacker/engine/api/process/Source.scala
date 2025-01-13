@@ -50,15 +50,6 @@ trait TestWithParametersSupport[+T] { self: Source =>
 }
 
 /**
- * Used to define Source parameters for each activity
- * e.g.
- *   {"DEPLOY": { "parametername": ...parameter configuration... }
- */
-trait WithActionParameters { self: Source =>
-  def actionParametersDefinition: Map[String, Map[String, ParameterConfig]]
-}
-
-/**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
   * IMPORTANT lifecycle notice:
