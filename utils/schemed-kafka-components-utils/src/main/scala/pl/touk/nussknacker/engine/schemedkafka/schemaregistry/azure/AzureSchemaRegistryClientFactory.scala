@@ -44,6 +44,9 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     .credential(credential)
     .buildClient()
 
+  // TODO: close it
+  private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(config.kafkaProperties), None))
+
   // We need to create our own schemas service because some operations like schema listing are not exposed by default client
   // or even its Schemas inner class. Others like listing of versions are implemented incorrectly (it has wrong json field name in model)
   private val enhancedSchemasService = new EnhancedSchemasImpl(
@@ -105,7 +108,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
-    val topics        = fetchTopics(KafkaConfig(Some(config.kafkaProperties), None))
+    val topics        = fetchTopics
     val matchStrategy = SchemaNameTopicMatchStrategy(topics)
     getAllFullSchemaNames.map(matchStrategy.getAllMatchingTopics(_, isKey = false))
   }
@@ -117,13 +120,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     getOneMatchingSchemaName(topicName, isKey).andThen(getVersions)
   }
 
-  private def fetchTopics(kafkaConfig: KafkaConfig) = {
-    KafkaUtils
-      .usingAdminClient(kafkaConfig) { admin =>
-        admin.listTopics().names().get().asScala.toList
-      }
-      .map(UnspecializedTopicName.apply)
-  }
+  private def fetchTopics = kafkaAdminClient.listTopics().names().get().asScala.toList.map(UnspecializedTopicName.apply)
 
   private def getOneMatchingSchemaName(
       topicName: UnspecializedTopicName,
