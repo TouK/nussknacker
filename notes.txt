@@ -1,0 +1,3 @@
+notes
+
+trzeba zobaczyc jak dziala typowanie geta

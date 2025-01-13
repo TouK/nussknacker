@@ -439,6 +439,7 @@ object typing {
   }
 
   private def superTypeOfTypes(list: Iterable[TypingResult]) = {
+    // TODO_PAWEL tutaj sie szuka common typu w .get()
     list
       .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
       .getOrElse(Unknown)

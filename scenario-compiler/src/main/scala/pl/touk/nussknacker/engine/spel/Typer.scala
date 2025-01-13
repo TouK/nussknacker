@@ -190,6 +190,7 @@ private[spel] class Typer(
       }
     }
 
+    // TODO_PAWEL ten sie odpala by otypowac indexera rekordu
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
       withTypedChildren {
         case TypedObjectWithValue(_, indexString: String) :: Nil =>
