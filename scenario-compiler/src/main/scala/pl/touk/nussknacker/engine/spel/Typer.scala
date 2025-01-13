@@ -220,10 +220,18 @@ private[spel] class Typer(
         // TODO_PAWEL tutaj ten isAsignableFrom to chyba na wyrost, albo jak juz odwrotnie, albo rownosc niech bedzie
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
           withTypedChildren {
-            // TODO_PAWEL czy na pewno tak? trzeba zajrzec jakie konwersje sie robi w runtime
-            // mam wrazenie, ze tych konwersji w runtime nie robi. pytanie czy to z powodu braku typu?
-            case indexKey :: Nil if indexKey.canBeConvertedTo(keyParam) => valid(valueParam)
-            case _                                                      => invalid(IllegalIndexingOperation)}
+            // Spel implementation of map indexer (in class org.springframework.expression.spel.ast.Indexer, line 154) tries to convert
+            // indexer to key type of map, but this conversion can be accomplished only if key type of map is known.
+            // Currently .asMap extension is implemented in such a way, that spel does not know key type of the resulting map
+            // (that is when spel evaluates this expression it only knows that it got map, but does not know its type parameters).
+            // It would be hard to change implementation of .asMap extension so we partially turn off this feature of key conversion
+            // by allowing in typing only situations when map key type and indexer type are the same (though we have to allow
+            // indexing with unknown type)
+            case indexKey :: Nil if indexKey.canBeConvertedWithNoConversionTo(keyParam) => {
+              valid(valueParam)
+            }
+            case _ => invalid(IllegalIndexingOperation)
+          }
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)

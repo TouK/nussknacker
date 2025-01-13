@@ -40,6 +40,12 @@ object typing {
     final def canBeStrictlyConvertedTo(typingResult: TypingResult): Boolean =
       AssignabilityDeterminer.isAssignableStrict(this, typingResult).isValid
 
+    /**
+     * Checks if the conversion to a given typingResult can be made without any conversion.
+     */
+    final def canBeConvertedWithNoConversionTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignableNoConversion(this, typingResult).isValid
+
     def valueOpt: Option[Any]
 
     def withoutValue: TypingResult
