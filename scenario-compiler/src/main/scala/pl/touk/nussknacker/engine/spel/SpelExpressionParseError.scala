@@ -106,6 +106,10 @@ object SpelExpressionParseError {
       override def message: String = s"There is no property '$property' in type: ${typ.display}"
     }
 
+    case class NoPropertyTypeError(typ: TypingResult, propertyType: TypingResult) extends MissingObjectError {
+      override def message: String = s"There is no property of type '${propertyType.display}' in type: ${typ.display}"
+    }
+
     case class UnknownMethodError(methodName: String, displayableType: String) extends MissingObjectError {
       override def message: String = s"Unknown method '$methodName' in $displayableType"
     }
@@ -153,6 +157,7 @@ object SpelExpressionParseError {
       override def message: String = s"Cannot do projection/selection on ${typ.display}"
     }
 
+    // TODO_PAWEL maybe remove
     case object DynamicPropertyAccessError extends IllegalOperationError {
       override def message: String = "Dynamic property access is not allowed"
     }
