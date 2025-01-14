@@ -73,7 +73,6 @@ class TestingApiHttpService(
             capabilities = scenarioTestService.getTestingCapabilities(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
-              scenarioWithDetails.isFragment,
             )
           } yield capabilities
         }
@@ -93,7 +92,6 @@ class TestingApiHttpService(
             parametersDefinition = scenarioTestService.testUISourceParametersDefinition(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
-              scenarioWithDetails.isFragment
             )
           } yield parametersDefinition
         }
