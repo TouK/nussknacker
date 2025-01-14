@@ -276,8 +276,8 @@ Explicit conversions are available as built-in functions and utility classes.
 List of built-in functions:
 - `canBe(className)`/`to(className)`/`toOrNull(className)`
 - `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
-- `canBeLong`/`toLong`/`toLongOrNull`
 - `canBeInteger`/`toInteger`/`toIntegerOrNull`
+- `canBeLong`/`toLong`/`toLongOrNull`
 - `canBeDouble`/`toDouble`/`toDoubleOrNull`
 - `canBeBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
 - `canBeList`/`toList`/`toListOrNull`
