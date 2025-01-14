@@ -131,6 +131,8 @@ object SwaggerTyped {
             case (Some("string"), Some("date"))      => SwaggerDate
             case (Some("string"), Some("time"))      => SwaggerTime
             case (Some("string"), _)                 => SwaggerString
+            case (Some("integer"), Some("int32"))    => SwaggerInteger
+            case (Some("integer"), Some("int64"))    => SwaggerLong
             case (Some("integer"), _) =>
               inferredIntType(
                 schema.getMinimum,

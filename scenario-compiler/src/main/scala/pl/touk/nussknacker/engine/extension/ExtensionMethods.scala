@@ -56,6 +56,7 @@ object ExtensionMethods {
     CastOrConversionExt,
     ArrayExt,
     ConversionExt(ToLongConversion),
+    ConversionExt(ToIntegerConversion),
     ConversionExt(ToDoubleConversion),
     ConversionExt(ToBigDecimalConversion),
     ConversionExt(ToBooleanConversion),

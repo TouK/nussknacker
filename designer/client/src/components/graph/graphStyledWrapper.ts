@@ -1,5 +1,5 @@
 import { CSSProperties } from "react";
-import { css, styled, Theme } from "@mui/material";
+import { alpha, css, styled, Theme } from "@mui/material";
 import { blend } from "@mui/system";
 import { blendLighten } from "../../containers/theme/helpers";
 
@@ -180,6 +180,41 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 ".body .joint-port-body .background": {
                     transition: "all 0.25s ease-in-out",
                 },
+            },
+            ".sticky-note-markdown": {
+                width: "100%",
+                height: "100%",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+            },
+            ".sticky-note-markdown-editor": {
+                paddingLeft: theme.spacing(1),
+                paddingRight: theme.spacing(1),
+                backgroundColor: alpha(theme.palette.common.white, 0.3),
+                color: theme.palette.common.black,
+                fontFamily: theme.typography.fontFamily,
+                fontSize: theme.typography.body1.fontSize,
+                resize: "none",
+                width: "100%",
+                height: "100%",
+                borderStyle: "none",
+                borderColor: "Transparent",
+                whiteSpace: "pre-line",
+                overflow: "hidden",
+            },
+            ".sticky-note-markdown-editor:focus": {
+                outline: "none",
+                boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+            },
+            ".sticky-note-content": {
+                width: "100%",
+                height: "100%",
+            },
+            ".joint-sticky-note-remove-tool > circle": {
+                fill: "#ca344c",
+            },
+            ".sticky-note-markdown-editor:disabled": {
+                display: "none",
             },
         },
     ]),
