@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.model
 
-import pl.touk.nussknacker.engine.api.deployment.periodic.{PeriodicDeployStatus, PeriodicProcessDeploymentDetails}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{PeriodicDeployStatus, PeriodicProcessDeploymentDetails}
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.{
   Deployed,
   Failed,

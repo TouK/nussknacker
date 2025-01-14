@@ -10,11 +10,11 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.DeploymentWithRuntimeParams
-import pl.touk.nussknacker.engine.api.deployment.periodic._
+import pl.touk.nussknacker.engine.api.deployment.periodic.model._
+import pl.touk.nussknacker.engine.api.deployment.periodic.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
@@ -148,7 +148,7 @@ class PeriodicProcessService(
         processVersion,
       )
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
-        ProcessConfigEnricher.InitialScheduleData(inputConfigDuringExecution.serialized)
+        ProcessConfigEnricher.InitialScheduleData(canonicalProcess, inputConfigDuringExecution.serialized)
       )
       _ <- initialSchedule(
         scheduleProperty,
@@ -262,29 +262,37 @@ class PeriodicProcessService(
           s"Process '$processName' latest deployment ids: ${scheduleData.latestDeployments.map(_.id.toString)}"
         )
         scheduleData.latestDeployments.map { deployment =>
-          (deployment, runtimeStatuses.getStatus(deployment.id))
+          (
+            scheduleData.process.deploymentData.processName,
+            scheduleData.process.deploymentData.versionId,
+            deployment,
+            runtimeStatuses.getStatus(deployment.id)
+          )
         }
       }
       _ = logger.debug(
         s"Process '$processName' schedule deployments with status: ${scheduleDeploymentsWithStatus.map(_.toString)}"
       )
       needRescheduleDeployments <- Future
-        .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
-          synchronizeDeploymentState(deploymentData, statusOpt).map { needReschedule =>
+        .sequence(scheduleDeploymentsWithStatus.map { case (processName, versionId, deploymentData, statusOpt) =>
+          synchronizeDeploymentState(processName, versionId, deploymentData, statusOpt).map { needReschedule =>
             Option(deploymentData.id).filter(_ => needReschedule)
           }
         })
         .map(_.flatten.toSet)
       followingDeployDeploymentsForSchedules = scheduleDeploymentsWithStatus.collect {
-        case (deployment, Some(status)) if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(status.status) =>
+        case (_, _, deployment, Some(status))
+            if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(status.status) =>
           deployment.id
       }.toSet
     } yield (followingDeployDeploymentsForSchedules, needRescheduleDeployments)
 
   // We assume that this method leaves with data in consistent state
   private def synchronizeDeploymentState(
+      processName: ProcessName,
+      versionId: VersionId,
       deployment: ScheduleDeploymentData,
-      processState: Option[StatusDetails]
+      processState: Option[StatusDetails],
   ): Future[NeedsReschedule] = {
     implicit class RichFuture[Unit](a: Future[Unit]) {
       def needsReschedule(value: Boolean): Future[NeedsReschedule] = a.map(_ => value)
@@ -299,7 +307,7 @@ class PeriodicProcessService(
           if EngineStatusesToReschedule.contains(
             status
           ) && deployment.state.status != PeriodicProcessDeploymentStatus.Finished =>
-        markFinished(deployment, processState).needsReschedule(value = true)
+        markFinished(processName, versionId, deployment, processState).needsReschedule(value = true)
       case None
           if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed
             && deployment.deployedAt.exists(_.isBefore(LocalDateTime.now().minusMinutes(5))) =>
@@ -307,7 +315,7 @@ class PeriodicProcessService(
         // this can be caused by a race in e.g. FlinkRestManager
         // (because /jobs/overview used in getProcessStates isn't instantly aware of submitted jobs)
         // so freshly deployed deployments aren't considered
-        markFinished(deployment, processState).needsReschedule(value = true)
+        markFinished(processName, versionId, deployment, processState).needsReschedule(value = true)
       case _ =>
         Future.successful(()).needsReschedule(value = false)
     }
@@ -364,12 +372,28 @@ class PeriodicProcessService(
       case (schedule, name)                  => Left(s"Schedule name: $name mismatch with schedule: $schedule")
     }
 
-  private def markFinished(deployment: ScheduleDeploymentData, state: Option[StatusDetails]): Future[Unit] = {
+  private def markFinished(
+      processName: ProcessName,
+      versionId: VersionId,
+      deployment: ScheduleDeploymentData,
+      state: Option[StatusDetails],
+  ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
       _            <- periodicProcessesManager.markFinished(deployment.id)
       currentState <- periodicProcessesManager.findProcessData(deployment.id)
-    } yield handleEvent(FinishedEvent(currentState.toDetails, state))
+      canonicalProcessOpt <- periodicProcessesManager
+        .fetchCanonicalProcessWithVersion(
+          processName,
+          versionId
+        )
+        .map(_.map(_._1))
+      canonicalProcess = canonicalProcessOpt.getOrElse {
+        throw new PeriodicProcessException(
+          s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
+        )
+      }
+    } yield handleEvent(FinishedEvent(currentState.toDetails, canonicalProcess, state))
   }
 
   private def handleFailedDeployment(
@@ -478,11 +502,9 @@ class PeriodicProcessService(
       }
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
         ProcessConfigEnricher.DeployData(
-          PeriodicProcessDetails(
-            processVersion = canonicalProcessWithVersion._2,
-            processMetaData = canonicalProcessWithVersion._1.metaData,
-            inputConfigDuringExecutionJson = inputConfigDuringExecutionJson
-          ),
+          canonicalProcessWithVersion._1,
+          canonicalProcessWithVersion._2,
+          inputConfigDuringExecutionJson,
           deployment.toDetails
         )
       )

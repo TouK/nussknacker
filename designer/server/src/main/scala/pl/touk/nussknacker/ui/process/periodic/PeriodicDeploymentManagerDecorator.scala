@@ -4,12 +4,15 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.periodic._
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
+  EmptyPeriodicProcessListenerFactory,
+  PeriodicSchedulePropertyExtractorFactory,
+  ProcessConfigEnricherFactory
+}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, PeriodicExecutionSupported}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.cron.CronParameterValidator
+import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.repository.{
   DBFetchingProcessRepository,
@@ -38,9 +41,8 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     val periodicBatchConfig = deploymentConfig.as[PeriodicBatchConfig]("deploymentManager")
 
-    val schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory =
+    val schedulePropertyExtractorFactory: PeriodicSchedulePropertyExtractorFactory =
       periodicExecutionSupported.customSchedulePropertyExtractorFactory
-        .map(toDomain)
         .getOrElse(_ => CronSchedulePropertyExtractor())
 
     val processConfigEnricherFactory =
@@ -107,35 +109,10 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     )
   }
 
-  private def toDomain(
-      apiExtractorFactory: PeriodicSchedulePropertyExtractorFactory
-  ): SchedulePropertyExtractorFactory =
-    (config: Config) => toDomain(apiExtractorFactory(config))
-
-  private def toDomain(
-      apiSchedulePropertyExtractor: PeriodicSchedulePropertyExtractor
-  ): SchedulePropertyExtractor =
-    (canonicalProcess: CanonicalProcess) => apiSchedulePropertyExtractor(canonicalProcess).map(toDomain)
-
-  private def toDomain(
-      apiScheduleProperty: PeriodicScheduleProperty
-  ): ScheduleProperty = apiScheduleProperty match {
-    case property: SinglePeriodicScheduleProperty =>
-      toDomain(property)
-    case MultiplePeriodicScheduleProperty(schedules) =>
-      MultipleScheduleProperty(schedules.map { case (k, v) => (k, toDomain(v)) })
-  }
-
-  private def toDomain(
-      apiSingleScheduleProperty: SinglePeriodicScheduleProperty
-  ): SingleScheduleProperty = apiSingleScheduleProperty match {
-    case CronPeriodicScheduleProperty(labelOrCronExpr) => CronScheduleProperty(labelOrCronExpr)
-  }
-
   private val cronConfig = CronSchedulePropertyExtractor.CronPropertyDefaultName -> ScenarioPropertyConfig(
     defaultValue = None,
     editor = Some(StringParameterEditor),
-    validators = Some(List(MandatoryParameterValidator, CronParameterValidator.delegate)),
+    validators = Some(List(MandatoryParameterValidator, CronParameterValidator)),
     label = Some("Schedule"),
     hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")
   )

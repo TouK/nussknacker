@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.PeriodicDeploymentEngineHandler
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution

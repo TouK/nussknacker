@@ -6,6 +6,13 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.periodic._
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
+  AdditionalDeploymentDataProvider,
+  PeriodicDeploymentEngineHandler,
+  PeriodicProcessListenerFactory,
+  PeriodicSchedulePropertyExtractorFactory,
+  ProcessConfigEnricherFactory
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess

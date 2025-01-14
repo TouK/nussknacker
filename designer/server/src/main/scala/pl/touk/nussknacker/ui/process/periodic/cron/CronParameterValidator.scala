@@ -3,34 +3,15 @@ package pl.touk.nussknacker.ui.process.periodic.cron
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
-import pl.touk.nussknacker.engine.api.definition.{
-  CustomParameterValidator,
-  CustomParameterValidatorDelegate,
-  ParameterValidator
-}
+import pl.touk.nussknacker.engine.api.definition.CustomParameterValidatorDelegate
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.ui.process.periodic.SchedulePropertyExtractor
-
-object CronParameterValidator extends CronParameterValidator {
-
-  val underlying = new CronParameterValidator
-
-  def delegate: ParameterValidator = new CustomParameterValidatorDelegate(name) {
-
-    override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
-        implicit nodeId: NodeId
-    ): Validated[PartSubGraphCompilationError, Unit] = underlying.isValid(paramName, expression, value, label)
-
-  }
-
-}
+import pl.touk.nussknacker.ui.process.periodic.utils.SchedulePropertyExtractorUtils
 
 // Valid expression is e.g.: 0 * * * * ? * which means run every minute at 0 second
-class CronParameterValidator extends CustomParameterValidator {
+object CronParameterValidator extends CustomParameterValidatorDelegate("cron_validator") {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: api.NodeId
@@ -45,12 +26,12 @@ class CronParameterValidator extends CustomParameterValidator {
     }
     value match {
       case Some(s: String) =>
-        SchedulePropertyExtractor.parseAndValidateProperty(s).fold(_ => invalid(createValidationError), _ => valid(()))
+        SchedulePropertyExtractorUtils
+          .parseAndValidateProperty(s)
+          .fold(_ => invalid(createValidationError), _ => valid(()))
       case _ => invalid(createValidationError)
     }
 
   }
-
-  override def name: String = "cron_validator"
 
 }

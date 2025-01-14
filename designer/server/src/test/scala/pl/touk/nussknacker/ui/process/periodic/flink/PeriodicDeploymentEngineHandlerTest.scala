@@ -5,8 +5,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.PeriodicDeploymentEngineHandler
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkPeriodicDeploymentEngineHandler}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
@@ -58,8 +58,8 @@ class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with
   }
 
   test("prepareDeploymentWithJar - should handle disappearing model JAR") {
-    val modelJarProvider          = new FlinkModelJarProvider(currentModelUrls)
-    val engineHandler = createPeriodicDeploymentHandler(jarsDir, modelJarProvider)
+    val modelJarProvider = new FlinkModelJarProvider(currentModelUrls)
+    val engineHandler    = createPeriodicDeploymentHandler(jarsDir, modelJarProvider)
 
     def verifyAndDeleteJar(result: Future[DeploymentWithRuntimeParams]): Unit = {
       val copiedJarFile = jarsDir.resolve(result.futureValue.runtimeParams.params("jarFileName"))
@@ -76,8 +76,8 @@ class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with
   }
 
   test("prepareDeploymentWithJar - should create jars dir if not exists") {
-    val tmpDir                    = System.getProperty("java.io.tmpdir")
-    val jarsDir                   = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
+    val tmpDir        = System.getProperty("java.io.tmpdir")
+    val jarsDir       = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
     val engineHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
 
     Files.exists(jarsDir) shouldBe false

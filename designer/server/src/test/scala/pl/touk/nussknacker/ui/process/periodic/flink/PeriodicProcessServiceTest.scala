@@ -8,8 +8,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.ProcessConfigEnricher.EnrichedProcessConfig
-import pl.touk.nussknacker.engine.api.deployment.periodic._
+import pl.touk.nussknacker.engine.api.deployment.periodic.model._
+import pl.touk.nussknacker.engine.api.deployment.periodic.services._
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.AdditionalDeploymentDataProvider
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.ProcessConfigEnricher.EnrichedProcessConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
@@ -185,7 +187,7 @@ class PeriodicProcessServiceTest
     val finished :: scheduled :: Nil =
       f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
     f.events.toList shouldBe List(
-      FinishedEvent(finished.toDetails, None),
+      FinishedEvent(finished.toDetails, canonicalProcess, None),
       ScheduledEvent(scheduled.toDetails, firstSchedule = false)
     )
   }
@@ -242,6 +244,7 @@ class PeriodicProcessServiceTest
     f.events.toList shouldBe List(
       FinishedEvent(
         finished.toDetails,
+        canonicalProcess,
         f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
       ),
       ScheduledEvent(scheduled.toDetails, firstSchedule = false)
@@ -291,6 +294,7 @@ class PeriodicProcessServiceTest
       )
     f.events.loneElement shouldBe FinishedEvent(
       event.toDetails,
+      canonicalProcess,
       f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
     )
   }

@@ -1,12 +1,9 @@
-package pl.touk.nussknacker.engine.api.deployment.periodic
+package pl.touk.nussknacker.ui.process.periodic
+
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentDetails
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.AdditionalDeploymentDataProvider
 
 import java.time.format.DateTimeFormatter
-
-trait AdditionalDeploymentDataProvider {
-
-  def prepareAdditionalData(runDetails: PeriodicProcessDeploymentDetails): Map[String, String]
-
-}
 
 object DefaultAdditionalDeploymentDataProvider extends AdditionalDeploymentDataProvider {
 

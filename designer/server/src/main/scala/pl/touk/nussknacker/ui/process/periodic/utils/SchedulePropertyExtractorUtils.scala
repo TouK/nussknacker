@@ -1,18 +1,13 @@
-package pl.touk.nussknacker.ui.process.periodic
+package pl.touk.nussknacker.ui.process.periodic.utils
 
 import cats.instances.list._
 import cats.syntax.traverse._
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.periodic.CronSchedulePropertyExtractor.CronPropertyDefaultName
+import pl.touk.nussknacker.ui.process.periodic.{CronScheduleProperty, MultipleScheduleProperty, ScheduleProperty, SingleScheduleProperty}
 
 import java.time.Clock
 
-trait SchedulePropertyExtractor {
-  def apply(canonicalProcess: CanonicalProcess): Either[String, ScheduleProperty]
-}
-
-object SchedulePropertyExtractor {
+object SchedulePropertyExtractorUtils {
 
   def extractProperty(canonicalProcess: CanonicalProcess, name: String): Either[String, ScheduleProperty] = {
     for {
@@ -72,22 +67,6 @@ object SchedulePropertyExtractor {
     } else {
       potentialStringExpression
     }
-  }
-
-}
-
-object CronSchedulePropertyExtractor {
-
-  val CronPropertyDefaultName = "cron"
-
-}
-
-case class CronSchedulePropertyExtractor(propertyName: String = CronPropertyDefaultName)
-    extends SchedulePropertyExtractor
-    with LazyLogging {
-
-  override def apply(canonicalProcess: CanonicalProcess): Either[String, ScheduleProperty] = {
-    SchedulePropertyExtractor.extractProperty(canonicalProcess, propertyName)
   }
 
 }

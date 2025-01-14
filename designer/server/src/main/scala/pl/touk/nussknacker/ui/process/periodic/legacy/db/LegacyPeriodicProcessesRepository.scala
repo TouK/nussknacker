@@ -11,10 +11,7 @@ import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentSt
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import LegacyPeriodicProcessesRepository.createPeriodicProcess
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{
-  DeploymentWithRuntimeParams,
-  RuntimeParams
-}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.management.FlinkPeriodicDeploymentEngineHandler.jarFileNameRuntimeParam
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty

@@ -4,12 +4,16 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{
+  CronPeriodicScheduleProperty,
+  MultiplePeriodicScheduleProperty
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.ui.process.periodic.{CronScheduleProperty, CronSchedulePropertyExtractor, MultipleScheduleProperty}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.ui.process.periodic.cron.CronParameterValidator
+import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
+import pl.touk.nussknacker.ui.process.periodic.{CronScheduleProperty, MultipleScheduleProperty}
 
 class CronSchedulePropertyExtractorTest
     extends AnyFunSuite
@@ -40,16 +44,16 @@ class CronSchedulePropertyExtractorTest
   test("should extract cron property") {
     val result = extractor(PeriodicProcessGen.buildCanonicalProcess())
 
-    inside(result) { case Right(CronScheduleProperty(_)) => }
+    inside(result) { case Right(CronPeriodicScheduleProperty(_)) => }
   }
 
   test("should extract MultipleScheduleProperty") {
     val multipleSchedulesExpression = "{foo: '0 0 * * * ?', bar: '1 0 * * * ?'}"
     val result                      = extractor(PeriodicProcessGen.buildCanonicalProcess(multipleSchedulesExpression))
-    result.rightValue shouldEqual MultipleScheduleProperty(
+    result.rightValue shouldEqual MultiplePeriodicScheduleProperty(
       Map(
-        "foo" -> CronScheduleProperty("0 0 * * * ?"),
-        "bar" -> CronScheduleProperty("1 0 * * * ?")
+        "foo" -> CronPeriodicScheduleProperty("0 0 * * * ?"),
+        "bar" -> CronPeriodicScheduleProperty("1 0 * * * ?")
       )
     )
 

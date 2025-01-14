@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.PeriodicDeploymentEngineHandler
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkPeriodicDeploymentEngineHandler.jarFileNameRuntimeParam

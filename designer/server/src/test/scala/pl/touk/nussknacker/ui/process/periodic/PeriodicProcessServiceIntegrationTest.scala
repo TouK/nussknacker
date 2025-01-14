@@ -14,6 +14,11 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
+  PeriodicProcessEvent,
+  PeriodicProcessListener,
+  ProcessConfigEnricher
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
@@ -29,12 +34,6 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicPr
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentEngineHandlerStub}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
-import pl.touk.nussknacker.engine.api.deployment.periodic.{
-  DefaultAdditionalDeploymentDataProvider,
-  PeriodicProcessEvent,
-  PeriodicProcessListener,
-  ProcessConfigEnricher
-}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,

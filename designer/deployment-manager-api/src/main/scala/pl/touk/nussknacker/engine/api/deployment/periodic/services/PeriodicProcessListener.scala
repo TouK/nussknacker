@@ -1,7 +1,9 @@
-package pl.touk.nussknacker.engine.api.deployment.periodic
+package pl.touk.nussknacker.engine.api.deployment.periodic.services
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.StatusDetails
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentDetails
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 /*
@@ -27,8 +29,11 @@ case class DeployedEvent(
     externalDeploymentId: Option[ExternalDeploymentId]
 ) extends PeriodicProcessEvent
 
-case class FinishedEvent(deployment: PeriodicProcessDeploymentDetails, processState: Option[StatusDetails])
-    extends PeriodicProcessEvent
+case class FinishedEvent(
+    deployment: PeriodicProcessDeploymentDetails,
+    canonicalProcess: CanonicalProcess,
+    processState: Option[StatusDetails]
+) extends PeriodicProcessEvent
 
 case class FailedOnDeployEvent(
     deployment: PeriodicProcessDeploymentDetails,

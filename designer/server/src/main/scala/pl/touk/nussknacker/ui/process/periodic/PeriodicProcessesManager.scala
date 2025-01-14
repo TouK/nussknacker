@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.periodic
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicDeploymentEngineHandler.DeploymentWithRuntimeParams
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
