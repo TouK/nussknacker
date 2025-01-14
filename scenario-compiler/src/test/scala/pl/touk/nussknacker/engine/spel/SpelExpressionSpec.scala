@@ -908,7 +908,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("""{{key: 1, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
   }
 
-  test("should handle handle map indexing with unknown key type") {
+  test("should handle map indexing with unknown key type") {
     val context = Context("sth").withVariables(
       Map(
         "unknownString" -> ContainerOfUnknown("a"),
