@@ -33,7 +33,7 @@ object AssignabilityDeterminer {
     isAssignable(from, to, StrictConversionChecker)
 
   def isAssignableWithoutConversion(from: TypingResult, to: TypingResult): ValidatedNel[String, Unit] =
-    isAssignable(from, to, NoConversionConversionChecker)
+    isAssignable(from, to, WithoutConversionChecker)
 
   private def isAssignable(from: TypingResult, to: TypingResult, conversionChecker: ConversionChecker) = {
     (from, to) match {
@@ -226,7 +226,7 @@ object AssignabilityDeterminer {
 
   }
 
-  private object NoConversionConversionChecker extends ConversionChecker {
+  private object WithoutConversionChecker extends ConversionChecker {
 
     override def isConvertable(
         from: SingleTypingResult,

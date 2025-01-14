@@ -226,7 +226,7 @@ private[spel] class Typer(
             // It would be hard to change implementation of .asMap extension so we partially turn off this feature of indexer conversion
             // by allowing in typing only situations when map key type and indexer type are the same (though we have to allow
             // indexing with unknown type)
-            case indexKey :: Nil if indexKey.canBeConvertedWithNoConversionTo(keyParam) => valid(valueParam)
+            case indexKey :: Nil if indexKey.canBeConvertedWithoutConversionTo(keyParam) => valid(valueParam)
             case _ => invalid(IllegalIndexingOperation)
           }
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)

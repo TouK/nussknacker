@@ -43,7 +43,7 @@ object typing {
     /**
      * Checks if the conversion to a given typingResult can be made without any conversion.
      */
-    final def canBeConvertedWithNoConversionTo(typingResult: TypingResult): Boolean =
+    final def canBeConvertedWithoutConversionTo(typingResult: TypingResult): Boolean =
       AssignabilityDeterminer.isAssignableWithoutConversion(this, typingResult).isValid
 
     def valueOpt: Option[Any]
