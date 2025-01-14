@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -127,7 +128,8 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: DeploymentManagerProvider =
     new MockManagerProvider(deploymentManager)
 
-  private val modelData = ModelData(processingTypeConfig, modelDependencies)
+  private val modelData =
+    ModelData(processingTypeConfig, modelDependencies, ModelClassLoader.apply(processingTypeConfig.classPath, None))
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
