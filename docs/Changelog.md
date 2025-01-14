@@ -46,6 +46,7 @@
 * [#7400](https://github.com/TouK/nussknacker/pull/7400) Deploy and cancel buttons are not shown for fragments
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 * [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
+* [#7420](https://github.com/TouK/nussknacker/pull/7420) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
   * in order to use it, DM must implement interface `PeriodicExecutionSupported`, that handles deployments on a specific engine
   * implementation provided for Flink DM
