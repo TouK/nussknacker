@@ -30,7 +30,7 @@ env:
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, gh-runner-nu-3]
     outputs:
       fe_changes_count: ${{ steps.filter.outputs.fe_changes_count }}
       all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
