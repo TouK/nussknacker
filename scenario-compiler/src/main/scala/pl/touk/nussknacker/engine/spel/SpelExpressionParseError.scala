@@ -157,7 +157,6 @@ object SpelExpressionParseError {
       override def message: String = s"Cannot do projection/selection on ${typ.display}"
     }
 
-    // TODO_PAWEL maybe remove
     case object DynamicPropertyAccessError extends IllegalOperationError {
       override def message: String = "Dynamic property access is not allowed"
     }
