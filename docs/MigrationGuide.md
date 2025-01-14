@@ -31,9 +31,42 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism. 
   If there were any custom actions defined in some custom DeploymentManager implementation, 
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * the PeriodicDeploymentManager is no longer a separate DM type
+    * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
+  ```hocon   
+    deploymentConfig: {
+      type: "flinkPeriodic"
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
+      deploymentManager {
+        db: { <config of the custom db data source> },
+        processingType: streaming,
+        jarsDir: ./storage/jars
+      }
+    }
+    ```
+  * changes:
+    * the `type: "flinkPeriodic"` is no longer supported, instead `type: "flinkStreaming"` with additional setting `supportsPeriodicExecution: true` should be used
+    * the db config is now optional - the periodic DM may still use its custom datasource defined here in `db` section
+    * when custom `db` section not defined here, then main Nussknacker db will be used
+  * config after changes may look like that:
+  ```hocon   
+    deploymentConfig: {
+      type: "flinkStreaming"
+      supportsPeriodicExecution: true
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
+      deploymentManager {
+        processingType: streaming,
+        jarsDir: ./storage/jars
+      }
+    }
+    ```
 
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def periodicExecutionSupport: PeriodicExecutionSupport`. If support not added, then `NoPeriodicExecutionSupport` should be used.
 
 ## In version 1.18.0
 

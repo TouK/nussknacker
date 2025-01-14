@@ -11,30 +11,17 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
 }
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, PeriodicExecutionSupported}
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
-import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
-import pl.touk.nussknacker.ui.process.repository.{
-  DBFetchingProcessRepository,
-  DbScenarioActionReadOnlyRepository,
-  ScenarioLabelsRepository,
-  SlickPeriodicProcessesRepository
-}
-import slick.jdbc
-import slick.jdbc.JdbcProfile
-
-import java.time.Clock
 
 object PeriodicDeploymentManagerDecorator extends LazyLogging {
 
   def decorate(
       underlying: DeploymentManager,
       periodicExecutionSupported: PeriodicExecutionSupported,
+      periodicProcessesManagerProvider: PeriodicProcessesManagerProvider,
       modelData: ModelData,
       deploymentConfig: Config,
       dependencies: DeploymentManagerDependencies,
-      dbRef: DbRef,
-      clock: Clock,
   ): DeploymentManager = {
     logger.info("Decorating DM with periodic functionality")
     import net.ceedubs.ficus.Ficus._
@@ -60,12 +47,9 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     PeriodicDeploymentManager(
       delegate = underlying,
       dependencies = dependencies,
-      periodicProcessesManager = createPeriodicProcessesManager(
+      periodicProcessesManager = periodicProcessesManagerProvider.provide(
         periodicBatchConfig.processingType,
-        periodicBatchConfig,
-        dependencies,
-        dbRef,
-        clock
+        periodicBatchConfig.db
       ),
       engineHandler = periodicExecutionSupported.engineHandler(modelData, dependencies, deploymentConfig),
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
@@ -78,36 +62,6 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
   }
 
   def additionalScenarioProperties: Map[String, ScenarioPropertyConfig] = Map(cronConfig)
-
-  private def createPeriodicProcessesManager(
-      processingType: String,
-      periodicBatchConfig: PeriodicBatchConfig,
-      dependencies: DeploymentManagerDependencies,
-      dbRef: DbRef,
-      clock: Clock,
-  ): PeriodicProcessesManager = {
-    import dependencies._
-    val actionRepository =
-      DbScenarioActionReadOnlyRepository.create(dbRef)
-    val scenarioLabelsRepository =
-      new ScenarioLabelsRepository(dbRef)
-    val processRepository =
-      DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-
-    val periodicProcessesRepository = periodicBatchConfig.db match {
-      case None =>
-        new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, clock)
-      case Some(customDbConfig) =>
-        val clock                                                      = Clock.systemDefaultZone()
-        val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
-        new SlickLegacyPeriodicProcessesRepository(db, dbProfile, clock)
-    }
-    new RepositoryBasedPeriodicProcessesManager(
-      processingType,
-      periodicProcessesRepository,
-      processRepository,
-    )
-  }
 
   private val cronConfig = CronSchedulePropertyExtractor.CronPropertyDefaultName -> ScenarioPropertyConfig(
     defaultValue = None,

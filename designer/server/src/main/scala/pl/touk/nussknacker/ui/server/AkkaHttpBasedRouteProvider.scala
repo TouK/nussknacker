@@ -65,8 +65,9 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
+import pl.touk.nussknacker.ui.process.periodic.RepositoryBasedPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionSupportForManager
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionAvailability
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -724,7 +725,7 @@ class AkkaHttpBasedRouteProvider(
               sttpBackend,
               _
             ),
-            PeriodicExecutionSupportForManager.Available(dbRef, designerClock),
+            PeriodicExecutionAvailability.Available(new RepositoryBasedPeriodicProcessesManagerProvider(dbRef)),
           )
           val loadAndNotifyIO = laodProcessingTypeDataIO
             .map { state =>

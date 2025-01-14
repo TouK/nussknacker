@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -10,6 +11,15 @@ import pl.touk.nussknacker.ui.process.periodic.model._
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
+
+trait PeriodicProcessesManagerProvider {
+
+  def provide(
+      processingType: String,
+      customLegacyDbConfig: Option[Config],
+  ): PeriodicProcessesManager
+
+}
 
 trait PeriodicProcessesManager {
 

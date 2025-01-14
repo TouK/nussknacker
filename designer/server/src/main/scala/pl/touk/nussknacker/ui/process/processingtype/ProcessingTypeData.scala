@@ -14,11 +14,9 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
-import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
+import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, PeriodicProcessesManagerProvider}
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
-import java.time.Clock
 import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
@@ -57,7 +55,7 @@ object ProcessingTypeData {
       name: ProcessingType,
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
-      periodicExecutionSupportForManager: PeriodicExecutionSupportForManager,
+      periodicExecutionAvailability: PeriodicExecutionAvailability,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       deploymentConfig: Config,
@@ -69,7 +67,7 @@ object ProcessingTypeData {
       val deploymentData =
         createDeploymentData(
           deploymentManagerProvider,
-          periodicExecutionSupportForManager,
+          periodicExecutionAvailability,
           deploymentManagerDependencies,
           engineSetupName,
           modelData,
@@ -96,7 +94,7 @@ object ProcessingTypeData {
 
   private def createDeploymentData(
       deploymentManagerProvider: DeploymentManagerProvider,
-      periodicExecutionSupportForManager: PeriodicExecutionSupportForManager,
+      periodicExecutionAvailability: PeriodicExecutionAvailability,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
@@ -112,18 +110,17 @@ object ProcessingTypeData {
         deploymentConfig,
         scenarioStateCacheTTL
       )
-      decoratedDeploymentManager = periodicExecutionSupportForManager match {
-        case PeriodicExecutionSupportForManager.Available(dbRef, clock) =>
+      decoratedDeploymentManager = periodicExecutionAvailability match {
+        case PeriodicExecutionAvailability.Available(managerProvider) =>
           deploymentManager.periodicExecutionSupport match {
             case supported: PeriodicExecutionSupported =>
               PeriodicDeploymentManagerDecorator.decorate(
                 underlying = deploymentManager,
                 periodicExecutionSupported = supported,
+                periodicProcessesManagerProvider = managerProvider,
                 modelData = modelData,
                 deploymentConfig = deploymentConfig,
                 dependencies = deploymentManagerDependencies,
-                dbRef = dbRef,
-                clock = clock,
               )
             case NoPeriodicExecutionSupport =>
               throw new IllegalStateException(
@@ -131,15 +128,15 @@ object ProcessingTypeData {
               )
           }
 
-        case PeriodicExecutionSupportForManager.NotAvailable =>
+        case PeriodicExecutionAvailability.NotAvailable =>
           deploymentManager
       }
     } yield decoratedDeploymentManager
 
-    val additionalScenarioProperties = periodicExecutionSupportForManager match {
-      case PeriodicExecutionSupportForManager.Available(_, _) =>
+    val additionalScenarioProperties = periodicExecutionAvailability match {
+      case PeriodicExecutionAvailability.Available(_) =>
         PeriodicDeploymentManagerDecorator.additionalScenarioProperties
-      case PeriodicExecutionSupportForManager.NotAvailable =>
+      case PeriodicExecutionAvailability.NotAvailable =>
         Map.empty[String, ScenarioPropertyConfig]
     }
     val scenarioProperties = additionalScenarioProperties ++
@@ -200,11 +197,16 @@ object ProcessingTypeData {
     )
   }
 
-  sealed trait PeriodicExecutionSupportForManager
+  sealed trait PeriodicExecutionAvailability
 
-  object PeriodicExecutionSupportForManager {
-    final case class Available(dbRef: DbRef, clock: Clock) extends PeriodicExecutionSupportForManager
-    case object NotAvailable                               extends PeriodicExecutionSupportForManager
+  object PeriodicExecutionAvailability {
+
+    case object NotAvailable extends PeriodicExecutionAvailability
+
+    final case class Available(
+        periodicProcessesManagerProvider: PeriodicProcessesManagerProvider
+    ) extends PeriodicExecutionAvailability
+
   }
 
 }

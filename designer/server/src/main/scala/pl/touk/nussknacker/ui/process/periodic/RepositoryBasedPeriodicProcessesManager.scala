@@ -1,24 +1,53 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
-import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.periodic.model.{
-  PeriodicProcess,
-  PeriodicProcessDeployment,
-  PeriodicProcessDeploymentId,
-  PeriodicProcessId,
-  ScheduleName,
-  SchedulesState
-}
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.ui.process.periodic.model._
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, NussknackerInternalUser}
+import slick.jdbc
+import slick.jdbc.JdbcProfile
 
-import java.time.LocalDateTime
-import scala.concurrent.Future
+import java.time.{Clock, LocalDateTime}
+import scala.concurrent.{ExecutionContext, Future}
+
+class RepositoryBasedPeriodicProcessesManagerProvider(dbRef: DbRef)(
+    implicit executionContext: ExecutionContext
+) extends PeriodicProcessesManagerProvider {
+
+  override def provide(
+      processingType: String,
+      customLegacyDbConfig: Option[Config],
+  ): PeriodicProcessesManager = {
+    val clock = Clock.systemDefaultZone()
+    val actionRepository =
+      DbScenarioActionReadOnlyRepository.create(dbRef)
+    val scenarioLabelsRepository =
+      new ScenarioLabelsRepository(dbRef)
+    val processRepository =
+      DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
+    val periodicProcessesRepository = customLegacyDbConfig match {
+      case None =>
+        new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, clock)
+      case Some(customDbConfig) =>
+        val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
+        new SlickLegacyPeriodicProcessesRepository(db, dbProfile, clock)
+    }
+    new RepositoryBasedPeriodicProcessesManager(
+      processingType,
+      periodicProcessesRepository,
+      processRepository,
+    )
+  }
+
+}
 
 class RepositoryBasedPeriodicProcessesManager(
     processingType: String,
