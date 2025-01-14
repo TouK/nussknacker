@@ -13,8 +13,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.NoPropertyError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
+  NoPropertyError,
+  NoPropertyTypeError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.MapWithExpressionKeysError
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord._
@@ -178,6 +180,17 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       Unknown
     typeExpression(s"$testRecordExpr[$nonPresentKey]")(dynamicAccessTyper).invalidValue.toList should matchPattern {
       case NoPropertyError(typingResult, key) :: Nil if typingResult == testRecordTyped && key == nonPresentKey =>
+    }
+  }
+
+  test("indexing on records with key which is not known at compile time treats record as map") {
+    typeExpression("{a: 5, b: 10}[#var.toString()]", "var" -> "a").validValue.finalResult.typingResult shouldBe Typed
+      .typedClass[Int]
+  }
+
+  test("indexing on records with non string key produces error") {
+    typeExpression("{a: 5, b: 10}[4]").invalidValue.toList should matchPattern {
+      case NoPropertyTypeError(_, _) :: Nil =>
     }
   }
 
