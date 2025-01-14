@@ -4,3 +4,4 @@ trzeba zobaczyc jak dziala typowanie geta
 chyba po prostu uzupelnia runtimeClass w czyms reprezentujacym obiekt.
 no tak.
 runtimeObjType w TypedObjectTypingResult
+List(NoPropertyError(TypedObjectTypingResult(ListMap("int" -> TypedObjectWithValue(TypedClass(class java.lang.Integer, List()), 1), "string" -> TypedObjectWithValue(TypedClass(class java.lang.String, List()), "stringVal"), "boolean" -> TypedObjectWithValue(TypedClass(class java.lang.Boolean, List()), true), "null" -> TypedNull, "nestedRecord" -> TypedObjectTypingResult(ListMap("nestedRecordKey" -> TypedObjectWithValue(TypedClass(class java.lang.Integer, List()), 2)), TypedClass(interface java.util.Map, List(TypedClass(class java.lang.String, List()), TypedObjectWithValue(TypedClass(class java.lang.Integer, List()), 2))), Map())), TypedClass(interface java.util.Map, List(TypedClass(class java.lang.String, List()), Unknown)), Map()), "nonPresentKey")) did not match the given pattern

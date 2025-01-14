@@ -272,16 +272,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private def evaluate[T: TypeTag](expr: String, context: Context = ctx): T =
     parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
 
-  // failing
   test("should be able to dynamically index record") {
-    // use of toString() makes typing lose compile-time value of #input variable
     evaluate[Int]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "a")) shouldBe 5
+    evaluate[Integer]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "asdf")) shouldBe null
   }
 
-  // already was passing
-  test("should be able to dynamically index record with get") {
-    // use of toString() makes typing lose compile-time value of #input variable
-    evaluate[Int]("{a: 5, b: 10, c: 15}.get(#input.toString())", Context("abc").withVariable("input", "a")) shouldBe 5
+  test("should figure out result type when dynamically indexing record") {
+    evaluate[Int]("{a: {g: 5, h: 10}, b: {g: 50, h: 100}}[#input.toString()].h", Context("abc").withVariable("input", "b")) shouldBe 100
   }
 
   test("parsing first selection on array") {

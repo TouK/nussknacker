@@ -162,10 +162,8 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     typeExpression(s"$testRecordExpr[#var]", "var" -> s"$nonPresentKey").invalidValue.toList should matchPattern {
       case NoPropertyError(typingResult, key) :: Nil if typingResult == testRecordTyped && key == nonPresentKey =>
     }
-    // TODO: this behavior is to be fixed - ideally this should behave the same as above
     typeExpression(s"$testRecordExpr[$nonPresentKey]").invalidValue.toList should matchPattern {
-      case NoPropertyError(typingResult, key) :: DynamicPropertyAccessError :: Nil
-          if typingResult == testRecordTyped && key == nonPresentKey =>
+      case NoPropertyError(typingResult, key) :: Nil if typingResult == testRecordTyped && key == nonPresentKey =>
     }
   }
 
