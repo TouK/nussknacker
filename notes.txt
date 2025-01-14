@@ -1,3 +1,6 @@
 notes
 
 trzeba zobaczyc jak dziala typowanie geta
+chyba po prostu uzupelnia runtimeClass w czyms reprezentujacym obiekt.
+no tak.
+runtimeObjType w TypedObjectTypingResult
