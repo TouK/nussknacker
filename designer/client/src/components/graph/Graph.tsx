@@ -592,7 +592,7 @@ export class Graph extends React.Component<Props> {
         };
     };
 
-    #highlightNodes = (selectedNodeIds: string[] = [], process = this.props.scenario): void => {
+    #highlightNodes = (selectedNodeIds: string[] = [], scenario = this.props.scenario): void => {
         this.processGraphPaper.freeze();
         const elements = this.graph.getElements();
         elements.forEach((cell) => {
@@ -600,8 +600,10 @@ export class Graph extends React.Component<Props> {
             this.#unhighlightCell(cell, nodeFocused);
         });
 
-        const validationErrors = ProcessUtils.getValidationErrors(process);
-        const invalidNodeIds = [...keys(validationErrors?.invalidNodes), ...validationErrors.globalErrors.flatMap((e) => e.nodeIds)];
+        const validationErrors = ProcessUtils.getValidationErrors(scenario);
+        const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
+        const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
+        const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {
@@ -615,6 +617,17 @@ export class Graph extends React.Component<Props> {
         selectedNodeIds.forEach((id) => this.highlightNode(id, nodeFocused));
 
         this.processGraphPaper.unfreeze();
+    };
+
+    #getInvalidFragmentNodes = (invalidNodeIds: string[], scenarioGraph: ScenarioGraph): string[] => {
+        const invalidFragmentNodeIds: Set<string> = new Set();
+        invalidNodeIds.forEach((invalidNodeId) => {
+            if (NodeUtils.isFragmentNodeReference(invalidNodeId, scenarioGraph)) {
+                const fragmentId = scenarioGraph.nodes.find((n) => invalidNodeId.startsWith(n.id))?.id;
+                invalidFragmentNodeIds.add(fragmentId);
+            }
+        });
+        return [...invalidFragmentNodeIds];
     };
 
     #highlightCell(cell: dia.Cell, className: string): void {
