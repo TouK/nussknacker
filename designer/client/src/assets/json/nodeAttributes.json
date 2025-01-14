@@ -41,6 +41,9 @@
     "Properties": {
         "name": "Properties"
     },
+    "StickyNote": {
+        "name": "StickyNote"
+    },
     "CustomNode": {
         "name": "CustomNode"
     },

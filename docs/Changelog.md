@@ -19,6 +19,10 @@
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
 ### 1.18-esp
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
+  * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
+  * new API available under `processes/{scenarioName}/stickyNotes`
+  * configuration `stickyNotesSettings` allowing to hide/show stickyNotes, set sticky notes max content length or its max number on a graph
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload

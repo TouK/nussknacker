@@ -2452,6 +2452,406 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/processes/{scenarioName}/stickyNotes:
+    get:
+      tags:
+      - StickyNotes
+      summary: Returns sticky nodes for given scenario with version
+      operationId: getApiProcessesScenarionameStickynotes
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: scenarioVersionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StickyNote'
+              examples:
+                Example:
+                  summary: List of valid sticky notes returned for scenario
+                  value:
+                  - noteId: 1
+                    content: "##Title \nNote1"
+                    layoutData:
+                      x: 20
+                      y: 30
+                    color: '#99aa20'
+                    dimensions:
+                      width: 300
+                      height: 200
+                    editedBy: Marco
+                    editedAt: '1970-01-21T00:35:36.602Z'
+                  - noteId: 2
+                    content: "##Title \nNote1"
+                    layoutData:
+                      x: 20
+                      y: 30
+                    color: '#99aa20'
+                    dimensions:
+                      width: 300
+                      height: 200
+                    editedBy: Marco
+                    editedAt: '1970-01-21T00:35:36.602Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter scenarioVersionId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario s1 found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+    put:
+      tags:
+      - StickyNotes
+      summary: Updates sticky note with new values
+      operationId: putApiProcessesScenarionameStickynotes
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StickyNoteUpdateRequest'
+            example:
+              noteId: 1
+              scenarioVersionId: 1
+              content: ''
+              layoutData:
+                x: 12
+                y: 33
+              color: '#441022'
+              dimensions:
+                width: 300
+                height: 200
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Provided note content is too long (5004 characters). Max
+                    content length is 5000.
+                  value: Provided note content is too long (5004 characters). Max
+                    content length is 5000.
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: 'No sticky note with id: 3 was found'
+                  value: 'No sticky note with id: StickyNoteId(3) was found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+    post:
+      tags:
+      - StickyNotes
+      summary: Creates new sticky note with given content
+      operationId: postApiProcessesScenarionameStickynotes
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StickyNoteAddRequest'
+            example:
+              scenarioVersionId: 1
+              content: ''
+              layoutData:
+                x: 12
+                y: 33
+              color: '#441022'
+              dimensions:
+                width: 300
+                height: 200
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: 'Cannot add another sticky note, since max number of sticky
+                    notes was reached: 5 (see configuration).'
+                  value: 'Cannot add another sticky note, since max number of sticky
+                    notes was reached: 5 (see configuration).'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario s1 found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/stickyNotes/{noteId}:
+    delete:
+      tags:
+      - StickyNotes
+      summary: Deletes stickyNote by given noteId
+      operationId: deleteApiProcessesScenarionameStickynotesNoteid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter noteId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario s1 found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/scenarioTesting/{scenarioName}/adhoc/validate:
     post:
       tags:
@@ -4986,6 +5386,19 @@ components:
       properties:
         dictId:
           type: string
+    Dimensions:
+      title: Dimensions
+      type: object
+      required:
+      - width
+      - height
+      properties:
+        width:
+          type: integer
+          format: int64
+        height:
+          type: integer
+          format: int64
     DisplayableUser:
       title: DisplayableUser
       type: object
@@ -6663,6 +7076,92 @@ components:
       type: string
       enum:
       - ERROR
+    StickyNote:
+      title: StickyNote
+      type: object
+      required:
+      - noteId
+      - content
+      - layoutData
+      - color
+      - dimensions
+      - editedBy
+      - editedAt
+      properties:
+        noteId:
+          type: integer
+          format: int64
+        content:
+          type: string
+        layoutData:
+          $ref: '#/components/schemas/LayoutData'
+        color:
+          type: string
+        dimensions:
+          $ref: '#/components/schemas/Dimensions'
+        targetEdge:
+          type:
+          - string
+          - 'null'
+        editedBy:
+          type: string
+        editedAt:
+          type: string
+          format: date-time
+    StickyNoteAddRequest:
+      title: StickyNoteAddRequest
+      type: object
+      required:
+      - scenarioVersionId
+      - content
+      - layoutData
+      - color
+      - dimensions
+      properties:
+        scenarioVersionId:
+          type: integer
+          format: int64
+        content:
+          type: string
+        layoutData:
+          $ref: '#/components/schemas/LayoutData'
+        color:
+          type: string
+        dimensions:
+          $ref: '#/components/schemas/Dimensions'
+        targetEdge:
+          type:
+          - string
+          - 'null'
+    StickyNoteUpdateRequest:
+      title: StickyNoteUpdateRequest
+      type: object
+      required:
+      - noteId
+      - scenarioVersionId
+      - content
+      - layoutData
+      - color
+      - dimensions
+      properties:
+        noteId:
+          type: integer
+          format: int64
+        scenarioVersionId:
+          type: integer
+          format: int64
+        content:
+          type: string
+        layoutData:
+          $ref: '#/components/schemas/LayoutData'
+        color:
+          type: string
+        dimensions:
+          $ref: '#/components/schemas/Dimensions'
+        targetEdge:
+          type:
+          - string
+          - 'null'
     StringParameterEditor:
       title: StringParameterEditor
       type: object

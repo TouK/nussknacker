@@ -4,6 +4,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.18-esp (Not released yet)
 
+
+### Configuration changes
+
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
+  * maxContentLength - max length of a sticky notes content (characters)
+  * maxNotesCount - max count of sticky notes inside one scenario/fragment
+  * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
+
+
 ### Other changes
 
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
