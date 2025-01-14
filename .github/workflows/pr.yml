@@ -379,7 +379,7 @@ jobs:
 
   cypressTests:
     name: CypressTests
-    runs-on: [self-hosted, linux, x64, gh-runner-nu-3]
+    runs-on: [self-hosted, linux, x64, gh-runner-nu-1]
     needs: [ build, build-fe, setup ]
     env:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
