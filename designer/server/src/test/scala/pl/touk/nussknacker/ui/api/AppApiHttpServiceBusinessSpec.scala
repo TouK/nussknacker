@@ -279,7 +279,7 @@ class AppApiHttpServiceBusinessSpec
   "The processing type data reload endpoint should" - {
     "reload processing types-related model data when" - {
       "'scenarioTypes' configuration is changed" in {
-        val componentNamesBeforeReload = fetchSortedComponentNames()
+        val componentNamesBeforeReload = fetchComponentGroupNamesWithOccurencesCount()
 
         given()
           .applicationState {
@@ -291,10 +291,10 @@ class AppApiHttpServiceBusinessSpec
           .Then()
           .statusCode(204)
 
-        val componentNamesAfterReload = fetchSortedComponentNames()
+        val componentNamesAfterReload = fetchComponentGroupNamesWithOccurencesCount()
 
         componentNamesAfterReload shouldNot be(componentNamesBeforeReload)
-        componentNamesAfterReload.length should be > (componentNamesBeforeReload.length)
+        componentNamesAfterReload("someComponentGroup") shouldBe 2
       }
     }
   }
@@ -332,34 +332,33 @@ class AppApiHttpServiceBusinessSpec
     ConfigFactory.parseString(
       s"""
          |scenarioTypes {
-         |  streaming3 {
-         |    deploymentConfig {
-         |      type: "mockable"
-         |      id: "3"
-         |      engineSetupName: "Mockable"
-         |    }
-         |    modelConfig: {
-         |      classPath: [
-         |        "engine/flink/management/dev-model/target/scala-"$${scala.major.version}"/devModel.jar",
-         |        "engine/flink/executor/target/scala-"$${scala.major.version}"/flinkExecutor.jar"
-         |      ]
-         |    }
-         |    category: "Category1"
-         |  }
+         |   streaming {
+         |     modelConfig {
+         |        componentsUiConfig {
+         |          sendCommunication {
+         |             componentGroup: "someComponentGroup"
+         |          }
+         |        }
+         |     }
+         |   }
          |}
          |""".stripMargin
     )
   }
 
-  private def fetchSortedComponentNames(): List[String] = {
-    given()
+  private def fetchComponentGroupNamesWithOccurencesCount(): Map[String, Int] = {
+    val body = given()
       .when()
       .basicAuthAdmin()
       .get(s"$nuDesignerHttpAddress/api/components")
       .Then()
       .statusCode(200)
-      .extractList("name")
-      .sorted
+    body
+      .extractList("componentGroupName")
+      .groupBy(identity)
+      .view
+      .map { case (name, occurences) => name -> occurences.length }
+      .toMap
   }
 
   private def forceReloadProcessingTypes(): Unit = {
