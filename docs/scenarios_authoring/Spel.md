@@ -278,6 +278,7 @@ List of built-in functions:
 - `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
 - `canBeInteger`/`toInteger`/`toIntegerOrNull`
 - `canBeLong`/`toLong`/`toLongOrNull`
+- `canBeInteger`/`toInteger`/`toIntegerOrNull`
 - `canBeDouble`/`toDouble`/`toDoubleOrNull`
 - `canBeBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
 - `canBeList`/`toList`/`toListOrNull`
