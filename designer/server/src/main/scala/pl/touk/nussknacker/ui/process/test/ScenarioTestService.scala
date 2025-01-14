@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -35,12 +35,18 @@ class ScenarioTestService(
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(
-      implicit user: LoggedUser
   ): TestingCapabilities = {
-    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     testInfoProvider.getTestingCapabilities(processVersion, canonical)
+  }
+
+  def testParametersDefinition(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+  ): Map[String, List[Parameter]] = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+    testInfoProvider
+      .getTestParameters(processVersion, canonical)
   }
 
   def testParametersDefinition(
@@ -56,9 +62,8 @@ class ScenarioTestService(
   def testUISourceParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean
-  )(implicit user: LoggedUser): List[UISourceParameters] =
-    testParametersDefinition(scenarioGraph, processVersion, isFragment)
+  ): List[UISourceParameters] =
+    testParametersDefinition(scenarioGraph, processVersion)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .map { assignUserFriendlyEditor }
       .toList
