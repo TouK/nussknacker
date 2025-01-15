@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
@@ -29,9 +30,10 @@ class AppApiHttpServiceBusinessSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with PatientScalaFutures {
+    with PatientScalaFutures
+    with LazyLogging {
 
-  private var simulateChangeInApplicationConfig: Boolean = false
+  private var simulatedChangeInApplicationConfig: Option[Config] = None
 
   "The app health check endpoint should" - {
     "return simple designer health check (with no scenario statuses check)" in {
@@ -283,7 +285,7 @@ class AppApiHttpServiceBusinessSpec
 
         given()
           .applicationState {
-            simulateChangeInApplicationConfig = true
+            simulatedChangeInApplicationConfig = Some(additionalProcessingTypeCustomization)
           }
           .when()
           .basicAuthAdmin()
@@ -297,21 +299,80 @@ class AppApiHttpServiceBusinessSpec
         componentNamesAfterReload("someComponentGroup") shouldBe 2
       }
     }
+    "return error when" - {
+      "scenario type is added" in {
+        given()
+          .applicationState {
+            simulatedChangeInApplicationConfig = Some(
+              ConfigFactory.parseString(
+                s"""
+                     |scenarioTypes {
+                     |   streaming2 {
+                     |     deploymentConfig {
+                     |        type: "development-tests"
+                     |     }
+                     |     modelConfig {
+                     |       classPath: []
+                     |     }
+                     |     category: "Default"
+                     |   }
+                     |}
+                     |""".stripMargin
+              )
+            )
+          }
+          .when()
+          .basicAuthAdmin()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(500)
+          .body(
+            startsWith("Processing types cannot be added, removed, or renamed during processing type reload.")
+          )
+      }
+      "classpath of a model is changed" in {
+        given()
+          .applicationState {
+            simulatedChangeInApplicationConfig = Some(
+              ConfigFactory.parseString(
+                s"""
+                   |scenarioTypes {
+                   |   streaming {
+                   |     modelConfig {
+                   |       classPath: ["changed.jar"]
+                   |     }
+                   |   }
+                   |}
+                   |""".stripMargin
+              )
+            )
+          }
+          .when()
+          .basicAuthAdmin()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(500)
+          .body(
+            startsWith(
+              "Error during processing types reload. Model ClassLoader dependencies such as classpath cannot be modified during reload."
+            )
+          )
+      }
+    }
   }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    if (simulateChangeInApplicationConfig) {
-      simulateChangeInApplicationConfig = false
+    if (simulatedChangeInApplicationConfig.isDefined) {
+      simulatedChangeInApplicationConfig = None
       forceReloadProcessingTypes()
     }
   }
 
   override def designerConfig: Config = {
-    if (simulateChangeInApplicationConfig) {
-      additionalProcessingTypeCustomization.withFallback(originDesignerConfig)
-    } else {
-      originDesignerConfig
+    simulatedChangeInApplicationConfig match {
+      case Some(customization) => customization.withFallback(originDesignerConfig)
+      case None                => originDesignerConfig
     }
   }
 
