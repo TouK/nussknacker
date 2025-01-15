@@ -201,8 +201,11 @@ private[spel] class Typer(
           }
         case indexKey :: Nil if indexKey.canBeConvertedTo(Typed[String]) =>
           if (dynamicPropertyAccessAllowed) valid(Unknown)
-          else if (record.runtimeObjType.params.size == 2) valid(record.runtimeObjType.params(1))
-          else valid(Unknown)
+          else
+            record.runtimeObjType.params match {
+              case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] => valid(value)
+              case _                                                                                => valid(Unknown)
+            }
         case e :: Nil =>
           indexer.children match {
             case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
