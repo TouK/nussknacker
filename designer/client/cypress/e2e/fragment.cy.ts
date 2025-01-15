@@ -26,7 +26,7 @@ describe("Fragment", () => {
 
         // Provide String Any Value inputMode
         cy.get("@window").contains("+").click();
-        cy.get("[data-testid='fieldsRow:3']").find("[placeholder='Field name']").type("name_value_string_any_value");
+        cy.get("[data-testid='fieldsRow:3']").find("input[placeholder='Field name']").focus().realType("name_value_string_any_value");
         toggleSettings(3);
         cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']");
         cy.get("[data-testid='fieldsRow:0']").find("[placeholder='Field name']").should("have.value", "name_value_string_any_value");
