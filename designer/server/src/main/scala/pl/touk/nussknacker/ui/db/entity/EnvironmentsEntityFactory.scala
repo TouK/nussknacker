@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.db.entity
 import slick.jdbc.JdbcProfile
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 
-//TODO: Remove it in next release test
+//TODO: Remove it in next release
 trait EnvironmentsEntityFactory {
 
   protected val profile: JdbcProfile
