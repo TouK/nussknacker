@@ -43,4 +43,6 @@ const Root = () => (
         <GlideGridPortal />
     </>
 );
+
+console.log("rerun");
 root.render(<Root />);
