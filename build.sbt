@@ -1936,6 +1936,7 @@ lazy val designer = (project in file("designer/server"))
         "com.typesafe.akka"             %% "akka-testkit"         % akkaV     % Test,
         "de.heikoseeberger"             %% "akka-http-circe"      % akkaHttpCirceV,
         "com.softwaremill.sttp.client3" %% "akka-http-backend"    % sttpV,
+        "com.cronutils"                  % "cron-utils"           % cronParserV,
         "ch.qos.logback"                 % "logback-core"         % logbackV,
         "ch.qos.logback"                 % "logback-classic"      % logbackV,
         "ch.qos.logback.contrib"         % "logback-json-classic" % logbackJsonV,
