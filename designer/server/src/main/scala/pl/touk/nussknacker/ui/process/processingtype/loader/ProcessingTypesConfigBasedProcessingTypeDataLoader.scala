@@ -6,7 +6,9 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.NussknackerConfig
+import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigs, ProcessingTypeConfigsLoader}
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -18,40 +20,69 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     config
       .loadProcessingTypeConfigs()
-      .map { processingTypesConfig =>
-        // This step with splitting DeploymentManagerProvider loading for all processing types
-        // and after that creating ProcessingTypeData is done because of the deduplication of deployments
-        // See DeploymentManagerProvider.engineSetupIdentity
-        val providerWithNameInputData = processingTypesConfig.mapValuesNow { processingTypeConfig =>
-          val provider = createDeploymentManagerProvider(processingTypeConfig)
-          val nameInputData = EngineNameInputData(
-            provider.defaultEngineSetupName,
-            provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
-            processingTypeConfig.engineSetupName
-          )
-          (processingTypeConfig, provider, nameInputData)
-        }
-        val engineSetupNames =
-          ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
-        val processingTypesData = providerWithNameInputData
-          .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
-            logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
-            val modelDependencies = getModelDependencies(processingType)
-            val processingTypeData = ProcessingTypeData.createProcessingTypeData(
-              processingType,
-              ModelData(processingTypeConfig, modelDependencies),
-              deploymentManagerProvider,
-              getDeploymentManagerDependencies(processingType),
-              engineSetupNames(processingType),
-              processingTypeConfig.deploymentConfig,
-              processingTypeConfig.category,
-              modelDependencies.componentDefinitionExtractionMode
+      .map(
+        createProcessingTypeData(
+          _,
+          getModelDependencies,
+          getDeploymentManagerDependencies,
+          dbRef
+        )
+      )
+  }
+
+  private def createProcessingTypeData(
+      processingTypesConfig: ProcessingTypeConfigs,
+      getModelDependencies: ProcessingType => ModelDependencies,
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      dbRef: Option[DbRef],
+  ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+    // This step with splitting DeploymentManagerProvider loading for all processing types
+    // and after that creating ProcessingTypeData is done because of the deduplication of deployments
+    // See DeploymentManagerProvider.engineSetupIdentity
+    val providerWithNameInputData = processingTypesConfig.configByProcessingType.mapValuesNow { processingTypeConfig =>
+      val provider = createDeploymentManagerProvider(processingTypeConfig)
+      val nameInputData = EngineNameInputData(
+        provider.defaultEngineSetupName,
+        provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
+        processingTypeConfig.engineSetupName
+      )
+      (processingTypeConfig, provider, nameInputData)
+    }
+    val engineSetupNames =
+      ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
+    val processingTypesData = providerWithNameInputData
+      .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
+        logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
+        val schedulingForProcessingType =
+          if (processingTypeConfig.deploymentConfig.hasPath("scheduling") &&
+            processingTypeConfig.deploymentConfig.getBoolean("scheduling.enabled")) {
+            SchedulingForProcessingType.Available(
+              dbRef.getOrElse(
+                throw new RuntimeException(s"dbRef not present, but required for Dm with scheduling enabled")
+              ),
             )
-            processingType -> processingTypeData
+          } else {
+            SchedulingForProcessingType.NotAvailable
           }
+
+        val modelDependencies = getModelDependencies(processingType)
+        val processingTypeData = ProcessingTypeData.createProcessingTypeData(
+          processingType,
+          ModelData(processingTypeConfig, modelDependencies),
+          deploymentManagerProvider,
+          schedulingForProcessingType,
+          getDeploymentManagerDependencies(processingType),
+          engineSetupNames(processingType),
+          processingTypeConfig.deploymentConfig,
+          processingTypeConfig.category,
+          modelDependencies.componentDefinitionExtractionMode,
+        )
+        processingType -> processingTypeData
+      }
 
         // Here all processing types are loaded and we are ready to perform additional configuration validations
         // to assert the loaded configuration is correct (fail-fast approach).

@@ -1,9 +1,18 @@
 package pl.touk.nussknacker.engine.management
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.scheduler._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
+  AdditionalDeploymentDataProvider,
+  ProcessConfigEnricherFactory,
+  SchedulePropertyExtractorFactory,
+  ScheduledExecutionPerformer,
+  ScheduledProcessListenerFactory
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -11,10 +20,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkRestManager.ParsedJobConfig
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
-import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.{
-  WithDataFreshnessStatusMapOps,
-  WithDataFreshnessStatusOps
-}
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -70,6 +76,21 @@ class FlinkRestManager(
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = getAllProcessesStatesFromFlink()
 
     }
+
+  override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
+
+    override def createScheduledExecutionPerformer(
+        modelData: BaseModelData,
+        dependencies: DeploymentManagerDependencies,
+        config: Config,
+    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(modelData, dependencies, config)
+
+    override def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
+    override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]         = None
+    override def customPeriodicProcessListenerFactory: Option[ScheduledProcessListenerFactory]    = None
+    override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
+
+  }
 
   private def getAllProcessesStatesFromFlink()(
       implicit freshnessPolicy: DataFreshnessPolicy

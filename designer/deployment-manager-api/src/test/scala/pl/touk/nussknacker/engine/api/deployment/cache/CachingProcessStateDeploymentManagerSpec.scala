@@ -30,7 +30,8 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoStateQueryForAllScenariosSupport
+      NoStateQueryForAllScenariosSupport,
+      NoSchedulingSupport,
     )
 
     val results = List(
@@ -49,7 +50,8 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoStateQueryForAllScenariosSupport
+      NoStateQueryForAllScenariosSupport,
+      NoSchedulingSupport,
     )
 
     val firstInvocation = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.CanBeCached)
@@ -67,7 +69,8 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoStateQueryForAllScenariosSupport
+      NoStateQueryForAllScenariosSupport,
+      NoSchedulingSupport,
     )
 
     val resultForFresh = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh)

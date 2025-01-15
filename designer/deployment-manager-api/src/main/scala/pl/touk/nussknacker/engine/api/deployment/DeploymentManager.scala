@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
@@ -47,6 +49,8 @@ trait DeploymentManager extends AutoCloseable {
   def deploymentSynchronisationSupport: DeploymentSynchronisationSupport
 
   def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport
+
+  def schedulingSupport: SchedulingSupport
 
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
@@ -132,3 +136,25 @@ trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSuppor
 }
 
 case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport
+
+sealed trait SchedulingSupport
+
+trait SchedulingSupported extends SchedulingSupport {
+
+  def createScheduledExecutionPerformer(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config,
+  ): ScheduledExecutionPerformer
+
+  def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory]
+
+  def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]
+
+  def customPeriodicProcessListenerFactory: Option[ScheduledProcessListenerFactory]
+
+  def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]
+
+}
+
+case object NoSchedulingSupport extends SchedulingSupport

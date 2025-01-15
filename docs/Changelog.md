@@ -34,6 +34,12 @@
 * [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
 * [#7420](https://github.com/TouK/nussknacker/pull/7420) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
 * [#7438](https://github.com/TouK/nussknacker/pull/7438) Map int32 integer format in OpenAPI schema to the `Integer` type
+* [#7446](https://github.com/TouK/nussknacker/pull/7446) Small changes regarding node errors in fragments used in scenarios:
+  * Fragment error node tips in scenarios are now clickable and open problematic node edit window in a new tab.
+  * Fragment nodes are now highlighted when they contain nodes with errors.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
+  * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
+  * implementation provided for Flink DM
 
 ## 1.18
 

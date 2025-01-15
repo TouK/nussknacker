@@ -389,6 +389,7 @@ class K8sDeploymentManager(
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }
 
 object K8sDeploymentManager {

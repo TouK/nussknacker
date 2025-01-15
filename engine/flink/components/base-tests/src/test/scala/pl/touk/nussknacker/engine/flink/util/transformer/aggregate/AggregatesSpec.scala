@@ -136,7 +136,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   }
 
   test("AverageAggregator should calculate correct results for empty aggregation set") {
-    val agg = AverageAggregator
+    val agg =AverageAggregator
     val result = agg.result(
       agg.zero
     )
