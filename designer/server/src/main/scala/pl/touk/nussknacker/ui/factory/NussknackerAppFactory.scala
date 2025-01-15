@@ -7,6 +7,7 @@ import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
@@ -126,7 +127,7 @@ class NussknackerAppFactory(
   ): ModelClassLoaderProvider = {
     val defaultWorkingDirOpt = None
     ModelClassLoaderProvider(
-      processingTypeConfigs.mapValues(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt))
+      processingTypeConfigs.mapValuesNow(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt))
     )
   }
 

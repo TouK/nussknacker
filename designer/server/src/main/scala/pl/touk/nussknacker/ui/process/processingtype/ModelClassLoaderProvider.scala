@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.nio.file.Path
@@ -43,7 +44,7 @@ class ModelClassLoaderProvider private (
       )
     }
     dependenciesFromReload.foreach { case (processingType, reloadedConfig) =>
-      val currentConfig = processingTypeClassLoaders.mapValues(_._2)(processingType)
+      val currentConfig = processingTypeClassLoaders.mapValuesNow(_._2)(processingType)
       if (reloadedConfig != currentConfig) {
         throw new IllegalStateException(
           s"Error during processing types reload. Model ClassLoader dependencies such as classpath cannot be modified during reload. " +
