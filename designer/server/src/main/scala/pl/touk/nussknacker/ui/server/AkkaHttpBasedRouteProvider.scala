@@ -726,6 +726,7 @@ class AkkaHttpBasedRouteProvider(
                 sttpBackend,
                 _
               ),
+              Some(dbRef),
             )
           )
         )
