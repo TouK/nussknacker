@@ -28,7 +28,7 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
         engineStateResolvedWithLastAction,
         latestVersionId,
         deployedVersionId,
-        currentlyPresentedVersionId
+        currentlyPresentedVersionId,
       )
     )
   }
