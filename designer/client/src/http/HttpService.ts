@@ -3,7 +3,7 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import { UserData } from "../common/models/User";
@@ -33,9 +33,12 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, LayoutData, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import { handleAxiosError } from "../devHelpers";
+import { Dimensions, StickyNote } from "../common/StickyNote";
+import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -123,9 +126,10 @@ export type ComponentUsageType = {
     lastAction: ProcessActionType;
 };
 
-type NotificationActions = {
+export type NotificationActions = {
     success(message: string): void;
     error(message: string, error: string, showErrorText: boolean): void;
+    warn(message: string): void;
 };
 
 export interface TestProcessResponse {
@@ -669,9 +673,66 @@ class HttpService {
         );
         promise
             .then((response) => FileSaver.saveAs(response.data, `${processName}-testData`))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true),
+            .catch((error: AxiosError) =>
+                this.#addError(
+                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data due to: {{axiosError}}", {
+                        axiosError: handleAxiosError(error),
+                    }),
+                    error,
+                    true,
+                ),
             );
+        return promise;
+    }
+
+    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions) {
+        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
+            scenarioVersionId,
+            content: "",
+            layoutData: position,
+            color: STICKY_NOTE_DEFAULT_COLOR, //TODO add config for default sticky note color? For now this is default.
+            dimensions: dimensions,
+        });
+        promise.catch((error) => {
+            const errorMsg: string = error?.response?.data;
+            this.#addError("Failed to add sticky note" + (errorMsg ? ": " + errorMsg : ""), error, true);
+        });
+        return promise;
+    }
+
+    deleteStickyNote(scenarioName: string, stickyNoteId: number) {
+        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNoteId}`);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNoteId}`),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
+        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
+            noteId: stickyNote.noteId,
+            scenarioVersionId,
+            content: stickyNote.content,
+            layoutData: stickyNote.layoutData,
+            color: stickyNote.color,
+            dimensions: stickyNote.dimensions,
+        });
+        promise.catch((error) => {
+            const errorMsg = error?.response?.data;
+            this.#addError("Failed to update sticky note" + errorMsg ? ": " + errorMsg : "", error, true);
+        });
+        return promise;
+    }
+
+    getStickyNotes(scenarioName: string, scenarioVersionId: number): Promise<AxiosResponse<StickyNote[]>> {
+        const promise = api.get(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes?scenarioVersionId=${scenarioVersionId}`);
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToGetStickyNotes", "Failed to get sticky notes"), error, true),
+        );
         return promise;
     }
 
@@ -750,7 +811,15 @@ class HttpService {
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
         const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
-        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
         return promise;
     }
 
@@ -766,7 +835,15 @@ class HttpService {
         };
 
         const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
-        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
         return promise;
     }
 
@@ -779,8 +856,14 @@ class HttpService {
             `/processManagement/generateAndTest/${processName}/${testSampleSize}`,
             this.#sanitizeScenarioGraph(scenarioGraph),
         );
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"), error, true),
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
         );
         return promise;
     }

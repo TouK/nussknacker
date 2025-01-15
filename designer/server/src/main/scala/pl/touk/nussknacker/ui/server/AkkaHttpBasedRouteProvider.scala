@@ -26,10 +26,10 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsC
 import pl.touk.nussknacker.ui.config.{
   AttachmentsConfig,
   ComponentLinksConfigExtractor,
+  DesignerConfig,
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
 }
-import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
@@ -44,7 +44,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
-import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
+import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
@@ -72,6 +72,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessi
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
+import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -95,7 +96,7 @@ import pl.touk.nussknacker.ui.validation.{
 }
 import sttp.client3.SttpBackend
 
-import java.time.Clock
+import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.Future
@@ -131,6 +132,8 @@ class AkkaHttpBasedRouteProvider(
       deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
       dbioRunner                 = DBIOActionRunner(dbRef)
+      // 1 hour is the delay to propagate all global notifications for all users
+      globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
@@ -138,6 +141,7 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
+        globalNotificationRepository
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -170,6 +174,7 @@ class AkkaHttpBasedRouteProvider(
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
       val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
       val actionRepository                              = DbScenarioActionRepository.create(dbRef, modelBuildInfo)
+      val stickyNotesRepository                         = DbStickyNotesRepository.create(dbRef, designerClock)
       val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
@@ -326,6 +331,7 @@ class AkkaHttpBasedRouteProvider(
       val notificationService = new NotificationServiceImpl(
         fetchScenarioActivityService,
         actionRepository,
+        globalNotificationRepository,
         dbioRunner,
         notificationsConfig
       )
@@ -404,6 +410,15 @@ class AkkaHttpBasedRouteProvider(
         ),
         processingTypeToScenarioTestServices = scenarioTestService,
         scenarioService = processService,
+      )
+
+      val stickyNotesApiHttpService = new StickyNotesApiHttpService(
+        authManager = authManager,
+        stickyNotesRepository = stickyNotesRepository,
+        scenarioService = processService,
+        scenarioAuthorizer = processAuthorizer,
+        dbioRunner,
+        stickyNotesSettings = featureTogglesConfig.stickyNotesSettings
       )
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
@@ -598,6 +613,7 @@ class AkkaHttpBasedRouteProvider(
           scenarioActivityApiHttpService,
           scenarioLabelsApiHttpService,
           scenarioParametersHttpService,
+          stickyNotesApiHttpService,
           userApiHttpService,
           statisticsApiHttpService
         )
@@ -700,7 +716,8 @@ class AkkaHttpBasedRouteProvider(
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
-      featureTogglesConfig: FeatureTogglesConfig
+      featureTogglesConfig: FeatureTogglesConfig,
+      globalNotificationRepository: InMemoryTimeseriesRepository[Notification]
   ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
@@ -720,7 +737,12 @@ class AkkaHttpBasedRouteProvider(
               _
             ),
           )
-          new ReloadableProcessingTypeDataProvider(loadProcessingTypeDataIO)
+          val loadAndNotifyIO = loadProcessingTypeDataIO
+            .map { state =>
+              globalNotificationRepository.saveEntry(Notification.configurationReloaded)
+              state
+            }
+          new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(
         release = _.close()

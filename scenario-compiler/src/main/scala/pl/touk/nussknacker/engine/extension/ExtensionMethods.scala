@@ -40,10 +40,11 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
   }
 
   private def createExecutor(method: ExtensionMethod[_]): MethodExecutor = new MethodExecutor {
-    private val typeDescriptor = TypeDescriptor.valueOf(method.returnType)
 
-    override def execute(context: EvaluationContext, target: Any, args: Object*): TypedValue =
+    override def execute(context: EvaluationContext, target: Any, args: Object*): TypedValue = {
+      val typeDescriptor = TypeDescriptor.valueOf(method.returnType(args: _*))
       new TypedValue(method.invoke(target, args: _*), typeDescriptor)
+    }
 
   }
 
@@ -55,6 +56,7 @@ object ExtensionMethods {
     CastOrConversionExt,
     ArrayExt,
     ConversionExt(ToLongConversion),
+    ConversionExt(ToIntegerConversion),
     ConversionExt(ToDoubleConversion),
     ConversionExt(ToBigDecimalConversion),
     ConversionExt(ToBooleanConversion),
@@ -77,28 +79,37 @@ object ExtensionMethods {
 abstract class ExtensionMethod[R: ClassTag] {
   val argsSize: Int
   def invoke(target: Any, args: Object*): R
-  def returnType: Class[R] = classTag[R].runtimeClass.asInstanceOf[Class[R]]
+  // This method gets the same arguments as passed to invoke
+  def returnType(args: Object*): Class[_] = classTag[R].runtimeClass.asInstanceOf[Class[R]]
 }
 
 object ExtensionMethod {
 
-  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] = new ExtensionMethod {
-    override val argsSize: Int                         = 0
-    override def invoke(target: Any, args: Object*): R = method(target)
-  }
+  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 0
+      override def invoke(target: Any, args: Object*): R = method(target)
+    }
 
-  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] = new ExtensionMethod {
-    override val argsSize: Int                         = 1
-    override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
-  }
+  def NoArg[R: ClassTag](method: Any => R, returnTypeClass: Class[_]): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 0
+      override def invoke(target: Any, args: Object*): R = method(target)
+      override def returnType(args: Object*): Class[_]   = returnTypeClass
+    }
 
-  implicit class FindMethodExtension(private val registry: Map[String, ExtensionMethod[_]]) extends AnyVal {
+  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 1
+      override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
+    }
 
-    def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = registry
-      .get(methodName)
-      .filter(_.argsSize == argsSize)
-
-  }
+  def SingleArg[T, R: ClassTag](method: (Any, T) => R, clazzProvider: T => Class[_]): ExtensionMethod[R] =
+    new ExtensionMethod[R] {
+      override val argsSize: Int                         = 1
+      override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
+      override def returnType(args: Object*): Class[_]   = clazzProvider(args.head.asInstanceOf[T])
+    }
 
 }
 

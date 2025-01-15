@@ -21,7 +21,7 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     openApi.name.value shouldBe "getCollectionDataUsingGET"
 
     openApi.parameters shouldBe List(
-      UriParameter("accountNo", SwaggerLong),
+      UriParameter("accountNo", SwaggerInteger),
       QueryParameter("pretty", SwaggerBool),
       HeaderParameter("System-Name", SwaggerString),
       HeaderParameter("System-User-Name", SwaggerString),

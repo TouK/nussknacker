@@ -41,10 +41,11 @@ import pl.touk.nussknacker.ui.process.repository.{
 }
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, ZoneId}
+import java.time.{Clock, Duration, Instant, ZoneId}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -293,10 +294,12 @@ class NotificationServiceTest
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
-    val config = NotificationConfig(20 minutes)
+    val config                       = NotificationConfig(20 minutes)
+    val globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), clock)
     val notificationService = new NotificationServiceImpl(
       scenarioActivityService,
       actionRepository,
+      globalNotificationRepository,
       dbioRunner,
       config,
       clock
