@@ -5,63 +5,33 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigs, ProcessingTypeConfigsLoader}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
-import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicReference
-
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLoader: ProcessingTypeConfigsLoader)
     extends ProcessingTypeDataLoader
     with LazyLogging {
 
-  private object ModelClassloadersHolder {
-
-    private val modelClassloaders: AtomicReference[Option[Map[String, ModelClassLoader]]] =
-      new AtomicReference(None)
-
-    def getOrCreate(
-        processingTypeNamesWithClasspathAndWorkdir: Map[String, (List[String], Option[Path])],
-    ): Map[String, ModelClassLoader] = {
-      modelClassloaders.get() match {
-        case Some(map) => map
-        case None =>
-          val newMap = initializeModelClassloaders(processingTypeNamesWithClasspathAndWorkdir)
-          if (modelClassloaders.compareAndSet(None, Some(newMap))) {
-            newMap
-          } else {
-            modelClassloaders.get().get
-          }
-      }
-    }
-
-    private def initializeModelClassloaders(
-        processingTypeNamesWithClasspath: Map[String, (List[String], Option[Path])]
-    ): Map[String, ModelClassLoader] = {
-      logger.debug("Initializing Model ClassLoaders...")
-      processingTypeNamesWithClasspath.map { case (name, (classpath, workdir)) =>
-        name -> ModelClassLoader(classpath, workdir)
-      }
-    }
-
-  }
-
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
-      .map(createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies))
+      .map(
+        createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies, modelClassLoaderProvider)
+      )
   }
 
   private def createProcessingTypeData(
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
-      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
@@ -75,12 +45,12 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       )
       (processingTypeConfig, provider, nameInputData)
     }
-    val modelClassLoaders = {
-      val modelClassLoaderDeps = processingTypesConfig.configByProcessingType.map { case (name, config) =>
-        name -> (config.classPath -> getModelDependencies(name).workingDirectoryOpt)
-      }
-      ModelClassloadersHolder.getOrCreate(modelClassLoaderDeps)
-    }
+    modelClassLoaderProvider.validateReloadConsistency(providerWithNameInputData.map { case (processingType, data) =>
+      processingType -> ModelClassLoaderDependencies(
+        classpath = data._1.classPath,
+        workingDirectoryOpt = getModelDependencies(processingType).workingDirectoryOpt
+      )
+    })
 
     val engineSetupNames =
       ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
@@ -88,7 +58,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
         logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
         val modelDependencies = getModelDependencies(processingType)
-        val modelClassLoader  = modelClassLoaders(processingType)
+        val modelClassLoader  = modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
         val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
           ModelData(processingTypeConfig, modelDependencies, modelClassLoader),

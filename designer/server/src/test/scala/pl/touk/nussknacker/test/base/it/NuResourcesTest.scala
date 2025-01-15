@@ -24,7 +24,6 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -125,11 +124,18 @@ trait NuResourcesTest
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
-  protected val deploymentManagerProvider: DeploymentManagerProvider =
-    new MockManagerProvider(deploymentManager)
+  protected val deploymentManagerProvider: DeploymentManagerProvider = new MockManagerProvider(deploymentManager)
+
+  private val modelClassLoaderProvider = ModelClassLoaderProvider(
+    Map(Streaming.stringify -> ModelClassLoaderDependencies(processingTypeConfig.classPath, None))
+  )
 
   private val modelData =
-    ModelData(processingTypeConfig, modelDependencies, ModelClassLoader.apply(processingTypeConfig.classPath, None))
+    ModelData(
+      processingTypeConfig,
+      modelDependencies,
+      modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
+    )
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
@@ -153,7 +159,8 @@ trait NuResourcesTest
       new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
         .loadProcessingTypeData(
           _ => modelDependencies,
-          _ => deploymentManagerDependencies
+          _ => deploymentManagerDependencies,
+          modelClassLoaderProvider
         )
         .unsafeRunSync()
     )

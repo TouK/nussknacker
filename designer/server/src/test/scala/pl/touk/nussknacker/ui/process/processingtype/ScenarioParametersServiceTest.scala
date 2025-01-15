@@ -296,6 +296,11 @@ class ScenarioParametersServiceTest
               ComponentDefinitionExtractionMode.FinalDefinition
             ),
           _ => TestFactory.deploymentManagerDependencies,
+          ModelClassLoaderProvider(
+            designerConfig.processingTypeConfigs.configByProcessingType.mapValues(conf =>
+              ModelClassLoaderDependencies(conf.classPath, None)
+            )
+          )
         )
         .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService
