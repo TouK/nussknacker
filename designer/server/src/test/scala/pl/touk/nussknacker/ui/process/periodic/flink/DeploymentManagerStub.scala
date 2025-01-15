@@ -82,7 +82,7 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
     new StateQueryForAllScenariosSupported {

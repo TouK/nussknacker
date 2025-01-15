@@ -46,7 +46,6 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.periodic.RepositoryBasedPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionAvailability
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
@@ -155,7 +154,7 @@ trait NuResourcesTest
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,
-          PeriodicExecutionAvailability.Available(new RepositoryBasedPeriodicProcessesManagerProvider(testDbRef)),
+          PeriodicExecutionAvailability.Available(testDbRef),
         )
         .unsafeRunSync()
     )

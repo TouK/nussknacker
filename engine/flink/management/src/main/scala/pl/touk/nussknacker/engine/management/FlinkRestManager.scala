@@ -5,13 +5,13 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic._
-import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
+import pl.touk.nussknacker.engine.api.deployment.scheduler._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   AdditionalDeploymentDataProvider,
-  PeriodicDeploymentEngineHandler,
-  PeriodicProcessListenerFactory,
-  PeriodicSchedulePropertyExtractorFactory,
-  ProcessConfigEnricherFactory
+  ProcessConfigEnricherFactory,
+  SchedulePropertyExtractorFactory,
+  ScheduledExecutionPerformer,
+  ScheduledProcessListenerFactory
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -77,18 +77,18 @@ class FlinkRestManager(
 
     }
 
-  override def periodicExecutionSupport: PeriodicExecutionSupport = new PeriodicExecutionSupported {
+  override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
 
-    override def engineHandler(
+    override def createScheduledExecutionPerformer(
         modelData: BaseModelData,
         dependencies: DeploymentManagerDependencies,
         config: Config,
-    ): PeriodicDeploymentEngineHandler = FlinkPeriodicDeploymentEngineHandler.create(modelData, dependencies, config)
+    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(modelData, dependencies, config)
 
-    override def customSchedulePropertyExtractorFactory: Option[PeriodicSchedulePropertyExtractorFactory] = None
-    override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]                 = None
-    override def customPeriodicProcessListenerFactory: Option[PeriodicProcessListenerFactory]             = None
-    override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]         = None
+    override def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
+    override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]         = None
+    override def customPeriodicProcessListenerFactory: Option[ScheduledProcessListenerFactory]    = None
+    override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
 
   }
 

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.model
 
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{PeriodicDeployStatus, PeriodicProcessDeploymentDetails}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduledDeploymentDetails, ScheduledDeploymentStatus}
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.{
   Deployed,
   Failed,
@@ -28,8 +28,8 @@ case class PeriodicProcessDeployment(
   def display: String =
     s"Process with id=${periodicProcess.deploymentData.processId}, name=${periodicProcess.deploymentData.processName}, versionId=${periodicProcess.deploymentData.versionId}, scheduleName=${scheduleName.display} and deploymentId=$id"
 
-  def toDetails: PeriodicProcessDeploymentDetails =
-    PeriodicProcessDeploymentDetails(
+  def toDetails: ScheduledDeploymentDetails =
+    ScheduledDeploymentDetails(
       id = id.value,
       processName = periodicProcess.deploymentData.processName,
       versionId = periodicProcess.deploymentData.versionId,
@@ -39,12 +39,12 @@ case class PeriodicProcessDeployment(
       deployedAt = state.deployedAt,
       completedAt = state.completedAt,
       status = state.status match {
-        case Scheduled      => PeriodicDeployStatus.Scheduled
-        case Deployed       => PeriodicDeployStatus.Deployed
-        case Finished       => PeriodicDeployStatus.Finished
-        case Failed         => PeriodicDeployStatus.Failed
-        case RetryingDeploy => PeriodicDeployStatus.RetryingDeploy
-        case FailedOnDeploy => PeriodicDeployStatus.FailedOnDeploy
+        case Scheduled      => ScheduledDeploymentStatus.Scheduled
+        case Deployed       => ScheduledDeploymentStatus.Deployed
+        case Finished       => ScheduledDeploymentStatus.Finished
+        case Failed         => ScheduledDeploymentStatus.Failed
+        case RetryingDeploy => ScheduledDeploymentStatus.RetryingDeploy
+        case FailedOnDeploy => ScheduledDeploymentStatus.FailedOnDeploy
       },
     )
 

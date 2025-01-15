@@ -3,32 +3,21 @@ package pl.touk.nussknacker.ui.process.periodic.legacy.db
 import cats.Monad
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.parser
+import db.util.DBIOActionInstances.DB
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
-import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import LegacyPeriodicProcessesRepository.createPeriodicProcess
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
-import pl.touk.nussknacker.engine.management.FlinkPeriodicDeploymentEngineHandler.jarFileNameRuntimeParam
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.management.FlinkScheduledExecutionPerformer.jarFileNameRuntimeParam
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
-import pl.touk.nussknacker.ui.process.periodic.model.{
-  PeriodicProcess,
-  PeriodicProcessDeployment,
-  PeriodicProcessDeploymentId,
-  PeriodicProcessDeploymentState,
-  PeriodicProcessDeploymentStatus,
-  PeriodicProcessId,
-  ScheduleData,
-  ScheduleDeploymentData,
-  ScheduleId,
-  ScheduleName,
-  SchedulesState
-}
-import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.periodic.legacy.db.LegacyPeriodicProcessesRepository.createPeriodicProcess
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.ui.process.periodic.model._
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -94,9 +83,11 @@ object LegacyPeriodicProcessesRepository {
 }
 
 class SlickLegacyPeriodicProcessesRepository(
+    processingType: String,
     db: JdbcBackend.DatabaseDef,
     override val profile: JdbcProfile,
     clock: Clock,
+    fetchingProcessRepository: FetchingProcessRepository[Future],
 )(implicit ec: ExecutionContext)
     extends PeriodicProcessesRepository
     with LegacyPeriodicProcessesTableFactory
@@ -106,8 +97,6 @@ class SlickLegacyPeriodicProcessesRepository(
   import pl.touk.nussknacker.engine.util.Implicits._
 
   type Action[T] = DBIOActionInstances.DB[T]
-
-  override implicit def monad: Monad[Action] = DBIOActionInstances.dbMonad
 
   override def run[T](action: DBIOAction[T, NoStream, Effect.All]): Future[T] = db.run(action.transactionally)
 
@@ -130,7 +119,6 @@ class SlickLegacyPeriodicProcessesRepository(
       canonicalProcess: CanonicalProcess,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
-      processingType: String,
   ): Action[PeriodicProcess] = {
     val jarFileName = deploymentWithRuntimeParams.runtimeParams.params.getOrElse(
       jarFileNameRuntimeParam,
@@ -155,7 +143,7 @@ class SlickLegacyPeriodicProcessesRepository(
 
   private def now(): LocalDateTime = LocalDateTime.now(clock)
 
-  override def findToBeDeployed(processingType: String): Action[Seq[PeriodicProcessDeployment]] =
+  override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] =
     findProcesses(
       activePeriodicProcessWithDeploymentQuery(processingType)
         .filter { case (_, d) =>
@@ -164,7 +152,7 @@ class SlickLegacyPeriodicProcessesRepository(
         }
     )
 
-  override def findToBeRetried(processingType: String): Action[Seq[PeriodicProcessDeployment]] =
+  override def findToBeRetried: Action[Seq[PeriodicProcessDeployment]] =
     findProcesses(
       activePeriodicProcessWithDeploymentQuery(processingType)
         .filter { case (_, d) =>
@@ -237,7 +225,6 @@ class SlickLegacyPeriodicProcessesRepository(
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
-      processingType: String,
   ): Action[SchedulesState] = {
     val processesHavingDeploymentsWithMatchingStatus = PeriodicProcessesWithoutJson.filter(p =>
       p.active &&
@@ -259,7 +246,6 @@ class SlickLegacyPeriodicProcessesRepository(
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Action[SchedulesState] = {
     val activeProcessesQuery =
       PeriodicProcessesWithoutJson.filter(p => p.processName === processName && p.active)
@@ -269,7 +255,6 @@ class SlickLegacyPeriodicProcessesRepository(
 
   override def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Action[Map[ProcessName, SchedulesState]] = {
     val activeProcessesQuery = PeriodicProcessesWithoutJson.filter(_.active)
     getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount, processingType)
@@ -279,7 +264,6 @@ class SlickLegacyPeriodicProcessesRepository(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Action[SchedulesState] = {
     val filteredProcessesQuery = PeriodicProcessesWithoutJson
       .filter(p => p.processName === processName && !p.active)
@@ -292,7 +276,6 @@ class SlickLegacyPeriodicProcessesRepository(
   override def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Action[Map[ProcessName, SchedulesState]] = {
     val filteredProcessesQuery = PeriodicProcessesWithoutJson
       .filter(!_.active)
@@ -431,15 +414,11 @@ class SlickLegacyPeriodicProcessesRepository(
     update.map(_ => ())
   }
 
-  def fetchCanonicalProcess(processName: ProcessName, versionId: VersionId): Action[Option[CanonicalProcess]] = {
-    PeriodicProcessesWithJson
-      .filter(p => p.processName === processName && p.processVersionId === versionId)
-      .map(_.processJson)
-      .result
-      .headOption
-      .map(_.flatMap(parser.parse(_).toOption))
-      .map(_.flatMap(ProcessMarshaller.fromJson(_).toOption))
-  }
+  override def fetchCanonicalProcessWithVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] =
+    fetchingProcessRepository.getCanonicalProcessWithVersion(processName, versionId)(NussknackerInternalUser.instance)
 
   def fetchInputConfigDuringExecutionJson(processName: ProcessName, versionId: VersionId): Action[Option[String]] =
     PeriodicProcessesWithJson

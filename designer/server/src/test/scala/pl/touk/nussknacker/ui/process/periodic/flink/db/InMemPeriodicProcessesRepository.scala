@@ -2,16 +2,17 @@ package pl.touk.nussknacker.ui.process.periodic.flink.db
 
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.periodic._
-import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager._
+import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model._
+import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{LocalDateTime, ZoneId}
@@ -21,11 +22,11 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.util.Random
 
-object InMemPeriodicProcessesRepository {
-  val getLatestDeploymentQueryCount = new AtomicLong(0)
-}
+class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicProcessesRepository {
 
-class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProcessesManager {
+  override type Action[T] = Future[T]
+
+  override def run[T](action: Future[T]): Future[T] = action
 
   var processEntities: mutable.ListBuffer[TestPeriodicProcessEntity]              = ListBuffer.empty
   var deploymentEntities: mutable.ListBuffer[TestPeriodicProcessDeploymentEntity] = ListBuffer.empty
@@ -360,7 +361,9 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
 
 }
 
-object InMemPeriodicProcessesManager {
+object InMemPeriodicProcessesRepository {
+
+  val getLatestDeploymentQueryCount = new AtomicLong(0)
 
   private val ProcessIdSequence    = new AtomicLong(0)
   private val DeploymentIdSequence = new AtomicLong(0)

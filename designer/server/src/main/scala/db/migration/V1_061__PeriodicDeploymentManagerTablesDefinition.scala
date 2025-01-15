@@ -1,7 +1,7 @@
 package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
-import db.migration.V1_060__PeriodicDeploymentManagerTablesDefinition.Definitions
+import db.migration.V1_061__PeriodicDeploymentManagerTablesDefinition.Definitions
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
@@ -11,14 +11,14 @@ import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait V1_060__PeriodicDeploymentManagerTablesDefinition extends SlickMigration with LazyLogging {
+trait V1_061__PeriodicDeploymentManagerTablesDefinition extends SlickMigration with LazyLogging {
 
   import profile.api._
 
   private val definitions = new Definitions(profile)
 
   override def migrateActions: DBIOAction[Any, NoStream, Effect.All] = {
-    logger.info("Starting migration V1_056__CreateScenarioActivitiesDefinition")
+    logger.info("Starting migration V1_061__PeriodicDeploymentManagerTablesDefinition")
     for {
       _ <- definitions.periodicProcessesTable.schema.create
       _ <- definitions.periodicProcessDeploymentsTable.schema.create
@@ -27,7 +27,7 @@ trait V1_060__PeriodicDeploymentManagerTablesDefinition extends SlickMigration w
 
 }
 
-object V1_060__PeriodicDeploymentManagerTablesDefinition {
+object V1_061__PeriodicDeploymentManagerTablesDefinition {
 
   class Definitions(val profile: JdbcProfile) {
     import profile.api._

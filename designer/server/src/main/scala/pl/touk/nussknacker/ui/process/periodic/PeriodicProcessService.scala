@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.deployment.periodic.services._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => _, _}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus._
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.periodic.utils.DeterministicUUIDFromLong
+import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
@@ -32,9 +34,9 @@ import scala.util.control.NonFatal
 
 class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
-    engineHandler: PeriodicDeploymentEngineHandler,
-    periodicProcessesManager: PeriodicProcessesManager,
-    periodicProcessListener: PeriodicProcessListener,
+    engineHandler: ScheduledExecutionPerformer,
+    periodicProcessesRepository: PeriodicProcessesRepository,
+    periodicProcessListener: ScheduledProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
     deploymentRetryConfig: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
@@ -47,6 +49,7 @@ class PeriodicProcessService(
     extends LazyLogging {
 
   import cats.syntax.all._
+  import periodicProcessesRepository._
 
   private type Callback        = () => Future[Unit]
   private type NeedsReschedule = Boolean
@@ -64,10 +67,12 @@ class PeriodicProcessService(
       processIdWithName: ProcessIdWithName,
       after: Option[Instant],
   ): Future[List[ScenarioActivity]] = for {
-    schedulesState <- periodicProcessesManager.getSchedulesState(
-      processIdWithName.name,
-      after.map(localDateTimeAtSystemDefaultZone)
-    )
+    schedulesState <- periodicProcessesRepository
+      .getSchedulesState(
+        processIdWithName.name,
+        after.map(localDateTimeAtSystemDefaultZone)
+      )
+      .run
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
@@ -169,7 +174,7 @@ class PeriodicProcessService(
       inputConfigDuringExecutionJson: String,
       processActionId: ProcessActionId,
   ): Future[Unit] = {
-    periodicProcessesManager
+    periodicProcessesRepository
       .create(
         deploymentWithJarData,
         inputConfigDuringExecutionJson,
@@ -177,11 +182,13 @@ class PeriodicProcessService(
         scheduleMap,
         processActionId
       )
+      .run
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
-            periodicProcessesManager
+            periodicProcessesRepository
               .schedule(process.id, name, date, deploymentRetryConfig.deployMaxRetries)
+              .run
               .flatMap { data =>
                 handleEvent(ScheduledEvent(data.toDetails, firstSchedule = true))
               }
@@ -195,11 +202,11 @@ class PeriodicProcessService(
 
   def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
     for {
-      toBeDeployed <- periodicProcessesManager.findToBeDeployed.flatMap { toDeployList =>
+      toBeDeployed <- periodicProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
       }
       // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
-      toBeRetried <- periodicProcessesManager.findToBeRetried
+      toBeRetried <- periodicProcessesRepository.findToBeRetried.run
       // We don't block scheduled deployments by retries
     } yield toBeDeployed.sortBy(d => (d.runAt, d.createdAt)) ++ toBeRetried.sortBy(d => (d.nextRetryAt, d.createdAt))
   }
@@ -238,10 +245,11 @@ class PeriodicProcessService(
         }
 
     for {
-      schedules <- periodicProcessesManager
+      schedules <- periodicProcessesRepository
         .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
           Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy),
         )
+        .run
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
       _ <- Future.sequence(schedules.groupByProcessName.toList.map(handleSingleProcess _ tupled))
     } yield ()
@@ -331,8 +339,9 @@ class PeriodicProcessService(
         nextRunAt(deployment, clock) match {
           case Right(Some(futureDate)) =>
             logger.info(s"Rescheduling ${deployment.display} to $futureDate")
-            val action = periodicProcessesManager
+            val action = periodicProcessesRepository
               .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
+              .run
               .flatMap { data =>
                 handleEvent(ScheduledEvent(data.toDetails, firstSchedule = false))
               }
@@ -380,9 +389,9 @@ class PeriodicProcessService(
   ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
-      _            <- periodicProcessesManager.markFinished(deployment.id)
-      currentState <- periodicProcessesManager.findProcessData(deployment.id)
-      canonicalProcessOpt <- periodicProcessesManager
+      _            <- periodicProcessesRepository.markFinished(deployment.id).run
+      currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
+      canonicalProcessOpt <- periodicProcessesRepository
         .fetchCanonicalProcessWithVersion(
           processName,
           versionId
@@ -418,8 +427,8 @@ class PeriodicProcessService(
     )
 
     for {
-      _ <- periodicProcessesManager.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt)
-      currentState <- periodicProcessesManager.findProcessData(deployment.id)
+      _ <- periodicProcessesRepository.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt).run
+      currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
     } yield handleEvent(FailedOnDeployEvent(currentState.toDetails, state))
   }
 
@@ -429,8 +438,8 @@ class PeriodicProcessService(
   ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} as failed.")
     for {
-      _            <- periodicProcessesManager.markFailed(deployment.id)
-      currentState <- periodicProcessesManager.findProcessData(deployment.id)
+      _            <- periodicProcessesRepository.markFailed(deployment.id).run
+      currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
     } yield handleEvent(FailedOnRunEvent(currentState.toDetails, state))
   }
 
@@ -446,7 +455,7 @@ class PeriodicProcessService(
   ): Future[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
     for {
-      _ <- periodicProcessesManager.markInactive(process.id)
+      _ <- periodicProcessesRepository.markInactive(process.id).run
       // we want to delete jars only after we successfully mark process as inactive. It's better to leave jar garbage than
       // have process without jar
     } yield () => engineHandler.cleanAfterDeployment(process.deploymentData.runtimeParams)
@@ -482,19 +491,22 @@ class PeriodicProcessService(
       )
       processName = deploymentWithJarData.processName
       versionId   = deploymentWithJarData.versionId
-      canonicalProcessWithVersionOpt <- periodicProcessesManager.fetchCanonicalProcessWithVersion(
-        processName,
-        versionId
-      )
+      canonicalProcessWithVersionOpt <- periodicProcessesRepository
+        .fetchCanonicalProcessWithVersion(
+          processName,
+          versionId
+        )
       canonicalProcessWithVersion = canonicalProcessWithVersionOpt.getOrElse {
         throw new PeriodicProcessException(
           s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
         )
       }
-      inputConfigDuringExecutionJsonOpt <- periodicProcessesManager.fetchInputConfigDuringExecutionJson(
-        processName,
-        versionId,
-      )
+      inputConfigDuringExecutionJsonOpt <- periodicProcessesRepository
+        .fetchInputConfigDuringExecutionJson(
+          processName,
+          versionId,
+        )
+        .run
       inputConfigDuringExecutionJson = inputConfigDuringExecutionJsonOpt.getOrElse {
         throw new PeriodicProcessException(
           s"Could not fetch inputConfigDuringExecutionJson for processName=${processName}, versionId=${versionId}"
@@ -520,9 +532,10 @@ class PeriodicProcessService(
       .flatMap { externalDeploymentId =>
         logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData, id)
         // TODO: add externalDeploymentId??
-        periodicProcessesManager
+        periodicProcessesRepository
           .markDeployed(id)
-          .flatMap(_ => periodicProcessesManager.findProcessData(id))
+          .run
+          .flatMap(_ => periodicProcessesRepository.findProcessData(id).run)
           .flatMap(afterChange => handleEvent(DeployedEvent(afterChange.toDetails, externalDeploymentId)))
       }
       // We can recover since deployment actor watches only future completion.
@@ -533,10 +546,10 @@ class PeriodicProcessService(
   }
 
   // TODO: allow access to DB in listener?
-  private def handleEvent(event: PeriodicProcessEvent): Future[Unit] = {
+  private def handleEvent(event: ScheduledProcessEvent): Future[Unit] = {
     Future.successful {
       try {
-        periodicProcessListener.onPeriodicProcessEvent.applyOrElse(event, (_: PeriodicProcessEvent) => ())
+        periodicProcessListener.onScheduledProcessEvent.applyOrElse(event, (_: ScheduledProcessEvent) => ())
       } catch {
         case NonFatal(e) => throw new PeriodicProcessException("Failed to invoke listener", e)
       }
@@ -652,35 +665,41 @@ class PeriodicProcessService(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int = 1
   ): Future[SchedulesState] =
-    periodicProcessesManager.getLatestDeploymentsForActiveSchedules(
-      processName,
-      deploymentsPerScheduleMaxCount,
-    )
+    periodicProcessesRepository
+      .getLatestDeploymentsForActiveSchedules(
+        processName,
+        deploymentsPerScheduleMaxCount,
+      )
+      .run
 
   def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int
   ): Future[Map[ProcessName, SchedulesState]] =
-    periodicProcessesManager.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount)
+    periodicProcessesRepository.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount).run
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
   ): Future[SchedulesState] =
-    periodicProcessesManager.getLatestDeploymentsForLatestInactiveSchedules(
-      processName,
-      inactiveProcessesMaxCount,
-      deploymentsPerScheduleMaxCount,
-    )
+    periodicProcessesRepository
+      .getLatestDeploymentsForLatestInactiveSchedules(
+        processName,
+        inactiveProcessesMaxCount,
+        deploymentsPerScheduleMaxCount,
+      )
+      .run
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
   ): Future[Map[ProcessName, SchedulesState]] =
-    periodicProcessesManager.getLatestDeploymentsForLatestInactiveSchedules(
-      inactiveProcessesMaxCount,
-      deploymentsPerScheduleMaxCount
-    )
+    periodicProcessesRepository
+      .getLatestDeploymentsForLatestInactiveSchedules(
+        inactiveProcessesMaxCount,
+        deploymentsPerScheduleMaxCount
+      )
+      .run
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
 

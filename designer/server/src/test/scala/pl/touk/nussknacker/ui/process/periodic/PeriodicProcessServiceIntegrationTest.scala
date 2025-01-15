@@ -14,10 +14,10 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
-  PeriodicProcessEvent,
-  PeriodicProcessListener,
-  ProcessConfigEnricher
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
+  ProcessConfigEnricher,
+  ScheduledProcessEvent,
+  ScheduledProcessListener
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -31,13 +31,14 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentEngineHandlerStub}
+import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DBProcessRepository,
+  PeriodicProcessesRepository,
   SlickPeriodicProcessesRepository
 }
 import pl.touk.nussknacker.ui.security.api.AdminUser
@@ -91,6 +92,8 @@ class PeriodicProcessServiceIntegrationTest
       maxFetchedPeriodicScenarioActivities: Option[Int] = None,
   )(testCode: Fixture => Any): Unit = {
 
+    val fetchingProcessRepository = TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+
     val postgresConfig = ConfigFactory.parseMap(
       Map(
         "user"     -> container.username,
@@ -112,14 +115,12 @@ class PeriodicProcessServiceIntegrationTest
     def runWithLegacyRepository(dbConfig: Config): Unit = {
       val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(dbConfig)
       val creator = (processingType: String, currentTime: Instant) =>
-        new RepositoryBasedPeriodicProcessesManager(
+        new SlickLegacyPeriodicProcessesRepository(
           processingType,
-          new SlickLegacyPeriodicProcessesRepository(
-            db,
-            dbProfile,
-            fixedClock(currentTime),
-          ),
-          TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+          db,
+          dbProfile,
+          fixedClock(currentTime),
+          fetchingProcessRepository,
         )
       try {
         testCode(
@@ -132,14 +133,12 @@ class PeriodicProcessServiceIntegrationTest
 
     def runTestCodeWithNuDb(): Unit = {
       val creator = (processingType: String, currentTime: Instant) =>
-        new RepositoryBasedPeriodicProcessesManager(
+        new SlickPeriodicProcessesRepository(
           processingType,
-          new SlickPeriodicProcessesRepository(
-            testDbRef.db,
-            testDbRef.profile,
-            fixedClock(currentTime),
-          ),
-          TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+          testDbRef.db,
+          testDbRef.profile,
+          fixedClock(currentTime),
+          fetchingProcessRepository,
         )
       testCode(
         new Fixture(creator, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
@@ -159,14 +158,14 @@ class PeriodicProcessServiceIntegrationTest
   }
 
   class Fixture(
-      periodicProcessesManagerCreator: (String, Instant) => PeriodicProcessesManager,
+      periodicProcessesRepositoryCreator: (String, Instant) => PeriodicProcessesRepository,
       deploymentRetryConfig: DeploymentRetryConfig,
       executionConfig: PeriodicExecutionConfig,
       maxFetchedPeriodicScenarioActivities: Option[Int],
   ) {
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val engineHandlerStub             = new PeriodicDeploymentEngineHandlerStub
-    val events                        = new ArrayBuffer[PeriodicProcessEvent]()
+    val engineHandlerStub             = new ScheduledExecutionPerformerStub
+    val events                        = new ArrayBuffer[ScheduledProcessEvent]()
     var failListener                  = false
 
     def periodicProcessService(
@@ -176,10 +175,10 @@ class PeriodicProcessServiceIntegrationTest
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
         engineHandler = engineHandlerStub,
-        periodicProcessesManager = periodicProcessesManagerCreator(processingType, currentTime),
-        periodicProcessListener = new PeriodicProcessListener {
+        periodicProcessesRepository = periodicProcessesRepositoryCreator(processingType, currentTime),
+        periodicProcessListener = new ScheduledProcessListener {
 
-          override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
+          override def onScheduledProcessEvent: PartialFunction[ScheduledProcessEvent, Unit] = {
             case k if failListener => throw new Exception(s"$k was ordered to fail")
             case k                 => events.append(k)
           }

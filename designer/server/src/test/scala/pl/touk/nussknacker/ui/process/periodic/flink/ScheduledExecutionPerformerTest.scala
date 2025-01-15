@@ -5,17 +5,17 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
-import pl.touk.nussknacker.engine.api.deployment.periodic.services.PeriodicDeploymentEngineHandler
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExecutionPerformer
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkPeriodicDeploymentEngineHandler}
+import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkScheduledExecutionPerformer}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
 
-class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
+class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
 
   private val processName      = "test"
   private val processVersionId = 5
@@ -32,14 +32,14 @@ class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with
 
   private val currentModelUrls = List(currentModelJarFile.toURI.toURL)
 
-  private val engineHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
+  private val engineHandler = createScheduledExecutionPerformer(jarsDir = jarsDir)
 
-  private def createPeriodicDeploymentHandler(
+  private def createScheduledExecutionPerformer(
       jarsDir: Path,
       modelJarProvider: FlinkModelJarProvider = new FlinkModelJarProvider(currentModelUrls)
-  ): PeriodicDeploymentEngineHandler = {
+  ): ScheduledExecutionPerformer = {
 
-    new FlinkPeriodicDeploymentEngineHandler(
+    new FlinkScheduledExecutionPerformer(
       flinkClient = new FlinkClientStub,
       jarsDir = jarsDir,
       inputConfigDuringExecution = InputConfigDuringExecution(ConfigFactory.empty()),
@@ -59,7 +59,7 @@ class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with
 
   test("prepareDeploymentWithJar - should handle disappearing model JAR") {
     val modelJarProvider = new FlinkModelJarProvider(currentModelUrls)
-    val engineHandler    = createPeriodicDeploymentHandler(jarsDir, modelJarProvider)
+    val engineHandler    = createScheduledExecutionPerformer(jarsDir, modelJarProvider)
 
     def verifyAndDeleteJar(result: Future[DeploymentWithRuntimeParams]): Unit = {
       val copiedJarFile = jarsDir.resolve(result.futureValue.runtimeParams.params("jarFileName"))
@@ -78,7 +78,7 @@ class PeriodicDeploymentEngineHandlerTest extends AnyFunSuite with Matchers with
   test("prepareDeploymentWithJar - should create jars dir if not exists") {
     val tmpDir        = System.getProperty("java.io.tmpdir")
     val jarsDir       = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
-    val engineHandler = createPeriodicDeploymentHandler(jarsDir = jarsDir)
+    val engineHandler = createScheduledExecutionPerformer(jarsDir = jarsDir)
 
     Files.exists(jarsDir) shouldBe false
 

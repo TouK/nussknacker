@@ -10,15 +10,17 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentEngineHandlerStub}
-import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesManager
+import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
+import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.api.deployment.periodic.services.{EmptyListener, ProcessConfigEnricher}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
 
 import java.time.Clock
 import java.util.UUID
+import scala.concurrent.Future
 
 class PeriodicProcessesFetchingTest
     extends AnyFunSuite
@@ -37,15 +39,15 @@ class PeriodicProcessesFetchingTest
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val processingType                = "testProcessingType"
-    val periodicProcessesManager      = new InMemPeriodicProcessesManager(processingType)
+    val repository                    = new InMemPeriodicProcessesRepository(processingType)
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val engineHandlerStub             = new PeriodicDeploymentEngineHandlerStub
+    val engineHandlerStub             = new ScheduledExecutionPerformerStub
     val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
       engineHandler = engineHandlerStub,
-      periodicProcessesManager = periodicProcessesManager,
+      periodicProcessesRepository = repository,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
@@ -60,7 +62,7 @@ class PeriodicProcessesFetchingTest
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,
-      periodicProcessesManager = periodicProcessesManager,
+      periodicProcessesRepository = repository,
       schedulePropertyExtractor = CronSchedulePropertyExtractor(),
       toClose = () => ()
     )
@@ -77,7 +79,7 @@ class PeriodicProcessesFetchingTest
 
     for (i <- 1 to n) {
       val deploymentId =
-        f.periodicProcessesManager.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
+        f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
       f.delegateDeploymentManagerStub.addStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
     }
 
@@ -102,7 +104,7 @@ class PeriodicProcessesFetchingTest
 
     for (i <- 1 to n) {
       val deploymentId =
-        f.periodicProcessesManager.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
+        f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
       f.delegateDeploymentManagerStub.addStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
     }
 

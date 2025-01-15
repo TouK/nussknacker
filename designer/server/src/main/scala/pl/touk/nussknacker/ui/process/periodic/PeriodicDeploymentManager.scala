@@ -5,18 +5,14 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{
-  CronPeriodicScheduleProperty,
-  MultiplePeriodicScheduleProperty,
-  PeriodicScheduleProperty,
-  SinglePeriodicScheduleProperty
-}
-import pl.touk.nussknacker.engine.api.deployment.periodic.services._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.ui.process.periodic.Utils._
+import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,15 +21,15 @@ object PeriodicDeploymentManager {
 
   def apply(
       delegate: DeploymentManager,
-      engineHandler: PeriodicDeploymentEngineHandler,
-      schedulePropertyExtractorFactory: PeriodicSchedulePropertyExtractorFactory,
+      engineHandler: ScheduledExecutionPerformer,
+      schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
       processConfigEnricherFactory: ProcessConfigEnricherFactory,
       periodicBatchConfig: PeriodicBatchConfig,
       originalConfig: Config,
-      listenerFactory: PeriodicProcessListenerFactory,
+      listenerFactory: ScheduledProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
       dependencies: DeploymentManagerDependencies,
-      periodicProcessesManager: PeriodicProcessesManager,
+      periodicProcessesRepository: PeriodicProcessesRepository,
   ): PeriodicDeploymentManager = {
     import dependencies._
 
@@ -43,7 +39,7 @@ object PeriodicDeploymentManager {
     val service = new PeriodicProcessService(
       delegate,
       engineHandler,
-      periodicProcessesManager,
+      periodicProcessesRepository,
       listener,
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
@@ -78,7 +74,7 @@ object PeriodicDeploymentManager {
     new PeriodicDeploymentManager(
       delegate,
       service,
-      periodicProcessesManager,
+      periodicProcessesRepository,
       schedulePropertyExtractorFactory(originalConfig),
       toClose
     )
@@ -89,13 +85,15 @@ object PeriodicDeploymentManager {
 class PeriodicDeploymentManager private[periodic] (
     val delegate: DeploymentManager,
     service: PeriodicProcessService,
-    periodicProcessesManager: PeriodicProcessesManager,
-    schedulePropertyExtractor: PeriodicSchedulePropertyExtractor,
+    periodicProcessesRepository: PeriodicProcessesRepository,
+    schedulePropertyExtractor: SchedulePropertyExtractor,
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
     with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
+
+  import periodicProcessesRepository._
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
@@ -150,18 +148,18 @@ class PeriodicDeploymentManager private[periodic] (
   }
 
   private def toDomain(
-      apiScheduleProperty: PeriodicScheduleProperty
+      apiScheduleProperty: ApiScheduleProperty,
   ): ScheduleProperty = apiScheduleProperty match {
-    case property: SinglePeriodicScheduleProperty =>
+    case property: ApiScheduleProperty.SingleScheduleProperty =>
       toDomain(property)
-    case MultiplePeriodicScheduleProperty(schedules) =>
+    case ApiScheduleProperty.MultipleScheduleProperty(schedules) =>
       MultipleScheduleProperty(schedules.map { case (k, v) => (k, toDomain(v)) })
   }
 
   private def toDomain(
-      apiSingleScheduleProperty: SinglePeriodicScheduleProperty
+      apiSingleScheduleProperty: ApiScheduleProperty.SingleScheduleProperty
   ): SingleScheduleProperty = apiSingleScheduleProperty match {
-    case CronPeriodicScheduleProperty(labelOrCronExpr) => CronScheduleProperty(labelOrCronExpr)
+    case ApiScheduleProperty.CronScheduleProperty(labelOrCronExpr) => CronScheduleProperty(labelOrCronExpr)
   }
 
   private def stopScenario(command: DMStopScenarioCommand): Future[SavepointResult] = {
@@ -282,10 +280,10 @@ class PeriodicDeploymentManager private[periodic] (
         .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
     )
     processDeploymentWithProcessJson <- OptionT.liftF(
-      periodicProcessesManager.findProcessData(processDeployment.id)
+      periodicProcessesRepository.findProcessData(processDeployment.id).run
     )
     _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
   } yield ()
 
-  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }

@@ -191,7 +191,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
-  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {

@@ -24,7 +24,7 @@ object DBFetchingProcessRepository {
 
   def create(
       dbRef: DbRef,
-      actionRepository: ScenarioActionRepository,
+      actionRepository: ScenarioActionReadOnlyRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[DB](dbRef, actionRepository, scenarioLabelsRepository) with DbioRepository

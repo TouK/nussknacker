@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
-import pl.touk.nussknacker.engine.api.deployment.{NoPeriodicExecutionSupport, PeriodicExecutionSupported}
+import pl.touk.nussknacker.engine.api.deployment.{NoSchedulingSupport, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.{
@@ -14,7 +14,8 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
-import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, PeriodicProcessesManagerProvider}
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 import scala.util.control.NonFatal
@@ -111,18 +112,18 @@ object ProcessingTypeData {
         scenarioStateCacheTTL
       )
       decoratedDeploymentManager = periodicExecutionAvailability match {
-        case PeriodicExecutionAvailability.Available(managerProvider) =>
-          deploymentManager.periodicExecutionSupport match {
-            case supported: PeriodicExecutionSupported =>
+        case PeriodicExecutionAvailability.Available(dbRef) =>
+          deploymentManager.schedulingSupport match {
+            case supported: SchedulingSupported =>
               PeriodicDeploymentManagerDecorator.decorate(
                 underlying = deploymentManager,
-                periodicExecutionSupported = supported,
-                periodicProcessesManagerProvider = managerProvider,
+                schedulingSupported = supported,
                 modelData = modelData,
                 deploymentConfig = deploymentConfig,
                 dependencies = deploymentManagerDependencies,
+                dbRef = dbRef,
               )
-            case NoPeriodicExecutionSupport =>
+            case NoSchedulingSupport =>
               throw new IllegalStateException(
                 s"DeploymentManager ${deploymentManagerProvider.name} does not support periodic execution"
               )
@@ -204,7 +205,7 @@ object ProcessingTypeData {
     case object NotAvailable extends PeriodicExecutionAvailability
 
     final case class Available(
-        periodicProcessesManagerProvider: PeriodicProcessesManagerProvider
+        dbRef: DbRef,
     ) extends PeriodicExecutionAvailability
 
   }

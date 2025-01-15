@@ -75,7 +75,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
-* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def periodicExecutionSupport: PeriodicExecutionSupport`. If support not added, then `NoPeriodicExecutionSupport` should be used.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
 
 ## In version 1.18.0
 

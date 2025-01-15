@@ -4,54 +4,94 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.periodic.services.{
-  EmptyPeriodicProcessListenerFactory,
-  PeriodicSchedulePropertyExtractorFactory,
-  ProcessConfigEnricherFactory
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
+  EmptyScheduledProcessListenerFactory,
+  ProcessConfigEnricherFactory,
+  SchedulePropertyExtractorFactory
 }
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, PeriodicExecutionSupported}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, SchedulingSupported}
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
+import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.process.repository.{
+  DBFetchingProcessRepository,
+  DbScenarioActionReadOnlyRepository,
+  ScenarioLabelsRepository,
+  SlickPeriodicProcessesRepository
+}
+import slick.jdbc
+import slick.jdbc.JdbcProfile
+
+import java.time.Clock
 
 object PeriodicDeploymentManagerDecorator extends LazyLogging {
 
   def decorate(
       underlying: DeploymentManager,
-      periodicExecutionSupported: PeriodicExecutionSupported,
-      periodicProcessesManagerProvider: PeriodicProcessesManagerProvider,
+      schedulingSupported: SchedulingSupported,
       modelData: ModelData,
       deploymentConfig: Config,
       dependencies: DeploymentManagerDependencies,
+      dbRef: DbRef,
   ): DeploymentManager = {
     logger.info("Decorating DM with periodic functionality")
+    import dependencies._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+    val clock = Clock.systemDefaultZone()
+
     val periodicBatchConfig = deploymentConfig.as[PeriodicBatchConfig]("deploymentManager")
 
-    val schedulePropertyExtractorFactory: PeriodicSchedulePropertyExtractorFactory =
-      periodicExecutionSupported.customSchedulePropertyExtractorFactory
+    val schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory =
+      schedulingSupported.customSchedulePropertyExtractorFactory
         .getOrElse(_ => CronSchedulePropertyExtractor())
 
     val processConfigEnricherFactory =
-      periodicExecutionSupported.customProcessConfigEnricherFactory
+      schedulingSupported.customProcessConfigEnricherFactory
         .getOrElse(ProcessConfigEnricherFactory.noOp)
 
     val periodicProcessListenerFactory =
-      periodicExecutionSupported.customPeriodicProcessListenerFactory
-        .getOrElse(EmptyPeriodicProcessListenerFactory)
+      schedulingSupported.customPeriodicProcessListenerFactory
+        .getOrElse(EmptyScheduledProcessListenerFactory)
 
     val additionalDeploymentDataProvider =
-      periodicExecutionSupported.customAdditionalDeploymentDataProvider
+      schedulingSupported.customAdditionalDeploymentDataProvider
         .getOrElse(DefaultAdditionalDeploymentDataProvider)
+
+    val actionRepository =
+      DbScenarioActionReadOnlyRepository.create(dbRef)
+    val scenarioLabelsRepository =
+      new ScenarioLabelsRepository(dbRef)
+    val fetchingProcessRepository =
+      DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
+
+    val periodicProcessesRepository = periodicBatchConfig.db match {
+      case None =>
+        new SlickPeriodicProcessesRepository(
+          periodicBatchConfig.processingType,
+          dbRef.db,
+          dbRef.profile,
+          clock,
+          fetchingProcessRepository
+        )
+      case Some(customDbConfig) =>
+        val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
+        new SlickLegacyPeriodicProcessesRepository(
+          periodicBatchConfig.processingType,
+          db,
+          dbProfile,
+          clock,
+          fetchingProcessRepository
+        )
+    }
 
     PeriodicDeploymentManager(
       delegate = underlying,
       dependencies = dependencies,
-      periodicProcessesManager = periodicProcessesManagerProvider.provide(
-        periodicBatchConfig.processingType,
-        periodicBatchConfig.db
-      ),
-      engineHandler = periodicExecutionSupported.engineHandler(modelData, dependencies, deploymentConfig),
+      periodicProcessesRepository = periodicProcessesRepository,
+      engineHandler = schedulingSupported.createScheduledExecutionPerformer(modelData, dependencies, deploymentConfig),
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
       processConfigEnricherFactory = processConfigEnricherFactory,
       listenerFactory = periodicProcessListenerFactory,

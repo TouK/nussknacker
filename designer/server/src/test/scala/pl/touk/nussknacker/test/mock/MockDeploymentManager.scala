@@ -267,7 +267,7 @@ class MockDeploymentManager(
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
-  override def periodicExecutionSupport: PeriodicExecutionSupport = NoPeriodicExecutionSupport
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }
 
 class MockManagerProvider(deploymentManager: DeploymentManager = new MockDeploymentManager())

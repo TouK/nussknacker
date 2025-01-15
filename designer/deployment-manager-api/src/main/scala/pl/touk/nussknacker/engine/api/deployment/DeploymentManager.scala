@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.definition.CustomParameterValidatorDelegate
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.deployment.periodic.services._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
@@ -51,7 +50,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport
 
-  def periodicExecutionSupport: PeriodicExecutionSupport
+  def schedulingSupport: SchedulingSupport
 
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
@@ -138,24 +137,24 @@ trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSuppor
 
 case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport
 
-sealed trait PeriodicExecutionSupport
+sealed trait SchedulingSupport
 
-trait PeriodicExecutionSupported extends PeriodicExecutionSupport {
+trait SchedulingSupported extends SchedulingSupport {
 
-  def engineHandler(
+  def createScheduledExecutionPerformer(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
-  ): PeriodicDeploymentEngineHandler
+  ): ScheduledExecutionPerformer
 
-  def customSchedulePropertyExtractorFactory: Option[PeriodicSchedulePropertyExtractorFactory]
+  def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory]
 
   def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]
 
-  def customPeriodicProcessListenerFactory: Option[PeriodicProcessListenerFactory]
+  def customPeriodicProcessListenerFactory: Option[ScheduledProcessListenerFactory]
 
   def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]
 
 }
 
-case object NoPeriodicExecutionSupport extends PeriodicExecutionSupport
+case object NoSchedulingSupport extends SchedulingSupport
