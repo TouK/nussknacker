@@ -126,6 +126,34 @@ class ManagementResourcesSpec
     }
   }
 
+  // TODO: To be removed. See comment in ManagementResources.deployRequestEntity
+  test("deploys and cancels with plain text comment") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+    deployProcessCommentOnly(
+      ProcessTestData.sampleScenario.name,
+      comment = Some("deployComment")
+    ) ~> checkThatEventually {
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ScenarioWithDetails]
+        processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+      }
+    }
+  }
+
+  // TODO: To be removed. See comment in ManagementResources.deployRequestEntity
+  test("deploys and cancels with plain text no comment") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+    deployProcessCommentOnly(
+      ProcessTestData.sampleScenario.name,
+      comment = None
+    ) ~> checkThatEventually {
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ScenarioWithDetails]
+        processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+      }
+    }
+  }
+
   test("deploys and cancels with comment") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     deployProcess(

@@ -366,6 +366,17 @@ trait NuResourcesTest
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def deployProcessCommentOnly(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/deploy/$processName",
+      HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
   protected def cancelProcess(
       processName: ProcessName,
       comment: Option[String] = None

@@ -81,6 +81,8 @@
 * [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
 * [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier `ScenarioTestRunner` creation - see [Migration guide](MigrationGuide.md) for details
 * [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Ability to configure deploy action parameters and apply those parameters in deploy http request. 
+  Kafka source has "offset reset strategy" parameter that controls starting point for reading events. 
 
 ## 1.18
 

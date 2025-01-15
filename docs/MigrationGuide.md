@@ -81,6 +81,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Deploy http request requires valid json in request body (see `RunDeploymentRequest`) instead of plain text, e.g. `{"comment": "example text"}`. 
+  For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "Reset"}}}` 
 
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
