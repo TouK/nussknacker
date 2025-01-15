@@ -40,6 +40,7 @@ import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransform
   * This is universal kafka source - it will handle both avro and json
   * TODO: Move it to some other module when json schema handling will be available
   */
+// TODO_PAWEL o ten source sie rozchodzi
 class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,

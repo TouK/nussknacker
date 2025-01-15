@@ -1,0 +1,14 @@
+notes
+
+na poczatek chce znalezc sobie test takiego sobie komponentu
+trzeba bedzie kurcze jakos poprawic dokumentacje jesli sie uda
+
+jest ten azure i ten confluent schema registry, to sobie nu rozpoznaje na podstawie
+schema.registry.url
+i to tak bez polaczania sie, na podstawie tego czy sie konczy jakims suffixem
+
+jest jeszcze kwestia ze jest avro i json, te formaty danych, w sumie czy bedziemy wiedziec jaki jest format gdy nie bedzie schemy?
+tez czy bedziemy wiedziec jaka jest lista topikow? co my bedziemy wiedziec?
+
+ciekawe, tam jest to ze sama schema moze byc w formacie avro albo json i zwykle jest tak ze messages w formacie avro sa
+z schema w formacie avro, ale cos pisza ze mozna to pomieszac czy cos. jest na to configuration setting

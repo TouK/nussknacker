@@ -42,6 +42,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
       scenario: CanonicalProcess
   ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
 
+  // TODO_PAWEL pierwszy lepszy test
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
 
