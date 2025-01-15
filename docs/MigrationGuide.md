@@ -73,6 +73,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       shouldVerifyBeforeDeploy: true
     }
     ```
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Deploy http request requires valid json in request body (see `RunDeploymentRequest`) instead of plain text, e.g. `{"comment": "example text"}`. 
+  For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "Reset"}}}` 
 
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`

@@ -91,6 +91,28 @@ class ManagementResources(
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
 
+  // TODO: This is workaround for touk/nussknacker-example-scenarios-library that deploys tests with plain text comment.
+  // https://github.com/TouK/nussknacker-scenario-examples-library/pull/7
+  private def deployRequestEntity: Directive1[RunDeploymentRequest] = {
+    entity(as[Option[String]]).flatMap { optStr =>
+      {
+        optStr match {
+          case None => provide(RunDeploymentRequest(None, None))
+          case Some(body) =>
+            io.circe.parser.parse(body) match {
+              case Right(json) =>
+                json.as[RunDeploymentRequest] match {
+                  case Right(request) => provide(request)
+                  case Left(notValidDeployRequest) =>
+                    reject(MalformedRequestContentRejection("lorem ipsum", notValidDeployRequest))
+                }
+              case Left(notJson) => provide(RunDeploymentRequest(None, Some(body)))
+            }
+        }
+      }
+    }
+  }
+
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("adminProcessManagement") {
       path("snapshot" / ProcessNameSegment) { processName =>
@@ -120,7 +142,7 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[RunDeploymentRequest]) & parameters(Symbol("savepointPath"))) {
+          (post & processId(processName) & deployRequestEntity & parameters(Symbol("savepointPath"))) {
             (processIdWithName, request, savepointPath) =>
               canDeploy(processIdWithName) {
                 complete {
@@ -143,7 +165,7 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[RunDeploymentRequest])) { (processIdWithName, request) =>
+        (post & processId(processName) & deployRequestEntity) { (processIdWithName, request) =>
           canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
