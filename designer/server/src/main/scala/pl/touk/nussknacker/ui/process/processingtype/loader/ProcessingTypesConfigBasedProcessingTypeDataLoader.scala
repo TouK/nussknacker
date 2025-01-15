@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigs, ProcessingTypeConfigsLoader}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionAvailability
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionAvailability.NotAvailable
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -20,7 +20,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      periodicExecutionAvailability: PeriodicExecutionAvailability,
+      dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
@@ -29,7 +29,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
           _,
           getModelDependencies,
           getDeploymentManagerDependencies,
-          periodicExecutionAvailability
+          dbRef
         )
       )
   }
@@ -38,7 +38,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      periodicExecutionAvailability: PeriodicExecutionAvailability,
+      dbRef: Option[DbRef],
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
@@ -57,12 +57,24 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
     val processingTypesData = providerWithNameInputData
       .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
         logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
+        val schedulingForProcessingType =
+          if (processingTypeConfig.deploymentConfig.hasPath("scheduling") &&
+            processingTypeConfig.deploymentConfig.getBoolean("scheduling.enabled")) {
+            SchedulingForProcessingType.Available(
+              dbRef.getOrElse(
+                throw new RuntimeException(s"dbRef not present, but required for Dm with scheduling enabled")
+              ),
+            )
+          } else {
+            SchedulingForProcessingType.NotAvailable
+          }
+
         val modelDependencies = getModelDependencies(processingType)
         val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
           ModelData(processingTypeConfig, modelDependencies),
           deploymentManagerProvider,
-          if (processingTypeConfig.supportsPeriodicExecution) periodicExecutionAvailability else NotAvailable,
+          schedulingForProcessingType,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
           processingTypeConfig.deploymentConfig,

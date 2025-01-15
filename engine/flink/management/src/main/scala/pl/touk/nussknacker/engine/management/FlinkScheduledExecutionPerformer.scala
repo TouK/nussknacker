@@ -32,7 +32,7 @@ object FlinkScheduledExecutionPerformer {
     val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkScheduledExecutionPerformer(
       flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
-      jarsDir = Paths.get(config.getString("deploymentManager.jarsDir")),
+      jarsDir = Paths.get(config.getString("scheduling.jarsDir")),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
     )

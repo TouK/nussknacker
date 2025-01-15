@@ -5,7 +5,8 @@ import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.PeriodicExecutionAvailability
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 import pl.touk.nussknacker.ui.process.processingtype.{CombinedProcessingTypeData, ProcessingTypeData}
@@ -18,7 +19,7 @@ class LocalProcessingTypeDataLoader(
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      periodicExecutionAvailability: PeriodicExecutionAvailability,
+      dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = IO {
     val processingTypes = modelData.map { case (processingType, (category, model)) =>
       val deploymentManagerDependencies = getDeploymentManagerDependencies(processingType)
@@ -26,7 +27,7 @@ class LocalProcessingTypeDataLoader(
         name = processingType,
         modelData = model,
         deploymentManagerProvider = deploymentManagerProvider,
-        periodicExecutionAvailability = PeriodicExecutionAvailability.NotAvailable,
+        schedulingForProcessingType = SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies = deploymentManagerDependencies,
         engineSetupName = deploymentManagerProvider.defaultEngineSetupName,
         deploymentConfig = ConfigFactory.empty(),

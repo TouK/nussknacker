@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
+import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, SchedulingConfig}
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 import scala.util.control.NonFatal
@@ -56,7 +56,7 @@ object ProcessingTypeData {
       name: ProcessingType,
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
-      periodicExecutionAvailability: PeriodicExecutionAvailability,
+      schedulingForProcessingType: SchedulingForProcessingType,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       deploymentConfig: Config,
@@ -68,7 +68,7 @@ object ProcessingTypeData {
       val deploymentData =
         createDeploymentData(
           deploymentManagerProvider,
-          periodicExecutionAvailability,
+          schedulingForProcessingType,
           deploymentManagerDependencies,
           engineSetupName,
           modelData,
@@ -95,7 +95,7 @@ object ProcessingTypeData {
 
   private def createDeploymentData(
       deploymentManagerProvider: DeploymentManagerProvider,
-      periodicExecutionAvailability: PeriodicExecutionAvailability,
+      schedulingForProcessingType: SchedulingForProcessingType,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
@@ -111,8 +111,8 @@ object ProcessingTypeData {
         deploymentConfig,
         scenarioStateCacheTTL
       )
-      decoratedDeploymentManager = periodicExecutionAvailability match {
-        case PeriodicExecutionAvailability.Available(dbRef) =>
+      decoratedDeploymentManager = schedulingForProcessingType match {
+        case SchedulingForProcessingType.Available(dbRef) =>
           deploymentManager.schedulingSupport match {
             case supported: SchedulingSupported =>
               PeriodicDeploymentManagerDecorator.decorate(
@@ -129,15 +129,15 @@ object ProcessingTypeData {
               )
           }
 
-        case PeriodicExecutionAvailability.NotAvailable =>
+        case SchedulingForProcessingType.NotAvailable =>
           deploymentManager
       }
     } yield decoratedDeploymentManager
 
-    val additionalScenarioProperties = periodicExecutionAvailability match {
-      case PeriodicExecutionAvailability.Available(_) =>
+    val additionalScenarioProperties = schedulingForProcessingType match {
+      case SchedulingForProcessingType.Available(_) =>
         PeriodicDeploymentManagerDecorator.additionalScenarioProperties
-      case PeriodicExecutionAvailability.NotAvailable =>
+      case SchedulingForProcessingType.NotAvailable =>
         Map.empty[String, ScenarioPropertyConfig]
     }
     val scenarioProperties = additionalScenarioProperties ++
@@ -198,15 +198,13 @@ object ProcessingTypeData {
     )
   }
 
-  sealed trait PeriodicExecutionAvailability
+  sealed trait SchedulingForProcessingType
 
-  object PeriodicExecutionAvailability {
+  object SchedulingForProcessingType {
 
-    case object NotAvailable extends PeriodicExecutionAvailability
+    case object NotAvailable extends SchedulingForProcessingType
 
-    final case class Available(
-        dbRef: DbRef,
-    ) extends PeriodicExecutionAvailability
+    final case class Available(dbRef: DbRef) extends SchedulingForProcessingType
 
   }
 

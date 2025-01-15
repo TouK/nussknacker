@@ -57,19 +57,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     ```
   * changes:
     * the `type: "flinkPeriodic"` is no longer supported, instead `type: "flinkStreaming"` with additional setting `supportsPeriodicExecution: true` should be used
-    * the db config is now optional - the periodic DM may still use its custom datasource defined here in `db` section
+    * the db config is now optional - the periodic DM may still use its custom datasource defined here in `legacyDb` section
     * when custom `db` section not defined here, then main Nussknacker db will be used
   * config after changes may look like that:
   ```hocon   
     deploymentConfig: {
       type: "flinkStreaming"
-      supportsPeriodicExecution: true
-      restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
-      deploymentManager {
+      scheduling {
+        enabled: true
         processingType: streaming,
         jarsDir: ./storage/jars
+        legacyDb: { <OPTIONAL config of the custom db data source> },
       }
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
     }
     ```
 

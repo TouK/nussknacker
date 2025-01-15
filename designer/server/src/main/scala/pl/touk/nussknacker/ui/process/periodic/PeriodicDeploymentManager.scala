@@ -24,7 +24,7 @@ object PeriodicDeploymentManager {
       engineHandler: ScheduledExecutionPerformer,
       schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
       processConfigEnricherFactory: ProcessConfigEnricherFactory,
-      periodicBatchConfig: PeriodicBatchConfig,
+      schedulingConfig: SchedulingConfig,
       originalConfig: Config,
       listenerFactory: ScheduledProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
@@ -42,9 +42,9 @@ object PeriodicDeploymentManager {
       periodicProcessesRepository,
       listener,
       additionalDeploymentDataProvider,
-      periodicBatchConfig.deploymentRetry,
-      periodicBatchConfig.executionConfig,
-      periodicBatchConfig.maxFetchedPeriodicScenarioActivities,
+      schedulingConfig.deploymentRetry,
+      schedulingConfig.executionConfig,
+      schedulingConfig.maxFetchedPeriodicScenarioActivities,
       processConfigEnricher,
       clock,
       dependencies.actionService,
@@ -54,13 +54,13 @@ object PeriodicDeploymentManager {
     // These actors have to be created with retries because they can initially fail to create due to taken names,
     // if the actors (with the same names) created before reload aren't fully stopped (and their names freed) yet
     val deploymentActor = createActorWithRetry(
-      s"periodic-${periodicBatchConfig.processingType}-deployer",
-      DeploymentActor.props(service, periodicBatchConfig.deployInterval),
+      s"periodic-${schedulingConfig.processingType}-deployer",
+      DeploymentActor.props(service, schedulingConfig.deployInterval),
       dependencies.actorSystem
     )
     val rescheduleFinishedActor = createActorWithRetry(
-      s"periodic-${periodicBatchConfig.processingType}-rescheduler",
-      RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval),
+      s"periodic-${schedulingConfig.processingType}-rescheduler",
+      RescheduleFinishedActor.props(service, schedulingConfig.rescheduleCheckInterval),
       dependencies.actorSystem
     )
 

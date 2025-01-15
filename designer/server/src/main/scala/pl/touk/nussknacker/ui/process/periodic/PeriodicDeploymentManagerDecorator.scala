@@ -42,7 +42,9 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
 
     val clock = Clock.systemDefaultZone()
 
-    val periodicBatchConfig = deploymentConfig.as[PeriodicBatchConfig]("deploymentManager")
+    deploymentConfig.as[SchedulingConfig]("scheduling")
+    val rawSchedulingConfig = deploymentConfig.getConfig("scheduling")
+    val schedulingConfig    = rawSchedulingConfig.as[SchedulingConfig]
 
     val schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory =
       schedulingSupported.customSchedulePropertyExtractorFactory
@@ -67,10 +69,10 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     val fetchingProcessRepository =
       DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
 
-    val periodicProcessesRepository = periodicBatchConfig.db match {
+    val periodicProcessesRepository = schedulingConfig.legacyDb match {
       case None =>
         new SlickPeriodicProcessesRepository(
-          periodicBatchConfig.processingType,
+          schedulingConfig.processingType,
           dbRef.db,
           dbRef.profile,
           clock,
@@ -79,7 +81,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       case Some(customDbConfig) =>
         val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
         new SlickLegacyPeriodicProcessesRepository(
-          periodicBatchConfig.processingType,
+          schedulingConfig.processingType,
           db,
           dbProfile,
           clock,
@@ -95,7 +97,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
       processConfigEnricherFactory = processConfigEnricherFactory,
       listenerFactory = periodicProcessListenerFactory,
-      periodicBatchConfig = periodicBatchConfig,
+      schedulingConfig = schedulingConfig,
       originalConfig = deploymentConfig,
       additionalDeploymentDataProvider = additionalDeploymentDataProvider,
     )

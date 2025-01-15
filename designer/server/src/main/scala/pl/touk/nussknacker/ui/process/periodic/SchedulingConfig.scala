@@ -7,15 +7,15 @@ import scala.concurrent.duration._
 /**
   * Periodic Flink scenarios deployment configuration.
   *
-  * @param db Nussknacker db configuration.
+  * @param legacyDb Optional custom db, that will be used instead of main Nussknacker DB. Will be removed in the future.
   * @param processingType processing type of scenarios to be managed by this instance of the periodic engine.
   * @param rescheduleCheckInterval {@link RescheduleFinishedActor} check interval.
   * @param deployInterval {@link DeploymentActor} check interval.
   * @param deploymentRetry {@link DeploymentRetryConfig}  for deployment failure recovery.
   * @param maxFetchedPeriodicScenarioActivities Optional limit of number of latest periodic-related Scenario Activities that are returned by Periodic DM.
   */
-case class PeriodicBatchConfig(
-    db: Option[Config],
+case class SchedulingConfig(
+    legacyDb: Option[Config],
     processingType: String,
     rescheduleCheckInterval: FiniteDuration = 13 seconds,
     deployInterval: FiniteDuration = 17 seconds,
