@@ -297,7 +297,7 @@ class ScenarioParametersServiceTest
               ComponentDefinitionExtractionMode.FinalDefinition
             ),
           _ => TestFactory.deploymentManagerDependencies,
-          SchedulingForProcessingType.NotAvailable,
+          dbRef = None,
         )
         .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService

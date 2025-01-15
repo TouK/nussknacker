@@ -154,7 +154,7 @@ trait NuResourcesTest
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,
-          SchedulingForProcessingType.Available(testDbRef),
+          Some(testDbRef),
         )
         .unsafeRunSync()
     )

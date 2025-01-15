@@ -59,7 +59,7 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
       .loadProcessingTypeData(
         _ => modelDependencies,
         _ => TestFactory.deploymentManagerDependencies,
-        SchedulingForProcessingType.NotAvailable,
+        dbRef = None,
       )
       .unsafeRunSync()
   }
