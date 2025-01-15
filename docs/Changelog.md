@@ -55,6 +55,8 @@
 * [#7446](https://github.com/TouK/nussknacker/pull/7446) Small changes regarding node errors in fragments used in scenarios:
   * Fragment error node tips in scenarios are now clickable and open problematic node edit window in a new tab.
   * Fragment nodes are now highlighted when they contain nodes with errors.
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Ability to configure deploy action parameters and apply those parameters in deploy http request. 
+  Kafka source has "offset reset strategy" parameter that controls starting point for reading events. 
 
 ## 1.18
 

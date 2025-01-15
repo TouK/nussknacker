@@ -40,6 +40,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism. 
   If there were any custom actions defined in some custom DeploymentManager implementation, 
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Deploy http request requires valid json in request body (see `RunDeploymentRequest`) instead of plain text, e.g. `{"comment": "example text"}`. 
+  For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "Reset"}}}` 
 
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
