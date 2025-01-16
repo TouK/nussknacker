@@ -44,7 +44,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def modelDependencies: ProcessObjectDependencies
 
-  @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
+  // TODO_PAWEL tutaj zmieniony typ
+  @transient protected lazy val schemaRegistryClient: Option[SchemaRegistryClient] =
     schemaRegistryClientFactory.create(kafkaConfig)
 
   protected def topicSelectionStrategy: TopicSelectionStrategy = {

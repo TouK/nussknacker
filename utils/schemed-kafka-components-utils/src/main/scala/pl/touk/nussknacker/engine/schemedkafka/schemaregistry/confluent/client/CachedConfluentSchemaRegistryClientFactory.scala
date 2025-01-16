@@ -25,7 +25,7 @@ class CachedConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFac
   // Cache engines are shared by many of CachedConfluentSchemaRegistryClient
   @transient private lazy val caches = mutable.Map[SchemaRegistryClientKafkaConfig, SchemaRegistryCaches]()
 
-  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+  override def createOnConfigWithSchemaUrl(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     val client = DefaultConfluentSchemaRegistryClientFactory.createConfluentClient(config)
     val cache = synchronized {
       caches.getOrElseUpdate(

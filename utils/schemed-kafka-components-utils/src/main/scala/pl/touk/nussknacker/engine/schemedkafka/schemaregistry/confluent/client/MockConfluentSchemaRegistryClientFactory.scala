@@ -16,7 +16,7 @@ class MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient: => CSch
 
   override type SchemaRegistryClientT = SchemaRegistryClientWithRegistration with ConfluentSchemaRegistryClient
 
-  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+  override def createOnConfigWithSchemaUrl(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient)
   }
 

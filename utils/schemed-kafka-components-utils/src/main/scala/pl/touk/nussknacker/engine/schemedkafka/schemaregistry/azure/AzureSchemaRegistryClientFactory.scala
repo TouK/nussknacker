@@ -25,7 +25,7 @@ object AzureSchemaRegistryClientFactory extends SchemaRegistryClientFactoryWithR
 
   override type SchemaRegistryClientT = AzureSchemaRegistryClient
 
-  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+  override def createOnConfigWithSchemaUrl(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     new AzureSchemaRegistryClient(config)
   }
 

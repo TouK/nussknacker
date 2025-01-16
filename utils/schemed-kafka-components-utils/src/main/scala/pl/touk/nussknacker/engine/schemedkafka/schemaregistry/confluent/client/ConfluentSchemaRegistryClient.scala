@@ -47,7 +47,7 @@ object DefaultConfluentSchemaRegistryClientFactory extends SchemaRegistryClientF
 
   override type SchemaRegistryClientT = SchemaRegistryClientWithRegistration with ConfluentSchemaRegistryClient
 
-  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+  override def createOnConfigWithSchemaUrl(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     val schemaRegistryClient = createConfluentClient(config)
     new DefaultConfluentSchemaRegistryClient(schemaRegistryClient)
   }
