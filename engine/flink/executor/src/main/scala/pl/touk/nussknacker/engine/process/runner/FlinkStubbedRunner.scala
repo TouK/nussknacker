@@ -5,11 +5,9 @@ import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.jobgraph.{JobGraph, SavepointRestoreSettings}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.graph.StreamGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
-import java.net.{MalformedURLException, URL}
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -26,10 +24,10 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     env
   }
 
-  private def createMiniCluster[T](env: StreamExecutionEnvironment, configuration: Configuration) = {
+  private def createMiniCluster(configuration: Configuration, numSlotsPerTaskManager: Int) = {
     val miniCluster = new MiniCluster(
       new MiniClusterConfiguration.Builder()
-        .setNumSlotsPerTaskManager(env.getParallelism)
+        .setNumSlotsPerTaskManager(numSlotsPerTaskManager)
         .setConfiguration(configuration)
         .build()
     )
@@ -38,7 +36,7 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
   }
 
   // we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
-  def execute[T](
+  def execute(
       env: StreamExecutionEnvironment,
       parallelism: Int,
       scenarioName: ProcessName,
@@ -49,14 +47,16 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     val jobGraph = streamGraph.getJobGraph
     setupJobGraph(jobGraph, savepointRestoreSettings)
 
-    val miniClusterConfiguration = prepareMiniClusterConfiguration(parallelism, jobGraph)
+    val miniClusterConfiguration = prepareMiniClusterConfiguration(numTaskSlots = parallelism, jobGraph)
 
     // it is required for proper working of HadoopFileSystem
     FileSystem.initialize(miniClusterConfiguration, null)
 
-    Using.resource(createMiniCluster(env, miniClusterConfiguration)) { exec =>
-      val id = exec.submitJob(jobGraph).get().getJobID
-      exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
+    val miniCluster = createMiniCluster(miniClusterConfiguration, numSlotsPerTaskManager = parallelism)
+
+    Using.resource(miniCluster) { miniCluster =>
+      val id = miniCluster.submitJob(jobGraph).get().getJobID
+      miniCluster.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
     }
   }
 
@@ -84,10 +84,10 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     }
   }
 
-  private def prepareMiniClusterConfiguration[T](parallelism: Int, jobGraph: JobGraph) = {
+  private def prepareMiniClusterConfiguration(numTaskSlots: Int, jobGraph: JobGraph) = {
     val configuration: Configuration = new Configuration
     configuration.addAll(jobGraph.getJobConfiguration)
-    configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, parallelism)
+    configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, numTaskSlots)
     configuration.set[Integer](RestOptions.PORT, 0)
 
     // FIXME: reversing flink default order
