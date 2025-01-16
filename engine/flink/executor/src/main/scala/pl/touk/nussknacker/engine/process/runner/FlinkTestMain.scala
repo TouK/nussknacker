@@ -4,7 +4,7 @@ import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListenerHolder,
   TestServiceInvocationCollector
 }
+import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 import scala.util.Using
 
@@ -55,17 +56,21 @@ class FlinkTestMain(
     val configuration: Configuration
 ) {
 
-  private val stubbedRunner = new FlinkStubbedRunner(modelData, process, configuration)
+  private val stubbedRunner = new FlinkStubbedRunner(modelData.modelClassLoader, configuration)
 
   def runTest: TestResults[Json] = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     try {
       val resultCollector = new TestServiceInvocationCollector(collectingListener)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
-      val env             = stubbedRunner.createEnv
+      val parallelism = MetaDataExtractor
+        .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
+        .parallelism
+        .getOrElse(1)
+      val env = stubbedRunner.createEnv(parallelism)
 
       registrar.register(env, process, processVersion, deploymentData, resultCollector)
-      stubbedRunner.execute(env, SavepointRestoreSettings.none())
+      stubbedRunner.execute(env, parallelism, process.name, SavepointRestoreSettings.none())
       collectingListener.results
     } finally {
       collectingListener.clean()
