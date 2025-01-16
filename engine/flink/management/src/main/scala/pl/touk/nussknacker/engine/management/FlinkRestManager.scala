@@ -2,17 +2,11 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.scheduler._
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
-  AdditionalDeploymentDataProvider,
-  ProcessConfigEnricherFactory,
-  SchedulePropertyExtractorFactory,
-  ScheduledExecutionPerformer,
-  ScheduledProcessListenerFactory
-}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -208,19 +202,40 @@ class FlinkRestManager(
 
   private def withParsedJobConfig(jobId: String, name: ProcessName): Future[Option[ParsedJobConfig]] = {
     client.getJobConfig(jobId).map { executionConfig =>
+      val prefix     = "additionalInformation" // Prefix defined in NkGlobalParameters
       val userConfig = executionConfig.`user-config`
       for {
-        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
-        user    <- userConfig.get("user").map(_.asString.getOrElse(""))
-        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
-        processId    = ProcessId(userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L))
-        labels       = userConfig.get("labels").flatMap(_.asArray).map(_.toList.flatMap(_.asString)).toList.flatten
-        deploymentId = userConfig.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
+        version <- userConfig
+          .getWithOptionalPrefix("versionId", prefix)
+          .flatMap(_.asString)
+          .map(_.toLong)
+          .map(VersionId(_))
+        user <- userConfig.getWithOptionalPrefix("user", prefix).map(_.asString.getOrElse(""))
+        modelVersion = userConfig.getWithOptionalPrefix("modelVersion", prefix).flatMap(_.asString).map(_.toInt)
+        processId = ProcessId(
+          userConfig.getWithOptionalPrefix("processId", prefix).flatMap(_.asString).map(_.toLong).getOrElse(-1L)
+        )
+        labels = userConfig
+          .getWithOptionalPrefix("labels", prefix)
+          .flatMap(_.asArray)
+          .map(_.toList.flatMap(_.asString))
+          .toList
+          .flatten
+        deploymentId = userConfig.getWithOptionalPrefix("deploymentId", prefix).flatMap(_.asString).map(DeploymentId(_))
       } yield {
         val versionDetails = ProcessVersion(version, name, processId, labels, user, modelVersion)
         ParsedJobConfig(versionDetails, deploymentId)
       }
     }
+  }
+
+  implicit class ConfigOps(config: Map[String, Json]) {
+
+    def getWithOptionalPrefix(key: String, prefix: String): Option[Json] =
+      config
+        .get(key)
+        .orElse(config.get(s"$prefix$key"))
+
   }
 
   override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {

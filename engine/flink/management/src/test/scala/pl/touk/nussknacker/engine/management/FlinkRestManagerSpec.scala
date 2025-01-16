@@ -335,6 +335,40 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     history should not contain HistoryEntry("cancel", Some(barDeploymentId.value))
   }
 
+  test("allow cancel specific deployment with prefixed user config") {
+    val processName     = ProcessName("process1")
+    val fooDeploymentId = DeploymentId("foo")
+    val barDeploymentId = DeploymentId("bar")
+
+    val deploymentIds = List(fooDeploymentId, barDeploymentId)
+    statuses = deploymentIds.map(deploymentId =>
+      JobOverview(deploymentId.value, processName.value, 10L, 10L, JobStatus.RUNNING.name(), tasksOverview())
+    )
+    configs = deploymentIds
+      .map(deploymentId =>
+        deploymentId.value -> ExecutionConfig(
+          1,
+          Map(
+            "additionalInformationprocessId"    -> fromString("123"),
+            "additionalInformationversionId"    -> fromString("1"),
+            "additionalInformationdeploymentId" -> fromString(deploymentId.value),
+            "additionalInformationuser"         -> fromString("user1"),
+            "additionalInformationlabels"       -> fromValues(List.empty)
+          )
+        )
+      )
+      .toMap
+
+    val (manager, history) = createManagerWithHistory(statuses)
+
+    manager
+      .processCommand(DMCancelDeploymentCommand(processName, fooDeploymentId, User("user1", "user1")))
+      .futureValue shouldBe (())
+
+    history should contain(HistoryEntry("cancel", Some(fooDeploymentId.value)))
+    history should not contain HistoryEntry("cancel", Some(barDeploymentId.value))
+  }
+
   test("cancel duplicate processes which are in non terminal state") {
     val jobStatuses = List(
       JobStatus.RUNNING.name(),

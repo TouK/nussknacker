@@ -172,7 +172,8 @@ object NkGlobalParameters {
       private val prefix = "configParameters"
     }
 
-    private val namespaceTagsMapPrefix         = "namespaceTags"
+    private val namespaceTagsMapPrefix = "namespaceTags"
+    // When modifying this prefix, be sure to check and modify the `prefix` in FlinkRestManager
     private val additionalInformationMapPrefix = "additionalInformation"
   }
 
