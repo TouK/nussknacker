@@ -15,6 +15,39 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 
+* [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * the PeriodicDeploymentManager is no longer a separate DM type
+    * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
+  ```hocon   
+    deploymentConfig: {
+      type: "flinkPeriodic"
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
+      deploymentManager {
+        db: { <config of the custom db data source> },
+        processingType: streaming,
+        jarsDir: ./storage/jars
+      }
+    }
+    ```
+    * changes:
+        * the `type: "flinkPeriodic"` is no longer supported, instead `type: "flinkStreaming"` with additional setting `supportsPeriodicExecution: true` should be used
+        * the db config is now optional - the periodic DM may still use its custom datasource defined here in `legacyDb` section
+        * when custom `db` section not defined here, then main Nussknacker db will be used
+    * config after changes may look like that:
+  ```hocon   
+    deploymentConfig: {
+      type: "flinkStreaming"
+      scheduling {
+        enabled: true
+        processingType: streaming,
+        jarsDir: ./storage/jars
+        legacyDb: { <OPTIONAL config of the custom db data source> },
+      }
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
+    }
+    ```
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
     * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15
     * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
@@ -33,6 +66,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
   If there were any custom actions defined in some custom DeploymentManager implementation,
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
+
+### Code API changes
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
 
 ## In version 1.18.0
 

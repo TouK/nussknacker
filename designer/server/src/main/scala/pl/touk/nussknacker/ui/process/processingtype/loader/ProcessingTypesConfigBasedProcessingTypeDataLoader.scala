@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.NussknackerConfig
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -18,6 +20,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     config
       .loadProcessingTypeConfigs()
@@ -39,11 +42,23 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
         val processingTypesData = providerWithNameInputData
           .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
             logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
+            val schedulingForProcessingType =
+              if (processingTypeConfig.deploymentConfig.hasPath("scheduling") &&
+                processingTypeConfig.deploymentConfig.getBoolean("scheduling.enabled")) {
+                SchedulingForProcessingType.Available(
+                  dbRef.getOrElse(
+                    throw new RuntimeException(s"dbRef not present, but required for Dm with scheduling enabled")
+                  ),
+                )
+              } else {
+                SchedulingForProcessingType.NotAvailable
+              }
             val modelDependencies = getModelDependencies(processingType)
             val processingTypeData = ProcessingTypeData.createProcessingTypeData(
               processingType,
               ModelData(processingTypeConfig, modelDependencies),
               deploymentManagerProvider,
+              schedulingForProcessingType,
               getDeploymentManagerDependencies(processingType),
               engineSetupNames(processingType),
               processingTypeConfig.deploymentConfig,
