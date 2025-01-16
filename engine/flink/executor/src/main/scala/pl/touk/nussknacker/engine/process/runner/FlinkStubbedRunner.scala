@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
-import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
+import org.apache.flink.runtime.jobgraph.{JobGraph, SavepointRestoreSettings}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.graph.StreamGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
@@ -14,10 +15,16 @@ import scala.util.Using
 
 final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration: Configuration) {
 
-  def createEnv(parallelism: Int): StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(
-    parallelism,
-    configuration
-  )
+  def createEnv(parallelism: Int): StreamExecutionEnvironment = {
+    val env = StreamExecutionEnvironment.createLocalEnvironment(
+      parallelism,
+      configuration
+    )
+    // Checkpoints are disabled to prevent waiting for checkpoint to happen
+    // before finishing execution.
+    env.getCheckpointConfig.disableCheckpointing()
+    env
+  }
 
   private def createMiniCluster[T](env: StreamExecutionEnvironment, configuration: Configuration) = {
     val miniCluster = new MiniCluster(
@@ -37,32 +44,30 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
       scenarioName: ProcessName,
       savepointRestoreSettings: SavepointRestoreSettings
   ): Unit = {
-    // Checkpoints are disabled to prevent waiting for checkpoint to happen
-    // before finishing execution.
-    env.getCheckpointConfig.disableCheckpointing()
-
     val streamGraph = env.getStreamGraph
+    setupStreamGraph(streamGraph, scenarioName, savepointRestoreSettings)
+
+    val miniClusterConfiguration = prepareMiniClusterConfiguration(parallelism, streamGraph)
+
+    // it is required for proper working of HadoopFileSystem
+    FileSystem.initialize(miniClusterConfiguration, null)
+
+    Using.resource(createMiniCluster(env, miniClusterConfiguration)) { exec =>
+      val id = exec.submitJob(streamGraph.getJobGraph).get().getJobID
+      exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
+    }
+  }
+
+  private def setupStreamGraph(
+      streamGraph: StreamGraph,
+      scenarioName: ProcessName,
+      savepointRestoreSettings: SavepointRestoreSettings
+  ): Unit = {
     streamGraph.setJobName(scenarioName.value)
 
     val jobGraph = streamGraph.getJobGraph()
     jobGraph.setClasspaths(classpathsFromModelWithFallbackToConfiguration)
     jobGraph.setSavepointRestoreSettings(savepointRestoreSettings)
-
-    val configuration: Configuration = new Configuration
-    configuration.addAll(jobGraph.getJobConfiguration)
-    configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, parallelism)
-    configuration.set[Integer](RestOptions.PORT, 0)
-
-    // FIXME: reversing flink default order
-    configuration.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
-
-    // it is required for proper working of HadoopFileSystem
-    FileSystem.initialize(configuration, null)
-
-    Using.resource(createMiniCluster(env, configuration)) { exec =>
-      val id = exec.submitJob(jobGraph).get().getJobID
-      exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
-    }
   }
 
   private def classpathsFromModelWithFallbackToConfiguration = {
@@ -78,6 +83,17 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
         )
       case list => list.asJava
     }
+  }
+
+  private def prepareMiniClusterConfiguration[T](parallelism: Int, streamGraph: StreamGraph) = {
+    val configuration: Configuration = new Configuration
+    configuration.addAll(streamGraph.getJobGraph.getJobConfiguration)
+    configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, parallelism)
+    configuration.set[Integer](RestOptions.PORT, 0)
+
+    // FIXME: reversing flink default order
+    configuration.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+    configuration
   }
 
 }
