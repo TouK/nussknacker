@@ -16,7 +16,7 @@ import scala.concurrent.duration._
   */
 case class SchedulingConfig(
     legacyDb: Option[Config],
-    // The `processingType` value should be removed in the future, because it should correspond to the real of processingType.
+    // The `processingType` value should be removed in the future, because it should correspond to the real value of processingType.
     // But at the moment it may not be equal to the value of processingType of the DM that uses scheduling mechanism.
     // Therefore, we must keep the separate value SchedulingConfig, until we ensure consistency between the real processingType and the one defined here.
     processingType: String,
