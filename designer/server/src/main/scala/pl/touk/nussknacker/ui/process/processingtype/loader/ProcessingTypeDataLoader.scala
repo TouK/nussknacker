@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
+  ModelClassLoaderProvider,
   ProcessingTypeData,
   ValueWithRestriction
 }

@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.{
   ModelDependencies,
   ProcessingTypeConfig
 }
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 object FlinkStreamingDeploymentManagerProviderHelper {
 
