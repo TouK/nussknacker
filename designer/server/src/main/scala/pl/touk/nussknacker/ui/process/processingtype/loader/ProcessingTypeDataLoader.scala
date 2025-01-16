@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependenc
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
+  ModelClassLoaderProvider,
   ProcessingTypeData,
   ValueWithRestriction
 }
@@ -15,6 +16,7 @@ trait ProcessingTypeDataLoader {
   def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]]
 
 }

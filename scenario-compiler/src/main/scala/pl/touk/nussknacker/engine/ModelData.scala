@@ -40,8 +40,11 @@ object ModelData extends LazyLogging {
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
 
-  def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
-    val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
+  def apply(
+      processingTypeConfig: ProcessingTypeConfig,
+      dependencies: ModelDependencies,
+      modelClassLoader: ModelClassLoader
+  ): ModelData = {
     ClassLoaderModelData(
       _.resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
       modelClassLoader,
