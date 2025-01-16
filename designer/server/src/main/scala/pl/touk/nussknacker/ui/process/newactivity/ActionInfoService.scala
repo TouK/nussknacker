@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.activity.ActionInfoProvider
 import pl.touk.nussknacker.restmodel.definition.UiActionParameterConfig
-import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService.UiActionNodeParameters
+import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService.{UiActionNodeParameters, UiActionParameters}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
@@ -21,12 +21,12 @@ class ActionInfoService(activityInfoProvider: ActionInfoProvider, processResolve
       isFragment: Boolean
   )(
       implicit user: LoggedUser
-  ): Map[String, List[UiActionNodeParameters]] = {
+  ): UiActionParameters = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     activityInfoProvider
       .getActionParameters(processVersion, canonical)
       .map { case (scenarioActionName, nodeParamsMap) =>
-        scenarioActionName.value -> nodeParamsMap.map { case (nodeId, params) =>
+        scenarioActionName -> nodeParamsMap.map { case (nodeId, params) =>
           UiActionNodeParameters(
             nodeId,
             params.map { case (name, value) =>
@@ -55,4 +55,5 @@ class ActionInfoService(activityInfoProvider: ActionInfoProvider, processResolve
 
 object ActionInfoService {
   @JsonCodec case class UiActionNodeParameters(nodeId: NodeId, parameters: Map[String, UiActionParameterConfig])
+  type UiActionParameters = Map[ScenarioActionName, List[UiActionNodeParameters]]
 }
