@@ -55,6 +55,9 @@
 * [#7446](https://github.com/TouK/nussknacker/pull/7446) Small changes regarding node errors in fragments used in scenarios:
   * Fragment error node tips in scenarios are now clickable and open problematic node edit window in a new tab.
   * Fragment nodes are now highlighted when they contain nodes with errors.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
+  * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
+  * implementation provided for Flink DM
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) introduced `managersDirs` config to configure deployment managers directory paths (you can use `MANAGERS_DIR` env in case of docker-based deployments). The default is `./managers`.
 
 ## 1.18

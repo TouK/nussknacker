@@ -4,6 +4,8 @@ import akka.actor.ActorSystem
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
@@ -22,7 +24,6 @@ import pl.touk.nussknacker.engine.{
   ModelDependencies,
   ProcessingTypeConfig
 }
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 object FlinkStreamingDeploymentManagerProviderHelper {
 

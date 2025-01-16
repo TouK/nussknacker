@@ -66,6 +66,8 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
@@ -739,7 +741,8 @@ class AkkaHttpBasedRouteProvider(
               sttpBackend,
               _
             ),
-            modelClassLoaderProvider
+            modelClassLoaderProvider,
+            Some(dbRef),
           )
           val loadAndNotifyIO = loadProcessingTypeDataIO
             .map { state =>

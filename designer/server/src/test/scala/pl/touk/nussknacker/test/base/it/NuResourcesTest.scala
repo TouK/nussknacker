@@ -51,6 +51,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -150,6 +151,7 @@ trait NuResourcesTest
         Streaming.stringify,
         modelData,
         deploymentManagerProvider,
+        SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
@@ -170,7 +172,8 @@ trait NuResourcesTest
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,
-          modelClassLoaderProvider
+          modelClassLoaderProvider,
+          Some(testDbRef),
         )
         .unsafeRunSync()
     )

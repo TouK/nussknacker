@@ -62,7 +62,8 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with WithTestDeployment
         ModelClassLoaderProvider(
           allProcessingTypes.map(_ -> ModelClassLoaderDependencies(List.empty, None)).toMap,
           deploymentManagersClassLoader
-        )
+        ),
+        dbRef = None,
       )
       .unsafeRunSync()
   }

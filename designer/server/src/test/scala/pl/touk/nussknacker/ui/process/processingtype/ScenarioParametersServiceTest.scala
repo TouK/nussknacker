@@ -21,6 +21,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -305,9 +306,9 @@ class ScenarioParametersServiceTest
           ModelClassLoaderProvider(
             designerConfig.processingTypeConfigs.configByProcessingType.mapValuesNow(conf =>
               ModelClassLoaderDependencies(conf.classPath, None)
-            ),
-            deploymentManagersClassLoader
-          )
+            )
+          ),
+          dbRef = None,
         )
         .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService

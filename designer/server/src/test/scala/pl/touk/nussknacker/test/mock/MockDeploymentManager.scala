@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.test.mock
 
-import _root_.sttp.client3.testing.SttpBackendStub
 import akka.actor.ActorSystem
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
@@ -8,6 +7,7 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
+import sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -301,6 +301,7 @@ class MockDeploymentManager private (
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }
 
 class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentManager.create())
