@@ -21,7 +21,7 @@ object PeriodicDeploymentManager {
 
   def apply(
       delegate: DeploymentManager,
-      engineHandler: ScheduledExecutionPerformer,
+      scheduledExecutionPerformer: ScheduledExecutionPerformer,
       schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
       processConfigEnricherFactory: ProcessConfigEnricherFactory,
       schedulingConfig: SchedulingConfig,
@@ -38,7 +38,7 @@ object PeriodicDeploymentManager {
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
     val service = new PeriodicProcessService(
       delegate,
-      engineHandler,
+      scheduledExecutionPerformer,
       periodicProcessesRepository,
       listener,
       additionalDeploymentDataProvider,

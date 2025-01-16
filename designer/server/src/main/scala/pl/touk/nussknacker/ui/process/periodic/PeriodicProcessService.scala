@@ -34,7 +34,7 @@ import scala.util.control.NonFatal
 
 class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
-    engineHandler: ScheduledExecutionPerformer,
+    scheduledExecutionPerformer: ScheduledExecutionPerformer,
     periodicProcessesRepository: PeriodicProcessesRepository,
     periodicProcessListener: ScheduledProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
@@ -148,8 +148,8 @@ class PeriodicProcessService(
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
 
     for {
-      inputConfigDuringExecution <- engineHandler.provideInputConfigDuringExecutionJson()
-      deploymentWithJarData <- engineHandler.prepareDeploymentWithRuntimeParams(
+      inputConfigDuringExecution <- scheduledExecutionPerformer.provideInputConfigDuringExecutionJson()
+      deploymentWithJarData <- scheduledExecutionPerformer.prepareDeploymentWithRuntimeParams(
         processVersion,
       )
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
@@ -458,7 +458,7 @@ class PeriodicProcessService(
       _ <- periodicProcessesRepository.markInactive(process.id).run
       // we want to delete jars only after we successfully mark process as inactive. It's better to leave jar garbage than
       // have process without jar
-    } yield () => engineHandler.cleanAfterDeployment(process.deploymentData.runtimeParams)
+    } yield () => scheduledExecutionPerformer.cleanAfterDeployment(process.deploymentData.runtimeParams)
   }
 
   private def markProcessActionExecutionFinished(
@@ -520,7 +520,7 @@ class PeriodicProcessService(
           deployment.toDetails
         )
       )
-      externalDeploymentId <- engineHandler.deployWithRuntimeParams(
+      externalDeploymentId <- scheduledExecutionPerformer.deployWithRuntimeParams(
         deploymentWithJarData,
         enrichedProcessConfig.inputConfigDuringExecutionJson,
         deploymentData,

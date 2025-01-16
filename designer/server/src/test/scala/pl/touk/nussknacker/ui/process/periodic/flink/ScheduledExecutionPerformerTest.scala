@@ -32,7 +32,7 @@ class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with Sca
 
   private val currentModelUrls = List(currentModelJarFile.toURI.toURL)
 
-  private val engineHandler = createScheduledExecutionPerformer(jarsDir = jarsDir)
+  private val scheduledExecutionPerformer = createScheduledExecutionPerformer(jarsDir = jarsDir)
 
   private def createScheduledExecutionPerformer(
       jarsDir: Path,
@@ -48,7 +48,7 @@ class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with Sca
   }
 
   test("prepareDeploymentWithJar - should copy to local dir") {
-    val result = engineHandler.prepareDeploymentWithRuntimeParams(processVersion)
+    val result = scheduledExecutionPerformer.prepareDeploymentWithRuntimeParams(processVersion)
 
     val copiedJarFileName = result.futureValue.runtimeParams.params("jarFileName")
     copiedJarFileName should fullyMatch regex s"^$processName-$processVersionId-\\d+\\.jar$$"
@@ -58,8 +58,8 @@ class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with Sca
   }
 
   test("prepareDeploymentWithJar - should handle disappearing model JAR") {
-    val modelJarProvider = new FlinkModelJarProvider(currentModelUrls)
-    val engineHandler    = createScheduledExecutionPerformer(jarsDir, modelJarProvider)
+    val modelJarProvider            = new FlinkModelJarProvider(currentModelUrls)
+    val scheduledExecutionPerformer = createScheduledExecutionPerformer(jarsDir, modelJarProvider)
 
     def verifyAndDeleteJar(result: Future[DeploymentWithRuntimeParams]): Unit = {
       val copiedJarFile = jarsDir.resolve(result.futureValue.runtimeParams.params("jarFileName"))
@@ -68,21 +68,21 @@ class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with Sca
       Files.delete(copiedJarFile)
     }
 
-    verifyAndDeleteJar(engineHandler.prepareDeploymentWithRuntimeParams(processVersion))
+    verifyAndDeleteJar(scheduledExecutionPerformer.prepareDeploymentWithRuntimeParams(processVersion))
 
     modelJarProvider.getJobJar().delete() shouldBe true
 
-    verifyAndDeleteJar(engineHandler.prepareDeploymentWithRuntimeParams(processVersion))
+    verifyAndDeleteJar(scheduledExecutionPerformer.prepareDeploymentWithRuntimeParams(processVersion))
   }
 
   test("prepareDeploymentWithJar - should create jars dir if not exists") {
-    val tmpDir        = System.getProperty("java.io.tmpdir")
-    val jarsDir       = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
-    val engineHandler = createScheduledExecutionPerformer(jarsDir = jarsDir)
+    val tmpDir                      = System.getProperty("java.io.tmpdir")
+    val jarsDir                     = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
+    val scheduledExecutionPerformer = createScheduledExecutionPerformer(jarsDir = jarsDir)
 
     Files.exists(jarsDir) shouldBe false
 
-    val result = engineHandler.prepareDeploymentWithRuntimeParams(processVersion)
+    val result = scheduledExecutionPerformer.prepareDeploymentWithRuntimeParams(processVersion)
 
     val copiedJarFileName = result.futureValue.runtimeParams.params("jarFileName")
     Files.exists(jarsDir) shouldBe true
@@ -94,14 +94,14 @@ class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with Sca
     val jarPath     = jarsDir.resolve(jarFileName)
     Files.copy(currentModelJarFile.toPath, jarPath)
 
-    engineHandler.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> jarFileName))).futureValue
+    scheduledExecutionPerformer.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> jarFileName))).futureValue
 
     Files.exists(jarPath) shouldBe false
   }
 
   test("deleteJar - should handle not existing file") {
     val result =
-      engineHandler.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> "unknown.jar"))).futureValue
+      scheduledExecutionPerformer.cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> "unknown.jar"))).futureValue
 
     result shouldBe (())
   }

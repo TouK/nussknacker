@@ -163,10 +163,10 @@ class PeriodicProcessServiceIntegrationTest
       executionConfig: PeriodicExecutionConfig,
       maxFetchedPeriodicScenarioActivities: Option[Int],
   ) {
-    val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val engineHandlerStub             = new ScheduledExecutionPerformerStub
-    val events                        = new ArrayBuffer[ScheduledProcessEvent]()
-    var failListener                  = false
+    val delegateDeploymentManagerStub   = new DeploymentManagerStub
+    val scheduledExecutionPerformerStub = new ScheduledExecutionPerformerStub
+    val events                          = new ArrayBuffer[ScheduledProcessEvent]()
+    var failListener                    = false
 
     def periodicProcessService(
         currentTime: Instant,
@@ -174,7 +174,7 @@ class PeriodicProcessServiceIntegrationTest
     ) =
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
-        engineHandler = engineHandlerStub,
+        scheduledExecutionPerformer = scheduledExecutionPerformerStub,
         periodicProcessesRepository = periodicProcessesRepositoryCreator(processingType, currentTime),
         periodicProcessListener = new ScheduledProcessListener {
 
@@ -415,7 +415,7 @@ class PeriodicProcessServiceIntegrationTest
   ) { f =>
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
     var currentTime        = startTime
-    f.engineHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.scheduledExecutionPerformerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
 
     def service = f.periodicProcessService(currentTime)
 
@@ -807,7 +807,7 @@ class PeriodicProcessServiceIntegrationTest
     val timeToTriggerCheck = startTime.plus(1, ChronoUnit.HOURS)
     var currentTime        = startTime
 
-    f.engineHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.scheduledExecutionPerformerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     def service = f.periodicProcessService(currentTime)
 
     val processIdWithName = f.prepareProcess(processName).dbioActionValues

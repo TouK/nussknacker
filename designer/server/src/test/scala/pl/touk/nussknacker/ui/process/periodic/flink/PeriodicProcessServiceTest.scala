@@ -65,17 +65,17 @@ class PeriodicProcessServiceTest
   )
 
   class Fixture {
-    val repository                    = new InMemPeriodicProcessesRepository(processingType = "testProcessingType")
-    val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val engineHandlerStub             = new ScheduledExecutionPerformerStub
-    val events                        = new ArrayBuffer[ScheduledProcessEvent]()
-    val additionalData                = Map("testMap" -> "testValue")
+    val repository                      = new InMemPeriodicProcessesRepository(processingType = "testProcessingType")
+    val delegateDeploymentManagerStub   = new DeploymentManagerStub
+    val scheduledExecutionPerformerStub = new ScheduledExecutionPerformerStub
+    val events                          = new ArrayBuffer[ScheduledProcessEvent]()
+    val additionalData                  = Map("testMap" -> "testValue")
 
     val actionService: ProcessingTypeActionServiceStub = new ProcessingTypeActionServiceStub
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
-      engineHandler = engineHandlerStub,
+      scheduledExecutionPerformer = scheduledExecutionPerformerStub,
       periodicProcessesRepository = repository,
       new ScheduledProcessListener {
 
@@ -396,7 +396,7 @@ class PeriodicProcessServiceTest
     val deploymentEntity = f.repository.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Deployed
     ConfigFactory
-      .parseString(f.engineHandlerStub.lastInputConfigDuringExecutionJson.value)
+      .parseString(f.scheduledExecutionPerformerStub.lastInputConfigDuringExecutionJson.value)
       .getString("runAt") shouldBe deploymentEntity.runAt.toString
 
     val expectedDetails =
@@ -408,7 +408,7 @@ class PeriodicProcessServiceTest
   test("deploy - should handle failed deployment") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    f.engineHandlerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.scheduledExecutionPerformerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     val toSchedule = createPeriodicProcessDeployment(
       f.repository.processEntities.loneElement,
       f.repository.deploymentEntities.loneElement,
