@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -139,6 +139,10 @@ package object definition {
       label: Option[String],
       hintText: Option[String]
   )
+
+  object UiActionParameterConfig {
+    def empty: UiActionParameterConfig = UiActionParameterConfig(None, RawParameterEditor, None, None)
+  }
 
   object UIParameter {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
