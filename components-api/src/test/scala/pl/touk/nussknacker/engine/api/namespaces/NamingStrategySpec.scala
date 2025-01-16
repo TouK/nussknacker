@@ -12,10 +12,14 @@ class NamingStrategySpec extends AnyFunSuite with Matchers {
   }
 
   test("should add namespace if configured") {
-    val namingStrategy = NamingStrategy(Some("customer1"))
+    val namingStrategy = NamingStrategy(Some(Namespace("customer1", "_")))
     namingStrategy.prepareName("original") shouldBe "customer1_original"
     namingStrategy.decodeName("customer1_someName") shouldBe Some("someName")
     namingStrategy.decodeName("dummy??") shouldBe None
   }
+
+  test("should parse naming strategy from config with default separator") {}
+
+  test("should parse naming strategy from config with separator") {}
 
 }
