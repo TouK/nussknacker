@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.schemedkafka.serialization.{
 trait SchemaRegistryBasedSerializerFactory extends Serializable {
 
   def createSerializer(
-      schemaRegistryClient: SchemaRegistryClient,
+      schemaRegistryClient: Option[SchemaRegistryClient],
       kafkaConfig: KafkaConfig,
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       isKey: Boolean

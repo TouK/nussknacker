@@ -14,6 +14,7 @@ trait SchemaRegistryClientFactory extends Serializable {
     if (config.kafkaProperties.contains("schema.registry.url")) Some(createOnConfigWithSchemaUrl(config)) else None
 
   // TODO_PAWEL tutaj mozna w sumie podawac ten url co go odczytalismy i go nie czytac z configa
+  // tak powinno byc, koniecznie
   protected def createOnConfigWithSchemaUrl(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT
 }
 

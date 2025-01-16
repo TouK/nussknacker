@@ -51,11 +51,11 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
   override def serializer(
       schemaOpt: Option[ParsedSchema],
-      client: SchemaRegistryClient,
+      client: Option[SchemaRegistryClient],
       isKey: Boolean
   ): Serializer[Any] = {
     client match {
-      case confluentClient: ConfluentSchemaRegistryClient if kafkaConfig.avroAsJsonSerialization.contains(true) =>
+      case Some(confluentClient: ConfluentSchemaRegistryClient) if kafkaConfig.avroAsJsonSerialization.contains(true) =>
         new ConfluentJsonPayloadKafkaSerializer(
           kafkaConfig,
           confluentClient,
@@ -63,10 +63,12 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
           schemaOpt.map(_.cast()),
           isKey = isKey
         )
-      case confluentClient: ConfluentSchemaRegistryClient =>
+      case Some(confluentClient: ConfluentSchemaRegistryClient) =>
         ConfluentKafkaAvroSerializer(kafkaConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
-      case azureClient: AzureSchemaRegistryClient =>
+      case Some(azureClient: AzureSchemaRegistryClient) =>
         AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
+      // TODO_PAWEL no wlasnie, jak nie ma to nie ma, nie ma znaczenia czy nie ma azure czy
+      case None =>
       case _ =>
         throw new IllegalArgumentException(
           s"Not supported schema registry client: ${client.getClass}. " +

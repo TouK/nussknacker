@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.Sche
 object UniversalSerializerFactory extends SchemaRegistryBasedSerializerFactory {
 
   override def createSerializer(
-      schemaRegistryClient: SchemaRegistryClient,
+      schemaRegistryClient: Option[SchemaRegistryClient],
       kafkaConfig: KafkaConfig,
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       isKey: Boolean

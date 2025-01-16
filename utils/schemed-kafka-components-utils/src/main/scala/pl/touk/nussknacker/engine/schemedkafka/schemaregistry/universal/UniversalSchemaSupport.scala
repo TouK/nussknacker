@@ -36,7 +36,7 @@ object UniversalSchemaSupportDispatcher {
 
 trait UniversalSchemaSupport {
   def payloadDeserializer: UniversalSchemaPayloadDeserializer
-  def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any]
+  def serializer(schemaOpt: Option[ParsedSchema], c: Option[SchemaRegistryClient], isKey: Boolean): Serializer[Any]
   def typeDefinition(schema: ParsedSchema): TypingResult
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
