@@ -73,12 +73,13 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     // and this fallback is to work with a work around for a behaviour added in https://issues.apache.org/jira/browse/FLINK-32265
     // see details in pl.touk.nussknacker.engine.flink.test.MiniClusterExecutionEnvironment#execute
     modelClassLoader.urls match {
-      case Nil =>
-        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
-          configuration,
-          PipelineOptions.CLASSPATHS,
-          new URL(_)
-        )
+      // FIXME abr: is it necessary?
+//      case Nil =>
+//        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
+//          configuration,
+//          PipelineOptions.CLASSPATHS,
+//          new URL(_)
+//        )
       case list => list.asJava
     }
   }
