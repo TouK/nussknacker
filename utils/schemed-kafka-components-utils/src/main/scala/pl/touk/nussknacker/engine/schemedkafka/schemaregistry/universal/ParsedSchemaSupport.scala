@@ -68,6 +68,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       case Some(azureClient: AzureSchemaRegistryClient) =>
         AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
       // TODO_PAWEL no wlasnie, jak nie ma to nie ma, nie ma znaczenia czy nie ma azure czy
+      // dowiedziec sie gdzie jest konfig staginga, on jest mi potrzebny
       case None =>
       case _ =>
         throw new IllegalArgumentException(

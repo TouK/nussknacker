@@ -68,3 +68,5 @@ na staging (self hosted) jes tkafka source, i tam jeden topic w dropdownie jest 
 
 i generalnie to my mozemy pobierac liste topickow z kafki bezposrednio, i tak nawet robimy, z tym ze potem dorzucamy jeszcze
 topicki z schema registry zdaje sie.
+
+dowiedziec sie gdzie jest konf
