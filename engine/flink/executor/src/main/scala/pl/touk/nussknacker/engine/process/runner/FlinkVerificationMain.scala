@@ -28,12 +28,12 @@ object FlinkVerificationMain extends FlinkRunner {
 }
 
 class FlinkVerificationMain(
-    val modelData: ModelData,
-    val process: CanonicalProcess,
+    modelData: ModelData,
+    process: CanonicalProcess,
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     savepointPath: String,
-    val configuration: Configuration
+    configuration: Configuration
 ) {
 
   private val stubbedRunner = new FlinkStubbedRunner(modelData.modelClassLoader, configuration)

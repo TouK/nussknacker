@@ -6,7 +6,7 @@ import java.io.File
 import java.net.{URI, URL, URLClassLoader}
 import java.nio.file.Path
 
-case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) {
+case class ModelClassLoader(classLoader: ClassLoader, urls: List[URL]) {
 
   override def toString: String = s"ModelClassLoader(${toString(classLoader)})"
 

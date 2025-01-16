@@ -16,13 +16,6 @@ object FlinkTestConfiguration {
     config.set(TaskManagerOptions.NETWORK_MEMORY_MIN, MemorySize.parse("16m"))
     config.set(TaskManagerOptions.NETWORK_MEMORY_MAX, MemorySize.parse("16m"))
 
-    // This is a work around for a behaviour added in https://issues.apache.org/jira/browse/FLINK-32265
-    // Flink overwrite user classloader by the AppClassLoader if classpaths parameter is empty
-    // (implementation in org.apache.flink.runtime.execution.librarycache.BlobLibraryCacheManager)
-    // which holds all needed jars/classes in case of running from Scala plugin in IDE.
-    // but in case of running from sbt it contains only sbt-launcher.jar
-    config.set(PipelineOptions.CLASSPATHS, List("http://dummy-classpath.invalid").asJava)
-
     // This is to prevent memory problem in tests with mutliple Table API based aggregations. An IllegalArgExceptionon
     // is thrown with message "The minBucketMemorySize is not valid!" in
     // org.apache.flink.table.runtime.util.collections.binary.AbstractBytesHashMap.java:121 where memorySize is set

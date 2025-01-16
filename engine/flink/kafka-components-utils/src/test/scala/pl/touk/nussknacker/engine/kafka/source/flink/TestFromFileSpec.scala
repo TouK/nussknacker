@@ -24,8 +24,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
+import java.net.URL
 import java.util.Collections
 
 class TestFromFileSpec
@@ -48,7 +50,13 @@ class TestFromFileSpec
     LocalModelData(
       inputConfig = config,
       components = List.empty,
-      configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders)
+      configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders),
+      // This is a work around for a behaviour added in https://issues.apache.org/jira/browse/FLINK-32265
+      // Flink overwrite user classloader by the AppClassLoader if classpaths parameter is empty
+      // (implementation in org.apache.flink.runtime.execution.librarycache.BlobLibraryCacheManager)
+      // which holds all needed jars/classes in case of running from Scala plugin in IDE.
+      // but in case of running from sbt it contains only sbt-launcher.jar
+      modelClassLoader = new ModelClassLoader(getClass.getClassLoader, List(new URL("http://dummy-classpath.invalid")))
     )
 
   test("Should pass correct timestamp from test data") {

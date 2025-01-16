@@ -4,9 +4,9 @@ import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
@@ -19,8 +19,6 @@ import pl.touk.nussknacker.engine.testmode.{
   TestServiceInvocationCollector
 }
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
-
-import scala.util.Using
 
 object FlinkTestMain extends FlinkRunner {
 
@@ -48,12 +46,12 @@ object FlinkTestMain extends FlinkRunner {
 }
 
 class FlinkTestMain(
-    val modelData: ModelData,
-    val process: CanonicalProcess,
+    modelData: ModelData,
+    process: CanonicalProcess,
     scenarioTestData: ScenarioTestData,
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
-    val configuration: Configuration
+    configuration: Configuration
 ) {
 
   private val stubbedRunner = new FlinkStubbedRunner(modelData.modelClassLoader, configuration)
