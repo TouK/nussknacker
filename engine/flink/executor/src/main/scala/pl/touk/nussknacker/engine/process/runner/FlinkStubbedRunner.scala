@@ -86,7 +86,8 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
 
   private def prepareMiniClusterConfiguration(numTaskSlots: Int, jobGraph: JobGraph) = {
     val configuration: Configuration = new Configuration
-    configuration.addAll(jobGraph.getJobConfiguration)
+    // FIXME abr: is it necessary?
+//    configuration.addAll(jobGraph.getJobConfiguration)
     configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, numTaskSlots)
     configuration.set[Integer](RestOptions.PORT, 0)
 
