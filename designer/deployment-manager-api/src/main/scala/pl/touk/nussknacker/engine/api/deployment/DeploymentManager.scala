@@ -151,7 +151,7 @@ trait SchedulingSupported extends SchedulingSupport {
 
   def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]
 
-  def customPeriodicProcessListenerFactory: Option[ScheduledProcessListenerFactory]
+  def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]
 
   def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]
 

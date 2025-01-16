@@ -55,7 +55,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
         .getOrElse(ProcessConfigEnricherFactory.noOp)
 
     val periodicProcessListenerFactory =
-      schedulingSupported.customPeriodicProcessListenerFactory
+      schedulingSupported.customScheduledProcessListenerFactory
         .getOrElse(EmptyScheduledProcessListenerFactory)
 
     val additionalDeploymentDataProvider =

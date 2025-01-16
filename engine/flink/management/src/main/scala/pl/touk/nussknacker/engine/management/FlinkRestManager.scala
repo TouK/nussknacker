@@ -87,7 +87,7 @@ class FlinkRestManager(
 
     override def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
     override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]         = None
-    override def customPeriodicProcessListenerFactory: Option[ScheduledProcessListenerFactory]    = None
+    override def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]   = None
     override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
 
   }
