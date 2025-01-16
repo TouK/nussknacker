@@ -41,3 +41,30 @@ Pytania:
     jak wyciagnac danych.
 - wiec jest nadzieja tylko w przypadku json serializowanych danych, bo te maja nazwy pol zachowane.
     kurcze, ale to zadanie robi sie slabe.
+
+-------
+
+table api by bylo najlepsze
+generalnie bo w cloud jfest jakis kmponent w ktorym ozna tableapi pisac tak doslownie sql
+i wiec jak by bylo na java path ten nasz komponent do mqtt to by bylo fajnie to by dzialalo , tylko by sie podawalo
+w tym sql doslownie nazwe tegoz komponentua
+
+1823 i potem jeszcze pare fixow, by dalo sie bez source
+
+kafkaUniwervsalcomponenttransformer linia 47
+to pewnie po prostu ma byc optionem
+
+flinknamespacekafkatest i inne tam
+flinkwithkafkasuite
+topicselectionstrategyspec
+
+bo to jest tak, ze to dzialalo sboei jak byl url do schema registry, aczkolwiek dla tego topicka nie bylo nic npaisanego w
+schema registry. A teraz jest problem jak wgl ni ema schema registry, to trzeba po prostu sprawic by ten kod pracowal jak tak jest.
+
+jak nie ma dla topick ainformacji w schema registry to user ma w ui w dropdownie wybrac ze na jego odpowiedzialnosc to jest json
+(a nie avro)
+
+na staging (self hosted) jes tkafka source, i tam jeden topic w dropdownie jest co nie ma w schema registry
+
+i generalnie to my mozemy pobierac liste topickow z kafki bezposrednio, i tak nawet robimy, z tym ze potem dorzucamy jeszcze
+topicki z schema registry zdaje sie.
