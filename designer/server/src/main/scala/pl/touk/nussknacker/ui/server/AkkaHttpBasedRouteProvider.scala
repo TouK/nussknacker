@@ -225,7 +225,7 @@ class AkkaHttpBasedRouteProvider(
             new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
           )
       }
-      val scenarioActivityService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
+      val actionInfoService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
         new ActionInfoService(
           new ModelDataActionInfoProvider(modelData),
           processResolver
@@ -421,6 +421,12 @@ class AkkaHttpBasedRouteProvider(
         scenarioService = processService,
       )
 
+      val actionInfoHttpService = new ActionInfoHttpService(
+        authManager = authManager,
+        processingTypeToActionInfoService = actionInfoService,
+        scenarioService = processService,
+      )
+
       val stickyNotesApiHttpService = new StickyNotesApiHttpService(
         authManager = authManager,
         stickyNotesRepository = stickyNotesRepository,
@@ -531,7 +537,6 @@ class AkkaHttpBasedRouteProvider(
               )
             }
           ),
-          new ActionInfoResources(processService, scenarioActivityService),
           new StatusResources(stateDefinitionService),
         )
 
@@ -619,6 +624,7 @@ class AkkaHttpBasedRouteProvider(
           migrationApiHttpService,
           nodesApiHttpService,
           testingApiHttpService,
+          actionInfoHttpService,
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioLabelsApiHttpService,
