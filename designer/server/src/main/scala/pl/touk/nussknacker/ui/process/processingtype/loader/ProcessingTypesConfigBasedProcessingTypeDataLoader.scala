@@ -20,6 +20,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
@@ -29,6 +30,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
           _,
           getModelDependencies,
           getDeploymentManagerDependencies,
+          modelClassLoaderProvider,
           dbRef
         )
       )
@@ -38,6 +40,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
@@ -52,6 +55,13 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       )
       (processingTypeConfig, provider, nameInputData)
     }
+    modelClassLoaderProvider.validateReloadConsistency(providerWithNameInputData.map { case (processingType, data) =>
+      processingType -> ModelClassLoaderDependencies(
+        classpath = data._1.classPath,
+        workingDirectoryOpt = getModelDependencies(processingType).workingDirectoryOpt
+      )
+    })
+
     val engineSetupNames =
       ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
     val processingTypesData = providerWithNameInputData
@@ -70,9 +80,10 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
           }
 
         val modelDependencies = getModelDependencies(processingType)
+        val modelClassLoader  = modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
         val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
-          ModelData(processingTypeConfig, modelDependencies),
+          ModelData(processingTypeConfig, modelDependencies, modelClassLoader),
           deploymentManagerProvider,
           schedulingForProcessingType,
           getDeploymentManagerDependencies(processingType),

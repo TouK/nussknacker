@@ -7,9 +7,10 @@ import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypeDataLoader,
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.util.{ActorSystemBasedExecutionContextWithIORuntime, IOToFutureSttpBackendConverter}
 import sttp.client3.SttpBackend
@@ -40,6 +42,9 @@ class NussknackerAppFactory(
         designerConfig,
         ioSttpBackend
       )(executionContextWithIORuntime.ioRuntime)
+      modelClassLoaderProvider = createModelClassLoaderProvider(
+        designerConfig.processingTypeConfigs.configByProcessingType
+      )
       processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
       materializer             = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
@@ -54,7 +59,8 @@ class NussknackerAppFactory(
           IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime),
           processingTypeDataLoader,
           feStatisticsRepository,
-          clock
+          clock,
+          modelClassLoaderProvider
         )(
           system,
           materializer,
@@ -114,6 +120,15 @@ class NussknackerAppFactory(
       )(
         release = _ => IO(logger.info("Stopping Nussknacker ..."))
       )
+  }
+
+  private def createModelClassLoaderProvider(
+      processingTypeConfigs: Map[String, ProcessingTypeConfig]
+  ): ModelClassLoaderProvider = {
+    val defaultWorkingDirOpt = None
+    ModelClassLoaderProvider(
+      processingTypeConfigs.mapValuesNow(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt))
+    )
   }
 
 }

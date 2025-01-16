@@ -7,11 +7,6 @@ import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
 import sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.definition.{
-  NotBlankParameterValidator,
-  NotNullParameterValidator,
-  StringParameterEditor
-}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -19,6 +14,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
@@ -47,7 +43,8 @@ class MockDeploymentManager(
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-        TestFactory.modelDependencies
+        TestFactory.modelDependencies,
+        ModelClassLoader(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig).classPath, None)
       ),
       DeploymentManagerDependencies(
         deployedScenariosProvider,

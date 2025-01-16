@@ -67,6 +67,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -110,7 +111,8 @@ class AkkaHttpBasedRouteProvider(
     sttpBackend: SttpBackend[Future, Any],
     processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
-    designerClock: Clock
+    designerClock: Clock,
+    modelClassLoaderProvider: ModelClassLoaderProvider
 )(
     implicit system: ActorSystem,
     materializer: Materializer,
@@ -141,7 +143,8 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
-        globalNotificationRepository
+        globalNotificationRepository,
+        modelClassLoaderProvider
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -717,7 +720,8 @@ class AkkaHttpBasedRouteProvider(
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig,
-      globalNotificationRepository: InMemoryTimeseriesRepository[Notification]
+      globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
@@ -736,6 +740,7 @@ class AkkaHttpBasedRouteProvider(
               sttpBackend,
               _
             ),
+            modelClassLoaderProvider,
             Some(dbRef),
           )
           val loadAndNotifyIO = laodProcessingTypeDataIO

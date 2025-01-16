@@ -125,10 +125,18 @@ trait NuResourcesTest
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
-  protected val deploymentManagerProvider: DeploymentManagerProvider =
-    new MockManagerProvider(deploymentManager)
+  protected val deploymentManagerProvider: DeploymentManagerProvider = new MockManagerProvider(deploymentManager)
 
-  private val modelData = ModelData(processingTypeConfig, modelDependencies)
+  private val modelClassLoaderProvider = ModelClassLoaderProvider(
+    Map(Streaming.stringify -> ModelClassLoaderDependencies(processingTypeConfig.classPath, None))
+  )
+
+  private val modelData =
+    ModelData(
+      processingTypeConfig,
+      modelDependencies,
+      modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
+    )
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
@@ -154,6 +162,7 @@ trait NuResourcesTest
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,
+          modelClassLoaderProvider,
           Some(testDbRef),
         )
         .unsafeRunSync()
