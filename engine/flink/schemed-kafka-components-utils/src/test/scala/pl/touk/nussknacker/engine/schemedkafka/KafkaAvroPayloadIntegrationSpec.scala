@@ -77,6 +77,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     )
   }
 
+  // TODO_PAWEL to wyglada obiecujaco
   test("should read primitive event and save it in the same format") {
     val topicConfig = createAndRegisterTopicConfig("simple.primitive", Schema.create(Schema.Type.STRING))
     val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)

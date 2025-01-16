@@ -27,6 +27,8 @@ zakladam, ze sinkiem sie nie zajmujemy
 hmm
 mozna by ustalic gdzie jest fetchowana lista topikow, moze to nie wymaga jeszcze schema registry?
 
+ten schemaRegistryClient o ktorym mowi w tasku to jest jakas kafkowa klasa
+
 ---------------
 
 Pytania:
