@@ -16,6 +16,7 @@ class CachingProcessStateDeploymentManager(
     cacheTTL: FiniteDuration,
     override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport,
     override val stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport,
+    override val schedulingSupport: SchedulingSupport,
 ) extends DeploymentManager {
 
   private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
@@ -83,7 +84,8 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
           delegate,
           cacheTTL,
           delegate.deploymentSynchronisationSupport,
-          delegate.stateQueryForAllScenariosSupport
+          delegate.stateQueryForAllScenariosSupport,
+          delegate.schedulingSupport,
         )
       }
       .getOrElse {

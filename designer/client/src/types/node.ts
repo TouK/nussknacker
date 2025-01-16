@@ -2,7 +2,7 @@ import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 import { StickyNoteType } from "./stickyNote";
 
-type Type =  "FragmentInput" | typeof StickyNoteType | string;
+type Type = "FragmentInput" | typeof StickyNoteType | string;
 
 export type LayoutData = { x: number; y: number };
 
