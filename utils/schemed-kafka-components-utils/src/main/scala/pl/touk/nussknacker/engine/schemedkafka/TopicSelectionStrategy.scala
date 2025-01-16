@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated
+import cats.data.Validated.Valid
 import org.apache.kafka.clients.admin.ListTopicsOptions
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
@@ -14,7 +15,7 @@ import scala.jdk.CollectionConverters._
 trait TopicSelectionStrategy extends Serializable {
 
   def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
+      schemaRegistryClient: Option[SchemaRegistryClient],
       kafkaConfig: KafkaConfig
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
@@ -23,21 +24,21 @@ trait TopicSelectionStrategy extends Serializable {
 class TopicsWithExistingSubjectSelectionStrategy extends TopicSelectionStrategy {
 
   override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
+      schemaRegistryClient: Option[SchemaRegistryClient],
       kafkaConfig: KafkaConfig
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
-    schemaRegistryClient.getAllTopics
-  }
+    schemaRegistryClient.map(e => e.getAllTopics).getOrElse(Valid(List()))
+
 
 }
 
 class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy {
 
   override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
+      schemaRegistryClient: Option[SchemaRegistryClient],
       kafkaConfig: KafkaConfig
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
-    val topicsFromSchemaRegistry = schemaRegistryClient.getAllTopics
+    val topicsFromSchemaRegistry = schemaRegistryClient.map(e => e.getAllTopics).getOrElse(Valid(List()))
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
