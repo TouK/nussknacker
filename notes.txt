@@ -5,7 +5,8 @@ trzeba bedzie kurcze jakos poprawic dokumentacje jesli sie uda
 
 jest ten azure i ten confluent schema registry, to sobie nu rozpoznaje na podstawie
 schema.registry.url
-i to tak bez polaczania sie, na podstawie tego czy sie konczy jakims suffixem
+i to tak bez polaczania sie, na podstawie tego czy sie konczy url schemy jakims suffixem
+na tej podstawie albo azure albo ten confluent schema registry jest rozpoznany.
 
 jest jeszcze kwestia ze jest avro i json, te formaty danych, w sumie czy bedziemy wiedziec jaki jest format gdy nie bedzie schemy?
 tez czy bedziemy wiedziec jaka jest lista topikow? co my bedziemy wiedziec?
@@ -13,14 +14,28 @@ tez czy bedziemy wiedziec jaka jest lista topikow? co my bedziemy wiedziec?
 ciekawe, tam jest to ze sama schema moze byc w formacie avro albo json i zwykle jest tak ze messages w formacie avro sa
 z schema w formacie avro, ale cos pisza ze mozna to pomieszac czy cos. jest na to configuration setting
 
-message maja w sobie schema id, po to by miec mozliwosc robienia ewolucjij schemy
+message maja w sobie schema id, po to by miec mozliwosc robienia ewolucjij schemy. nawet te avro messages.
+ktory jest bezuzyteczny gdy nie mamy schema registry
 
 no wlasnie, normalnie w source sie podaje scheme w ui, a teraz nie?
 jak to nie
 
 TODO skad sie bierze lista schem w dropdownie?
 
-czy w sinku bedzie trzeba dalej podawac link do schema registry by wiedziec gdzie pisac?
+zakladam, ze sinkiem sie nie zajmujemy
 
 hmm
 mozna by ustalic gdzie jest fetchowana lista topikow, moze to nie wymaga jeszcze schema registry?
+
+---------------
+
+Pytania:
+
+- skad sie bierze lista topikow w source? czy ona bedzie dostepna jesli nie bedzie schema registry? czy trzeba
+    bedzie wpisywac recznie topic name w source w przeciwnym przypadku
+- poradzi sobie np z rozpoznanie czy to avro czy json ta wiadomosc?
+    Czy ten feature ma sens wgl dla avro? skoro avro nie ma w sobie informacji o nazwach pol.
+    No wlasnie, widze ze dane avro nie maja w sobie wcale nazw pol, wiec nawet jak to otypuje na unknown to nie mam
+    jak wyciagnac danych.
+- wiec jest nadzieja tylko w przypadku json serializowanych danych, bo te maja nazwy pol zachowane.
+    kurcze, ale to zadanie robi sie slabe.
