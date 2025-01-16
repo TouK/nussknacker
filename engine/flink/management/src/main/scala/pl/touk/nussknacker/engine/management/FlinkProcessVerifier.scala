@@ -6,18 +6,18 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.util.StaticMethodRunner
+import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class FlinkProcessVerifier(modelData: ModelData)
-    extends StaticMethodRunner(
-      modelData.modelClassLoader.classLoader,
-      "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain",
-      "run"
-    )
-    with LazyLogging {
+class FlinkProcessVerifier(modelData: ModelData) extends LazyLogging {
+
+  private val methodInvoker = new ReflectiveMethodInvoker[Unit](
+    modelData.modelClassLoader.classLoader,
+    "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain",
+    "run"
+  )
 
   def verify(
       processVersion: ProcessVersion,
@@ -27,7 +27,14 @@ class FlinkProcessVerifier(modelData: ModelData)
     val processId = processVersion.processName
     try {
       logger.info(s"Starting to verify $processId")
-      tryToInvoke(modelData, canonicalProcess, processVersion, DeploymentData.empty, savepointPath, new Configuration())
+      methodInvoker.invokeStaticMethod(
+        modelData,
+        canonicalProcess,
+        processVersion,
+        DeploymentData.empty,
+        savepointPath,
+        new Configuration()
+      )
       logger.info(s"Verification of $processId successful")
       Future.successful(())
     } catch {

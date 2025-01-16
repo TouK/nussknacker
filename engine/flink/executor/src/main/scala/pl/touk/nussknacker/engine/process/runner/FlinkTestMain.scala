@@ -53,17 +53,19 @@ class FlinkTestMain(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     val configuration: Configuration
-) extends FlinkStubbedRunner {
+) {
+
+  private val stubbedRunner = new FlinkStubbedRunner(modelData, process, configuration)
 
   def runTest: TestResults[Json] = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     try {
       val resultCollector = new TestServiceInvocationCollector(collectingListener)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
-      val env             = createEnv
+      val env             = stubbedRunner.createEnv
 
       registrar.register(env, process, processVersion, deploymentData, resultCollector)
-      execute(env, SavepointRestoreSettings.none())
+      stubbedRunner.execute(env, SavepointRestoreSettings.none())
       collectingListener.results
     } finally {
       collectingListener.clean()

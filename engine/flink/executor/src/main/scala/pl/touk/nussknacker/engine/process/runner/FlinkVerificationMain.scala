@@ -33,16 +33,18 @@ class FlinkVerificationMain(
     deploymentData: DeploymentData,
     savepointPath: String,
     val configuration: Configuration
-) extends FlinkStubbedRunner {
+) {
+
+  private val stubbedRunner = new FlinkStubbedRunner(modelData, process, configuration)
 
   def runTest(): Unit = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     val resultCollector    = new TestServiceInvocationCollector(collectingListener)
     val registrar          = prepareRegistrar()
-    val env                = createEnv
+    val env                = stubbedRunner.createEnv
 
     registrar.register(env, process, processVersion, deploymentData, resultCollector)
-    execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
+    stubbedRunner.execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {

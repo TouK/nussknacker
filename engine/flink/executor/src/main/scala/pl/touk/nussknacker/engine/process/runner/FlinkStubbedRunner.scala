@@ -21,15 +21,9 @@ import java.net.{MalformedURLException, URL}
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-trait FlinkStubbedRunner {
+final class FlinkStubbedRunner(modelData: ModelData, process: CanonicalProcess, configuration: Configuration) {
 
-  protected def modelData: ModelData
-
-  protected def process: CanonicalProcess
-
-  protected def configuration: Configuration
-
-  protected def createEnv: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(
+  def createEnv: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(
     MetaDataExtractor
       .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
       .parallelism
@@ -38,7 +32,7 @@ trait FlinkStubbedRunner {
   )
 
   // we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
-  protected def execute[T](
+  def execute[T](
       env: StreamExecutionEnvironment,
       savepointRestoreSettings: SavepointRestoreSettings
   ): Unit = {
