@@ -7,7 +7,8 @@ import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.{
   ExecutionContextWithIORuntimeAdapter,
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypeDataLoader,
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
@@ -39,7 +41,8 @@ object NussknackerAppFactory {
     } yield new NussknackerAppFactory(
       designerConfig,
       designerConfigLoader,
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_, deploymentManagerClassLoader)
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_, deploymentManagerClassLoader),
+      deploymentManagerClassLoader
     )
   }
 
@@ -48,7 +51,8 @@ object NussknackerAppFactory {
 class NussknackerAppFactory(
     alreadyLoadedConfig: DesignerConfig,
     designerConfigLoader: DesignerConfigLoader,
-    createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader
+    createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader,
+    deploymentManagersClassLoader: DeploymentManagersClassLoader
 ) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
@@ -60,6 +64,10 @@ class NussknackerAppFactory(
         alreadyLoadedConfig,
         ioSttpBackend
       )(executionContextWithIORuntime.ioRuntime)
+      modelClassLoaderProvider = createModelClassLoaderProvider(
+        alreadyLoadedConfig.processingTypeConfigs.configByProcessingType,
+        deploymentManagersClassLoader
+      )
       processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
       materializer             = Materializer(system)
       _               <- Resource.eval(IO(JavaClassVersionChecker.check()))
@@ -78,7 +86,8 @@ class NussknackerAppFactory(
           IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime),
           processingTypeDataLoader,
           feStatisticsRepository,
-          clock
+          clock,
+          modelClassLoaderProvider
         )(
           system,
           materializer,
@@ -138,6 +147,17 @@ class NussknackerAppFactory(
       )(
         release = _ => IO(logger.info("Stopping Nussknacker ..."))
       )
+  }
+
+  private def createModelClassLoaderProvider(
+      processingTypeConfigs: Map[String, ProcessingTypeConfig],
+      deploymentManagersClassLoader: DeploymentManagersClassLoader
+  ): ModelClassLoaderProvider = {
+    val defaultWorkingDirOpt = None
+    ModelClassLoaderProvider(
+      processingTypeConfigs.mapValuesNow(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt)),
+      deploymentManagersClassLoader
+    )
   }
 
 }

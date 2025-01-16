@@ -33,7 +33,7 @@ import scala.util.control.NonFatal
 class BaseK8sDeploymentManagerTest
     extends AnyFunSuite
     with Matchers
-    with ExtremelyPatientScalaFutures
+    with VeryPatientScalaFutures
     with BeforeAndAfterAll {
   self: LazyLogging =>
 

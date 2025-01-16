@@ -20,16 +20,20 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
-      .map(createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies))
+      .map(
+        createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies, modelClassLoaderProvider)
+      )
   }
 
   private def createProcessingTypeData(
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
-      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
@@ -43,15 +47,23 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
       )
       (processingTypeConfig, provider, nameInputData)
     }
+    modelClassLoaderProvider.validateReloadConsistency(providerWithNameInputData.map { case (processingType, data) =>
+      processingType -> ModelClassLoaderDependencies(
+        classpath = data._1.classPath,
+        workingDirectoryOpt = getModelDependencies(processingType).workingDirectoryOpt
+      )
+    })
+
     val engineSetupNames =
       ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
     val processingTypesData = providerWithNameInputData
       .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
         logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
         val modelDependencies = getModelDependencies(processingType)
+        val modelClassLoader  = modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
         val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
-          ModelData(processingTypeConfig, modelDependencies, deploymentManagersClassLoader),
+          ModelData(processingTypeConfig, modelDependencies, modelClassLoader),
           deploymentManagerProvider,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),

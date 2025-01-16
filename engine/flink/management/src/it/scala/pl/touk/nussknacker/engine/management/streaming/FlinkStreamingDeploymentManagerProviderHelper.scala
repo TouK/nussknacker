@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
   DeploymentManagerDependencies,
@@ -29,7 +30,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       processingTypeConfig: ConfigWithUnresolvedVersion,
       deploymentManagerClassLoader: DeploymentManagersClassLoader
   ): DeploymentManager = {
-    val typeConfig = ProcessingTypeConfig.read(processingTypeConfig)
+    val typeConfig       = ProcessingTypeConfig.read(processingTypeConfig)
+    val modelClassLoader = ModelClassLoader(typeConfig.classPath, None, deploymentManagerClassLoader)
     val modelData = ModelData(
       processingTypeConfig = typeConfig,
       ModelDependencies(
@@ -37,9 +39,9 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
         _ => true,
-        ComponentDefinitionExtractionMode.FinalDefinition
+        ComponentDefinitionExtractionMode.FinalDefinition,
       ),
-      deploymentManagerClassLoader
+      modelClassLoader
     )
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend     = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())

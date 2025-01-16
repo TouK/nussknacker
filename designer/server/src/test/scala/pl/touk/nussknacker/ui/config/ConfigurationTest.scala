@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.config
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
@@ -18,11 +19,14 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
   private def globalConfig = ConfigWithScalaVersion.TestsConfig
 
-  private def modelData: ModelData = ModelData(
-    ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-    TestFactory.modelDependencies,
-    deploymentManagersClassLoader
-  )
+  private def modelData: ModelData = {
+    val config = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    ModelData(
+      config,
+      TestFactory.modelDependencies,
+      ModelClassLoader(config.classPath, None, ???),
+    )
+  }
 
   private lazy val modelDataConfig = modelData.modelConfig
 

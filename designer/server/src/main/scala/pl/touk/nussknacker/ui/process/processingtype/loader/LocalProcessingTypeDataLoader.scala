@@ -7,7 +7,11 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
-import pl.touk.nussknacker.ui.process.processingtype.{CombinedProcessingTypeData, ProcessingTypeData}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ModelClassLoaderProvider,
+  ProcessingTypeData
+}
 
 class LocalProcessingTypeDataLoader(
     modelData: Map[ProcessingType, (String, ModelData)],
@@ -16,7 +20,8 @@ class LocalProcessingTypeDataLoader(
 
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
-      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = IO {
     val processingTypes = modelData.map { case (processingType, (category, model)) =>
       val deploymentManagerDependencies = getDeploymentManagerDependencies(processingType)

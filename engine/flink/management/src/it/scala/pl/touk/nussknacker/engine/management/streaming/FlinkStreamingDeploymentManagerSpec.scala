@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -69,7 +70,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployedResponse.futureValue
   }
 
-  // this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
+  // this is for the case where e.g. we manually cancel flink job, or it fails and didn't restart...
   test("cancel of not existing job should not fail") {
     deploymentManager
       .processCommand(DMCancelScenarioCommand(ProcessName("not existing job"), user = userToAct))
@@ -272,7 +273,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
-      deploymentManagerClassLoader
+      ModelClassLoader(processingTypeConfig.classPath, None, deploymentManagerClassLoader)
     )
     val definition = modelData.modelDefinition
     definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

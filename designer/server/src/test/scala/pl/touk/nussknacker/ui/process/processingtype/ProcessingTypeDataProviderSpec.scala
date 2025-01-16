@@ -8,13 +8,14 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalModelData}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 
-class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
+class ProcessingTypeDataProviderSpec extends AnyFunSuite with WithTestDeploymentManagerClassLoader with Matchers {
 
   test("allow to access to processing type data only users that has read access to associated category") {
     val provider = ProcessingTypeDataProvider(mockProcessingTypeData("foo", "bar"))
@@ -57,7 +58,11 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
     loader
       .loadProcessingTypeData(
         _ => modelDependencies,
-        _ => TestFactory.deploymentManagerDependencies
+        _ => TestFactory.deploymentManagerDependencies,
+        ModelClassLoaderProvider(
+          allProcessingTypes.map(_ -> ModelClassLoaderDependencies(List.empty, None)).toMap,
+          deploymentManagersClassLoader
+        )
       )
       .unsafeRunSync()
   }

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
@@ -40,7 +41,8 @@ object MockDeploymentManager {
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
       scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
-      customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None
+      customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
+      deploymentManagersClassLoader: Option[DeploymentManagersClassLoader] = None
   ): MockDeploymentManager = {
     new MockDeploymentManager(
       defaultProcessStateStatus,
@@ -67,7 +69,11 @@ class MockDeploymentManager private (
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestFactory.modelDependencies,
-        deploymentManagersClassLoader._1
+        ModelClassLoader(
+          ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig).classPath,
+          None,
+          deploymentManagersClassLoader._1
+        )
       ),
       DeploymentManagerDependencies(
         deployedScenariosProvider,
