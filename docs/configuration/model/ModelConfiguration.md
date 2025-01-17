@@ -186,3 +186,49 @@ The docs button which is displayed in the scenario properties modal window is by
 ``` scenarioPropertiesDocsUrl: "http://custom-configurable-link"```
 
 in the config. 
+
+## Multitenancy support
+
+Nussknacker supports multitenancy, allowing multiple Nussknacker designer instances to operate on shared infrastructure components,
+such as Kafka, Flink, or InfluxDB. This is achieved by using configured namespaces to isolate resources. For example:
+- Kafka Topics (`kafkaTopic`): Prefixed with a namespace.
+- Flink Jobs (`flink`): Prefixed with a namespace.
+- InfluxDB Metrics (`metrics`): Tagged with an additional namespace tag.
+
+A namespace configuration can be defined as follows:
+
+```
+modelConfig: {
+  ...
+  namespace: {
+    value: customer1
+    overrides: {
+      kafkaTopic: {
+        value: customer1_internal
+        separator: "."
+      }
+    }
+  }
+}
+```
+
+Explanation:
+- The configuration specifies the namespace `customer1` with a default `_` prefix.
+- Deploying a scenario named `InternetOfThings` to a Flink cluster will create a Flink job named `customer1_InternetOfThings`.
+- A namespace override is defined for Kafka topics. For example:
+  - In the designer, topics appear without the namespace prefix (e.g., `example-topic`).
+  - During runtime, the system will read/write to `customer1_internal.example-topic`.
+
+A simpler namespace configuration can also be used:
+
+```
+modelConfig: {
+  ...
+  namespace: customer1
+  namespaceSeparator: "_"
+}
+```
+
+Notes:
+- The `namespaceSeparator` is optional and defaults to `_` if not specified.
+- This configuration applies a uniform namespace prefix to all resources.
