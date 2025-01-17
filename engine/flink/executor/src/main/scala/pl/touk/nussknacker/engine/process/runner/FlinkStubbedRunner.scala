@@ -75,7 +75,7 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     // see details in pl.touk.nussknacker.engine.flink.test.MiniClusterExecutionEnvironment#execute
     modelClassLoader.urls match {
       // FIXME abr: is it necessary?
-      case Nil =>
+//      case Nil =>
 //        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
 //          configuration,
 //          PipelineOptions.CLASSPATHS,

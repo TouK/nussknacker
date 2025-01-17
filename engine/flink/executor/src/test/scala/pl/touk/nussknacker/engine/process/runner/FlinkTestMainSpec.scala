@@ -41,11 +41,14 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.deployment.AdditionalModelConfigs
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.jdk.CollectionConverters._
 
 class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with BeforeAndAfterEach with OptionValues {
 
@@ -767,8 +770,10 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
     // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData.duringFlinkExecution(
-      ModelConfigs(config, AdditionalModelConfigs(additionalConfigsFromProvider))
+    val modelData = ModelData.duringExecution(
+      ModelConfigs(config, AdditionalModelConfigs(additionalConfigsFromProvider)),
+      ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround),
+      resolveConfigs = false
     )
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.setupMemory(new Configuration))
