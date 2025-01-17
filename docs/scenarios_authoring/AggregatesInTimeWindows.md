@@ -241,7 +241,7 @@ There are two implications of using slices:
 * The minimal window lenght used by the components which also use slices should be equal or longer than the slice length. If you configure window lenght to less than slice length, your aggregate function will not yield correct results.
 * If the event with the aggregate is emitted because a new event arrived to the aggregate node and the window length is set to M minutes, the actual window length will be somewhere in the range of (M-1, M] minutes, depending on when exactly the event arrived.
 
-The following slice durations are currently used by Nussknacker. There is no parameter which allow change of the slice lenght; please get in touch with us if you need to modify slice lenght.  
+The following slice durations are currently used by Nussknacker. There is no parameter which allows change of the slice lenght; please get in touch with us if you need to modify it.  
 
 | aggregationType | slice length |
 |-----------------|--------------|
