@@ -48,7 +48,7 @@ object NamingStrategy {
     if (modelConfig.hasPath(s"$namespacePath.$valueKey")) {
       readWithOverrides(modelConfig.getConfig(namespacePath))
     } else if (modelConfig.hasPath(namespacePath)) {
-      readSimple(modelConfig) q
+      readSimple(modelConfig)
     } else {
       Disabled
     }
