@@ -906,6 +906,28 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
+  test("should not validate map indexing if index type and map key type are different") {
+    parse[Any]("""{{key: "a", value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap["0"]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1.toLong, value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0.toLong]""") shouldBe Symbol("invalid")
+  }
+
+  test("should validate map indexing if index type and map key type are the same") {
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+  }
+
+  test("should handle map indexing with unknown key type") {
+    val context = Context("sth").withVariables(
+      Map(
+        "unknownString" -> ContainerOfUnknown("a"),
+      )
+    )
+
+    evaluate[Int]("""{{key: "a", value: 5}}.toMap[#unknownString.value]""", context) shouldBe 5
+    evaluate[Integer]("""{{key: "b", value: 5}}.toMap[#unknownString.value]""", context) shouldBe null
+  }
+
   test("validate ternary operator") {
     parse[Long]("'d'? 3 : 4", ctx) should not be Symbol("valid")
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be Symbol("valid")
