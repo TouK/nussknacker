@@ -165,27 +165,27 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)
 
-  protected def prepareValueSchemaDeterminer(
-      preparedTopic: PreparedKafkaTopic[TN],
-      version: SchemaVersionOption
-  ): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      version,
-      isKey = false
-    )
-  }
-
-  // TODO: add schema versioning for key schemas
-  protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      LatestSchemaVersion,
-      isKey = true
-    )
-  }
+//  protected def prepareValueSchemaDeterminer(
+//      preparedTopic: PreparedKafkaTopic[TN],
+//      version: SchemaVersionOption
+//  ): AvroSchemaDeterminer = {
+//    new BasedOnVersionAvroSchemaDeterminer(
+//      schemaRegistryClient,
+//      preparedTopic.prepared.toUnspecialized,
+//      version,
+//      isKey = false
+//    )
+//  }
+//
+//  // TODO: add schema versioning for key schemas
+//  protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): AvroSchemaDeterminer = {
+//    new BasedOnVersionAvroSchemaDeterminer(
+//      schemaRegistryClient,
+//      preparedTopic.prepared.toUnspecialized,
+//      LatestSchemaVersion,
+//      isKey = true
+//    )
+//  }
 
   protected def prepareUniversalValueSchemaDeterminer(
       preparedTopic: PreparedKafkaTopic[TN],

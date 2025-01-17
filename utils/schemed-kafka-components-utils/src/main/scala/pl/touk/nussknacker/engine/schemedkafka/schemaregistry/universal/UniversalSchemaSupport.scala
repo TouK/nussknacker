@@ -39,7 +39,7 @@ trait UniversalSchemaSupport {
   def serializer(schemaOpt: Option[ParsedSchema], c: Option[SchemaRegistryClient], isKey: Boolean): Serializer[Any]
   def typeDefinition(schema: ParsedSchema): TypingResult
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
-  def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
+  def recordFormatterSupport(schemaRegistryClient: Option[SchemaRegistryClient]): RecordFormatterSupport
 
   def extractParameter(
       schema: ParsedSchema,
@@ -61,7 +61,10 @@ trait UniversalSchemaSupport {
     ).map(_.toParameters)
   }
 
-  final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
+  final def prepareMessageFormatter(
+      schema: ParsedSchema,
+      schemaRegistryClient: Option[SchemaRegistryClient]
+  ): Any => Json = {
     val recordFormatter = recordFormatterSupport(schemaRegistryClient)
     val encodeRecord    = formValueEncoder(schema, ValidationMode.lax)
     (data: Any) => recordFormatter.formatMessage(encodeRecord(data))

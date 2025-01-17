@@ -8,6 +8,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
+// TODO_PAWEL can be removed
 class BasedOnVersionAvroSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
     topic: UnspecializedTopicName,
@@ -42,7 +43,7 @@ class BasedOnVersionAvroSchemaDeterminer(
 }
 
 class ParsedSchemaDeterminer(
-    schemaRegistryClient: SchemaRegistryClient,
+    schemaRegistryClient: Option[SchemaRegistryClient],
     topic: UnspecializedTopicName,
     versionOption: SchemaVersionOption,
     isKey: Boolean

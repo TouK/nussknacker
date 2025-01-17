@@ -105,13 +105,13 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
 
-  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport = {
+  override def recordFormatterSupport(schemaRegistryClient: Option[SchemaRegistryClient]): RecordFormatterSupport = {
     if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadRecordFormatterSupport
     } else {
       // We pass None to schema, because message readers should not do schema evolution.
       // It is done this way because we want to keep messages in the original format as they were serialized on Kafka
-      val createSerializer    = serializer(None, Some(schemaRegistryClient), _)
+      val createSerializer    = serializer(None, schemaRegistryClient, _)
       val avroKeySerializer   = createSerializer(true)
       val avroValueSerializer = createSerializer(false)
       new AvroPayloadRecordFormatterSupport(
@@ -165,6 +165,6 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     (value: Any) => encoder.encodeOrError(value, rawSchema)
   }
 
-  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+  override def recordFormatterSupport(schemaRegistryClient: Option[SchemaRegistryClient]): RecordFormatterSupport =
     JsonPayloadRecordFormatterSupport
 }
