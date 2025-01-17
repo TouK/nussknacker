@@ -70,7 +70,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
   ): ProcessObjectDependencies = {
     val disableNamespacePath = "disableNamespace"
     if (config.hasPath(disableNamespacePath) && config.getBoolean(disableNamespacePath)) {
-      dependencies.copy(namingStrategy = NamingStrategy(None))
+      dependencies.copy(namingStrategy = NamingStrategy.Disabled)
     } else {
       dependencies
     }

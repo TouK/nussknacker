@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.namespaces.NamespaceContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -91,7 +92,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
               // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
               // TODO: add addNullOption feature flag to FixedValuesParameterEditor
               nullFixedValue +: topics
-                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name))
+                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name, NamespaceContext.Kafka))
                 .sorted
                 .map(v => FixedExpressionValue(s"'$v'", v))
             )

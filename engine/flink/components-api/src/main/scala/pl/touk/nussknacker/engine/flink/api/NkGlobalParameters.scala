@@ -6,7 +6,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.namespaces.{NamespaceContext, NamingStrategy}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
 
@@ -47,7 +47,7 @@ object NamespaceMetricsTags {
   private val namespaceTag    = "namespace"
 
   def apply(scenarioName: String, namingStrategy: NamingStrategy): Option[NamespaceMetricsTags] = {
-    namingStrategy.namespace.map { namespace =>
+    namingStrategy.findNamespace(NamespaceContext.Metrics).map { namespace =>
       NamespaceMetricsTags(
         Map(
           originalNameTag -> scenarioName,
