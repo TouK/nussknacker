@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.source.flink
+package pl.touk.nussknacker.testsmechanism.kafka
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -18,8 +18,9 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
+import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunner
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -28,7 +29,6 @@ import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
-import java.net.URL
 import java.util.Collections
 
 class TestFromFileSpec
@@ -133,12 +133,9 @@ class TestFromFileSpec
 
   private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(
-        modelData,
-        process,
-        scenarioTestData,
-        FlinkTestConfiguration.setupMemory(new Configuration),
-      )
+      // TODO: reuse this instance between all test cases
+      new FlinkProcessTestRunner(modelData, parallelism = 1, FlinkTestConfiguration.setupMemory(new Configuration))
+        .runTests(process, scenarioTestData)
     }
   }
 

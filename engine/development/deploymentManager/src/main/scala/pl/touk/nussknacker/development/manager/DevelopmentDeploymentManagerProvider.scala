@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -19,7 +20,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
+import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunner
 
 import java.net.URI
 import java.util.UUID
@@ -48,7 +50,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random                                      = new scala.util.Random()
 
-  private lazy val flinkTestRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
+  private lazy val flinkTestRunner =
+    new FlinkProcessTestRunner(modelData.asInvokableModelData, parallelism = 1, new Configuration())
 
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
 
@@ -83,7 +86,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     case command: DMRunOffScheduleCommand  => runOffSchedule(command)
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
     case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-      flinkTestRunner.test(canonicalProcess, scenarioTestData) // it's just for streaming e2e tests from file purposes
+      flinkTestRunner.runTestsAsync(
+        canonicalProcess,
+        scenarioTestData
+      ) // it's just for streaming e2e tests from file purposes
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {

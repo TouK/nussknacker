@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
+import pl.touk.nussknacker.engine.management.testsmechanism.{FlinkProcessTestRunner, FlinkProcessVerifier}
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -27,7 +29,8 @@ abstract class FlinkDeploymentManager(
 
   import dependencies._
 
-  private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
+  private lazy val testRunner =
+    new FlinkProcessTestRunner(modelData.asInvokableModelData, parallelism = 1, new Configuration)
 
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
 
@@ -115,7 +118,7 @@ abstract class FlinkDeploymentManager(
           makeSavepoint(_, savepointDir)
         }
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-        testRunner.test(canonicalProcess, scenarioTestData)
+        testRunner.runTestsAsync(canonicalProcess, scenarioTestData)
       case _: DMRunOffScheduleCommand => notImplemented
     }
 

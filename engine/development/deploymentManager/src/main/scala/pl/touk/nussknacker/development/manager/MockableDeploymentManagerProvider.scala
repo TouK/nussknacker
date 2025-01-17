@@ -4,16 +4,17 @@ import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import io.circe.Json
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
+import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunner
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -59,7 +60,9 @@ object MockableDeploymentManagerProvider {
       with StubbingCommands {
 
     private lazy val testRunnerOpt =
-      modelDataOpt.map(modelData => new FlinkProcessTestRunner(modelData.asInvokableModelData))
+      modelDataOpt.map(modelData =>
+        new FlinkProcessTestRunner(modelData.asInvokableModelData, parallelism = 1, new Configuration())
+      )
 
     override def resolve(
         idWithName: ProcessIdWithName,
@@ -102,7 +105,7 @@ object MockableDeploymentManagerProvider {
             .get()
             .get(processVersion.processName.value)
             .map(Future.successful)
-            .orElse(testRunnerOpt.map(_.test(scenario, testData)))
+            .orElse(testRunnerOpt.map(_.runTestsAsync(scenario, testData)))
             .getOrElse(
               throw new IllegalArgumentException(
                 s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
