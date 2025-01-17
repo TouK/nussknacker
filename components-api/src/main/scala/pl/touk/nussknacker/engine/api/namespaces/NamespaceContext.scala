@@ -6,7 +6,7 @@ import enumeratum.{Enum, EnumEntry}
 sealed trait NamespaceContext extends EnumEntry with EnumEntry.Uncapitalised
 
 object NamespaceContext extends Enum[NamespaceContext] {
-  val values: IndexedSeq[NamespaceContext] = findValues
+  override def values = findValues
 
   case object Kafka   extends NamespaceContext
   case object Metrics extends NamespaceContext
