@@ -22,7 +22,7 @@ object KafkaComponentsUtils extends KafkaUtils {
       modelDependencies: ProcessObjectDependencies
   ): PreparedKafkaTopic[T] = {
     val doPrepareName: String => String = (name: String) =>
-      modelDependencies.namingStrategy.prepareName(name, NamespaceContext.Kafka)
+      modelDependencies.namingStrategy.prepareName(name, NamespaceContext.KafkaTopic)
     (topic match {
       case TopicName.ForSource(name) =>
         PreparedKafkaTopic(TopicName.ForSource(name), TopicName.ForSource(doPrepareName(name)))

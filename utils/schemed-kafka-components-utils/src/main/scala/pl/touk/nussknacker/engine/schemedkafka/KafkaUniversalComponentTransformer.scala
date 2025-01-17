@@ -92,7 +92,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
               // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
               // TODO: add addNullOption feature flag to FixedValuesParameterEditor
               nullFixedValue +: topics
-                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name, NamespaceContext.Kafka))
+                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name, NamespaceContext.KafkaTopic))
                 .sorted
                 .map(v => FixedExpressionValue(s"'$v'", v))
             )

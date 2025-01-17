@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.api.namespaces
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.namespaces.NamespaceContext.{Flink, Kafka}
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.s
+import pl.touk.nussknacker.engine.api.namespaces.NamespaceContext.{Flink, KafkaTopic}
 
 class NamingStrategySpec extends AnyFunSuite with Matchers {
 
@@ -23,14 +24,14 @@ class NamingStrategySpec extends AnyFunSuite with Matchers {
   }
 
   test("should use namespace configuration for context if available") {
-    val namingStrategy = NamingStrategy(Some(Namespace("customer1", "_")), Map(Kafka -> Namespace("cust1", ".")))
+    val namingStrategy = NamingStrategy(Some(Namespace("customer1", "_")), Map(KafkaTopic -> Namespace("cust1", ".")))
 
     namingStrategy.prepareName("original", Flink) shouldBe "customer1_original"
-    namingStrategy.prepareName("original", Kafka) shouldBe "cust1.original"
+    namingStrategy.prepareName("original", KafkaTopic) shouldBe "cust1.original"
     namingStrategy.decodeName("customer1_someName", Flink) shouldBe Some("someName")
-    namingStrategy.decodeName("cust1.someName", Kafka) shouldBe Some("someName")
+    namingStrategy.decodeName("cust1.someName", KafkaTopic) shouldBe Some("someName")
     namingStrategy.decodeName("dummy??", Flink) shouldBe None
-    namingStrategy.decodeName("dummy??", Kafka) shouldBe None
+    namingStrategy.decodeName("dummy??", KafkaTopic) shouldBe None
   }
 
   test("should read disabled naming strategy config") {
@@ -74,7 +75,7 @@ class NamingStrategySpec extends AnyFunSuite with Matchers {
         |namespace: {
         |  value: customer1
         |  overrides: {
-        |    kafka: {
+        |    kafkaTopic: {
         |      value: customer1_internal
         |      separator: "."
         |    }
@@ -84,7 +85,25 @@ class NamingStrategySpec extends AnyFunSuite with Matchers {
     val namingStrategy = NamingStrategy.fromConfig(config)
 
     namingStrategy.prepareName("original", Flink) shouldBe "customer1_original"
-    namingStrategy.prepareName("original", Kafka) shouldBe "customer1_internal.original"
+    namingStrategy.prepareName("original", KafkaTopic) shouldBe "customer1_internal.original"
+  }
+
+  test("should read naming strategy config object with overridesw") {
+    val config = ConfigFactory.parseString("""
+        |namespace: {
+        |  value: customer1
+        |  overrides: {
+        |    kafkaTopic: {
+        |      value: customer1_internal
+        |      separator: "."
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val namingStrategy = NamingStrategy.fromConfig(config)
+
+    namingStrategy.prepareName("original", Flink) shouldBe "customer1_original"
+    namingStrategy.prepareName("original", KafkaTopic) shouldBe "customer1_internal.original"
   }
 
 }
