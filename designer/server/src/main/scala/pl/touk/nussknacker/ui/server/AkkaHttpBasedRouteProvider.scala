@@ -66,11 +66,14 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
+import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -108,7 +111,8 @@ class AkkaHttpBasedRouteProvider(
     sttpBackend: SttpBackend[Future, Any],
     processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
-    designerClock: Clock
+    designerClock: Clock,
+    modelClassLoaderProvider: ModelClassLoaderProvider
 )(
     implicit system: ActorSystem,
     materializer: Materializer,
@@ -139,7 +143,8 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
-        globalNotificationRepository
+        globalNotificationRepository,
+        modelClassLoaderProvider
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -172,6 +177,7 @@ class AkkaHttpBasedRouteProvider(
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
       val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
       val actionRepository                              = DbScenarioActionRepository.create(dbRef, modelBuildInfo)
+      val stickyNotesRepository                         = DbStickyNotesRepository.create(dbRef, designerClock)
       val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
@@ -409,6 +415,15 @@ class AkkaHttpBasedRouteProvider(
         scenarioService = processService,
       )
 
+      val stickyNotesApiHttpService = new StickyNotesApiHttpService(
+        authManager = authManager,
+        stickyNotesRepository = stickyNotesRepository,
+        scenarioService = processService,
+        scenarioAuthorizer = processAuthorizer,
+        dbioRunner,
+        stickyNotesSettings = featureTogglesConfig.stickyNotesSettings
+      )
+
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authManager = authManager,
         fetchScenarioActivityService = fetchScenarioActivityService,
@@ -601,6 +616,7 @@ class AkkaHttpBasedRouteProvider(
           scenarioActivityApiHttpService,
           scenarioLabelsApiHttpService,
           scenarioParametersHttpService,
+          stickyNotesApiHttpService,
           userApiHttpService,
           statisticsApiHttpService
         )
@@ -704,7 +720,8 @@ class AkkaHttpBasedRouteProvider(
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig,
-      globalNotificationRepository: InMemoryTimeseriesRepository[Notification]
+      globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
+      modelClassLoaderProvider: ModelClassLoaderProvider
   ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
@@ -723,6 +740,8 @@ class AkkaHttpBasedRouteProvider(
               sttpBackend,
               _
             ),
+            modelClassLoaderProvider,
+            Some(dbRef),
           )
           val loadAndNotifyIO = laodProcessingTypeDataIO
             .map { state =>
