@@ -67,9 +67,8 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
         ConfluentKafkaAvroSerializer(kafkaConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
       case Some(azureClient: AzureSchemaRegistryClient) =>
         AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
-      // TODO_PAWEL no wlasnie, jak nie ma to nie ma, nie ma znaczenia czy nie ma azure czy
-      // dowiedziec sie gdzie jest konfig staginga, on jest mi potrzebny
       case None =>
+        throw new IllegalArgumentException("Avro serialization requires schema registry client, but none were provided")
       case _ =>
         throw new IllegalArgumentException(
           s"Not supported schema registry client: ${client.getClass}. " +
@@ -112,7 +111,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     } else {
       // We pass None to schema, because message readers should not do schema evolution.
       // It is done this way because we want to keep messages in the original format as they were serialized on Kafka
-      val createSerializer    = serializer(None, schemaRegistryClient, _)
+      val createSerializer    = serializer(None, Some(schemaRegistryClient), _)
       val avroKeySerializer   = createSerializer(true)
       val avroValueSerializer = createSerializer(false)
       new AvroPayloadRecordFormatterSupport(
@@ -127,7 +126,11 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
 
-  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
+  override def serializer(
+      schemaOpt: Option[ParsedSchema],
+      c: Option[SchemaRegistryClient],
+      isKey: Boolean
+  ): Serializer[Any] =
     (topic: String, data: Any) =>
       data match {
         case j: Json => j.noSpaces.getBytes()

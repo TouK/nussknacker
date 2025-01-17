@@ -12,11 +12,10 @@ class UniversalSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
   override type SchemaRegistryClientT = SchemaRegistryClient
 
   override def createOnConfigWithSchemaUrl(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
-    // TODO_PAWEL wczesniej nigdy nullem nie byl..., no w tym miejscu koud tez nigdy nie bedzie
     if (config.kafkaProperties.get("schema.registry.url").exists(_.endsWith(KafkaUtils.azureEventHubsUrl))) {
-      AzureSchemaRegistryClientFactory.create(config)
+      AzureSchemaRegistryClientFactory.createOnConfigWithSchemaUrl(config)
     } else {
-      CachedConfluentSchemaRegistryClientFactory.create(config)
+      CachedConfluentSchemaRegistryClientFactory.createOnConfigWithSchemaUrl(config)
     }
   }
 
