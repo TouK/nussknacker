@@ -28,7 +28,7 @@ class TopicsWithExistingSubjectSelectionStrategy extends TopicSelectionStrategy 
       kafkaConfig: KafkaConfig
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     schemaRegistryClient.map(e => e.getAllTopics).getOrElse(Valid(List()))
-
+  }
 
 }
 
@@ -73,9 +73,10 @@ class TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(val topicPatter
     extends TopicSelectionStrategy {
 
   override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
+      schemaRegistryClient: Option[SchemaRegistryClient],
       kafkaConfig: KafkaConfig
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
-    schemaRegistryClient.getAllTopics.map(_.filter(topic => topicPattern.matcher(topic.name).matches()))
+    // TODO_PAWEL tu jest niebezpiecznie
+    schemaRegistryClient.get.getAllTopics.map(_.filter(topic => topicPattern.matcher(topic.name).matches()))
 
 }
