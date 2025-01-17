@@ -52,7 +52,7 @@ class AvroToJsonFormatterFactory(
   */
 class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
     protected val kafkaConfig: KafkaConfig,
-    protected val schemaRegistryClient: SchemaRegistryClient,
+    protected val schemaRegistryClient: Option[SchemaRegistryClient],
     keyMessageReader: AvroMessageReader,
     valueMessageReader: AvroMessageReader,
     protected val deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],

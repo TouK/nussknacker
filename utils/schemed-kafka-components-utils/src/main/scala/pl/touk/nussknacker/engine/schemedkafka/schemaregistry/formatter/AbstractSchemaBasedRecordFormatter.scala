@@ -28,7 +28,7 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 
   protected def kafkaConfig: KafkaConfig
 
-  protected def schemaRegistryClient: SchemaRegistryClient
+  protected def schemaRegistryClient: Option[SchemaRegistryClient]
 
   protected def deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
 

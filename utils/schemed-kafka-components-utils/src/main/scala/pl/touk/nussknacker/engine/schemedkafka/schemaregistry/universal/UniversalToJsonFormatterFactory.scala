@@ -41,7 +41,7 @@ class UniversalToJsonFormatterFactory(
 
 class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
     protected val kafkaConfig: KafkaConfig,
-    protected val schemaRegistryClient: SchemaRegistryClient,
+    protected val schemaRegistryClient: Option[SchemaRegistryClient],
     recordFormatterSupportDispatcher: RecordFormatterSupportDispatcher,
     protected val deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
     protected val schemaIdFromMessageExtractor: SchemaIdFromMessageExtractor

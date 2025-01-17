@@ -55,7 +55,8 @@ class ParsedSchemaDeterminer(
       case LatestSchemaVersion      => None
     }
     schemaRegistryClient
-      .getFreshSchema(topic, version, isKey = isKey)
+      .map(e => e.getFreshSchema(topic, version, isKey = isKey))
+      .getOrElse(Invalid(SchemaError("No schema registry is defined")))
       .leftMap(err =>
         new SchemaDeterminerError(s"Fetching schema error for topic: ${topic.name}, version: $versionOption", err)
       )
