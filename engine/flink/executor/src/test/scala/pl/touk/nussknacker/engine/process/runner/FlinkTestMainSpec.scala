@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -770,7 +771,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       ModelConfigs(config, AdditionalModelConfigs(additionalConfigsFromProvider))
     )
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
+      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.setupMemory(new Configuration))
     }
   }
 

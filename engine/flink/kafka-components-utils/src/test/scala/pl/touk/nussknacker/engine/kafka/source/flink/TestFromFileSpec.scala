@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json.{Null, fromString, obj}
+import org.apache.flink.configuration.Configuration
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
@@ -51,12 +52,7 @@ class TestFromFileSpec
       inputConfig = config,
       components = List.empty,
       configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders),
-      // This is a work around for a behaviour added in https://issues.apache.org/jira/browse/FLINK-32265
-      // Flink overwrite user classloader by the AppClassLoader if classpaths parameter is empty
-      // (implementation in org.apache.flink.runtime.execution.librarycache.BlobLibraryCacheManager)
-      // which holds all needed jars/classes in case of running from Scala plugin in IDE.
-      // but in case of running from sbt it contains only sbt-launcher.jar
-      modelClassLoader = new ModelClassLoader(getClass.getClassLoader, List(new URL("http://dummy-classpath.invalid")))
+      modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
     )
 
   test("Should pass correct timestamp from test data") {
@@ -141,7 +137,7 @@ class TestFromFileSpec
         modelData,
         process,
         scenarioTestData,
-        FlinkTestConfiguration.configuration(),
+        FlinkTestConfiguration.setupMemory(new Configuration),
       )
     }
   }

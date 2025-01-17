@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json._
 import org.apache.avro.Schema
+import org.apache.flink.configuration.Configuration
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
@@ -37,8 +38,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
+import java.net.URL
 import java.util.Collections
 
 class TestWithTestDataSpec
@@ -200,10 +203,15 @@ class TestWithTestDataSpec
   private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
-        LocalModelData(config, List.empty, configCreator = creator),
+        LocalModelData(
+          config,
+          List.empty,
+          configCreator = creator,
+          modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
+        ),
         process,
         scenarioTestData,
-        FlinkTestConfiguration.configuration(),
+        FlinkTestConfiguration.setupMemory(new Configuration),
       )
     }
   }

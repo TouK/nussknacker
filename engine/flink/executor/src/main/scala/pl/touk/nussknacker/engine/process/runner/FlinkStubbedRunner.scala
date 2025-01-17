@@ -76,11 +76,11 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     modelClassLoader.urls match {
       // FIXME abr: is it necessary?
       case Nil =>
-        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
-          configuration,
-          PipelineOptions.CLASSPATHS,
-          new URL(_)
-        )
+//        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
+//          configuration,
+//          PipelineOptions.CLASSPATHS,
+//          new URL(_)
+//        )
       case list => list.asJava
     }
   }
