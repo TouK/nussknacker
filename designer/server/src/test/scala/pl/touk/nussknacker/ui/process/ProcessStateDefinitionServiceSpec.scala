@@ -15,6 +15,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
@@ -196,6 +197,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
         }
       ),
+      SchedulingForProcessingType.NotAvailable,
       TestFactory.deploymentManagerDependencies,
       deploymentConfig = ConfigFactory.empty(),
       engineSetupName = EngineSetupName("mock"),

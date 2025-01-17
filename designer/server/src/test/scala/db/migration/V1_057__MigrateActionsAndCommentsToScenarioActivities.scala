@@ -8,7 +8,6 @@ import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinit
 import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ScenarioComment.WithContent
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}

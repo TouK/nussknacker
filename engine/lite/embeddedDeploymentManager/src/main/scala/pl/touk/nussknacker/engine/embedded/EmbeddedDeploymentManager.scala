@@ -257,6 +257,8 @@ class EmbeddedDeploymentManager(
 
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
   override def close(): Unit = {

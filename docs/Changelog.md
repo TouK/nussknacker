@@ -10,6 +10,10 @@
 
 ### 1.19.0 (Not released yet)
 
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
+  * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
+  * new API available under `processes/{scenarioName}/stickyNotes`
+  * configuration `stickyNotesSettings` allowing to hide/show stickyNotes, set sticky notes max content length or its max number on a graph
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
@@ -47,6 +51,14 @@
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 * [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
 * [#7420](https://github.com/TouK/nussknacker/pull/7420) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
+* [#7438](https://github.com/TouK/nussknacker/pull/7438) Map int32 integer format in OpenAPI schema to the `Integer` type
+* [#7446](https://github.com/TouK/nussknacker/pull/7446) Small changes regarding node errors in fragments used in scenarios:
+  * Fragment error node tips in scenarios are now clickable and open problematic node edit window in a new tab.
+  * Fragment nodes are now highlighted when they contain nodes with errors.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
+  * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
+  * implementation provided for Flink DM
+* [#7443](https://github.com/TouK/nussknacker/pull/7443) Indexing on record is more similar to indexing on map. The change lets us access record values dynamically. For example now spel expression "{a: 5, b: 10}[#input.field]" compiles and has type "Integer" inferred from types of values of the record. This lets us access record value based on user input, for instance if user passes "{"field": "b"}" to scenario we will get value "10", whereas input {"field": "c"} would result in "null". Expression "{a: 5}["b"]" still does not compile because it is known at compile time that record does not have property "b".
 
 ## 1.18
 

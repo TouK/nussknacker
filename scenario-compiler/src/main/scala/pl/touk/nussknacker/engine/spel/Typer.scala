@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperation
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   ConstructionOfUnknown,
   NoPropertyError,
+  NoPropertyTypeError,
   NonReferenceError,
   UnresolvedReferenceError
 }
@@ -199,11 +200,16 @@ private[spel] class Typer(
             case _                                      => typeFieldNameReferenceOnRecord(indexString, record)
           }
         case indexKey :: Nil if indexKey.canBeConvertedTo(Typed[String]) =>
-          if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
-        case _ :: Nil =>
+          if (dynamicPropertyAccessAllowed) valid(Unknown)
+          else
+            record.runtimeObjType.params match {
+              case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] => valid(value)
+              case _                                                                                => valid(Unknown)
+            }
+        case e :: Nil =>
           indexer.children match {
             case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
-            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
+            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyTypeError(record, e))
           }
         case _ =>
           invalid(IllegalIndexingOperation)

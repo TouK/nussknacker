@@ -116,7 +116,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for average aggregator on BigInt") {
     val agg = AverageAggregator
-    addElementsAndComputeResult(List(new BigInteger("7"), new BigInteger("8")), agg) shouldEqual new java.math.BigDecimal("7.5")
+    addElementsAndComputeResult(
+      List(new BigInteger("7"), new BigInteger("8")),
+      agg
+    ) shouldEqual new java.math.BigDecimal("7.5")
   }
 
   test("should calculate correct results for average aggregator on float") {
@@ -133,20 +136,22 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   }
 
   test("some aggregators should produce null on single null input") {
-    forAll (Table(
-      "aggregator",
-      AverageAggregator,
-      SampleStandardDeviationAggregator,
-      PopulationStandardDeviationAggregator,
-      SampleVarianceAggregator,
-      PopulationVarianceAggregator,
-      MaxAggregator,
-      MinAggregator,
-      FirstAggregator,
-      LastAggregator,
-      SumAggregator,
-      MedianAggregator
-    )) { agg =>
+    forAll(
+      Table(
+        "aggregator",
+        AverageAggregator,
+        SampleStandardDeviationAggregator,
+        PopulationStandardDeviationAggregator,
+        SampleVarianceAggregator,
+        PopulationVarianceAggregator,
+        MaxAggregator,
+        MinAggregator,
+        FirstAggregator,
+        LastAggregator,
+        SumAggregator,
+        MedianAggregator
+      )
+    ) { agg =>
       addElementsAndComputeResult(List(null), agg) shouldEqual null
     }
   }
@@ -154,10 +159,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on doubles") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, Math.sqrt(2.5) ),
-      ( PopulationStandardDeviationAggregator, Math.sqrt(2) ),
-      ( SampleVarianceAggregator, 2.5 ),
-      ( PopulationVarianceAggregator, 2.0 )
+      (SampleStandardDeviationAggregator, Math.sqrt(2.5)),
+      (PopulationStandardDeviationAggregator, Math.sqrt(2)),
+      (SampleVarianceAggregator, 2.5),
+      (PopulationVarianceAggregator, 2.0)
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -182,7 +187,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for median aggregator on BigInt") {
     val agg = MedianAggregator
-    addElementsAndComputeResult(List(new BigInteger("7"), new BigInteger("8")), agg) shouldEqual new java.math.BigDecimal("7.5")
+    addElementsAndComputeResult(
+      List(new BigInteger("7"), new BigInteger("8")),
+      agg
+    ) shouldEqual new java.math.BigDecimal("7.5")
   }
 
   test("should calculate correct results for median aggregator on floats") {
@@ -225,10 +233,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on integers") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, Math.sqrt(2.5) ),
-      ( PopulationStandardDeviationAggregator, Math.sqrt(2) ),
-      ( SampleVarianceAggregator, 2.5 ),
-      ( PopulationVarianceAggregator, 2.0 )
+      (SampleStandardDeviationAggregator, Math.sqrt(2.5)),
+      (PopulationStandardDeviationAggregator, Math.sqrt(2)),
+      (SampleVarianceAggregator, 2.5),
+      (PopulationVarianceAggregator, 2.0)
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -240,10 +248,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on BigInt") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, BigDecimal(Math.sqrt(2.5)) ),
-      ( PopulationStandardDeviationAggregator, BigDecimal(Math.sqrt(2)) ),
-      ( SampleVarianceAggregator, BigDecimal(2.5) ),
-      ( PopulationVarianceAggregator, BigDecimal(2.0) )
+      (SampleStandardDeviationAggregator, BigDecimal(Math.sqrt(2.5))),
+      (PopulationStandardDeviationAggregator, BigDecimal(Math.sqrt(2))),
+      (SampleVarianceAggregator, BigDecimal(2.5)),
+      (PopulationVarianceAggregator, BigDecimal(2.0))
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -258,10 +266,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on float") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, Math.sqrt(2.5) ),
-      ( PopulationStandardDeviationAggregator, Math.sqrt(2) ),
-      ( SampleVarianceAggregator, 2.5 ),
-      ( PopulationVarianceAggregator, 2.0 )
+      (SampleStandardDeviationAggregator, Math.sqrt(2.5)),
+      (PopulationStandardDeviationAggregator, Math.sqrt(2)),
+      (SampleVarianceAggregator, 2.5),
+      (PopulationVarianceAggregator, 2.0)
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -273,10 +281,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on BigDecimals") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, BigDecimal(Math.sqrt(2.5)) ),
-      ( PopulationStandardDeviationAggregator, BigDecimal(Math.sqrt(2)) ),
-      ( SampleVarianceAggregator, BigDecimal(2.5) ),
-      ( PopulationVarianceAggregator, BigDecimal(2.0) )
+      (SampleStandardDeviationAggregator, BigDecimal(Math.sqrt(2.5))),
+      (PopulationStandardDeviationAggregator, BigDecimal(Math.sqrt(2))),
+      (SampleVarianceAggregator, BigDecimal(2.5)),
+      (PopulationVarianceAggregator, BigDecimal(2.0))
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -297,15 +305,15 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("some aggregators should ignore nulls ") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, Math.sqrt(2.5) ),
-      ( PopulationStandardDeviationAggregator, Math.sqrt(2) ),
-      ( SampleVarianceAggregator, 2.5 ),
-      ( PopulationVarianceAggregator, 2.0 ),
-      ( SumAggregator, 15.0),
-      ( MaxAggregator, 5.0),
-      ( MinAggregator, 1.0),
-      ( AverageAggregator, 3.0),
-      ( MedianAggregator, 3.0)
+      (SampleStandardDeviationAggregator, Math.sqrt(2.5)),
+      (PopulationStandardDeviationAggregator, Math.sqrt(2)),
+      (SampleVarianceAggregator, 2.5),
+      (PopulationVarianceAggregator, 2.0),
+      (SumAggregator, 15.0),
+      (MaxAggregator, 5.0),
+      (MinAggregator, 1.0),
+      (AverageAggregator, 3.0),
+      (MedianAggregator, 3.0)
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -315,19 +323,21 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   }
 
   test("some aggregators should produce null on empty set") {
-    forAll (Table(
-      "aggregator",
-      AverageAggregator,
-      SampleStandardDeviationAggregator,
-      PopulationStandardDeviationAggregator,
-      SampleVarianceAggregator,
-      PopulationVarianceAggregator,
-      MaxAggregator,
-      MinAggregator,
-      FirstAggregator,
-      LastAggregator,
-      SumAggregator
-    )) { agg =>
+    forAll(
+      Table(
+        "aggregator",
+        AverageAggregator,
+        SampleStandardDeviationAggregator,
+        PopulationStandardDeviationAggregator,
+        SampleVarianceAggregator,
+        PopulationVarianceAggregator,
+        MaxAggregator,
+        MinAggregator,
+        FirstAggregator,
+        LastAggregator,
+        SumAggregator
+      )
+    ) { agg =>
       val result = addElementsAndComputeResult(List(), agg)
       result shouldBe null
     }

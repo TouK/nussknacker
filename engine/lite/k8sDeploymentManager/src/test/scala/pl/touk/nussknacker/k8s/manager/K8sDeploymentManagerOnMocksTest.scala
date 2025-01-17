@@ -13,9 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProvider,
-  ProcessingTypeDeployedScenariosProviderStub,
-  ScenarioActivityManager
+  ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
