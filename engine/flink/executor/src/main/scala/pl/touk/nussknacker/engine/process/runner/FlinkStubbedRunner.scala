@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
+import java.net.{MalformedURLException, URL}
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -74,12 +75,12 @@ final class FlinkStubbedRunner(modelClassLoader: ModelClassLoader, configuration
     // see details in pl.touk.nussknacker.engine.flink.test.MiniClusterExecutionEnvironment#execute
     modelClassLoader.urls match {
       // FIXME abr: is it necessary?
-//      case Nil =>
-//        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
-//          configuration,
-//          PipelineOptions.CLASSPATHS,
-//          new URL(_)
-//        )
+      case Nil =>
+        ConfigUtils.decodeListFromConfig[String, URL, MalformedURLException](
+          configuration,
+          PipelineOptions.CLASSPATHS,
+          new URL(_)
+        )
       case list => list.asJava
     }
   }
