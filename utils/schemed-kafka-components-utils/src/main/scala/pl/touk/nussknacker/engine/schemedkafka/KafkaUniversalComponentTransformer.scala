@@ -104,33 +104,38 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getVersionOrContentTypeParam(
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    if (schemaRegistryClient.isTopicWithSchema(
-        preparedTopic.prepared.topicName.toUnspecialized.name,
-        kafkaConfig
-      )) {
-      val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
-      (versions match {
-        case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
-        case Invalid(e) =>
-          Writer[List[ProcessCompilationError], List[Integer]](
-            List(CustomNodeError(e.getMessage, Some(topicParamName))),
-            Nil
-          )
-      }).map(getVersionParam)
-    } else {
-      val contentTypesValues = List(
-        FixedExpressionValue(s"'${ContentTypes.JSON}'", s"${ContentTypes.JSON}"),
-        // TODO: Remove comment once plain is working correctly
-        // FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
-      )
+    schemaRegistryClient match {
+      case Some(schemaRegistryClientUnpacked)
+          if schemaRegistryClientUnpacked.isTopicWithSchema(
+            preparedTopic.prepared.topicName.toUnspecialized.name,
+            kafkaConfig
+          ) => {
+        val versions =
+          schemaRegistryClientUnpacked.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
+        (versions match {
+          case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
+          case Invalid(e) =>
+            Writer[List[ProcessCompilationError], List[Integer]](
+              List(CustomNodeError(e.getMessage, Some(topicParamName))),
+              Nil
+            )
+        }).map(getVersionParam)
+      }
+      case _ => {
+        val contentTypesValues = List(
+          FixedExpressionValue(s"'${ContentTypes.JSON}'", s"${ContentTypes.JSON}"),
+          // TODO: Remove comment once plain is working correctly
+          // FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
+        )
 
-      Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>
-        ParameterDeclaration
-          .mandatory[String](KafkaUniversalComponentTransformer.contentTypeParamName)
-          .withCreator(
-            modify = _.copy(editor = Some(FixedValuesParameterEditor(contentTypes)))
-          )
-      )
+        Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>
+          ParameterDeclaration
+            .mandatory[String](KafkaUniversalComponentTransformer.contentTypeParamName)
+            .withCreator(
+              modify = _.copy(editor = Some(FixedValuesParameterEditor(contentTypes)))
+            )
+        )
+      }
     }
   }
 

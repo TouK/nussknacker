@@ -68,7 +68,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       case Some(azureClient: AzureSchemaRegistryClient) =>
         AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
       case None =>
-        throw new IllegalArgumentException("Avro serialization requires schema registry client, but none were provided")
+        throw new IllegalArgumentException("Avro serialization requires schema registry client, but none was provided")
       case _ =>
         throw new IllegalArgumentException(
           s"Not supported schema registry client: ${client.getClass}. " +
