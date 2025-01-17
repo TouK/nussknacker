@@ -5,6 +5,7 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.namespaces.NamespaceContext
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
@@ -90,7 +91,7 @@ class FlinkRestManager(
       jobOverviews
         .groupBy(_.name)
         .flatMap { case (name, jobs) =>
-          modelData.namingStrategy.decodeName(name).map(decoded => (ProcessName(decoded), jobs))
+          modelData.namingStrategy.decodeName(name, NamespaceContext.Flink).map(decoded => (ProcessName(decoded), jobs))
         }
         .map { case (name, jobs) =>
           val statusDetails = jobs.map { job =>
