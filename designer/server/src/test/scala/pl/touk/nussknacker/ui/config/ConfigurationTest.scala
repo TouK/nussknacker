@@ -24,7 +24,7 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
     ModelData(
       config,
       TestFactory.modelDependencies,
-      ModelClassLoader(config.classPath, None, ???),
+      ModelClassLoader(config.classPath, None, deploymentManagersClassLoader),
     )
   }
 
