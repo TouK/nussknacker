@@ -272,6 +272,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private def evaluate[T: TypeTag](expr: String, context: Context = ctx): T =
     parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
 
+  test("should be able to dynamically index record") {
+    evaluate[Int]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "a")) shouldBe 5
+    evaluate[Integer]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "asdf")) shouldBe null
+  }
+
+  test("should figure out result type when dynamically indexing record") {
+    evaluate[Int]("{a: {g: 5, h: 10}, b: {g: 50, h: 100}}[#input.toString()].h", Context("abc").withVariable("input", "b")) shouldBe 100
+  }
+
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
       .evaluateSync[java.util.ArrayList[Int]](ctx) should equal(2)
@@ -895,6 +904,28 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Long]("-1.1", ctx) should not be Symbol("valid")
     parse[Double]("-1.1", ctx) shouldBe Symbol("valid")
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
+  }
+
+  test("should not validate map indexing if index type and map key type are different") {
+    parse[Any]("""{{key: "a", value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap["0"]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1.toLong, value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0.toLong]""") shouldBe Symbol("invalid")
+  }
+
+  test("should validate map indexing if index type and map key type are the same") {
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+  }
+
+  test("should handle map indexing with unknown key type") {
+    val context = Context("sth").withVariables(
+      Map(
+        "unknownString" -> ContainerOfUnknown("a"),
+      )
+    )
+
+    evaluate[Int]("""{{key: "a", value: 5}}.toMap[#unknownString.value]""", context) shouldBe 5
+    evaluate[Integer]("""{{key: "b", value: 5}}.toMap[#unknownString.value]""", context) shouldBe null
   }
 
   test("validate ternary operator") {

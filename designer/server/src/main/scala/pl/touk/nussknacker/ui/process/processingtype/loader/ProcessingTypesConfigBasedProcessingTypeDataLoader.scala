@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigs, ProcessingTypeConfigsLoader}
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -18,16 +20,28 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
+      dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
-      .map(createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies))
+      .map(
+        createProcessingTypeData(
+          _,
+          getModelDependencies,
+          getDeploymentManagerDependencies,
+          modelClassLoaderProvider,
+          dbRef
+        )
+      )
   }
 
   private def createProcessingTypeData(
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
-      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
+      dbRef: Option[DbRef],
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
@@ -41,21 +55,42 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
       )
       (processingTypeConfig, provider, nameInputData)
     }
+    modelClassLoaderProvider.validateReloadConsistency(providerWithNameInputData.map { case (processingType, data) =>
+      processingType -> ModelClassLoaderDependencies(
+        classpath = data._1.classPath,
+        workingDirectoryOpt = getModelDependencies(processingType).workingDirectoryOpt
+      )
+    })
+
     val engineSetupNames =
       ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
     val processingTypesData = providerWithNameInputData
       .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
         logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
+        val schedulingForProcessingType =
+          if (processingTypeConfig.deploymentConfig.hasPath("scheduling") &&
+            processingTypeConfig.deploymentConfig.getBoolean("scheduling.enabled")) {
+            SchedulingForProcessingType.Available(
+              dbRef.getOrElse(
+                throw new RuntimeException(s"dbRef not present, but required for Dm with scheduling enabled")
+              ),
+            )
+          } else {
+            SchedulingForProcessingType.NotAvailable
+          }
+
         val modelDependencies = getModelDependencies(processingType)
+        val modelClassLoader  = modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
         val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
-          ModelData(processingTypeConfig, modelDependencies),
+          ModelData(processingTypeConfig, modelDependencies, modelClassLoader),
           deploymentManagerProvider,
+          schedulingForProcessingType,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
           processingTypeConfig.deploymentConfig,
           processingTypeConfig.category,
-          modelDependencies.componentDefinitionExtractionMode
+          modelDependencies.componentDefinitionExtractionMode,
         )
         processingType -> processingTypeData
       }

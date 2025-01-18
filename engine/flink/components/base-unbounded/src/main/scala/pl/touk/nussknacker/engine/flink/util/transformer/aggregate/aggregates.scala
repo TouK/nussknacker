@@ -5,9 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
 import org.apache.flink.api.common.typeinfo.TypeInfo
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.{
-  ForLargeFloatingNumbersOperation,
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
@@ -17,7 +15,6 @@ import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import java.util
-import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 /*
@@ -81,7 +78,8 @@ object aggregates {
 
     override def zero: Aggregate = new java.util.ArrayList[Number]()
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg else {
+    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg
+    else {
       agg.add(el)
       agg
     }
@@ -95,7 +93,8 @@ object aggregates {
       result
     }
 
-    override def result(finalAggregate: Aggregate): AnyRef = MedianHelper.calculateMedian(finalAggregate.asScala.toList).orNull
+    override def result(finalAggregate: Aggregate): AnyRef =
+      MedianHelper.calculateMedian(finalAggregate.asScala.toList).orNull
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass[java.util.ArrayList[_]](List(input))
