@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinitio
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{
   ComponentUiConfigMode,
@@ -106,7 +106,13 @@ class DefinitionsService(
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
-      classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
+      classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList
+        .map(_.clazzName)
+        .filter {
+          case t: TypedClass if t.klass.isArray => false
+          case _                                => true
+        }
+        .sortBy(_.display.toLowerCase),
       scenarioProperties = {
         if (forFragment) {
           createUIProperties(FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, fragmentPropertiesDocsUrl)
