@@ -135,25 +135,25 @@ class K8sDeploymentManagerKafkaTest
 
   test("should deploy scenario with env, resources and replicas count from k8sDeploymentConfig") {
     val runtimeContainerConfig = baseRuntimeContainerConfig
-//      .withValue(
-//        "env",
-//        fromIterable(
-//          List(
-//            fromMap(
-//              Map(
-//                "name"  -> "ENV_VARIABLE",
-//                "value" -> "VALUE"
-//              ).asJava
-//            )
-//          ).asJava
-//        )
-//      )
+      .withValue(
+        "env",
+        fromIterable(
+          List(
+            fromMap(
+              Map(
+                "name"  -> "ENV_VARIABLE",
+                "value" -> "VALUE"
+              ).asJava
+            )
+          ).asJava
+        )
+      )
       .withValue(
         "resources",
         fromMap(
           Map(
-            "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
-            "limits"   -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
+            "requests" -> fromMap(Map("memory" -> "512Mi", "cpu" -> "1024m").asJava),
+            "limits"   -> fromMap(Map("memory" -> "512Mi", "cpu" -> "1024m").asJava)
           ).asJava
         )
       )
