@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
-import { Button, styled, Typography } from "@mui/material";
+import { Button, styled, Tooltip, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService from "../../../../http/HttpService";
 import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
@@ -20,6 +20,7 @@ import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import CircleIcon from "@mui/icons-material/Circle";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -37,15 +38,18 @@ const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
     gap: theme.spacing(0.5),
 }));
 
-const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isDeploymentActive: boolean; isActiveFound: boolean }>(
-    ({ theme, isHighlighted, isDeploymentActive, isActiveFound }) => ({
-        display: "flex",
-        alignItems: "center",
-        padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
-        borderRadius: theme.spacing(0.5),
-        ...getHeaderColors(theme, isHighlighted, isDeploymentActive, isActiveFound),
-    }),
-);
+const StyledActivityItemHeader = styled("div")<{
+    isHighlighted: boolean;
+    isDeploymentActive: boolean;
+    isActiveFound: boolean;
+    isVersionSelected: boolean;
+}>(({ theme, isHighlighted, isDeploymentActive, isActiveFound, isVersionSelected }) => ({
+    display: "flex",
+    alignItems: "center",
+    padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
+    borderRadius: theme.spacing(0.5),
+    ...getHeaderColors(theme, isHighlighted, isDeploymentActive, isActiveFound, isVersionSelected),
+}));
 
 const HeaderActivity = ({
     activityAction,
@@ -237,26 +241,40 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
     const openVersionEnable =
         ["SCENARIO_MODIFIED", "SCENARIO_DEPLOYED"].includes(activity.type) && activity.scenarioVersionId !== processVersionId;
+    const isVersionSelected = ["SCENARIO_MODIFIED"].includes(activity.type) && activity.scenarioVersionId === processVersionId;
 
     const getHeaderTitle = useMemo(() => {
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
 
+        const activeItemIndicatorText = isDeploymentActive
+            ? "Currently deployed version"
+            : isVersionSelected
+            ? "Currently selected version"
+            : undefined;
+
         const headerTitle = (
-            <Typography
-                variant={"caption"}
-                component={SearchHighlighter}
-                title={text}
-                highlights={[searchQuery]}
-                sx={(theme) => ({
-                    color: theme.palette.text.primary,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    textWrap: "noWrap",
-                    padding: !openVersionEnable && theme.spacing(0, 1),
-                })}
-            >
-                {text}
-            </Typography>
+            <>
+                <Typography
+                    variant={"caption"}
+                    component={SearchHighlighter}
+                    title={text}
+                    highlights={[searchQuery]}
+                    sx={(theme) => ({
+                        color: theme.palette.text.primary,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        textWrap: "noWrap",
+                        padding: !openVersionEnable && theme.spacing(0, 1),
+                    })}
+                >
+                    {text}
+                </Typography>
+                {activeItemIndicatorText && (
+                    <Tooltip title={activeItemIndicatorText}>
+                        <CircleIcon sx={{ fontSize: "10px", mx: openVersionEnable && 1 }} color={"primary"} />
+                    </Tooltip>
+                )}
+            </>
         );
 
         if (openVersionEnable) {
@@ -273,13 +291,20 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
         activity.overrideDisplayableName,
         activity.scenarioVersionId,
         activity.type,
+        isDeploymentActive,
         isFound,
+        isVersionSelected,
         openVersionEnable,
         searchQuery,
     ]);
 
     return (
-        <StyledActivityItemHeader isHighlighted={isHighlighted} isDeploymentActive={isDeploymentActive} isActiveFound={isActiveFound}>
+        <StyledActivityItemHeader
+            isHighlighted={isHighlighted}
+            isDeploymentActive={isDeploymentActive}
+            isActiveFound={isActiveFound}
+            isVersionSelected={isVersionSelected}
+        >
             <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
             <StyledHeaderActionRoot>
