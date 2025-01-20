@@ -10,7 +10,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{LoneElement, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -50,15 +50,16 @@ class TestWithTestDataSpec
     with LazyLogging
     with EitherValuesDetailedMessage
     with OptionValues
-    with LoneElement {
+    with LoneElement
+    with BeforeAndAfterAll {
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator =
+  private val creator: KafkaAvroTestProcessConfigCreator =
     new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
       override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
         MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
     }
 
-  private lazy val config = ConfigFactory
+  private val config = ConfigFactory
     .empty()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue(
@@ -67,6 +68,22 @@ class TestWithTestDataSpec
     )
     .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
+
+  private val modelData =
+    LocalModelData(
+      config,
+      List.empty,
+      configCreator = creator,
+      modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
+    )
+
+  private val testRunner =
+    new FlinkProcessTestRunner(modelData, parallelism = 1, FlinkTestConfiguration.setupMemory(new Configuration))
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    testRunner.close()
+  }
 
   test("Should pass correct timestamp from test data") {
     val topic             = UnspecializedTopicName("address")
@@ -114,7 +131,7 @@ class TestWithTestDataSpec
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
     val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
 
-    val results = run(process, scenarioTestData)
+    val results = testRunner.runTests(process, scenarioTestData)
 
     val testResultVars = results.nodeResults("end").head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
@@ -146,7 +163,7 @@ class TestWithTestDataSpec
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
-    val results = run(process, scenarioTestData)
+    val results = testRunner.runTests(process, scenarioTestData)
     results
       .invocationResults("end")
       .head
@@ -168,7 +185,7 @@ class TestWithTestDataSpec
       ParameterName("in") -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
-    val results          = run(fragment, scenarioTestData)
+    val results          = testRunner.runTests(fragment, scenarioTestData)
 
     results.nodeResults("fragment1").loneElement shouldBe ResultContext(
       "fragment1-fragment1-0-0",
@@ -198,20 +215,6 @@ class TestWithTestDataSpec
     val subject      = ConfluentUtils.topicSubject(topic, isKey = false)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryMockClient.register(subject, parsedSchema)
-  }
-
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      val modelData = LocalModelData(
-        config,
-        List.empty,
-        configCreator = creator,
-        modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
-      )
-      // TODO: reuse this instance between all test cases
-      new FlinkProcessTestRunner(modelData, parallelism = 1, FlinkTestConfiguration.setupMemory(new Configuration))
-        .runTests(process, scenarioTestData)
-    }
   }
 
 }

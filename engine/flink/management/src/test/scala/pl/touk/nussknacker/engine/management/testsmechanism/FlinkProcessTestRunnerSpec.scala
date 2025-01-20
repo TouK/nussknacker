@@ -7,8 +7,16 @@ import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ParameterAdditionalUIConfig}
-import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation, ValueInputWithDictEditor}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  ParameterAdditionalUIConfig
+}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor
+}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, FragmentSpecificData, MetaData, StreamMetaData}
@@ -17,11 +25,18 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.deployment.AdditionalModelConfigs
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
+import pl.touk.nussknacker.engine.flink.test.{
+  FlinkTestConfiguration,
+  RecordingExceptionConsumer,
+  RecordingExceptionConsumerProvider
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, FragmentInputDefinition, FragmentOutputDefinition}
-import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunnerSpec.{fragmentWithValidationName, processWithFragmentParameterValidation}
+import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunnerSpec.{
+  fragmentWithValidationName,
+  processWithFragmentParameterValidation
+}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
@@ -762,15 +777,13 @@ class FlinkProcessTestRunnerSpec
       ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround),
       resolveConfigs = false
     )
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      // TODO: reuse this instance between all test cases
-      val parallelism = MetaDataExtractor
-        .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
-        .parallelism
-        .getOrElse(1)
-      new FlinkProcessTestRunner(modelData, parallelism, FlinkTestConfiguration.setupMemory(new Configuration))
-        .runTests(process, scenarioTestData)
-    }
+    // TODO: reuse this instance between all test cases
+    val parallelism = MetaDataExtractor
+      .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
+      .parallelism
+      .getOrElse(1)
+    new FlinkProcessTestRunner(modelData, parallelism, FlinkTestConfiguration.setupMemory(new Configuration))
+      .runTests(process, scenarioTestData)
   }
 
   private def nodeResult(count: Int, vars: (String, Any)*): ResultContext[_] =

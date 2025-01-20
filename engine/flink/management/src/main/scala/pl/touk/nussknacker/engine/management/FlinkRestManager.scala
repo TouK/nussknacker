@@ -297,10 +297,6 @@ class FlinkRestManager(
       Future.successful(())
   }
 
-  override def close(): Unit = {
-    logger.info("Closing Flink REST manager")
-  }
-
 }
 
 object FlinkRestManager {

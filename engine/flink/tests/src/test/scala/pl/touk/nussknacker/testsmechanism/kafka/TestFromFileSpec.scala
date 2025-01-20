@@ -7,13 +7,12 @@ import io.circe.Json
 import io.circe.Json.{Null, fromString, obj}
 import org.apache.flink.configuration.Configuration
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
@@ -23,8 +22,6 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessCo
 import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunner
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
@@ -36,9 +33,10 @@ class TestFromFileSpec
     with Matchers
     with LazyLogging
     with EitherValuesDetailedMessage
-    with OptionValues {
+    with OptionValues
+    with BeforeAndAfterAll {
 
-  private lazy val config = ConfigFactory
+  private val config = ConfigFactory
     .empty()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue(
@@ -47,13 +45,21 @@ class TestFromFileSpec
     )
     .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
 
-  protected lazy val modelData: ModelData =
+  private val modelData: ModelData =
     LocalModelData(
       inputConfig = config,
       components = List.empty,
       configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders),
       modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
     )
+
+  private val testRunner =
+    new FlinkProcessTestRunner(modelData, parallelism = 1, FlinkTestConfiguration.setupMemory(new Configuration))
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    testRunner.close()
+  }
 
   test("Should pass correct timestamp from test data") {
     val topic             = "simple"
@@ -97,7 +103,7 @@ class TestFromFileSpec
         _.add("value", obj("id" -> fromString("fooId"), "field" -> fromString("fooField")))
       )
 
-    val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
+    val results = testRunner.runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
     val testResultVars = results.nodeResults("end").head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
@@ -126,17 +132,9 @@ class TestFromFileSpec
           .add("value", obj("id" -> fromString("1234"), "field" -> fromString("abcd")))
       )
 
-    val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
+    val results = testRunner.runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
     results.nodeResults shouldBe Symbol("nonEmpty")
-  }
-
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      // TODO: reuse this instance between all test cases
-      new FlinkProcessTestRunner(modelData, parallelism = 1, FlinkTestConfiguration.setupMemory(new Configuration))
-        .runTests(process, scenarioTestData)
-    }
   }
 
 }

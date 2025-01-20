@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FlinkProcessTestRunner(modelData: ModelData, parallelism: Int, streamExecutionConfig: Configuration) {
+class FlinkProcessTestRunner(modelData: ModelData, parallelism: Int, streamExecutionConfig: Configuration)
+    extends AutoCloseable {
 
   private val streamExecutionEnvironment =
     TestsMechanismStreamExecutionEnvironmentFactory.createStreamExecutionEnvironment(parallelism, streamExecutionConfig)
@@ -41,5 +42,10 @@ class FlinkProcessTestRunner(modelData: ModelData, parallelism: Int, streamExecu
       canonicalProcess,
       scenarioTestData
     )
+
+  def close(): Unit = {
+    miniCluster.close()
+    streamExecutionEnvironment.close()
+  }
 
 }

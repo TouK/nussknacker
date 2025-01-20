@@ -265,6 +265,11 @@ abstract class FlinkDeploymentManager(
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
 
+  override def close(): Unit = {
+    logger.info("Closing Flink Deployment Manager")
+    testRunner.close()
+  }
+
 }
 
 object FlinkDeploymentManager {
