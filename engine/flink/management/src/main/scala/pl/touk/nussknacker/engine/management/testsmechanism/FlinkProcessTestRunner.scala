@@ -3,10 +3,11 @@ package pl.touk.nussknacker.engine.management.testsmechanism
 import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
+import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ReflectiveMethodInvoker}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,9 +40,27 @@ class FlinkProcessTestRunner(modelData: ModelData, parallelism: Int, streamExecu
       miniCluster,
       streamExecutionEnvironment,
       modelData,
-      canonicalProcess,
+      rewriteParallelismIfHigherThanMaxParallelism(canonicalProcess),
       scenarioTestData
     )
+
+  private def rewriteParallelismIfHigherThanMaxParallelism(canonicalProcess: CanonicalProcess): CanonicalProcess = {
+    val scenarioParallelism = MetaDataExtractor
+      .extractTypeSpecificDataOrDefault[StreamMetaData](canonicalProcess.metaData, StreamMetaData())
+      .parallelism
+      .getOrElse(1)
+    if (scenarioParallelism > parallelism) {
+      canonicalProcess.copy(metaData =
+        canonicalProcess.metaData.copy(additionalFields =
+          canonicalProcess.metaData.additionalFields.copy(properties =
+            canonicalProcess.metaData.additionalFields.properties + (StreamMetaData.parallelismName -> parallelism.toString)
+          )
+        )
+      )
+    } else {
+      canonicalProcess
+    }
+  }
 
   def close(): Unit = {
     miniCluster.close()
