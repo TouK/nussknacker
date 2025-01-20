@@ -151,6 +151,7 @@ class BaseK8sDeploymentManagerTest
     def waitForRunning(version: ProcessVersion): Assertion = {
       eventually {
         val state = manager.getProcessStates(version.processName).map(_.value).futureValue
+        logger.info(s"Current process state: $state")
         state.flatMap(_.version) shouldBe List(version)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
