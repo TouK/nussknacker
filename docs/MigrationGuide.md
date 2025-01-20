@@ -73,6 +73,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       shouldVerifyBeforeDeploy: true
     }
     ```
+  * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
+    This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
+    was removed to temporarily disable consumer group namespacing.
 
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
