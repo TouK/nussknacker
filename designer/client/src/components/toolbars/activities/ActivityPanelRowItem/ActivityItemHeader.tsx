@@ -237,6 +237,7 @@ const WithOpenVersion = ({
 const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFound, searchQuery }: Props) => {
     const scenario = useSelector(getScenario);
     const { processVersionId } = scenario || {};
+    const { t } = useTranslation();
 
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
     const openVersionEnable =
@@ -247,9 +248,9 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
 
         const activeItemIndicatorText = isDeploymentActive
-            ? "Currently deployed version"
+            ? t("activityItem.currentlyDeployedVersionText", "Currently deployed version")
             : isVersionSelected
-            ? "Currently selected version"
+            ? t("activityItem.currentlySelectedVersionText", "Currently selected version")
             : undefined;
 
         const headerTitle = (
@@ -296,6 +297,7 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
         isVersionSelected,
         openVersionEnable,
         searchQuery,
+        t,
     ]);
 
     return (
