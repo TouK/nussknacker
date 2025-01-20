@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext
 // 2. At the moment, the old ScenarioActionRepository
 //   - handles those activities, which underlying operations may be long and may be in progress
 // 3. Eventually, the new ScenarioActivityRepository should be aware of the state of the underlying operation, and should replace this repository
-trait ScenarioActionRepository extends LockableTable {
+trait ScenarioActionRepository extends ScenarioActionReadOnlyRepository with LockableTable {
 
   def addInstantAction(
       processId: ProcessId,
@@ -80,6 +80,10 @@ trait ScenarioActionRepository extends LockableTable {
 
   def deleteInProgressActions(): DB[Unit]
 
+}
+
+trait ScenarioActionReadOnlyRepository extends LockableTable {
+
   def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]]
 
   def getInProgressActionNames(
@@ -110,10 +114,11 @@ trait ScenarioActionRepository extends LockableTable {
 }
 
 class DbScenarioActionRepository private (
-    protected val dbRef: DbRef,
+    override protected val dbRef: DbRef,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(override implicit val executionContext: ExecutionContext)
-    extends DbioRepository
+    extends DbScenarioActionReadOnlyRepository(dbRef)
+    with DbioRepository
     with NuTables
     with DbLockableTable
     with ScenarioActionRepository
@@ -340,6 +345,42 @@ class DbScenarioActionRepository private (
     } yield updateCount == 1
   }
 
+  override def deleteInProgressActions(): DB[Unit] = {
+    run(scenarioActivityTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
+  }
+
+  private def activityId(actionId: ProcessActionId) =
+    ScenarioActivityId(actionId.value)
+
+}
+
+object DbScenarioActionRepository {
+
+  def create(dbRef: DbRef, buildInfos: ProcessingTypeDataProvider[Map[String, String], _])(
+      implicit executionContext: ExecutionContext,
+  ): ScenarioActionRepository = {
+    new ScenarioActionRepositoryAuditLogDecorator(
+      new DbScenarioActionRepository(dbRef, buildInfos)
+    )
+  }
+
+}
+
+class DbScenarioActionReadOnlyRepository(
+    protected val dbRef: DbRef,
+)(override implicit val executionContext: ExecutionContext)
+    extends DbioRepository
+    with NuTables
+    with DbLockableTable
+    with ScenarioActionReadOnlyRepository
+    with LazyLogging {
+
+  import profile.api._
+
+  override type ENTITY = ScenarioActivityEntityFactory#ScenarioActivityEntity
+
+  override protected def table: TableQuery[ScenarioActivityEntityFactory#ScenarioActivityEntity] = scenarioActivityTable
+
   override def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] = {
     val query = scenarioActivityTable
       .filter(action => action.scenarioId === processId && action.state === ProcessActionState.InProgress)
@@ -389,10 +430,6 @@ class DbScenarioActionRepository private (
           toFinishedProcessAction(data).map((_, name))
         }.toList)
     )
-  }
-
-  override def deleteInProgressActions(): DB[Unit] = {
-    run(scenarioActivityTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
   override def getLastActionPerProcess(
@@ -456,7 +493,7 @@ class DbScenarioActionRepository private (
     )
   }
 
-  private def toFinishedProcessAction(
+  protected def toFinishedProcessAction(
       activityEntity: ScenarioActivityEntityData
   ): Option[ProcessAction] = actionName(activityEntity.activityType).flatMap { actionName =>
     (for {
@@ -486,10 +523,7 @@ class DbScenarioActionRepository private (
     }.toOption
   }
 
-  private def activityId(actionId: ProcessActionId) =
-    ScenarioActivityId(actionId.value)
-
-  private def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
+  protected def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
     activityType match {
       case ScenarioActivityType.ScenarioCreated =>
         None
@@ -553,14 +587,12 @@ class DbScenarioActionRepository private (
 
 }
 
-object DbScenarioActionRepository {
+object DbScenarioActionReadOnlyRepository {
 
-  def create(dbRef: DbRef, buildInfos: ProcessingTypeDataProvider[Map[String, String], _])(
+  def create(dbRef: DbRef)(
       implicit executionContext: ExecutionContext,
-  ): ScenarioActionRepository = {
-    new ScenarioActionRepositoryAuditLogDecorator(
-      new DbScenarioActionRepository(dbRef, buildInfos)
-    )
+  ): ScenarioActionReadOnlyRepository = {
+    new DbScenarioActionReadOnlyRepository(dbRef)
   }
 
 }

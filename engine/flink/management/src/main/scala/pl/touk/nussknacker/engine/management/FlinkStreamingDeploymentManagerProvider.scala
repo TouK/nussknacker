@@ -27,15 +27,6 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
-    createDeploymentManagerWithCapabilities(modelData, dependencies, deploymentConfig, scenarioStateCacheTTL)
-  }
-
-  def createDeploymentManagerWithCapabilities(
-      modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config,
-      scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] = {
     import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>

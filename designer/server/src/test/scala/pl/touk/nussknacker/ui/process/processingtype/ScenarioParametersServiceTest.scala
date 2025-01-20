@@ -14,11 +14,13 @@ import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWide
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -296,6 +298,12 @@ class ScenarioParametersServiceTest
               ComponentDefinitionExtractionMode.FinalDefinition
             ),
           _ => TestFactory.deploymentManagerDependencies,
+          ModelClassLoaderProvider(
+            designerConfig.processingTypeConfigs.configByProcessingType.mapValuesNow(conf =>
+              ModelClassLoaderDependencies(conf.classPath, None)
+            )
+          ),
+          dbRef = None,
         )
         .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService

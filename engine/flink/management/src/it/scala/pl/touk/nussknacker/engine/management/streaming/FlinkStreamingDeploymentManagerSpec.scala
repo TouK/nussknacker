@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -271,7 +272,8 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         workingDirectoryOpt = None,
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
-      )
+      ),
+      ModelClassLoader(processingTypeConfig.classPath, None)
     )
     val definition = modelData.modelDefinition
     definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

@@ -510,8 +510,7 @@ lazy val distribution: Project = sbt
     },
     devArtifacts                             := {
       modelArtifacts.value ++ List(
-        (flinkDevModel / assembly).value                  -> "model/devModel.jar",
-        (flinkPeriodicDeploymentManager / assembly).value -> "managers/nussknacker-flink-periodic-manager.jar",
+        (flinkDevModel / assembly).value -> "model/devModel.jar",
       )
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
@@ -611,8 +610,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     libraryDependencies ++= {
       Seq(
         "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
-        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % flinkScope
-          excludeAll (
+        ("org.apache.flink"       % "flink-streaming-java"       % flinkV         % flinkScope)
+          .excludeAll(
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
@@ -635,37 +634,6 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     flinkExecutor        % Test,
     flinkTestUtils       % "it,test",
     kafkaTestUtils       % "it,test"
-  )
-
-lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic"))
-  .settings(commonSettings)
-  .settings(assemblyNoScala("nussknacker-flink-periodic-manager.jar"): _*)
-  .settings(publishAssemblySettings: _*)
-  .settings(
-    name := "nussknacker-flink-periodic-manager",
-    libraryDependencies ++= {
-      Seq(
-        "org.typelevel"       %% "cats-core"                       % catsV                % Provided,
-        "com.typesafe.slick"  %% "slick"                           % slickV               % Provided,
-        "com.typesafe.slick"  %% "slick-hikaricp"                  % slickV               % "provided, test",
-        "com.github.tminglei" %% "slick-pg"                        % slickPgV,
-        "org.hsqldb"           % "hsqldb"                          % hsqldbV              % Test,
-        "org.flywaydb"         % "flyway-core"                     % flywayV              % Provided,
-        "com.cronutils"        % "cron-utils"                      % cronParserV,
-        "com.typesafe.akka"   %% "akka-actor"                      % akkaV,
-        "com.typesafe.akka"   %% "akka-testkit"                    % akkaV                % Test,
-        "com.dimafeng"        %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
-        "com.dimafeng"        %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
-      )
-    }
-  )
-  .dependsOn(
-    flinkDeploymentManager,
-    deploymentManagerApi % Provided,
-    scenarioCompiler     % Provided,
-    componentsApi        % Provided,
-    httpUtils            % Provided,
-    testUtils            % Test
   )
 
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
@@ -1816,10 +1784,10 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
   .settings(
     name := "nussknacker-flink-base-unbounded-components",
     libraryDependencies ++= Seq(
-      "org.apache.flink"          % "flink-streaming-java" % flinkV % Provided,
-      "com.clearspring.analytics" % "stream"               % "2.9.8"
+      "org.apache.flink"           % "flink-streaming-java" % flinkV % Provided,
       // It is used only in QDigest which we don't use, while it's >20MB in size...
-        exclude ("it.unimi.dsi", "fastutil")
+      ("com.clearspring.analytics" % "stream"               % "2.9.8")
+        .exclude("it.unimi.dsi", "fastutil")
     )
   )
   .dependsOn(
@@ -2009,6 +1977,7 @@ lazy val designer = (project in file("designer/server"))
         "com.typesafe.akka"             %% "akka-testkit"                   % akkaV     % Test,
         "de.heikoseeberger"             %% "akka-http-circe"                % akkaHttpCirceV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % sttpV,
+        "com.cronutils"                  % "cron-utils"                     % cronParserV,
         "ch.qos.logback"                 % "logback-core"                   % logbackV,
         "ch.qos.logback"                 % "logback-classic"                % logbackV,
         "ch.qos.logback.contrib"         % "logback-json-classic"           % logbackJsonV,
@@ -2031,6 +2000,7 @@ lazy val designer = (project in file("designer/server"))
         "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
+        "com.github.tminglei"           %% "slick-pg"                        % slickPgV,
         "com.softwaremill.sttp.tapir"   %% "tapir-akka-http-server"          % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-core"                      % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-derevo"                    % tapirV,
@@ -2085,7 +2055,6 @@ lazy val designer = (project in file("designer/server"))
     liteEmbeddedDeploymentManager     % Provided,
     liteK8sDeploymentManager          % Provided,
     developmentTestsDeploymentManager % Provided,
-    flinkPeriodicDeploymentManager    % Provided,
     schemedKafkaComponentsUtils       % Provided,
   )
 
@@ -2175,7 +2144,6 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime,
   liteEngineRuntimeApp,
   flinkDeploymentManager,
-  flinkPeriodicDeploymentManager,
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
