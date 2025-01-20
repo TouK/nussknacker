@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic.flink
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
-import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.engine.management.{
   FlinkStreamingRestManager
 }
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
+import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 import sttp.client3.SttpBackend
 
 import java.nio.file.{Files, Path, Paths}

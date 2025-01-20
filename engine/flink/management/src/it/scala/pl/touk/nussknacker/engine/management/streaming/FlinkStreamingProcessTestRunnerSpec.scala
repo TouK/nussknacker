@@ -17,6 +17,7 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures,
 import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 class FlinkStreamingProcessTestRunnerSpec
     extends AnyFlatSpec
@@ -45,20 +46,26 @@ class FlinkStreamingProcessTestRunnerSpec
   )
 
   it should "run scenario in test mode" in {
-    val deploymentManager =
+    Using.resource(
       FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
+    ) { deploymentManager =>
+      val processName    = ProcessName(UUID.randomUUID().toString)
+      val processVersion = ProcessVersion.empty.copy(processName = processName)
 
-    val processName    = ProcessName(UUID.randomUUID().toString)
-    val processVersion = ProcessVersion.empty.copy(processName = processName)
+      val process = SampleProcess.prepareProcess(processName)
 
-    val process = SampleProcess.prepareProcess(processName)
-
-    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
-      r.nodeResults shouldBe Map(
-        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))))
-      )
+      whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) {
+        r =>
+          r.nodeResults shouldBe Map(
+            "startProcess" -> List(
+              ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))
+            ),
+            "nightFilter" -> List(
+              ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))
+            ),
+            "endSend" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))))
+          )
+      }
     }
   }
 
@@ -71,16 +78,17 @@ class FlinkStreamingProcessTestRunnerSpec
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 
-    val deploymentManager =
+    Using.resource(
       FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
-
-    val caught = intercept[IllegalArgumentException] {
-      Await.result(
-        deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData)),
-        patienceConfig.timeout
-      )
+    ) { deploymentManager =>
+      val caught = intercept[IllegalArgumentException] {
+        Await.result(
+          deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData)),
+          patienceConfig.timeout
+        )
+      }
+      caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
     }
-    caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }
 
   private def variable(value: String): Json =

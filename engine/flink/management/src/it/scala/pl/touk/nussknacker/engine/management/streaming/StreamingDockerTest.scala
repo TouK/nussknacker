@@ -30,6 +30,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   override def afterAll(): Unit = {
     kafkaClient.shutdown()
     logger.info("Kafka client closed")
+    deploymentManager.close()
     super.afterAll()
   }
 
