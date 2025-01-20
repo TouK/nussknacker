@@ -160,7 +160,7 @@ class K8sDeploymentManagerKafkaTest
       .root()
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
-        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
+//        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
         .withValue(
           "k8sDeploymentConfig.spec.template.spec.containers",
           fromIterable(
