@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
+import pl.touk.nussknacker.engine.flink.util.transformer.{FlinkBaseComponentProvider, FlinkKafkaComponentProvider}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
@@ -79,7 +79,7 @@ abstract class FlinkWithKafkaSuite
     valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
-      new MockFlinkKafkaComponentProvider(() => schemaRegistryClientProvider.schemaRegistryClientFactory)
+      createFinkKafkaComponentProvider()
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
@@ -90,6 +90,11 @@ abstract class FlinkWithKafkaSuite
       FlinkJobConfig.parse(modelData.modelConfig),
       executionConfigPreparerChain(modelData, schemaRegistryClientProvider)
     )
+  }
+
+  protected def createFinkKafkaComponentProvider(): FlinkKafkaComponentProvider = {
+    val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
+    new MockFlinkKafkaComponentProvider(() => schemaRegistryClientProvider.schemaRegistryClientFactory)
   }
 
   private def executionConfigPreparerChain(
@@ -115,27 +120,31 @@ abstract class FlinkWithKafkaSuite
 
   protected def avroAsJsonSerialization = false
 
-  override def kafkaComponentsConfig: Config = ConfigFactory
-    .empty()
-    .withValue(
-      KafkaConfigProperties.bootstrapServersProperty("config"),
-      fromAnyRef(kafkaServerWithDependencies.kafkaAddress)
-    )
-    .withValue(
-      KafkaConfigProperties.property("config", "schema.registry.url"),
-      fromAnyRef("not_used")
-    )
-    .withValue(
-      KafkaConfigProperties.property("config", "auto.offset.reset"),
-      fromAnyRef("earliest")
-    )
-    .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
-    .withValue("config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
-    // we turn off auto registration to do it on our own passing mocked schema registry client
-    .withValue(
-      s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
-      fromAnyRef(false)
-    )
+  override def kafkaComponentsConfig: Config = {
+    val config = ConfigFactory
+      .empty()
+      .withValue(
+        KafkaConfigProperties.bootstrapServersProperty("config"),
+        fromAnyRef(kafkaServerWithDependencies.kafkaAddress)
+      )
+      .withValue(
+        KafkaConfigProperties.property("config", "auto.offset.reset"),
+        fromAnyRef("earliest")
+      )
+      .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
+      .withValue("config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+      // we turn off auto registration to do it on our own passing mocked schema registry client
+      .withValue(
+        s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
+        fromAnyRef(false)
+      )
+    maybeAddSchemaRegistryUrl(config)
+  }
+
+  protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
+    KafkaConfigProperties.property("config", "schema.registry.url"),
+    fromAnyRef("not_used")
+  )
 
   lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfig(config, "config")
   protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
