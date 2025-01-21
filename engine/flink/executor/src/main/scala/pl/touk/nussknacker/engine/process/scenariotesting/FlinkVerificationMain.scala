@@ -31,19 +31,22 @@ class FlinkVerificationMain(
   def runTest(scenario: CanonicalProcess, processVersion: ProcessVersion, savepointPath: String): Unit = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     try {
-      AdHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(miniClusterWrapperOpt, scenario) {
-        miniClusterWrapper =>
-          val alignedScenario = miniClusterWrapper.alignParallelism(scenario)
-          val resultCollector = new TestServiceInvocationCollector(collectingListener)
-          val registrar       = prepareRegistrar(alignedScenario)
-          val deploymentData  = DeploymentData.empty
+      AdHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(
+        miniClusterWrapperOpt,
+        scenario,
+        "scenario state verification"
+      ) { miniClusterWrapper =>
+        val alignedScenario = miniClusterWrapper.alignParallelism(scenario)
+        val resultCollector = new TestServiceInvocationCollector(collectingListener)
+        val registrar       = prepareRegistrar(alignedScenario)
+        val deploymentData  = DeploymentData.empty
 
-          registrar.register(miniClusterWrapper.env, alignedScenario, processVersion, deploymentData, resultCollector)
-          miniClusterWrapper.submitJobAndCleanEnv(
-            alignedScenario.name,
-            SavepointRestoreSettings.forPath(savepointPath, true),
-            modelData.modelClassLoader
-          )
+        registrar.register(miniClusterWrapper.env, alignedScenario, processVersion, deploymentData, resultCollector)
+        miniClusterWrapper.submitJobAndCleanEnv(
+          alignedScenario.name,
+          SavepointRestoreSettings.forPath(savepointPath, true),
+          modelData.modelClassLoader
+        )
       }
     } finally {
       collectingListener.clean()

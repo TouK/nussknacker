@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.{JobGraph, SavepointRestoreSettings}
 import org.apache.flink.runtime.minicluster.MiniCluster
@@ -67,10 +68,14 @@ final class ScenarioTestingMiniClusterWrapper(
 
 }
 
-object ScenarioTestingMiniClusterWrapper {
+object ScenarioTestingMiniClusterWrapper extends LazyLogging {
 
   def create(parallelism: Int, streamExecutionConfig: Configuration): ScenarioTestingMiniClusterWrapper = {
+    logger.debug(s"Creating MiniCluster with numTaskSlots = $parallelism")
     val miniCluster = ScenarioTestingMiniClusterFactory.createConfiguredMiniCluster(parallelism)
+    logger.debug(
+      s"Creating local StreamExecutionEnvironment with parallelism = $parallelism and configuration = $streamExecutionConfig"
+    )
     val env = ScenarioTestingStreamExecutionEnvironmentFactory.createStreamExecutionEnvironment(
       parallelism,
       streamExecutionConfig

@@ -35,23 +35,26 @@ class FlinkTestMain(miniClusterWrapperOpt: Option[ScenarioTestingMiniClusterWrap
   def testScenario(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     try {
-      AdHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(miniClusterWrapperOpt, scenario) {
-        miniClusterWrapper =>
-          val alignedScenario = miniClusterWrapper.alignParallelism(scenario)
-          val resultCollector = new TestServiceInvocationCollector(collectingListener)
-          // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
-          val processVersion = ProcessVersion.empty.copy(processName = alignedScenario.name)
-          val deploymentData = DeploymentData.empty.copy(additionalModelConfigs =
-            AdditionalModelConfigs(modelData.additionalConfigsFromProvider)
-          )
-          val registrar = prepareRegistrar(collectingListener, alignedScenario, scenarioTestData, processVersion)
-          registrar.register(miniClusterWrapper.env, alignedScenario, processVersion, deploymentData, resultCollector)
-          miniClusterWrapper.submitJobAndCleanEnv(
-            alignedScenario.name,
-            SavepointRestoreSettings.none(),
-            modelData.modelClassLoader
-          )
-          collectingListener.results
+      AdHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(
+        miniClusterWrapperOpt,
+        scenario,
+        "scenario testing"
+      ) { miniClusterWrapper =>
+        val alignedScenario = miniClusterWrapper.alignParallelism(scenario)
+        val resultCollector = new TestServiceInvocationCollector(collectingListener)
+        // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
+        val processVersion = ProcessVersion.empty.copy(processName = alignedScenario.name)
+        val deploymentData = DeploymentData.empty.copy(additionalModelConfigs =
+          AdditionalModelConfigs(modelData.additionalConfigsFromProvider)
+        )
+        val registrar = prepareRegistrar(collectingListener, alignedScenario, scenarioTestData, processVersion)
+        registrar.register(miniClusterWrapper.env, alignedScenario, processVersion, deploymentData, resultCollector)
+        miniClusterWrapper.submitJobAndCleanEnv(
+          alignedScenario.name,
+          SavepointRestoreSettings.none(),
+          modelData.modelClassLoader
+        )
+        collectingListener.results
       }
     } finally {
       collectingListener.clean()

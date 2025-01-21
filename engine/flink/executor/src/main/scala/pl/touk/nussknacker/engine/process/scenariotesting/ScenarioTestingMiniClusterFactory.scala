@@ -6,13 +6,13 @@ import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfigurati
 
 object ScenarioTestingMiniClusterFactory {
 
-  def createConfiguredMiniCluster(nomTaskSlots: Int): MiniCluster = {
-    val miniClusterConfiguration = prepareMiniClusterConfiguration(numTaskSlots = nomTaskSlots)
+  def createConfiguredMiniCluster(numTaskSlots: Int): MiniCluster = {
+    val miniClusterConfiguration = prepareMiniClusterConfiguration(numTaskSlots = numTaskSlots)
 
     // it is required for proper working of HadoopFileSystem
     FileSystem.initialize(miniClusterConfiguration, null)
 
-    createMiniCluster(miniClusterConfiguration, numSlotsPerTaskManager = nomTaskSlots)
+    createMiniCluster(miniClusterConfiguration, numSlotsPerTaskManager = numTaskSlots)
   }
 
   private def prepareMiniClusterConfiguration(numTaskSlots: Int) = {
