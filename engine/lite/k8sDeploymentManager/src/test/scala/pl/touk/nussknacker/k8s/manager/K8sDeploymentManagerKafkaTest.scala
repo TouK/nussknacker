@@ -160,7 +160,7 @@ class K8sDeploymentManagerKafkaTest
       .root()
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
-        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(1))
+        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(2))
         .withValue(
           "k8sDeploymentConfig.spec.template.spec.containers",
           fromIterable(List(runtimeContainerConfig).asJava)
@@ -169,7 +169,7 @@ class K8sDeploymentManagerKafkaTest
     f.withRunningScenario {
       eventually {
         val pods = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items
-        pods.size shouldBe 1
+        pods.size shouldBe 2
         forAll(pods.head.spec.get.containers) { container =>
           container.resources shouldBe Some(
             skuber.Resource.Requirements(
