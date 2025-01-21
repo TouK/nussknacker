@@ -62,7 +62,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     }
   }
 
-  def shouldRoundTripPlainMessageWithoutProvidedSchema() {
+  def shouldRoundTripPlainMessageWithoutProvidedSchema(): Unit = {
     val inputTopic  = "input-topic-without-schema-plain"
     val outputTopic = "output-topic-without-schema-plain"
 
