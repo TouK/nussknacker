@@ -14,8 +14,9 @@ import scala.util.control.NonFatal
 
 class FlinkProcessVerifier(modelData: ModelData) extends LazyLogging {
 
-  // We use reflection to avoid bundling of flinkExecutor.jar inside flinkDeploymentManager assembly jar
-  // TODO: use provided dependency instead
+  // We use reflection, because we don't want to bundle flinkExecutor.jar inside flinkDeploymentManager assembly jar
+  // because it is already in separate assembly for purpose of sending it to Flink during deployment.
+  // Other option would be to add flinkExecutor.jar to classpath from which Flink DM is loaded
   private val methodInvoker = new ReflectiveMethodInvoker[Unit](
     modelData.modelClassLoader.classLoader,
     "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain",
