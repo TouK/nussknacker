@@ -32,6 +32,9 @@ object AssignabilityDeterminer {
   def isAssignableStrict(from: TypingResult, to: TypingResult): ValidatedNel[String, Unit] =
     isAssignable(from, to, StrictConversionChecker)
 
+  def isAssignableWithoutConversion(from: TypingResult, to: TypingResult): ValidatedNel[String, Unit] =
+    isAssignable(from, to, WithoutConversionChecker)
+
   private def isAssignable(from: TypingResult, to: TypingResult, conversionChecker: ConversionChecker) = {
     (from, to) match {
       case (_, Unknown)       => ().validNel
@@ -220,6 +223,19 @@ object AssignabilityDeterminer {
         from: SingleTypingResult,
         to: TypedClass
     ): ValidatedNel[String, Unit]
+
+  }
+
+  private object WithoutConversionChecker extends ConversionChecker {
+
+    override def isConvertable(
+        from: SingleTypingResult,
+        to: TypedClass
+    ): ValidatedNel[String, Unit] = {
+      val errMsgPrefix =
+        s"${from.runtimeObjType.display} is not the same as ${to.display}"
+      condNel(from.withoutValue == to.withoutValue, (), errMsgPrefix)
+    }
 
   }
 
