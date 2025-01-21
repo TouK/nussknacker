@@ -525,7 +525,7 @@ jobs:
 
   publish-after-tests:
     name: Publish With Tests
-    uses: ./.github/workflows/shared/publish.yml
+    uses: .github/workflows/shared/publish.yml
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     with:
       ref: ${{ github.ref }}
@@ -533,7 +533,7 @@ jobs:
 
   publish-before-tests:
     name: Publish Without Tests
-    uses: ./.github/workflows/shared/publish.yml
+    uses: .github/workflows/shared/publish.yml
     needs: ['build', 'build-fe', 'setup']
     with:
       ref: ${{ github.ref }}
