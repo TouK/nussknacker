@@ -242,7 +242,7 @@ class PeriodicDeploymentManager private[periodic] (
   //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  // todo NU-1772
+  // TODO: NU-1772
   //  In the current implementation:
   //    - PeriodicDeploymentManager is a kind of plugin, and it has its own data source (separate db)
   //    - PeriodicDeploymentManager returns (by implementing ManagerSpecificScenarioActivitiesStoredByManager) custom ScenarioActivities, that are associated with operations performed internally by the manager

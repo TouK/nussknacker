@@ -7,13 +7,14 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 
 import java.net.URI
 import java.nio.file.Files
 import java.util.UUID
 
 // TODO: We should spit DesignerConfigLoader tests and model ProcessingTypeConfig tests
-class ConfigurationTest extends AnyFunSuite with Matchers {
+class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassLoader with Matchers {
 
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
   private def globalConfig = ConfigWithScalaVersion.TestsConfig
@@ -23,7 +24,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
     ModelData(
       config,
       TestFactory.modelDependencies,
-      ModelClassLoader(config.classPath, None)
+      ModelClassLoader(config.classPath, None, deploymentManagersClassLoader),
     )
   }
 

@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import akka.actor.ActorSystem
+import cats.effect.IO
+import cats.effect.kernel.Resource
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import pl.touk.nussknacker.engine._
@@ -13,6 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
@@ -26,9 +29,10 @@ object FlinkStreamingDeploymentManagerProviderHelper {
 
   def createDeploymentManager(
       processingTypeConfig: ConfigWithUnresolvedVersion,
+      deploymentManagerClassLoader: DeploymentManagersClassLoader
   ): DeploymentManager = {
     val typeConfig       = ProcessingTypeConfig.read(processingTypeConfig)
-    val modelClassLoader = ModelClassLoader(typeConfig.classPath, None)
+    val modelClassLoader = ModelClassLoader(typeConfig.classPath, None, deploymentManagerClassLoader)
     val modelData = ModelData(
       processingTypeConfig = typeConfig,
       ModelDependencies(
@@ -58,6 +62,16 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         None
       )
       .valueOr(err => throw new IllegalStateException(s"Invalid Deployment Manager: ${err.toList.mkString(", ")}"))
+  }
+
+  def createDeploymentManager(
+      processingTypeConfig: ConfigWithUnresolvedVersion,
+  ): Resource[IO, DeploymentManager] = {
+    DeploymentManagersClassLoader
+      .create(List.empty)
+      .map { deploymentManagerClassLoader =>
+        createDeploymentManager(processingTypeConfig, deploymentManagerClassLoader)
+      }
   }
 
 }

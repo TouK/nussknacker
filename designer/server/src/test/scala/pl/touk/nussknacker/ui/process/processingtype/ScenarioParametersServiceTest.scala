@@ -18,9 +18,9 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -31,6 +31,7 @@ class ScenarioParametersServiceTest
     extends AnyFunSuite
     with Matchers
     with ValidatedValuesDetailedMessage
+    with WithTestDeploymentManagerClassLoader
     with OptionValues
     with LazyLogging {
 
@@ -287,7 +288,10 @@ class ScenarioParametersServiceTest
     val designerConfig =
       DesignerConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
     val processingTypeData =
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+        () => IO.pure(designerConfig.processingTypeConfigs),
+        deploymentManagersClassLoader
+      )
         .loadProcessingTypeData(
           processingType =>
             ModelDependencies(
@@ -301,7 +305,8 @@ class ScenarioParametersServiceTest
           ModelClassLoaderProvider(
             designerConfig.processingTypeConfigs.configByProcessingType.mapValuesNow(conf =>
               ModelClassLoaderDependencies(conf.classPath, None)
-            )
+            ),
+            deploymentManagersClassLoader
           ),
           dbRef = None,
         )

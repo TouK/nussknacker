@@ -152,33 +152,29 @@ class K8sDeploymentManagerKafkaTest
         "resources",
         fromMap(
           Map(
-            "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
-            "limits"   -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
+            "requests" -> fromMap(Map("memory" -> "512Mi", "cpu" -> "1024m").asJava),
+            "limits"   -> fromMap(Map("memory" -> "512Mi", "cpu" -> "1024m").asJava)
           ).asJava
         )
       )
       .root()
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
-        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
+        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(2))
         .withValue(
           "k8sDeploymentConfig.spec.template.spec.containers",
-          fromIterable(
-            List(
-              runtimeContainerConfig
-            ).asJava
-          )
+          fromIterable(List(runtimeContainerConfig).asJava)
         )
     )
     f.withRunningScenario {
       eventually {
         val pods = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items
-        pods.size shouldBe 3
+        pods.size shouldBe 2
         forAll(pods.head.spec.get.containers) { container =>
           container.resources shouldBe Some(
             skuber.Resource.Requirements(
-              limits = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi")),
-              requests = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi"))
+              limits = Map("cpu" -> Quantity("1024m"), "memory" -> Quantity("512Mi")),
+              requests = Map("cpu" -> Quantity("1024m"), "memory" -> Quantity("512Mi"))
             )
           )
           container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))

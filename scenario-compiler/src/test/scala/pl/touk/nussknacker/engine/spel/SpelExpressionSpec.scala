@@ -278,7 +278,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should figure out result type when dynamically indexing record") {
-    evaluate[Int]("{a: {g: 5, h: 10}, b: {g: 50, h: 100}}[#input.toString()].h", Context("abc").withVariable("input", "b")) shouldBe 100
+    evaluate[Int](
+      "{a: {g: 5, h: 10}, b: {g: 50, h: 100}}[#input.toString()].h",
+      Context("abc").withVariable("input", "b")
+    ) shouldBe 100
   }
 
   test("parsing first selection on array") {
