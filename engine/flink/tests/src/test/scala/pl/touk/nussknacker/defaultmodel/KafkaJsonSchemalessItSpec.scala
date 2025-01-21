@@ -23,7 +23,7 @@ class KafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
 
   override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
     KafkaConfigProperties.property("config", "schema.registry.url"),
-    // TODO_PAWEL a docelowo ma wcale nic tu nie byc
+    // TODO_PAWEL 1 a docelowo ma wcale nic tu nie byc
     fromAnyRef("not_used")
   )
 
