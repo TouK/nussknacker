@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
@@ -16,6 +17,9 @@ class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryC
 
   private val supportBySchemaType =
     UniversalSchemaSupportDispatcher(kafkaConfig).supportBySchemaType
+      // TODO_PAWEL jakos inaczej moze niz takim filtrowaniem
+      .filterKeysNow(e => e == JsonSchema.TYPE)
+
       .mapValuesNow(_.recordFormatterSupport(schemaRegistryClient))
 
   def forSchemaType(schemaType: String): RecordFormatterSupport =
