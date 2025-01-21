@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.api.definition
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.generic.semiauto.deriveEncoder
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 import java.time.temporal.ChronoUnit
@@ -73,8 +75,10 @@ object PeriodParameterEditor {
  */
 case object CronParameterEditor extends SimpleParameterEditor
 
-@JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
-    extends SimpleParameterEditor
+case class FixedValuesParameterEditor(
+    possibleValues: List[FixedExpressionValue],
+    mode: FixedValuesEditorMode = FixedValuesEditorMode.LIST
+) extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesWithIconParameterEditor(possibleValues: List[FixedExpressionValueWithIcon])
     extends SimpleParameterEditor
@@ -98,5 +102,30 @@ object DualParameterEditor {
   implicit val decodeDualEditorMode: Decoder[DualEditorMode] = {
     Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
   }
+
+}
+
+object FixedValuesParameterEditor {
+  def apply(possibleValues: List[FixedExpressionValue]): FixedValuesParameterEditor =
+    FixedValuesParameterEditor(possibleValues, mode = FixedValuesEditorMode.LIST)
+
+  implicit val fixedValuesEditorModeEncoder: Encoder[FixedValuesEditorMode] = new Encoder[FixedValuesEditorMode] {
+    override def apply(a: FixedValuesEditorMode): Json = Encoder.encodeString(a.name())
+  }
+
+  implicit val fixedValuesEditorModeDecoder: Decoder[FixedValuesEditorMode] =
+    Decoder.decodeString.emapTry(name => Try(FixedValuesEditorMode.fromName(name)))
+
+  implicit val fixedValuesParameterEditorEncoder: Encoder[FixedValuesParameterEditor] =
+    deriveEncoder[FixedValuesParameterEditor]
+
+  implicit val fixedValuesParameterEditorDecoder: Decoder[FixedValuesParameterEditor] =
+    Decoder
+      .forProduct2("possibleValues", "mode")(FixedValuesParameterEditor.apply)
+      .or(
+        Decoder.forProduct1("possibleValues")((p: List[FixedExpressionValue]) =>
+          FixedValuesParameterEditor(p, FixedValuesEditorMode.LIST)
+        )
+      )
 
 }

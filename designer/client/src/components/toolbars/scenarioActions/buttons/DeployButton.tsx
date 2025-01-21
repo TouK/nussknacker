@@ -8,10 +8,12 @@ import { getProcessName, getProcessVersionId, hasError, isDeployPossible, isSave
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
+import { ToggleProcessActionModalData } from "../../../modals/DeployWithParametersDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
+
+import { useActionCapabilities } from "../../../modals/GenericAction/useActionCapabilities";
 
 export default function DeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
@@ -22,6 +24,9 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
+
+    // TODO: find better place to reload activity capabilities and properties
+    useActionCapabilities();
 
     const available = !disabled && deployPossible && capabilities.deploy;
 
@@ -39,7 +44,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
+    const action = (p, c, d) => HttpService.deploy(p, c, d).finally(() => dispatch(loadProcessState(processName, processVersionId)));
 
     return (
         <ToolbarButton
@@ -50,7 +55,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
             onClick={() =>
                 open<ToggleProcessActionModalData>({
                     title: message,
-                    kind: WindowKind.deployProcess,
+                    kind: WindowKind.deployWithParameters,
                     width: ACTION_DIALOG_WIDTH,
                     meta: { action, displayWarnings: true },
                 })

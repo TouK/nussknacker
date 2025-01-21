@@ -12,7 +12,7 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
+import { ToggleProcessActionModalData } from "../../../modals/DeployWithParametersDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
@@ -34,7 +34,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const available = !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (p, c) => HttpService.runOffSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
+    const action = (p, c, d) => HttpService.runOffSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
     const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");
