@@ -69,7 +69,6 @@ jobs:
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi
 
-
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -522,26 +521,93 @@ jobs:
           script: |
             core.setFailed('Snapshots updated, chceck comments!')
 
-
-  publish-after-tests:
-    name: Publish With Tests
-    uses: .github/workflows/shared/publish.yml
-    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
-    with:
-      ref: ${{ github.ref }}
-    if: ${{ github.ref != 'refs/heads/staging' }}
-
-  publish-before-tests:
-    name: Publish Without Tests
-    uses: .github/workflows/shared/publish.yml
-    needs: ['build', 'build-fe', 'setup']
-    with:
-      ref: ${{ github.ref }}
-    if: ${{ github.ref == 'refs/heads/staging' }}
+  #TODO: extract to different workflow?
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build, build-fe, setup, tests, integrationTests, slowTests, frontendTests, cypressTests]
+    #TODO: should we publish everything on all those branches?
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    env:
+      #TODO: shouldn't be needed...
+      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
+      # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
+      addDevArtifacts: true
+      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
+      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+    steps:
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: temurin:1.11.0.17
+      - name: Cache ivy packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: sbt
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-fe-dist
+      - name: Untar fe artifacts
+        shell: bash
+        run:  tar xfz fe-dist.tgz
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Setup buildx builder
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Try to free space
+        run: |
+          # Workaround to prevent "no space left on device" during buildx build - https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/local/lib/android
+      - uses: sbt/setup-sbt@v1
+      - name: Publish with scaladocs
+        if: ${{ github.ref == 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
+        shell: bash
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+      - name: Publish without scaladocs
+        if: ${{ github.ref != 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
+        shell: bash
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
 
   trigger-external-build:
     runs-on: ubuntu-latest
-    needs: [ setup, publish-before-tests ]
+    needs: [ setup, publish ]
     if: ${{ github.ref == 'refs/heads/staging' }}
     strategy:
       matrix:
