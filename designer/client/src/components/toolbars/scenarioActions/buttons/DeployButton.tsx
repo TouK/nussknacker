@@ -4,7 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, getProcessVersionId, hasError, isDeployPossible, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import {
+    getProcessName,
+    getProcessVersionId,
+    hasError,
+    isDeployPossible,
+    isSaveDisabled,
+    isValidationResultPresent,
+} from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
@@ -18,12 +25,13 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const deployPossible = useSelector(isDeployPossible);
     const saveDisabled = useSelector(isSaveDisabled);
     const hasErrors = useSelector(hasError);
+    const validationResultPresent = useSelector(isValidationResultPresent);
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
 
-    const available = !disabled && deployPossible && capabilities.deploy;
+    const available = validationResultPresent && !disabled && deployPossible && capabilities.deploy;
 
     const { t } = useTranslation();
     const deployToolTip = !capabilities.deploy

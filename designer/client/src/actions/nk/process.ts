@@ -17,10 +17,21 @@ export type ScenarioActions =
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
-
-        return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
+        return HttpService.fetchLatestProcessDetailsWithoutValidation(processName, versionId).then((response) => {
+            dispatch({
+                type: "DISPLAY_PROCESS",
+                scenario: response.data,
+            });
             dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
             dispatch(fetchStickyNotesForScenario(processName, response.data.processVersionId));
+            return response.data;
+        });
+    };
+}
+
+export function fetchValidatedProcess(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
+    return (dispatch) => {
+        return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,

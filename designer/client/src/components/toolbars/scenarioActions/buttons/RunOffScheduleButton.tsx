@@ -9,6 +9,7 @@ import {
     getProcessVersionId,
     isRunOffSchedulePossible,
     isRunOffScheduleVisible,
+    isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
@@ -26,12 +27,13 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
     const { disabled, type } = props;
     const scenarioState = useSelector((state: RootState) => getProcessState(state));
+    const validationResultPresent = useSelector(isValidationResultPresent);
     const isVisible = useSelector(isRunOffScheduleVisible);
     const isPossible = useSelector(isRunOffSchedulePossible);
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
-    const available = !disabled && isPossible && capabilities.deploy;
+    const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
     const action = (p, c) => HttpService.runOffSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));

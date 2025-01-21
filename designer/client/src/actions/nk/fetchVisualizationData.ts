@@ -1,5 +1,5 @@
 import { ThunkAction } from "../reduxTypes";
-import { displayCurrentProcessVersion } from "./process";
+import { displayCurrentProcessVersion, fetchValidatedProcess } from "./process";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
 import { ProcessName } from "../../components/Process/types";
@@ -9,9 +9,11 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
         try {
             const scenario = await dispatch(displayCurrentProcessVersion(processName));
             const { name, isFragment, processingType } = scenario;
-            await dispatch(loadProcessToolbarsConfiguration(name));
-            const processDefinitionData = await dispatch(fetchProcessDefinition(processingType, isFragment));
-            dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData });
+            dispatch(loadProcessToolbarsConfiguration(name));
+            dispatch(fetchProcessDefinition(processingType, isFragment)).then((processDefinitionData) =>
+                dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData }),
+            );
+            dispatch(fetchValidatedProcess(name));
             onSuccess();
             return scenario;
         } catch (error) {

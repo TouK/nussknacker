@@ -92,6 +92,7 @@ const config: Configuration = {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
                     }
                 },
+                secure: false,
             },
             "/grafana": {
                 target: process.env.BACKEND_DOMAIN,
