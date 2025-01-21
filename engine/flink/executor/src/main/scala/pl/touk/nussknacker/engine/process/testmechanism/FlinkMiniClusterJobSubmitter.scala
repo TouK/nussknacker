@@ -8,15 +8,15 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import scala.jdk.CollectionConverters._
 
-// FIXME abr: rename
-// we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
-final class FlinkStubbedRunner(miniCluster: MiniCluster, env: StreamExecutionEnvironment) {
+// We use MiniCluster directly, instead of LocalExecutionEnvironment, to be able to pass own classpath...
+final class FlinkMiniClusterJobSubmitter(miniCluster: MiniCluster, env: StreamExecutionEnvironment) {
 
-  def execute(
+  def submitJobAndCleanEnv(
       scenarioName: ProcessName,
       savepointRestoreSettings: SavepointRestoreSettings,
       modelClassLoader: ModelClassLoader
   ): Unit = {
+    // This step clean env transformations. It allows to reuse the same StreamExecutionEnvironment many times
     val streamGraph = env.getStreamGraph
     streamGraph.setJobName(scenarioName.value)
     val jobGraph = streamGraph.getJobGraph

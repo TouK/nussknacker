@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.testmechanism.FlinkStubbedRunner
+import pl.touk.nussknacker.engine.process.testmechanism.FlinkMiniClusterJobSubmitter
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestServiceInvocationCollector}
 
-object FlinkVerificationMain extends FlinkRunner {
+object FlinkVerificationMain {
 
   def run(
       miniCluster: MiniCluster,
@@ -46,7 +46,7 @@ class FlinkVerificationMain(
     savepointPath: String
 ) {
 
-  private val stubbedRunner = new FlinkStubbedRunner(miniCluster, env)
+  private val stubbedRunner = new FlinkMiniClusterJobSubmitter(miniCluster, env)
 
   def runTest(): Unit = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
@@ -54,7 +54,7 @@ class FlinkVerificationMain(
     val registrar          = prepareRegistrar()
 
     registrar.register(env, process, processVersion, deploymentData, resultCollector)
-    stubbedRunner.execute(
+    stubbedRunner.submitJobAndCleanEnv(
       process.name,
       SavepointRestoreSettings.forPath(savepointPath, true),
       modelData.modelClassLoader

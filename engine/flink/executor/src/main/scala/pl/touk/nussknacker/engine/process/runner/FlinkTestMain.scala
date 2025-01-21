@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.testmechanism.FlinkStubbedRunner
+import pl.touk.nussknacker.engine.process.testmechanism.FlinkMiniClusterJobSubmitter
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode.{
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.testmode.{
   TestServiceInvocationCollector
 }
 
-object FlinkTestMain extends FlinkRunner {
+object FlinkTestMain {
 
   def run(
       miniCluster: MiniCluster,
@@ -58,7 +58,7 @@ class FlinkTestMain(
     deploymentData: DeploymentData
 ) {
 
-  private val stubbedRunner = new FlinkStubbedRunner(miniCluster, env)
+  private val stubbedRunner = new FlinkMiniClusterJobSubmitter(miniCluster, env)
 
   def runTest: TestResults[Json] = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
@@ -67,7 +67,7 @@ class FlinkTestMain(
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
 
       registrar.register(env, process, processVersion, deploymentData, resultCollector)
-      stubbedRunner.execute(process.name, SavepointRestoreSettings.none(), modelData.modelClassLoader)
+      stubbedRunner.submitJobAndCleanEnv(process.name, SavepointRestoreSettings.none(), modelData.modelClassLoader)
       collectingListener.results
     } finally {
       collectingListener.clean()

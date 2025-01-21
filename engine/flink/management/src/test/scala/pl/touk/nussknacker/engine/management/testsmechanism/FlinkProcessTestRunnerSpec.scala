@@ -39,7 +39,7 @@ import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunn
 }
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
+import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 
@@ -47,7 +47,6 @@ import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.Using
 
 class FlinkProcessTestRunnerSpec
     extends AnyWordSpec
@@ -142,6 +141,44 @@ class FlinkProcessTestRunnerSpec
 
       MonitorEmptySink.invocationsCount.get() shouldBe 0
       LogService.invocationsCount.get() shouldBe 0
+    }
+
+    "be able to run tests multiple time on the same test runner" in {
+      val process =
+        ScenarioBuilder
+          .streaming(scenarioName)
+          .source(sourceNodeId, "input")
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
+
+      val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
+
+      def runTestAndVerify() = {
+        val results = testRunner.runTests(
+          process,
+          ScenarioTestData(
+            List(
+              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+            )
+          )
+        )
+
+        val nodeResults = results.nodeResults
+
+        nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input))
+        nodeResults("out") shouldBe List(nodeResult(0, "input" -> input))
+
+        val invocationResults = results.invocationResults
+
+        invocationResults("out") shouldBe
+          List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable(11)))
+
+        results.externalInvocationResults("out") shouldBe List(
+          ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "valueMonitor", variable(11))
+        )
+      }
+
+      runTestAndVerify()
+      runTestAndVerify()
     }
 
     "collect results for split" in {
