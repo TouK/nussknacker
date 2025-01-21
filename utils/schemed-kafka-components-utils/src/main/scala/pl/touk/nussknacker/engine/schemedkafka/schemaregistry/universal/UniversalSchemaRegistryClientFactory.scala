@@ -17,7 +17,6 @@ class UniversalSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
 
   override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     val maybeUrl = config.kafkaProperties.get("schema.registry.url")
-    // TODO_PAWEL 1 to tylko na test tak zrobione
     if (maybeUrl.isEmpty) {
       EmptySchemaRegistry
     } else {
