@@ -21,11 +21,7 @@ class KafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
 
   override def createFinkKafkaComponentProvider() = new FlinkKafkaComponentProvider()
 
-  override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
-    KafkaConfigProperties.property("config", "schema.registry.url"),
-    // TODO_PAWEL 1 a docelowo ma wcale nic tu nie byc
-    fromAnyRef("not_used")
-  )
+  override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config
 
   private val jsonRecord = Json.obj(
     "first"  -> Json.fromString("Jan"),

@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import pl.touk.nussknacker.engine.kafka.{KafkaUtils, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{EmptySchemaRegistry, SchemaRegistryClient, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  EmptySchemaRegistry,
+  SchemaRegistryClient,
+  SchemaRegistryClientFactory
+}
 
 object UniversalSchemaRegistryClientFactory extends UniversalSchemaRegistryClientFactory
 
@@ -14,10 +18,9 @@ class UniversalSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
   override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     val maybeUrl = config.kafkaProperties.get("schema.registry.url")
     // TODO_PAWEL 1 to tylko na test tak zrobione
-    if (maybeUrl.isDefined && maybeUrl.get == "not_used") {
+    if (maybeUrl.isEmpty) {
       EmptySchemaRegistry
-    }
-    else {
+    } else {
       if (maybeUrl.exists(_.endsWith(KafkaUtils.azureEventHubsUrl))) {
         AzureSchemaRegistryClientFactory.create(config)
       } else {
