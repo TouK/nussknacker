@@ -33,13 +33,14 @@ class FlinkVerificationMain(
     try {
       AdHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(miniClusterWrapperOpt, scenario) {
         miniClusterWrapper =>
+          val alignedScenario = miniClusterWrapper.alignParallelism(scenario)
           val resultCollector = new TestServiceInvocationCollector(collectingListener)
-          val registrar       = prepareRegistrar(scenario)
+          val registrar       = prepareRegistrar(alignedScenario)
           val deploymentData  = DeploymentData.empty
 
-          registrar.register(miniClusterWrapper.env, scenario, processVersion, deploymentData, resultCollector)
+          registrar.register(miniClusterWrapper.env, alignedScenario, processVersion, deploymentData, resultCollector)
           miniClusterWrapper.submitJobAndCleanEnv(
-            scenario.name,
+            alignedScenario.name,
             SavepointRestoreSettings.forPath(savepointPath, true),
             modelData.modelClassLoader
           )
