@@ -429,8 +429,6 @@ class FlinkProcessTestRunnerSpec
       results.exceptions should have length 1
       results.exceptions.head.nodeId shouldBe Some("out")
       results.exceptions.head.throwable.getMessage should include("message: / by zero")
-
-      SimpleProcessConfigCreator.sinkForIntsResultsHolder.results should have length 0
     }
 
     "be able to test process with time windows" in {

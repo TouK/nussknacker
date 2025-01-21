@@ -631,7 +631,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     componentsApi        % Provided,
     httpUtils            % Provided,
     flinkScalaUtils      % Provided,
-    flinkExecutor        % Test,
+    // test->test dependency is needed to load SimpleProcessConfigCreator
+    flinkExecutor        % "test,test->test",
     flinkTestUtils       % "it,test",
     kafkaTestUtils       % "it,test"
   )
@@ -721,7 +722,7 @@ lazy val flinkTests = (project in flink("tests"))
     kafkaTestUtils                   % Test,
     flinkComponentsTestkit           % Test,
     flinkDeploymentManager           % Test,
-    // TODO: cleanup kafka testsmechanism tests in order to remove test->test dependency
+    // test->test dependencies are needed to load components from these modules
     flinkKafkaComponentsUtils        % "test->test",
     flinkSchemedKafkaComponentsUtils % "test->test",
     // for local development
