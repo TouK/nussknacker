@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 
 import java.nio.file.Path
 
@@ -59,9 +59,12 @@ class ModelClassLoaderProvider private (
 
 object ModelClassLoaderProvider {
 
-  def apply(processingTypeConfig: Map[String, ModelClassLoaderDependencies]): ModelClassLoaderProvider = {
+  def apply(
+      processingTypeConfig: Map[String, ModelClassLoaderDependencies],
+      deploymentManagersClassLoader: DeploymentManagersClassLoader
+  ): ModelClassLoaderProvider = {
     val processingTypesClassloaders = processingTypeConfig.map { case (name, deps) =>
-      name -> (ModelClassLoader(deps.classpath, deps.workingDirectoryOpt) -> deps)
+      name -> (ModelClassLoader(deps.classpath, deps.workingDirectoryOpt, deploymentManagersClassLoader) -> deps)
     }
     new ModelClassLoaderProvider(processingTypesClassloaders)
   }

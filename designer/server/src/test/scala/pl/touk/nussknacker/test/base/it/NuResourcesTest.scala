@@ -33,7 +33,12 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener}
+import pl.touk.nussknacker.test.mock.{
+  MockDeploymentManager,
+  MockManagerProvider,
+  TestProcessChangeListener,
+  WithTestDeploymentManagerClassLoader
+}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
@@ -68,6 +73,7 @@ trait NuResourcesTest
     with WithClock
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
+    with WithTestDeploymentManagerClassLoader
     with EitherValuesDetailedMessage
     with OptionValues
     with BeforeAndAfterEach
@@ -99,7 +105,7 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
+  protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
 
@@ -128,7 +134,8 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: DeploymentManagerProvider = new MockManagerProvider(deploymentManager)
 
   private val modelClassLoaderProvider = ModelClassLoaderProvider(
-    Map(Streaming.stringify -> ModelClassLoaderDependencies(processingTypeConfig.classPath, None))
+    Map(Streaming.stringify -> ModelClassLoaderDependencies(processingTypeConfig.classPath, None)),
+    deploymentManagersClassLoader
   )
 
   private val modelData =
@@ -158,7 +165,10 @@ trait NuResourcesTest
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val designerConfig = DesignerConfig.from(testConfig)
     ProcessingTypeDataProvider(
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+        () => IO.pure(designerConfig.processingTypeConfigs),
+        deploymentManagersClassLoader
+      )
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,

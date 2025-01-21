@@ -41,7 +41,7 @@ class StatisticsApiHttpServiceSecuritySpec
       }
     }
 
-    // todo what about anonymous user
+    // TODO: what about anonymous user
     "not authenticated should" - {
       "forbid access" in {
         given()
@@ -69,7 +69,7 @@ class StatisticsApiHttpServiceSecuritySpec
       }
     }
 
-    // todo what about anonymous user
+    // TODO: what about anonymous user
     "not authenticated should" - {
       "forbid access" in {
         given()

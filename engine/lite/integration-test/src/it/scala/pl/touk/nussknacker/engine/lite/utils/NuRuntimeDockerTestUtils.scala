@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.utils
 
 import com.dimafeng.testcontainers.GenericContainer
 import org.slf4j.Logger
-import org.testcontainers.containers.output.Slf4jLogConsumer
+import org.testcontainers.containers.output.{OutputFrame, Slf4jLogConsumer}
 import org.testcontainers.containers.wait.strategy.{Wait, WaitStrategy, WaitStrategyTarget}
 import org.testcontainers.containers.{BindMode, Network}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.File
 import java.time.Duration
+import java.util.function.Consumer
+import scala.jdk.CollectionConverters._
 
 object NuRuntimeDockerTestUtils {
 
@@ -44,8 +46,9 @@ object NuRuntimeDockerTestUtils {
     )
     val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeApiPort) else DumbWaitStrategy
     runtimeContainer.underlyingUnsafeContainer.setWaitStrategy(waitStrategy)
+    val logConsumer: Consumer[OutputFrame] = new Slf4jLogConsumer(logger)
+    runtimeContainer.underlyingUnsafeContainer.setLogConsumers((logConsumer :: Nil).asJava)
     runtimeContainer.start()
-    runtimeContainer.underlyingUnsafeContainer.followOutput(new Slf4jLogConsumer(logger))
     runtimeContainer
   }
 

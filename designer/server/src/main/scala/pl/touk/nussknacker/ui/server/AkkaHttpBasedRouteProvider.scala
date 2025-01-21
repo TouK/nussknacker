@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
@@ -449,7 +450,7 @@ class AkkaHttpBasedRouteProvider(
           (
             processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
             processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
-            processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
+            processingTypeData.designerModelData.modelData.modelClassLoader
           )
         }
       )
@@ -726,7 +727,7 @@ class AkkaHttpBasedRouteProvider(
     Resource
       .make(
         acquire = IO {
-          val laodProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
+          val loadProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
             getModelDependencies(
               additionalUIConfigProvider,
               _,
@@ -743,7 +744,7 @@ class AkkaHttpBasedRouteProvider(
             modelClassLoaderProvider,
             Some(dbRef),
           )
-          val loadAndNotifyIO = laodProcessingTypeDataIO
+          val loadAndNotifyIO = loadProcessingTypeDataIO
             .map { state =>
               globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state

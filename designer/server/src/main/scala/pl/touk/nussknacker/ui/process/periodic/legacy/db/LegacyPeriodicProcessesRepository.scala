@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.periodic.legacy.db
 import cats.Monad
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -11,7 +10,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.FlinkScheduledExecutionPerformer.jarFileNameRuntimeParam
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.LegacyPeriodicProcessesRepository.createPeriodicProcess
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -65,7 +63,7 @@ object LegacyPeriodicProcessesRepository {
         processId = None,
         processName = processEntity.processName,
         versionId = processEntity.processVersionId,
-        runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam -> processEntity.jarFileName)),
+        runtimeParams = RuntimeParams(Map("jarFileName" -> processEntity.jarFileName)),
       ),
       scheduleProperty,
       processEntity.active,
@@ -121,7 +119,7 @@ class SlickLegacyPeriodicProcessesRepository(
       processActionId: ProcessActionId,
   ): Action[PeriodicProcess] = {
     val jarFileName = deploymentWithRuntimeParams.runtimeParams.params.getOrElse(
-      jarFileNameRuntimeParam,
+      "jarFileName",
       throw new RuntimeException(s"jarFileName runtime param not present")
     )
     val processEntity = PeriodicProcessEntityWithJson(
