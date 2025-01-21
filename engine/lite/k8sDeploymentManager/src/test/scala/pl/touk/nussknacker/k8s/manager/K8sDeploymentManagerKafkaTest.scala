@@ -173,8 +173,8 @@ class K8sDeploymentManagerKafkaTest
         forAll(pods.head.spec.get.containers) { container =>
           container.resources shouldBe Some(
             skuber.Resource.Requirements(
-              limits = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi")),
-              requests = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi"))
+              limits = Map("cpu" -> Quantity("1024m"), "memory" -> Quantity("512Mi")),
+              requests = Map("cpu" -> Quantity("1024m"), "memory" -> Quantity("512Mi"))
             )
           )
           container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
