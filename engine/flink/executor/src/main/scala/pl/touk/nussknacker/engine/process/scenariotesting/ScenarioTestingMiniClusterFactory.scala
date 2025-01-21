@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.management.testsmechanism
+package pl.touk.nussknacker.engine.process.scenariotesting
 
 import org.apache.flink.configuration.{Configuration, CoreOptions, RestOptions, TaskManagerOptions}
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
-object TestsMechanismMiniClusterFactory {
+object ScenarioTestingMiniClusterFactory {
 
   def createConfiguredMiniCluster(nomTaskSlots: Int): MiniCluster = {
     val miniClusterConfiguration = prepareMiniClusterConfiguration(numTaskSlots = nomTaskSlots)

@@ -29,6 +29,7 @@ object FlinkScheduledExecutionPerformer {
     import dependencies._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+    import ScenarioTestingConfig._
     val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkScheduledExecutionPerformer(
       flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),

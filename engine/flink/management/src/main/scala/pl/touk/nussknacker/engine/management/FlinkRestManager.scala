@@ -5,14 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.scheduler._
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
-  AdditionalDeploymentDataProvider,
-  ProcessConfigEnricherFactory,
-  SchedulePropertyExtractorFactory,
-  ScheduledExecutionPerformer,
-  ScheduledProcessListenerFactory
-}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -30,8 +23,14 @@ class FlinkRestManager(
     config: FlinkConfig,
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
-    mainClassName: String
-) extends FlinkDeploymentManager(modelData, dependencies, config.shouldVerifyBeforeDeploy, mainClassName)
+    mainClassName: String,
+) extends FlinkDeploymentManager(
+      modelData,
+      dependencies,
+      config.shouldVerifyBeforeDeploy,
+      mainClassName,
+      config.scenarioTesting
+    )
     with LazyLogging {
 
   import dependencies._

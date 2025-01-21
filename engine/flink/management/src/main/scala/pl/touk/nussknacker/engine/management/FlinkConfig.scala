@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.management
 
-import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
+import net.ceedubs.ficus.Ficus
+import net.ceedubs.ficus.readers.ValueReader
+import org.apache.flink.configuration.Configuration
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.jdk.CollectionConverters._
 
 /**
   * FlinkConfig deployment configuration.
@@ -15,12 +18,14 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 final case class FlinkConfig(
     restUrl: Option[String],
     jobManagerTimeout: FiniteDuration = 1 minute,
+    // TODO: move to scenarioTesting
     shouldVerifyBeforeDeploy: Boolean = true,
     shouldCheckAvailableSlots: Boolean = true,
     waitForDuringDeployFinish: FlinkWaitForDuringDeployFinishedConfig =
       FlinkWaitForDuringDeployFinishedConfig(enabled = true, Some(180), Some(1 second)),
     scenarioStateRequestTimeout: FiniteDuration = 3 seconds,
     jobConfigsCacheSize: Int = 1000,
+    scenarioTesting: ScenarioTestingConfig = ScenarioTestingConfig()
 )
 
 object FlinkConfig {
@@ -51,3 +56,19 @@ final case class FlinkWaitForDuringDeployFinishedConfig(
 }
 
 final case class EnabledFlinkWaitForDuringDeployFinishedConfig(maxChecks: Int, delay: FiniteDuration)
+
+final case class ScenarioTestingConfig(
+    reuseMiniClusterForScenarioTesting: Boolean = true,
+    reuseMiniClusterForScenarioStateVerification: Boolean = true,
+    parallelism: Int = 1,
+    streamExecutionConfig: Configuration = new Configuration
+)
+
+object ScenarioTestingConfig {
+
+  import Ficus._
+
+  implicit val flinkConfigurationValueReader: ValueReader[Configuration] =
+    Ficus.mapValueReader[String].map(map => Configuration.fromMap(map.asJava))
+
+}

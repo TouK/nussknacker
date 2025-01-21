@@ -20,6 +20,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
+  import ScenarioTestingConfig._
 
   override def createDeploymentManager(
       modelData: BaseModelData,

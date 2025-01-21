@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.testsmechanism.kafka
+package pl.touk.nussknacker.scenariotesting.kafka
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -19,7 +19,10 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunner
+import pl.touk.nussknacker.engine.management.scenariotesting.{
+  FlinkProcessTestRunner,
+  ScenarioTestingMiniClusterWrapperFactory
+}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
@@ -28,7 +31,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigPropert
 
 import java.util.Collections
 
-class TestFromFileSpec
+class KafkaScenarioTestingSpec
     extends AnyFunSuite
     with Matchers
     with LazyLogging
@@ -49,16 +52,22 @@ class TestFromFileSpec
     LocalModelData(
       inputConfig = config,
       components = List.empty,
-      configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders),
+      configCreator = new KafkaSourceFactoryProcessConfigCreator(() => KafkaScenarioTestingSpec.resultsHolders),
       modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
     )
 
+  private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
+    modelData.modelClassLoader,
+    parallelism = 1,
+    streamExecutionConfig = new Configuration
+  )
+
   private val testRunner =
-    new FlinkProcessTestRunner(modelData, parallelism = 1, FlinkTestConfiguration.setupMemory(new Configuration))
+    new FlinkProcessTestRunner(modelData, Some(scenarioTestingMiniClusterWrapper))
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    testRunner.close()
+    scenarioTestingMiniClusterWrapper.close()
   }
 
   test("Should pass correct timestamp from test data") {
@@ -139,7 +148,7 @@ class TestFromFileSpec
 
 }
 
-object TestFromFileSpec extends Serializable {
+object KafkaScenarioTestingSpec extends Serializable {
 
   private val resultsHolders = new ResultsHolders
 

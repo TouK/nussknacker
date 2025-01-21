@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -14,7 +13,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import pl.touk.nussknacker.engine.management.testsmechanism.{FlinkProcessTestRunner, FlinkProcessVerifier}
+import pl.touk.nussknacker.engine.management.scenariotesting.{
+  FlinkProcessTestRunner,
+  FlinkProcessVerifier,
+  ScenarioTestingMiniClusterWrapperFactory
+}
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -23,16 +26,28 @@ abstract class FlinkDeploymentManager(
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
     shouldVerifyBeforeDeploy: Boolean,
-    mainClassName: String
+    mainClassName: String,
+    scenarioTestingConfig: ScenarioTestingConfig
 ) extends DeploymentManager
     with LazyLogging {
 
   import dependencies._
 
-  private lazy val testRunner =
-    new FlinkProcessTestRunner(modelData.asInvokableModelData, parallelism = 1, new Configuration)
+  private lazy val scenarioTestingMiniClusterWrapperOpt =
+    ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
+      modelData.asInvokableModelData.modelClassLoader,
+      scenarioTestingConfig
+    )
 
-  private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
+  private lazy val testRunner = new FlinkProcessTestRunner(
+    modelData.asInvokableModelData,
+    scenarioTestingMiniClusterWrapperOpt.filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
+  )
+
+  private lazy val verification = new FlinkProcessVerifier(
+    modelData.asInvokableModelData,
+    scenarioTestingMiniClusterWrapperOpt.filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
+  )
 
   /**
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
@@ -267,7 +282,7 @@ abstract class FlinkDeploymentManager(
 
   override def close(): Unit = {
     logger.info("Closing Flink Deployment Manager")
-    testRunner.close()
+    scenarioTestingMiniClusterWrapperOpt.foreach(_.close())
   }
 
 }

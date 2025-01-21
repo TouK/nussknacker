@@ -20,8 +20,11 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.management.testsmechanism.FlinkProcessTestRunner
+import pl.touk.nussknacker.engine.management.{FlinkStreamingPropertiesConfig, ScenarioTestingConfig}
+import pl.touk.nussknacker.engine.management.scenariotesting.{
+  FlinkProcessTestRunner,
+  ScenarioTestingMiniClusterWrapperFactory
+}
 
 import java.net.URI
 import java.util.UUID
@@ -50,8 +53,14 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random                                      = new scala.util.Random()
 
+  private lazy val scenarioTestingMiniClusterWrapperOpt =
+    ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
+      modelData.asInvokableModelData.modelClassLoader,
+      ScenarioTestingConfig()
+    )
+
   private lazy val flinkTestRunner =
-    new FlinkProcessTestRunner(modelData.asInvokableModelData, parallelism = 1, new Configuration())
+    new FlinkProcessTestRunner(modelData.asInvokableModelData, scenarioTestingMiniClusterWrapperOpt)
 
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
 
@@ -154,7 +163,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     notImplemented
   }
 
-  override def close(): Unit = {}
+  override def close(): Unit = {
+    scenarioTestingMiniClusterWrapperOpt.foreach(_.close())
+  }
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
     memory.get(name).foreach { processState =>
