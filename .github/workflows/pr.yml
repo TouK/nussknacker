@@ -531,7 +531,7 @@ jobs:
     if: ${{ github.ref != 'refs/heads/staging' }}
     steps:
       - uses: actions/checkout@v1
-      - uses: ./.github/actions/publish
+      - uses: ./.github/actions/publish/action.yml
 
   publish-before-tests:
     name: Publish Without Tests
@@ -541,7 +541,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/staging' }}
     steps:
       - uses: actions/checkout@v1
-      - uses: ./.github/actions/publish
+      - uses: ./.github/actions/publish/action.yml
 
   trigger-external-build:
     runs-on: ubuntu-latest
