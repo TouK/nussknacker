@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{EmptySchemaRegistry, SchemaRegistryClient}
@@ -17,9 +16,13 @@ class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryC
 
   private val supportBySchemaType = {
     val supportBySchemaType = UniversalSchemaSupportDispatcher(kafkaConfig).supportBySchemaType
-    // To format avro messages one needs schema registry, so for EmptySchemaRegistry there is no need to construct avro formatter
-    (if (schemaRegistryClient == EmptySchemaRegistry) supportBySchemaType.filterKeysNow(e => e == JsonSchema.TYPE) else supportBySchemaType)
-    .mapValuesNow(_.recordFormatterSupport(schemaRegistryClient))
+    (
+      // To format avro messages you need schema registry, so for EmptySchemaRegistry there is no need to construct avro formatter
+      if (schemaRegistryClient == EmptySchemaRegistry)
+        supportBySchemaType.filterKeysNow(e => e != AvroSchema.TYPE)
+      else supportBySchemaType
+    )
+      .mapValuesNow(_.recordFormatterSupport(schemaRegistryClient))
   }
 
   def forSchemaType(schemaType: String): RecordFormatterSupport =

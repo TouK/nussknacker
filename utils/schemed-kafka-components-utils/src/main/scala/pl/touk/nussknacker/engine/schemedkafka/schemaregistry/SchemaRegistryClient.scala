@@ -53,29 +53,28 @@ trait SchemaRegistryClient extends Serializable {
 
 object EmptySchemaRegistry extends SchemaRegistryClient {
 
-  override def getSchemaById(id: SchemaId): SchemaWithMetadata = throw new IllegalStateException(
-    "There is no schema in empty schema registry"
-  )
+  private val errorMessage = "There is no schema in empty schema registry";
+  private val error        = SchemaError(errorMessage)
+
+  override def getSchemaById(id: SchemaId): SchemaWithMetadata = throw new IllegalStateException(errorMessage)
 
   override protected def getByTopicAndVersion(
-                                               topic: UnspecializedTopicName,
-                                               version: Int,
-                                               isKey: Boolean
-                                             ): Validated[SchemaRegistryError, SchemaWithMetadata] = Validated.Invalid(SchemaError("there is no schema"))
+      topic: UnspecializedTopicName,
+      version: Int,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = Validated.Invalid(error)
 
   override protected def getLatestFreshSchema(
-                                               topic: UnspecializedTopicName,
-                                               isKey: Boolean
-                                             ): Validated[SchemaRegistryError, SchemaWithMetadata] =
-    Validated.Invalid(SchemaError("There is no schema for this topic"))
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = Validated.Invalid(error)
 
   override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = Validated.Valid(List())
 
   override def getAllVersions(
-                               topic: UnspecializedTopicName,
-                               isKey: Boolean
-                             ): Validated[SchemaRegistryError, List[Integer]] =
-    Validated.Invalid(SchemaVersionError("There are no versions for this topic"))
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, List[Integer]] = Validated.Invalid(error)
 
 }
 
