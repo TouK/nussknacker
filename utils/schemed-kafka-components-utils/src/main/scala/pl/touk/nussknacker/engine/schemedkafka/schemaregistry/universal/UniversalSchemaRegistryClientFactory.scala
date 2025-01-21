@@ -16,15 +16,14 @@ class UniversalSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
   override type SchemaRegistryClientT = SchemaRegistryClient
 
   override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
-    val maybeUrl = config.kafkaProperties.get("schema.registry.url")
-    if (maybeUrl.isEmpty) {
-      EmptySchemaRegistry
-    } else {
-      if (maybeUrl.exists(_.endsWith(KafkaUtils.azureEventHubsUrl))) {
-        AzureSchemaRegistryClientFactory.create(config)
-      } else {
-        CachedConfluentSchemaRegistryClientFactory.create(config)
-      }
+    config.kafkaProperties.get("schema.registry.url") match {
+      case None => EmptySchemaRegistry
+      case Some(url) =>
+        if (url.endsWith(KafkaUtils.azureEventHubsUrl)) {
+          AzureSchemaRegistryClientFactory.create(config)
+        } else {
+          CachedConfluentSchemaRegistryClientFactory.create(config)
+        }
     }
   }
 
