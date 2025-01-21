@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.{Json, parser}
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -19,7 +21,11 @@ class KafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
 
   override def createFinkKafkaComponentProvider() = new FlinkKafkaComponentProvider()
 
-  override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config
+  override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
+    KafkaConfigProperties.property("config", "schema.registry.url"),
+    // TODO_PAWEL a docelowo ma wcale nic tu nie byc
+    fromAnyRef("not_used")
+  )
 
   private val jsonRecord = Json.obj(
     "first"  -> Json.fromString("Jan"),

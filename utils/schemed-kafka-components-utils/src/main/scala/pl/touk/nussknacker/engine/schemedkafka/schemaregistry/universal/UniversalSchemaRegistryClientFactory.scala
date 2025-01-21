@@ -12,6 +12,10 @@ class UniversalSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
   override type SchemaRegistryClientT = SchemaRegistryClient
 
   override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+    // TODO_PAWEL finish
+    if (!config.kafkaProperties.contains("schema.registry.url")) {
+
+    }
     if (config.kafkaProperties.get("schema.registry.url").exists(_.endsWith(KafkaUtils.azureEventHubsUrl))) {
       AzureSchemaRegistryClientFactory.create(config)
     } else {
