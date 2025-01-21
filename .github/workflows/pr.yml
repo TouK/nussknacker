@@ -525,19 +525,25 @@ jobs:
 
   publish-after-tests:
     name: Publish With Tests
-    uses: ./.github/actions/publish
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     with:
       ref: ${{ github.ref }}
     if: ${{ github.ref != 'refs/heads/staging' }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use local publish
+        uses: ./.github/actions/publish
 
   publish-before-tests:
     name: Publish Without Tests
-    uses: ./.github/actions/publish
     needs: ['build', 'build-fe', 'setup']
     with:
       ref: ${{ github.ref }}
     if: ${{ github.ref == 'refs/heads/staging' }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use local publish
+        uses: ./.github/actions/publish
 
   trigger-external-build:
     runs-on: ubuntu-latest
