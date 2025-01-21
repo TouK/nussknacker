@@ -526,6 +526,7 @@ jobs:
 
   publish-after-tests:
     name: Publish With Tests
+    runs-on: ubuntu-latest
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     if: ${{ github.ref != 'refs/heads/staging' }}
     steps:
@@ -537,6 +538,7 @@ jobs:
 
   publish-before-tests:
     name: Publish Without Tests
+    runs-on: ubuntu-latest
     needs: ['build', 'build-fe', 'setup']
     if: ${{ github.ref == 'refs/heads/staging' }}
     steps:
