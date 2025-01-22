@@ -115,7 +115,7 @@ export default function ToolBox(props: { filter: string }): JSX.Element {
 
     const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups, [processDefinitionData]);
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
-    const stickyNoteToolGroup = useMemo(() => stickyNoteComponentGroup(pristine), [pristine, props, t]);
+    const stickyNoteToolGroup = useMemo(() => stickyNoteComponentGroup(pristine), [pristine]);
     const groups = useMemo(() => {
         const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteToolGroup) : componentGroups;
         return allComponentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);

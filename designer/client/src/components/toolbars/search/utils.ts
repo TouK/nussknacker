@@ -169,7 +169,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                     }
                 })
                 .filter(({ groups }) => groups.length),
-        [displayNames, allEdges, searchQuery, allNodes],
+        [allNodes, allEdges, displayNames, isSimpleSearch, searchQuery],
     );
 }
 

@@ -111,7 +111,7 @@ export function Notifications(): JSX.Element {
                     );
                 }
             });
-    }, [currentScenarioName, dispatch, handleChangeConnectionError]);
+    }, [currentScenarioName, dispatch, handleChangeConnectionError, processVersionId]);
     useInterval(refresh, {
         refreshTime: 2000,
         ignoreFirst: true,

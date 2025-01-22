@@ -30,7 +30,7 @@ export function Properties({
     showValidation,
 }: Props): JSX.Element {
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
-    const scenarioPropertiesConfig = scenarioProperties?.propertiesConfig ?? {};
+    const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
 
     //fixme move this configuration to some better place?
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
