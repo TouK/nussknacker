@@ -79,7 +79,7 @@ abstract class FlinkWithKafkaSuite
     valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
-      createFinkKafkaComponentProvider()
+      createFinkKafkaComponentProvider(schemaRegistryClientProvider)
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
@@ -92,8 +92,9 @@ abstract class FlinkWithKafkaSuite
     )
   }
 
-  protected def createFinkKafkaComponentProvider(): FlinkKafkaComponentProvider = {
-    val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
+  protected def createFinkKafkaComponentProvider(
+      schemaRegistryClientProvider: MockSchemaRegistryClientProvider
+  ): FlinkKafkaComponentProvider = {
     new MockFlinkKafkaComponentProvider(() => schemaRegistryClientProvider.schemaRegistryClientFactory)
   }
 
