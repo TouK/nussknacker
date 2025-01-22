@@ -94,6 +94,9 @@ Currently, Nussknacker supports two implementations of Schema Registries: based 
 To configure connection Schema Registry, you need to configure at least `schema.registry.url`. It should contain comma separated list of urls to Schema Registry.
 For the single node installation, it will be just an url. Be aware that contrary to Kafka brokers, Schema Registry urls should start with `https://` or `http://`.
 
+It's possible to use kafka without schema registry, in this case You should not provide `schema.registry.url` property. Without
+schema registry you can use only json kafka topics. Values read from it will be typed to `Unknown`.
+
 Nussknacker determines which registry implementation (Confluent or Azure) is used from the `schema.registry.url` property. 
 If the URL ends with `.servicebus.windows.net`, Nussknacker assumes that Azure schema registry is used; if not Confluent schema registry is assumed.
 
