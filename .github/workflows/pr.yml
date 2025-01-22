@@ -527,8 +527,7 @@ jobs:
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     uses: ./.github/workflows/publish.yml
     with:
-      should_run: true
-#      job_needs: "['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']"
+      should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     secrets:
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
@@ -537,23 +536,13 @@ jobs:
       github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-  #    runs-on: ubuntu-latest
-#    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
-#    if: ${{ github.ref != 'refs/heads/staging' }}
-#    uses: ./.github/workflows/publish.yml
-#    with:
-#      ref: ${{ github.ref }}
-#    steps:
-#      - uses: actions/checkout@v1
-#      - name: "publish"
-#        uses: ./.github/actions/publish
 
   publish-before-tests:
     name: Publish Without Tests
     needs: ['build', 'build-fe', 'setup']
     uses: ./.github/workflows/publish.yml
     with:
-      should_run: true
+      should_run: ${{ github.ref == 'refs/heads/staging' }}
     secrets:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
@@ -562,18 +551,6 @@ jobs:
       github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-#    runs-on: ubuntu-latest
-#    needs: ['build', 'build-fe', 'setup']
-    #if: ${{ github.ref == 'refs/heads/staging' }}
-#    uses: ./.github/workflows/publish.yml
-#    with:
-#      ref: ${{ github.ref }}
-#    steps:
-#      - uses: actions/checkout@v1
-#      - name: "publish"
-#        uses: ./.github/actions/publish
-#        with:
-#          ref: ${{ github.ref }}
 
   trigger-external-build:
     runs-on: ubuntu-latest
