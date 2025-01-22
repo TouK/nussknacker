@@ -5,6 +5,10 @@ import pl.touk.nussknacker.engine.flink.util.transformer.FlinkKafkaComponentProv
 
 class KafkaJsonSchemalessNoSchemaRegistryItSpec extends BaseKafkaJsonSchemalessItSpec {
 
+  override def createFinkKafkaComponentProvider() = new FlinkKafkaComponentProvider()
+
+  override protected def maybeAddSchemaRegistryUrl(config: Config): Config = config
+
   test("should round-trip json message without schema registry") {
     shouldRoundTripJsonMessageWithoutProvidedSchema()
   }
