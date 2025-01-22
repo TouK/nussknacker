@@ -137,9 +137,12 @@ class PeriodicProcessService(
       case e: SingleScheduleProperty => e.nextRunAt(clock).map(t => List((ScheduleName(None), t)))
     }
     (schedules match {
-      case Left(error) => Left(s"Failed to parse periodic property: $error")
-      case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) => Left(s"No future date determined by $schedule")
-      case correctSchedules                                           => correctSchedules
+      case Left(error) => Left(s"Problem with parsing periodic property: $error")
+      case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
+        Left(
+          s"Problem with the scheduled date. It seems that a date from the past was configured in the CRON configuration."
+        )
+      case correctSchedules => correctSchedules
     }).left.map(new PeriodicProcessException(_))
   }
 
