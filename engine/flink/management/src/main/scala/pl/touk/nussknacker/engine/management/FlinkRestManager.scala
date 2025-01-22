@@ -223,10 +223,10 @@ class FlinkRestManager(
       deploymentId: Option[DeploymentId],
       statuses: List[StatusDetails]
   ) = {
-    statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
+    statuses.filterNot(details => SimpleStateStatus.isFinalOrTransitioningToFinalStatus(details.status)) match {
       case Nil =>
         logger.warn(
-          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
+          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not active on Flink."
         )
         Future.successful(())
       case single :: Nil =>
