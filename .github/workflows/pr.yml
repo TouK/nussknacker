@@ -528,8 +528,8 @@ jobs:
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     if: ${{ github.ref != 'refs/heads/staging' }}
     uses: ./.github/workflows/publish.yml
-    with:
-      ref: ${{ github.ref }}
+#    with:
+#      ref: ${{ github.ref }}
 #    steps:
 #      - uses: actions/checkout@v1
 #      - name: "publish"
@@ -542,8 +542,8 @@ jobs:
     needs: ['build', 'build-fe', 'setup']
     #if: ${{ github.ref == 'refs/heads/staging' }}
     uses: ./.github/workflows/publish.yml
-    with:
-      ref: ${{ github.ref }}
+#    with:
+#      ref: ${{ github.ref }}
 #    steps:
 #      - uses: actions/checkout@v1
 #      - name: "publish"
