@@ -2,8 +2,12 @@ name: Publish
 on:
   workflow_call:
     inputs:
-      ref:
-        description: "The branch or tag being published"
+      should_run:
+        description: "Indicates if the job should be run"
+        required: true
+        type: boolean
+      job_needs:
+        description: "Comma-spepared list of jobs needed to run this one"
         required: true
         type: string
     secrets:
@@ -19,7 +23,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: ${{ inputs.ref == 'refs/heads/staging' || inputs.ref == 'refs/heads/master' || inputs.ref == 'refs/heads/demo' || startsWith(inputs.ref, 'refs/heads/preview') || startsWith(inputs.ref, 'refs/heads/release') }}
+    if: ${{ inputs.should_run }}
+    needs: ${{ fromJSON(inputs.job_needs) }}
     env:
       nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
       addDevArtifacts: true

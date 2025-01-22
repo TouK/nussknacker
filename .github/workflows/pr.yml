@@ -524,10 +524,14 @@ jobs:
 
   publish-after-tests:
     name: Publish With Tests
-    runs-on: ubuntu-latest
-    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
-    if: ${{ github.ref != 'refs/heads/staging' }}
     uses: ./.github/workflows/publish.yml
+    with:
+      should_run: true
+      job_needs: "['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']"
+#    runs-on: ubuntu-latest
+#    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
+#    if: ${{ github.ref != 'refs/heads/staging' }}
+#    uses: ./.github/workflows/publish.yml
 #    with:
 #      ref: ${{ github.ref }}
 #    steps:
@@ -535,13 +539,16 @@ jobs:
 #      - name: "publish"
 #        uses: ./.github/actions/publish
 
-
   publish-before-tests:
-#    name: Publish Without Tests
+    name: Publish Without Tests
+    uses: ./.github/workflows/publish.yml
+    with:
+      should_run: true
+      job_needs: "['build', 'build-fe', 'setup']"
 #    runs-on: ubuntu-latest
 #    needs: ['build', 'build-fe', 'setup']
     #if: ${{ github.ref == 'refs/heads/staging' }}
-    uses: ./.github/workflows/publish.yml
+#    uses: ./.github/workflows/publish.yml
 #    with:
 #      ref: ${{ github.ref }}
 #    steps:
