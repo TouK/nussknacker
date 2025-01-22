@@ -17,7 +17,7 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
 
     useEffect(() => {
         if (resetCondition) setFlag(initialState);
-    }, [resetCondition]);
+    }, [initialState, resetCondition]);
 
     const toggle = useCallback(() => setFlag((state) => !state), []);
 

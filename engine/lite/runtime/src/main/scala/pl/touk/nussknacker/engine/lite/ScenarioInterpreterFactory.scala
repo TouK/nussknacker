@@ -88,7 +88,7 @@ object ScenarioInterpreterFactory {
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
-        modelData.modelClassLoader.classLoader,
+        modelData.modelClassLoader,
         resultCollector,
         componentUseCase,
         modelData.customProcessValidator
@@ -296,7 +296,8 @@ object ScenarioInterpreterFactory {
             }
         )
 
-      case other => throw new IllegalArgumentException(s"Not supported sink: $other")
+      case other =>
+        throw new IllegalArgumentException(s"Not supported sink: $other")
     }
 
     private def compilePartInvokers(parts: List[SubsequentPart]): CompilationResult[Map[String, PartInterpreterType]] =

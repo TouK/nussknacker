@@ -19,6 +19,7 @@ import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialo
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
+import { ProcessName, ProcessVersionId } from "../../../Process/types";
 
 export default function DeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
@@ -27,12 +28,10 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const hasErrors = useSelector(hasError);
     const validationResultPresent = useSelector(isValidationResultPresent);
     const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
 
     const available = validationResultPresent && !disabled && deployPossible && capabilities.deploy;
-
     const { t } = useTranslation();
     const deployToolTip = !capabilities.deploy
         ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
@@ -47,7 +46,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
+    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
+        HttpService.deploy(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
 
     return (
         <ToolbarButton

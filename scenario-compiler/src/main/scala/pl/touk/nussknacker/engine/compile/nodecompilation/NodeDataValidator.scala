@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationErro
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
@@ -46,11 +46,11 @@ class NodeDataValidator(modelData: ModelData) {
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.modelDefinitionWithClasses.classDefinitions.all
     ),
     expressionCompiler,
-    modelData.modelClassLoader.classLoader,
+    modelData.modelClassLoader,
     Seq.empty,
     PreventInvocationCollector,
     ComponentUseCase.Validation,

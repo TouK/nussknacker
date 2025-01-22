@@ -3,8 +3,9 @@ package pl.touk.nussknacker.ui
 import cats.effect.{IO, Resource}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.config.{DesignerConfig, SimpleConfigLoadingDesignerConfigLoader}
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 
@@ -49,15 +50,21 @@ object LocalNussknackerWithSingleModel {
       modelData = Map(typeName -> (category, modelData)),
       deploymentManagerProvider = deploymentManagerProvider
     )
-    val designerConfigLoader = DesignerConfigLoader.fromConfig(
+    val designerConfig = DesignerConfig.from(
       // This map is ignored but must exist
       appConfig.withValue("scenarioTypes", ConfigValueFactory.fromMap(Map.empty[String, ConfigValue].asJava))
     )
-    val appFactory = new NussknackerAppFactory(
-      designerConfigLoader,
-      _ => local
-    )
-    appFactory.createApp()
+    for {
+      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(List.empty)
+      designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(designerConfig.rawConfig.resolved)
+      appFactory = new NussknackerAppFactory(
+        designerConfig,
+        designerConfigLoader,
+        _ => local,
+        deploymentManagersClassLoader
+      )
+      app <- appFactory.createApp()
+    } yield app
   }
 
   // TODO: easier way of handling users file

@@ -4,13 +4,12 @@ import cats.data.Validated.{Invalid, Valid, invalid, invalidNel, valid}
 import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -70,7 +69,7 @@ object ExpressionCompiler {
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.designerDictServices.dictRegistry,
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithClasses.classDefinitions,
