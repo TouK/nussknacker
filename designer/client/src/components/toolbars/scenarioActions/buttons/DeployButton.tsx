@@ -6,7 +6,6 @@ import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
-    getProcessVersionId,
     hasError,
     isDeployPossible,
     isSaveDisabled,
