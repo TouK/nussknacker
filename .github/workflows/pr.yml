@@ -537,9 +537,9 @@ jobs:
 
 
   publish-before-tests:
-    name: Publish Without Tests
-    runs-on: ubuntu-latest
-    needs: ['build', 'build-fe', 'setup']
+#    name: Publish Without Tests
+#    runs-on: ubuntu-latest
+#    needs: ['build', 'build-fe', 'setup']
     #if: ${{ github.ref == 'refs/heads/staging' }}
     uses: ./.github/workflows/publish.yml
 #    with:
