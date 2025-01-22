@@ -534,7 +534,7 @@ jobs:
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
   #    runs-on: ubuntu-latest
@@ -559,7 +559,7 @@ jobs:
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      github__token: ${{ secrets.GITHUB_TOKEN }}
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 #    runs-on: ubuntu-latest

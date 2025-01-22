@@ -19,7 +19,7 @@ on:
         required: true
       sonatype_password:
         required: true
-      github_token:
+      github__token:
         required: true
       dockerhub_user:
         required: true
@@ -43,7 +43,7 @@ jobs:
         if: github.event_name != 'push'
         uses: styfle/cancel-workflow-action@0.11.0
         with:
-          access_token: ${{ secrets.github_token }}
+          access_token: ${{ secrets.github__token }}
       - uses: actions/checkout@v3
       - uses: coursier/setup-action@v1
         with:
