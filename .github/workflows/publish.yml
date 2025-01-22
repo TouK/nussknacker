@@ -6,10 +6,6 @@ on:
         description: "Indicates if the job should be run"
         required: true
         type: boolean
-#      job_needs:
-#        description: "JSON list of jobs needed to run this workflow"
-#        required: true
-#        type: string
     secrets:
       nussknacker_version:
         required: true
@@ -30,7 +26,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     if: ${{ inputs.should_run }}
-    #needs: ${{ fromJSON(inputs.job_needs) }}
     env:
       nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
       addDevArtifacts: true
