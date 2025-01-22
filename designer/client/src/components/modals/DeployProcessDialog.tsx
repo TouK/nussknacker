@@ -2,7 +2,7 @@ import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { ProcessName } from "../Process/types";
@@ -28,8 +28,6 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
-    const dispatch = useDispatch();
-
     const confirmAction = useCallback(async () => {
         try {
             await action(processName, comment);
@@ -37,7 +35,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         } catch (error) {
             setValidationError(error?.response?.data);
         }
-    }, [action, comment, dispatch, processName, props]);
+    }, [action, comment, processName, props]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
