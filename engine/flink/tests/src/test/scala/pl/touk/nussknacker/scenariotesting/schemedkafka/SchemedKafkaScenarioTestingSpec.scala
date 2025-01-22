@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.scenariotesting.schemedkafka
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -19,11 +20,17 @@ import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleV
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
-import pl.touk.nussknacker.engine.management.scenariotesting.{FlinkProcessTestRunner, ScenarioTestingMiniClusterWrapperFactory}
+import pl.touk.nussknacker.engine.management.scenariotesting.{
+  FlinkProcessTestRunner,
+  ScenarioTestingMiniClusterWrapperFactory
+}
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{schemaVersionParamName, topicParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  schemaVersionParamName,
+  topicParamName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
@@ -32,7 +39,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
@@ -63,12 +70,19 @@ class SchemedKafkaScenarioTestingSpec
     .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
+  private val (deploymentManagersClassLoaderInstance, releaseDeploymentManagersClassLoaderResources) =
+    DeploymentManagersClassLoader
+      .create(List.empty)
+      .allocated
+      .unsafeRunSync()
+
   private val modelData =
     LocalModelData(
       config,
       List.empty,
       configCreator = creator,
-      modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
+      modelClassLoader =
+        ModelClassLoader(FlinkTestConfiguration.classpathWorkaround, None, deploymentManagersClassLoaderInstance)
     )
 
   private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
@@ -83,6 +97,7 @@ class SchemedKafkaScenarioTestingSpec
   override protected def afterAll(): Unit = {
     super.afterAll()
     scenarioTestingMiniClusterWrapper.close()
+    releaseDeploymentManagersClassLoaderResources.unsafeRunSync()
   }
 
   test("Should pass correct timestamp from test data") {

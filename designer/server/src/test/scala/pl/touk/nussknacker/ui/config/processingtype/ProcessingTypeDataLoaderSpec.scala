@@ -6,7 +6,7 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
+import pl.touk.nussknacker.ui.config.{DesignerConfig, SimpleConfigLoadingDesignerConfigLoader}
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigsLoader
 
 class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
@@ -118,7 +118,7 @@ class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
   }
 
   private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = { () =>
-    DesignerConfigLoader.fromConfig(config).loadDesignerConfig().map(_.processingTypeConfigs)
+    new SimpleConfigLoadingDesignerConfigLoader(config).loadDesignerConfig().map(_.processingTypeConfigs)
   }
 
   private def loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(

@@ -15,7 +15,7 @@ object FlinkTestConfiguration {
     config.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, taskManagersCount)
     config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, taskSlotsCount)
 
-    config.set(PipelineOptions.CLASSPATHS, classpathWorkaround.map(_.toString).asJava)
+    config.set(PipelineOptions.CLASSPATHS, classpathWorkaround.asJava)
 
     setupMemory(config)
   }
@@ -26,9 +26,7 @@ object FlinkTestConfiguration {
   // (implementation in org.apache.flink.runtime.execution.librarycache.BlobLibraryCacheManager)
   // which holds all needed jars/classes in case of running from Scala plugin in IDE.
   // but in case of running from sbt it contains only sbt-launcher.jar
-  def classpathWorkaround: List[URL] = {
-    List(new URL("http://dummy-classpath.invalid"))
-  }
+  def classpathWorkaround: List[String] = List("http://dummy-classpath.invalid")
 
   def setupMemory(config: Configuration): Configuration = {
     // to prevent OutOfMemoryError: Could not allocate enough memory segments for NetworkBufferPool on low memory env (like Travis)

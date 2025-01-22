@@ -72,7 +72,7 @@ function AdhocTestingDialog(props: WindowContentProps<WindowKind, AdhocTestingDa
                 disabled: !isValid,
             },
         ];
-    }, [close, confirm, isValid, view.cancelText, view.confirmText, t]);
+    }, [close, confirm, isValid, t]);
 
     return (
         <WindowContent

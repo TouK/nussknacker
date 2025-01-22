@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.scenariotesting.kafka
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -26,7 +27,7 @@ import pl.touk.nussknacker.engine.management.scenariotesting.{
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
 import java.util.Collections
@@ -48,12 +49,19 @@ class KafkaScenarioTestingSpec
     )
     .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
 
+  private val (deploymentManagersClassLoaderInstance, releaseDeploymentManagersClassLoaderResources) =
+    DeploymentManagersClassLoader
+      .create(List.empty)
+      .allocated
+      .unsafeRunSync()
+
   private val modelData: ModelData =
     LocalModelData(
       inputConfig = config,
       components = List.empty,
       configCreator = new KafkaSourceFactoryProcessConfigCreator(() => KafkaScenarioTestingSpec.resultsHolders),
-      modelClassLoader = new ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
+      modelClassLoader =
+        ModelClassLoader(FlinkTestConfiguration.classpathWorkaround, None, deploymentManagersClassLoaderInstance)
     )
 
   private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
@@ -68,6 +76,7 @@ class KafkaScenarioTestingSpec
   override protected def afterAll(): Unit = {
     super.afterAll()
     scenarioTestingMiniClusterWrapper.close()
+    releaseDeploymentManagersClassLoaderResources.unsafeRunSync()
   }
 
   test("Should pass correct timestamp from test data") {

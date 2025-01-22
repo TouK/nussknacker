@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
@@ -13,29 +16,40 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.DockerTest
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 
 trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matchers with OptionValues {
   self: Suite with LazyLogging =>
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
-  protected var kafkaClient: KafkaClient = _
+  protected lazy val (kafkaClient, releaseKafkaClient) =
+    Resource
+      .make(
+        acquire = IO(new KafkaClient(hostKafkaAddress, self.suiteName))
+          .map { client =>
+            logger.info("Kafka client created")
+            client
+          }
+      )(
+        release = client => IO(client.shutdown()).map(_ => logger.info("Kafka client closed"))
+      )
+      .allocated
+      .unsafeRunSync()
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    kafkaClient = new KafkaClient(hostKafkaAddress, self.suiteName)
-    logger.info("Kafka client created")
-  }
+  protected lazy val (deploymentManagerClassLoader, releaseDeploymentManagerClassLoaderResources) =
+    DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
+
+  protected lazy val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(
+    ConfigWithUnresolvedVersion(config),
+    deploymentManagerClassLoader
+  )
 
   override def afterAll(): Unit = {
-    kafkaClient.shutdown()
-    logger.info("Kafka client closed")
-    deploymentManager.close()
+    releaseKafkaClient.unsafeToFuture()
+    releaseDeploymentManagerClassLoaderResources.unsafeToFuture()
     super.afterAll()
   }
-
-  protected lazy val deploymentManager: DeploymentManager =
-    FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
   protected def deployProcessAndWaitIfRunning(
       process: CanonicalProcess,

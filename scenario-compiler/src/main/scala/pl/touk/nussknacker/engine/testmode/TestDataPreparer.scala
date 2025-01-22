@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, ScenarioTestParametersRecord, ScenarioTestRecord}
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.api.{Context, JobData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -107,7 +106,7 @@ object TestDataPreparer {
 
   def apply(modelData: ModelData, jobData: JobData): TestDataPreparer =
     new TestDataPreparer(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.modelDefinition.expressionConfig,
       modelData.engineDictRegistry,
       modelData.modelDefinitionWithClasses.classDefinitions,

@@ -24,7 +24,7 @@ object ScenarioTestingMiniClusterWrapperFactory {
       streamExecutionConfig: Configuration
   ): AutoCloseable = {
     val methodInvoker = new ReflectiveMethodInvoker[AutoCloseable](
-      modelClassLoader.classLoader,
+      modelClassLoader,
       "pl.touk.nussknacker.engine.process.scenariotesting.ScenarioTestingMiniClusterWrapper",
       "create"
     )

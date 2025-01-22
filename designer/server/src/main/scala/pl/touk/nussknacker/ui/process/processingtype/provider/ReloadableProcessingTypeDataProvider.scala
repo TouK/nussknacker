@@ -23,7 +23,8 @@ class ReloadableProcessingTypeDataProvider(
 ) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
     with LazyLogging {
 
-  // We init state with dumb value instead of calling loadMethod() to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
+  // We initiate state with dumb value instead of calling loadMethod() to avoid problems with dependency injection
+  // cycle - see NusskanckerDefaultAppRouter.create
   private var stateValue: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = emptyState
 
   override private[processingtype] def state

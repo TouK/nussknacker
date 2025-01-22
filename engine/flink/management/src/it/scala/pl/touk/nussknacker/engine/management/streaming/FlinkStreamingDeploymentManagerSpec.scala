@@ -71,7 +71,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployedResponse.futureValue
   }
 
-  // this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
+  // this is for the case where e.g. we manually cancel flink job, or it fails and didn't restart...
   test("cancel of not existing job should not fail") {
     deploymentManager
       .processCommand(DMCancelScenarioCommand(ProcessName("not existing job"), user = userToAct))
@@ -284,7 +284,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
-      ModelClassLoader(processingTypeConfig.classPath, None)
+      ModelClassLoader(processingTypeConfig.classPath, None, deploymentManagerClassLoader)
     )
     val definition = modelData.modelDefinition
     definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

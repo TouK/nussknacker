@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.scenariotesting
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
 import org.apache.flink.configuration.Configuration
@@ -39,7 +40,7 @@ import pl.touk.nussknacker.engine.management.scenariotesting.FlinkProcessTestRun
 }
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 
 import java.util.{Date, UUID}
@@ -59,7 +60,18 @@ class FlinkProcessTestRunnerSpec
   private val scenarioName      = "proc1"
   private val sourceNodeId      = "id"
   private val firstSubtaskIndex = 0
-  private val modelClassLoader  = ModelClassLoader(getClass.getClassLoader, FlinkTestConfiguration.classpathWorkaround)
+
+  private val (deploymentManagersClassLoaderInstance, releaseDeploymentManagersClassLoaderResources) =
+    DeploymentManagersClassLoader
+      .create(List.empty)
+      .allocated
+      .unsafeRunSync()
+
+  private val modelClassLoader = ModelClassLoader(
+    FlinkTestConfiguration.classpathWorkaround,
+    None,
+    deploymentManagersClassLoaderInstance
+  )
 
   private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
     modelClassLoader,
@@ -76,6 +88,7 @@ class FlinkProcessTestRunnerSpec
   override protected def afterAll(): Unit = {
     super.afterAll()
     scenarioTestingMiniClusterWrapper.close()
+    releaseDeploymentManagersClassLoaderResources.unsafeRunSync()
   }
 
   "A scenario run on Flink engine" when {
@@ -160,7 +173,6 @@ class FlinkProcessTestRunnerSpec
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
-
 
       val testRunner = prepareTestRunner(useIOMonadInInterpreter)
 

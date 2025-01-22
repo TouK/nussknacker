@@ -15,7 +15,7 @@ class FlinkProcessVerifier(modelData: ModelData, miniClusterWrapperOpt: Option[A
   // because it is already in separate assembly for purpose of sending it to Flink during deployment.
   // Other option would be to add flinkExecutor.jar to classpath from which Flink DM is loaded
   private val mainRunner = new ReflectiveMethodInvoker[Unit](
-    modelData.modelClassLoader.classLoader,
+    modelData.modelClassLoader,
     "pl.touk.nussknacker.engine.process.scenariotesting.FlinkVerificationMain",
     "run"
   )
