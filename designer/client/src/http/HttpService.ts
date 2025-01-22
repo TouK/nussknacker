@@ -357,10 +357,13 @@ class HttpService {
             .then(() => {
                 return { isSuccess: true };
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
                     return this.#addError(
-                        i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processName}}", { processName }),
+                        i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processName}} due to: {{axiosError}}", {
+                            processName,
+                            axiosError: handleAxiosError(error),
+                        }),
                         error,
                         true,
                     ).then(() => {

@@ -41,7 +41,7 @@ class InconsistentStateDetector extends LazyLogging {
   private def doExtractAtMostOneStatus(
       statusDetails: List[StatusDetails]
   ): Either[StatusDetails, Option[StatusDetails]] = {
-    val notFinalStatuses = statusDetails.filterNot(isFinalStatus)
+    val notFinalStatuses = statusDetails.filterNot(isFinalOrTransitioningToFinalStatus)
     (statusDetails, notFinalStatuses) match {
       case (Nil, Nil)                    => Right(None)
       case (_, singleNotFinished :: Nil) => Right(Some(singleNotFinished))
@@ -144,8 +144,8 @@ class InconsistentStateDetector extends LazyLogging {
     SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status)
   }
 
-  protected def isFinalStatus(state: StatusDetails): Boolean =
-    SimpleStateStatus.isFinalStatus(state.status)
+  protected def isFinalOrTransitioningToFinalStatus(state: StatusDetails): Boolean =
+    SimpleStateStatus.isFinalOrTransitioningToFinalStatus(state.status)
 
   protected def isFinishedStatus(state: StatusDetails): Boolean = {
     state.status == SimpleStateStatus.Finished

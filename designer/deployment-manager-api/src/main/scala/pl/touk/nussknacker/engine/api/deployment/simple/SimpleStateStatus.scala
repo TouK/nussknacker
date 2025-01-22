@@ -85,8 +85,10 @@ object SimpleStateStatus {
 
   val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringDeploy, Running)
 
-  def isFinalStatus(status: StateStatus): Boolean =
-    List(SimpleStateStatus.Finished, SimpleStateStatus.Canceled).contains(status) || ProblemStateStatus.isProblemStatus(
+  def isFinalOrTransitioningToFinalStatus(status: StateStatus): Boolean =
+    List(SimpleStateStatus.Finished, SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(
+      status
+    ) || ProblemStateStatus.isProblemStatus(
       status
     )
 
