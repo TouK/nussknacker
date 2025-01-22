@@ -524,6 +524,7 @@ jobs:
 
   publish-after-tests:
     name: Publish With Tests
+    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     uses: ./.github/workflows/publish.yml
     with:
       should_run: true
@@ -541,6 +542,7 @@ jobs:
 
   publish-before-tests:
     name: Publish Without Tests
+    needs: ['build', 'build-fe', 'setup']
     uses: ./.github/workflows/publish.yml
     with:
       should_run: true
