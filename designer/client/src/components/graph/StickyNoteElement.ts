@@ -33,6 +33,7 @@ export const StickyNoteElementView = dia.ElementView.extend({
         evt.stopPropagation();
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
         evt.currentTarget.querySelector("textarea").focus({ preventScroll: true });
+        evt.currentTarget.querySelector(".sticky-note-markdown").style.display = "none";
     },
 
     selectAll: function (evt) {
@@ -48,5 +49,6 @@ export const StickyNoteElementView = dia.ElementView.extend({
         this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, true);
+        evt.currentTarget.parentElement.querySelector(".sticky-note-markdown").style.display = "block";
     },
 });

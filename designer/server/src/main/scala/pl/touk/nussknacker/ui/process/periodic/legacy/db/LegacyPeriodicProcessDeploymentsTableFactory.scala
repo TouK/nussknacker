@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.ui.process.periodic.legacy.db
 
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.model.{PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessId}
+import pl.touk.nussknacker.ui.process.periodic.model.{
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentStatus,
+  PeriodicProcessId
+}
 import slick.jdbc.{JdbcProfile, JdbcType}
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull

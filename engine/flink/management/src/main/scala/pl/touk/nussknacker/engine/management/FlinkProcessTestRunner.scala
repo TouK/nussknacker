@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkProcessTestRunner(modelData: ModelData)
     extends StaticMethodRunner(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       "pl.touk.nussknacker.engine.process.runner.FlinkTestMain",
       "run"
     ) {

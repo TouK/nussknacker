@@ -70,7 +70,7 @@ class NotificationServiceTest
   private val dbProcessRepository        = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
   private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
-  private val dm: MockDeploymentManager  = new MockDeploymentManager
+  private val dm: MockDeploymentManager  = MockDeploymentManager.create()
 
   private val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> dm),
