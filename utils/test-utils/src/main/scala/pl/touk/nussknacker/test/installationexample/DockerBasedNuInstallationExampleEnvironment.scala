@@ -43,7 +43,7 @@ class DockerBasedInstallationExampleNuEnvironment(
         )
       ),
       // Change to 'true' to enable logging
-      tailChildContainers = false
+      tailChildContainers = true
     ) {
 
   start()
