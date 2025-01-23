@@ -56,28 +56,38 @@ const renderer = new marked.Renderer();
 renderer.link = function (href, title, text) {
     return `<a target="_blank" rel="noopener noreferrer" href="${href}">${text}</a>`;
 };
+
+renderer.hr = function () {
+    return `----`; // SVG doesn't support HTML hr inside foreignObject
+};
+
 renderer.image = function (href, title, text) {
-    // SVG don't support HTML img inside foreignObject
+    // SVG doesn't support HTML img inside foreignObject
     return `<a target="_blank" rel="noopener noreferrer" href="${href}">${text} (attached img)</a>`;
 };
 
-const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
-    let parsed;
-    try {
-        parsed = DOMPurify.sanitize(marked.parse(stickyNote.content, { renderer }), { ADD_ATTR: ["target"] });
-    } catch (error) {
-        console.error("Failed to parse markdown:", error);
-        parsed = "Error: Could not parse markdown content. See error logs in console";
-    }
-    const singleMarkupNode = util.svg/* xml */ `
+const prepareSvgObject = (content: string) =>
+    util.svg/* xml */ `
             <foreignObject @selector="foreignObject">
                 <div @selector="sticky-note-content" class="sticky-note-content">
                     <textarea @selector="${MARKDOWN_EDITOR_NAME}" class="sticky-note-markdown-editor" name="${MARKDOWN_EDITOR_NAME}" autocomplete="off" disabled="disabled"></textarea>
-                    <div @selector="markdown" class="sticky-note-markdown">${parsed}</div>
+                    <div @selector="markdown" class="sticky-note-markdown">${content}</div>
                 </div>
             </foreignObject>
-    `[0];
-    return singleMarkupNode as MarkupNodeJSON;
+    `[0] as MarkupNodeJSON;
+
+const escapeHtmlContent = (content: string) =>
+    content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+
+const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
+    try {
+        const contentWithHtmlTagsSanitized = escapeHtmlContent(stickyNote.content);
+        const parsed = DOMPurify.sanitize(marked.parse(contentWithHtmlTagsSanitized, { renderer }), { ADD_ATTR: ["target"] });
+        return prepareSvgObject(parsed);
+    } catch (error) {
+        console.error("Failed to parse markdown:", error);
+        return prepareSvgObject("<b>[!] Could not parse markdown content [!]\n</b><br/>" + escapeHtmlContent(stickyNote.content));
+    }
 };
 
 export const stickyNotePath = "M 0 0 L 19 0 L 19 19 L 0 19 L 0 0";
