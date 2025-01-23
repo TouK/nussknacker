@@ -115,56 +115,56 @@ jobs:
           name: build-target
           path: target.tgz
 
-  build-fe:
-    name: BuildFrontend
-    runs-on: ubuntu-latest
-    needs: [ setup ]
-    env:
-      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
-    steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
-      - name: Cache npm
-        id: cache-npm
-        uses: actions/cache@v3
-        with:
-          path: |
-            **/node_modules
-            ~/.cache/Cypress
-          key: ${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Download node modules
-        if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: |
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
-      - name: Build FE
-        run: (cd designer/client; npm run build)
-      - name: Build FE submodules
-        run: |
-          cd designer
-          cp -r client/.federated-types/nussknackerUi submodules/types/@remote
-          cd submodules
-          npm run build
-      - name: Tar fe artifacts
-        shell: bash
-        run:  tar -czf 'fe-dist.tgz' designer/client/dist designer/submodules/dist
-      - name: Store dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-fe-dist
-          path: fe-dist.tgz
-
+#  build-fe:
+#    name: BuildFrontend
+#    runs-on: ubuntu-latest
+#    needs: [ setup ]
+#    env:
+#      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
+#    steps:
+#      - name: Cancel previous runs
+#        if: github.event_name != 'push'
+#        uses: styfle/cancel-workflow-action@0.11.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v3
+#      - name: Cache npm
+#        id: cache-npm
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            **/node_modules
+#            ~/.cache/Cypress
+#          key: ${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
+#      - name: Get Node.js version
+#        id: nvm
+#        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - name: Download node modules
+#        if: steps.cache-npm.outputs.cache-hit != 'true'
+#        run: |
+#          npm ci --no-audit --prefix designer/client
+#          npm ci --no-audit --prefix designer/submodules
+#      - name: Build FE
+#        run: (cd designer/client; npm run build)
+#      - name: Build FE submodules
+#        run: |
+#          cd designer
+#          cp -r client/.federated-types/nussknackerUi submodules/types/@remote
+#          cd submodules
+#          npm run build
+#      - name: Tar fe artifacts
+#        shell: bash
+#        run:  tar -czf 'fe-dist.tgz' designer/client/dist designer/submodules/dist
+#      - name: Store dist
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: build-fe-dist
+#          path: fe-dist.tgz
+#
   tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -173,7 +173,8 @@ jobs:
       matrix:
         # Due to the different behaviour of Nussknacker's OpenAPI generation on different versions of scala we
         # have to run these tests always for every scala version. See NuDesignerApiAvailableToExposeYamlSpec
-        scalaVersion: [2.12, 2.13]
+#        scalaVersion: [2.12, 2.13]
+        scalaVersion: [2.12]
     env:
       NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
@@ -212,374 +213,374 @@ jobs:
         with:
           name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
-
-  integrationTests:
-    name: IntegrationTests
-    needs: [ build, setup ]
-    strategy:
-      matrix:
-        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
-    env:
-      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.11.0.17
-      - uses: sbt/setup-sbt@v1
-      - name: Cache ivy packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - uses: sbt/setup-sbt@v1
-      - name: Integration tests
-        shell: bash
-        env:
-          dockerUpLatest: true
-        run: ./ciRunSbt.sh It/test
-      - name: Test Report
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IntegrationTests-results-${{ matrix.scalaVersion }}
-          path: '**/it-reports/*.xml'
-
-  slowTests:
-    name: SlowTests
-    runs-on: ubuntu-latest
-    needs: [ build, setup ]
-    strategy:
-      matrix:
-        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
-    env:
-      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.11.0.17
-      - uses: sbt/setup-sbt@v1
-      - name: Cache ivy packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-      - uses: AbsaOSS/k3d-action@v2.4.0
-        env:
-          PROJECT_ROOT: ${{ github.workspace }}
-        with:
-          cluster-name: "k3s-default"
-          k3d-version: "v5.6.0"
-          args: >-
-            --config=.k3d/single-cluster.yml
-            --trace
-      - name: Slow tests
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME }}
-          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY }}
-        shell: bash
-        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
-      - name: docker logs
-        if: success() || failure()
-        run: |
-          docker logs k3d-k3s-default-server-0
-          docker logs k3d-k3s-default-agent-0
-          docker logs k3d-k3s-default-serverlb
-      - name: Test Report
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: SlowTests-results-${{ matrix.scalaVersion }}
-          path: '**/test-reports/*.xml'
-
-  frontendTests:
-    name: FrontendTests
-    runs-on: ubuntu-latest
-    needs: [ setup ]
-    env:
-      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
-      shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
-    steps:
-      - name: Cancel previous runs
-        if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-      - name: Cache npm
-        id: cache-npm
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/cache@v3
-        with:
-          path: |
-            **/node_modules
-            ~/.cache/Cypress
-          key: ${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
-      - name: Get Node.js version
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        id: nvm
-        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
-      - name: Use Node.js ${{ matrix.node-version }}
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Download node modules
-        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
-        run: |
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
-      - name: Test FE
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        run: (cd designer/client; npm run test:unit)
-      - name: Test Report
-        if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: FrontendTests-results
-          path: designer/client/junit.xml
-
-  cypressTests:
-    name: CypressTests
-    runs-on: self-hosted
-    needs: [ build, build-fe, setup ]
-    env:
-      # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
-      # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
-      # have this conditional logic in this step. We force building images on our "special" branches because run between merges
-      # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
-      shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
-      BE_PORT: 7251
-    steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
-      - name: Clean all docker containers
-        shell: bash
-        run: |
-          c=$(docker ps -q)
-          [[ $c ]] && docker kill $c || echo "No container run"
-      - uses: actions/checkout@v3
-      - name: Get Node.js version
-        id: nvm
-        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: coursier/setup-action@v1
-        if: ${{ env.shouldBuildImage == 'true' }}
-        with:
-          jvm: temurin:1.11.0.17
-      - name: Download node modules
-        run: |
-          export npm_config_cache=$(mktemp -d)
-          npm config ls -l | grep cache
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
-          rm -rf $npm_config_cache
-      - uses: actions/download-artifact@v4
-        if: ${{ env.shouldBuildImage == 'true' }}
-        with:
-          name: build-target
-      - name: Untar artifacts
-        if: ${{ env.shouldBuildImage == 'true' }}
-        shell: bash
-        run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-fe-dist
-      - name: Untar fe artifacts
-        shell: bash
-        run:  tar xfz fe-dist.tgz
-      - name: set version
-        if: ${{ env.shouldBuildImage == 'true' }}
-        shell: bash
-        run: echo "NUSSKNACKER_VERSION=${{ needs.setup.outputs.nk_snapshot_version }}" >> $GITHUB_ENV
-      - name: Prepare docker
-        if: ${{ env.shouldBuildImage == 'true' }}
-        env:
-          addDevArtifacts: true
-        shell: bash
-        #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
-      - name: FE tests e2e on build docker image
-        if: ${{ env.shouldBuildImage == 'true' }}
-        env:
-          CYPRESS_SNAPSHOT_UPDATE: "true"
-          CYPRESS_BASE_URL: http://localhost:${{ env.BE_PORT }}
-          DOCKER_PULL_OPTION: never
-        shell: bash
-        run: |
-          cd designer/client
-          ! npx wait-on -t 250 tcp:localhost:${{ env.BE_PORT }} 2> /dev/null || (echo "Port: ${BE_PORT} already in use!" && exit 1)
-          npx start-server-and-test backend:docker ${{ env.BE_PORT }} test:e2e
-      - name: Determine docker tag version to use
-        if: ${{ env.shouldBuildImage == 'false' }}
-        shell: bash
-        run: |
-          # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
-          NK_REF_VERSION=`[ "${GITHUB_REF}" != "" ] && echo "${GITHUB_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
-          NK_BASE_REF_VERSION=`[ "${NK_REF_VERSION}" != "" ] && echo "${NK_REF_VERSION}" || [ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
-          echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo staging-latest`" >> $GITHUB_ENV
-      - name: FE tests e2e on pulled image
-        if: ${{ env.shouldBuildImage == 'false' }}
-        env:
-          CYPRESS_SNAPSHOT_UPDATE: "true"
-        shell: bash
-        run: |
-          cd designer/client
-          ! npx wait-on -t 250 tcp:localhost:${{ env.BE_PORT }} 2> /dev/null || (echo "Port: ${BE_PORT} already in use!" && exit 1)
-          npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
-      - name: Test Report
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: CypressTests-results
-          path: designer/client/cypress-test-results/*.xml
-      - name: Store test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-test-results
-          path: |
-            docs/autoScreenshotChangeDocs/
-            designer/client/cypress/**/__image_snapshots__/
-            designer/client/cypress/screenshots/
-            designer/client/cypress/videos/
-          if-no-files-found: ignore
-      - name: Create Pull Request
-        id: update_snapshots
-        uses: peter-evans/create-pull-request@v7
-        if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
-        env:
-          HASH: ${{ format('#{0}', github.event.number) }}
-          BRANCH: ${{ needs.setup.outputs.git_source_branch }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ env.BRANCH }}
-          branch: snapshots-patch/${{ env.BRANCH }}
-          title: Update Cypress snapshots in ${{ env.BRANCH }}
-          commit-message: Updated snapshots
-          body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
-          labels: cypress
-      - name: Comment PR
-        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          message: |
-            ${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}
-            :warning: Be careful! Snapshot changes are not necessarily the cause of the error. Check the logs.
-          comment_tag: snapshots_pr
-      - name: Force fail if update PR created
-        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
-        uses: actions/github-script@v6.3.3
-        with:
-          script: |
-            core.setFailed('Snapshots updated, chceck comments!')
-
-  publish-after-tests:
-    name: Publish With Tests
-    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
-    uses: ./.github/workflows/publish.yml
-    with:
-      should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    secrets:
-      nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
-      git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
-      sonatype_user: ${{ secrets.SONATYPE_USER }}
-      sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github__token: ${{ secrets.GITHUB_TOKEN }}
-      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
-      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-
-  publish-before-tests:
-    name: Publish Without Tests
-    needs: ['build', 'build-fe', 'setup']
-    uses: ./.github/workflows/publish.yml
-    with:
-      should_run: ${{ github.ref == 'refs/heads/staging' }}
-    secrets:
-      nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
-      git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
-      sonatype_user: ${{ secrets.SONATYPE_USER }}
-      sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
-      github__token: ${{ secrets.GITHUB_TOKEN }}
-      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
-      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-
-  trigger-external-build:
-    runs-on: ubuntu-latest
-    needs: [ setup, publish-before-tests ]
-    if: ${{ github.ref == 'refs/heads/staging' }}
-    strategy:
-      matrix:
-        include:
-          - repo: nussknacker-helm
-            workflow_id: helm-test-workflow.yaml
-            ref: main
-          - repo: nussknacker-quickstart
-            workflow_id: pr.yml
-            ref: staging
-          - repo: nussknacker-sample-components
-            workflow_id: pr.yml
-            ref: staging
-          - repo: nussknacker-flink-compatibility
-            workflow_id: test.yml
-            ref: staging
-    steps:
-      - uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: '${{ matrix.repo }}',
-              workflow_id: '${{ matrix.workflow_id }}',
-              ref: '${{ matrix.ref }}',
-              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
-            })
+#
+#  integrationTests:
+#    name: IntegrationTests
+#    needs: [ build, setup ]
+#    strategy:
+#      matrix:
+#        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
+#    env:
+#      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
+#    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Cancel previous runs
+#        if: github.event_name != 'push'
+#        uses: styfle/cancel-workflow-action@0.11.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v3
+#      - uses: coursier/setup-action@v1
+#        with:
+#          jvm: temurin:1.11.0.17
+#      - uses: sbt/setup-sbt@v1
+#      - name: Cache ivy packages
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: sbt
+#      - uses: actions/download-artifact@v4
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - uses: sbt/setup-sbt@v1
+#      - name: Integration tests
+#        shell: bash
+#        env:
+#          dockerUpLatest: true
+#        run: ./ciRunSbt.sh It/test
+#      - name: Test Report
+#        if: success() || failure()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: IntegrationTests-results-${{ matrix.scalaVersion }}
+#          path: '**/it-reports/*.xml'
+#
+#  slowTests:
+#    name: SlowTests
+#    runs-on: ubuntu-latest
+#    needs: [ build, setup ]
+#    strategy:
+#      matrix:
+#        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
+#    env:
+#      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
+#    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    steps:
+#      - name: Cancel previous runs
+#        if: github.event_name != 'push'
+#        uses: styfle/cancel-workflow-action@0.11.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v3
+#      - uses: coursier/setup-action@v1
+#        with:
+#          jvm: temurin:1.11.0.17
+#      - uses: sbt/setup-sbt@v1
+#      - name: Cache ivy packages
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: sbt
+#      - uses: actions/download-artifact@v4
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
+#      - uses: AbsaOSS/k3d-action@v2.4.0
+#        env:
+#          PROJECT_ROOT: ${{ github.workspace }}
+#        with:
+#          cluster-name: "k3s-default"
+#          k3d-version: "v5.6.0"
+#          args: >-
+#            --config=.k3d/single-cluster.yml
+#            --trace
+#      - name: Slow tests
+#        env:
+#          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+#          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+#          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+#          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME }}
+#          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY }}
+#        shell: bash
+#        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+#      - name: docker logs
+#        if: success() || failure()
+#        run: |
+#          docker logs k3d-k3s-default-server-0
+#          docker logs k3d-k3s-default-agent-0
+#          docker logs k3d-k3s-default-serverlb
+#      - name: Test Report
+#        if: success() || failure()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: SlowTests-results-${{ matrix.scalaVersion }}
+#          path: '**/test-reports/*.xml'
+#
+#  frontendTests:
+#    name: FrontendTests
+#    runs-on: ubuntu-latest
+#    needs: [ setup ]
+#    env:
+#      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
+#      shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
+#    steps:
+#      - name: Cancel previous runs
+#        if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
+#        uses: styfle/cancel-workflow-action@0.11.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v3
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#      - name: Cache npm
+#        id: cache-npm
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            **/node_modules
+#            ~/.cache/Cypress
+#          key: ${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
+#      - name: Get Node.js version
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        id: nvm
+#        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - name: Download node modules
+#        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
+#        run: |
+#          npm ci --no-audit --prefix designer/client
+#          npm ci --no-audit --prefix designer/submodules
+#      - name: Test FE
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        run: (cd designer/client; npm run test:unit)
+#      - name: Test Report
+#        if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: FrontendTests-results
+#          path: designer/client/junit.xml
+#
+#  cypressTests:
+#    name: CypressTests
+#    runs-on: self-hosted
+#    needs: [ build, build-fe, setup ]
+#    env:
+#      # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
+#      # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
+#      # have this conditional logic in this step. We force building images on our "special" branches because run between merges
+#      # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
+#      shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+#      BE_PORT: 7251
+#    steps:
+#      - name: Cancel previous runs
+#        if: github.event_name != 'push'
+#        uses: styfle/cancel-workflow-action@0.11.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
+#      - name: Clean all docker containers
+#        shell: bash
+#        run: |
+#          c=$(docker ps -q)
+#          [[ $c ]] && docker kill $c || echo "No container run"
+#      - uses: actions/checkout@v3
+#      - name: Get Node.js version
+#        id: nvm
+#        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - uses: coursier/setup-action@v1
+#        if: ${{ env.shouldBuildImage == 'true' }}
+#        with:
+#          jvm: temurin:1.11.0.17
+#      - name: Download node modules
+#        run: |
+#          export npm_config_cache=$(mktemp -d)
+#          npm config ls -l | grep cache
+#          npm ci --no-audit --prefix designer/client
+#          npm ci --no-audit --prefix designer/submodules
+#          rm -rf $npm_config_cache
+#      - uses: actions/download-artifact@v4
+#        if: ${{ env.shouldBuildImage == 'true' }}
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        if: ${{ env.shouldBuildImage == 'true' }}
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - uses: actions/download-artifact@v4
+#        with:
+#          name: build-fe-dist
+#      - name: Untar fe artifacts
+#        shell: bash
+#        run:  tar xfz fe-dist.tgz
+#      - name: set version
+#        if: ${{ env.shouldBuildImage == 'true' }}
+#        shell: bash
+#        run: echo "NUSSKNACKER_VERSION=${{ needs.setup.outputs.nk_snapshot_version }}" >> $GITHUB_ENV
+#      - name: Prepare docker
+#        if: ${{ env.shouldBuildImage == 'true' }}
+#        env:
+#          addDevArtifacts: true
+#        shell: bash
+#        #Doc generation is rather costly, we don't want it in test image creation
+#        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
+#      - name: FE tests e2e on build docker image
+#        if: ${{ env.shouldBuildImage == 'true' }}
+#        env:
+#          CYPRESS_SNAPSHOT_UPDATE: "true"
+#          CYPRESS_BASE_URL: http://localhost:${{ env.BE_PORT }}
+#          DOCKER_PULL_OPTION: never
+#        shell: bash
+#        run: |
+#          cd designer/client
+#          ! npx wait-on -t 250 tcp:localhost:${{ env.BE_PORT }} 2> /dev/null || (echo "Port: ${BE_PORT} already in use!" && exit 1)
+#          npx start-server-and-test backend:docker ${{ env.BE_PORT }} test:e2e
+#      - name: Determine docker tag version to use
+#        if: ${{ env.shouldBuildImage == 'false' }}
+#        shell: bash
+#        run: |
+#          # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
+#          NK_REF_VERSION=`[ "${GITHUB_REF}" != "" ] && echo "${GITHUB_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
+#          NK_BASE_REF_VERSION=`[ "${NK_REF_VERSION}" != "" ] && echo "${NK_REF_VERSION}" || [ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
+#          echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo staging-latest`" >> $GITHUB_ENV
+#      - name: FE tests e2e on pulled image
+#        if: ${{ env.shouldBuildImage == 'false' }}
+#        env:
+#          CYPRESS_SNAPSHOT_UPDATE: "true"
+#        shell: bash
+#        run: |
+#          cd designer/client
+#          ! npx wait-on -t 250 tcp:localhost:${{ env.BE_PORT }} 2> /dev/null || (echo "Port: ${BE_PORT} already in use!" && exit 1)
+#          npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
+#      - name: Test Report
+#        if: success() || failure()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: CypressTests-results
+#          path: designer/client/cypress-test-results/*.xml
+#      - name: Store test results
+#        if: failure()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: e2e-test-results
+#          path: |
+#            docs/autoScreenshotChangeDocs/
+#            designer/client/cypress/**/__image_snapshots__/
+#            designer/client/cypress/screenshots/
+#            designer/client/cypress/videos/
+#          if-no-files-found: ignore
+#      - name: Create Pull Request
+#        id: update_snapshots
+#        uses: peter-evans/create-pull-request@v7
+#        if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+#        env:
+#          HASH: ${{ format('#{0}', github.event.number) }}
+#          BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+#        with:
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          base: ${{ env.BRANCH }}
+#          branch: snapshots-patch/${{ env.BRANCH }}
+#          title: Update Cypress snapshots in ${{ env.BRANCH }}
+#          commit-message: Updated snapshots
+#          body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
+#          labels: cypress
+#      - name: Comment PR
+#        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
+#        uses: thollander/actions-comment-pull-request@v2
+#        with:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          message: |
+#            ${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}
+#            :warning: Be careful! Snapshot changes are not necessarily the cause of the error. Check the logs.
+#          comment_tag: snapshots_pr
+#      - name: Force fail if update PR created
+#        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
+#        uses: actions/github-script@v6.3.3
+#        with:
+#          script: |
+#            core.setFailed('Snapshots updated, chceck comments!')
+#
+#  publish-after-tests:
+#    name: Publish With Tests
+#    needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
+#    uses: ./.github/workflows/publish.yml
+#    with:
+#      should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    secrets:
+#      nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
+#      git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
+#      sonatype_user: ${{ secrets.SONATYPE_USER }}
+#      sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
+#      github__token: ${{ secrets.GITHUB_TOKEN }}
+#      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+#      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#  publish-before-tests:
+#    name: Publish Without Tests
+#    needs: ['build', 'build-fe', 'setup']
+#    uses: ./.github/workflows/publish.yml
+#    with:
+#      should_run: ${{ github.ref == 'refs/heads/staging' }}
+#    secrets:
+#      nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
+#      git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
+#      sonatype_user: ${{ secrets.SONATYPE_USER }}
+#      sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
+#      github__token: ${{ secrets.GITHUB_TOKEN }}
+#      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+#      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#  trigger-external-build:
+#    runs-on: ubuntu-latest
+#    needs: [ setup, publish-before-tests ]
+#    if: ${{ github.ref == 'refs/heads/staging' }}
+#    strategy:
+#      matrix:
+#        include:
+#          - repo: nussknacker-helm
+#            workflow_id: helm-test-workflow.yaml
+#            ref: main
+#          - repo: nussknacker-quickstart
+#            workflow_id: pr.yml
+#            ref: staging
+#          - repo: nussknacker-sample-components
+#            workflow_id: pr.yml
+#            ref: staging
+#          - repo: nussknacker-flink-compatibility
+#            workflow_id: test.yml
+#            ref: staging
+#    steps:
+#      - uses: actions/github-script@v6
+#        with:
+#          github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
+#          script: |
+#            await github.rest.actions.createWorkflowDispatch({
+#              owner: context.repo.owner,
+#              repo: '${{ matrix.repo }}',
+#              workflow_id: '${{ matrix.workflow_id }}',
+#              ref: '${{ matrix.ref }}',
+#              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
+#            })

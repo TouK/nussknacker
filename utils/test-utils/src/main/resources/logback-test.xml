@@ -70,6 +70,7 @@
     <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
     <logger name="com.azure" level="INFO"/>
     <logger name="org.testcontainers" level="INFO"/>
+    <logger name="docker-compose" level="INFO"/>
 
     <logger name="scenario-activity-audit" level="INFO" additivity="false">
         <appender-ref ref="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT"/>
