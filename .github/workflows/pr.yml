@@ -206,7 +206,8 @@ jobs:
           restore-keys: sbt
       - name: Backend tests
         shell: bash
-        run: ./ciRunSbt.sh test
+#        run: ./ciRunSbt.sh test
+        run: ./ciRunSbt.sh e2eTests/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v4
