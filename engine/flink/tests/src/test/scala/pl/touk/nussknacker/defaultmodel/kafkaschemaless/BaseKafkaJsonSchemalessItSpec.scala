@@ -1,6 +1,7 @@
-package pl.touk.nussknacker.defaultmodel
+package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 
 import io.circe.{Json, parser}
+import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-class KafkaJsonItSpec extends FlinkWithKafkaSuite {
+abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
 
   private val jsonRecord = Json.obj(
     "first"  -> Json.fromString("Jan"),
@@ -21,7 +22,7 @@ class KafkaJsonItSpec extends FlinkWithKafkaSuite {
     "last"   -> Json.fromString("Kowalski")
   )
 
-  test("should round-trip json message without provided schema") {
+  def shouldRoundTripJsonMessageWithoutProvidedSchema(): Unit = {
 
     val inputTopic  = "input-topic-without-schema-json"
     val outputTopic = "output-topic-without-schema-json"
@@ -61,7 +62,7 @@ class KafkaJsonItSpec extends FlinkWithKafkaSuite {
     }
   }
 
-  ignore("should round-trip plain message without provided schema") {
+  def shouldRoundTripPlainMessageWithoutProvidedSchema(): Unit = {
     val inputTopic  = "input-topic-without-schema-plain"
     val outputTopic = "output-topic-without-schema-plain"
 
