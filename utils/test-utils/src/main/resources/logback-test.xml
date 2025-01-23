@@ -13,12 +13,12 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
     </root>
 
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
-    <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
+    <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-DEBUG}"/>
     <logger name="slick.jdbc.JdbcBackend.statement" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.JdbcBackend.parameter" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.StatementInvoker.result" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>

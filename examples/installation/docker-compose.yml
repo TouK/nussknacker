@@ -59,7 +59,7 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
-      retries: 10
+      retries: 15
     volumes:
       - ./designer/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
     volumes_from:
