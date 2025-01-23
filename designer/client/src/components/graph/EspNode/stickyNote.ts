@@ -82,11 +82,12 @@ const escapeHtmlContent = (content: string) =>
 const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
     try {
         const contentWithHtmlTagsSanitized = escapeHtmlContent(stickyNote.content);
-        const parsed = DOMPurify.sanitize(marked.parse(contentWithHtmlTagsSanitized, { renderer }), { ADD_ATTR: ["target"] });
+        let parsed = DOMPurify.sanitize(marked.parse(contentWithHtmlTagsSanitized, { renderer }), { ADD_ATTR: ["target"] });
+        parsed = parsed.replace(/<br\s*\/?>/g, "<br/>"); // SVG does not allow tag without closing and DOMPurify always remove closing tag.
         return prepareSvgObject(parsed);
     } catch (error) {
-        console.error("Failed to parse markdown:", error);
-        return prepareSvgObject("<b>[!] Could not parse markdown content [!]\n</b><br/>" + escapeHtmlContent(stickyNote.content));
+        console.error("Error: Could not parse markdown:", error);
+        return prepareSvgObject("<b>[!] Could not parse markdown content [!]\n</b><br></br>" + escapeHtmlContent(stickyNote.content));
     }
 };
 
