@@ -33,18 +33,18 @@ abstract class FlinkDeploymentManager(
 
   import dependencies._
 
-  private lazy val scenarioTestingMiniClusterWrapperOpt =
+  private val scenarioTestingMiniClusterWrapperOpt =
     ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
       modelData.asInvokableModelData.modelClassLoader,
       scenarioTestingConfig
     )
 
-  private lazy val testRunner = new FlinkProcessTestRunner(
+  private val testRunner = new FlinkProcessTestRunner(
     modelData.asInvokableModelData,
     scenarioTestingMiniClusterWrapperOpt.filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
   )
 
-  private lazy val verification = new FlinkProcessVerifier(
+  private val verification = new FlinkProcessVerifier(
     modelData.asInvokableModelData,
     scenarioTestingMiniClusterWrapperOpt.filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
   )
