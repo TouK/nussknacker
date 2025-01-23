@@ -3,9 +3,9 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getProcessName } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { ProcessName } from "../Process/types";
+import { ProcessName, ProcessVersionId } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
@@ -13,7 +13,7 @@ import { FormHelperText, Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export type ToggleProcessActionModalData = {
-    action: (processName: ProcessName, comment: string) => Promise<unknown>;
+    action: (processName: ProcessName, processVersionId: ProcessVersionId, comment: string) => Promise<unknown>;
     displayWarnings?: boolean;
 };
 
@@ -23,6 +23,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         meta: { action, displayWarnings },
     } = props.data;
     const processName = useSelector(getProcessName);
+    const processVersionId = useSelector(getProcessVersionId);
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);
@@ -30,12 +31,12 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
 
     const confirmAction = useCallback(async () => {
         try {
-            await action(processName, comment);
+            await action(processName, processVersionId, comment);
             props.close();
         } catch (error) {
             setValidationError(error?.response?.data);
         }
-    }, [action, comment, processName, props]);
+    }, [action, comment, processName, props, processVersionId]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
