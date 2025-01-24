@@ -41,7 +41,7 @@ services:
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       INFLUXDB_URL: "http://influxdb:8086"
       FLINK_REST_URL: "http://flink-jobmanager:8081"
-      JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=300M -XX:MaxDirectMemorySize=100M"
+      JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=300M -XX:MaxDirectMemorySize=200M"
       USAGE_REPORTS_SOURCE: "example-installation-docker-compose"
     depends_on:
       postgres:
