@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import scala.jdk.CollectionConverters._
 
-// We use MiniCluster directly, instead of LocalExecutionEnvironment, to be able to pass own classpath...
 final class ScenarioTestingMiniClusterWrapper(
     miniCluster: MiniCluster,
     val env: StreamExecutionEnvironment,

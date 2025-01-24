@@ -69,50 +69,50 @@ jobs:
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi
 
-#  build:
-#    name: Build
-#    runs-on: ubuntu-latest
-#    needs: [ setup ]
-#    env:
-#      # We can't just use conditional jobs mechanism ('if' directive) because 'cypressTests' job depends on this one
-#      shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-#    steps:
-#      - name: Cancel previous runs
-#        if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
-#        uses: styfle/cancel-workflow-action@0.11.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
-#      - uses: actions/checkout@v3
-#        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-#      - uses: coursier/setup-action@v1
-#        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-#        with:
-#          jvm: temurin:1.11.0.17
-#      - uses: sbt/setup-sbt@v1
-#      - name: Cache ivy packages
-#        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/.ivy2/cache
-#            ~/.cache/coursier
-#            ~/.sbt
-#          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-#          restore-keys: sbt
-#      - name: Build
-#        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-#        shell: bash
-#        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
-#      - name: Tar artifacts
-#        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-#        shell: bash
-#        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
-#      - name: Store target
-#        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: build-target
-#          path: target.tgz
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [ setup ]
+    env:
+      # We can't just use conditional jobs mechanism ('if' directive) because 'cypressTests' job depends on this one
+      shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    steps:
+      - name: Cancel previous runs
+        if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+      - uses: coursier/setup-action@v1
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+        with:
+          jvm: temurin:1.11.0.17
+      - uses: sbt/setup-sbt@v1
+      - name: Cache ivy packages
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: sbt
+      - name: Build
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+        shell: bash
+        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
+      - name: Tar artifacts
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+        shell: bash
+        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
+      - name: Store target
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-target
+          path: target.tgz
 #
 #  build-fe:
 #    name: BuildFrontend
@@ -167,8 +167,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-#    needs: [ build, setup ]
-    needs: [ setup ]
+    needs: [ build, setup ]
     strategy:
       matrix:
         # Due to the different behaviour of Nussknacker's OpenAPI generation on different versions of scala we
@@ -188,12 +187,12 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.11.0.17
-#      - uses: actions/download-artifact@v4
-#        with:
-#          name: build-target
-#      - name: Untar artifacts
-#        shell: bash
-#        run:  tar xfz target.tgz
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - uses: sbt/setup-sbt@v1
       - name: Cache ivy packages
         uses: actions/cache@v3
@@ -206,8 +205,8 @@ jobs:
           restore-keys: sbt
       - name: Backend tests
         shell: bash
-#        run: ./ciRunSbt.sh test
-        run: ./ciRunSbt.sh e2eTests/test
+        run: ./ciRunSbt.sh test
+#        run: ./ciRunSbt.sh e2eTests/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v4
