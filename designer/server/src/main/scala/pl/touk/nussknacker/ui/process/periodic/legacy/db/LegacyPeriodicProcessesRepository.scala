@@ -420,9 +420,9 @@ class SlickLegacyPeriodicProcessesRepository(
   ): Future[Option[(CanonicalProcess, ProcessVersion)]] =
     fetchingProcessRepository.getCanonicalProcessWithVersion(processName, versionId)(NussknackerInternalUser.instance)
 
-  def fetchInputConfigDuringExecutionJson(processName: ProcessName, versionId: VersionId): Action[Option[String]] =
+  def fetchInputConfigDuringExecutionJson(periodicProcessId: PeriodicProcessId): Action[Option[String]] =
     PeriodicProcessesWithJson
-      .filter(p => p.processName === processName && p.processVersionId === versionId)
+      .filter(p => p.id === periodicProcessId)
       .map(_.inputConfigDuringExecutionJson)
       .result
       .headOption
