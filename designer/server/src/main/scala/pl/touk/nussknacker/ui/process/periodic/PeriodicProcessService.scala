@@ -505,10 +505,7 @@ class PeriodicProcessService(
         )
       }
       inputConfigDuringExecutionJsonOpt <- periodicProcessesRepository
-        .fetchInputConfigDuringExecutionJson(
-          processName,
-          versionId,
-        )
+        .fetchInputConfigDuringExecutionJson(deployment.periodicProcess.id)
         .run
       inputConfigDuringExecutionJson = inputConfigDuringExecutionJsonOpt.getOrElse {
         throw new PeriodicProcessException(
