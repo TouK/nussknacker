@@ -4,10 +4,15 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, WaitingForService}
+import com.github.dockerjava.api.DockerClient
+import com.github.dockerjava.api.model.Container
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.Logger
+import org.slf4j.MarkerFactory.getIMarkerFactory
+import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
+import org.testcontainers.utility.LogUtils
 import pl.touk.nussknacker.test.MiscUtils._
 import pl.touk.nussknacker.test.WithTestHttpClientCreator
 import pl.touk.nussknacker.test.containers.ContainerExt.toContainerExt
@@ -18,7 +23,9 @@ import ujson.Value
 
 import java.io.{File => JFile}
 import java.time.Duration
-import scala.util.Try
+import java.util
+import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
@@ -46,7 +53,15 @@ class DockerBasedInstallationExampleNuEnvironment(
       tailChildContainers = false
     ) {
 
-  start()
+  Try(start()) match {
+    case Failure(ex) =>
+      // There is no way currently to automatically capture logs from containers before all services from the docker
+      // compose started. When one of the services is not healthy, there won't be any logs captured. That's why we do
+      // the capture manually.
+      captureAllContainerLogs()
+      throw ex
+    case Success(()) =>
+  }
 
   private val (dockerBasedInstallationExampleClient, closeHandler) =
     DockerBasedInstallationExampleClient.create(this).allocated.unsafeRunSync()
@@ -56,6 +71,31 @@ class DockerBasedInstallationExampleNuEnvironment(
   override def stop(): Unit = {
     closeHandler.unsafeRunSync()
     super.stop()
+  }
+
+  private def captureAllContainerLogs() = {
+    val dockerClient = DockerClientFactory.lazyClient()
+    getNuDockerComposeContainers(dockerClient).foreach { container =>
+      val logs = LogUtils.getOutput(dockerClient, container.getId)
+      slf4jLogger.info(getIMarkerFactory.getMarker(container.getNames.mkString(",")), logs)
+    }
+  }
+
+  private def getNuDockerComposeContainers(dockerClient: DockerClient) = {
+    dockerClient
+      .listContainersCmd()
+      .exec()
+      .asInstanceOf[util.ArrayList[Container]]
+      .asScala
+      .filter { container =>
+        // dummy method of how to distinguish if the container is Nu docker-compose related container
+        container.labels.asScala.get("com.docker.compose.project.working_dir") match {
+          case Some(value) =>
+            value.contains("nussknacker")
+          case None => false
+        }
+      }
+      .toList
   }
 
 }
@@ -87,7 +127,7 @@ class DockerBasedInstallationExampleClient private (
 
   def deployAndWaitForRunningState(scenarioName: String): Unit = {
     bootstrapSetupService.executeBash(
-      s"""/app/utils/nu/deploy-scenario-and-wait-for-running-state.sh "$scenarioName" """
+      s"""/app/utils/nu/deploy-scenario-and-wait-for-deployed-state.sh "$scenarioName" """
     )
   }
 
