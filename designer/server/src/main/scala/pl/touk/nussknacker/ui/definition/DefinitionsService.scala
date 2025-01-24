@@ -1,41 +1,19 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.FragmentSpecificData
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{
-  ComponentUiConfigMode,
-  createUIParameter,
-  createUIScenarioPropertyConfig
-}
-import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
-import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
-import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.{DesignerModelData, ProcessingTypeData}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.ComponentUiConfigMode
+import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-// This class only combines various views on definitions for the FE. It is executed for each request, when user
-// enters the scenario view. The core domain logic should be done during Model definition extraction
-class DefinitionsService(
-    modelData: ModelData,
-    staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
-    scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-    fragmentRepository: FragmentRepository,
-    fragmentPropertiesDocsUrl: Option[String]
-)(implicit ec: ExecutionContext) {
+trait DefinitionsService {
 
   def prepareUIDefinitions(
       processingType: ProcessingType,
@@ -43,125 +21,11 @@ class DefinitionsService(
       componentUiConfigMode: ComponentUiConfigMode
   )(
       implicit user: LoggedUser
-  ): Future[UIDefinitions] = {
-    fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
-      val alignedComponentsDefinition =
-        alignedComponentsDefinitionProvider
-          .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
-
-      val withStaticDefinition = {
-        val (components, cachedStaticDefinitionsForDynamicComponents) = componentUiConfigMode match {
-          case ComponentUiConfigMode.EnrichedWithUiConfig =>
-            (alignedComponentsDefinition.components, staticDefinitionForDynamicComponents.finalDefinitions)
-          case ComponentUiConfigMode.BasicConfig =>
-            (
-              alignedComponentsDefinition.basicComponentsUnsafe,
-              staticDefinitionForDynamicComponents.basicDefinitionsUnsafe
-            )
-        }
-
-        components.map {
-          case dynamic: DynamicComponentDefinitionWithImplementation =>
-            val staticDefinition = cachedStaticDefinitionsForDynamicComponents.getOrElse(
-              dynamic.id,
-              throw new IllegalStateException(
-                s"Static definition for dynamic component: $dynamic should be precomputed"
-              )
-            )
-            ComponentWithStaticDefinition(dynamic, staticDefinition)
-          case methodBased: MethodBasedComponentDefinitionWithImplementation =>
-            ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
-          case other =>
-            throw new IllegalStateException(s"Unknown component representation: $other")
-        }
-      }
-
-      val finalizedScenarioPropertiesConfig = componentUiConfigMode match {
-        case ComponentUiConfigMode.EnrichedWithUiConfig =>
-          scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
-        case ComponentUiConfigMode.BasicConfig =>
-          scenarioPropertiesConfig
-      }
-
-      import net.ceedubs.ficus.Ficus._
-      val scenarioPropertiesDocsUrl = modelData.modelConfig.getAs[String]("scenarioPropertiesDocsUrl")
-
-      prepareUIDefinitions(
-        withStaticDefinition,
-        forFragment,
-        finalizedScenarioPropertiesConfig,
-        scenarioPropertiesDocsUrl
-      )
-    }
-  }
-
-  private def prepareUIDefinitions(
-      components: List[ComponentWithStaticDefinition],
-      forFragment: Boolean,
-      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      scenarioPropertiesDocsUrl: Option[String]
-  ): UIDefinitions = {
-    UIDefinitions(
-      componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
-      components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
-      classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList
-        .map(_.clazzName)
-        .filter {
-          case t: TypedClass if t.klass.isArray => false
-          case _                                => true
-        }
-        .sortBy(_.display.toLowerCase),
-      scenarioProperties = {
-        if (forFragment) {
-          createUIProperties(FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, fragmentPropertiesDocsUrl)
-        } else {
-          createUIProperties(finalizedScenarioPropertiesConfig, scenarioPropertiesDocsUrl)
-        }
-      },
-      edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
-    )
-  }
-
-  private def createUIProperties(finalizedProperties: Map[String, ScenarioPropertyConfig], docsUrl: Option[String]) = {
-    val transformedProps = finalizedProperties.mapValuesNow(createUIScenarioPropertyConfig)
-    UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = docsUrl)
-  }
-
-  private def createUIComponentDefinition(
-      componentDefinition: ComponentWithStaticDefinition
-  ): UIComponentDefinition = {
-    UIComponentDefinition(
-      parameters = componentDefinition.staticDefinition.parameters.map(createUIParameter),
-      returnType = componentDefinition.staticDefinition.returnType,
-      icon = componentDefinition.component.icon,
-      docsUrl = componentDefinition.component.docsUrl,
-      outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
-        case FragmentSpecificData(outputNames) => outputNames
-      }
-    )
-  }
+  ): Future[UIDefinitions]
 
 }
 
 object DefinitionsService {
-
-  def apply(
-      processingTypeData: ProcessingTypeData,
-      alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
-      scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-      fragmentRepository: FragmentRepository,
-      fragmentPropertiesDocsUrl: Option[String]
-  )(implicit ec: ExecutionContext) =
-    new DefinitionsService(
-      processingTypeData.designerModelData.modelData,
-      processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
-      processingTypeData.deploymentData.scenarioPropertiesConfig,
-      processingTypeData.deploymentData.fragmentPropertiesConfig,
-      alignedComponentsDefinitionProvider,
-      scenarioPropertiesConfigFinalizer,
-      fragmentRepository,
-      fragmentPropertiesDocsUrl
-    )
 
   def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(

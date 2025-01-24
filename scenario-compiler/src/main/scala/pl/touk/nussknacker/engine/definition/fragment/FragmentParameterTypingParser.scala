@@ -9,24 +9,24 @@ import scala.util.Try
 
 class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: Set[ClassDefinition]) {
 
-  private val typingResultCache: Cache[String, Try[TypingResult]] =
-    Caffeine
-      .newBuilder()
-      .maximumSize(2500) // In real-world, large system there are ~150 entries, 2500 should always suffice
-      .build[String, Try[TypingResult]]()
+//  private val typingResultCache: Cache[String, Try[TypingResult]] =
+//    Caffeine
+//      .newBuilder()
+//      .maximumSize(2500) // In real-world, large system there are ~150 entries, 2500 should always suffice
+//      .build[String, Try[TypingResult]]()
+//
+//  def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
+//    Option(typingResultCache.getIfPresent(className)) match {
+//      case Some(found) =>
+//        found
+//      case None =>
+//        val result = doParseClassNameToTypingResult(className)
+//        typingResultCache.put(className, result)
+//        result
+//    }
+//  }
 
   def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
-    Option(typingResultCache.getIfPresent(className)) match {
-      case Some(found) =>
-        found
-      case None =>
-        val result = doParseClassNameToTypingResult(className)
-        typingResultCache.put(className, result)
-        result
-    }
-  }
-
-  private def doParseClassNameToTypingResult(className: String): Try[TypingResult] = {
     /*
    TODO: Write this parser in a way that handles arbitrary depth expressions
          One should not use regexes for doing so and rather build AST

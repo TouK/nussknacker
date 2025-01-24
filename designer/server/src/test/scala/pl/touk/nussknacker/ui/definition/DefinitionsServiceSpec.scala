@@ -304,7 +304,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ProcessingMode.UnboundedStream
     )
 
-    new DefinitionsService(
+    new DefinitionsServiceImpl(
       modelData = model,
       staticDefinitionForDynamicComponents = DynamicComponentsStaticDefinitions(
         finalDefinitions = Map.empty,
