@@ -59,7 +59,7 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
-      retries: 15
+      retries: 10
     volumes:
       - ./designer/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
     volumes_from:
@@ -67,7 +67,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1000M
+          memory: 1024M
 
   postgres:
     image: postgres:13
