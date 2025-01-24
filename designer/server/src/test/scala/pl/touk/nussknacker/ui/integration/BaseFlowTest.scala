@@ -40,8 +40,8 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
+import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -94,34 +94,13 @@ class BaseFlowTest
   }
 
   test("ensure components definition is enriched with components config") {
-    def time[T](block: => T): T = {
-      val before = System.nanoTime
-      val result = block
-      val after  = System.nanoTime
-      println("Elapsed time: " + (after - before) / 1000000 + "ms")
-      result
-    }
-
-    val req = quickRequest
-      .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}?isFragment=false")
-      .auth
-      .basic("admin", "admin")
-
-    time(httpClient.send(req))
-
-    val response = time(httpClient.send(req))
+    val response = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}?isFragment=false")
+        .auth
+        .basic("admin", "admin")
+    )
     response.code shouldEqual StatusCode.Ok
-
-    println(response.body)
-
-    Thread.sleep(5000)
-    time(httpClient.send(req))
-    Thread.sleep(5000)
-    time(httpClient.send(req))
-    Thread.sleep(5000)
-    time(httpClient.send(req))
-
-    time(httpClient.send(req))
 
     val componentsResultJson = response.extractFieldJsonValue("components").asObject.value.toMap
 

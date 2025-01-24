@@ -90,6 +90,7 @@ import pl.touk.nussknacker.ui.statistics.{
 }
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.util.AutoRefreshableCache.AutoRefreshableCacheConfig
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui.validation.{
   NodeValidator,
@@ -176,8 +177,7 @@ class AkkaHttpBasedRouteProvider(
       uiDefinitionsAutoRefreshableCache <- AutoRefreshableCache
         .create[IO, (ProcessingType, Boolean, ComponentUiConfigMode), UIDefinitions](
           actorSystem = system,
-          refreshInterval = 5 seconds,
-          autoRefreshDuration = 15 seconds,
+          config = AutoRefreshableCacheConfig.parse(resolvedDesignerConfig, "uiDefinitionsCache"),
         )
     } yield {
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)

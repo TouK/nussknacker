@@ -36,8 +36,6 @@ class AutoRefreshableCache[KEY, VALUE](
     .expireAfterWrite(java.time.Duration.ofMillis(2 * config.autoRefreshInterval.toMillis))
     .build[KEY, (VALUE, VALUE_CREATOR)]()
 
-  // Once a key is put into cache, its corresponding value will be refreshed with refreshInterval.
-  // It will happen for the duration of autoRefreshDuration since the last invocation of this method.
   def getIfPresentOrPut(key: KEY, updater: () => Future[VALUE]): Future[VALUE] = {
     keysToRefresh.put(key, ())
     Option(cache.getIfPresent(key)) match {
