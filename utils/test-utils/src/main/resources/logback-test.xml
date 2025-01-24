@@ -18,7 +18,7 @@
     </root>
 
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
-    <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-DEBUG}"/>
+    <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.JdbcBackend.statement" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.JdbcBackend.parameter" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.StatementInvoker.result" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
@@ -73,6 +73,7 @@
     <!-- skuber by default logs all requests to k8s on INFO -->
     <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
     <logger name="com.azure" level="INFO"/>
+    <!-- these loggers are useful to diagnose docker tests -->
     <logger name="org.testcontainers" level="DEBUG"/>
     <logger name="tc" level="DEBUG"/>
 
