@@ -38,7 +38,7 @@ object AdHocMiniClusterFallbackHandler extends LazyLogging {
       .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
       .parallelism
       .getOrElse(1)
-    ScenarioTestingMiniClusterWrapper.create(scenarioParallelism, new Configuration())
+    ScenarioTestingMiniClusterWrapper.create(scenarioParallelism, new Configuration(), new Configuration())
   }
 
 }

@@ -12,7 +12,7 @@ object ScenarioTestingMiniClusterWrapperFactory {
   // Other option would be to add flinkExecutor.jar to classpath from which Flink DM is loaded
   def createIfConfigured(modelClassLoader: ModelClassLoader, config: ScenarioTestingConfig): Option[AutoCloseable] = {
     if (config.reuseMiniClusterForScenarioTesting || config.reuseMiniClusterForScenarioStateVerification) {
-      Some(create(modelClassLoader, config.parallelism, config.streamExecutionConfig))
+      Some(create(modelClassLoader, config.parallelism, config.miniClusterConfig, config.streamExecutionConfig))
     } else {
       None
     }
@@ -21,6 +21,7 @@ object ScenarioTestingMiniClusterWrapperFactory {
   private[nussknacker] def create(
       modelClassLoader: ModelClassLoader,
       parallelism: Int,
+      miniClusterConfig: Configuration,
       streamExecutionConfig: Configuration
   ): AutoCloseable = {
     val methodInvoker = new ReflectiveMethodInvoker[AutoCloseable](
@@ -28,7 +29,7 @@ object ScenarioTestingMiniClusterWrapperFactory {
       "pl.touk.nussknacker.engine.process.scenariotesting.ScenarioTestingMiniClusterWrapper",
       "create"
     )
-    methodInvoker.invokeStaticMethod(parallelism, streamExecutionConfig)
+    methodInvoker.invokeStaticMethod(parallelism, miniClusterConfig, streamExecutionConfig)
   }
 
 }

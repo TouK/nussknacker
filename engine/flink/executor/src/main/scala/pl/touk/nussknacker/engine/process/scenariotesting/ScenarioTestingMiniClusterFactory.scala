@@ -6,23 +6,17 @@ import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfigurati
 
 object ScenarioTestingMiniClusterFactory {
 
-  def createConfiguredMiniCluster(numTaskSlots: Int): MiniCluster = {
-    val miniClusterConfiguration = prepareMiniClusterConfiguration(numTaskSlots = numTaskSlots)
+  def createConfiguredMiniCluster(numTaskSlots: Int, miniClusterConfig: Configuration): MiniCluster = {
+    adjustConfiguration(miniClusterConfig, numTaskSlots = numTaskSlots)
 
     // it is required for proper working of HadoopFileSystem
-    FileSystem.initialize(miniClusterConfiguration, null)
+    FileSystem.initialize(miniClusterConfig, null)
 
-    createMiniCluster(miniClusterConfiguration, numSlotsPerTaskManager = numTaskSlots)
+    createMiniCluster(miniClusterConfig, numSlotsPerTaskManager = numTaskSlots)
   }
 
-  private def prepareMiniClusterConfiguration(numTaskSlots: Int) = {
-    val configuration: Configuration = new Configuration
+  private def adjustConfiguration(configuration: Configuration, numTaskSlots: Int): Unit = {
     configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, numTaskSlots)
-    configuration.set[Integer](RestOptions.PORT, 0)
-
-    // FIXME: reversing flink default order
-    configuration.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
-    configuration
   }
 
   private def createMiniCluster(configuration: Configuration, numSlotsPerTaskManager: Int) = {

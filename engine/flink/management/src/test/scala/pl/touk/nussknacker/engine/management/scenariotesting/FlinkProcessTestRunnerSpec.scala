@@ -34,6 +34,7 @@ import pl.touk.nussknacker.engine.flink.test.{
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.management.ScenarioTestingConfig
 import pl.touk.nussknacker.engine.management.scenariotesting.FlinkProcessTestRunnerSpec.{
   fragmentWithValidationName,
   processWithFragmentParameterValidation
@@ -76,6 +77,7 @@ class FlinkProcessTestRunnerSpec
   private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
     modelClassLoader,
     parallelism = 1,
+    miniClusterConfig = ScenarioTestingConfig.defaultMiniClusterConfig,
     streamExecutionConfig = new Configuration
   )
 

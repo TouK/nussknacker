@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleV
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.management.ScenarioTestingConfig
 import pl.touk.nussknacker.engine.management.scenariotesting.{
   FlinkProcessTestRunner,
   ScenarioTestingMiniClusterWrapperFactory
@@ -88,6 +89,7 @@ class SchemedKafkaScenarioTestingSpec
   private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
     modelData.modelClassLoader,
     parallelism = 1,
+    miniClusterConfig = ScenarioTestingConfig.defaultMiniClusterConfig,
     streamExecutionConfig = new Configuration
   )
 

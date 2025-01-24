@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
+import pl.touk.nussknacker.engine.management.ScenarioTestingConfig
 import pl.touk.nussknacker.engine.management.scenariotesting.{
   FlinkProcessTestRunner,
   ScenarioTestingMiniClusterWrapperFactory
@@ -67,6 +68,7 @@ class KafkaScenarioTestingSpec
   private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
     modelData.modelClassLoader,
     parallelism = 1,
+    miniClusterConfig = ScenarioTestingConfig.defaultMiniClusterConfig,
     streamExecutionConfig = new Configuration
   )
 

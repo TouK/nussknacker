@@ -70,9 +70,13 @@ final class ScenarioTestingMiniClusterWrapper(
 
 object ScenarioTestingMiniClusterWrapper extends LazyLogging {
 
-  def create(parallelism: Int, streamExecutionConfig: Configuration): ScenarioTestingMiniClusterWrapper = {
+  def create(
+      parallelism: Int,
+      miniClusterConfig: Configuration,
+      streamExecutionConfig: Configuration
+  ): ScenarioTestingMiniClusterWrapper = {
     logger.debug(s"Creating MiniCluster with numTaskSlots = $parallelism")
-    val miniCluster = ScenarioTestingMiniClusterFactory.createConfiguredMiniCluster(parallelism)
+    val miniCluster = ScenarioTestingMiniClusterFactory.createConfiguredMiniCluster(parallelism, miniClusterConfig)
     logger.debug(
       s"Creating local StreamExecutionEnvironment with parallelism = $parallelism and configuration = $streamExecutionConfig"
     )
