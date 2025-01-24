@@ -127,7 +127,7 @@ class DockerBasedInstallationExampleClient private (
 
   def deployAndWaitForRunningState(scenarioName: String): Unit = {
     bootstrapSetupService.executeBash(
-      s"""/app/utils/nu/deploy-scenario-and-wait-for-running-state.sh "$scenarioName" """
+      s"""/app/utils/nu/deploy-scenario-and-wait-for-deployed-state.sh "$scenarioName" """
     )
   }
 
