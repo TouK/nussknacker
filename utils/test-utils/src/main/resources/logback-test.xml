@@ -13,7 +13,7 @@
         </encoder>
     </appender>
 
-    <root level="DEBUG">
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
 
@@ -66,6 +66,10 @@
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
     <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>
+    <!-- it generates a lot of logs on DEBUG during test containers usage -->
+    <logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http" level="INFO"/>
+    <logger name="org.testcontainers.shaded.com.github.dockerjava.core.exec" level="INFO"/>
+    <logger name="org.testcontainers.shaded.com.github.dockerjava.core.command" level="INFO"/>
     <!-- skuber by default logs all requests to k8s on INFO -->
     <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
     <logger name="com.azure" level="INFO"/>
