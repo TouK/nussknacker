@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.configuration.{Configuration, CoreOptions, RestOptions}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
@@ -38,7 +38,11 @@ object AdHocMiniClusterFallbackHandler extends LazyLogging {
       .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
       .parallelism
       .getOrElse(1)
-    ScenarioTestingMiniClusterWrapper.create(scenarioParallelism, new Configuration(), new Configuration())
+    val legacyMiniClusterConfig = new Configuration
+    legacyMiniClusterConfig.set[Integer](RestOptions.PORT, 0)
+    // FIXME: reversing flink default order
+    legacyMiniClusterConfig.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+    ScenarioTestingMiniClusterWrapper.create(scenarioParallelism, legacyMiniClusterConfig, new Configuration())
   }
 
 }
