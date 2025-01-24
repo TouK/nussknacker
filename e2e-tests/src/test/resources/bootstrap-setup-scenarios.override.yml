@@ -1,13 +1,5 @@
 services:
 
-  designer:
-    environment:
-      JDK_JAVA_OPTIONS: "-Xmx2048M"
-    deploy:
-      resources:
-        limits:
-          memory: 2048M
-
   bootstrap-setup:
     volumes:
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
