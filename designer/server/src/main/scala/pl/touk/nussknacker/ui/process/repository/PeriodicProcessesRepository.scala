@@ -157,8 +157,7 @@ trait PeriodicProcessesRepository {
   ): Action[PeriodicProcessDeployment]
 
   def fetchInputConfigDuringExecutionJson(
-      processName: ProcessName,
-      versionId: VersionId
+      periodicProcessId: PeriodicProcessId,
   ): Action[Option[String]]
 
   def fetchCanonicalProcessWithVersion(
@@ -496,9 +495,9 @@ class SlickPeriodicProcessesRepository(
     update.map(_ => ())
   }
 
-  def fetchInputConfigDuringExecutionJson(processName: ProcessName, versionId: VersionId): Action[Option[String]] =
+  def fetchInputConfigDuringExecutionJson(periodicProcessId: PeriodicProcessId): Action[Option[String]] =
     PeriodicProcessesWithInputConfig
-      .filter(p => p.processName === processName && p.processVersionId === versionId)
+      .filter(p => p.id === periodicProcessId)
       .map(_.inputConfigDuringExecutionJson)
       .result
       .headOption
