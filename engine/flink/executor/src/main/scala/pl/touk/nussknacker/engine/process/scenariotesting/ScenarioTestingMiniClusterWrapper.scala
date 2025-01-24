@@ -17,8 +17,7 @@ import scala.jdk.CollectionConverters._
 final class ScenarioTestingMiniClusterWrapper(
     miniCluster: MiniCluster,
     val env: StreamExecutionEnvironment,
-    parallelism: Int,
-    streamExecutionConfig: Configuration
+    parallelism: Int
 ) extends AutoCloseable {
 
   def alignParallelism(canonicalProcess: CanonicalProcess): CanonicalProcess = {
@@ -60,8 +59,6 @@ final class ScenarioTestingMiniClusterWrapper(
   ): Unit = {
     jobGraph.setClasspaths(modelClassLoader.urls.asJava)
     jobGraph.setSavepointRestoreSettings(savepointRestoreSettings)
-    // FIXME abr: Is it needed?
-    jobGraph.getJobConfiguration.addAll(streamExecutionConfig)
   }
 
   def close(): Unit = {
@@ -83,7 +80,7 @@ object ScenarioTestingMiniClusterWrapper extends LazyLogging {
       parallelism,
       streamExecutionConfig
     )
-    new ScenarioTestingMiniClusterWrapper(miniCluster, env, parallelism, streamExecutionConfig)
+    new ScenarioTestingMiniClusterWrapper(miniCluster, env, parallelism)
   }
 
 }
