@@ -5,10 +5,15 @@ sidebar_position: 2
 
 # Scenario Deployment configuration
 
-Deployment of a scenario onto the [Engine](../about/engines/Engines.md) is managed by the Designer's extension called [Deployment Manager](../about/GLOSSARY.md#deployment-manager).
-To enable a given [Deployment Manager](../about/GLOSSARY.md#deployment-manager) its jar package has to be placed in the Designer's classpath. Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY.md#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers` directory. 
+Deployment of a scenario onto the [Engine](../about/engines/Engines.md) is managed by the Designer's extension
+called [Deployment Manager](../about/GLOSSARY.md#deployment-manager).
+To enable a given [Deployment Manager](../about/GLOSSARY.md#deployment-manager) its jar package has to be placed in the
+Designer's classpath. Nussknacker is distributed with three
+default [Deployment Managers](../about/GLOSSARY.md#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`).
+Their jars are located in the `managers` directory.
 
-Deployment specific configuration is provided in the `deploymentConfig` section of the configuration file - check [configuration areas](./index.mdx#configuration-areas) to understand the structure of the configuration file.
+Deployment specific configuration is provided in the `deploymentConfig` section of the configuration file -
+check [configuration areas](./index.mdx#configuration-areas) to understand the structure of the configuration file.
 
 Below is a snippet of scenario deployment configuration.
 
@@ -23,22 +28,32 @@ deploymentConfig {
 ```
 
 Parameters:
-- `type` parameter determines the type of the [Deployment Manager](../about/GLOSSARY.md#deployment-manager). Possible options are: `flinkStreaming`, `lite-k8s`, `lite-embedded`
-- `engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified, default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).   
+
+- `type` parameter determines the type of the [Deployment Manager](../about/GLOSSARY.md#deployment-manager). Possible
+  options are: `flinkStreaming`, `lite-k8s`, `lite-embedded`
+- `engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified,
+  default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).
 
 ## Kubernetes native Lite engine configuration
 
-Please check high level [Lite engine description](../about/engines/LiteArchitecture.md#scenario-deployment) before proceeding to configuration details.
+Please check high level [Lite engine description](../about/engines/LiteArchitecture.md#scenario-deployment) before
+proceeding to configuration details.
 
-Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you have to configure `.kube/config` properly.
+Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
+in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you
+have to configure `.kube/config` properly.
 
 Except the `servicePort` configuration option, all remaining configuration options apply to
 both `streaming` and `request-response` processing modes.
 
-The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm values override mechanism to supply your own values for these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result of the Helm template rendering "classic" Nussknacker configuration file will be generated.
+The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm
+values override mechanism to supply your own values for
+these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result
+of the Helm template rendering "classic" Nussknacker configuration file will be generated.
 
 &nbsp;
-If you install Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration.
+If you install Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig`
+key as any other Nussknacker non K8s configuration.
 
 | Parameter                                            | Type                      | Default value                     | Description                                                                              |
 |------------------------------------------------------|---------------------------|-----------------------------------|------------------------------------------------------------------------------------------|
@@ -204,7 +219,9 @@ fixedReplicasCount configuration key; its default value is 2:
 
 `{ fixedReplicasCount: x }`.
 
-​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the minimal number of tasks used to process events. The count of replicas, scenario parallelism and number of tasks per replica are connected with a simple formula:
+​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the
+minimal number of tasks used to process events. The count of replicas, scenario parallelism and number of tasks per
+replica are connected with a simple formula:
 
 *scenarioParallelism = replicasCount \* tasksPerReplica*
 
@@ -258,6 +275,7 @@ It can be configured with following options.
 #### Configuring custom ingress class
 
 By default, ingress resource will be created without any ingress class. If you want to use different class, you can set
+
 ```hocon
 ingress {
   enabled: true,
@@ -285,7 +303,7 @@ Deployment Manager of type `lite-embedded` has the following configuration optio
 
 | Parameter                                                 | Type   | Default value   | Description                                                                                                                                              |
 |-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| mode                                                      | string |                 | Processing mode: either  streaming-lite or request-response                                                                                                                     |
+| mode                                                      | string |                 | Processing mode: either  streaming-lite or request-response                                                                                              |
 | http.interface                                            | string | 0.0.0.0         | (Request-Response only) Interface on which REST API of scenarios will be exposed                                                                         |
 | http.port                                                 | int    | 8181            | (Request-Response only) Port on which REST API of scenarios will be exposed                                                                              | 
 | request-response.definitionMetadata.servers               | string | [{"url": "./"}] | (Request-Response only) Configuration of exposed servers in scenario's OpenAPI definition. When not configured, will be used server with ./ relative url | 
@@ -298,16 +316,21 @@ Deployment Manager of type `lite-embedded` has the following configuration optio
 
 Deployment Manager of type `flinkStreaming` has the following configuration options:
 
-| Parameter                           | Type     | Default value | Description                                                                                                                                                                                                                                |
-|-------------------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| restUrl                             | string   |               | The only required parameter, REST API endpoint of the Flink cluster                                                                                                                                                                        |
-| jobManagerTimeout                   | duration | 1 minute      | Timeout for communication with FLink cluster. Consider extending if e.g. you have long savepoint times etc.                                                                                                                                |
-| shouldVerifyBeforeDeploy            | boolean  | true          | By default, before redeployment of scenario with state from savepoint, verification of savepoint compatibility is performed. There are some cases when it can be too time consuming or not possible. Use this flag to disable it.          |
-| shouldCheckAvailableSlots           | boolean  | true          | When set to true, Nussknacker checks if there are free slots to run new job. This check should be disabled on Flink Kubernetes Native deployments, where Taskmanager is started on demand.                                                 |
-| waitForDuringDeployFinish.enabled   | boolean  | true          | When set to true, after Flink job execution, we check if tasks were successfully started on TaskMangers, before marking version as deployed. Otherwise version is marked as deployed immediately after successful response from JobManager. |
-| waitForDuringDeployFinish.maxChecks | boolean  | 180           | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how many times we should check if tasks were successfully started on TaskMangers before notifying about deployment failure.             |
-| waitForDuringDeployFinish.delay     | boolean  | 1 second      | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how long should be delay between checks.                                                                                                |
-| scenarioStateCaching.enabled        | boolean  | true          | Enables scenario state caching in scenario list view                                                                                                                                                                                       |
-| scenarioStateCaching.cacheTTL       | duration | 10 seconds    | TimeToLeave for scenario state cache entries                                                                                                                                                                                               |
-| scenarioStateRequestTimeout         | duration | 3 seconds     | Request timeout for fetching scenario state from Flink                                                                                                                                                                                     |
-| jobConfigsCacheSize                 | int      | 1000          | Maximum number of cached job configuration elements.                                                                                                                                                                                       |
+| Parameter                                                    | Type           | Default value | Description                                                                                                                                                                                                                                      |
+|--------------------------------------------------------------|----------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| restUrl                                                      | string         |               | The only required parameter, REST API endpoint of the Flink cluster                                                                                                                                                                              |
+| jobManagerTimeout                                            | duration       | 1 minute      | Timeout for communication with FLink cluster. Consider extending if e.g. you have long savepoint times etc.                                                                                                                                      |
+| shouldVerifyBeforeDeploy                                     | boolean        | true          | By default, before redeployment of scenario with state from savepoint, verification of savepoint compatibility is performed. There are some cases when it can be too time consuming or not possible. Use this flag to disable it.                |
+| shouldCheckAvailableSlots                                    | boolean        | true          | When set to true, Nussknacker checks if there are free slots to run new job. This check should be disabled on Flink Kubernetes Native deployments, where Taskmanager is started on demand.                                                       |
+| waitForDuringDeployFinish.enabled                            | boolean        | true          | When set to true, after Flink job execution, we check if tasks were successfully started on TaskMangers, before marking version as deployed. Otherwise version is marked as deployed immediately after successful response from JobManager.      |
+| waitForDuringDeployFinish.maxChecks                          | boolean        | 180           | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how many times we should check if tasks were successfully started on TaskMangers before notifying about deployment failure.                   |
+| waitForDuringDeployFinish.delay                              | boolean        | 1 second      | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how long should be delay between checks.                                                                                                      |
+| scenarioStateCaching.enabled                                 | boolean        | true          | Enables scenario state caching in scenario list view                                                                                                                                                                                             |
+| scenarioStateCaching.cacheTTL                                | duration       | 10 seconds    | TimeToLeave for scenario state cache entries                                                                                                                                                                                                     |
+| scenarioStateRequestTimeout                                  | duration       | 3 seconds     | Request timeout for fetching scenario state from Flink                                                                                                                                                                                           |
+| jobConfigsCacheSize                                          | int            | 1000          | Maximum number of cached job configuration elements.                                                                                                                                                                                             |
+| scenarioTesting.reuseMiniClusterForScenarioTesting           | boolean        | true          | Creates mini cluster once and reuses it for each scenario testing attempt                                                                                                                                                                        |
+| scenarioTesting.reuseMiniClusterForScenarioStateVerification | boolean        | true          | Creates mini cluster once and reuses it for each scenario state verification                                                                                                                                                                     |
+| scenarioTesting.parallelism                                  | int            | 1             | Parallelism that will be used for scenario testing and scenario state verifications mechanisms when mini cluster reusage is enabled; when mini cluster reusage is disabled, parallelism is taken from scenario properties                        |
+| scenarioTesting.miniClusterConfig                            | map of strings | [:]           | Configuration that will be passed to `MiniCluster` for scenario testing and scenario state verifications mechanisms when mini cluster reusage is enabled; when mini cluster reusage is disabled, empty configuration will be used                |
+| scenarioTesting.streamExecutionConfig                        | map of strings | [:]           | Configuration that will be passed to `StreamExecutionEnvironment` for scenario testing and scenario state verifications mechanisms when mini cluster reusage is enabled; when mini cluster reusage is disabled, empty configuration will be used |

@@ -69,7 +69,6 @@ jobs:
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi
 
-
   build:
     name: Build
     runs-on: ubuntu-latest

@@ -29,4 +29,3 @@ object DeploymentManagersClassLoader extends LazyLogging {
 }
 
 class DeploymentManagersClassLoader private (urls: Seq[URL], parent: ClassLoader) extends URLClassLoader(urls, parent)
-
