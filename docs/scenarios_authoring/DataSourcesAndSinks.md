@@ -96,8 +96,8 @@ should be used for that.
 
 ![Kafka source](img/kafkaSource.png "Kafka source")
 
-&nbsp;
-### Kafka sink
+_&nbsp;
+### Kafka sink_
 
 The `kafka` sink configuration form will show a list of fields defined in Schema Registry for the given topic. 
 The result of the expression entered in the `Key` field will be used as a partitioning key when sending the 
@@ -184,16 +184,16 @@ Holds event in the node until
 The `key` parameter will be removed in the future release of Nussknacker, for the time being, configure it to `#inputMeta.key`.
 
 &nbsp;
-### Sample generator
+### Event generator
 
 **(Flink engine only)**
 
-![sample_generator_window](img/sample-generator.png)
+![event_generator_window](img/event-generator.png)
 
 This source provides functionality of sending a number of given events in a periodic way. It's mainly used for testing.
 
 This source has the following parameters:
-- period - specifies how often events will be sent
+- schedule - specifies how often events will be sent
 - count - specifies number of event that will be sent every `period`
 - value - specifies data that event will hold
 
