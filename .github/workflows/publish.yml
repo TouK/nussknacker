@@ -6,11 +6,15 @@ on:
         description: "Indicates if the job should be run"
         required: true
         type: boolean
-    secrets:
       nussknacker_version:
+        description: "Version that will be published"
         required: true
+        type: string
       git_source_branch:
+        description: "Source branch"
         required: true
+        type: string
+    secrets:
       sonatype_user:
         required: true
       sonatype_password:
@@ -29,8 +33,8 @@ jobs:
     env:
       nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
       addDevArtifacts: true
-      NUSSKNACKER_VERSION: ${{ secrets.nussknacker_version }}
-      GIT_SOURCE_BRANCH: ${{ secrets.git_source_branch }}
+      NUSSKNACKER_VERSION: ${{ inputs.nussknacker_version }}
+      GIT_SOURCE_BRANCH: ${{ inputs.git_source_branch }}
       SONATYPE_USERNAME: ${{ secrets.sonatype_user }}
       SONATYPE_PASSWORD: ${{ secrets.sonatype_password }}
     steps:
