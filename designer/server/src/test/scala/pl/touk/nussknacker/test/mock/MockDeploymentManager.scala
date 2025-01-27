@@ -17,6 +17,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+import pl.touk.nussknacker.engine.management.{
+  FlinkDeploymentManager,
+  FlinkStreamingDeploymentManagerProvider,
+  ScenarioTestingConfig
+}
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
@@ -84,7 +89,8 @@ class MockDeploymentManager private (
         SttpBackendStub.asynchronousFuture
       ),
       shouldVerifyBeforeDeploy = false,
-      mainClassName = "UNUSED"
+      mainClassName = "UNUSED",
+      scenarioTestingConfig = ScenarioTestingConfig()
     ) {
 
   import MockDeploymentManager._

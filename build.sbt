@@ -629,7 +629,9 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     componentsApi        % Provided,
     httpUtils            % Provided,
     flinkScalaUtils      % Provided,
-    flinkTestUtils       % IntegrationTest,
+    // test->test dependency is needed to load SimpleProcessConfigCreator
+    flinkExecutor        % "test,test->test",
+    flinkTestUtils       % "it,test",
     kafkaTestUtils       % "it,test"
   )
 
@@ -708,18 +710,22 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel                 % Test,
-    flinkExecutor                % Test,
-    flinkKafkaComponents         % Test,
-    flinkBaseComponents          % Test,
-    flinkBaseUnboundedComponents % Test,
-    flinkTableApiComponents      % Test,
-    flinkTestUtils               % Test,
-    kafkaTestUtils               % Test,
-    flinkComponentsTestkit       % Test,
+    defaultModel                     % Test,
+    flinkExecutor                    % Test,
+    flinkKafkaComponents             % Test,
+    flinkBaseComponents              % Test,
+    flinkBaseUnboundedComponents     % Test,
+    flinkTableApiComponents          % Test,
+    flinkTestUtils                   % Test,
+    kafkaTestUtils                   % Test,
+    flinkComponentsTestkit           % Test,
+    flinkDeploymentManager           % Test,
+    // test->test dependencies are needed to load components from these modules
+    flinkKafkaComponentsUtils        % "test->test",
+    flinkSchemedKafkaComponentsUtils % "test->test",
     // for local development
-    designer                     % Test,
-    deploymentManagerApi         % Test
+    designer                         % Test,
+    deploymentManagerApi             % Test
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
@@ -963,7 +969,7 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     componentsUtils             % Provided,
     kafkaTestUtils              % Test,
     flinkTestUtils              % Test,
-    flinkExecutor               % Test
+    flinkExecutor               % Test,
   )
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils"))
