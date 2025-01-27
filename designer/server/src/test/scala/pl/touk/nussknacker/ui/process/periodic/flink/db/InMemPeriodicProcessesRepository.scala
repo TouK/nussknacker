@@ -356,7 +356,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def fetchInputConfigDuringExecutionJson(
       periodicProcessId: PeriodicProcessId,
   ): Future[Option[String]] =
-    Future.successful(Some("{}"))
+    Future.successful(Some(""))
 
 }
 
