@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.periodic.legacy.db
 
 import cats.Monad
+import cats.data.OptionT
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -415,10 +416,29 @@ class SlickLegacyPeriodicProcessesRepository(
   }
 
   override def fetchCanonicalProcessWithVersion(
+      periodicProcessId: PeriodicProcessId,
       processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[(CanonicalProcess, ProcessVersion)]] =
-    fetchingProcessRepository.getCanonicalProcessWithVersion(processName, versionId)(NussknackerInternalUser.instance)
+  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = (for {
+    // fixme: We should fetch CanonicalProcess from the main Nu db, not from the legacy table.
+    //        But it seems, that the process graph is different in legacy table and in main Nu database.
+    //        Until this issue is solved, we use the CanonicalProcess representation from legacy table.
+    canonicalProcessFromLegacyTable <- OptionT(
+      PeriodicProcessesWithJson
+        .filter(p => p.id === periodicProcessId)
+        .result
+        .headOption
+        .map(_.map(_.processJson))
+        .run
+    )
+    canonicalProcessWithProcessVersion <- OptionT(
+      fetchingProcessRepository
+        .getCanonicalProcessWithVersion(
+          processName,
+          versionId
+        )(NussknackerInternalUser.instance)
+    )
+  } yield (canonicalProcessFromLegacyTable, canonicalProcessWithProcessVersion._2)).value
 
   def fetchInputConfigDuringExecutionJson(periodicProcessId: PeriodicProcessId): Action[Option[String]] =
     PeriodicProcessesWithJson
@@ -464,6 +484,7 @@ class SlickLegacyPeriodicProcessesRepository(
   private def scheduleDeploymentData(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
+      deployment.periodicProcessId,
       deployment.createdAt,
       deployment.runAt,
       deployment.deployedAt,
