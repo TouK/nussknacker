@@ -1,26 +1,31 @@
-package pl.touk.nussknacker.engine.schemedkafka.source.flink
+package pl.touk.nussknacker.scenariotesting.schemedkafka
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json._
 import org.apache.avro.Schema
+import org.apache.flink.configuration.Configuration
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.management.ScenarioTestingConfig
+import pl.touk.nussknacker.engine.management.scenariotesting.{
+  FlinkProcessTestRunner,
+  ScenarioTestingMiniClusterWrapperFactory
+}
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
-import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
@@ -31,31 +36,32 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
-import pl.touk.nussknacker.engine.schemedkafka.source.flink.TestWithTestDataSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
+import pl.touk.nussknacker.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
 import java.util.Collections
 
-class TestWithTestDataSpec
+class SchemedKafkaScenarioTestingSpec
     extends AnyFunSuite
     with Matchers
     with LazyLogging
     with EitherValuesDetailedMessage
     with OptionValues
-    with LoneElement {
+    with LoneElement
+    with BeforeAndAfterAll {
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator =
+  private val creator: KafkaAvroTestProcessConfigCreator =
     new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
       override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
         MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
     }
 
-  private lazy val config = ConfigFactory
+  private val config = ConfigFactory
     .empty()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue(
@@ -64,6 +70,37 @@ class TestWithTestDataSpec
     )
     .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
+
+  private val (deploymentManagersClassLoaderInstance, releaseDeploymentManagersClassLoaderResources) =
+    DeploymentManagersClassLoader
+      .create(List.empty)
+      .allocated
+      .unsafeRunSync()
+
+  private val modelData =
+    LocalModelData(
+      config,
+      List.empty,
+      configCreator = creator,
+      modelClassLoader =
+        ModelClassLoader(FlinkTestConfiguration.classpathWorkaround, None, deploymentManagersClassLoaderInstance)
+    )
+
+  private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
+    modelData.modelClassLoader,
+    parallelism = 1,
+    miniClusterConfig = ScenarioTestingConfig.defaultMiniClusterConfig,
+    streamExecutionConfig = new Configuration
+  )
+
+  private val testRunner =
+    new FlinkProcessTestRunner(modelData, Some(scenarioTestingMiniClusterWrapper))
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    scenarioTestingMiniClusterWrapper.close()
+    releaseDeploymentManagersClassLoaderResources.unsafeRunSync()
+  }
 
   test("Should pass correct timestamp from test data") {
     val topic             = UnspecializedTopicName("address")
@@ -111,7 +148,7 @@ class TestWithTestDataSpec
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
     val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
 
-    val results = run(process, scenarioTestData)
+    val results = testRunner.runTests(process, scenarioTestData)
 
     val testResultVars = results.nodeResults("end").head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
@@ -143,7 +180,7 @@ class TestWithTestDataSpec
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
-    val results = run(process, scenarioTestData)
+    val results = testRunner.runTests(process, scenarioTestData)
     results
       .invocationResults("end")
       .head
@@ -165,7 +202,7 @@ class TestWithTestDataSpec
       ParameterName("in") -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
-    val results          = run(fragment, scenarioTestData)
+    val results          = testRunner.runTests(fragment, scenarioTestData)
 
     results.nodeResults("fragment1").loneElement shouldBe ResultContext(
       "fragment1-fragment1-0-0",
@@ -197,20 +234,9 @@ class TestWithTestDataSpec
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
 
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(
-        LocalModelData(config, List.empty, configCreator = creator),
-        process,
-        scenarioTestData,
-        FlinkTestConfiguration.configuration(),
-      )
-    }
-  }
-
 }
 
-object TestWithTestDataSpec {
+object SchemedKafkaScenarioTestingSpec {
 
   private val sinkForInputMetaResultsHolder = new TestResultsHolder[java.util.Map[String @unchecked, _]]
 

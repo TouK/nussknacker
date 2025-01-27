@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import java.lang.reflect.InvocationTargetException
 
-abstract class StaticMethodRunner(classLoader: ClassLoader, className: String, methodName: String) {
+final class ReflectiveMethodInvoker[Result](classLoader: ClassLoader, className: String, methodName: String) {
 
   import scala.reflect.runtime.{universe => ru}
 
@@ -17,9 +17,9 @@ abstract class StaticMethodRunner(classLoader: ClassLoader, className: String, m
   }
 
   // we have to use context loader, as in UI we have don't have e.g. nussknacker-process or user model on classpath...
-  def tryToInvoke(args: Any*): Any = ThreadUtils.withThisAsContextClassLoader(classLoader) {
+  def invokeStaticMethod(args: Any*): Result = ThreadUtils.withThisAsContextClassLoader(classLoader) {
     try {
-      invoker(args: _*)
+      invoker(args: _*).asInstanceOf[Result]
     } catch {
       case e: InvocationTargetException => throw e.getTargetException
     }

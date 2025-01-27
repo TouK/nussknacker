@@ -4,7 +4,14 @@ services:
     environment:
       CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf,/opt/nussknacker/conf/batch-customizations.conf"
       TABLES_DEFINITION_FILE: "/opt/nussknacker/conf/tables-definition.sql"
+      # Batch adds 2 new processing types, each of them add MiniCluster for scenario testing purpose. Also batch components itself use MiniCluster.
+      # It increases memory footprint significantly
+      JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=500M -XX:MaxDirectMemorySize=200M"
     volumes:
       - ../../e2e-tests/src/test/resources/batch-data-generation/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
       - ../../e2e-tests/src/test/resources/batch-data-generation/transactions:/transactions
       - ../../e2e-tests/src/test/resources/batch-data-generation/tables-definition.sql:/opt/nussknacker/conf/tables-definition.sql
+    deploy:
+      resources:
+        limits:
+          memory: 1300M

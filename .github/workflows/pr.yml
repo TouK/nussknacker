@@ -69,7 +69,6 @@ jobs:
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi
 
-
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -528,9 +527,9 @@ jobs:
     uses: ./.github/workflows/publish.yml
     with:
       should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    secrets:
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
+    secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
       github__token: ${{ secrets.GITHUB_TOKEN }}
@@ -542,10 +541,10 @@ jobs:
     needs: ['build', 'build-fe', 'setup']
     uses: ./.github/workflows/publish.yml
     with:
-      should_run: ${{ github.ref == 'refs/heads/staging' }}
-    secrets:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
+      should_run: ${{ github.ref == 'refs/heads/staging' }}
+    secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
       github__token: ${{ secrets.GITHUB_TOKEN }}

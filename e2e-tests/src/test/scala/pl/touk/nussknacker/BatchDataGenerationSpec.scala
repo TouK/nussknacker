@@ -27,8 +27,9 @@ class BatchDataGenerationSpec
 
   private val designerServiceUrl = "http://localhost:8080"
 
-  private val liveDataGenScenarioName   = "SumTransactions-LiveData"
-  private val randomDataGenScenarioName = "SumTransactions-RandomData"
+  private val timeBasedRandomSuffix     = System.currentTimeMillis()
+  private val liveDataGenScenarioName   = s"SumTransactions-LiveData-$timeBasedRandomSuffix"
+  private val randomDataGenScenarioName = s"SumTransactions-RandomData-$timeBasedRandomSuffix"
 
   override def beforeAll(): Unit = {
     createEmptyBatchScenario(liveDataGenScenarioName, "Default")
@@ -106,7 +107,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
-           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "id": "$liveDataGenScenarioName-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -122,7 +123,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
-           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "id": "$liveDataGenScenarioName-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -183,7 +184,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
-           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "id": "$liveDataGenScenarioName-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -199,7 +200,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
-           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "id": "$liveDataGenScenarioName-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
