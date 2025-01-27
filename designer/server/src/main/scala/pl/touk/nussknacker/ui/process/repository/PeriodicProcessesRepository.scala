@@ -161,6 +161,7 @@ trait PeriodicProcessesRepository {
   ): Action[Option[String]]
 
   def fetchCanonicalProcessWithVersion(
+      periodicProcessId: PeriodicProcessId,
       processName: ProcessName,
       versionId: VersionId
   ): Future[Option[(CanonicalProcess, ProcessVersion)]]
@@ -539,6 +540,7 @@ class SlickPeriodicProcessesRepository(
   private def scheduleDeploymentData(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
+      deployment.periodicProcessId,
       deployment.createdAt,
       deployment.runAt,
       deployment.deployedAt,
@@ -549,6 +551,7 @@ class SlickPeriodicProcessesRepository(
   }
 
   override def fetchCanonicalProcessWithVersion(
+      periodicProcessId: PeriodicProcessId,
       processName: ProcessName,
       versionId: VersionId
   ): Future[Option[(CanonicalProcess, ProcessVersion)]] =

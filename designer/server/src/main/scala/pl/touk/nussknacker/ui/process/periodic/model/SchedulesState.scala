@@ -43,6 +43,7 @@ case class ScheduleId(processId: PeriodicProcessId, scheduleName: ScheduleName)
 
 case class ScheduleDeploymentData(
     id: PeriodicProcessDeploymentId,
+    periodicProcessId: PeriodicProcessId,
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
     deployedAt: Option[LocalDateTime],

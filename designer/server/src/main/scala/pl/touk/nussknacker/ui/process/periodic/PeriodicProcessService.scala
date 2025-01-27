@@ -396,6 +396,7 @@ class PeriodicProcessService(
       currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
       canonicalProcessOpt <- periodicProcessesRepository
         .fetchCanonicalProcessWithVersion(
+          deployment.periodicProcessId,
           processName,
           versionId
         )
@@ -496,6 +497,7 @@ class PeriodicProcessService(
       versionId   = deploymentWithJarData.versionId
       canonicalProcessWithVersionOpt <- periodicProcessesRepository
         .fetchCanonicalProcessWithVersion(
+          deployment.periodicProcess.id,
           processName,
           versionId
         )
