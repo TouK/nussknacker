@@ -15,10 +15,6 @@ on:
         required: true
         type: string
     secrets:
-      nussknacker_version:
-        required: true
-      git_source_branch:
-        required: true
       sonatype_user:
         required: true
       sonatype_password:
