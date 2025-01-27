@@ -119,11 +119,12 @@ export default function ToolBox(props: ToolBoxProps): JSX.Element {
     const pristine = useSelector(isPristine);
     const { t } = useTranslation();
 
-    const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups, [processDefinitionData]);
+    const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups ?? [], [processDefinitionData]);
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
     const stickyNoteToolGroup = useMemo(() => stickyNoteComponentGroup(pristine), [pristine, props, t]);
     const groups = useMemo(() => {
-        const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteToolGroup) : componentGroups;
+        const stickyNotesEnabled = stickyNotesSettings ? stickyNotesSettings.enabled : false;
+        const allComponentGroups = stickyNotesEnabled ? concat(componentGroups, stickyNoteToolGroup) : componentGroups;
         return allComponentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
     }, [componentGroups, filters, stickyNoteToolGroup, stickyNotesSettings]);
 

@@ -4,7 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, isRunOffSchedulePossible, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
+import {
+    getProcessName,
+    isRunOffSchedulePossible,
+    isRunOffScheduleVisible,
+    isValidationResultPresent,
+} from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -21,11 +26,12 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
     const { disabled, type } = props;
     const scenarioState = useSelector((state: RootState) => getProcessState(state));
+    const validationResultPresent = useSelector(isValidationResultPresent);
     const isVisible = useSelector(isRunOffScheduleVisible);
     const isPossible = useSelector(isRunOffSchedulePossible);
     const processName = useSelector(getProcessName);
     const capabilities = useSelector(getCapabilities);
-    const available = !disabled && isPossible && capabilities.deploy;
+    const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
     const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>

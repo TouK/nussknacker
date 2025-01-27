@@ -30,6 +30,18 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
     };
 }
 
+export function fetchValidatedProcess(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
+    return (dispatch) => {
+        return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
+            dispatch({
+                type: "DISPLAY_PROCESS",
+                scenario: response.data,
+            });
+            return response.data;
+        });
+    };
+}
+
 export function loadProcessState(processName: ProcessName, processVersionId: number): ThunkAction {
     return (dispatch) =>
         HttpService.fetchProcessState(processName, processVersionId).then(({ data }) =>
