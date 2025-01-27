@@ -66,6 +66,7 @@
 * [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: mini cluster created once and reused each time
 * [#7498](https://github.com/TouK/nussknacker/pull/7498) Support many migrations loaded using SPI. Loaded migration numbers
   cannot overlap, if they do, an exception is thrown.
+* [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
 
 ## 1.18
 
