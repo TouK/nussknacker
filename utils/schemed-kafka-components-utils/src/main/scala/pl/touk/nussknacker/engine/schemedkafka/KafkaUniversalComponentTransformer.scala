@@ -13,7 +13,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicN
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaComponentsUtils,
+  KafkaConfig,
+  KafkaUtils,
+  PreparedKafkaTopic,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
@@ -47,10 +53,14 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  protected def topicSelectionStrategy: TopicSelectionStrategy = {
+  @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
-      new AllNonHiddenTopicsSelectionStrategy
-    } else new TopicsWithExistingSubjectSelectionStrategy
+      new AllNonHiddenTopicsSelectionStrategy(
+        schemaRegistryClient,
+        KafkaUtils.createKafkaAdminClient(kafkaConfig),
+        kafkaConfig.topicsWithoutSchemaFetchTimeout
+      )
+    } else new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
   }
 
   @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
@@ -67,7 +77,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient, kafkaConfig)
+    val topics = topicSelectionStrategy.getTopics
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
