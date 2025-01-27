@@ -38,8 +38,8 @@
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
 * Changes to `periodic` component (renamed to `event-generator`):
-  * [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Component rename: `periodic` to `event-generator`
-  * [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Parameter rename: `period` to `schedule`
+  * [#7502](https://github.com/TouK/nussknacker/pull/7502) Component rename: `periodic` to `event-generator`
+  * [#7502](https://github.com/TouK/nussknacker/pull/7502) Parameter rename: `period` to `schedule`
   * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `schedule` editor
   * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
     and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
