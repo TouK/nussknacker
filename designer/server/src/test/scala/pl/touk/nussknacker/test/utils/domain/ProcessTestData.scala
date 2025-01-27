@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingM
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -32,7 +32,6 @@ import pl.touk.nussknacker.test.mock.{
   StubModelDataWithModelDefinition,
   TestAdditionalUIConfigProvider
 }
-
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
@@ -365,6 +364,26 @@ object ProcessTestData {
     ),
     List.empty
   )
+
+  val sampleFragmentWithPreset: CanonicalProcess =
+    CanonicalProcess(
+      MetaData(sampleFragmentName.value, FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                ParameterName("param1"),
+                FragmentClazzRef[String]
+              ).copy(valueEditor = Some(ValueInputWithDictEditor("rgb", allowOtherValue = false)))
+            )
+          )
+        ),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
 
   val sampleFragment: CanonicalProcess = {
     CanonicalProcess(

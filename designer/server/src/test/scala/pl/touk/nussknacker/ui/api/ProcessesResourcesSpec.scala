@@ -19,8 +19,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -33,6 +34,12 @@ import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.T
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
+  existingSinkFactory,
+  existingSourceFactory,
+  sampleFragmentOneOut,
+  sampleFragmentWithPreset
+}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
@@ -230,6 +237,42 @@ class ProcessesResourcesSpec
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.Conflict
+    }
+  }
+
+  test("should return validation error when fragment was modified in an incompatible way") {
+    // Create a fragment that has a preset parameter and a scenario that uses that fragment
+    val fragmentWithPreset = CanonicalProcessConverter.toScenarioGraph(sampleFragmentWithPreset)
+    val fragmentName       = sampleFragmentWithPreset.name.value
+    val scenarioWithFragment = ScenarioBuilder
+      .streaming(processName.value)
+      .source("source", existingSourceFactory)
+      .fragment(
+        fragmentName,
+        fragmentName,
+        List(("param1", Expression.dictKeyWithLabel("H000000", Some("Black")))),
+        Map("output" -> "fragmentResult"),
+        Map(
+          "output" -> GraphBuilder.emptySink("sink", existingSinkFactory)
+        )
+      )
+    saveFragment(ProcessName(fragmentName), fragmentWithPreset, category = Category1)(succeed)
+    saveCanonicalProcess(scenarioWithFragment, category = Category1)(succeed)
+
+    // Modify fragment so the parameter is no longer a preset
+    updateProcess(CanonicalProcessConverter.toScenarioGraph(sampleFragmentOneOut), ProcessName(fragmentName))(succeed)
+
+    // Verify that incompatible changes were introduced in the fragment and thus error is returned for scenario
+    Get(
+      s"/api/processes/${processName.value}"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
+      val scenarioDetails = responseAs[ScenarioWithDetails]
+      scenarioDetails.validationResult.value.errors.invalidNodes should not be empty
+      scenarioDetails.validationResult.value.errors.invalidNodes
+        .get(fragmentName)
+        .value
+        .find(_.typ == "IncompatibleParameterDefinitionModification")
+        .value
     }
   }
 
