@@ -79,7 +79,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `deploymentConfig.scenarioTesting.reuseMiniClusterForScenarioStateVerification` to `false` 
 
 ### Code API changes
-* [#7368](https://github.com/TouK/nussknacker/pull/7368) [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
+* [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
 
 ## In version 1.18.0
