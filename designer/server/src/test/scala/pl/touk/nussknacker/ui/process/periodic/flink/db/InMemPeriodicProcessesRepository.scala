@@ -2,14 +2,13 @@ package pl.touk.nussknacker.ui.process.periodic.flink.db
 
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository._
-import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
@@ -347,6 +346,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   }
 
   override def fetchCanonicalProcessWithVersion(
+      periodicProcessId: PeriodicProcessId,
       processName: ProcessName,
       versionId: VersionId
   ): Future[Option[(CanonicalProcess, ProcessVersion)]] = Future.successful {
@@ -469,6 +469,7 @@ object InMemPeriodicProcessesRepository {
   private def scheduleDeploymentData(deployment: TestPeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
+      deployment.periodicProcessId,
       deployment.createdAt,
       deployment.runAt,
       deployment.deployedAt,
