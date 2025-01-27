@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.migration
 
 import cats.data.NonEmptyList
 import cats.syntax.functor._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.migration.ProcessMigrations.CombineError.OverlappingMigrations
 import pl.touk.nussknacker.engine.migration.ProcessMigrations.MigrationNumber
 
-object ProcessMigrations {
+object ProcessMigrations extends LazyLogging {
 
   type MigrationNumber = Int
 
@@ -14,6 +15,7 @@ object ProcessMigrations {
   }
 
   def combine(processMigrationsList: List[ProcessMigrations]): Either[CombineError, ProcessMigrations] = {
+    logger.info(s"Combining migrations list: $processMigrationsList")
     processMigrationsList match {
       case Nil        => Right(empty)
       case one :: Nil => Right(one)
