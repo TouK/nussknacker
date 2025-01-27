@@ -45,6 +45,8 @@ object ProcessMigrations {
   sealed trait CombineError
 
   object CombineError {
+    // To allow overlapping numbers, we would need to version model independently for each list of process migrations.
+    // That is "model_version" column should be replaced with a column or a table that contains version for each migrations list.
     case class OverlappingMigrations(migrationNumberToOrigins: Map[MigrationNumber, List[ProcessMigrations]])
         extends CombineError
   }
