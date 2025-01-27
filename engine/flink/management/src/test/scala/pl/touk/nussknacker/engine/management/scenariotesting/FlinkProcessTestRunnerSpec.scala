@@ -764,13 +764,15 @@ class FlinkProcessTestRunnerSpec
           )
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
-      val dictEditorException = intercept[IllegalStateException] {
+      val dictEditorException = intercept[IllegalArgumentException] {
         prepareTestRunner(useIOMonadInInterpreter).runTests(
           process,
           ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
         )
       }
-      dictEditorException.getMessage shouldBe "DictKeyWithLabel expression can only be used with DictParameterEditor, got Some(DualParameterEditor(StringParameterEditor,RAW))"
+      dictEditorException.getMessage.startsWith(
+        "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(DualParameterEditor(StringParameterEditor,RAW))"
+      ) shouldBe true
     }
 
     "should run correctly when parameter was modified by AdditionalUiConfigProvider with dict editor and flink was provided with additional config" in {

@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.expression.parse.{
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -240,7 +241,7 @@ class ExpressionCompiler(
       paramName: ParameterName
   )(
       implicit nodeId: NodeId
-  ) = {
+  ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     def substitute(dictId: String) = {
       DictKeyWithLabelExpressionParser
         .parseDictKeyWithLabelExpression(expression.expression)
@@ -262,18 +263,25 @@ class ExpressionCompiler(
         )
     }
 
-    if (expression.language == Language.DictKeyWithLabel && !expression.expression.isBlank)
+    def isDictKeyWithLabel(expression: Expression): Boolean =
+      expression.language == DictKeyWithLabel
+
+    val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editor, nodeId.id))
+
+    def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       editor match {
-        case Some(DictParameterEditor(dictId)) => substitute(dictId)
-        case Some(DualParameterEditor(DictParameterEditor(dictId), _)) =>
-          substitute(dictId) // in `RAW` mode, expression.language is SpEL, and no substitution/validation is done
-        case editor =>
-          throw new IllegalStateException(
-            s"DictKeyWithLabel expression can only be used with DictParameterEditor, got $editor"
-          )
+        case Some(DictParameterEditor(dictId)) if isDictKeyWithLabel(expression) =>
+          if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
+        case Some(DualParameterEditor(DictParameterEditor(dictId), _)) if isDictKeyWithLabel(expression) =>
+          if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
+        case Some(DictParameterEditor(_)) if !isDictKeyWithLabel(expression) =>
+          incompatibleChangeToParameterDefinitionDetected
+        case _ if isDictKeyWithLabel(expression) => incompatibleChangeToParameterDefinitionDetected
+        case _                                   => Valid(expression)
       }
-    else
-      Valid(expression)
+    }
+    validateAndSubstitute(expression)
   }
 
   def compileValidator(
