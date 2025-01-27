@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.migration
 
-import cats.data.NonEmptyList
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
