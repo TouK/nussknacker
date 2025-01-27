@@ -29,11 +29,13 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
           .flatMap(elements)(ctx)
           .flatMap(
             (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
-              valueWithContext.value.asScala.zipWithIndex
-                .map { case (partToRun, index) =>
-                  new ValueWithContext[AnyRef](partToRun, valueWithContext.context.appendIdSuffix(index.toString))
-                }
-                .foreach(c.collect)
+              Option(valueWithContext.value).foreach(
+                _.asScala.zipWithIndex
+                  .map { case (partToRun, index) =>
+                    new ValueWithContext[AnyRef](partToRun, valueWithContext.context.appendIdSuffix(index.toString))
+                  }
+                  .foreach(c.collect)
+              )
             },
             ctx.valueWithContextInfo.forType[AnyRef](returnType(elements))
           )
