@@ -24,12 +24,7 @@ import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{
-  DeploymentManagersClassLoader,
-  ModelClassLoader,
-  ProcessConfigCreatorLoader,
-  ScalaServiceLoader
-}
+import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.net.URL
@@ -163,7 +158,12 @@ case class ClassLoaderModelData private (
       case Empty()            => ProcessMigrations.empty
       case One(migrationsDef) => migrationsDef
       case Many(moreThanOne) =>
-        throw new IllegalArgumentException(s"More than one ProcessMigrations instance found: $moreThanOne")
+        ProcessMigrations
+          .combine(moreThanOne)
+          .fold(
+            error => throw new IllegalArgumentException(s"Cannot combine many migrations list because of: $error"),
+            identity
+          )
     }
   }
 
