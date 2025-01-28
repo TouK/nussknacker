@@ -527,7 +527,7 @@ jobs:
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     uses: ./.github/workflows/publish.yml
     with:
-      should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/release') }}
     secrets:
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
@@ -542,7 +542,7 @@ jobs:
     needs: ['build', 'build-fe', 'setup']
     uses: ./.github/workflows/publish.yml
     with:
-      should_run: ${{ github.ref == 'refs/heads/staging' }}
+      should_run: ${{ github.ref == 'refs/heads/staging' || startsWith(github.ref, 'refs/heads/preview') }}
     secrets:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
