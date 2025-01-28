@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class SampleGeneratorToEventGeneratorAndPeriodicToScheduleSpec extends AnyFreeSpecLike with Matchers {
 
-  "PeriodicToSampleGeneratorMigration should be applied" in {
+  "SampleGeneratorToEventGeneratorAndPeriodicToScheduleSpec should be applied" in {
     val metaData = MetaData("test", StreamMetaData(Some(1)))
     val beforeMigration = Source(
       id = "sample-generator",
