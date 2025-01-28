@@ -109,7 +109,7 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
             closeWithEsc
             buttons={[preview, cancel, apply]}
             classnames={{
-                content: css({ maxHeight: "35vh", display: "flex", ">div": { flex: 1 }, position: "relative" }),
+                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
             components={componentsOverride}
         >
