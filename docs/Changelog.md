@@ -69,6 +69,11 @@
   cannot overlap, if they do, an exception is thrown.
 * [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) Configurable namespace separator (was fixed to `_`), added namespace tag to Lite engine metrics and fixed namespacing of Kafka consumer groups.
+* [#7508](https://github.com/TouK/nussknacker/pull/7508) Fixes for window components:
+  * Can now pass more than 31 days as `windowLength` and it won't be reduced to remainder of 31 
+  * Introduced some default values:
+    * For all - default `windowLength` is 1 hour
+    * For `aggregate-session` - default `endSessionCondition` is now false
 
 ## 1.18
 
