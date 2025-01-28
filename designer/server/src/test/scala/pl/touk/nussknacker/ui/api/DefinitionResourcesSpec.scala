@@ -23,7 +23,7 @@ import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
-  DefinitionsService,
+  DefinitionsServiceImpl,
   ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -44,7 +44,7 @@ class DefinitionResourcesSpec
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData)
 
-      DefinitionsService(
+      DefinitionsServiceImpl(
         processingTypeData,
         modelDefinitionEnricher,
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
