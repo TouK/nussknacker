@@ -690,8 +690,10 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       val run = Future {
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))), useIOMonadInInterpreter)
       }
-      val dictEditorException = intercept[IllegalStateException](Await.result(run, 10 seconds))
-      dictEditorException.getMessage shouldBe "DictKeyWithLabel expression can only be used with DictParameterEditor, got Some(DualParameterEditor(StringParameterEditor,RAW))"
+      val dictEditorException = intercept[IllegalArgumentException](Await.result(run, 10 seconds))
+      dictEditorException.getMessage.startsWith(
+        "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(DualParameterEditor(StringParameterEditor,RAW))"
+      ) shouldBe true
     }
 
     "should run correctly when parameter was modified by AdditionalUiConfigProvider with dict editor and flink was provided with additional config" in {
