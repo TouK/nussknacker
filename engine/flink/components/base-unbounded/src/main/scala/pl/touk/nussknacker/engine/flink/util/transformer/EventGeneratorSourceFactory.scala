@@ -31,8 +31,8 @@ import javax.validation.constraints.Min
 import scala.jdk.CollectionConverters._
 
 // TODO: add testing capabilities
-object SampleGeneratorSourceFactory
-    extends SampleGeneratorSourceFactory(
+object EventGeneratorSourceFactory
+    extends EventGeneratorSourceFactory(
       new StandardTimestampWatermarkHandler[AnyRef](
         WatermarkStrategy
           .forMonotonousTimestamps()
@@ -42,14 +42,14 @@ object SampleGeneratorSourceFactory
       )
     )
 
-class SampleGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[AnyRef])
+class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[AnyRef])
     extends SourceFactory
     with UnboundedStreamComponent {
 
   @silent("deprecated")
   @MethodToInvoke
   def create(
-      @ParamName("period")
+      @ParamName("schedule")
       @DualEditor(
         simpleEditor = new SimpleEditor(
           `type` = SimpleEditorType.DURATION_EDITOR,
@@ -57,7 +57,7 @@ class SampleGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHa
         ),
         defaultMode = DualEditorMode.SIMPLE
       )
-      period: Duration,
+      schedule: Duration,
       // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
       @ParamName("value") value: LazyParameter[AnyRef]
@@ -72,7 +72,7 @@ class SampleGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHa
         // Parameter evaluation requires context, so here we create an empty context just to evaluate the `value` param.
         // Later the evaluated value is extracted from this temporary context and proper context is initialized.
         env
-          .addSource(new PeriodicFunction(period))
+          .addSource(new PeriodicFunction(schedule))
           .flatMap(
             (_: Unit, out: Collector[Context]) => {
               val temporaryContextForEvaluation = Context(flinkNodeContext.metaData.name.value)

@@ -18,10 +18,10 @@
         {
             "id": "source",
             "ref": {
-                "typ": "sample-generator",
+                "typ": "event-generator",
                 "parameters": [
                     {
-                        "name": "period",
+                        "name": "schedule",
                         "expression": {
                             "language": "spel",
                             "expression": "T(java.time.Duration).parse('PT1M')"

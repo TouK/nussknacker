@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-class SampleGeneratorSourceFactorySpec
+class EventGeneratorSourceFactorySpec
     extends AnyFunSuite
     with FlinkSpec
     with PatientScalaFutures
@@ -34,11 +34,11 @@ class SampleGeneratorSourceFactorySpec
     val scenario = ScenarioBuilder
       .streaming("test")
       .source(
-        "sample-generator",
-        "sample-generator",
-        "period" -> "T(java.time.Duration).ofSeconds(1)".spel,
-        "count"  -> "1".spel,
-        "value"  -> s"'$input'".spel
+        "event-generator",
+        "event-generator",
+        "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+        "count"    -> "1".spel,
+        "value"    -> s"'$input'".spel
       )
       .emptySink(sinkId, "dead-end")
 
@@ -69,11 +69,11 @@ class SampleGeneratorSourceFactorySpec
     val scenario = ScenarioBuilder
       .streaming("test")
       .source(
-        "sample-generator",
-        "sample-generator",
-        "period" -> "T(java.time.Duration).ofSeconds(1)".spel,
-        "count"  -> "2".spel,
-        "value"  -> s"T(java.util.UUID).randomUUID".spel
+        "event-generator",
+        "event-generator",
+        "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+        "count"    -> "2".spel,
+        "value"    -> s"T(java.util.UUID).randomUUID".spel
       )
       .emptySink(sinkId, "dead-end")
 
