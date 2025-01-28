@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.config.{
 }
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
-import pl.touk.nussknacker.ui.definition.DefinitionsService.ComponentUiConfigMode
+import pl.touk.nussknacker.ui.definition.DefinitionsServiceAutoRefreshableCacheDecorator.CacheKey
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
@@ -69,9 +69,9 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
@@ -174,7 +174,7 @@ class AkkaHttpBasedRouteProvider(
         }
       )
       uiDefinitionsAutoRefreshableCache <- AutoRefreshableCache
-        .create[IO, (ProcessingType, Boolean, ComponentUiConfigMode), UIDefinitions](
+        .create[IO, CacheKey, UIDefinitions](
           actorSystem = system,
           config = AutoRefreshableCacheConfig.parse(resolvedDesignerConfig, "uiDefinitionsCache"),
         )
@@ -522,6 +522,9 @@ class AkkaHttpBasedRouteProvider(
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
             processingTypeDataProvider.mapValues { processingTypeData =>
+              DefinitionsServiceAutoRefreshableCacheDecorator
+                .allCacheKeysForProcessingType(processingTypeData.name)
+                .foreach(uiDefinitionsAutoRefreshableCache.invalidate)
               new DefinitionsServiceAutoRefreshableCacheDecorator(
                 DefinitionsServiceImpl(
                   processingTypeData,

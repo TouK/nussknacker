@@ -53,6 +53,11 @@ class AutoRefreshableCache[KEY, VALUE](
     }
   }
 
+  def invalidate(key: KEY): Unit = {
+    keysToRefresh.invalidate(key)
+    cache.invalidate(key)
+  }
+
   @volatile private var scheduledJob: Option[Cancellable] = None
 
   private def start(): Unit = {
