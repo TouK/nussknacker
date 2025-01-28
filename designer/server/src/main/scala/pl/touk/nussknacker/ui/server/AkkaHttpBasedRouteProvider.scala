@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
+import pl.touk.nussknacker.restmodel.definition.UIDefinitions
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{
@@ -32,10 +33,12 @@ import pl.touk.nussknacker.ui.config.{
 }
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
+import pl.touk.nussknacker.ui.definition.DefinitionsService.ComponentUiConfigMode
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
-  DefinitionsService,
+  DefinitionsServiceAutoRefreshableCacheDecorator,
+  DefinitionsServiceImpl,
   ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.initialization.Initialization
@@ -66,15 +69,13 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
-import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -89,6 +90,7 @@ import pl.touk.nussknacker.ui.statistics.{
 }
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.util.AutoRefreshableCache.AutoRefreshableCacheConfig
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui.validation.{
   NodeValidator,
@@ -171,6 +173,11 @@ class AkkaHttpBasedRouteProvider(
           Source.fromURL(getClass.getResource("/encryption.key"))
         }
       )
+      uiDefinitionsAutoRefreshableCache <- AutoRefreshableCache
+        .create[IO, (ProcessingType, Boolean, ComponentUiConfigMode), UIDefinitions](
+          actorSystem = system,
+          config = AutoRefreshableCacheConfig.parse(resolvedDesignerConfig, "uiDefinitionsCache"),
+        )
     } yield {
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
@@ -515,14 +522,15 @@ class AkkaHttpBasedRouteProvider(
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
             processingTypeDataProvider.mapValues { processingTypeData =>
-              (
-                DefinitionsService(
+              new DefinitionsServiceAutoRefreshableCacheDecorator(
+                DefinitionsServiceImpl(
                   processingTypeData,
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
                   fragmentRepository,
                   resolvedDesignerConfig.getAs[String]("fragmentPropertiesDocsUrl")
-                )
+                ),
+                uiDefinitionsAutoRefreshableCache,
               )
             }
           ),
