@@ -191,10 +191,10 @@ in the config.
 
 Nussknacker supports multitenancy, allowing multiple Nussknacker designer instances to operate on shared infrastructure components,
 such as Kafka, Flink, or InfluxDB. This is achieved by using configured namespaces to isolate resources:
-- Kafka Topics: Prefixed with a namespace.
+- Kafka Topics: Prefixed with a namespace
 - Kafka Consumer Groups: Prefixed with a namespace
-- Flink Jobs: Prefixed with a namespace.
-- InfluxDB Metrics: Tagged with an additional namespace tag.
+- Flink Jobs: Prefixed with a namespace
+- InfluxDB Metrics: Tagged with an additional namespace tag
 
 A namespace configuration can be defined as follows:
 
