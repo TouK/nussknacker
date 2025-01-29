@@ -11,7 +11,7 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKaf
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.namespaces.{NamespaceContext, NamingStrategy}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
@@ -140,7 +140,7 @@ class FlinkKafkaSource[T](
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
     val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
-    namingStrategy.prepareName(baseName, NamespaceContext.KafkaConsumerGroup)
+    namingStrategy.prepareName(baseName)
   }
 
 }
