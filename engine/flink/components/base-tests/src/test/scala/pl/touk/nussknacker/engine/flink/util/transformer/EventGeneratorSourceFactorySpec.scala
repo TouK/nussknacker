@@ -42,17 +42,15 @@ class EventGeneratorSourceFactorySpec
       )
       .emptySink(sinkId, "dead-end")
 
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(scenario)
+    flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(scenario)
 
-    val id = stoppableEnv.executeAndWaitForStart(scenario.name.value)
-    try {
-      eventually {
-        val results = collectingListener.results.nodeResults.get(sinkId)
-        results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
+      stoppableEnv.withJobRunning(scenario.name.value) {
+        eventually {
+          val results = collectingListener.results.nodeResults.get(sinkId)
+          results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
+        }
       }
-    } finally {
-      stoppableEnv.cancel(id.getJobID)
     }
 
   }
@@ -77,19 +75,17 @@ class EventGeneratorSourceFactorySpec
       )
       .emptySink(sinkId, "dead-end")
 
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(scenario)
+    flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(scenario)
 
-    val id = stoppableEnv.executeAndWaitForStart(scenario.name.value)
-    try {
-      eventually {
-        val results        = collectingListener.results.nodeResults.get(sinkId)
-        val emittedResults = results.toList.flatten.flatMap(_.variableTyped("input"))
-        emittedResults.size should be > 1
-        emittedResults.distinct.size shouldBe emittedResults.size
+      stoppableEnv.withJobRunning(scenario.name.value) {
+        eventually {
+          val results        = collectingListener.results.nodeResults.get(sinkId)
+          val emittedResults = results.toList.flatten.flatMap(_.variableTyped("input"))
+          emittedResults.size should be > 1
+          emittedResults.distinct.size shouldBe emittedResults.size
+        }
       }
-    } finally {
-      stoppableEnv.cancel(id.getJobID)
     }
   }
 

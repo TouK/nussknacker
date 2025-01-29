@@ -4,14 +4,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
-
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - max count of sticky notes inside one scenario/fragment
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
-
 
 ### Other changes
 
@@ -84,6 +82,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing
+  * `TestScenarioRunner.flinkBased` now takes `FlinkMiniClusterWithServices` instead of `FlinkMiniClusterHolder`. 
+    `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps:
+    * Remove `FlinkSpec` inheritance from test class
+    * Extend `BeforeAndAfterAll` by your test class
+    * Create `FlinkMiniClusterWithServices` using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
+    * Close `FlinkMiniClusterWithServices` in `afterAll` block
+  * Changes in `flink-test-utils` module
+    * `FlinkMiniClusterHolder` doesn't provide `MiniCluster` methods. If you want to use them, use `FlinkMiniClusterHolder.miniCluster`
+    * `FlinkMiniClusterHolder.createExecutionEnvironment` method is not available. Use `FlinkMiniClusterHolder.withExecutionEnvironment`
+      which properly closes created environment
+    * `MiniClusterExecutionEnvironment` created by `FlinkMiniClusterHolder` is not a `StreamExecutionEnvironment`, to access it, use `.env` nested method 
 
 ## In version 1.18.0
 

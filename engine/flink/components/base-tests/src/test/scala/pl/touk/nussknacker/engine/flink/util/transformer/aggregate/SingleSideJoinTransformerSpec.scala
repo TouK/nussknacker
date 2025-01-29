@@ -90,40 +90,41 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
     )
 
     val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
+    withRunningScenario(process, input1, input2, collectingListener) { (id, stoppableEnv) =>
+      input1.add(OneRecord(key, 0, -1))
+      // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
+      eventually {
+        SingleSideJoinTransformerSpec.elementsAddedToState should have size input2.size
+      }
+      input1.add(OneRecord(key, 2, -1))
+      input1.finish()
 
-    input1.add(OneRecord(key, 0, -1))
-    // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
-    eventually {
-      SingleSideJoinTransformerSpec.elementsAddedToState should have size input2.size
+      stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, process.name.value, ExecutionState.FINISHED)()
+
+      val outValues = collectingListener.results
+        .nodeResults(EndNodeId)
+        .filter(_.variableTyped(KeyVariableName).contains(key))
+        .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
+
+      outValues shouldEqual List(
+        Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),
+        Map("approxCardinality" -> 1, "last" -> 123, "list"  -> singletonList(123), "sum" -> 123)
+      )
     }
-    input1.add(OneRecord(key, 2, -1))
-    input1.finish()
-
-    stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, process.name.value, ExecutionState.FINISHED)()
-
-    val outValues = collectingListener.results
-      .nodeResults(EndNodeId)
-      .filter(_.variableTyped(KeyVariableName).contains(key))
-      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
-
-    outValues shouldEqual List(
-      Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),
-      Map("approxCardinality" -> 1, "last" -> 123, "list"  -> singletonList(123), "sum" -> 123)
-    )
   }
 
-  private def runProcess(
+  private def withRunningScenario(
       testProcess: CanonicalProcess,
       input1: BlockingQueueSource[OneRecord],
       input2: List[OneRecord],
       collectingListener: ResultsCollectingListener[Any]
-  ): (JobExecutionResult, MiniClusterExecutionEnvironment) = {
-    val model        = modelData(input1, input2, collectingListener)
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    val id = stoppableEnv.executeAndWaitForStart(testProcess.name.value)
-    (id, stoppableEnv)
+  )(action: (JobExecutionResult, MiniClusterExecutionEnvironment) => Unit): Unit = {
+    val model = modelData(input1, input2, collectingListener)
+    flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(testProcess)
+      val id = stoppableEnv.executeAndWaitForStart(testProcess.name.value)
+      action(id, stoppableEnv)
+    }
   }
 
   private def modelData(

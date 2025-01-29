@@ -25,7 +25,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
+  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(scenario)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
@@ -136,23 +136,23 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
     val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
     val enrichedComponents = sourceComponentDefinition :: FlinkBaseComponentProvider.Components :::
       FlinkBaseUnboundedComponentProvider.Components
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, enrichedComponents), scenario)
+    flinkMiniCluster.withExecutionEnvironment { env =>
+      registerInEnvironment(env, LocalModelData(config, enrichedComponents), scenario)
 
-    env.executeAndWaitForFinished("test")()
+      env.executeAndWaitForFinished("test")()
 
-    // A bit more complex check, since there are errors from both join sides...
-    RecordingExceptionConsumer
-      .exceptionsFor(runId)
-      .collect { case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _) =>
-        e.expression
-      }
-      .toSet shouldBe Set(
-      "'right' + '' + (1 / #input[0])",
-      "'left' + '' + (1 / #input[0])",
-      "'aggregate' + '' + (1 / #input[1])"
-    )
-
+      // A bit more complex check, since there are errors from both join sides...
+      RecordingExceptionConsumer
+        .exceptionsFor(runId)
+        .collect { case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _) =>
+          e.expression
+        }
+        .toSet shouldBe Set(
+        "'right' + '' + (1 / #input[0])",
+        "'left' + '' + (1 / #input[0])",
+        "'aggregate' + '' + (1 / #input[1])"
+      )
+    }
   }
 
 }

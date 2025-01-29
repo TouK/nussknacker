@@ -17,7 +17,7 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
+  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(scenario)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 

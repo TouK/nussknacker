@@ -85,24 +85,25 @@ class KafkaExceptionConsumerSpec
       .filter("shouldFail", "1/{0, 1}[0] != 10".spel)
       .emptySink("end", "sink")
 
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    val message = env.withJobRunning(process.name.value) {
-      val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
+    flinkMiniCluster.withExecutionEnvironment { env =>
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      val message = env.withJobRunning(process.name.value) {
+        val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
 
-      consumed.key() shouldBe s"$scenarioName-shouldFail"
+        consumed.key() shouldBe s"$scenarioName-shouldFail"
 
-      consumed.message()
+        consumed.message()
+      }
+
+      message.processName.value shouldBe scenarioName
+      message.nodeId shouldBe Some("shouldFail")
+      message.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
+      message.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
+      message.stackTrace.value should include("evaluation failed, message:")
+      message.additionalData shouldBe Map("configurableKey" -> "sampleValue")
+
+      message
     }
-
-    message.processName.value shouldBe scenarioName
-    message.nodeId shouldBe Some("shouldFail")
-    message.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
-    message.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
-    message.stackTrace.value should include("evaluation failed, message:")
-    message.additionalData shouldBe Map("configurableKey" -> "sampleValue")
-
-    message
   }
 
   def extractInputEventMap(message: KafkaExceptionInfo): Map[String, String] =

@@ -215,9 +215,10 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       prepareComponents(sourceFoo, sourceBar),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.withJobRunning(testProcess.name.value)(action)
+    flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(testProcess)
+      stoppableEnv.withJobRunning(testProcess.name.value)(action)
+    }
   }
 
   def prepareComponents(

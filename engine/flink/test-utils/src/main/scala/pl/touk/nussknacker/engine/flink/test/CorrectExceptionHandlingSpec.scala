@@ -31,14 +31,15 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     val scenario                  = ScenarioBuilder.streaming("test").sources(start, rest: _*)
     val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
 
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(
-      env,
-      LocalModelData(config, sourceComponentDefinition :: components),
-      scenario
-    )
+    flinkMiniCluster.withExecutionEnvironment { env =>
+      registerInEnvironment(
+        env,
+        LocalModelData(config, sourceComponentDefinition :: components),
+        scenario
+      )
 
-    env.executeAndWaitForFinished("test")()
+      env.executeAndWaitForFinished("test")()
+    }
     RecordingExceptionConsumer.exceptionsFor(runId) should have length generator.count
   }
 

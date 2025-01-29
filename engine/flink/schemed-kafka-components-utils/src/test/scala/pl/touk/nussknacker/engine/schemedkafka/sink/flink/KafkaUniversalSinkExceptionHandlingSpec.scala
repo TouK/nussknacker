@@ -40,7 +40,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
+  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(scenario)
 
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)

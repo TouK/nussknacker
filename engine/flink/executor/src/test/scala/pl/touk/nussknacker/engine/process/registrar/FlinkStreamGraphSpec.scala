@@ -23,10 +23,11 @@ trait FlinkStreamGraphSpec
 
   protected def streamGraph(process: CanonicalProcess, config: Config = ConfigFactory.load()): StreamGraph = {
     val components = ProcessTestHelpers.prepareComponents(List.empty)
-    val env        = flinkMiniCluster.createExecutionEnvironment()
-    val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    env.getStreamGraph
+    flinkMiniCluster.withExecutionEnvironment { env =>
+      val modelData = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      env.env.getStreamGraph
+    }
   }
 
   implicit class EnhancedStreamGraph(graph: StreamGraph) {

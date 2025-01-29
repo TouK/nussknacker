@@ -9,7 +9,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -259,7 +258,7 @@ class MetricsSpec
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics(reporterName, FlinkTestConfiguration.configuration())
+    TestReporterUtil.configWithTestMetrics(reporterName, new Configuration())
   }
 
 }

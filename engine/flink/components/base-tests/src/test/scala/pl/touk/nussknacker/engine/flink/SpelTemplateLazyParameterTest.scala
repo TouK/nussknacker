@@ -5,6 +5,7 @@ import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
@@ -30,7 +31,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation
 }
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -40,17 +41,24 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class SpelTemplateLazyParameterTest
     extends AnyFunSuite
-    with FlinkSpec
     with Matchers
-    with ValidatedValuesDetailedMessage {
+    with ValidatedValuesDetailedMessage
+    with BeforeAndAfterAll {
+
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
   private lazy val runner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(
       List(ComponentDefinition("spelTemplatePartsCustomTransformer", SpelTemplatePartsCustomTransformer))
     )
     .build()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   test("flink custom transformer using spel template rendered parts") {
     val scenario = ScenarioBuilder

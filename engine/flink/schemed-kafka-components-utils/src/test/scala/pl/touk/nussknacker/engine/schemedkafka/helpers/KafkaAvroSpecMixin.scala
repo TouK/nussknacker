@@ -212,9 +212,10 @@ trait KafkaAvroSpecMixin
   }
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    env.withJobRunning(process.name.value)(action)
+    flinkMiniCluster.withExecutionEnvironment { env =>
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      env.withJobRunning(process.name.value)(action)
+    }
   }
 
   sealed trait SourceAvroParam {

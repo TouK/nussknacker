@@ -69,6 +69,7 @@
   cannot overlap, if they do, an exception is thrown.
 * [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) Configurable namespace separator (was fixed to `_`), added namespace tag to Lite engine metrics and fixed namespacing of Kafka consumer groups.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier ScenarioTestRunner creation - see [Migration guide](MigrationGuide.md) for details 
 
 ## 1.18
 
