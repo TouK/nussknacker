@@ -85,8 +85,10 @@ class ScenarioTestService(
     } yield rawTestData
   }
 
-  def getDataFromSource(metaData: MetaData, nodeId: NodeId, size: Int) = {
-    testInfoProvider.generateTestDataForSource(metaData, nodeId, size)
+  def getDataFromSource(metaData: MetaData, nodeId: NodeId, size: Int): Either[String, RawScenarioTestData] = {
+    testInfoProvider.generateTestDataForSource(metaData, nodeId, size).flatMap { generatedData =>
+      preliminaryScenarioTestDataSerDe.serialize(generatedData)
+    }
   }
 
   def performTest(

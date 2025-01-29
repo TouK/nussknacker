@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
@@ -13,7 +14,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -152,7 +155,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): Either[String, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
 
-    val testDataGenerator = prepareSourceObj(node.Source(nodeId.id, SourceRef("source", Nil)))(jobData, nodeId).toList
+    val testDataGenerator = prepareSourceObj(
+      node.Source(
+        nodeId.id,
+        SourceRef(
+          "kafka",
+          evaluatedparam.Parameter(ParameterName("Topic"), Expression(Language.Spel, "'sometopic'")) :: Nil
+        )
+      )
+    )(jobData, nodeId).toList
       .flatMap(_.cast[TestDataGenerator])
     val gen = NonEmptyList
       .fromList(testDataGenerator)

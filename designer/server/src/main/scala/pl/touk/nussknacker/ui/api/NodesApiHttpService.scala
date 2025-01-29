@@ -5,6 +5,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -160,10 +161,9 @@ class NodesApiHttpService(
               scenarioWithDetails.processingType
             )
             parametersDefinition <- EitherT[Future, NodesError, String](
-              scenarioTestService.generateData(
-                scenarioGraph,
-                scenarioWithDetails.processVersionUnsafe,
-                scenarioWithDetails.isFragment,
+              scenarioTestService.getDataFromSource(
+                scenarioGraph.toMetaData(scenarioName),
+                NodeId(nodeId),
                 numberOfRecords
               ) match {
                 case Left(error) =>
