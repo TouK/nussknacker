@@ -47,7 +47,7 @@ export function AdvancedSearchFilters({
         return new Set(
             componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
         );
-    }, []);
+    }, [componentsGroups]);
 
     const nodeTypes = useMemo(() => {
         const availableTypes = allNodes
@@ -60,12 +60,12 @@ export function AdvancedSearchFilters({
             .filter((type) => componentLabels.has(type.toLowerCase()));
 
         return uniq(availableTypes);
-    }, [allNodes]);
+    }, [allNodes, componentLabels]);
 
     useEffect(() => {
         const searchQuery = resolveSearchQuery(filter);
         setFilterFields(searchQuery);
-    }, [filter]);
+    }, [filter, setFilterFields]);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();

@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -70,7 +71,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployedResponse.futureValue
   }
 
-  // this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
+  // this is for the case where e.g. we manually cancel flink job, or it fails and didn't restart...
   test("cancel of not existing job should not fail") {
     deploymentManager
       .processCommand(DMCancelScenarioCommand(ProcessName("not existing job"), user = userToAct))
@@ -102,23 +103,35 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   }
 
   test("save state when redeploying") {
-    val processName                         = ProcessName("redeploy")
-    val outTopic                            = s"output-$processName"
-    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processName)
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(ProcessName("redeploy"))
+    testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)
+  }
+
+  test("redeploy scenario with greater parallelism than configured in mini cluster") {
+    val processEmittingOneElementAfterStart =
+      StatefulSampleProcess.prepareProcess(ProcessName("redeploy-parallelism-2"), parallelism = 2)
+    testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)
+  }
+
+  private def testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart: CanonicalProcess) = {
+    val outTopic = s"output-${processEmittingOneElementAfterStart.name}"
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processEmittingOneElementAfterStart.name))
     try {
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("[One element]")
 
-      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
+      deployProcessAndWaitIfRunning(
+        processEmittingOneElementAfterStart,
+        empty(processEmittingOneElementAfterStart.name)
+      )
 
       val messages = messagesFromTopic(outTopic, 2)
       messages shouldBe List("[One element]", "[One element, One element]")
     } finally {
-      cancelProcess(processName)
+      cancelProcess(processEmittingOneElementAfterStart.name)
     }
   }
 
@@ -261,8 +274,6 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     }
   }
 
-  def empty(processName: ProcessName): ProcessVersion = ProcessVersion.empty.copy(processName = processName)
-
   test("extract scenario definition") {
     val modelData = ModelData(
       processingTypeConfig = processingTypeConfig,
@@ -273,11 +284,13 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
-      ModelClassLoader(processingTypeConfig.classPath, None)
+      ModelClassLoader(processingTypeConfig.classPath, None, deploymentManagerClassLoader)
     )
     val definition = modelData.modelDefinition
     definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))
   }
+
+  def empty(processName: ProcessName): ProcessVersion = ProcessVersion.empty.copy(processName = processName)
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] =
     kafkaClient

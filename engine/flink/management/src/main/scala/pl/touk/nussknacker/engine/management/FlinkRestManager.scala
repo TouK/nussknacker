@@ -5,14 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.scheduler._
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
-  AdditionalDeploymentDataProvider,
-  ProcessConfigEnricherFactory,
-  SchedulePropertyExtractorFactory,
-  ScheduledExecutionPerformer,
-  ScheduledProcessListenerFactory
-}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.namespaces.NamespaceContext
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -31,8 +24,14 @@ class FlinkRestManager(
     config: FlinkConfig,
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
-    mainClassName: String
-) extends FlinkDeploymentManager(modelData, dependencies, config.shouldVerifyBeforeDeploy, mainClassName)
+    mainClassName: String,
+) extends FlinkDeploymentManager(
+      modelData,
+      dependencies,
+      config.shouldVerifyBeforeDeploy,
+      mainClassName,
+      config.scenarioTesting
+    )
     with LazyLogging {
 
   import dependencies._
@@ -245,10 +244,10 @@ class FlinkRestManager(
       deploymentId: Option[DeploymentId],
       statuses: List[StatusDetails]
   ) = {
-    statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
+    statuses.filterNot(details => SimpleStateStatus.isFinalOrTransitioningToFinalStatus(details.status)) match {
       case Nil =>
         logger.warn(
-          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
+          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not active on Flink."
         )
         Future.successful(())
       case single :: Nil => cancelFlinkJob(single)
@@ -317,10 +316,6 @@ class FlinkRestManager(
       slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobsIds)
     } else
       Future.successful(())
-  }
-
-  override def close(): Unit = {
-    logger.info("Closing Flink REST manager")
   }
 
 }

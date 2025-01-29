@@ -8,12 +8,15 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
+import pl.touk.nussknacker.engine.management.scenariotesting.{
+  FlinkProcessTestRunner,
+  ScenarioTestingMiniClusterWrapperFactory
+}
+import pl.touk.nussknacker.engine.management.{FlinkStreamingPropertiesConfig, ScenarioTestingConfig}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -58,8 +61,17 @@ object MockableDeploymentManagerProvider {
       with ManagerSpecificScenarioActivitiesStoredByManager
       with StubbingCommands {
 
+    private lazy val scenarioTestingMiniClusterWrapperOpt = modelDataOpt.flatMap { modelData =>
+      ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
+        modelData.asInvokableModelData.modelClassLoader,
+        ScenarioTestingConfig()
+      )
+    }
+
     private lazy val testRunnerOpt =
-      modelDataOpt.map(modelData => new FlinkProcessTestRunner(modelData.asInvokableModelData))
+      modelDataOpt.map { modelData =>
+        new FlinkProcessTestRunner(modelData.asInvokableModelData, scenarioTestingMiniClusterWrapperOpt)
+      }
 
     override def resolve(
         idWithName: ProcessIdWithName,
@@ -102,7 +114,7 @@ object MockableDeploymentManagerProvider {
             .get()
             .get(processVersion.processName.value)
             .map(Future.successful)
-            .orElse(testRunnerOpt.map(_.test(scenario, testData)))
+            .orElse(testRunnerOpt.map(_.runTestsAsync(scenario, testData)))
             .getOrElse(
               throw new IllegalArgumentException(
                 s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
@@ -125,7 +137,10 @@ object MockableDeploymentManagerProvider {
     ): Future[List[ScenarioActivity]] =
       Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 
-    override def close(): Unit = {}
+    override def close(): Unit = {
+      scenarioTestingMiniClusterWrapperOpt.foreach(_.close())
+    }
+
   }
 
   // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
