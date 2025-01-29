@@ -52,7 +52,7 @@ object NamespaceMetricsTags {
       NamespaceMetricsTags(
         Map(
           originalNameTag -> scenarioName,
-          namespaceTag    -> namespace
+          namespaceTag    -> namespace.value
         )
       )
     }

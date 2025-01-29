@@ -31,7 +31,9 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
       RequestResponseDeploymentStrategy(engineConfig)
     )
 
-    val metricRegistry  = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
+    val metricRegistry = LiteMetricRegistryFactory
+      .usingHostnameAsDefaultInstanceId(modelData.namingStrategy.namespace)
+      .prepareRegistry(engineConfig)
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
     strategy.open(modelData.asInvokableModelData, contextPreparer)
