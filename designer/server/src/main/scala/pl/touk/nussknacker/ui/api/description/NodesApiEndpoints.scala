@@ -10,7 +10,7 @@ import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -54,6 +54,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  FetchLatestRecordsError,
   MalformedTypingResult,
   NoProcessingType,
   NoScenario
@@ -349,6 +350,55 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+  lazy val fetchLatestRecordsForNodeEndpoint: SecuredEndpoint[
+    (ProcessName, String, Int, ScenarioGraph),
+    NodesError,
+    String,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Fetch latest records for specific node")
+      .tag("Nodes")
+      .post
+      .in(
+        "nodes" / path[ProcessName]("scenarioName") / path[String]("nodeId") / "fetchLatestRecordsForNode" / path[Int](
+          "numberOfRecords"
+        )
+      )
+      .in(
+        jsonBody[ScenarioGraph]
+          .example(simpleGraphExample)
+      )
+      .out(
+        statusCode(Ok).and(
+          stringBody
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Simple scenario test data in json stringify form"),
+                  value = "{name: John}"
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          fetchLatestRecordsErrorExample,
+          noScenarioExample
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  private val simpleGraphExample: Example[ScenarioGraph] = Example.of(
+    ScenarioGraph(
+      ProcessProperties(StreamMetaData()),
+      List(),
+      List(),
+    )
+  )
+
   lazy val parametersValidationEndpoint: SecuredEndpoint[
     (ProcessingType, ParametersValidationRequestDto),
     NodesError,
@@ -557,6 +607,18 @@ object NodesApiEndpoints {
             Example.of(
               summary = Some("No scenario {scenarioName} found"),
               value = NoScenario(ProcessName("'example scenario'"))
+            )
+          )
+      )
+
+    val fetchLatestRecordsErrorExample: EndpointOutput.OneOfVariant[FetchLatestRecordsError] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[FetchLatestRecordsError]
+          .example(
+            Example.of(
+              summary = Some("Fetching error"),
+              value = FetchLatestRecordsError("Fetching error")
             )
           )
       )
@@ -1472,6 +1534,7 @@ object NodesApiEndpoints {
     sealed trait NodesError
 
     object NodesError {
+      final case class FetchLatestRecordsError(msg: String)             extends NodesError
       final case class NoScenario(scenarioName: ProcessName)            extends NodesError
       final case class NoProcessingType(processingType: ProcessingType) extends NodesError
       final case object NoPermission                                    extends NodesError with CustomAuthorizationError
@@ -1492,6 +1555,12 @@ object NodesApiEndpoints {
       implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
           s"The request content was malformed:\n${e.msg}"
+        )
+      }
+
+      implicit val fetchLatestRecordsErrorCodec: Codec[String, FetchLatestRecordsError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[FetchLatestRecordsError](e =>
+          s"Error during fetching latest records: \n${e.msg}"
         )
       }
 

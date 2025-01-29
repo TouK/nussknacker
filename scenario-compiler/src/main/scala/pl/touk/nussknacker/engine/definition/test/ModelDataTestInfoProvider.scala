@@ -8,12 +8,14 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
@@ -141,6 +143,33 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       source: SourceNodeData
   )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
     nodeCompiler.compileSource(source).compiledObject
+  }
+
+  def generateTestDataForSource(
+      metaData: MetaData,
+      nodeId: NodeId,
+      size: Int
+  ): Either[String, PreliminaryScenarioTestData] = {
+    val jobData = JobData(metaData, ProcessVersion.empty)
+
+    val testDataGenerator = prepareSourceObj(node.Source(nodeId.id, SourceRef("source", Nil)))(jobData, nodeId).toList
+      .flatMap(_.cast[TestDataGenerator])
+    val gen = NonEmptyList
+      .fromList(testDataGenerator)
+      .map(x => Right(x))
+      .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
+
+    for {
+      generators <- gen
+      generatedData = generateTestData(generators.map(nodeId -> _), size)
+      // Records without timestamp are put at the end of the list.
+      sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+      preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
+      nonEmptyPreliminaryTestRecords <- NonEmptyList
+        .fromList(preliminaryTestRecords)
+        .map(Right(_))
+        .getOrElse(Left("Empty list of generated data"))
+    } yield PreliminaryScenarioTestData(nonEmptyPreliminaryTestRecords)
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {

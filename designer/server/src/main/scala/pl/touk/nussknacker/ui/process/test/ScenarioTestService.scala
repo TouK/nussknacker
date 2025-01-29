@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.test
 
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
@@ -82,6 +83,10 @@ class ScenarioTestService(
       generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize)
       rawTestData   <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
+  }
+
+  def getDataFromSource(metaData: MetaData, nodeId: NodeId, size: Int) = {
+    testInfoProvider.generateTestDataForSource(metaData, nodeId, size)
   }
 
   def performTest(

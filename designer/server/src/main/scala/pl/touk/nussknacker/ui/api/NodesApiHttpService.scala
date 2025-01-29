@@ -13,9 +13,12 @@ import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.TestDataGenerationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  FetchLatestRecordsError,
   MalformedTypingResult,
   NoPermission,
   NoProcessingType,
@@ -39,6 +42,7 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -52,6 +56,7 @@ class NodesApiHttpService(
     processingTypeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     processingTypeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
+    processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -140,6 +145,35 @@ class NodesApiHttpService(
               validationPerformed = true
             )
           } yield validation
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.fetchLatestRecordsForNodeEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, nodeId, numberOfRecords, scenarioGraph) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            parametersDefinition <- EitherT[Future, NodesError, String](
+              scenarioTestService.generateData(
+                scenarioGraph,
+                scenarioWithDetails.processVersionUnsafe,
+                scenarioWithDetails.isFragment,
+                numberOfRecords
+              ) match {
+                case Left(error) =>
+                  logger.error(s"Error during fetching latest records for node=[$nodeId]: $error")
+                  Future(Left(FetchLatestRecordsError(error)))
+                case Right(rawScenarioTestData) =>
+                  Future(Right(rawScenarioTestData.content))
+              }
+            )
+          } yield parametersDefinition
         }
       }
   }
