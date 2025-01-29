@@ -203,6 +203,6 @@ Parameters:
 
 - schedule - specifies how often events will be sent
 - count - specifies number of events that will be generated at every run
-- value - specifies data that event will hold. Expressions will be evaluated for every event in the `count`
+- value - specifies data that event will hold. Expression will be evaluated for every generated event
 
 &nbsp;
