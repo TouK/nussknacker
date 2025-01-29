@@ -9,7 +9,6 @@ import { isEmpty } from "lodash";
 import { ExtendedEditor } from "../Editor";
 
 export type Duration = {
-    months: number;
     days: number;
     hours: number;
     minutes: number;
@@ -30,8 +29,7 @@ type Props = {
 const SPEL_DURATION_SWITCHABLE_TO_REGEX =
     /^T\(java\.time\.Duration\)\.parse\('(-)?P([0-9]{1,}D)?(T((-)?[0-9]{1,}H)?((-)?[0-9]{1,}M)?((-)?[0-9]{1,}S)?)?'\)$/;
 const NONE_DURATION = {
-    months: () => null,
-    days: () => null,
+    asDays: () => null,
     hours: () => null,
     minutes: () => null,
     seconds: () => null,
@@ -65,8 +63,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             const duration =
                 decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
             return {
-                months: 0,
-                days: duration.days() + duration.months() * 31,
+                days: duration.asDays() < 1 ? null : duration.asDays().toFixed(),
                 hours: duration.hours(),
                 minutes: duration.minutes(),
                 seconds: duration.seconds(),
