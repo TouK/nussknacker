@@ -59,7 +59,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
         selectStyled(theme);
-    return mode === "RADIO" ? (
+    return mode == "RADIO" ? (
         <div className={cx(className)}>
             <RadioGroup value={currentOption.value} onChange={(event) => onValueChange(event.target.value)}>
                 {options.map((option: Option) => {

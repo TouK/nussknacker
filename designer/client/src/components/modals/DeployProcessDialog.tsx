@@ -15,7 +15,12 @@ import { ScenarioActionResult, ScenarioActionResultType } from "../toolbars/scen
 import { NodesDeploymentData } from "../../http/HttpService";
 
 export type ToggleProcessActionModalData = {
-    action: (processName: ProcessName, processVersionId: ProcessVersionId, comment: string, nodeData: NodesDeploymentData) => Promise<ScenarioActionResult>;
+    action: (
+        processName: ProcessName,
+        processVersionId: ProcessVersionId,
+        comment: string,
+        nodeData?: NodesDeploymentData,
+    ) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
 };
 
@@ -32,7 +37,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, values);
+        const response = await action(processName, processVersionId, comment);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.UnhandledError:

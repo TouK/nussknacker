@@ -18,7 +18,6 @@ export type GraphState = {
     stickyNotes?: StickyNote[];
     selectionState?: string[];
     layout: Layout;
-    actionParameters?: ActionParameters;
     testCapabilities?: TestCapabilities;
     testFormParameters?: TestFormParameters[];
     testResults: TestResults;
