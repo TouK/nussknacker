@@ -5,11 +5,10 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalactic.source.Position
-import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import org.scalatest.enablers.Retrying
-import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
+import pl.touk.nussknacker.engine.flink.test.MiniClusterExecutionEnvironment.JobIsNotInitialized
 
 import scala.jdk.CollectionConverters._
 
@@ -17,8 +16,7 @@ class MiniClusterExecutionEnvironment(
     miniCluster: MiniCluster,
     envConfig: AdditionalEnvironmentConfig,
     val env: StreamExecutionEnvironment
-) extends AutoCloseable
-    with Matchers {
+) extends AutoCloseable {
 
   def withJobRunning[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
     waitForStart(jobID)()
@@ -51,10 +49,11 @@ class MiniClusterExecutionEnvironment(
 
   def assertJobNotFailing(jobID: JobID): Unit = {
     val executionGraph = miniCluster.getExecutionGraph(jobID).get()
-    assert(
-      !Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),
-      s"Job: $jobID has failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
-    )
+    if (Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState)) {
+      throw new Exception(
+        s"Job: $jobID has failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
+      )
+    }
   }
 
   private def stopJob(jobID: JobID)(
@@ -80,11 +79,10 @@ class MiniClusterExecutionEnvironment(
     Eventually.eventually {
       val executionGraph = miniCluster.getExecutionGraph(jobID).get()
       additionalChecks
-      assert(
-        executionGraph.getState.equals(expectedJobStatus),
-        s"Job ${executionGraph.getJobName} does not have expected status: $expectedJobStatus"
-      )
-    }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
+      if (executionGraph.getState != expectedJobStatus) {
+        throw new Exception(s"Job ${executionGraph.getJobName} does not have expected status: $expectedJobStatus")
+      }
+    }(patience, implicitly[Retrying[Unit]], implicitly[Position])
   }
 
   private def waitForJobStateWithAdditionalCheck(
@@ -98,25 +96,34 @@ class MiniClusterExecutionEnvironment(
       val executionGraph = miniCluster.getExecutionGraph(jobID).get()
       // we have to verify if job is initialized, because otherwise, not all vertices are available so vertices status check
       // would be misleading
-      assert(executionGraph.getState != JobStatus.INITIALIZING)
+      if (executionGraph.getState == JobStatus.INITIALIZING) {
+        throw new JobIsNotInitialized(jobID, executionGraph.getJobName)
+      }
       additionalChecks
       val executionVertices  = executionGraph.getAllExecutionVertices.asScala
       val notInExpectedState = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
-      assert(
-        notInExpectedState.isEmpty,
-        notInExpectedState
+      if (notInExpectedState.nonEmpty) {
+        val message = notInExpectedState
           .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
           .mkString(
             s"Some vertices of ${executionGraph.getJobName} are not in expected (${expectedState.mkString(", ")}) state): ",
             ", ",
             ""
           )
-      )
-    }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
+        throw new Exception(message)
+      }
+    }(patience, implicitly[Retrying[Unit]], implicitly[Position])
   }
 
   override def close(): Unit = {
     env.close()
   }
+
+}
+
+object MiniClusterExecutionEnvironment {
+
+  class JobIsNotInitialized(jobID: JobID, jobName: String)
+      extends Exception(s"Job [id=$jobID, name=$jobName] is not initialized")
 
 }

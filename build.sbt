@@ -694,11 +694,9 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-base"       % flinkV               % Test,
-        "org.apache.flink" % "flink-streaming-java"       % flinkV               % Test,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV               % Test,
-        "org.apache.flink" % "flink-connector-kafka"      % flinkConnectorKafkaV % Test,
-        "org.apache.flink" % "flink-json"                 % flinkV               % Test
+        "org.apache.flink" % "flink-connector-base"  % flinkV               % Test,
+        "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV % Test,
+        "org.apache.flink" % "flink-json"            % flinkV               % Test
       )
     }
   )
@@ -1222,9 +1220,11 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-metrics-dropwizard"       % flinkV,
-        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV,
-        "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV,
+        "org.apache.flink"        % "flink-metrics-dropwizard"       % flinkV,
+        "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV,
+        "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV,
+        // FIXME abr move to minicluster
+        "com.softwaremill.retry" %% "retry"                          % retryV,
       )
     }
   )
