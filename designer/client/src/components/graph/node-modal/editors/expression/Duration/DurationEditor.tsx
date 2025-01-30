@@ -29,7 +29,7 @@ type Props = {
 const SPEL_DURATION_SWITCHABLE_TO_REGEX =
     /^T\(java\.time\.Duration\)\.parse\('(-)?P([0-9]{1,}D)?(T((-)?[0-9]{1,}H)?((-)?[0-9]{1,}M)?((-)?[0-9]{1,}S)?)?'\)$/;
 const NONE_DURATION = {
-    days: () => null,
+    asDays: () => null,
     hours: () => null,
     minutes: () => null,
     seconds: () => null,
@@ -60,14 +60,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
         (expression: string): Duration => {
             const decodeExecResult = durationFormatter.decode(expression);
 
-            const duration =
-                decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
-            return {
-                days: duration.days(),
-                hours: duration.hours(),
-                minutes: duration.minutes(),
-                seconds: duration.seconds(),
-            };
+            return duration(decodeExecResult);
         },
         [durationFormatter],
     );
@@ -97,3 +90,13 @@ DurationEditor.notSwitchableToHint = () =>
         "editors.duration.noSwitchableToHint",
         "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode",
     );
+
+export function duration(decodeExecResult) {
+    const duration = decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
+    return {
+        days: Math.floor(duration.asDays()),
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+        seconds: duration.seconds(),
+    };
+}
