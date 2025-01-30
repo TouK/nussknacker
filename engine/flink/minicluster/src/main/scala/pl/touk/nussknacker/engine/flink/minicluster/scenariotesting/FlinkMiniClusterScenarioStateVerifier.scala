@@ -22,9 +22,9 @@ class FlinkMiniClusterScenarioStateVerifier(
   // We use reflection, because we don't want to bundle flinkExecutor.jar inside deployment manager assembly jar
   // because it is already in separate assembly for purpose of sending it to Flink during deployment.
   // Other option would be to add flinkExecutor.jar to classpath from which DM is loaded
-  private val mainRunner = new ReflectiveMethodInvoker[Unit](
+  private val jobInvoker = new ReflectiveMethodInvoker[Unit](
     modelData.modelClassLoader,
-    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkVerificationMain",
+    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkScenarioTestingJob",
     "run"
   )
 
@@ -45,7 +45,7 @@ class FlinkMiniClusterScenarioStateVerifier(
         Using.resource(miniClusterWithServices.createStreamExecutionEnvironment(attached = true)) { env =>
           try {
             logger.info(s"Starting to verify $scenarioName")
-            mainRunner.invokeStaticMethod(
+            jobInvoker.invokeStaticMethod(
               modelData,
               scenarioWithOverrodeParallelism,
               processVersion,

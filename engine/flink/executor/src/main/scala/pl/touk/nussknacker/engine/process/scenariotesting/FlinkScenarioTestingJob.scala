@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.testmode.{
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
 
-object FlinkTestMain {
+object FlinkScenarioTestingJob {
 
   // This method is invoked via reflection without shared API classes, so simple types should be used
   def run(
@@ -29,14 +29,14 @@ object FlinkTestMain {
       scenarioTestData: ScenarioTestData,
       streamExecutionEnv: StreamExecutionEnvironment,
   ): Future[TestResults[Json]] = {
-    new FlinkTestMain(modelData).testScenario(scenario, scenarioTestData, streamExecutionEnv)
+    new FlinkScenarioTestingJob(modelData).run(scenario, scenarioTestData, streamExecutionEnv)
   }
 
 }
 
-class FlinkTestMain(modelData: ModelData) {
+class FlinkScenarioTestingJob(modelData: ModelData) {
 
-  def testScenario(
+  def run(
       scenario: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       streamExecutionEnv: StreamExecutionEnvironment,

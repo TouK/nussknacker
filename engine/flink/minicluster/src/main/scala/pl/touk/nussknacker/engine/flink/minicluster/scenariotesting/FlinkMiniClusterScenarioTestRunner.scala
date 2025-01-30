@@ -23,9 +23,9 @@ class FlinkMiniClusterScenarioTestRunner(
   // We use reflection, because we don't want to bundle flinkExecutor.jar inside deployment manager assembly jar
   // because it is already in separate assembly for purpose of sending it to Flink during deployment.
   // Other option would be to add flinkExecutor.jar to classpath from which DM is loaded
-  private val mainRunner = new ReflectiveMethodInvoker[Future[TestResults[Json]]](
+  private val jobInvoker = new ReflectiveMethodInvoker[Future[TestResults[Json]]](
     modelData.modelClassLoader,
-    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkTestMain",
+    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkScenarioTestingJob",
     "run"
   )
 
@@ -42,7 +42,7 @@ class FlinkMiniClusterScenarioTestRunner(
           .map(_ => scenario.overrideParallelismIfNeeded(ScenarioTestingParallelism))
           .getOrElse(scenario)
         val env = miniClusterWithServices.createStreamExecutionEnvironment(attached = true)
-        val resultFuture = mainRunner.invokeStaticMethod(
+        val resultFuture = jobInvoker.invokeStaticMethod(
           modelData,
           scenarioWithOverrodeParallelism,
           scenarioTestData,
