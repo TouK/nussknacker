@@ -60,18 +60,6 @@ object FlinkMiniClusterFactory extends LazyLogging {
       miniClusterConfigOverrides: Configuration,
       streamExecutionConfigOverrides: Configuration
   ): FlinkMiniClusterWithServices = {
-    val (miniCluster, createStreamExecutionEnv) =
-      createMiniClusterWithServicesRaw(modelClassLoader, miniClusterConfigOverrides, streamExecutionConfigOverrides)
-    new FlinkMiniClusterWithServices(miniCluster, createStreamExecutionEnv)
-  }
-
-  // This class return raw objects (tuple, library classes) because is used by reflection and it simplify it
-  // TODO: Remove raw variant of this method after fully switch to shared mini cluster, see LegacyAdHocMiniClusterFallbackHandler
-  def createMiniClusterWithServicesRaw(
-      modelClassLoader: URLClassLoader,
-      miniClusterConfigOverrides: Configuration,
-      streamExecutionConfigOverrides: Configuration
-  ): (MiniCluster, Boolean => StreamExecutionEnvironment) = {
     val miniClusterConfig = DefaultMiniClusterConfig
     miniClusterConfig.addAll(miniClusterConfigOverrides)
 
@@ -92,7 +80,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
       )
     }
 
-    (miniCluster, createStreamExecutionEnv)
+    new FlinkMiniClusterWithServices(miniCluster, createStreamExecutionEnv)
   }
 
   private def createMiniCluster(configuration: Configuration) = {

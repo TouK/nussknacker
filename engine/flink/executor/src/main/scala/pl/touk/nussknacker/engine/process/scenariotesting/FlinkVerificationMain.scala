@@ -8,63 +8,53 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.scenariotesting.legacyadhocminicluster.LegacyAdHocMiniClusterFallbackHandler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestServiceInvocationCollector}
 
 object FlinkVerificationMain {
 
   def run(
-      sharedMiniClusterServicesOpt: Option[(StreamExecutionEnvironment, Int)],
       modelData: ModelData,
       scenario: CanonicalProcess,
       processVersion: ProcessVersion,
-      savepointPath: String
+      savepointPath: String,
+      streamExecutionEnv: StreamExecutionEnvironment
   ): Unit =
-    new FlinkVerificationMain(
-      sharedMiniClusterServicesOpt.map(StreamExecutionEnvironmentWithParallelismOverride.apply _ tupled),
-      modelData
-    ).verifyScenarioState(
+    new FlinkVerificationMain(modelData).verifyScenarioState(
       scenario,
       processVersion,
-      savepointPath
+      savepointPath,
+      streamExecutionEnv
     )
 
 }
 
-class FlinkVerificationMain(
-    sharedMiniClusterServicesOpt: Option[StreamExecutionEnvironmentWithParallelismOverride],
-    modelData: ModelData,
-) {
+class FlinkVerificationMain(modelData: ModelData) {
 
-  private val adHocMiniClusterFallbackHandler =
-    new LegacyAdHocMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario state verification")
-
-  def verifyScenarioState(scenario: CanonicalProcess, processVersion: ProcessVersion, savepointPath: String): Unit = {
+  def verifyScenarioState(
+      scenario: CanonicalProcess,
+      processVersion: ProcessVersion,
+      savepointPath: String,
+      streamExecutionEnv: StreamExecutionEnvironment
+  ): Unit = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     try {
-      adHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(
-        sharedMiniClusterServicesOpt,
-        scenario,
-      ) { streamExecutionEnvWithMaxParallelism =>
-        import streamExecutionEnvWithMaxParallelism._
-        val scenarioWithOverrodeParallelism = streamExecutionEnvWithMaxParallelism.overrideParallelismIfNeeded(scenario)
-        val resultCollector                 = new TestServiceInvocationCollector(collectingListener)
-        val registrar                       = prepareRegistrar(scenarioWithOverrodeParallelism)
-        val deploymentData                  = DeploymentData.empty
+      val resultCollector = new TestServiceInvocationCollector(collectingListener)
+      val registrar       = prepareRegistrar(scenario)
+      val deploymentData  = DeploymentData.empty
 
-        streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
-        registrar.register(
-          streamExecutionEnv,
-          scenarioWithOverrodeParallelism,
-          processVersion,
-          deploymentData,
-          resultCollector
-        )
-        val streamGraph = streamExecutionEnv.getStreamGraph
-        streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savepointPath, true))
-        streamExecutionEnv.execute(streamGraph)
-      }
+      registrar.register(
+        streamExecutionEnv,
+        scenario,
+        processVersion,
+        deploymentData,
+        resultCollector
+      )
+      streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
+      val streamGraph = streamExecutionEnv.getStreamGraph
+      streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savepointPath, true))
+
+      streamExecutionEnv.execute(streamGraph)
     } finally {
       collectingListener.clean()
     }

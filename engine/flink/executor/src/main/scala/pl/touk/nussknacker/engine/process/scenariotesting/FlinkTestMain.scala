@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.scenariotesting.legacyadhocminicluster.LegacyAdHocMiniClusterFallbackHandler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode.{
@@ -23,66 +22,54 @@ import scala.concurrent.{Future, blocking}
 
 object FlinkTestMain {
 
-  // This method is invoked via reflection from module (Flink DM) without shared API classes, so simple types should be used
+  // This method is invoked via reflection without shared API classes, so simple types should be used
   def run(
-      sharedMiniClusterServicesOpt: Option[(StreamExecutionEnvironment, Int)],
       modelData: ModelData,
       scenario: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
+      scenarioTestData: ScenarioTestData,
+      streamExecutionEnv: StreamExecutionEnvironment,
   ): Future[TestResults[Json]] = {
-    new FlinkTestMain(
-      sharedMiniClusterServicesOpt.map(StreamExecutionEnvironmentWithParallelismOverride.apply _ tupled),
-      modelData
-    )
-      .testScenario(scenario, scenarioTestData)
+    new FlinkTestMain(modelData).testScenario(scenario, scenarioTestData, streamExecutionEnv)
   }
 
 }
 
-class FlinkTestMain(
-    sharedMiniClusterServicesOpt: Option[StreamExecutionEnvironmentWithParallelismOverride],
-    modelData: ModelData
-) {
+class FlinkTestMain(modelData: ModelData) {
 
-  private val adHocMiniClusterFallbackHandler =
-    new LegacyAdHocMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario testing")
-
-  def testScenario(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): Future[TestResults[Json]] = {
+  def testScenario(
+      scenario: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      streamExecutionEnv: StreamExecutionEnvironment,
+  ): Future[TestResults[Json]] = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
-    adHocMiniClusterFallbackHandler.handleAdHocMniClusterFallbackAsync(
-      sharedMiniClusterServicesOpt,
+    val resultCollector    = new TestServiceInvocationCollector(collectingListener)
+    // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
+    val processVersion = ProcessVersion.empty.copy(processName = scenario.name)
+    val deploymentData = DeploymentData.empty.copy(additionalModelConfigs =
+      AdditionalModelConfigs(modelData.additionalConfigsFromProvider)
+    )
+    val registrar = prepareRegistrar(collectingListener, scenario, scenarioTestData, processVersion)
+
+    registrar.register(
+      streamExecutionEnv,
       scenario,
-    ) { streamExecutionEnvWithMaxParallelism =>
-      import streamExecutionEnvWithMaxParallelism._
-      val scenarioWithOverrodeParallelism = streamExecutionEnvWithMaxParallelism.overrideParallelismIfNeeded(scenario)
-      val resultCollector                 = new TestServiceInvocationCollector(collectingListener)
-      // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
-      val processVersion = ProcessVersion.empty.copy(processName = scenarioWithOverrodeParallelism.name)
-      val deploymentData = DeploymentData.empty.copy(additionalModelConfigs =
-        AdditionalModelConfigs(modelData.additionalConfigsFromProvider)
-      )
-      val registrar =
-        prepareRegistrar(collectingListener, scenarioWithOverrodeParallelism, scenarioTestData, processVersion)
-      streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
-      registrar.register(
-        streamExecutionEnv,
-        scenarioWithOverrodeParallelism,
-        processVersion,
-        deploymentData,
-        resultCollector
-      )
-      // TODO: Non-blocking future periodically checking if job is finished
-      val resultFuture = Future {
-        blocking {
-          streamExecutionEnv.execute(scenarioWithOverrodeParallelism.name.value)
-          collectingListener.results
-        }
+      processVersion,
+      deploymentData,
+      resultCollector
+    )
+    streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
+
+    // TODO: Non-blocking future periodically checking if job is finished
+    val resultFuture = Future {
+      blocking {
+        streamExecutionEnv.execute(scenario.name.value)
+        collectingListener.results
       }
-      resultFuture.onComplete { _ =>
-        collectingListener.clean()
-      }
-      resultFuture
     }
+    resultFuture.onComplete { _ =>
+      collectingListener.clean()
+    }
+    resultFuture
   }
 
   protected def prepareRegistrar(
