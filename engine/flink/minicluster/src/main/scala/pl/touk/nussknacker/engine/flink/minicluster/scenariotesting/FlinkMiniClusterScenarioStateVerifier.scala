@@ -24,7 +24,7 @@ class FlinkMiniClusterScenarioStateVerifier(
   // Other option would be to add flinkExecutor.jar to classpath from which DM is loaded
   private val jobInvoker = new ReflectiveMethodInvoker[Unit](
     modelData.modelClassLoader,
-    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkScenarioTestingJob",
+    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkStateStateVerificationJob",
     "run"
   )
 
