@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.serialization
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OffsetResetStrategy
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 

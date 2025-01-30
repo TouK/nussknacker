@@ -5687,15 +5687,11 @@ components:
     FixedValuesParameterEditor:
       title: FixedValuesParameterEditor
       type: object
-      required:
-      - mode
       properties:
         possibleValues:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
-        mode:
-          type: string
     FixedValuesWithIconParameterEditor:
       title: FixedValuesWithIconParameterEditor
       type: object
@@ -5704,6 +5700,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValueWithIcon'
+    FixedValuesWithRadioParameterEditor:
+      title: FixedValuesWithRadioParameterEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
     FragmentClazzRef:
       title: FragmentClazzRef
       type: object
@@ -6571,6 +6575,7 @@ components:
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
@@ -7032,6 +7037,7 @@ components:
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'

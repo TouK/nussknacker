@@ -15,10 +15,10 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
     parameters.determinedEditor
       .flatMap {
-        case FixedValuesParameterEditor(firstValue :: _, _) => Some(Expression.spel(firstValue.expression))
+        case FixedValuesParameterEditor(firstValue :: _) => Some(Expression.spel(firstValue.expression))
         // it is better to see error that field is not filled instead of strange default value like '' for String
-        case FixedValuesParameterEditor(Nil, _) => Some(Expression.spel(""))
-        case DualParameterEditor(FixedValuesParameterEditor(firstValue :: _, _), _) =>
+        case FixedValuesParameterEditor(Nil) => Some(Expression.spel(""))
+        case DualParameterEditor(FixedValuesParameterEditor(firstValue :: _), _) =>
           Some(Expression.spel(firstValue.expression))
         case TabularTypedDataEditor =>
           Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))

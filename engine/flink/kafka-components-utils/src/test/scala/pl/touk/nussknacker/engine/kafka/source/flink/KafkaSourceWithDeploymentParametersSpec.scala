@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OffsetResetStrategy
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OffsetResetStrategy.OffsetResetStrategy
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 
@@ -34,7 +33,7 @@ class KafkaSourceWithDeploymentParametersSpec extends KafkaSourceFactoryProcessM
     createEvents(eventsBeforeStart, topic, constTimestamp)
 
     val process        = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
-    val deploymentData = deploymentDataWithOffset(OffsetResetStrategy.Restart)
+    val deploymentData = deploymentDataWithOffset(OffsetResetStrategy.ToEarliest)
 
     run(process, deploymentData) {
       createEvents(eventsAfterStart, topic, constTimestamp + 4)
@@ -53,7 +52,7 @@ class KafkaSourceWithDeploymentParametersSpec extends KafkaSourceFactoryProcessM
     createEvents(eventsBeforeStart, topic, constTimestamp)
 
     val process        = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
-    val deploymentData = deploymentDataWithOffset(OffsetResetStrategy.Reset)
+    val deploymentData = deploymentDataWithOffset(OffsetResetStrategy.ToLatest)
 
     run(process, deploymentData) {
       createEvents(eventsAfterStart, topic, constTimestamp + 4)
@@ -63,10 +62,6 @@ class KafkaSourceWithDeploymentParametersSpec extends KafkaSourceFactoryProcessM
         results.map(_.id) shouldBe List("d")
       }
     }
-  }
-
-  test("should continue where stopped") {
-    // TODO
   }
 
   private def createEvents(events: List[ObjToSerialize], topic: String, startTimestamp: Long): Unit = {
@@ -81,7 +76,7 @@ class KafkaSourceWithDeploymentParametersSpec extends KafkaSourceFactoryProcessM
         NodesDeploymentData(dataByNodeId =
           Map(
             NodeId("procSource") -> Map(
-              FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME.value -> offsetResetStrategy.toString
+              FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME.value -> offsetResetStrategy.entryName
             )
           )
         )

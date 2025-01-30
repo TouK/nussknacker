@@ -3,9 +3,8 @@ package pl.touk.nussknacker.engine.management.sample.source
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.RawParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
-import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -26,7 +25,7 @@ object BoundedSource extends SourceFactory with UnboundedStreamComponent {
 
 object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamComponent {
 
-  val OFFSET_PARAMETER_NAME: ParameterName = ParameterName("offset")
+  private val OFFSET_PARAMETER_NAME: ParameterName = ParameterName("offset")
 
   @MethodToInvoke
   def source(@ParamName("elements") elements: java.util.List[Any]) =
@@ -49,7 +48,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
             .flatMap(s => Try(s.toInt).toOption)
         val elementsWithOffset = offsetOpt match {
           case Some(offset) => list.drop(offset)
-          case _            => list
+          case None         => list
         }
         super.createSourceStream(elementsWithOffset, env, flinkNodeContext)
       }

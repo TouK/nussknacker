@@ -61,13 +61,6 @@ final case class ScenarioActionName(value: String) extends AnyVal {
   override def toString: String = value
 }
 
-/**
- * Used to define Source parameters for each action
- */
-trait WithActionParametersSupport { self: Source =>
-  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
-}
-
 object ScenarioActionName {
 
   implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
@@ -101,4 +94,11 @@ object ScenarioActionName {
     case other              => ScenarioActionName(other)
   }
 
+}
+
+/**
+ * Used to define Source parameters for each action
+ */
+trait WithActionParametersSupport { self: Source =>
+  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }

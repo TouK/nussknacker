@@ -40,10 +40,9 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     } = props.data;
     const processName = useSelector(getProcessName);
 
-    const activityParameters = useSelector(getActionParameters);
-    const activityNodeParameters = activityParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
-    const initialValues = useMemo(() => initialNodesData(activityNodeParameters), [activityNodeParameters]);
-    const [values, setValues] = useState(initialValues);
+    const actionParameters = useSelector(getActionParameters);
+    const actionNodeParameters = actionParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
+    const [values, setValues] = useState(() => initialNodesData(actionNodeParameters));
 
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
@@ -59,7 +58,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
         } catch (error) {
             setValidationError(error?.response?.data);
         }
-    }, [action, comment, dispatch, processName, props]);
+    }, [action, comment, processName, props, values]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
@@ -90,7 +89,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 <FormHelperText title={validationError} error>
                     {validationError}
                 </FormHelperText>
-                {activityNodeParameters && activityNodeParameters.length > 0 ? (
+                {actionNodeParameters && actionNodeParameters.length > 0 ? (
                     <Typography
                         sx={(theme) => ({
                             color: theme.palette.primary.main,
@@ -99,17 +98,17 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                             textDecoration: "none",
                         })}
                     >
-                        Advanced parameters
+                        {t("dialog.advancedParameters.title", "Advanced parameters")}
                     </Typography>
                 ) : null}
-                {activityNodeParameters.map((anp: ActionNodeParameters) => (
-                    <AdvancedParametersSection key={anp.nodeId} nodeId={anp.nodeId}>
+                {actionNodeParameters.map((nodeParameters: ActionNodeParameters) => (
+                    <AdvancedParametersSection key={nodeParameters.nodeId} nodeId={nodeParameters.nodeId}>
                         <NodeTable>
-                            {Object.entries(anp.parameters).map(([paramName, paramConfig]) => {
+                            {Object.entries(nodeParameters.parameters).map(([paramName, paramConfig]) => {
                                 return (
                                     <ActionParameter
                                         key={paramName}
-                                        nodeName={anp.nodeId}
+                                        nodeName={nodeParameters.nodeId}
                                         propertyName={paramName}
                                         propertyConfig={paramConfig}
                                         errors={[]}

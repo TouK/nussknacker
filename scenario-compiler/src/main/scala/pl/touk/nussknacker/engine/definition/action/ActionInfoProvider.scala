@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.activity
+package pl.touk.nussknacker.engine.definition.action
 
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
