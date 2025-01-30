@@ -283,6 +283,14 @@ class HttpService {
         return api.get<Scenario>(url);
     }
 
+    fetchLatestProcessDetailsWithoutValidation(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
+        const id = encodeURIComponent(processName);
+        const url = versionId
+            ? `/processes/${id}/${versionId}?skipValidateAndResolve=true`
+            : `/processes/${id}?skipValidateAndResolve=true`;
+        return api.get<Scenario>(url);
+    }
+
     fetchProcessesStates() {
         return api
             .get<StatusesType>("/processes/status")

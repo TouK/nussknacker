@@ -74,6 +74,8 @@
   * Introduced some default values:
     * For all - default `windowLength` is 1 hour
     * For `aggregate-session` - default `endSessionCondition` is now false
+* Improved scenario visualization loading time
+  * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order
 
 ## 1.18
 
