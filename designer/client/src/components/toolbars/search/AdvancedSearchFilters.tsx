@@ -76,6 +76,7 @@ export function AdvancedSearchFilters({
 
     const handleClear = () => {
         setFilter(filterFields?.plainQuery);
+        setFilterFields({ plainQuery: filterFields?.plainQuery });
     };
 
     return (

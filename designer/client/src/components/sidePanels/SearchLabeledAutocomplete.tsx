@@ -8,7 +8,7 @@ export const SearchLabeledAutocomplete = ({ children, name, options, value, setF
     }
 
     return (
-        <FormControl sx={{ display: "flex", flexDirection: "column", m: 0, gap: 1, width: "100%" }} fullWidth={true}>
+        <FormControl sx={{ display: "flex", flexDirection: "column", m: 0, gap: 1 }} fullWidth={true}>
             {children}
             <Autocomplete
                 freeSolo
