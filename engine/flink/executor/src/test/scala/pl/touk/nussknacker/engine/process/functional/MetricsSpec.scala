@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.functional
 
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Counter, Gauge, Histogram}
 import org.scalatest.LoneElement._
@@ -228,6 +229,25 @@ class MetricsSpec
     allNodes.filter(_.isInstanceOf[DeadEndingData]).foreach { node =>
       counter(s"dead_end.nodeId.${node.id}.count") shouldBe 0L
     }
+  }
+
+  test("should add namespace to metrics") { implicit scenarioName =>
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
+      .source("source1", "input")
+      .emptySink("out1", "monitor")
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0))
+    )
+    val namespace = "a-tenant"
+
+    processInvoker.invokeWithSampleData(
+      process,
+      data,
+      ConfigFactory.empty().withValue("namespace", ConfigValueFactory.fromAnyRef(namespace))
+    )
+
+    counter(s"namespace.$namespace.nodeId.source1.originalProcessName.${scenarioName.value}.nodeCount") shouldBe 1
   }
 
   private def counter(name: String)(implicit scenarioName: ProcessName): Long = withClue(s"counter $name") {

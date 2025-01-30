@@ -13,13 +13,13 @@ describe("Node window", () => {
         cy.viewport(1600, 800);
     });
 
-    it("should display sample-generator source", () => {
+    it("should display event-generator source", () => {
         cy.visitNewProcess(NAME).as("processName");
         cy.contains(/^sources$/)
             .should("exist")
             .scrollIntoView();
         cy.layoutScenario();
-        cy.get("[data-testid='component:sample-generator']")
+        cy.get("[data-testid='component:event-generator']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
@@ -29,7 +29,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("sample-generator").dblclick();
+        cy.getNode("event-generator").dblclick();
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");

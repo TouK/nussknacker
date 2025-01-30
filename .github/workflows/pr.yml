@@ -526,7 +526,7 @@ jobs:
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
     uses: ./.github/workflows/publish.yml
     with:
-      should_run: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      should_run: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
       nussknacker_version:  ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
     secrets:
@@ -543,7 +543,7 @@ jobs:
     with:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
-      should_run: ${{ github.ref == 'refs/heads/staging' }}
+      should_run: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}
