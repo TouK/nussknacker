@@ -99,7 +99,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       input1.add(OneRecord(key, 2, -1))
       input1.finish()
 
-      stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, process.name.value, ExecutionState.FINISHED)()
+      stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, ExecutionState.FINISHED)()
 
       val outValues = collectingListener.results
         .nodeResults(EndNodeId)

@@ -166,12 +166,12 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
       sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
       val jobExecutionResult = env.env.execute(streamGraph)
-      env.waitForStart(jobExecutionResult.getJobID, process1.name.value)()
+      env.waitForStart(jobExecutionResult.getJobID)()
       sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
 
       env.assertJobNotFailing(jobExecutionResult.getJobID)
       verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
-      env.stopJob(process1.name.value, jobExecutionResult)
+      env.stopJob(jobExecutionResult.getJobID)
     }
   }
 

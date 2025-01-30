@@ -34,17 +34,13 @@ class MiniClusterExecutionEnvironment(
       assertJobNotFailing(jobID)
       res
     } finally {
-      stopJob(jobName, executionResult)
+      stopJob(executionResult.getJobID)
     }
-  }
-
-  def stopJob(jobName: String, executionResult: JobExecutionResult): Unit = {
-    stopJob(jobName, executionResult.getJobID)
   }
 
   def executeAndWaitForStart(jobName: String): JobExecutionResult = {
     val res = env.execute(jobName)
-    waitForStart(res.getJobID, jobName)()
+    waitForStart(res.getJobID)()
     res
   }
 
@@ -52,22 +48,22 @@ class MiniClusterExecutionEnvironment(
       jobName: String
   )(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
     val res = env.execute(jobName)
-    waitForJobStatusWithAdditionalCheck(res.getJobID, jobName, assertJobNotFailing(res.getJobID), JobStatus.FINISHED)(
+    waitForJobStatusWithAdditionalCheck(res.getJobID, assertJobNotFailing(res.getJobID), JobStatus.FINISHED)(
       patience
     )
     res
   }
 
-  def waitForStart(jobID: JobID, name: String)(
+  def waitForStart(jobID: JobID)(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
-    waitForJobStateWithNotFailingCheck(jobID, name, ExecutionState.RUNNING, ExecutionState.FINISHED)(patience)
+    waitForJobStateWithNotFailingCheck(jobID, ExecutionState.RUNNING, ExecutionState.FINISHED)(patience)
   }
 
-  def waitForJobStateWithNotFailingCheck(jobID: JobID, name: String, expectedState: ExecutionState*)(
+  def waitForJobStateWithNotFailingCheck(jobID: JobID, expectedState: ExecutionState*)(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
-    waitForJobStateWithAdditionalCheck(jobID, name, assertJobNotFailing(jobID), expectedState: _*)(patience)
+    waitForJobStateWithAdditionalCheck(jobID, assertJobNotFailing(jobID), expectedState: _*)(patience)
   }
 
   def assertJobNotFailing(jobID: JobID): Unit = {
@@ -78,20 +74,19 @@ class MiniClusterExecutionEnvironment(
     )
   }
 
-  private def stopJob(jobName: String, jobID: JobID): Unit = {
+  def stopJob(jobID: JobID): Unit = {
     miniCluster.cancelJob(jobID)
-    waitForJobState(jobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
+    waitForJobState(jobID, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
   }
 
-  private def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(
+  private def waitForJobState(jobID: JobID, expectedState: ExecutionState*)(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
-    waitForJobStateWithAdditionalCheck(jobID, name, {}, expectedState: _*)(patience)
+    waitForJobStateWithAdditionalCheck(jobID, {}, expectedState: _*)(patience)
   }
 
   private def waitForJobStatusWithAdditionalCheck(
       jobID: JobID,
-      name: String,
       additionalChecks: => Unit,
       expectedJobStatus: JobStatus
   )(
@@ -102,14 +97,13 @@ class MiniClusterExecutionEnvironment(
       additionalChecks
       assert(
         executionGraph.getState.equals(expectedJobStatus),
-        s"Job $name does not have expected status: $expectedJobStatus"
+        s"Job ${executionGraph.getJobName} does not have expected status: $expectedJobStatus"
       )
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
   private def waitForJobStateWithAdditionalCheck(
       jobID: JobID,
-      name: String,
       additionalChecks: => Unit,
       expectedState: ExecutionState*
   )(
@@ -127,7 +121,11 @@ class MiniClusterExecutionEnvironment(
         notInExpectedState.isEmpty,
         notInExpectedState
           .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
-          .mkString(s"Some vertices of $name are not in expected (${expectedState.mkString(", ")}) state): ", ", ", "")
+          .mkString(
+            s"Some vertices of ${executionGraph.getJobName} are not in expected (${expectedState.mkString(", ")}) state): ",
+            ", ",
+            ""
+          )
       )
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }

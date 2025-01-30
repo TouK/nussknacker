@@ -114,7 +114,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       input1.finish()
       input2.finish()
 
-      stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, process.name.value, ExecutionState.FINISHED)()
+      stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, ExecutionState.FINISHED)()
 
       val outValues = collectingListener.results
         .nodeResults(EndNodeId)
