@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
 import { MenuItem, MenuList } from "@mui/material";
 import { FoundNode } from "./FoundNode";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { resolveSearchQuery, useFilteredNodes } from "./utils";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
@@ -22,7 +22,7 @@ export type SearchQuery = {
 };
 
 export function SearchResults({ filterRawText }: { filterRawText?: string }) {
-    const searchQuery: SearchQuery = resolveSearchQuery(filterRawText);
+    const searchQuery: SearchQuery = useMemo(() => resolveSearchQuery(filterRawText), [filterRawText]);
     const nodes = useFilteredNodes(searchQuery);
 
     const [hasFocus, setHasFocus] = useState(false);
