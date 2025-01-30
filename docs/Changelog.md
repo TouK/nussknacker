@@ -40,6 +40,7 @@
 * [#7438](https://github.com/TouK/nussknacker/pull/7438) Map int32 integer format in OpenAPI schema to the `Integer` type
 * Improved scenario visualization loading time
     * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order
 
 ## 1.18
 
