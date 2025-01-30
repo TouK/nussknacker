@@ -124,6 +124,18 @@ describe("Search Panel View", () => {
         cy.get("[data-testid=search-panel]").contains("sendSms");
     });
 
+    it("should clear unapplied search filters", () => {
+        cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
+        cy.get("[data-testid=search-panel]").find("button[type='button']").click();
+
+        cy.get("[data-testid=search-panel]").find("input[name='name']").click();
+        cy.realType("sink");
+
+        cy.get("[data-testid=search-panel]").find("button[type='button']").click();
+
+        cy.get("[data-testid=search-panel]").find("input[name='name']").should("have.value", "");
+    });
+
     it("should clear filters when clear all button clicked", () => {
         cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
         cy.realType("se");
