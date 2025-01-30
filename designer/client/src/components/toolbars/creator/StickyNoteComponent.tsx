@@ -2,7 +2,7 @@ import { ComponentGroup } from "../../../types";
 import { StickyNoteType } from "../../../types/stickyNote";
 
 const noteModel = { id: "StickyNoteToAdd", type: StickyNoteType, isDisabled: false };
-export const stickyNoteComponentGroup = (pristine: boolean) => {
+export const stickyNoteComponentGroup = (pristine: boolean): ComponentGroup[] => {
     return [
         {
             components: [
@@ -14,6 +14,6 @@ export const stickyNoteComponentGroup = (pristine: boolean) => {
                 },
             ],
             name: "Misc",
-        } as ComponentGroup,
+        },
     ];
 };

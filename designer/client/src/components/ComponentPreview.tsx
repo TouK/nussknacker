@@ -1,14 +1,20 @@
 import { css, cx } from "@emotion/css";
+import { alpha, styled, useTheme } from "@mui/material";
+import { blend } from "@mui/system";
 import React from "react";
+import { blendLighten, getBorderColor } from "../containers/theme/helpers";
 import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
-import { alpha, styled, useTheme } from "@mui/material";
-import { blend } from "@mui/system";
-import { blendLighten, getBorderColor } from "../containers/theme/helpers";
 
-export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
+export type ComponentPreviewProps = {
+    node: NodeType;
+    isActive?: boolean;
+    isOver?: boolean;
+};
+
+export function ComponentPreview({ node, isActive, isOver }: ComponentPreviewProps): JSX.Element {
     const theme = useTheme();
 
     const nodeStyles = css({
