@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
@@ -35,7 +35,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
           defaultComponents,
           configCreator = ProcessTestHelpersConfigCreator
         )
-        UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+        new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env.env)
 
         ProcessTestHelpers.logServiceResultsHolder.clear()
         ProcessTestHelpers.sinkForStringsResultsHolder.clear()

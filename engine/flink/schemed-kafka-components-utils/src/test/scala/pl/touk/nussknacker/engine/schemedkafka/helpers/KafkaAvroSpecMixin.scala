@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,
   UnoptimizedSerializationPreparer
 }
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
@@ -213,7 +213,7 @@ trait KafkaAvroSpecMixin
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     flinkMiniCluster.withExecutionEnvironment { env =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env.env)
       env.withJobRunning(process.name.value)(action)
     }
   }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
@@ -43,7 +43,7 @@ class EventGeneratorSourceFactorySpec
       .emptySink(sinkId, "dead-end")
 
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(scenario)
+      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(scenario, stoppableEnv.env)
 
       stoppableEnv.withJobRunning(scenario.name.value) {
         eventually {
@@ -76,7 +76,7 @@ class EventGeneratorSourceFactorySpec
       .emptySink(sinkId, "dead-end")
 
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(scenario)
+      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(scenario, stoppableEnv.env)
 
       stoppableEnv.withJobRunning(scenario.name.value) {
         eventually {

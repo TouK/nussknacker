@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -81,7 +81,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       testProcess: CanonicalProcess
   ): Unit = {
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(testProcess)
+      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(testProcess, stoppableEnv.env)
       stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
     }
   }

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -216,7 +216,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(testProcess)
+      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(testProcess, stoppableEnv.env)
       stoppableEnv.withJobRunning(testProcess.name.value)(action)
     }
   }

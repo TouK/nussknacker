@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, ProcessTestHelpersConfigCreator}
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -25,7 +25,7 @@ trait FlinkStreamGraphSpec
     val components = ProcessTestHelpers.prepareComponents(List.empty)
     flinkMiniCluster.withExecutionEnvironment { env =>
       val modelData = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env.env)
       env.env.getStreamGraph
     }
   }

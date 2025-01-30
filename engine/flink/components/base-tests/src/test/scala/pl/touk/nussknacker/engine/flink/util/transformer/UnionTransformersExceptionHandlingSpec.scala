@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
@@ -17,7 +17,7 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(scenario)
+  ): Unit = new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(scenario, env.env)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 

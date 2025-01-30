@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -25,7 +25,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(scenario)
+  ): Unit = new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(scenario, env.env)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 

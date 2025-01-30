@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
@@ -40,7 +40,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(scenario)
+  ): Unit = new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(scenario, env.env)
 
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)

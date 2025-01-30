@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
@@ -737,7 +737,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       testProcess: CanonicalProcess
   ): Unit = {
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv.env, model)(testProcess)
+      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(testProcess, stoppableEnv.env)
       stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
     }
   }

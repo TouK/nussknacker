@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -86,7 +86,7 @@ class KafkaExceptionConsumerSpec
       .emptySink("end", "sink")
 
     flinkMiniCluster.withExecutionEnvironment { env =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env.env)
       val message = env.withJobRunning(process.name.value) {
         val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
 

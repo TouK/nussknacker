@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicP
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NuScalaTestAssertions
@@ -44,7 +44,7 @@ trait KafkaSourceFactoryProcessMixin
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     flinkMiniCluster.withExecutionEnvironment { env =>
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env.env, modelData)(process)
+      new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env.env)
       env.withJobRunning(process.name.value)(action)
     }
   }
