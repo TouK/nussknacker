@@ -52,7 +52,8 @@ class AutoRefreshableCache[KEY, VALUE](
   }
 
   def invalidateAll(): Unit = {
-    cache.asMap().forEach { case (key, value) => (key, value.copy(valid = false)) }
+    val modifiedEntries = cache.asMap().asScala.map { case (key, value) => (key, value.copy(valid = false)) }
+    cache.putAll(modifiedEntries.asJava)
   }
 
   @volatile private var scheduledJob: Option[Cancellable] = None
