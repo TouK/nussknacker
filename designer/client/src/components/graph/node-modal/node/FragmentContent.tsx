@@ -41,7 +41,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}
                     scenario={fragmentContent}
-                    stickyNotes={stickyNotes}
+                    stickyNotes={[]}
                     nodeIdPrefixForFragmentTests={getFragmentNodesPrefix(fragmentContent)}
                 />
             )}
