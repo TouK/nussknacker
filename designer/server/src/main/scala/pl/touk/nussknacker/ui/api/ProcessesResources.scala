@@ -17,7 +17,6 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  SkipAdditionalFields,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -144,10 +143,12 @@ class ProcessesResources(
                 complete {
                   processService
                     .updateProcess(processId, updateCommand)
-                    .withSideEffect(response =>
-                      response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+                    .withSideEffect(result =>
+                      result.updateProcessResponse.processResponse.foreach(resp =>
+                        notifyListener(OnSaved(resp.id, resp.versionId, result.isFragment))
+                      )
                     )
-                    .map(_.validationResult)
+                    .map(_.updateProcessResponse.validationResult)
                 }
               }
             }
@@ -197,7 +198,9 @@ class ProcessesResources(
                 .createProcess(createCommand)
                 // Currently, we throw error but when we switch to Tapir, we would probably handle such a request validation errors more type-safety
                 .map(_.valueOr(err => throw err))
-                .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
+                .withListenerNotifySideEffect(response =>
+                  OnSaved(response.id, response.versionId, createCommand.isFragment)
+                )
                 .map(response =>
                   HttpResponse(
                     status = StatusCodes.Created,

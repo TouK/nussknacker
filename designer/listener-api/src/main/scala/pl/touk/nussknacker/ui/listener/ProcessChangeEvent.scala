@@ -14,7 +14,7 @@ sealed trait ProcessChangeEvent {
 object ProcessChangeEvent {
 
   // Designer related events
-  final case class OnSaved(processId: ProcessId, version: VersionId) extends ProcessChangeEvent
+  final case class OnSaved(processId: ProcessId, version: VersionId, isFragment: Boolean) extends ProcessChangeEvent
   final case class OnRenamed(processId: ProcessId, oldName: ProcessName, newName: ProcessName)
       extends ProcessChangeEvent
   final case class OnArchived(processId: ProcessId)   extends ProcessChangeEvent

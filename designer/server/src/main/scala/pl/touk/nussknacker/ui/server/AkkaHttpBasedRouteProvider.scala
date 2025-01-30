@@ -34,13 +34,8 @@ import pl.touk.nussknacker.ui.config.{
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.DefinitionsServiceAutoRefreshableCacheDecorator.CacheKey
+import pl.touk.nussknacker.ui.definition._
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
-import pl.touk.nussknacker.ui.definition.{
-  AlignedComponentsDefinitionProvider,
-  DefinitionsServiceAutoRefreshableCacheDecorator,
-  DefinitionsServiceImpl,
-  ScenarioPropertiesConfigFinalizer
-}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -242,7 +237,8 @@ class AkkaHttpBasedRouteProvider(
       val processChangeListener = ProcessChangeListenerLoader.loadListeners(
         getClass.getClassLoader,
         resolvedDesignerConfig,
-        NussknackerServices(new PullProcessRepository(futureProcessRepository))
+        NussknackerServices(new PullProcessRepository(futureProcessRepository)),
+        new DefinitionsServiceProcessChangeListener(uiDefinitionsAutoRefreshableCache)
       )
 
       val dmDispatcher =
@@ -522,9 +518,7 @@ class AkkaHttpBasedRouteProvider(
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
             processingTypeDataProvider.mapValues { processingTypeData =>
-              DefinitionsServiceAutoRefreshableCacheDecorator
-                .allCacheKeysForProcessingType(processingTypeData.name)
-                .foreach(uiDefinitionsAutoRefreshableCache.invalidate)
+              uiDefinitionsAutoRefreshableCache.invalidateAll()
               new DefinitionsServiceAutoRefreshableCacheDecorator(
                 DefinitionsServiceImpl(
                   processingTypeData,

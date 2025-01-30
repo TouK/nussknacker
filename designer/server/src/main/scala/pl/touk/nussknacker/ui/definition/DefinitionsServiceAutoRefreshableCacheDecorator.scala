@@ -27,16 +27,5 @@ class DefinitionsServiceAutoRefreshableCacheDecorator(
 }
 
 object DefinitionsServiceAutoRefreshableCacheDecorator {
-
   type CacheKey = (ProcessingType, Boolean, ComponentUiConfigMode)
-
-  def allCacheKeysForProcessingType(
-      processingType: ProcessingType
-  ): Set[CacheKey] = {
-    for {
-      forFragmentValues     <- Set(true, false)
-      componentUiConfigMode <- Set(ComponentUiConfigMode.BasicConfig, ComponentUiConfigMode.EnrichedWithUiConfig)
-    } yield (processingType, forFragmentValues, componentUiConfigMode)
-  }
-
 }

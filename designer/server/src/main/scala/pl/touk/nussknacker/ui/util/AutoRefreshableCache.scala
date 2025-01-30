@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import pl.touk.nussknacker.ui.util.AutoRefreshableCache.AutoRefreshableCacheConfig
+import pl.touk.nussknacker.ui.util.AutoRefreshableCache.{AutoRefreshableCacheConfig, CacheItem}
 import pl.touk.nussknacker.ui.utils.GenericCaffeineCache
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -26,36 +26,33 @@ class AutoRefreshableCache[KEY, VALUE](
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
-  private type VALUE_CREATOR = () => Future[VALUE]
-
   private val keysToRefresh: Cache[KEY, Unit] =
     new GenericCaffeineCache[KEY, Unit](
       java.time.Duration.ofMillis(config.autoRefreshDurationSinceLastUsage.toMillis)
     ).getCache
 
-  private val cache: Cache[KEY, (VALUE, VALUE_CREATOR)] =
-    new GenericCaffeineCache[KEY, (VALUE, VALUE_CREATOR)](
+  private val cache: Cache[KEY, CacheItem[VALUE]] =
+    new GenericCaffeineCache[KEY, CacheItem[VALUE]](
       java.time.Duration.ofMillis(2 * config.autoRefreshInterval.toMillis)
     ).getCache
 
   def getIfPresentOrPut(key: KEY, updater: () => Future[VALUE]): Future[VALUE] = {
     keysToRefresh.put(key, ())
     Option(cache.getIfPresent(key)) match {
-      case Some((currentValue, _)) =>
+      case Some(CacheItem(currentValue, _, valid)) if valid =>
         logger.debug(s"Value present in AutoRefreshableCache with key: $key")
         Future.successful(currentValue)
-      case None =>
+      case None | Some(_) =>
         updater().map { value =>
           logger.debug(s"Putting new value into AutoRefreshableCache with key: $key")
-          cache.put(key, (value, updater))
+          cache.put(key, CacheItem(value, updater, valid = true))
           value
         }
     }
   }
 
-  def invalidate(key: KEY): Unit = {
-    keysToRefresh.invalidate(key)
-    cache.invalidate(key)
+  def invalidateAll(): Unit = {
+    cache.asMap().forEach { case (key, value) => (key, value.copy(valid = false)) }
   }
 
   @volatile private var scheduledJob: Option[Cancellable] = None
@@ -68,12 +65,12 @@ class AutoRefreshableCache[KEY, VALUE](
         Await.result(
           Future
             .sequence(
-              currentCacheContent.map { case (key, (_, valueCreator)) =>
+              currentCacheContent.map { case (key, cacheItem) =>
                 Option(keysToRefresh.getIfPresent(key)) match {
                   case Some(_) =>
-                    valueCreator().map { newValue =>
+                    cacheItem.valueCreator().map { newValue =>
                       logger.debug(s"AutoRefreshableCache refreshed for key $key")
-                      cache.put(key, (newValue, valueCreator))
+                      cache.put(key, CacheItem(newValue, cacheItem.valueCreator, valid = true))
                     }
                   case None =>
                     logger.debug(s"Auto-refresh duration expired for $key")
@@ -96,6 +93,8 @@ class AutoRefreshableCache[KEY, VALUE](
 }
 
 object AutoRefreshableCache {
+
+  final case class CacheItem[VALUE](value: VALUE, valueCreator: () => Future[VALUE], valid: Boolean)
 
   def create[M[_]: Sync, K, V](
       actorSystem: ActorSystem,
