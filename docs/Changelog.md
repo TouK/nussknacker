@@ -22,6 +22,7 @@
 * Improved scenario visualization loading time
     * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
     * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
   * new API available under `processes/{scenarioName}/stickyNotes`
@@ -48,9 +49,6 @@
   * Introduced some default values:
     * For all - default `windowLength` is 1 hour
     * For `aggregate-session` - default `endSessionCondition` is now false
-* Improved scenario visualization loading time
-    * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
-* [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
 
 ## 1.18
 
