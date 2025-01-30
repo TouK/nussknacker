@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 
 import java.time.Duration
+import scala.util.Using
 
 class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -31,53 +32,55 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private val forEachNodeResultId       = "for-each-result"
 
   test("should produce results for each element in list") {
-    val collectingListener = initializeListener
-    val model              = modelData(List(TestRecord()), collectingListener)
+    Using.resource(ResultsCollectingListenerHolder.registerListener) { collectingListener =>
+      val model = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess =
-      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+      val testProcess =
+        aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
-    val results = collectTestResults(model, testProcess, collectingListener)
-    extractResultValues(results) shouldBe List("one_1", "other_1")
+      val results = collectTestResults(model, testProcess, collectingListener)
+      extractResultValues(results) shouldBe List("one_1", "other_1")
+    }
   }
 
   test("should produce unique contextId for each element in list") {
-    val collectingListener = initializeListener
-    val model              = modelData(List(TestRecord()), collectingListener)
+    Using.resource(ResultsCollectingListenerHolder.registerListener) { collectingListener =>
+      val model = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess =
-      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+      val testProcess =
+        aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
-    val results = collectTestResults(model, testProcess, collectingListener)
-    extractContextIds(results) shouldBe List("forEachProcess-start-0-0-0", "forEachProcess-start-0-0-1")
+      val results = collectTestResults(model, testProcess, collectingListener)
+      extractContextIds(results) shouldBe List("forEachProcess-start-0-0-0", "forEachProcess-start-0-0-1")
+    }
   }
 
   test("should set return type based on element types") {
-    val collectingListener = initializeListener
-    val model              = modelData(List(TestRecord()), collectingListener)
+    Using.resource(ResultsCollectingListenerHolder.registerListener) { collectingListener =>
+      val model = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess =
-      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
-    val processValidator = ProcessValidator.default(model)
-    implicit val jobData: JobData =
-      JobData(testProcess.metaData, ProcessVersion.empty.copy(processName = testProcess.metaData.name))
+      val testProcess =
+        aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+      val processValidator = ProcessValidator.default(model)
+      implicit val jobData: JobData =
+        JobData(testProcess.metaData, ProcessVersion.empty.copy(processName = testProcess.metaData.name))
 
-    val forEachResultValidationContext =
-      processValidator.validate(testProcess, isFragment = false).typing(forEachNodeResultId)
-    forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])
+      val forEachResultValidationContext =
+        processValidator.validate(testProcess, isFragment = false).typing(forEachNodeResultId)
+      forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])
+    }
   }
 
   test("should not produce any results when elements list is empty") {
-    val collectingListener = initializeListener
-    val model              = modelData(List(TestRecord()), collectingListener)
+    Using.resource(ResultsCollectingListenerHolder.registerListener) { collectingListener =>
+      val model = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess = aProcessWithForEachNode(elements = "{}")
+      val testProcess = aProcessWithForEachNode(elements = "{}")
 
-    val results = collectTestResults(model, testProcess, collectingListener)
-    results.nodeResults shouldNot contain key sinkId
+      val results = collectTestResults(model, testProcess, collectingListener)
+      results.nodeResults shouldNot contain key sinkId
+    }
   }
-
-  private def initializeListener = ResultsCollectingListenerHolder.registerListener
 
   private def modelData(
       list: List[TestRecord] = List(),
@@ -125,8 +128,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(testProcess, stoppableEnv.env)
-      stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, stoppableEnv.env)
+      stoppableEnv.waitForFinished(executionResult.getJobID)()
     }
   }
 

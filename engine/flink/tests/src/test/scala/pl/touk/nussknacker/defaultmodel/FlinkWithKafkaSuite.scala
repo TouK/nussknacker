@@ -163,7 +163,8 @@ abstract class FlinkWithKafkaSuite
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     flinkMiniCluster.withExecutionEnvironment { env =>
       registrar.register(env.env, process, ProcessVersion.empty, DeploymentData.empty)
-      env.withJobRunning(process.name.value)(action)
+      val executionResult = env.env.execute()
+      env.withJobRunning(executionResult.getJobID)(action)
     }
   }
 

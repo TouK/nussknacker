@@ -21,8 +21,8 @@ class FlinkScenarioUnitTestJob(modelData: ModelData) {
   }
 
   def registerInEnvironmentWithModel(scenario: CanonicalProcess, env: StreamExecutionEnvironment): Unit = {
-    val deploymentData: DeploymentData = DeploymentData.empty
-    val version: ProcessVersion = ProcessVersion.empty
+    val deploymentData = DeploymentData.empty
+    val version        = ProcessVersion.empty
     val registrar =
       FlinkProcessRegistrar(
         new FlinkProcessCompilerDataFactory(modelData),

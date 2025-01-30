@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
+import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -20,47 +20,30 @@ class MiniClusterExecutionEnvironment(
 ) extends AutoCloseable
     with Matchers {
 
-  // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
-  // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
-  // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
-  def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T =
-    withJobRunning(jobName, _ => actionToInvokeWithJobRunning)
-
-  def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
-    val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
+  def withJobRunning[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
+    waitForStart(jobID)()
     try {
-      val res   = actionToInvokeWithJobRunning(executionResult)
-      val jobID = executionResult.getJobID
+      val res = actionToInvokeWithJobRunning
       assertJobNotFailing(jobID)
       res
     } finally {
-      stopJob(executionResult.getJobID)
+      stopJob(jobID)()
     }
   }
 
-  def executeAndWaitForStart(jobName: String): JobExecutionResult = {
-    val res = env.execute(jobName)
-    waitForStart(res.getJobID)()
-    res
+  def waitForFinished(
+      jobID: JobID
+  )(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
+    waitForJobStatusWithAdditionalCheck(jobID, assertJobNotFailing(jobID), JobStatus.FINISHED)(patience)
   }
 
-  def executeAndWaitForFinished(
-      jobName: String
-  )(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
-    val res = env.execute(jobName)
-    waitForJobStatusWithAdditionalCheck(res.getJobID, assertJobNotFailing(res.getJobID), JobStatus.FINISHED)(
-      patience
-    )
-    res
-  }
-
-  def waitForStart(jobID: JobID)(
+  private def waitForStart(jobID: JobID)(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
     waitForJobStateWithNotFailingCheck(jobID, ExecutionState.RUNNING, ExecutionState.FINISHED)(patience)
   }
 
-  def waitForJobStateWithNotFailingCheck(jobID: JobID, expectedState: ExecutionState*)(
+  private def waitForJobStateWithNotFailingCheck(jobID: JobID, expectedState: ExecutionState*)(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
     waitForJobStateWithAdditionalCheck(jobID, assertJobNotFailing(jobID), expectedState: _*)(patience)
@@ -74,13 +57,15 @@ class MiniClusterExecutionEnvironment(
     )
   }
 
-  def stopJob(jobID: JobID): Unit = {
+  private def stopJob(jobID: JobID)(
+      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+  ): Unit = {
     miniCluster.cancelJob(jobID)
-    waitForJobState(jobID, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
+    waitForJobState(jobID, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)(patience)
   }
 
   private def waitForJobState(jobID: JobID, expectedState: ExecutionState*)(
-      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+      patience: Eventually.PatienceConfig
   ): Unit = {
     waitForJobStateWithAdditionalCheck(jobID, {}, expectedState: _*)(patience)
   }
@@ -90,7 +75,7 @@ class MiniClusterExecutionEnvironment(
       additionalChecks: => Unit,
       expectedJobStatus: JobStatus
   )(
-      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+      patience: Eventually.PatienceConfig
   ): Unit = {
     Eventually.eventually {
       val executionGraph = miniCluster.getExecutionGraph(jobID).get()
@@ -107,7 +92,7 @@ class MiniClusterExecutionEnvironment(
       additionalChecks: => Unit,
       expectedState: ExecutionState*
   )(
-      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+      patience: Eventually.PatienceConfig
   ): Unit = {
     Eventually.eventually {
       val executionGraph = miniCluster.getExecutionGraph(jobID).get()

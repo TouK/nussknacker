@@ -29,21 +29,20 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
         config: Config = config
     ): Unit = {
       val defaultComponents = ProcessTestHelpers.prepareComponents(data)
+      ProcessTestHelpers.logServiceResultsHolder.clear()
+      ProcessTestHelpers.sinkForStringsResultsHolder.clear()
+      ProcessTestHelpers.sinkForIntsResultsHolder.clear()
+      ProcessTestHelpers.eagerOptionalParameterSinkResultsHolder.clear()
+      ProcessTestHelpers.genericParameterSinkResultsHolder.clear()
+      ProcessTestHelpers.optionalEndingCustomResultsHolder.clear()
       flinkMiniCluster.withExecutionEnvironment { env =>
         val modelData = LocalModelData(
           config,
           defaultComponents,
           configCreator = ProcessTestHelpersConfigCreator
         )
-        new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env.env)
-
-        ProcessTestHelpers.logServiceResultsHolder.clear()
-        ProcessTestHelpers.sinkForStringsResultsHolder.clear()
-        ProcessTestHelpers.sinkForIntsResultsHolder.clear()
-        ProcessTestHelpers.eagerOptionalParameterSinkResultsHolder.clear()
-        ProcessTestHelpers.genericParameterSinkResultsHolder.clear()
-        ProcessTestHelpers.optionalEndingCustomResultsHolder.clear()
-        env.executeAndWaitForFinished(process.name.value)()
+        val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env.env)
+        env.waitForFinished(executionResult.getJobID)()
       }
     }
 

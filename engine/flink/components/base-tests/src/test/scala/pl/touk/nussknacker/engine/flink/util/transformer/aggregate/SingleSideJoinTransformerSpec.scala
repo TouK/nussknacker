@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
@@ -32,6 +32,7 @@ import java.util.Collections.{emptyList, singletonList}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
@@ -89,27 +90,28 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       OneRecord(key, 1, 123)
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    withRunningScenario(process, input1, input2, collectingListener) { (id, stoppableEnv) =>
-      input1.add(OneRecord(key, 0, -1))
-      // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
-      eventually {
-        SingleSideJoinTransformerSpec.elementsAddedToState should have size input2.size
+    Using.resource(ResultsCollectingListenerHolder.registerListener) { collectingListener =>
+      withRunningScenario(process, input1, input2, collectingListener) { (jobId, stoppableEnv) =>
+        input1.add(OneRecord(key, 0, -1))
+        // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
+        eventually {
+          SingleSideJoinTransformerSpec.elementsAddedToState should have size input2.size
+        }
+        input1.add(OneRecord(key, 2, -1))
+        input1.finish()
+
+        stoppableEnv.waitForFinished(jobId)()
+
+        val outValues = collectingListener.results
+          .nodeResults(EndNodeId)
+          .filter(_.variableTyped(KeyVariableName).contains(key))
+          .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
+
+        outValues shouldEqual List(
+          Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),
+          Map("approxCardinality" -> 1, "last" -> 123, "list"  -> singletonList(123), "sum" -> 123)
+        )
       }
-      input1.add(OneRecord(key, 2, -1))
-      input1.finish()
-
-      stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, ExecutionState.FINISHED)()
-
-      val outValues = collectingListener.results
-        .nodeResults(EndNodeId)
-        .filter(_.variableTyped(KeyVariableName).contains(key))
-        .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
-
-      outValues shouldEqual List(
-        Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),
-        Map("approxCardinality" -> 1, "last" -> 123, "list"  -> singletonList(123), "sum" -> 123)
-      )
     }
   }
 
@@ -118,12 +120,11 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       input1: BlockingQueueSource[OneRecord],
       input2: List[OneRecord],
       collectingListener: ResultsCollectingListener[Any]
-  )(action: (JobExecutionResult, MiniClusterExecutionEnvironment) => Unit): Unit = {
+  )(action: (JobID, MiniClusterExecutionEnvironment) => Unit): Unit = {
     val model = modelData(input1, input2, collectingListener)
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(testProcess, stoppableEnv.env)
-      val id = stoppableEnv.executeAndWaitForStart(testProcess.name.value)
-      action(id, stoppableEnv)
+      val result = new FlinkScenarioUnitTestJob(model).run(testProcess, stoppableEnv.env)
+      stoppableEnv.withJobRunning(result.getJobID)(action(result.getJobID, stoppableEnv))
     }
   }
 

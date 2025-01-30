@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.common.JobExecutionResult
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
@@ -21,11 +22,11 @@ import java.util.UUID
 
 class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
-  override protected def registerInEnvironment(
+  override protected def runScenario(
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(scenario, env.env)
+  ): JobExecutionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env.env)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
@@ -137,9 +138,8 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
     val enrichedComponents = sourceComponentDefinition :: FlinkBaseComponentProvider.Components :::
       FlinkBaseUnboundedComponentProvider.Components
     flinkMiniCluster.withExecutionEnvironment { env =>
-      registerInEnvironment(env, LocalModelData(config, enrichedComponents), scenario)
-
-      env.executeAndWaitForFinished("test")()
+      val executionResult = runScenario(env, LocalModelData(config, enrichedComponents), scenario)
+      env.waitForFinished(executionResult.getJobID)()
 
       // A bit more complex check, since there are errors from both join sides...
       RecordingExceptionConsumer

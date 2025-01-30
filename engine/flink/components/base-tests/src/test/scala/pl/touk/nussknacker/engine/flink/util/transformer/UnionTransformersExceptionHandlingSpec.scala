@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
+import org.apache.flink.api.common.JobExecutionResult
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.build.GraphBuilder
@@ -13,11 +14,11 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
-  override protected def registerInEnvironment(
+  override protected def runScenario(
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(scenario, env.env)
+  ): JobExecutionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env.env)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 

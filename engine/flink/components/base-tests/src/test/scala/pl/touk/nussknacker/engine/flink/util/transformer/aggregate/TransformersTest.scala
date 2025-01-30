@@ -737,8 +737,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       testProcess: CanonicalProcess
   ): Unit = {
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(testProcess, stoppableEnv.env)
-      stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, stoppableEnv.env)
+      stoppableEnv.waitForFinished(executionResult.getJobID)()
     }
   }
 

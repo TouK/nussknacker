@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import org.apache.flink.api.common.JobExecutionResult
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -36,11 +37,11 @@ class KafkaUniversalSinkExceptionHandlingSpec
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def registerInEnvironment(
+  override protected def runScenario(
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(scenario, env.env)
+  ): JobExecutionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env.env)
 
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)

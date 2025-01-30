@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
+import org.apache.flink.api.common.JobExecutionResult
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -32,13 +33,12 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
 
     flinkMiniCluster.withExecutionEnvironment { env =>
-      registerInEnvironment(
+      val executionResult = runScenario(
         env,
         LocalModelData(config, sourceComponentDefinition :: components),
         scenario
       )
-
-      env.executeAndWaitForFinished("test")()
+      env.waitForFinished(executionResult.getJobID)()
     }
     RecordingExceptionConsumer.exceptionsFor(runId) should have length generator.count
   }
@@ -46,11 +46,11 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   /**
     * TestFlinkRunner should be invoked, it's not accessible in this module
     */
-  protected def registerInEnvironment(
+  protected def runScenario(
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit
+  ): JobExecutionResult
 
   class ExceptionGenerator {
 

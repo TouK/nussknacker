@@ -43,9 +43,8 @@ class EventGeneratorSourceFactorySpec
       .emptySink(sinkId, "dead-end")
 
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(scenario, stoppableEnv.env)
-
-      stoppableEnv.withJobRunning(scenario.name.value) {
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, stoppableEnv.env)
+      stoppableEnv.withJobRunning(executionResult.getJobID) {
         eventually {
           val results = collectingListener.results.nodeResults.get(sinkId)
           results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
@@ -76,9 +75,9 @@ class EventGeneratorSourceFactorySpec
       .emptySink(sinkId, "dead-end")
 
     flinkMiniCluster.withExecutionEnvironment { stoppableEnv =>
-      new FlinkScenarioUnitTestJob(model).registerInEnvironmentWithModel(scenario, stoppableEnv.env)
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, stoppableEnv.env)
 
-      stoppableEnv.withJobRunning(scenario.name.value) {
+      stoppableEnv.withJobRunning(executionResult.getJobID) {
         eventually {
           val results        = collectingListener.results.nodeResults.get(sinkId)
           val emittedResults = results.toList.flatten.flatMap(_.variableTyped("input"))
