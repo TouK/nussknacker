@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.RawParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.activity.ActionInfoProvider
+import pl.touk.nussknacker.engine.definition.action.ActionInfoProvider
 import pl.touk.nussknacker.restmodel.definition.UiActionParameterConfig
 import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService.{UiActionNodeParameters, UiActionParameters}
 import pl.touk.nussknacker.ui.security.api.LoggedUser

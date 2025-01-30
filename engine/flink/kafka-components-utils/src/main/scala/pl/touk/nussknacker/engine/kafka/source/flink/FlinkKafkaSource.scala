@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
+import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -11,9 +13,8 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKaf
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
-import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
@@ -82,7 +83,7 @@ class FlinkKafkaSource[T](
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
   private val defaultOffsetResetStrategy =
-    if (kafkaConfig.forceLatestRead.contains(true)) OffsetResetStrategy.Reset else OffsetResetStrategy.Continue
+    if (kafkaConfig.forceLatestRead.contains(true)) OffsetResetStrategy.ToLatest else OffsetResetStrategy.None
 
   override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
     Map(
@@ -90,22 +91,21 @@ class FlinkKafkaSource[T](
         OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
           defaultValue = Some(defaultOffsetResetStrategy.toString),
           editor = Some(
-            FixedValuesParameterEditor(
+            FixedValuesWithRadioParameterEditor(
               List(
                 FixedExpressionValue(
-                  OffsetResetStrategy.Continue.toString,
-                  s"Resume reading data where it previously stopped (continue)."
+                  OffsetResetStrategy.None.toString,
+                  s"Resume reading where it previously stopped"
                 ),
                 FixedExpressionValue(
-                  OffsetResetStrategy.Reset.toString,
-                  "Start reading new events only (reset)."
+                  OffsetResetStrategy.ToLatest.toString,
+                  "Start reading new events only"
                 ),
                 FixedExpressionValue(
-                  OffsetResetStrategy.Restart.toString,
-                  "Rewinds reading from the earliest event (restart)."
+                  OffsetResetStrategy.ToEarliest.toString,
+                  "Read all events from the topic"
                 ),
-              ),
-              mode = FixedValuesEditorMode.RADIO
+              )
             )
           ),
           validators = None,
@@ -131,11 +131,12 @@ class FlinkKafkaSource[T](
     )
 
     offsetResetStrategy match {
-      case OffsetResetStrategy.Reset =>
+      case OffsetResetStrategy.ToLatest =>
         topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaConfig))
-      case OffsetResetStrategy.Restart =>
+      case OffsetResetStrategy.ToEarliest =>
         topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaConfig))
-      case _ => ()
+      case OffsetResetStrategy.None =>
+        ()
     }
 
     createFlinkSource(consumerGroupId, flinkNodeContext)
@@ -208,9 +209,14 @@ class FlinkKafkaSource[T](
 object FlinkKafkaSource {
   val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
 
-  object OffsetResetStrategy extends Enumeration {
-    type OffsetResetStrategy = Value
-    val Continue, Reset, Restart = Value
+  sealed trait OffsetResetStrategy extends EnumEntry with UpperSnakecase
+
+  object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
+    override def values: IndexedSeq[OffsetResetStrategy] = findValues
+
+    case object None       extends OffsetResetStrategy
+    case object ToEarliest extends OffsetResetStrategy
+    case object ToLatest   extends OffsetResetStrategy
   }
 
 }

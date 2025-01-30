@@ -5,9 +5,11 @@ import java.util.Arrays;
 import java.util.Map;
 import pl.touk.nussknacker.engine.api.Hidden;
 import pl.touk.nussknacker.engine.api.ParamName;
-import pl.touk.nussknacker.engine.api.definition.*;
+import pl.touk.nussknacker.engine.api.definition.DualParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
+import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
-import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode;
 import scala.collection.JavaConverters;
 
 /**
@@ -20,26 +22,22 @@ import scala.collection.JavaConverters;
  */
 public class AggregateHelper implements Serializable {
 
-    public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(
-            JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
-                    new FixedExpressionValue("#AGG.first", "First"),
-                    new FixedExpressionValue("#AGG.last", "Last"),
-                    new FixedExpressionValue("#AGG.countWhen", "CountWhen"),
-                    new FixedExpressionValue("#AGG.average", "Average"),
-                    new FixedExpressionValue("#AGG.stddevPop", "StddevPop"),
-                    new FixedExpressionValue("#AGG.stddevSamp", "StddevSamp"),
-                    new FixedExpressionValue("#AGG.varPop", "VarPop"),
-                    new FixedExpressionValue("#AGG.varSamp", "VarSamp"),
-                    new FixedExpressionValue("#AGG.median", "Median"),
-                    new FixedExpressionValue("#AGG.min", "Min"),
-                    new FixedExpressionValue("#AGG.max", "Max"),
-                    new FixedExpressionValue("#AGG.sum", "Sum"),
-                    new FixedExpressionValue("#AGG.list", "List"),
-                    new FixedExpressionValue("#AGG.set", "Set"),
-                    new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality")
-            )).asScala().toList(),
-            FixedValuesEditorMode.LIST
-    );
+    public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
+            new FixedExpressionValue("#AGG.first", "First"),
+            new FixedExpressionValue("#AGG.last", "Last"),
+            new FixedExpressionValue("#AGG.countWhen", "CountWhen"),
+            new FixedExpressionValue("#AGG.average", "Average"),
+            new FixedExpressionValue("#AGG.stddevPop", "StddevPop"),
+            new FixedExpressionValue("#AGG.stddevSamp", "StddevSamp"),
+            new FixedExpressionValue("#AGG.varPop", "VarPop"),
+            new FixedExpressionValue("#AGG.varSamp", "VarSamp"),
+            new FixedExpressionValue("#AGG.median", "Median"),
+            new FixedExpressionValue("#AGG.min", "Min"),
+            new FixedExpressionValue("#AGG.max", "Max"),
+            new FixedExpressionValue("#AGG.sum", "Sum"),
+            new FixedExpressionValue("#AGG.list", "List"),
+            new FixedExpressionValue("#AGG.set", "Set"),
+            new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality"))).asScala().toList());
 
     @Hidden
     public static final DualParameterEditor DUAL_EDITOR = new DualParameterEditor(SIMPLE_EDITOR, DualEditorMode.SIMPLE);

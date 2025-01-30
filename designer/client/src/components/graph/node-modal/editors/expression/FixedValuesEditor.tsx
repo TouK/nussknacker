@@ -5,7 +5,7 @@ import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
-import { FormControlLabel, Radio, RadioGroup, Stack, styled, Typography, useTheme } from "@mui/material";
+import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
 import { ExtendedEditor } from "./Editor";
 import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
@@ -36,11 +36,6 @@ function getOptions(values: FixedValuesOption[]): Option[] {
     }));
 }
 
-enum FixedValuesEditorMode {
-    LIST = "LIST",
-    RADIO = "RADIO",
-}
-
 export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
@@ -51,7 +46,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     };
 
     const { expressionObj, readOnly, onValueChange, className, showValidation, editorConfig, fieldErrors } = props;
-    const mode = FixedValuesEditorMode[editorConfig.mode || "LIST"];
+    const mode = "LIST"; // FIXME: handle list and radios
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
@@ -64,7 +59,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
         selectStyled(theme);
-    return mode == FixedValuesEditorMode.RADIO ? (
+    return mode === "RADIO" ? (
         <div className={cx(className)}>
             <RadioGroup value={currentOption.value} onChange={(event) => onValueChange(event.target.value)}>
                 {options.map((option: Option) => {

@@ -175,7 +175,6 @@ class DefinitionResourcesSpec
                    |      "label" : "someValue"
                    |    }
                    |  ],
-                   |  "mode" : "LIST",
                    |  "type" : "FixedValuesParameterEditor"
                    |}""".stripMargin)
         .toOption

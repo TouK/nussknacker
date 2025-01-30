@@ -247,7 +247,6 @@ class TestingApiHttpServiceSpec
              |                            "label": "due"
              |                        }
              |                    ],
-             |                    "mode" : "LIST",
              |                    "type": "FixedValuesParameterEditor"
              |                },
              |                "defaultValue": {

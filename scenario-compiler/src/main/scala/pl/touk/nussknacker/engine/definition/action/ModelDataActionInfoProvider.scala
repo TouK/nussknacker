@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.engine.definition.activity
+package pl.touk.nussknacker.engine.definition.action
 
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap

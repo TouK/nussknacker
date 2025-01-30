@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.component.Component._
-import pl.touk.nussknacker.engine.api.component.{Component, ParameterConfig, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName

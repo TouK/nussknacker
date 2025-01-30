@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.activity
+package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.ModelData
@@ -12,15 +12,15 @@ import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefiniti
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
-class CommonModelDataInfoProvider(modelData: ModelData) {
+abstract class CommonModelDataInfoProvider(modelData: ModelData) {
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
   private lazy val nodeCompiler = new NodeCompiler(
     modelData.modelDefinition,
-    new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
+    new FragmentParametersDefinitionExtractor(modelData.modelClassLoader),
     expressionCompiler,
-    modelData.modelClassLoader.classLoader,
+    modelData.modelClassLoader,
     Seq.empty,
     ProductionServiceInvocationCollector,
     ComponentUseCase.TestDataGeneration,

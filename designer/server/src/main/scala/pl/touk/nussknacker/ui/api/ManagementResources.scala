@@ -102,11 +102,14 @@ class ManagementResources(
             io.circe.parser.parse(body) match {
               case Right(json) =>
                 json.as[RunDeploymentRequest] match {
-                  case Right(request) => provide(request)
+                  case Right(request) =>
+                    provide(request)
                   case Left(notValidDeployRequest) =>
-                    reject(MalformedRequestContentRejection("lorem ipsum", notValidDeployRequest))
+                    reject(MalformedRequestContentRejection("Invalid deployment request", notValidDeployRequest))
                 }
-              case Left(notJson) => provide(RunDeploymentRequest(None, Some(body)))
+              case Left(notJson) =>
+                // assume deployment request contains plaintext comment only
+                provide(RunDeploymentRequest(None, Some(body)))
             }
         }
       }
