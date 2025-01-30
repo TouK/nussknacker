@@ -60,14 +60,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
         (expression: string): Duration => {
             const decodeExecResult = durationFormatter.decode(expression);
 
-            const duration =
-                decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
-            return {
-                days: duration.asDays() < 1 ? null : duration.asDays().toFixed(),
-                hours: duration.hours(),
-                minutes: duration.minutes(),
-                seconds: duration.seconds(),
-            };
+            return duration(decodeExecResult);
         },
         [durationFormatter],
     );
@@ -97,3 +90,13 @@ DurationEditor.notSwitchableToHint = () =>
         "editors.duration.noSwitchableToHint",
         "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode",
     );
+
+export function duration(decodeExecResult) {
+    const duration = decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
+    return {
+        days: Math.floor(duration.asDays()),
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+        seconds: duration.seconds(),
+    };
+}
