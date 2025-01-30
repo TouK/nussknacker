@@ -59,7 +59,7 @@ export function AdvancedSearchFilters({
             .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression))
             .filter((type) => componentLabels.has(type.toLowerCase()));
 
-        return uniq(availableTypes);
+        return uniq(availableTypes).sort();
     }, [allNodes, componentLabels]);
 
     useEffect(() => {

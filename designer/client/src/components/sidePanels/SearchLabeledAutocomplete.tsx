@@ -8,7 +8,7 @@ export const SearchLabeledAutocomplete = ({ children, name, options, value, setF
     }
 
     return (
-        <FormControl sx={{ display: "flex", flexDirection: "column", m: 0, gap: 1, width: "100%" }}>
+        <FormControl sx={{ display: "flex", flexDirection: "column", m: 0, gap: 1, width: "100%" }} fullWidth={true}>
             {children}
             <Autocomplete
                 freeSolo
@@ -16,10 +16,9 @@ export const SearchLabeledAutocomplete = ({ children, name, options, value, setF
                 value={value.join(",")}
                 onChange={handleChange}
                 onInputChange={handleChange}
-                className={nodeInput}
                 renderInput={(params) => (
                     <div ref={params.InputProps.ref}>
-                        <input name={name} {...params.inputProps} className={nodeInput} />
+                        <input name={name} {...params.inputProps} className={nodeInput} style={{ width: "100%" }} />
                     </div>
                 )}
             />
