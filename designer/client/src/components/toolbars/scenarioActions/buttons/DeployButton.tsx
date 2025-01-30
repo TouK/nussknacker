@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
-import HttpService, {NodesDeploymentData} from "../../../../http/HttpService";
+import HttpService, { NodesDeploymentData } from "../../../../http/HttpService";
 import {
     getProcessName,
     hasError,
@@ -14,13 +14,11 @@ import {
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployWithParametersDialog";
+import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { ProcessName, ProcessVersionId } from "../../../Process/types";
-
-import { useActionCapabilities } from "../../../modals/GenericAction/useActionCapabilities";
 
 export default function DeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
@@ -31,9 +29,6 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const processName = useSelector(getProcessName);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
-
-    // TODO: find better place to reload activity capabilities and properties
-    useActionCapabilities();
 
     const available = validationResultPresent && !disabled && deployPossible && capabilities.deploy;
     const { t } = useTranslation();

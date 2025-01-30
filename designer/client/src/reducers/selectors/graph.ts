@@ -8,7 +8,6 @@ import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 import { TestFormParameters } from "../../common/TestResultUtils";
-import { ActionParameters } from "../../types/action";
 import { StickyNote } from "../../common/StickyNote";
 import { getStickyNotesSettings } from "./settings";
 
@@ -74,7 +73,6 @@ export const isArchivePossible = createSelector(
     [getProcessState, isFragment],
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
-export const getActionParameters = createSelector(getGraph, (g) => g.actionParameters || ({} as ActionParameters));
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);

@@ -40,16 +40,6 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
         );
 }
 
-export function fetchActionParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
-    return (dispatch) =>
-        HttpService.getActionParameters(processName, scenarioGraph).then(({ data }) => {
-            dispatch({
-                type: "UPDATE_ACTION_PARAMETERS",
-                actionParameters: data,
-            });
-        });
-}
-
 export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
         HttpService.getTestFormParameters(processName, scenarioGraph).then(({ data }) => {

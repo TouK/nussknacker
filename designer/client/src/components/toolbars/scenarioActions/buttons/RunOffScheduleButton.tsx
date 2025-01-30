@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
-import HttpService, {NodesDeploymentData} from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
     isRunOffSchedulePossible,
@@ -12,7 +12,7 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployWithParametersDialog";
+import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
@@ -34,7 +34,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
+    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
         HttpService.runOffSchedule(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
