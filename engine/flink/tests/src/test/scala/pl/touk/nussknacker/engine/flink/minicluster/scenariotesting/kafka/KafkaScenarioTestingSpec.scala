@@ -1,12 +1,10 @@
-package pl.touk.nussknacker.scenariotesting.kafka
+package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.kafka
 
-import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json.{Null, fromString, obj}
-import org.apache.flink.configuration.Configuration
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -14,24 +12,21 @@ import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.management.ScenarioTestingConfig
-import pl.touk.nussknacker.engine.management.scenariotesting.{
-  FlinkProcessTestRunner,
-  ScenarioTestingMiniClusterWrapperFactory
-}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, PatientScalaFutures}
 
 import java.util.Collections
+import scala.concurrent.ExecutionContext
 
 class KafkaScenarioTestingSpec
     extends AnyFunSuite
@@ -39,7 +34,8 @@ class KafkaScenarioTestingSpec
     with LazyLogging
     with EitherValuesDetailedMessage
     with OptionValues
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with PatientScalaFutures {
 
   private val config = ConfigFactory
     .empty()
@@ -50,35 +46,22 @@ class KafkaScenarioTestingSpec
     )
     .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
 
-  private val (deploymentManagersClassLoaderInstance, releaseDeploymentManagersClassLoaderResources) =
-    DeploymentManagersClassLoader
-      .create(List.empty)
-      .allocated
-      .unsafeRunSync()
-
   private val modelData: ModelData =
     LocalModelData(
       inputConfig = config,
       components = List.empty,
       configCreator = new KafkaSourceFactoryProcessConfigCreator(() => KafkaScenarioTestingSpec.resultsHolders),
-      modelClassLoader =
-        ModelClassLoader(FlinkTestConfiguration.classpathWorkaround, None, deploymentManagersClassLoaderInstance)
+      modelClassLoader = ModelClassLoader.flinkWorkAroundEmptyClassloader
     )
 
-  private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
-    modelData.modelClassLoader,
-    parallelism = 1,
-    miniClusterConfig = ScenarioTestingConfig.defaultMiniClusterConfig,
-    streamExecutionConfig = new Configuration
-  )
+  private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
   private val testRunner =
-    new FlinkProcessTestRunner(modelData, Some(scenarioTestingMiniClusterWrapper))
+    new FlinkMiniClusterScenarioTestRunner(modelData, Some(miniClusterWithServices))
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    scenarioTestingMiniClusterWrapper.close()
-    releaseDeploymentManagersClassLoaderResources.unsafeRunSync()
+    miniClusterWithServices.close()
   }
 
   test("Should pass correct timestamp from test data") {
@@ -123,7 +106,11 @@ class KafkaScenarioTestingSpec
         _.add("value", obj("id" -> fromString("fooId"), "field" -> fromString("fooField")))
       )
 
-    val results = testRunner.runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
+    val results = testRunner
+      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))(
+        ExecutionContext.global
+      )
+      .futureValue
 
     val testResultVars = results.nodeResults("end").head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
@@ -152,7 +139,11 @@ class KafkaScenarioTestingSpec
           .add("value", obj("id" -> fromString("1234"), "field" -> fromString("abcd")))
       )
 
-    val results = testRunner.runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
+    val results = testRunner
+      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))(
+        ExecutionContext.global
+      )
+      .futureValue
 
     results.nodeResults shouldBe Symbol("nonEmpty")
   }

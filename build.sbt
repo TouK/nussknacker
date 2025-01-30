@@ -354,16 +354,17 @@ val igniteV                   = "2.10.0"
 val retryV                    = "0.3.6"
 
 // depending on scala version one of this jar lays in Flink lib dir
-def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion) {
-  case (2, 12) =>
-    Seq(
-      "org.apache.flink" %% "flink-scala" % flinkV
-    ) // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
-  case (2, 13) =>
-    Seq(
-      "pl.touk" %% "flink-scala-2-13" % "1.1.2"
-    ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
-}.map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
+def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
+  forScalaVersion(scalaVersion) {
+    case (2, 12) =>
+      Seq(
+        "org.apache.flink" %% "flink-scala" % flinkV
+      ) // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
+    case (2, 13) =>
+      Seq(
+        "pl.touk" %% "flink-scala-2-13" % "1.1.2"
+      ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
+  }.map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
@@ -607,30 +608,22 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
-        ("org.apache.flink"       % "flink-streaming-java"       % flinkV)
-          .excludeAll(
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
-        "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV,
-        "com.softwaremill.retry" %% "retry"                      % retryV,
-        "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
-        "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
-      ) ++ flinkLibScalaDeps(scalaVersion.value)
+        "org.typelevel"          %% "cats-core"    % catsV          % Provided,
+        "com.softwaremill.retry" %% "retry"        % retryV,
+        "org.wiremock"            % "wiremock"     % wireMockV      % Test,
+        "org.scalatestplus"      %% "mockito-5-10" % scalaTestPlusV % Test,
+      )
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
     dependencyOverrides += "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
   )
   .dependsOn(
     deploymentManagerApi % Provided,
-    scenarioCompiler     % Provided,
-    componentsApi        % Provided,
+    flinkMiniCluster,
+    commonUtils          % Provided,
+    utilsInternal        % Provided,
     httpUtils            % Provided,
-    flinkScalaUtils      % Provided,
-    // test->test dependency is needed to load SimpleProcessConfigCreator
-    flinkExecutor        % "test,test->test",
+    flinkExecutor        % Test,
     flinkTestUtils       % "it,test",
     kafkaTestUtils       % "it,test"
   )
@@ -711,7 +704,6 @@ lazy val flinkTests = (project in flink("tests"))
   )
   .dependsOn(
     defaultModel                     % Test,
-    flinkExecutor                    % Test,
     flinkKafkaComponents             % Test,
     flinkBaseComponents              % Test,
     flinkBaseUnboundedComponents     % Test,
@@ -721,6 +713,7 @@ lazy val flinkTests = (project in flink("tests"))
     flinkComponentsTestkit           % Test,
     flinkDeploymentManager           % Test,
     // test->test dependencies are needed to load components from these modules
+    flinkExecutor                    % "test,test->test",
     flinkKafkaComponentsUtils        % "test->test",
     flinkSchemedKafkaComponentsUtils % "test->test",
     // for local development
@@ -756,8 +749,8 @@ lazy val flinkExecutor = (project in flink("executor"))
       .value,
     libraryDependencies ++= {
       Seq(
+        // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
         "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
-        "org.apache.flink" % "flink-runtime"              % flinkV % Provided,
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
         "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
@@ -787,6 +780,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     flinkComponentsUtils,
     flinkExtensionsApi,
     scenarioCompiler,
+    utilsInternal,
     // Various components uses one of library in stack: sttp -> async-http-client -> netty
     // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
     // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
@@ -1194,10 +1188,33 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
         "org.apache.flink"        % "flink-streaming-java"    % flinkV     % Provided,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest"          %% "scalatest"               % scalaTestV % Test,
-      ) ++ flinkLibScalaDeps(scalaVersion.value, Some("provided"))
+      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(Provided))
     }
   )
   .dependsOn(testUtils % Test)
+
+lazy val flinkMiniCluster = (project in flink("minicluster"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-flink-minicluster",
+    libraryDependencies ++= {
+      Seq(
+        ("org.apache.flink"           % "flink-streaming-java"       % flinkV)
+          .excludeAll(
+            ExclusionRule("log4j", "log4j"),
+            ExclusionRule("org.slf4j", "slf4j-log4j12"),
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
+        "org.apache.flink"            % "flink-statebackend-rocksdb" % flinkV,
+        "org.scala-lang.modules"     %% "scala-collection-compat"    % scalaCollectionsCompatV % Provided,
+        "com.typesafe.scala-logging" %% "scala-logging"              % scalaLoggingV           % Provided,
+      ) ++ flinkLibScalaDeps(scalaVersion.value)
+    }
+  )
+  .dependsOn(
+    extensionsApi % Provided,
+    utilsInternal % Provided,
+  )
 
 lazy val flinkTestUtils = (project in flink("test-utils"))
   .settings(commonSettings)
@@ -2173,6 +2190,7 @@ lazy val modules = List[ProjectReference](
   flinkKafkaComponentsUtils,
   flinkComponentsUtils,
   flinkTests,
+  flinkMiniCluster,
   flinkTestUtils,
   flinkComponentsApi,
   flinkExtensionsApi,

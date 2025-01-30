@@ -75,8 +75,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     ```
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
 * [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: by default mini cluster is created once and reused each time
-  To revert previous behaviour (creating minicluster each time), change `deploymentConfig.scenarioTesting.reuseMiniClusterForScenarioTesting` or/and 
-  `deploymentConfig.scenarioTesting.reuseMiniClusterForScenarioStateVerification` to `false` 
+  To revert previous behaviour (creating minicluster each time), change `deploymentConfig.miniCluster.useForScenarioTesting` or/and 
+  `deploymentConfig.miniCluster.useForScenarioStateVerification` to `false` 
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.

@@ -1,10 +1,8 @@
-package pl.touk.nussknacker.engine.management.scenariotesting
+package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting
 
-import cats.effect.unsafe.implicits.global
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
-import org.apache.flink.configuration.Configuration
-import org.apache.flink.runtime.client.JobExecutionException
+import org.apache.flink.runtime.JobException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
@@ -25,35 +23,31 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.FragmentResolver
-import pl.touk.nussknacker.engine.deployment.AdditionalModelConfigs
-import pl.touk.nussknacker.engine.flink.test.{
-  FlinkTestConfiguration,
-  RecordingExceptionConsumer,
-  RecordingExceptionConsumerProvider
-}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunnerSpec._
+import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, FragmentInputDefinition, FragmentOutputDefinition}
-import pl.touk.nussknacker.engine.management.ScenarioTestingConfig
-import pl.touk.nussknacker.engine.management.scenariotesting.FlinkProcessTestRunnerSpec.{
-  fragmentWithValidationName,
-  processWithFragmentParameterValidation
-}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
-import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.{Date, UUID}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class FlinkProcessTestRunnerSpec
+class FlinkMiniClusterScenarioTestRunnerSpec
     extends AnyWordSpec
     with Matchers
     with Inside
     with BeforeAndAfterEach
     with BeforeAndAfterAll
-    with OptionValues {
+    with OptionValues
+    with PatientScalaFutures {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -62,24 +56,7 @@ class FlinkProcessTestRunnerSpec
   private val sourceNodeId      = "id"
   private val firstSubtaskIndex = 0
 
-  private val (deploymentManagersClassLoaderInstance, releaseDeploymentManagersClassLoaderResources) =
-    DeploymentManagersClassLoader
-      .create(List.empty)
-      .allocated
-      .unsafeRunSync()
-
-  private val modelClassLoader = ModelClassLoader(
-    FlinkTestConfiguration.classpathWorkaround,
-    None,
-    deploymentManagersClassLoaderInstance
-  )
-
-  private val scenarioTestingMiniClusterWrapper = ScenarioTestingMiniClusterWrapperFactory.create(
-    modelClassLoader,
-    parallelism = 1,
-    miniClusterConfig = ScenarioTestingConfig.defaultMiniClusterConfig,
-    streamExecutionConfig = new Configuration
-  )
+  private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -89,8 +66,7 @@ class FlinkProcessTestRunnerSpec
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    scenarioTestingMiniClusterWrapper.close()
-    releaseDeploymentManagersClassLoaderResources.unsafeRunSync()
+    miniClusterWithServices.close()
   }
 
   "A scenario run on Flink engine" when {
@@ -117,15 +93,17 @@ class FlinkProcessTestRunnerSpec
       val input  = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
       val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        process,
-        ScenarioTestData(
-          List(
-            ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")),
-            ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          process,
+          ScenarioTestData(
+            List(
+              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")),
+              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+            )
           )
-        )
-      )
+        )(ExecutionContext.global)
+        .futureValue
 
       val nodeResults = results.nodeResults
 
@@ -179,14 +157,16 @@ class FlinkProcessTestRunnerSpec
       val testRunner = prepareTestRunner(useIOMonadInInterpreter)
 
       def runTestAndVerify() = {
-        val results = testRunner.runTests(
-          process,
-          ScenarioTestData(
-            List(
-              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+        val results = testRunner
+          .runTests(
+            process,
+            ScenarioTestData(
+              List(
+                ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+              )
             )
-          )
-        )
+          )(ExecutionContext.global)
+          .futureValue
 
         val nodeResults = results.nodeResults
 
@@ -207,6 +187,43 @@ class FlinkProcessTestRunnerSpec
       runTestAndVerify()
     }
 
+    "be able to run tests with legacy ad-hoc mini cluster" in {
+      val process =
+        ScenarioBuilder
+          .streaming(scenarioName)
+          .source(sourceNodeId, "input")
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
+
+      val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
+
+      val testRunner = prepareTestRunner(useIOMonadInInterpreter, useLegacyAdHocMiniCluster = true)
+
+      val results = testRunner
+        .runTests(
+          process,
+          ScenarioTestData(
+            List(
+              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+            )
+          )
+        )(ExecutionContext.global)
+        .futureValue
+
+      val nodeResults = results.nodeResults
+
+      nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input))
+      nodeResults("out") shouldBe List(nodeResult(0, "input" -> input))
+
+      val invocationResults = results.invocationResults
+
+      invocationResults("out") shouldBe
+        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable(11)))
+
+      results.externalInvocationResults("out") shouldBe List(
+        ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "valueMonitor", variable(11))
+      )
+    }
+
     "collect results for split" in {
       val process =
         ScenarioBuilder
@@ -214,10 +231,12 @@ class FlinkProcessTestRunnerSpec
           .source(sourceNodeId, "input")
           .split("splitId1", GraphBuilder.emptySink("out1", "monitor"), GraphBuilder.emptySink("out2", "monitor"))
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        process,
-        ScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
-      )
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          process,
+          ScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
+        )(ExecutionContext.global)
+        .futureValue
 
       results.nodeResults("splitId1") shouldBe List(
         nodeResult(
@@ -247,10 +266,12 @@ class FlinkProcessTestRunnerSpec
       val aggregate  = SimpleRecordWithPreviousValue(input, 0, "s")
       val aggregate2 = SimpleRecordWithPreviousValue(input2, 1, "s")
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        process,
-        ScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
-      )
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          process,
+          ScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
+        )(ExecutionContext.global)
+        .futureValue
 
       val nodeResults = results.nodeResults
 
@@ -295,15 +316,17 @@ class FlinkProcessTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName)
-          .parallelism(4)
+          .parallelism(FlinkMiniClusterFactory.DefaultTaskSlots + 1)
           .source(sourceNodeId, "input")
           .emptySink("out", "monitor")
 
       val results =
-        prepareTestRunner(useIOMonadInInterpreter).runTests(
-          process,
-          ScenarioTestData(createTestRecord() :: List.fill(4)(createTestRecord(value1 = 11))),
-        )
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(
+            process,
+            ScenarioTestData(createTestRecord() :: List.fill(4)(createTestRecord(value1 = 11))),
+          )(ExecutionContext.global)
+          .futureValue
 
       val nodeResults = results.nodeResults
 
@@ -319,17 +342,19 @@ class FlinkProcessTestRunnerSpec
           .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        process,
-        ScenarioTestData(
-          List(
-            createTestRecord(id = "0", value1 = 1),
-            createTestRecord(id = "1", value1 = 0),
-            createTestRecord(id = "2", value1 = 2),
-            createTestRecord(id = "3", value1 = 4)
-          )
-        ),
-      )
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          process,
+          ScenarioTestData(
+            List(
+              createTestRecord(id = "0", value1 = 1),
+              createTestRecord(id = "1", value1 = 0),
+              createTestRecord(id = "2", value1 = 2),
+              createTestRecord(id = "3", value1 = 4)
+            )
+          ),
+        )(ExecutionContext.global)
+        .futureValue
 
       val nodeResults = results.nodeResults
 
@@ -388,7 +413,8 @@ class FlinkProcessTestRunnerSpec
             createTestRecord(id = "3", value1 = 4)
           )
         )
-      )
+      )(ExecutionContext.global)
+        .futureValue
 
       val nodeResults = results.nodeResults
 
@@ -407,12 +433,15 @@ class FlinkProcessTestRunnerSpec
           .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2".spel)
           .emptySink("out", "monitor")
 
-      intercept[JobExecutionException] {
-        prepareTestRunner(useIOMonadInInterpreter).runTests(
+      val runner = prepareTestRunner(useIOMonadInInterpreter)
+      runner
+        .runTests(
           process,
           ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
-        )
-      }
+        )(ExecutionContext.global)
+        .failed
+        .futureValue
+        .getCause shouldBe a[JobException]
     }
 
     "handle json input" in {
@@ -438,7 +467,8 @@ class FlinkProcessTestRunnerSpec
         )
       )
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData)
+      val results =
+        prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData)(ExecutionContext.global).futureValue
 
       results.nodeResults(sourceNodeId) should have size 3
       results.externalInvocationResults("out") shouldBe
@@ -468,7 +498,8 @@ class FlinkProcessTestRunnerSpec
         .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo".spel)
       val testData = ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData)
+      val results =
+        prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData)(ExecutionContext.global).futureValue
 
       results.nodeResults(sourceNodeId) should have size 1
       results.externalInvocationResults("out") shouldBe
@@ -489,10 +520,12 @@ class FlinkProcessTestRunnerSpec
           .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]".spel)
 
       val results =
-        prepareTestRunner(useIOMonadInInterpreter).runTests(
-          process,
-          ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
-        )
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(
+            process,
+            ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
+          )(ExecutionContext.global)
+          .futureValue
 
       results.exceptions should have length 1
       results.exceptions.head.nodeId shouldBe Some("out")
@@ -510,18 +543,20 @@ class FlinkProcessTestRunnerSpec
       def recordWithSeconds(duration: FiniteDuration) =
         ScenarioTestJsonRecord(sourceNodeId, Json.fromString(s"0|0|0|${duration.toMillis}|0|0|0"))
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        process,
-        ScenarioTestData(
-          List(
-            recordWithSeconds(1 second),
-            recordWithSeconds(2 second),
-            recordWithSeconds(5 second),
-            recordWithSeconds(9 second),
-            recordWithSeconds(20 second)
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          process,
+          ScenarioTestData(
+            List(
+              recordWithSeconds(1 second),
+              recordWithSeconds(2 second),
+              recordWithSeconds(5 second),
+              recordWithSeconds(9 second),
+              recordWithSeconds(20 second)
+            )
           )
-        )
-      )
+        )(ExecutionContext.global)
+        .futureValue
 
       val nodeResults = results.nodeResults
 
@@ -540,15 +575,17 @@ class FlinkProcessTestRunnerSpec
           )
           .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2".spel)
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        process,
-        ScenarioTestData(
-          ScenarioTestJsonRecord(
-            sourceNodeId,
-            Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))
-          ) :: Nil
-        )
-      )
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          process,
+          ScenarioTestData(
+            ScenarioTestJsonRecord(
+              sourceNodeId,
+              Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))
+            ) :: Nil
+          )
+        )(ExecutionContext.global)
+        .futureValue
 
       results.invocationResults("out").map(_.value) shouldBe List(variable("abcdef"))
     }
@@ -571,10 +608,12 @@ class FlinkProcessTestRunnerSpec
         .emptySink("out", "valueMonitor", "Value" -> "#parsed.size + ' ' + #parsed[0].field2".spel)
 
       val results =
-        prepareTestRunner(useIOMonadInInterpreter).runTests(
-          process,
-          ScenarioTestData(List(createTestRecord(value1 = valueToReturn)))
-        )
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(
+            process,
+            ScenarioTestData(List(createTestRecord(value1 = valueToReturn)))
+          )(ExecutionContext.global)
+          .futureValue
 
       results.invocationResults("out").map(_.value) shouldBe List(variable(s"$countToPass $valueToReturn"))
     }
@@ -598,7 +637,9 @@ class FlinkProcessTestRunnerSpec
       val recordFalse = createTestRecord(id = "bela")
 
       val results =
-        prepareTestRunner(useIOMonadInInterpreter).runTests(process, ScenarioTestData(List(recordTrue, recordFalse)))
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(process, ScenarioTestData(List(recordTrue, recordFalse)))(ExecutionContext.global)
+          .futureValue
 
       val invocationResults = results.invocationResults
 
@@ -637,7 +678,9 @@ class FlinkProcessTestRunnerSpec
       val recC = createTestRecord(id = "c")
 
       val results =
-        prepareTestRunner(useIOMonadInInterpreter).runTests(process, ScenarioTestData(List(recA, recB, recC)))
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(process, ScenarioTestData(List(recA, recB, recC)))(ExecutionContext.global)
+          .futureValue
 
       results.invocationResults("proc2").map(_.contextId) should contain only (
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-end1",
@@ -694,7 +737,9 @@ class FlinkProcessTestRunnerSpec
       val recordC = recordA.copy(id = "c")
       val recordD = recordA.copy(id = "d")
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(process, scenarioTestData)
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(process, scenarioTestData)(ExecutionContext.global)
+        .futureValue
 
       val nodeResults = results.nodeResults
       nodeResults("source1") shouldBe List(
@@ -741,10 +786,12 @@ class FlinkProcessTestRunnerSpec
         .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}".spel)
 
       val results =
-        prepareTestRunner(useIOMonadInInterpreter).runTests(
-          process,
-          ScenarioTestData(List(createTestRecord(sourceId = "start")))
-        )
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(
+            process,
+            ScenarioTestData(List(createTestRecord(sourceId = "start")))
+          )(ExecutionContext.global)
+          .futureValue
 
       results.invocationResults("out").map(_.value) shouldBe List(
         variable(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime))
@@ -765,10 +812,12 @@ class FlinkProcessTestRunnerSpec
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val dictEditorException = intercept[IllegalArgumentException] {
-        prepareTestRunner(useIOMonadInInterpreter).runTests(
-          process,
-          ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
-        )
+        prepareTestRunner(useIOMonadInInterpreter)
+          .runTests(
+            process,
+            ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
+          )(ExecutionContext.global)
+          .futureValue
       }
       dictEditorException.getMessage.startsWith(
         "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(DualParameterEditor(StringParameterEditor,RAW))"
@@ -805,7 +854,8 @@ class FlinkProcessTestRunnerSpec
             )
           )
         )
-      ).runTests(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))))
+      ).runTests(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))))(ExecutionContext.global)
+        .futureValue
       results.exceptions should have length 0
     }
 
@@ -818,10 +868,12 @@ class FlinkProcessTestRunnerSpec
 
       val resolved = FragmentResolver(List(processWithFragmentParameterValidation)).resolve(scenario)
 
-      val results = prepareTestRunner(useIOMonadInInterpreter).runTests(
-        resolved.valueOr { _ => throw new IllegalArgumentException("Won't happen") },
-        ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")))),
-      )
+      val results = prepareTestRunner(useIOMonadInInterpreter)
+        .runTests(
+          resolved.valueOr { _ => throw new IllegalArgumentException("Won't happen") },
+          ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")))),
+        )(ExecutionContext.global)
+        .futureValue
       results.exceptions.length shouldBe 0
     }
   }
@@ -836,18 +888,23 @@ class FlinkProcessTestRunnerSpec
   private def prepareTestRunner(
       useIOMonadInInterpreter: Boolean,
       enrichDefaultConfig: Config => Config = identity,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
-  ): FlinkProcessTestRunner = {
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
+      useLegacyAdHocMiniCluster: Boolean = false
+  ): FlinkMiniClusterScenarioTestRunner = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
-    // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData.duringExecution(
-      ModelConfigs(config, AdditionalModelConfigs(additionalConfigsFromProvider)),
-      modelClassLoader,
-      resolveConfigs = false
+    val modelData = LocalModelData(
+      config,
+      List.empty,
+      configCreator = new SimpleProcessConfigCreator,
+      additionalConfigsFromProvider = additionalConfigsFromProvider,
+      modelClassLoader = ModelClassLoader.flinkWorkAroundEmptyClassloader,
     )
-    new FlinkProcessTestRunner(modelData, Some(scenarioTestingMiniClusterWrapper))
+    new FlinkMiniClusterScenarioTestRunner(
+      modelData,
+      Some(miniClusterWithServices).filterNot(_ => useLegacyAdHocMiniCluster)
+    )
   }
 
   private def nodeResult(count: Int, vars: (String, Any)*): ResultContext[_] =
@@ -882,7 +939,7 @@ class FlinkProcessTestRunnerSpec
 
 }
 
-object FlinkProcessTestRunnerSpec {
+object FlinkMiniClusterScenarioTestRunnerSpec {
   private val fragmentWithValidationName = "fragmentWithValidation"
 
   private val processWithFragmentParameterValidation: CanonicalProcess = {
