@@ -40,14 +40,18 @@ describe(`${duration.name} function`, () => {
         const formatter = typeFormatters[FormatterType.Duration];
         const oneMinute = "PT1M";
         const oneHour = "PT1H";
+        const almostOneDay = "PT23H";
+        const oneDayOneHour = "PT25H";
         const oneDay = "P1D";
         const fortyDays = "P40D";
         const mix = "P1DT1H1M";
 
-        const times = [oneMinute, oneHour, oneDay, fortyDays, mix];
+        const times = [oneMinute, oneHour, almostOneDay, oneDayOneHour, oneDay, fortyDays, mix];
         const results = [
             { ...emptyDuration, minutes: 1 },
             { ...emptyDuration, hours: 1 },
+            { ...emptyDuration, hours: 23 },
+            { ...emptyDuration, days: 1, hours: 1 },
             { ...emptyDuration, days: 1 },
             { ...emptyDuration, days: 40 },
             { days: 1, hours: 1, minutes: 1, seconds: 0 },
