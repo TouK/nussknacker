@@ -4,6 +4,7 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -327,6 +328,14 @@ object ProcessCompilationError {
 
   final case class UnsupportedDictParameterEditorType(paramName: ParameterName, typ: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
+
+  final case class IncompatibleParameterDefinitionModification(
+      paramName: ParameterName,
+      language: Language,
+      parameterEditor: Option[ParameterEditor],
+      nodeId: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
 
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 

@@ -186,3 +186,26 @@ The docs button which is displayed in the scenario properties modal window is by
 ``` scenarioPropertiesDocsUrl: "http://custom-configurable-link"```
 
 in the config. 
+
+## Multitenancy support
+
+Nussknacker supports multitenancy, allowing multiple Nussknacker designer instances to operate on shared infrastructure components,
+such as Kafka, Flink, or InfluxDB. This is achieved by using configured namespaces to isolate resources:
+- Kafka Topics: Prefixed with a namespace
+- Kafka Consumer Groups: Prefixed with a namespace
+- Flink Jobs: Prefixed with a namespace
+- InfluxDB Metrics: Tagged with an additional namespace tag
+
+A namespace configuration can be defined as follows:
+
+```
+modelConfig: {
+  ...
+  namespace: customer1
+  namespaceSeparator: "_"
+}
+```
+
+Notes:
+- The `namespaceSeparator` is optional and defaults to `_` if not specified.
+- This configuration applies a uniform namespace to all resources.

@@ -5,6 +5,7 @@ import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import pl.touk.nussknacker.engine.api.namespaces.Namespace
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
@@ -36,7 +37,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
               ModelClassLoader(urls, workingDirectoryOpt = None, deploymentManagersClassLoader),
               resolveConfigs = true
             )
-            val metricRegistry = prepareMetricRegistry(runtimeConfig)
+            val metricRegistry = prepareMetricRegistry(runtimeConfig, modelData.namingStrategy.namespace)
             val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
             // TODO Pass correct ProcessVersion and DeploymentData
             val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
@@ -75,9 +76,9 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
     }
   }
 
-  private def prepareMetricRegistry(engineConfig: Config) = {
+  private def prepareMetricRegistry(engineConfig: Config, namespace: Option[Namespace]) = {
     lazy val instanceId = sys.env.getOrElse("INSTANCE_ID", LiteMetricRegistryFactory.hostname)
-    new LiteMetricRegistryFactory(instanceId).prepareRegistry(engineConfig)
+    new LiteMetricRegistryFactory(instanceId, namespace).prepareRegistry(engineConfig)
   }
 
 }

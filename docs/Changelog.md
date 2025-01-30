@@ -37,9 +37,10 @@
 * [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
-* Changes to `periodic` component (renamed to `sample-generator`):
-  * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
-  * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
+* Changes to `periodic` component (renamed to `event-generator`):
+  * [#7502](https://github.com/TouK/nussknacker/pull/7502) Component rename: `periodic` to `event-generator`
+  * [#7502](https://github.com/TouK/nussknacker/pull/7502) Parameter rename: `period` to `schedule`
+  * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `schedule` editor
   * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
     and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
     generated and emitted 5 times. Now in one count batch each value is evaluated separately.
@@ -66,6 +67,8 @@
 * [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: mini cluster created once and reused each time
 * [#7498](https://github.com/TouK/nussknacker/pull/7498) Support many migrations loaded using SPI. Loaded migration numbers
   cannot overlap, if they do, an exception is thrown.
+* [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
+* [#7468](https://github.com/TouK/nussknacker/pull/7468) Configurable namespace separator (was fixed to `_`), added namespace tag to Lite engine metrics and fixed namespacing of Kafka consumer groups.
 
 ## 1.18
 
