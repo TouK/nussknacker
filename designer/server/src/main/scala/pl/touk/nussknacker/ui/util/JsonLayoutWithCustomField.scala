@@ -5,6 +5,7 @@ import ch.qos.logback.contrib.json.classic.JsonLayout
 
 import java.util
 
+// Utility class to enable add custom field to logback json output
 // Setters and classes with empty constructor are required by logback
 class JsonLayoutWithCustomField extends JsonLayout {
   private var customField: JsonLayoutCustomField = null
@@ -24,12 +25,8 @@ class JsonLayoutCustomField {
   private var key: String   = null
   private var value: String = null
 
-  def setKey(key: String): Unit =
-    this.key = key
-
-  def setValue(value: String): Unit =
-    this.value = value
-
-  def getKey(): String   = key
-  def getValue(): String = value
+  def setKey(key: String): Unit     = this.key = key
+  def setValue(value: String): Unit = this.value = value
+  def getKey(): String              = key
+  def getValue(): String            = value
 }
