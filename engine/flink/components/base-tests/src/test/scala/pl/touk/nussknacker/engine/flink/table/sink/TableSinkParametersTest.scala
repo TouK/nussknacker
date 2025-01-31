@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -14,20 +15,19 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.jdk.CollectionConverters._
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
+class TableSinkParametersTest extends AnyFunSuite with Matchers with PatientScalaFutures with BeforeAndAfterAll {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -99,8 +99,10 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
     ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(tableComponents)
     .build()
@@ -108,6 +110,7 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   override protected def afterAll(): Unit = {
     FileUtils.deleteQuietly(outputDirectory.toFile)
     FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
+    flinkMiniClusterWithServices.close()
     super.afterAll()
   }
 

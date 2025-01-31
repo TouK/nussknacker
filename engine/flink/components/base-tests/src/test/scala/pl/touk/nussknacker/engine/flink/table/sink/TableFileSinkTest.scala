@@ -5,7 +5,7 @@ import io.circe.Json
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.table.api.DataTypes
-import org.scalatest.LoneElement
+import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.utils.NotConvertibleResultOfAlignmentException
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -31,11 +31,11 @@ import scala.jdk.CollectionConverters._
 
 class TableFileSinkTest
     extends AnyFunSuite
-    with FlinkSpec
     with Matchers
     with PatientScalaFutures
     with LoneElement
-    with ValidatedValuesDetailedMessage {
+    with ValidatedValuesDetailedMessage
+    with BeforeAndAfterAll {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -238,8 +238,10 @@ class TableFileSinkTest
     ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(tableComponents)
     .build()
@@ -256,6 +258,7 @@ class TableFileSinkTest
     FileUtils.deleteQuietly(datetimeExpressionOutputDirectory.toFile)
     FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
     FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
+    flinkMiniClusterWithServices.close()
     super.afterAll()
   }
 

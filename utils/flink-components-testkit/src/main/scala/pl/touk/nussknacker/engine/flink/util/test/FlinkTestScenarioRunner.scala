@@ -2,8 +2,11 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.flink.api.connector.source.Boundedness
+import org.scalatest.concurrent.Futures.PatienceConfig
+import org.scalatest.concurrent.ScalaFutures.scaled
+import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -11,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
@@ -25,9 +28,13 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
 import pl.touk.nussknacker.engine.util.test._
+import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.{WaitForJobStatusPatience, toRetryPolicy}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 import scala.util.Using
+import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 
 private object testComponents {
 
@@ -69,7 +76,7 @@ class FlinkTestScenarioRunner(
     val components: List[ComponentDefinition],
     val globalVariables: Map[String, AnyRef],
     val config: Config,
-    flinkMiniCluster: FlinkMiniClusterHolder,
+    flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
     componentUseCase: ComponentUseCase,
 ) extends ClassBasedTestScenarioRunner {
 
@@ -180,10 +187,10 @@ class FlinkTestScenarioRunner(
       configCreator = new DefaultConfigCreator
     )
 
-    // TODO: get flink mini cluster through composition
-    val env = flinkMiniCluster.createExecutionEnvironment()
-
-    Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
+    Using.resources(
+      flinkMiniClusterWithServices.createStreamExecutionEnvironment(attached = true),
+      TestScenarioCollectorHandler.createHandler(componentUseCase)
+    ) { (env, testScenarioCollectorHandler) =>
       val compilerFactory =
         FlinkProcessCompilerDataFactoryWithTestComponents(
           testExtensionsHolder,
@@ -216,7 +223,12 @@ class FlinkTestScenarioRunner(
           testScenarioCollectorHandler.resultCollector
         )
 
-        env.executeAndWaitForFinished(scenario.name.value)()
+        val jobExecutionResult = env.execute(scenario.name.value)
+        flinkMiniClusterWithServices.miniCluster
+          .waitForFinished(jobExecutionResult.getJobID)(toRetryPolicy(WaitForJobStatusPatience))
+          .futureValue
+          .toTry
+          .get
 
         val successes = TestResultSinkFactory.extractOutputFor(testExtensionsHolder.runId) match {
           case Output.NotAvailable =>
@@ -253,10 +265,29 @@ object FlinkTestScenarioRunner {
 
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
-    def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
-      FlinkTestScenarioRunnerBuilder(List.empty, Map.empty, config, flinkMiniCluster, testRuntimeMode = false)
+    def flinkBased(
+        config: Config,
+        flinkMiniClusterWithServices: FlinkMiniClusterWithServices
+    ): FlinkTestScenarioRunnerBuilder = {
+      FlinkTestScenarioRunnerBuilder(
+        List.empty,
+        Map.empty,
+        config,
+        flinkMiniClusterWithServices,
+        testRuntimeMode = false
+      )
     }
 
+  }
+
+  private implicit val WaitForJobStatusPatience: PatienceConfig =
+    PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(10, Millis)))
+
+  private def toRetryPolicy(patience: PatienceConfig) = {
+    val maxAttempts = Math.max(Math.round(patience.timeout / patience.interval).toInt, 1)
+    val delta       = Span(50, Millis)
+    val interval    = (patience.timeout - delta) / maxAttempts
+    retry.Pause(maxAttempts, interval)
   }
 
 }
@@ -265,7 +296,7 @@ case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
     config: Config,
-    flinkMiniCluster: FlinkMiniClusterHolder,
+    flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
@@ -291,7 +322,7 @@ case class FlinkTestScenarioRunnerBuilder(
       components,
       globalVariables,
       config,
-      flinkMiniCluster,
+      flinkMiniClusterWithServices,
       componentUseCase(testRuntimeMode)
     )
 

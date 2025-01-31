@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.common.components
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import org.scalatest.Inside
+import com.typesafe.config.ConfigFactory
+import org.scalatest.{BeforeAndAfterAll, Inside}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
@@ -272,11 +273,20 @@ trait DecisionTableSpec
 
 private final case class TestMessage(id: String, minAge: Int)
 
-class FlinkEngineRunDecisionTableSpec extends DecisionTableSpec with FlinkSpec {
+class FlinkEngineRunDecisionTableSpec extends DecisionTableSpec with BeforeAndAfterAll {
+
+  private val config = ConfigFactory.empty()
+
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   override protected lazy val testScenarioRunner: FlinkTestScenarioRunner =
     TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
+      .flinkBased(config, flinkMiniClusterWithServices)
       .build()
 
   override protected def execute[DATA: ClassTag, RESULT](

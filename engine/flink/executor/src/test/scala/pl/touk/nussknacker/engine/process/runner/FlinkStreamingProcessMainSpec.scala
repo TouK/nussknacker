@@ -9,16 +9,20 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 
 class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Inside {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  private lazy val streamExecutionEnvironment = flinkMiniClusterWithServices.createStreamExecutionEnvironment(true)
+
   object TestFlinkStreamingProcessMain extends BaseFlinkStreamingProcessMain {
 
     override protected def getExecutionEnvironment: StreamExecutionEnvironment = {
-      StreamExecutionEnvironment.getExecutionEnvironment(FlinkTestConfiguration.configuration())
+      streamExecutionEnvironment
     }
 
   }

@@ -694,11 +694,9 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-base"       % flinkV               % Test,
-        "org.apache.flink" % "flink-streaming-java"       % flinkV               % Test,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV               % Test,
-        "org.apache.flink" % "flink-connector-kafka"      % flinkConnectorKafkaV % Test,
-        "org.apache.flink" % "flink-json"                 % flinkV               % Test
+        "org.apache.flink" % "flink-connector-base"  % flinkV               % Test,
+        "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV % Test,
+        "org.apache.flink" % "flink-json"            % flinkV               % Test
       )
     }
   )
@@ -785,7 +783,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
     // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
     httpUtils,
-    flinkTestUtils % Test
+    flinkTestUtils % Test,
   )
 
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
@@ -1033,14 +1031,14 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     name := "nussknacker-flink-components-testkit",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
   )
   .dependsOn(
     componentsTestkit,
     flinkExecutor,
-    flinkTestUtils,
+    flinkMiniCluster,
     flinkBaseComponents,
     flinkBaseUnboundedComponents,
     defaultModel
@@ -1208,6 +1206,7 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
         "org.apache.flink"            % "flink-statebackend-rocksdb" % flinkV,
         "org.scala-lang.modules"     %% "scala-collection-compat"    % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"              % scalaLoggingV           % Provided,
+        "com.softwaremill.retry"     %% "retry"                      % retryV,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
@@ -1222,21 +1221,13 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"           % flinkV % Provided,
-        // intellij has some problems with provided...
-        "org.apache.flink" % "flink-statebackend-rocksdb"     % flinkV,
-        "org.apache.flink" % "flink-test-utils"               % flinkV excludeAll (
-          // we use logback in NK
-          ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
-        ),
-        "org.apache.flink" % "flink-runtime"                  % flinkV % Compile classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard"       % flinkV,
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV,
         "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV,
-      ) ++ flinkLibScalaDeps(scalaVersion.value)
+      )
     }
   )
-  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, componentsUtils, scenarioCompiler)
+  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, scenarioCompiler, flinkMiniCluster)
 
 lazy val requestResponseComponentsUtils = (project in lite("request-response/components-utils"))
   .settings(commonSettings)
@@ -1825,6 +1816,7 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   )
   .dependsOn(
     flinkComponentsTestkit  % Test,
+    flinkTestUtils          % Test,
     flinkTableApiComponents % Test
   )
 

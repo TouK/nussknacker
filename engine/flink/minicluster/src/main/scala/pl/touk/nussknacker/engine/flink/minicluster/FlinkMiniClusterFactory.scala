@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URLClassLoader
+import scala.util.Using
 
 object FlinkMiniClusterFactory extends LazyLogging {
 
@@ -101,6 +102,10 @@ class FlinkMiniClusterWithServices(
     val miniCluster: MiniCluster,
     streamExecutionEnvironmentFactory: Boolean => StreamExecutionEnvironment
 ) extends AutoCloseable {
+
+  def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
+    Using.resource(createStreamExecutionEnvironment(attached = false))(action)
+  }
 
   def createStreamExecutionEnvironment(attached: Boolean): StreamExecutionEnvironment =
     streamExecutionEnvironmentFactory(attached)

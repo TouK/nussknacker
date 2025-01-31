@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{EitherValues, OptionValues}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -85,24 +86,25 @@ class KafkaExceptionConsumerSpec
       .filter("shouldFail", "1/{0, 1}[0] != 10".spel)
       .emptySink("end", "sink")
 
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    val message = env.withJobRunning(process.name.value) {
-      val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
+      val message = flinkMiniCluster.withJobRunning(executionResult.getJobID) {
+        val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
 
-      consumed.key() shouldBe s"$scenarioName-shouldFail"
+        consumed.key() shouldBe s"$scenarioName-shouldFail"
 
-      consumed.message()
+        consumed.message()
+      }
+
+      message.processName.value shouldBe scenarioName
+      message.nodeId shouldBe Some("shouldFail")
+      message.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
+      message.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
+      message.stackTrace.value should include("evaluation failed, message:")
+      message.additionalData shouldBe Map("configurableKey" -> "sampleValue")
+
+      message
     }
-
-    message.processName.value shouldBe scenarioName
-    message.nodeId shouldBe Some("shouldFail")
-    message.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
-    message.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
-    message.stackTrace.value should include("evaluation failed, message:")
-    message.additionalData shouldBe Map("configurableKey" -> "sampleValue")
-
-    message
   }
 
   def extractInputEventMap(message: KafkaExceptionInfo): Map[String, String] =
