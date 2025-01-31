@@ -196,7 +196,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
 
-      val testRunner = prepareTestRunner(useIOMonadInInterpreter, useLegacyAdHocMiniCluster = true)
+      val testRunner = prepareTestRunner(useIOMonadInInterpreter, useLegacySingleUseMiniCluster = true)
 
       val results = testRunner
         .runTests(
@@ -889,7 +889,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       useIOMonadInInterpreter: Boolean,
       enrichDefaultConfig: Config => Config = identity,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
-      useLegacyAdHocMiniCluster: Boolean = false
+      useLegacySingleUseMiniCluster: Boolean = false
   ): FlinkMiniClusterScenarioTestRunner = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
@@ -903,7 +903,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     )
     new FlinkMiniClusterScenarioTestRunner(
       modelData,
-      Some(miniClusterWithServices).filterNot(_ => useLegacyAdHocMiniCluster)
+      Some(miniClusterWithServices).filterNot(_ => useLegacySingleUseMiniCluster)
     )
   }
 

@@ -37,7 +37,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
       modelClassLoader: URLClassLoader,
       config: FlinkMiniClusterConfig
   ): Option[FlinkMiniClusterWithServices] = {
-    if (config.useForScenarioTesting || config.useForScenarioStateVerification) {
+    if (config.reuseMiniClusterForScenarioTesting || config.reuseMiniClusterForScenarioStateVerification) {
       Some(createMiniClusterWithServices(modelClassLoader, config.config, config.streamExecutionEnvConfig))
     } else {
       None

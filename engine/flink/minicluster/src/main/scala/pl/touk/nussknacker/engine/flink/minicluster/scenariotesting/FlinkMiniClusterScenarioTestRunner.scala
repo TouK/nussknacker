@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioParallelismOverride._
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacyadhocminicluster.LegacyAdHocMiniClusterFallbackHandler
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacySingleUseMiniClusterFallbackHandler
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
@@ -29,14 +29,14 @@ class FlinkMiniClusterScenarioTestRunner(
     "run"
   )
 
-  private val adHocMiniClusterFallbackHandler =
-    new LegacyAdHocMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario testing")
+  private val singleUseMiniClusterFallbackHandler =
+    new LegacySingleUseMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario testing")
 
   // NU-1455: We encode variable on the engine, because of classLoader's problems
   def runTests(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData)(
       implicit ec: ExecutionContext
   ): Future[TestResults[Json]] = {
-    adHocMiniClusterFallbackHandler.handleAdHocMniClusterFallbackAsync(sharedMiniClusterServicesOpt, scenario) {
+    singleUseMiniClusterFallbackHandler.withSharedOrSingleUseClusterAsync(sharedMiniClusterServicesOpt, scenario) {
       miniClusterWithServices =>
         val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
           .map(_ => scenario.overrideParallelismIfNeeded(ScenarioTestingParallelism))

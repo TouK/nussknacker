@@ -42,13 +42,13 @@ abstract class FlinkDeploymentManager(
   private val testRunner = new FlinkMiniClusterScenarioTestRunner(
     modelData,
     miniClusterWithServicesOpt
-      .filter(_ => scenarioTestingConfig.useForScenarioTesting)
+      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
   )
 
   private val verification = new FlinkMiniClusterScenarioStateVerifier(
     modelData,
     miniClusterWithServicesOpt
-      .filter(_ => scenarioTestingConfig.useForScenarioStateVerification)
+      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
   )
 
   /**

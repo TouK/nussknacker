@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacyadhocminicluster
+package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.{Configuration, TaskManagerOptions}
@@ -10,36 +10,36 @@ import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
-// This class handles a legacy ad-hoc way to create minicluster.
+// This class handles a legacy way to create single use minicluster
 // TODO: After we fully switch to shared mini cluster approach, it should be removed
-class LegacyAdHocMiniClusterFallbackHandler(modelClassLoader: URLClassLoader, useCaseForDebug: String)
+class LegacySingleUseMiniClusterFallbackHandler(modelClassLoader: URLClassLoader, useCaseForDebug: String)
     extends LazyLogging {
 
-  def handleAdHocMniClusterFallbackAsync[R](
+  def withSharedOrSingleUseClusterAsync[R](
       sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
       scenario: CanonicalProcess
   )(f: FlinkMiniClusterWithServices => Future[R])(implicit ec: ExecutionContext): Future[R] = {
-    val (adHocMiniClusterOpt, miniClusterToUse) =
-      useSharedMiniClusterOrAdHoc(sharedMiniClusterServicesOpt, scenario)
+    val (singleUseClusterOpt, miniClusterToUse) =
+      useSharedOrSingleUseCluster(sharedMiniClusterServicesOpt, scenario)
     val resultFuture = f(miniClusterToUse)
-    resultFuture.onComplete(_ => adHocMiniClusterOpt.foreach(_.close()))
+    resultFuture.onComplete(_ => singleUseClusterOpt.foreach(_.close()))
     resultFuture
   }
 
-  def handleAdHocMniClusterFallback[R](
+  def withSharedOrSingleUseCluster[R](
       sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
       scenario: CanonicalProcess
   )(f: FlinkMiniClusterWithServices => R): R = {
-    val (adHocMiniClusterOpt, miniClusterToUse) =
-      useSharedMiniClusterOrAdHoc(sharedMiniClusterServicesOpt, scenario)
+    val (singleUseClusterOpt, miniClusterToUse) =
+      useSharedOrSingleUseCluster(sharedMiniClusterServicesOpt, scenario)
     try {
       f(miniClusterToUse)
     } finally {
-      adHocMiniClusterOpt.foreach(_.close())
+      singleUseClusterOpt.foreach(_.close())
     }
   }
 
-  private def useSharedMiniClusterOrAdHoc[R](
+  private def useSharedOrSingleUseCluster[R](
       sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
       scenario: CanonicalProcess
   ): (Option[FlinkMiniClusterWithServices], FlinkMiniClusterWithServices) = {
@@ -49,13 +49,13 @@ class LegacyAdHocMiniClusterFallbackHandler(modelClassLoader: URLClassLoader, us
         (None, sharedMiniClusterServices)
       }
       .getOrElse {
-        logger.debug(s"Shared MiniCluster not used for $useCaseForDebug. Creating ad-hoc MiniCluster")
-        val adHocMiniCluster = createAdHocMiniCluster(scenario)
-        (Some(adHocMiniCluster), adHocMiniCluster)
+        logger.debug(s"Shared MiniCluster not used for $useCaseForDebug. Creating single use MiniCluster")
+        val singleUseCluster = createSingleUseMiniCluster(scenario)
+        (Some(singleUseCluster), singleUseCluster)
       }
   }
 
-  private def createAdHocMiniCluster(process: CanonicalProcess) = {
+  private def createSingleUseMiniCluster(process: CanonicalProcess) = {
     val scenarioParallelism = MetaDataExtractor
       .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
       .parallelism

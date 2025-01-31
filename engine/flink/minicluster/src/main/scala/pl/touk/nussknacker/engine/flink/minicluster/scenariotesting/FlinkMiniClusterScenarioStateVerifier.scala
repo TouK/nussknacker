@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioParallelismOverride.Ops
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacyadhocminicluster.LegacyAdHocMiniClusterFallbackHandler
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacySingleUseMiniClusterFallbackHandler
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.util.control.NonFatal
@@ -28,15 +28,15 @@ class FlinkMiniClusterScenarioStateVerifier(
     "run"
   )
 
-  private val adHocMiniClusterFallbackHandler =
-    new LegacyAdHocMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario state verification")
+  private val singleUseMiniClusterFallbackHandler =
+    new LegacySingleUseMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario state verification")
 
   def verify(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
       savepointPath: String
   ): Try[Unit] = {
-    adHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(sharedMiniClusterServicesOpt, scenario) {
+    singleUseMiniClusterFallbackHandler.withSharedOrSingleUseCluster(sharedMiniClusterServicesOpt, scenario) {
       miniClusterWithServices =>
         val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
           .map(_ => scenario.overrideParallelismIfNeeded(StateVerificationParallelism))

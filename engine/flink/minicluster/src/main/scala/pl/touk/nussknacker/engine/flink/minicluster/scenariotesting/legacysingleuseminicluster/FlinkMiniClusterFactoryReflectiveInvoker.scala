@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacyadhocminicluster
+package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster
 
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.minicluster.MiniCluster
