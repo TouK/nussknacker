@@ -48,7 +48,7 @@ class TestingApiHttpService(
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            inputParameters = scenarioTestService.testParametersDefinition(
+            inputParameters = scenarioTestService.validateAndGetTestParametersDefinition(
               request.scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
               scenarioWithDetails.isFragment
@@ -73,7 +73,6 @@ class TestingApiHttpService(
             capabilities = scenarioTestService.getTestingCapabilities(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
-              scenarioWithDetails.isFragment,
             )
           } yield capabilities
         }
@@ -93,7 +92,6 @@ class TestingApiHttpService(
             parametersDefinition = scenarioTestService.testUISourceParametersDefinition(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
-              scenarioWithDetails.isFragment
             )
           } yield parametersDefinition
         }
