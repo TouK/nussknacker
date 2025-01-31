@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.legacy.db
 
 import cats.Monad
-import cats.data.OptionT
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
@@ -413,30 +412,28 @@ class SlickLegacyPeriodicProcessesRepository(
     update.map(_ => ())
   }
 
-  override def fetchCanonicalProcessWithVersion(
+  override def fetchCanonicalProcess(
       periodicProcessId: PeriodicProcessId,
       processName: ProcessName,
+      versionId: VersionId,
+  ): Action[Option[CanonicalProcess]] = {
+    PeriodicProcessesWithJson
+      .filter(p => p.id === periodicProcessId)
+      .result
+      .headOption
+      .map(_.map(_.processJson))
+  }
+
+  override def fetchProcessVersion(
+      processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = (for {
-    // fixme: We should fetch CanonicalProcess from the main Nu db, not from the legacy table.
-    //        But it seems, that the process graph is different in legacy table and in main Nu database.
-    //        Until this issue is solved, we use the CanonicalProcess representation from legacy table.
-    canonicalProcessFromLegacyTable <- OptionT(
-      PeriodicProcessesWithJson
-        .filter(p => p.id === periodicProcessId)
-        .result
-        .headOption
-        .map(_.map(_.processJson))
-        .run
-    )
-    canonicalProcessWithProcessVersion <- OptionT(
-      fetchingProcessRepository
-        .getCanonicalProcessWithVersion(
-          processName,
-          versionId
-        )(NussknackerInternalUser.instance)
-    )
-  } yield (canonicalProcessFromLegacyTable, canonicalProcessWithProcessVersion._2)).value
+  ): Future[Option[ProcessVersion]] = {
+    fetchingProcessRepository
+      .getProcessVersion(
+        processName,
+        versionId
+      )(NussknackerInternalUser.instance)
+  }
 
   def fetchInputConfigDuringExecutionJson(periodicProcessId: PeriodicProcessId): Action[Option[String]] =
     PeriodicProcessesWithJson

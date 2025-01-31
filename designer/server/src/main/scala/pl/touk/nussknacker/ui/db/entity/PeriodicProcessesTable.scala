@@ -2,9 +2,11 @@ package pl.touk.nussknacker.ui.db.entity
 
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.deployment.scheduler.model.RuntimeParams
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.RuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessId
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
@@ -38,8 +40,14 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
         }
     )
 
+  implicit val canonicalProcessTypedType: BaseColumnType[CanonicalProcess] =
+    MappedColumnType.base[CanonicalProcess, String](
+      _.asJson.noSpaces,
+      ProcessMarshaller.fromJsonUnsafe
+    )
+
   abstract class PeriodicProcessesTable[ENTITY <: PeriodicProcessEntity](tag: Tag)
-      extends Table[ENTITY](tag, "periodic_scenarios") {
+      extends Table[ENTITY](tag, "scheduled_scenarios") {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 
@@ -63,12 +71,14 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
 
   }
 
-  class PeriodicProcessesWithInputConfigJsonTable(tag: Tag)
-      extends PeriodicProcessesTable[PeriodicProcessEntityWithInputConfigJson](tag) {
+  class PeriodicProcessesWithDeploymentDetailsTable(tag: Tag)
+      extends PeriodicProcessesTable[PeriodicProcessEntityWithDeploymentDetails](tag) {
 
-    def inputConfigDuringExecutionJson: Rep[String] = column[String]("input_config_during_execution", NotNull)
+    def inputConfigDuringExecutionJson: Rep[Option[String]] = column[Option[String]]("input_config_during_execution")
 
-    override def * : ProvenShape[PeriodicProcessEntityWithInputConfigJson] = (
+    def resolvedScenario: Rep[Option[CanonicalProcess]] = column[Option[CanonicalProcess]]("resolved_scenario_json")
+
+    override def * : ProvenShape[PeriodicProcessEntityWithDeploymentDetails] = (
       id,
       processId,
       processName,
@@ -80,14 +90,15 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
       createdAt,
       processActionId,
       inputConfigDuringExecutionJson,
-    ) <> (PeriodicProcessEntityWithInputConfigJson.apply _ tupled, PeriodicProcessEntityWithInputConfigJson.unapply)
+      resolvedScenario,
+    ) <> (PeriodicProcessEntityWithDeploymentDetails.apply _ tupled, PeriodicProcessEntityWithDeploymentDetails.unapply)
 
   }
 
-  class PeriodicProcessesWithoutInputConfigJsonTable(tag: Tag)
-      extends PeriodicProcessesTable[PeriodicProcessEntityWithoutInputConfigJson](tag) {
+  class PeriodicProcessesWithoutDeploymentDetailsTable(tag: Tag)
+      extends PeriodicProcessesTable[PeriodicProcessEntityWithoutDeploymentDetails](tag) {
 
-    override def * : ProvenShape[PeriodicProcessEntityWithoutInputConfigJson] = (
+    override def * : ProvenShape[PeriodicProcessEntityWithoutDeploymentDetails] = (
       id,
       processId,
       processName,
@@ -98,13 +109,14 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
       active,
       createdAt,
       processActionId
-    ) <> (PeriodicProcessEntityWithoutInputConfigJson.apply _ tupled, PeriodicProcessEntityWithoutInputConfigJson.unapply)
+    ) <> (PeriodicProcessEntityWithoutDeploymentDetails.apply _ tupled, PeriodicProcessEntityWithoutDeploymentDetails.unapply)
 
   }
 
-  object PeriodicProcessesWithoutInputConfig extends TableQuery(new PeriodicProcessesWithoutInputConfigJsonTable(_))
+  object PeriodicProcessesWithoutDeploymentDetails
+      extends TableQuery(new PeriodicProcessesWithoutDeploymentDetailsTable(_))
 
-  object PeriodicProcessesWithInputConfig extends TableQuery(new PeriodicProcessesWithInputConfigJsonTable(_))
+  object PeriodicProcessesWithDeploymentDetails extends TableQuery(new PeriodicProcessesWithDeploymentDetailsTable(_))
 
 }
 
@@ -132,7 +144,7 @@ trait PeriodicProcessEntity {
 
 }
 
-case class PeriodicProcessEntityWithInputConfigJson(
+case class PeriodicProcessEntityWithDeploymentDetails(
     id: PeriodicProcessId,
     processId: Option[ProcessId],
     processName: ProcessName,
@@ -143,10 +155,11 @@ case class PeriodicProcessEntityWithInputConfigJson(
     active: Boolean,
     createdAt: LocalDateTime,
     processActionId: Option[ProcessActionId],
-    inputConfigDuringExecutionJson: String,
+    inputConfigDuringExecutionJson: Option[String],
+    resolvedScenario: Option[CanonicalProcess],
 ) extends PeriodicProcessEntity
 
-case class PeriodicProcessEntityWithoutInputConfigJson(
+case class PeriodicProcessEntityWithoutDeploymentDetails(
     id: PeriodicProcessId,
     processId: Option[ProcessId],
     processName: ProcessName,

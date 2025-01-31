@@ -345,12 +345,19 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     Future.successful(deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now)))
   }
 
-  override def fetchCanonicalProcessWithVersion(
+  override def fetchCanonicalProcess(
       periodicProcessId: PeriodicProcessId,
       processName: ProcessName,
-      versionId: VersionId
-  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = Future.successful {
-    Some(canonicalProcess(processName), ProcessVersion.empty)
+      versionId: VersionId,
+  ): Future[Option[CanonicalProcess]] = Future.successful {
+    Some(canonicalProcess(processName))
+  }
+
+  override def fetchProcessVersion(
+      processName: ProcessName,
+      versionId: VersionId,
+  ): Future[Option[ProcessVersion]] = Future.successful {
+    Some(ProcessVersion.empty)
   }
 
   override def fetchInputConfigDuringExecutionJson(

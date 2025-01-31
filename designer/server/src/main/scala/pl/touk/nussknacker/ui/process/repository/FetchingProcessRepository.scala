@@ -25,12 +25,12 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]]
 
-  def getCanonicalProcessWithVersion(
+  def getProcessVersion(
       processName: ProcessName,
       versionId: VersionId
   )(
       implicit user: LoggedUser,
-  ): F[Option[(CanonicalProcess, ProcessVersion)]]
+  ): F[Option[ProcessVersion]]
 
   def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]]
 
