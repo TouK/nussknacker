@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 
 import java.net.URL
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 // TODO: Replace ModelData -> BasedModelData inheritance with composition. Thanks to that it won't be needed to downcast
 //       to ModelData in case of interpreter invocation
@@ -19,6 +20,8 @@ trait BaseModelData {
 
   def modelConfig: Config
 
-  def modelClassLoaderUrls: List[URL]
+  def modelClassLoader: URLClassLoader
+
+  final def modelClassLoaderUrls: List[URL] = modelClassLoader.getURLs.toList
 
 }

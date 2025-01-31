@@ -2,7 +2,10 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.Ficus
+import net.ceedubs.ficus.readers.ValueReader
 import org.apache.flink.api.common.JobID
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExecutionPerformer
@@ -16,6 +19,7 @@ import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies,
 
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 object FlinkScheduledExecutionPerformer {
 
@@ -29,7 +33,8 @@ object FlinkScheduledExecutionPerformer {
     import dependencies._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    import ScenarioTestingConfig._
+    implicit val flinkConfigurationValueReader: ValueReader[Configuration] =
+      Ficus.mapValueReader[String].map(map => Configuration.fromMap(map.asJava))
     val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkScheduledExecutionPerformer(
       flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),

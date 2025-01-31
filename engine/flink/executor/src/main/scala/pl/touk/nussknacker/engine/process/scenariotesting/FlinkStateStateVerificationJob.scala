@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -10,44 +11,50 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestServiceInvocationCollector}
 
-object FlinkVerificationMain {
+object FlinkStateStateVerificationJob {
 
   def run(
-      miniClusterWrapperOpt: Option[ScenarioTestingMiniClusterWrapper],
       modelData: ModelData,
       scenario: CanonicalProcess,
       processVersion: ProcessVersion,
-      savepointPath: String
+      savepointPath: String,
+      streamExecutionEnv: StreamExecutionEnvironment
   ): Unit =
-    new FlinkVerificationMain(miniClusterWrapperOpt, modelData).runTest(scenario, processVersion, savepointPath)
+    new FlinkStateStateVerificationJob(modelData).run(
+      scenario,
+      processVersion,
+      savepointPath,
+      streamExecutionEnv
+    )
 
 }
 
-class FlinkVerificationMain(
-    miniClusterWrapperOpt: Option[ScenarioTestingMiniClusterWrapper],
-    modelData: ModelData,
-) {
+class FlinkStateStateVerificationJob(modelData: ModelData) {
 
-  def runTest(scenario: CanonicalProcess, processVersion: ProcessVersion, savepointPath: String): Unit = {
+  def run(
+      scenario: CanonicalProcess,
+      processVersion: ProcessVersion,
+      savepointPath: String,
+      streamExecutionEnv: StreamExecutionEnvironment
+  ): Unit = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     try {
-      AdHocMiniClusterFallbackHandler.handleAdHocMniClusterFallback(
-        miniClusterWrapperOpt,
-        scenario,
-        "scenario state verification"
-      ) { miniClusterWrapper =>
-        val alignedScenario = miniClusterWrapper.alignParallelism(scenario)
-        val resultCollector = new TestServiceInvocationCollector(collectingListener)
-        val registrar       = prepareRegistrar(alignedScenario)
-        val deploymentData  = DeploymentData.empty
+      val resultCollector = new TestServiceInvocationCollector(collectingListener)
+      val registrar       = prepareRegistrar(scenario)
+      val deploymentData  = DeploymentData.empty
 
-        registrar.register(miniClusterWrapper.env, alignedScenario, processVersion, deploymentData, resultCollector)
-        miniClusterWrapper.submitJobAndCleanEnv(
-          alignedScenario.name,
-          SavepointRestoreSettings.forPath(savepointPath, true),
-          modelData.modelClassLoader
-        )
-      }
+      registrar.register(
+        streamExecutionEnv,
+        scenario,
+        processVersion,
+        deploymentData,
+        resultCollector
+      )
+      streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
+      val streamGraph = streamExecutionEnv.getStreamGraph
+      streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savepointPath, true))
+
+      streamExecutionEnv.execute(streamGraph)
     } finally {
       collectingListener.clean()
     }
