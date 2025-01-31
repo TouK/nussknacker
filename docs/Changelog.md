@@ -74,6 +74,8 @@
   * Introduced some default values:
     * For all - default `windowLength` is 1 hour
     * For `aggregate-session` - default `endSessionCondition` is now false
+* Improved scenario visualization loading time
+    * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
 
 ## 1.18
 
