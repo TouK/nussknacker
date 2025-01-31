@@ -19,6 +19,8 @@
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
 ### 1.18-esp
+* Improved scenario visualization loading time
+    * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
   * new API available under `processes/{scenarioName}/stickyNotes`
