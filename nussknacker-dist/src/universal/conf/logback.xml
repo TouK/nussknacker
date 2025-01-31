@@ -5,8 +5,21 @@
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>${CONSOLE_THRESHOLD_LEVEL:-INFO}</level>
         </filter>
-        <encoder>
-            <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
+<!--        <encoder>-->
+<!--            <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>-->
+<!--        </encoder>-->
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="pl.touk.nussknacker.ui.util.JsonLayoutWithCustomField">
+                <jsonFormatter class="pl.touk.nussknacker.ui.util.JsonLayoutWithCustomField">
+                    <prettyPrint>false</prettyPrint>
+                </jsonFormatter>
+                <appendLineSeparator>true</appendLineSeparator>
+                <timestampFormat>yyyy-MM-dd' 'HH:mm:ss.SSS</timestampFormat>
+                <customField class="pl.touk.nussknacker.ui.util.JsonLayoutCustomField">
+                    <key>internal_only</key>
+                    <value>true</value>
+                </customField>
+            </layout>
         </encoder>
     </appender>
 
