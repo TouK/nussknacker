@@ -12,7 +12,7 @@ import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 // This class handles a legacy way to create single use minicluster
 // TODO: After we fully switch to shared mini cluster approach, it should be removed
-class LegacySingleUseMiniClusterFallbackHandler(modelClassLoader: URLClassLoader, useCaseForDebug: String)
+class LegacyFallbackToSingleUseMiniClusterHandler(modelClassLoader: URLClassLoader, useCaseForDebug: String)
     extends LazyLogging {
 
   def withSharedOrSingleUseClusterAsync[R](

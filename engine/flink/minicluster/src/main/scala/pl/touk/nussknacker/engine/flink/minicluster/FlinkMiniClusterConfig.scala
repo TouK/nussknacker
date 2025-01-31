@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.minicluster
 import org.apache.flink.configuration.Configuration
 
 final case class FlinkMiniClusterConfig(
-    // TODO: remove after fully migration, see LegacySingleUseMiniClusterFallbackHandler
+    // TODO: remove after fully migration, see LegacyFallbackToSingleUseMiniClusterHandler
     reuseMiniClusterForScenarioTesting: Boolean = true,
     reuseMiniClusterForScenarioStateVerification: Boolean = true,
     config: Configuration = new Configuration,

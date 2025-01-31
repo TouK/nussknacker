@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioParallelismOverride._
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacySingleUseMiniClusterFallbackHandler
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacyFallbackToSingleUseMiniClusterHandler
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
@@ -29,29 +29,31 @@ class FlinkMiniClusterScenarioTestRunner(
     "run"
   )
 
-  private val singleUseMiniClusterFallbackHandler =
-    new LegacySingleUseMiniClusterFallbackHandler(modelData.modelClassLoader, "scenario testing")
+  private val legacyFallbackToSingleUseMiniClusterHandler =
+    new LegacyFallbackToSingleUseMiniClusterHandler(modelData.modelClassLoader, "scenario testing")
 
   // NU-1455: We encode variable on the engine, because of classLoader's problems
   def runTests(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData)(
       implicit ec: ExecutionContext
   ): Future[TestResults[Json]] = {
-    singleUseMiniClusterFallbackHandler.withSharedOrSingleUseClusterAsync(sharedMiniClusterServicesOpt, scenario) {
-      miniClusterWithServices =>
-        val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
-          .map(_ => scenario.overrideParallelismIfNeeded(ScenarioTestingParallelism))
-          .getOrElse(scenario)
-        val env = miniClusterWithServices.createStreamExecutionEnvironment(attached = true)
-        val resultFuture = jobInvoker.invokeStaticMethod(
-          modelData,
-          scenarioWithOverrodeParallelism,
-          scenarioTestData,
-          env
-        )
-        resultFuture.onComplete { _ =>
-          env.close()
-        }
-        resultFuture
+    legacyFallbackToSingleUseMiniClusterHandler.withSharedOrSingleUseClusterAsync(
+      sharedMiniClusterServicesOpt,
+      scenario
+    ) { miniClusterWithServices =>
+      val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
+        .map(_ => scenario.overrideParallelismIfNeeded(ScenarioTestingParallelism))
+        .getOrElse(scenario)
+      val env = miniClusterWithServices.createStreamExecutionEnvironment(attached = true)
+      val resultFuture = jobInvoker.invokeStaticMethod(
+        modelData,
+        scenarioWithOverrodeParallelism,
+        scenarioTestData,
+        env
+      )
+      resultFuture.onComplete { _ =>
+        env.close()
+      }
+      resultFuture
     }
   }
 
