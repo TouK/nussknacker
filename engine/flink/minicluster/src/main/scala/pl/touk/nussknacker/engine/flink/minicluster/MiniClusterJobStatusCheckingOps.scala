@@ -12,23 +12,25 @@ import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
+// FIXME abr: unit tests with plain flink jobs
 object MiniClusterJobStatusCheckingOps {
 
   implicit class Ops(miniCluster: MiniCluster)(implicit ec: ExecutionContext) {
 
+    // FIXME abr: cancel job when not finished
     def waitForFinished(
         jobID: JobID
     )(retryPolicy: retry.Policy): Future[Either[JobVerticesStatesCheckError, Unit]] = {
       waitForJobVerticesStates(jobID, checkIfNotFailing = true, Set(ExecutionState.FINISHED))(retryPolicy)
     }
 
-    def withJobRunning[T](jobID: JobID, retryPolicy: retry.Policy)(
+    def withJobRunning[T](jobID: JobID, runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy)(
         actionToInvokeWithJobRunning: => Future[T]
     ): Future[Either[JobVerticesStatesCheckError, T]] = {
       val resultFuture = (for {
-        _      <- EitherT(waitForRunningOrFinished(jobID)(retryPolicy))
+        _      <- EitherT(waitForRunningOrFinished(jobID)(runningCheckRetryPolicy))
         result <- EitherT.right(actionToInvokeWithJobRunning)
-        _      <- EitherT(assertJobNotFailing[JobVerticesStatesCheckError](jobID))
+        _      <- EitherT(doCheckJobNotFailing[JobVerticesStatesCheckError](jobID))
       } yield result).value
       // It is a kind of asynchronous "finally" block
       resultFuture.transformWith { resultTry =>
@@ -37,7 +39,7 @@ object MiniClusterJobStatusCheckingOps {
             // It occurs for example when job was already finished when we cancel it
             case ex: CompletionException if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
           }
-          _      <- waitForAnyTerminalState(jobID)(retryPolicy)
+          _      <- waitForAnyTerminalState(jobID)(terminalCheckRetryPolicy)
           result <- Future.fromTry(resultTry)
         } yield result
       }
@@ -86,6 +88,12 @@ object MiniClusterJobStatusCheckingOps {
             (),
             JobIsNotInitializedError(jobID, executionGraph.getJobName)
           )
+          // we check failing even if vertices states check was enough, for more precise error with failure info
+          _ <-
+            if (checkIfNotFailing)
+              doCheckJobNotFailing(executionGraph)
+            else
+              EitherT.rightT[Future, JobVerticesStatesCheckError](())
           executionVertices = executionGraph.getAllExecutionVertices.asScala
           verticesNotInExpectedState = executionVertices.filterNot(v =>
             expectedVerticesStates.contains(v.getExecutionState)
@@ -103,13 +111,16 @@ object MiniClusterJobStatusCheckingOps {
         } yield ()).value
       }
 
-    def assertJobNotFailing[E >: JobIsFailingError](jobID: JobID): Future[Either[E, Unit]] =
+    def checkJobNotFailing(jobID: JobID): Future[Either[JobIsFailingError, Unit]] =
+      doCheckJobNotFailing[JobIsFailingError](jobID)
+
+    private def doCheckJobNotFailing[E >: JobIsFailingError](jobID: JobID): Future[Either[E, Unit]] =
       (for {
         executionGraph <- EitherT.right(miniCluster.getExecutionGraph(jobID).toScala)
-        _              <- assertJobNotFailing[E](executionGraph)
+        _              <- doCheckJobNotFailing[E](executionGraph)
       } yield ()).value
 
-    private def assertJobNotFailing[E >: JobIsFailingError](
+    private def doCheckJobNotFailing[E >: JobIsFailingError](
         executionGraph: AccessExecutionGraph
     ): EitherT[Future, E, Unit] = {
       EitherT.cond[Future][E, Unit](

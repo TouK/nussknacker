@@ -30,8 +30,9 @@ object ScalatestMiniClusterJobStatusCheckingOps {
     }
 
     def withJobRunning[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
+      val retryPolicy = toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .withJobRunning(jobID, toRetryPolicy(WaitForJobStatusPatience)) {
+        .withJobRunning(jobID, retryPolicy, retryPolicy) {
           Future {
             blocking {
               actionToInvokeWithJobRunning
@@ -43,9 +44,9 @@ object ScalatestMiniClusterJobStatusCheckingOps {
         .get
     }
 
-    def assertJobNotFailing(jobID: JobID): Unit = {
+    def checkJobNotFailing(jobID: JobID): Unit = {
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .assertJobNotFailing(jobID)
+        .checkJobNotFailing(jobID)
         .futureValue
         .toTry
         .get

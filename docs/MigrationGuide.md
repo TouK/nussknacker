@@ -94,7 +94,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
       `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
     * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead
-      * To access methods such as `withJobRunning`, should be used imported `ScalatestMiniClusterJobStatusCheckingOps._` 
+      * To access methods such as `withJobRunning`, import `ScalatestMiniClusterJobStatusCheckingOps._` 
         and then invoke these methods on `flinkMiniCluster`
       * Method `withJobRunning` doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
       * Some methods are not available in `ScalatestMiniClusterJobStatusCheckingOps`:

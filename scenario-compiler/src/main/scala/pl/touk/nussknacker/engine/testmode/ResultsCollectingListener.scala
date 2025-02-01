@@ -24,6 +24,7 @@ case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, v
 
   def results: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
 
+  // FIXME abr: verify wrong usage of close() instead of clean()
   // Warning! close can't clean resources because listener is passed into each scenario subpart and it will be closed few times
   // We have to use dedicated clean() method when we are sure that we consumed results instead.
   override final def close(): Unit = {}

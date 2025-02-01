@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.api
 
 import com.github.ghik.silencer.silent
+import org.apache.flink.api.common.JobID
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -10,14 +11,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 
 @silent("deprecated")
 class EvictableStateTest
@@ -27,7 +25,7 @@ class EvictableStateTest
     with BeforeAndAfterAll
     with VeryPatientScalaFutures {
 
-  var futureResult: Future[_] = _
+  var jobID: JobID = _
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
@@ -39,21 +37,22 @@ class EvictableStateTest
   before {
     StaticSource.running = true
 
-    val env = flinkMiniClusterWithServices.createStreamExecutionEnvironment(attached = true)
-    env.enableCheckpointing(500)
+    flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
+      env.enableCheckpointing(500)
 
-    env
-      .addSource(StaticSource)
-      .keyBy((_: String) => "staticKey")
-      .process(new TestOperator)
-      .addSink(new SinkFunction[String] {
-        override def invoke(value: String, context: SinkFunction.Context): Unit = ()
-      })
+      env
+        .addSource(StaticSource)
+        .keyBy((_: String) => "staticKey")
+        .process(new TestOperator)
+        .addSink(new SinkFunction[String] {
+          override def invoke(value: String, context: SinkFunction.Context): Unit = ()
+        })
 
-    futureResult = Future {
-      // We need to set context loader to avoid forking in sbt
-      ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-        env.execute()
+      jobID = {
+        // We need to set context loader to avoid forking in sbt
+        ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+          env.execute().getJobID
+        }
       }
     }
   }
@@ -61,7 +60,7 @@ class EvictableStateTest
   after {
     StaticSource.running = false
     TestOperator.buffer = List()
-    Await.result(futureResult, 5 seconds)
+    flinkMiniClusterWithServices.waitForFinished(jobID)
   }
 
   it should "process state normally when no watermark is generated" in {

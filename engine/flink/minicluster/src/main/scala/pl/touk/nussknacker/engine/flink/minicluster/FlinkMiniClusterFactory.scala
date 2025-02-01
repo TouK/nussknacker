@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
@@ -9,7 +12,6 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URLClassLoader
-import scala.util.Using
 
 object FlinkMiniClusterFactory extends LazyLogging {
 
@@ -104,11 +106,18 @@ class FlinkMiniClusterWithServices(
 ) extends AutoCloseable {
 
   def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
-    Using.resource(createStreamExecutionEnvironment(attached = false))(action)
+    createStreamExecutionEnvironment(attached = false).use(env => IO(action(env))).unsafeRunSync()
   }
 
-  def createStreamExecutionEnvironment(attached: Boolean): StreamExecutionEnvironment =
-    streamExecutionEnvironmentFactory(attached)
+  // TODO: attached variant shouldn't be used. It blocks current thread infinitely during execution.
+  //       Instead, we should use detached variant + waitForFinished
+  def withAttachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
+    createStreamExecutionEnvironment(attached = true).use(env => IO(action(env))).unsafeRunSync()
+  }
+
+  def createStreamExecutionEnvironment(attached: Boolean): Resource[IO, StreamExecutionEnvironment] = {
+    Resource.fromAutoCloseable(IO(streamExecutionEnvironmentFactory(attached)))
+  }
 
   override def close(): Unit = miniCluster.close()
 

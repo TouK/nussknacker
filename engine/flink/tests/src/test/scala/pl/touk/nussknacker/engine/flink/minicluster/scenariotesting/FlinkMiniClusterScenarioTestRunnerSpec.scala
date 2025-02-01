@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
 import org.apache.flink.runtime.JobException
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
@@ -811,17 +812,19 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
-      val dictEditorException = intercept[IllegalArgumentException] {
+      val dictEditorException = intercept[TestFailedException] {
         prepareTestRunner(useIOMonadInInterpreter)
           .runTests(
             process,
             ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
           )(ExecutionContext.global)
           .futureValue
+      }.getCause
+      inside(dictEditorException) { case _: IllegalArgumentException =>
+        dictEditorException.getMessage.startsWith(
+          "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(DualParameterEditor(StringParameterEditor,RAW))"
+        ) shouldBe true
       }
-      dictEditorException.getMessage.startsWith(
-        "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(DualParameterEditor(StringParameterEditor,RAW))"
-      ) shouldBe true
     }
 
     "should run correctly when parameter was modified by AdditionalUiConfigProvider with dict editor and flink was provided with additional config" in {

@@ -170,7 +170,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
       flinkMiniCluster.withJobRunning(jobExecutionResult.getJobID) {
         sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
 
-        flinkMiniCluster.assertJobNotFailing(jobExecutionResult.getJobID)
+        flinkMiniCluster.checkJobNotFailing(jobExecutionResult.getJobID)
         verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
       }
     }
