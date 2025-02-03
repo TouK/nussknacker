@@ -388,7 +388,7 @@ class HttpService {
                     msg: msg,
                 };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                return result;
+                throw error;
             });
     }
 
