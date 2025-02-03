@@ -351,7 +351,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
   }
 
   lazy val fetchLatestRecordsForNodeEndpoint: SecuredEndpoint[
-    (ProcessName, String, Int, ScenarioGraph),
+    (ProcessName, Int, FetchLatestRecordsRequestDto),
     NodesError,
     String,
     Any
@@ -361,13 +361,21 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in(
-        "nodes" / path[ProcessName]("scenarioName") / path[String]("nodeId") / "fetchLatestRecordsForNode" / path[Int](
+        "nodes" / path[ProcessName]("scenarioName") / "fetchLatestRecordsForNode" / path[Int](
           "numberOfRecords"
         )
       )
       .in(
-        jsonBody[ScenarioGraph]
-          .example(simpleGraphExample)
+        jsonBody[FetchLatestRecordsRequestDto]
+          .example(
+            Example.of(
+              summary = Some("Basic fetch request"),
+              value = FetchLatestRecordsRequestDto(
+                ProcessProperties(StreamMetaData()),
+                Source("sourceId", SourceRef("source", List.empty), None)
+              )
+            )
+          )
       )
       .out(
         statusCode(Ok).and(
@@ -1565,6 +1573,12 @@ object NodesApiEndpoints {
       }
 
     }
+
+    @derive(schema, encoder, decoder)
+    final case class FetchLatestRecordsRequestDto(
+        processProperties: ProcessProperties,
+        nodeData: NodeData
+    )
 
   }
 

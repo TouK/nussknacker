@@ -5,17 +5,15 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.TestDataGenerationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
@@ -38,8 +36,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   decodeVariableTypes,
   prepareTypingResultDecoder
 }
-import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
+import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -154,20 +152,25 @@ class NodesApiHttpService(
     nodesApiEndpoints.fetchLatestRecordsForNodeEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (scenarioName, nodeId, numberOfRecords, scenarioGraph) =>
+        { case (scenarioName, numberOfRecords, fetchLatestRecordsDto) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
+            sourceNodeData <- EitherT.fromEither[Future](fetchLatestRecordsDto.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(FetchLatestRecordsError(s"Expected SourceNodeData but got: ${other.getClass.getSimpleName}"))
+            })
             parametersDefinition <- EitherT[Future, NodesError, String](
               scenarioTestService.getDataFromSource(
-                scenarioGraph.toMetaData(scenarioName),
-                NodeId(nodeId),
+                fetchLatestRecordsDto.processProperties.toMetaData(scenarioName),
+                sourceNodeData,
                 numberOfRecords
               ) match {
                 case Left(error) =>
-                  logger.error(s"Error during fetching latest records for node=[$nodeId]: $error")
+                  logger.error(s"Error during fetching latest records for node=[${sourceNodeData.id}]: $error")
                   Future(Left(FetchLatestRecordsError(error)))
                 case Right(rawScenarioTestData) =>
                   Future(Right(rawScenarioTestData.content))

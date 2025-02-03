@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
@@ -14,11 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
-import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
@@ -150,19 +145,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   def generateTestDataForSource(
       metaData: MetaData,
-      nodeId: NodeId,
+      sourceNodeData: SourceNodeData,
       size: Int
   ): Either[String, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
-
+    val nodeId  = NodeId(sourceNodeData.id)
     val testDataGenerator = prepareSourceObj(
-      node.Source(
-        nodeId.id,
-        SourceRef(
-          "kafka",
-          evaluatedparam.Parameter(ParameterName("Topic"), Expression(Language.Spel, "'sometopic'")) :: Nil
-        )
-      )
+      sourceNodeData
     )(jobData, nodeId).toList
       .flatMap(_.cast[TestDataGenerator])
     val gen = NonEmptyList
