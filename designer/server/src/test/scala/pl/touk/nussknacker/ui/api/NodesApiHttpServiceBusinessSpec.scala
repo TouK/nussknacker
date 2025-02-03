@@ -5,6 +5,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -891,6 +892,134 @@ class NodesApiHttpServiceBusinessSpec
     }
   }
 
+  "The endpoint for fetching latest records should" - {
+    "return records from source node" in {
+      given()
+        .applicationState {
+          createSavedScenario(sourceTestingScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "processProperties": {
+             |    "additionalFields": {
+             |      "properties": {
+             |        "parallelism": "1",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "nodeData": {
+             |    "id": "${sourceTestingScenarioSourceId}",
+             |    "type": "Source",
+             |    "ref": {
+             |      "typ": "genericSourceWithCustomVariables",
+             |      "parameters": [
+             |        {
+             |          "name": "elements",
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "{'test'}"
+             |          }
+             |        }
+             |      ]
+             |    }
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/nodes/${sourceTestingScenario.name}/fetchLatestRecordsForNode/10")
+        .Then()
+        .statusCode(200)
+        .equalsPlainBody(
+          """{"sourceId":"sourceId","record":"test-0"}
+            |{"sourceId":"sourceId","record":"test-1"}
+            |{"sourceId":"sourceId","record":"test-2"}
+            |{"sourceId":"sourceId","record":"test-3"}
+            |{"sourceId":"sourceId","record":"test-4"}
+            |{"sourceId":"sourceId","record":"test-5"}
+            |{"sourceId":"sourceId","record":"test-6"}
+            |{"sourceId":"sourceId","record":"test-7"}
+            |{"sourceId":"sourceId","record":"test-8"}
+            |{"sourceId":"sourceId","record":"test-9"}""".stripMargin
+        )
+    }
+
+    "return error when node is not a source" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "processProperties": {
+             |    "additionalFields": {
+             |      "properties": {
+             |        "parallelism": "1",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "nodeData": {
+             |    "id": "sinkId",
+             |    "type": "Sink",
+             |    "ref": {
+             |      "typ": "barSink",
+             |      "parameters": []
+             |    }
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/fetchLatestRecordsForNode/10")
+        .Then()
+        .statusCode(404)
+        .body(equalTo("Error during fetching latest records: \nExpected SourceNodeData but got: Sink"))
+    }
+
+    "return 404 for not existent scenario" in {
+      val nonExistingScenarioName = "nonExistingScenario"
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "processProperties": {
+             |    "additionalFields": {
+             |      "properties": {
+             |        "parallelism": "1",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "nodeData": {
+             |    "id": "sourceId",
+             |    "type": "Source",
+             |    "ref": {
+             |      "typ": "barSource",
+             |      "parameters": []
+             |    }
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/nodes/$nonExistingScenarioName/fetchLatestRecordsForNode/10")
+        .Then()
+        .statusCode(404)
+        .body(equalTo(s"No scenario $nonExistingScenarioName found"))
+    }
+  }
+
   private lazy val exampleScenario = ScenarioBuilder
     .streaming("test")
     .source("sourceId", "barSource")
@@ -1016,5 +1145,12 @@ class NodesApiHttpServiceBusinessSpec
        |        }
        |    }
        |}""".stripMargin
+
+  private val sourceTestingScenarioSourceId = "sourceId"
+
+  private val sourceTestingScenario = ScenarioBuilder
+    .streaming("source_testing_scenario")
+    .source(sourceTestingScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
+    .emptySink("sinkId", "barSink")
 
 }
