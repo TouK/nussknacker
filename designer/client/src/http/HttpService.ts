@@ -39,6 +39,7 @@ import { fixAggregateParameters, fixBranchParametersTemplate } from "./parameter
 import { handleAxiosError } from "../devHelpers";
 import { Dimensions, StickyNote } from "../common/StickyNote";
 import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
+import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -338,16 +339,11 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(
-        processName: string,
-        comment?: string,
-    ): Promise<{
-        isSuccess: boolean;
-    }> {
+    deploy(processName: string, comment?: string): Promise<ScenarioActionResult> {
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
             .then(() => {
-                return { isSuccess: true };
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -359,15 +355,22 @@ class HttpService {
                         error,
                         true,
                     ).then(() => {
-                        return { isSuccess: false };
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error",
+                        };
                     });
                 } else {
-                    throw error;
+                    const msg = error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
                 }
             });
     }
 
-    runOffSchedule(processName: string, comment?: string) {
+    runOffSchedule(processName: string, comment?: string): Promise<ScenarioActionResult> {
         const data = {
             comment: comment,
         };
@@ -377,35 +380,50 @@ class HttpService {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
                 return {
-                    isSuccess: res.data.isSuccess,
-                    msg: msg,
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: msg.toString(),
                 };
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
                 const result = {
-                    isSuccess: false,
-                    msg: msg,
+                    scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                    msg: msg.toString(),
                 };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                throw error;
+                return {
+                    scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                    msg: msg.toString(),
+                };
             });
     }
 
-    cancel(processName, comment?) {
-        return api.post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment).catch((error) => {
-            if (error?.response?.status != 400) {
-                return this.#addError(
-                    i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
-                    error,
-                    true,
-                ).then(() => {
-                    return { isSuccess: false };
-                });
-            } else {
-                throw error;
-            }
-        });
+    cancel(processName, comment?): Promise<ScenarioActionResult> {
+        return api
+            .post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment)
+            .then(() => {
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+            })
+            .catch((error) => {
+                if (error?.response?.status != 400) {
+                    return this.#addError(
+                        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
+                        error,
+                        true,
+                    ).then(() => {
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error occured",
+                        };
+                    });
+                } else {
+                    const msg = error.response.data.msg || error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
+                }
+            });
     }
 
     async addComment(processName: string, versionId: number, comment: string): Promise<ResponseStatus> {
