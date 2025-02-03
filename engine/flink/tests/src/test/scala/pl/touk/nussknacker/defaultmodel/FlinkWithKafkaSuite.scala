@@ -165,7 +165,7 @@ abstract class FlinkWithKafkaSuite
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
       val executionResult = env.execute()
-      flinkMiniCluster.withJobRunning(executionResult.getJobID)(action)
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
     }
   }
 

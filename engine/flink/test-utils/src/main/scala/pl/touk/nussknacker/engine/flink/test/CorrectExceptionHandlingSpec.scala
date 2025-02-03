@@ -40,7 +40,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
         LocalModelData(config, sourceComponentDefinition :: components),
         scenario
       )
-      flinkMiniCluster.waitForFinished(executionResult.getJobID)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
     }
     RecordingExceptionConsumer.exceptionsFor(runId) should have length generator.count
   }

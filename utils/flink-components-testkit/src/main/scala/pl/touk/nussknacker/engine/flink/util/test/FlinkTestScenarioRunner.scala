@@ -224,7 +224,7 @@ class FlinkTestScenarioRunner(
 
           val jobExecutionResult = env.execute(scenario.name.value)
           flinkMiniClusterWithServices.miniCluster
-            .waitForFinished(jobExecutionResult.getJobID)(toRetryPolicy(WaitForJobStatusPatience))
+            .waitForJobIsFinished(jobExecutionResult.getJobID)(toRetryPolicy(WaitForJobStatusPatience))
             .futureValue
             .toTry
             .get

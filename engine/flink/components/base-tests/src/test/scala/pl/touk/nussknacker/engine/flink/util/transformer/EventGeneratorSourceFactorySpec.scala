@@ -45,7 +45,7 @@ class EventGeneratorSourceFactorySpec
 
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
-      flinkMiniCluster.withJobRunning(executionResult.getJobID) {
+      flinkMiniCluster.withRunningJob(executionResult.getJobID) {
         eventually {
           val results = collectingListener.results.nodeResults.get(sinkId)
           results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
@@ -78,7 +78,7 @@ class EventGeneratorSourceFactorySpec
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
 
-      flinkMiniCluster.withJobRunning(executionResult.getJobID) {
+      flinkMiniCluster.withRunningJob(executionResult.getJobID) {
         eventually {
           val results        = collectingListener.results.nodeResults.get(sinkId)
           val emittedResults = results.toList.flatten.flatMap(_.variableTyped("input"))

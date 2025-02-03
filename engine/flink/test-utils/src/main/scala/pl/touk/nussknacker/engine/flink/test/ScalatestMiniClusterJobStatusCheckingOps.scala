@@ -21,18 +21,18 @@ object ScalatestMiniClusterJobStatusCheckingOps {
 
   implicit class Ops(miniCluster: MiniCluster) {
 
-    def waitForFinished(jobID: JobID): Unit = {
+    def waitForJobIsFinished(jobID: JobID): Unit = {
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .waitForFinished(jobID)(toRetryPolicy(WaitForJobStatusPatience))
+        .waitForJobIsFinished(jobID)(toRetryPolicy(WaitForJobStatusPatience))
         .futureValue
         .toTry
         .get
     }
 
-    def withJobRunning[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
+    def withRunningJob[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
       val retryPolicy = toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .withJobRunning(jobID, retryPolicy, retryPolicy) {
+        .withRunningJob(jobID, retryPolicy, retryPolicy) {
           Future {
             blocking {
               actionToInvokeWithJobRunning
@@ -44,9 +44,9 @@ object ScalatestMiniClusterJobStatusCheckingOps {
         .get
     }
 
-    def checkJobNotFailing(jobID: JobID): Unit = {
+    def checkJobIsNotFailing(jobID: JobID): Unit = {
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .checkJobNotFailing(jobID)
+        .checkJobIsNotFailing(jobID)
         .futureValue
         .toTry
         .get

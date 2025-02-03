@@ -739,7 +739,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   ): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
-      flinkMiniCluster.waitForFinished(executionResult.getJobID)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
     }
   }
 

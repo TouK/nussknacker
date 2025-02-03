@@ -167,10 +167,10 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
       sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
       val jobExecutionResult = env.execute(streamGraph)
-      flinkMiniCluster.withJobRunning(jobExecutionResult.getJobID) {
+      flinkMiniCluster.withRunningJob(jobExecutionResult.getJobID) {
         sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
 
-        flinkMiniCluster.checkJobNotFailing(jobExecutionResult.getJobID)
+        flinkMiniCluster.checkJobIsNotFailing(jobExecutionResult.getJobID)
         verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
       }
     }
@@ -194,7 +194,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
       val executionResult = env.execute(process.name.value)
-      flinkMiniCluster.withJobRunning(executionResult.getJobID)(action(executionResult))
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action(executionResult))
     }
   }
 

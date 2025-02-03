@@ -218,7 +218,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     )
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
-      flinkMiniCluster.withJobRunning(executionResult.getJobID)(action)
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
     }
   }
 

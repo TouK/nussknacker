@@ -88,7 +88,7 @@ class KafkaExceptionConsumerSpec
 
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
-      val message = flinkMiniCluster.withJobRunning(executionResult.getJobID) {
+      val message = flinkMiniCluster.withRunningJob(executionResult.getJobID) {
         val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
 
         consumed.key() shouldBe s"$scenarioName-shouldFail"

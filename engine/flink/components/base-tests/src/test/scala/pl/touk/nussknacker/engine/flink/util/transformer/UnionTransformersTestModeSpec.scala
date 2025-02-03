@@ -138,7 +138,7 @@ class UnionTransformersTestModeSpec
   private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env)
-      flinkMiniCluster.waitForFinished(executionResult.getJobID)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
     }
   }
 

@@ -141,7 +141,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
       FlinkBaseUnboundedComponentProvider.Components
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = runScenario(env, LocalModelData(config, enrichedComponents), scenario)
-      flinkMiniCluster.waitForFinished(executionResult.getJobID)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
 
       // A bit more complex check, since there are errors from both join sides...
       RecordingExceptionConsumer

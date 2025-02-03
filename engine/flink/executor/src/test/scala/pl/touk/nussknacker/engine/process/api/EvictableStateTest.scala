@@ -60,7 +60,7 @@ class EvictableStateTest
   after {
     StaticSource.running = false
     TestOperator.buffer = List()
-    flinkMiniClusterWithServices.waitForFinished(jobID)
+    flinkMiniClusterWithServices.waitForJobIsFinished(jobID)
   }
 
   it should "process state normally when no watermark is generated" in {

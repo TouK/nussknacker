@@ -101,7 +101,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
         input1.add(OneRecord(key, 2, -1))
         input1.finish()
 
-        flinkMiniCluster.waitForFinished(jobID)
+        flinkMiniCluster.waitForJobIsFinished(jobID)
 
         val outValues = collectingListener.results
           .nodeResults(EndNodeId)
@@ -125,7 +125,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
     val model = modelData(input1, input2, collectingListener)
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val result = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
-      flinkMiniCluster.withJobRunning(result.getJobID)(action(result.getJobID))
+      flinkMiniCluster.withRunningJob(result.getJobID)(action(result.getJobID))
     }
   }
 

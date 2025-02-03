@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
 import cats.data.EitherT
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.{AccessExecutionGraph, AccessExecutionVertex}
@@ -13,24 +14,30 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
 // FIXME abr: unit tests with plain flink jobs
-object MiniClusterJobStatusCheckingOps {
+object MiniClusterJobStatusCheckingOps extends LazyLogging {
+
+  private val InitializingJobStatuses = Set(JobStatus.INITIALIZING, JobStatus.CREATED)
+
+  private val GloballyTerminalJobStatuses = JobStatus.values().filter(_.isGloballyTerminalState).toSet
+
+  private val FailingJobStatuses = Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING)
 
   implicit class Ops(miniCluster: MiniCluster)(implicit ec: ExecutionContext) {
 
     // FIXME abr: cancel job when not finished
-    def waitForFinished(
+    def waitForJobIsFinished(
         jobID: JobID
-    )(retryPolicy: retry.Policy): Future[Either[JobVerticesStatesCheckError, Unit]] = {
-      waitForJobVerticesStates(jobID, checkIfNotFailing = true, Set(ExecutionState.FINISHED))(retryPolicy)
+    )(retryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
+      waitForJobState(jobID, Set(JobStatus.FINISHED), Set(ExecutionState.FINISHED))(retryPolicy)
     }
 
-    def withJobRunning[T](jobID: JobID, runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy)(
+    def withRunningJob[T](jobID: JobID, runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy)(
         actionToInvokeWithJobRunning: => Future[T]
-    ): Future[Either[JobVerticesStatesCheckError, T]] = {
+    ): Future[Either[JobStateCheckError, T]] = {
       val resultFuture = (for {
-        _      <- EitherT(waitForRunningOrFinished(jobID)(runningCheckRetryPolicy))
+        _      <- EitherT(waitForJobIsRunningOrFinished(jobID)(runningCheckRetryPolicy))
         result <- EitherT.right(actionToInvokeWithJobRunning)
-        _      <- EitherT(doCheckJobNotFailing[JobVerticesStatesCheckError](jobID))
+        _      <- doCheckJobIsNotFailing[JobStateCheckError](jobID)
       } yield result).value
       // It is a kind of asynchronous "finally" block
       resultFuture.transformWith { resultTry =>
@@ -39,122 +46,151 @@ object MiniClusterJobStatusCheckingOps {
             // It occurs for example when job was already finished when we cancel it
             case ex: CompletionException if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
           }
-          _      <- waitForAnyTerminalState(jobID)(terminalCheckRetryPolicy)
+          _      <- waitForJobIsInAnyGloballyTerminalState(jobID)(terminalCheckRetryPolicy)
           result <- Future.fromTry(resultTry)
         } yield result
       }
     }
 
-    private def waitForRunningOrFinished(
+    private def waitForJobIsRunningOrFinished(
         jobID: JobID
-    )(retryPolicy: retry.Policy): Future[Either[JobVerticesStatesCheckError, Unit]] = {
-      waitForJobVerticesStates(
+    )(retryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
+      waitForJobState(
         jobID,
-        checkIfNotFailing = true,
+        Set(JobStatus.RUNNING, JobStatus.FINISHED),
         Set(ExecutionState.RUNNING, ExecutionState.FINISHED)
       )(retryPolicy)
     }
 
-    private def waitForAnyTerminalState(
+    private def waitForJobIsInAnyGloballyTerminalState(
         jobID: JobID
-    )(retryPolicy: retry.Policy): Future[Either[JobVerticesStatesCheckError, Unit]] = {
-      waitForJobVerticesStates(
+    )(retryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
+      waitForJobState(
         jobID,
-        checkIfNotFailing = false,
+        GloballyTerminalJobStatuses,
         Set(ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)
       )(retryPolicy)
     }
 
-    private def waitForJobVerticesStates(
+    private def waitForJobState(
         jobID: JobID,
-        checkIfNotFailing: Boolean,
-        // We check vertices states instead of job status because of two reasons:
-        // 1. Flink reports job as RUNNING even if some of the vertices are only scheduled (not running yet)
-        // 2. We want to more precisely return info about not matching vertices states
-        expectedVerticesStates: Set[ExecutionState]
+        // We have to verify both job state and vertices states because there are cases when one is more useful than another and vice versa:
+        // - for checking RUNNING state, it is better to check vertices states because Flink reports job as RUNNING even if some of the vertices are only scheduled (not running yet)
+        // - for checking FINISHED state, it is better to check job states because Flink reports vertices as FINISHED even if job is not FINISHED yet
+        expectedJobStatuses: Set[JobStatus],
+        expectedVerticesStates: Set[ExecutionState],
     )(
         retryPolicy: retry.Policy
-    ): Future[Either[JobVerticesStatesCheckError, Unit]] =
+    ): Future[Either[JobStateCheckError, Unit]] =
       retryPolicy {
         (for {
           // we have to verify if job is initialized, because otherwise, not all vertices are available so vertices status check would be misleading
           executionGraph <- EitherT.right(miniCluster.getExecutionGraph(jobID).toScala): EitherT[
             Future,
-            JobVerticesStatesCheckError,
+            JobStateCheckError,
             AccessExecutionGraph
           ]
+          _ = {
+            logger.trace(
+              s"Job [id=${executionGraph.getJobID}, name=${executionGraph.getJobName}] state: ${executionGraph.getState}, vertices states: ${executionGraph.getAllExecutionVertices.asScala
+                  .map(_.getExecutionState)}"
+            )
+          }
           _ <- EitherT.cond[Future](
-            executionGraph.getState != JobStatus.INITIALIZING,
+            expectedJobStatuses.intersect(InitializingJobStatuses).nonEmpty || !InitializingJobStatuses.contains(
+              executionGraph.getState
+            ),
             (),
             JobIsNotInitializedError(jobID, executionGraph.getJobName)
           )
-          // we check failing even if vertices states check was enough, for more precise error with failure info
+          // we check failing status separately to provide more detailed information about job state in error case
           _ <-
-            if (checkIfNotFailing)
-              doCheckJobNotFailing(executionGraph)
+            if (expectedJobStatuses.intersect(FailingJobStatuses).nonEmpty)
+              doCheckJobIsNotFailing(executionGraph)
             else
-              EitherT.rightT[Future, JobVerticesStatesCheckError](())
-          executionVertices = executionGraph.getAllExecutionVertices.asScala
-          verticesNotInExpectedState = executionVertices.filterNot(v =>
-            expectedVerticesStates.contains(v.getExecutionState)
-          )
-          _ <- EitherT.cond[Future][JobVerticesStatesCheckError, Unit](
-            verticesNotInExpectedState.isEmpty,
+              EitherT.rightT[Future, JobStateCheckError](())
+          // we check vertices states before job state for more precise information about vertices in error
+          _ <- checkVerticesStates(executionGraph, expectedVerticesStates)
+          _ <- EitherT.cond[Future][JobStateCheckError, Unit](
+            expectedJobStatuses.contains(executionGraph.getState),
             (),
-            JobVerticesNotInExpectedStateError(
-              executionGraph.getJobID,
-              executionGraph.getJobName,
-              verticesNotInExpectedState,
-              expectedVerticesStates
-            )
+            JobInUnexpectedStateError(jobID, executionGraph.getJobName, executionGraph.getState, expectedJobStatuses)
           )
         } yield ()).value
       }
 
-    def checkJobNotFailing(jobID: JobID): Future[Either[JobIsFailingError, Unit]] =
-      doCheckJobNotFailing[JobIsFailingError](jobID)
+    def checkJobIsNotFailing(jobID: JobID): Future[Either[JobIsFailingError, Unit]] =
+      doCheckJobIsNotFailing[JobIsFailingError](jobID).value
 
-    private def doCheckJobNotFailing[E >: JobIsFailingError](jobID: JobID): Future[Either[E, Unit]] =
-      (for {
+    private def doCheckJobIsNotFailing[E >: JobIsFailingError](jobID: JobID): EitherT[Future, E, Unit] =
+      for {
         executionGraph <- EitherT.right(miniCluster.getExecutionGraph(jobID).toScala)
-        _              <- doCheckJobNotFailing[E](executionGraph)
-      } yield ()).value
+        _              <- doCheckJobIsNotFailing[E](executionGraph)
+      } yield ()
 
-    private def doCheckJobNotFailing[E >: JobIsFailingError](
+    private def doCheckJobIsNotFailing[E >: JobIsFailingError](
         executionGraph: AccessExecutionGraph
     ): EitherT[Future, E, Unit] = {
       EitherT.cond[Future][E, Unit](
-        !Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),
+        !FailingJobStatuses.contains(executionGraph.getState),
         (),
         JobIsFailingError(executionGraph)
       )
     }
 
+    private def checkVerticesStates(
+        executionGraph: AccessExecutionGraph,
+        expectedVerticesStates: Set[ExecutionState]
+    ): EitherT[Future, JobStateCheckError, Unit] = {
+      val executionVertices = executionGraph.getAllExecutionVertices.asScala
+      val verticesNotInExpectedState =
+        executionVertices.filterNot(v => expectedVerticesStates.contains(v.getExecutionState))
+      EitherT.cond[Future][JobStateCheckError, Unit](
+        verticesNotInExpectedState.isEmpty,
+        (),
+        JobVerticesInUnexpectedStateError(
+          executionGraph.getJobID,
+          executionGraph.getJobName,
+          verticesNotInExpectedState,
+          expectedVerticesStates
+        )
+      )
+    }
+
   }
 
-  sealed abstract class JobVerticesStatesCheckError(msg: String) extends Exception(msg)
+  sealed abstract class JobStateCheckError(msg: String) extends Exception(msg)
 
   case class JobIsNotInitializedError(jobID: JobID, jobName: String)
-      extends JobVerticesStatesCheckError(s"Job [id=$jobID, name=$jobName] is not initialized")
+      extends JobStateCheckError(s"Job [id=$jobID, name=$jobName] is not initialized")
 
   case class JobIsFailingError(executionGraph: AccessExecutionGraph)
-      extends JobVerticesStatesCheckError(
+      extends JobStateCheckError(
         s"Job [id=${executionGraph.getJobID}, name=${executionGraph.getJobName}] is in failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
       )
 
-  case class JobVerticesNotInExpectedStateError(
+  case class JobVerticesInUnexpectedStateError(
       jobID: JobID,
       jobName: String,
       verticesNotInExpectedState: Iterable[AccessExecutionVertex],
       expectedVerticesStates: Set[ExecutionState]
-  ) extends JobVerticesStatesCheckError(
+  ) extends JobStateCheckError(
         verticesNotInExpectedState
           .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
           .mkString(
-            s"Some vertices of ob [id=$jobID, name=$jobName] are not in expected (${expectedVerticesStates.mkString(", ")}) state): ",
+            s"Some vertices of ob [id=$jobID, name=$jobName] are not in expected (${expectedVerticesStates.mkString(" or ")}) state: ",
             ", ",
             ""
           )
+      )
+
+  case class JobInUnexpectedStateError(
+      jobID: JobID,
+      jobName: String,
+      jobStatus: JobStatus,
+      expectedStatuses: Set[JobStatus]
+  ) extends JobStateCheckError(
+        s"Job [id=${jobID}, name=${jobName}] is not in expected (${expectedStatuses.mkString(" or ")} state: $jobStatus"
       )
 
 }

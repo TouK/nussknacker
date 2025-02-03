@@ -45,7 +45,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
           configCreator = ProcessTestHelpersConfigCreator
         )
         val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
-        flinkMiniCluster.waitForFinished(executionResult.getJobID)
+        flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
       }
     }
 

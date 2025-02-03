@@ -82,25 +82,24 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
-* [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing
-  * `TestScenarioRunner.flinkBased` now takes `FlinkMiniClusterWithServices` instead of `FlinkMiniClusterHolder`. 
-    `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps:
-    * `FlinkSpec` inheritance should be removed from test class
-    * Test class should extend `BeforeAndAfterAll`
-    * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
-    * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
-  * Changes in `flink-test-utils` module
-    * `FlinkSpec.flinkMiniCluster` is of `FlinkMiniClusterWithServices` type instead of `FlinkMiniClusterHolder`
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing. As an entry point to all migration steps, assume that `FlinkMiniClusterWithServices` is a new `FlinkMiniClusterHolder`
+  * From perspective of testkit (`TestScenarioRunner.flinkBased`) module usage
+    * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps:
+      * `FlinkSpec` inheritance should be removed from test class
+      * Test class should extend `BeforeAndAfterAll`
+      * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
+      * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
+  * From perspective of `flink-test-utils` module usage
     * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
       `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
     * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead
       * To access methods such as `withJobRunning`, import `ScalatestMiniClusterJobStatusCheckingOps._` 
         and then invoke these methods on `flinkMiniCluster`
-      * Method `withJobRunning` doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
+      * Method `withJobRunning` was renamed to `withRunningJob` and it doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
       * Some methods are not available in `ScalatestMiniClusterJobStatusCheckingOps`:
-        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - test should be rewritten to testkit stack (`TestScenarioRunner.flinkBased`)
-          or should be used `withJobRunning` instead
-        * `executeAndWaitForFinished` - should be used `StreamExecutionEnvironment.execute` and then `flinkMiniCluster.waitForFinished`
+        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - test should be rewritten to testkit stack (`TestScenarioRunner.flinkBased`) or should be used `withRunningJob` instead
+        * `executeAndWaitForFinished` - should be used `StreamExecutionEnvironment.execute` and then `flinkMiniCluster.waitForJobIsFinished`
+        * `assertJobNotFailing` was renamed to `checkJobIsNotFailing`
         * Other methods were considered too much low-level and were removed
 
 ## In version 1.18.0

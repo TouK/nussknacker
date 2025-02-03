@@ -115,7 +115,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       input1.finish()
       input2.finish()
 
-      flinkMiniCluster.waitForFinished(jobID)
+      flinkMiniCluster.waitForJobIsFinished(jobID)
 
       val outValues = collectingListener.results
         .nodeResults(EndNodeId)
@@ -519,7 +519,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = modelData(input1, input2, collectingListener)
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val result = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
-      flinkMiniCluster.withJobRunning(result.getJobID)(action(result.getJobID))
+      flinkMiniCluster.withRunningJob(result.getJobID)(action(result.getJobID))
     }
   }
 

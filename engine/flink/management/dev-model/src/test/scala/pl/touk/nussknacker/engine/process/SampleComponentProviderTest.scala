@@ -53,7 +53,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
-      flinkMiniCluster.withJobRunning(executionResult.getJobID)(action)
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
     }
   }
 

@@ -130,7 +130,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
-      flinkMiniCluster.waitForFinished(executionResult.getJobID)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
     }
   }
 
