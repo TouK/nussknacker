@@ -1158,6 +1158,123 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/nodes/{scenarioName}/fetchLatestRecordsForNode/{numberOfRecords}:
+    post:
+      tags:
+      - Nodes
+      summary: Fetch latest records for specific node
+      operationId: postApiNodesScenarionameFetchlatestrecordsfornodeNumberofrecords
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: numberOfRecords
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FetchLatestRecordsRequestDto'
+            examples:
+              Example:
+                summary: Basic fetch request
+                value:
+                  processProperties:
+                    additionalFields:
+                      properties:
+                        parallelism: ''
+                        spillStateToDisk: 'true'
+                        useAsyncInterpretation: ''
+                        checkpointIntervalInSeconds: ''
+                      metaDataType: StreamMetaData
+                      showDescription: false
+                  nodeData:
+                    id: sourceId
+                    ref:
+                      typ: source
+                      parameters: []
+                    type: Source
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Simple scenario test data in json stringify form
+                  value: '{name: John}'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter numberOfRecords, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
@@ -5534,6 +5651,15 @@ components:
           $ref: '#/components/schemas/CaretPosition2d'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
+    FetchLatestRecordsRequestDto:
+      title: FetchLatestRecordsRequestDto
+      type: object
+      required:
+      - processProperties
+      - nodeData
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
     Field:
       title: Field
       type: object
