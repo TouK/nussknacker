@@ -151,16 +151,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .map(PreliminaryScenarioTestData.apply)
   }
 
-  private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
-    modelData.withThisAsContextClassLoader {
-      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
-      }
-      ListUtil.mergeLists(sourceTestDataList.toList, size)
-    }
-  }
-
   private def prepareTestDataGenerators(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
@@ -175,6 +165,16 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .fromList(generatorsForSourcesSupportingTestDataGeneration)
       .map(Right(_))
       .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
+  }
+
+  private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
+    modelData.withThisAsContextClassLoader {
+      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+      }
+      ListUtil.mergeLists(sourceTestDataList.toList, size)
+    }
   }
 
   private def prepareSourceObj(
