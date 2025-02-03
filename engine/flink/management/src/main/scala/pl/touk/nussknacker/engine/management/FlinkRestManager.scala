@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.management
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -11,10 +13,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkRestManager.ParsedJobConfig
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
-import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.{
-  WithDataFreshnessStatusMapOps,
-  WithDataFreshnessStatusOps
-}
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -24,8 +23,14 @@ class FlinkRestManager(
     config: FlinkConfig,
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
-    mainClassName: String
-) extends FlinkDeploymentManager(modelData, dependencies, config.shouldVerifyBeforeDeploy, mainClassName)
+    mainClassName: String,
+) extends FlinkDeploymentManager(
+      modelData,
+      dependencies,
+      config.shouldVerifyBeforeDeploy,
+      mainClassName,
+      config.miniCluster
+    )
     with LazyLogging {
 
   import dependencies._
@@ -70,6 +75,21 @@ class FlinkRestManager(
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = getAllProcessesStatesFromFlink()
 
     }
+
+  override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
+
+    override def createScheduledExecutionPerformer(
+        modelData: BaseModelData,
+        dependencies: DeploymentManagerDependencies,
+        config: Config,
+    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(modelData, dependencies, config)
+
+    override def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
+    override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]         = None
+    override def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]   = None
+    override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
+
+  }
 
   private def getAllProcessesStatesFromFlink()(
       implicit freshnessPolicy: DataFreshnessPolicy
@@ -223,10 +243,10 @@ class FlinkRestManager(
       deploymentId: Option[DeploymentId],
       statuses: List[StatusDetails]
   ) = {
-    statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
+    statuses.filterNot(details => SimpleStateStatus.isFinalOrTransitioningToFinalStatus(details.status)) match {
       case Nil =>
         logger.warn(
-          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
+          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not active on Flink."
         )
         Future.successful(())
       case single :: Nil => cancelFlinkJob(single)
@@ -295,10 +315,6 @@ class FlinkRestManager(
       slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobsIds)
     } else
       Future.successful(())
-  }
-
-  override def close(): Unit = {
-    logger.info("Closing Flink REST manager")
   }
 
 }

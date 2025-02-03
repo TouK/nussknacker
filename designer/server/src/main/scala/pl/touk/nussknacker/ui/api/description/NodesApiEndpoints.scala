@@ -1584,7 +1584,7 @@ object NodesApiEndpoints {
 
 }
 
-object TypingDtoSchemas { // todo
+object TypingDtoSchemas {
 
   import pl.touk.nussknacker.engine.api.typed.typing._
   import sttp.tapir.Schema.SName

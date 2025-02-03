@@ -4,6 +4,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
+
+### Configuration changes
+
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
+  * maxContentLength - max length of a sticky notes content (characters)
+  * maxNotesCount - max count of sticky notes inside one scenario/fragment
+  * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
+
+
 ### Other changes
 
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
@@ -31,9 +40,50 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism. 
   If there were any custom actions defined in some custom DeploymentManager implementation, 
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * the PeriodicDeploymentManager is no longer a separate DM type
+    * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
+  ```hocon   
+    deploymentConfig: {
+      type: "flinkPeriodic"
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
+      deploymentManager {
+        db: { <config of the custom db data source> },
+        processingType: streaming,
+        jarsDir: ./storage/jars
+      }
+    }
+    ```
+  * changes:
+    * the `type: "flinkPeriodic"` is no longer supported, instead `type: "flinkStreaming"` with additional setting `supportsPeriodicExecution: true` should be used
+    * the db config is now optional - the periodic DM may still use its custom datasource defined here in `legacyDb` section
+    * when custom `db` section not defined here, then main Nussknacker db will be used
+  * config after changes may look like that:
+  ```hocon   
+    deploymentConfig: {
+      type: "flinkStreaming"
+      scheduling {
+        enabled: true
+        processingType: streaming,
+        jarsDir: ./storage/jars
+        legacyDb: { <OPTIONAL config of the custom db data source> },
+      }
+      restUrl: "http://jobmanager:8081"
+      shouldVerifyBeforeDeploy: true
+    }
+    ```
+* [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: by default mini cluster is created once and reused each time
+  To revert previous behaviour (creating minicluster each time), change `deploymentConfig.miniCluster.reuseMiniClusterForScenarioTesting` or/and 
+  `deploymentConfig.miniCluster.reuseMiniClusterForScenarioStateVerification` to `false` 
+* [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
+  This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
+  was removed to temporarily disable consumer group namespacing.
 
 ### Code API changes
-* [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
+* [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
 
 ## In version 1.18.0
 

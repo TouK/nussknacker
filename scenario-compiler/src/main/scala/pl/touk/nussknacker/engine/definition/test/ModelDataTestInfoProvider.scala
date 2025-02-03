@@ -25,11 +25,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private lazy val nodeCompiler = new NodeCompiler(
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.modelDefinitionWithClasses.classDefinitions.all
     ),
     expressionCompiler,
-    modelData.modelClassLoader.classLoader,
+    modelData.modelClassLoader,
     Seq.empty,
     ProductionServiceInvocationCollector,
     ComponentUseCase.TestDataGeneration,

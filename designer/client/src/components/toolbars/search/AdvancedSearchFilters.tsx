@@ -47,7 +47,7 @@ export function AdvancedSearchFilters({
         return new Set(
             componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
         );
-    }, []);
+    }, [componentsGroups]);
 
     const nodeTypes = useMemo(() => {
         const availableTypes = allNodes
@@ -59,13 +59,13 @@ export function AdvancedSearchFilters({
             .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression))
             .filter((type) => componentLabels.has(type.toLowerCase()));
 
-        return uniq(availableTypes);
-    }, [allNodes]);
+        return uniq(availableTypes).sort();
+    }, [allNodes, componentLabels]);
 
     useEffect(() => {
         const searchQuery = resolveSearchQuery(filter);
         setFilterFields(searchQuery);
-    }, [filter]);
+    }, [filter, setFilterFields]);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -76,6 +76,7 @@ export function AdvancedSearchFilters({
 
     const handleClear = () => {
         setFilter(filterFields?.plainQuery);
+        setFilterFields({ plainQuery: filterFields?.plainQuery });
     };
 
     return (

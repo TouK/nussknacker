@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
@@ -12,6 +11,11 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
+  FlinkMiniClusterScenarioStateVerifier,
+  FlinkMiniClusterScenarioTestRunner
+}
+import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterConfig, FlinkMiniClusterFactory}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
@@ -21,15 +25,31 @@ abstract class FlinkDeploymentManager(
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
     shouldVerifyBeforeDeploy: Boolean,
-    mainClassName: String
+    mainClassName: String,
+    scenarioTestingConfig: FlinkMiniClusterConfig
 ) extends DeploymentManager
     with LazyLogging {
 
   import dependencies._
 
-  private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
+  private val miniClusterWithServicesOpt = {
+    FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
+      modelData.modelClassLoader,
+      scenarioTestingConfig
+    )
+  }
 
-  private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
+  private val testRunner = new FlinkMiniClusterScenarioTestRunner(
+    modelData,
+    miniClusterWithServicesOpt
+      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
+  )
+
+  private val verification = new FlinkMiniClusterScenarioStateVerifier(
+    modelData,
+    miniClusterWithServicesOpt
+      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
+  )
 
   /**
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
@@ -115,7 +135,7 @@ abstract class FlinkDeploymentManager(
           makeSavepoint(_, savepointDir)
         }
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-        testRunner.test(canonicalProcess, scenarioTestData)
+        testRunner.runTests(canonicalProcess, scenarioTestData)
       case _: DMRunOffScheduleCommand => notImplemented
     }
 
@@ -224,7 +244,7 @@ abstract class FlinkDeploymentManager(
       processVersion: ProcessVersion
   ): Future[Unit] =
     if (shouldVerifyBeforeDeploy)
-      verification.verify(processVersion, canonicalProcess, savepointPath)
+      Future.fromTry(verification.verify(processVersion, canonicalProcess, savepointPath))
     else Future.successful(())
 
   private def stopSavingSavepoint(
@@ -261,6 +281,11 @@ abstract class FlinkDeploymentManager(
   ): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+
+  override def close(): Unit = {
+    logger.info("Closing Flink Deployment Manager")
+    miniClusterWithServicesOpt.foreach(_.close())
+  }
 
 }
 

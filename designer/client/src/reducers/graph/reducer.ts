@@ -16,9 +16,12 @@ import { selectionState } from "./selectionState";
 import { GraphState } from "./types";
 import {
     addNodesWithLayout,
+    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
+    prepareNewStickyNotesWithLayout,
+    removeStickyNoteFromLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -238,6 +241,18 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: action.layout,
             });
         }
+        case "STICKY_NOTES_UPDATED": {
+            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+            return {
+                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+            };
+        }
+        case "STICKY_NOTE_DELETED": {
+            const { stickyNotes, layout } = removeStickyNoteFromLayout(state, action.stickyNoteId);
+            return {
+                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+            };
+        }
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
 
@@ -333,7 +348,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
+    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "UPDATE_TEST_FORM_PARAMETERS"])),
 });
 
 // apply only undoable changes for undo actions

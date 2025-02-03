@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -100,6 +101,20 @@ class DefinitionResourcesSpec
         .downField("display")
 
       typesInformation.focus.value shouldBe Json.fromString("ReturningTestCaseClass")
+    }
+  }
+
+  it("should return definition sorted data for allowed classes - skipping array because list should be uses instead") {
+    getProcessDefinitionData() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val allowedClasses              = responseAs[Json].hcursor.downField("classes").focus.value.asArray.value
+      val allowedClassesRefClazzNames = allowedClasses.flatMap(_.hcursor.downField("refClazzName").focus.value.asString)
+      val allowedClassesDisplay       = allowedClasses.flatMap(_.hcursor.downField("display").focus.value.asString)
+
+      allowedClassesRefClazzNames should contain("java.util.List")
+      allowedClassesRefClazzNames should not contain (Array().getClass.getName)
+      allowedClassesDisplay shouldBe allowedClassesDisplay.sortBy(_.toLowerCase)
     }
   }
 

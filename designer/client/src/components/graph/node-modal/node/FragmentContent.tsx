@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import HttpService from "../../../../http/HttpService";
-import { getProcessCounts } from "../../../../reducers/selectors/graph";
+import { getProcessCounts, getStickyNotes } from "../../../../reducers/selectors/graph";
 import { FragmentNodeType } from "../../../../types";
 import { ErrorBoundary, DialogErrorFallbackComponent } from "../../../common/error-boundary";
 import NodeUtils from "../../NodeUtils";
@@ -14,6 +14,7 @@ import { Scenario } from "../../../Process/types";
 
 export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): JSX.Element {
     const processCounts = useSelector(getProcessCounts);
+    const stickyNotes = useSelector(getStickyNotes);
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
     const [fragmentContent, setFragmentContent] = useState<Scenario>(null);
@@ -40,6 +41,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}
                     scenario={fragmentContent}
+                    stickyNotes={[]}
                     nodeIdPrefixForFragmentTests={getFragmentNodesPrefix(fragmentContent)}
                 />
             )}

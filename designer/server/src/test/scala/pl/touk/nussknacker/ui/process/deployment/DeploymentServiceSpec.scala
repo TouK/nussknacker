@@ -96,11 +96,11 @@ class DeploymentServiceSpec
 
   private val initialVersionId = ProcessVersion.empty.versionId
 
-  deploymentManager = new MockDeploymentManager(
-    SimpleStateStatus.Running,
-    DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
-    new DefaultProcessingTypeActionService("streaming", deploymentService),
-    new RepositoryBasedScenarioActivityManager(activityRepository, dbioRunner),
+  deploymentManager = MockDeploymentManager.create(
+    defaultProcessStateStatus = SimpleStateStatus.Running,
+    deployedScenariosProvider = DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
+    actionService = new DefaultProcessingTypeActionService("streaming", deploymentService),
+    scenarioActivityManager = new RepositoryBasedScenarioActivityManager(activityRepository, dbioRunner),
   )
 
   private def createDeploymentService(

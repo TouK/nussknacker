@@ -169,7 +169,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                     }
                 })
                 .filter(({ groups }) => groups.length),
-        [displayNames, allEdges, searchQuery, allNodes],
+        [allNodes, allEdges, displayNames, isSimpleSearch, searchQuery],
     );
 }
 
@@ -197,7 +197,7 @@ export function searchQueryToString(query: SearchQuery): string {
     const formattedParts = Object.entries(query)
         .filter(([key]) => key !== "plainQuery")
         .map(([key, value]) => {
-            if (Array.isArray(value) && !(value.length === 1 && value[0] === "")) {
+            if (Array.isArray(value) && value.length > 0 && value[0] !== null && value[0] !== "") {
                 return `${key}:(${value})`;
             } else if (typeof value === "string" && value.length > 0) {
                 return `${key}:(${[value]})`;

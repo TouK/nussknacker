@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import pl.touk.nussknacker.engine.api.namespaces.Namespace
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb.LiteEngineInfluxDbReporter
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -12,7 +13,9 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
-class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLogging {
+class LiteMetricRegistryFactory(defaultInstanceId: => String, namespace: Option[Namespace]) extends LazyLogging {
+
+  import LiteMetricRegistryFactory._
 
   val metricsConfigPath = "metrics"
 
@@ -28,7 +31,7 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
   }
 
   private def registerReporters(metricRegistry: MetricRegistry, metricsConfig: Config): Unit = {
-    val prefix          = preparePrefix(metricsConfig.rootAs[CommonMetricConfig])
+    val prefix          = prepareMetricPrefix(metricsConfig.rootAs[CommonMetricConfig], defaultInstanceId, namespace)
     val metricReporters = loadMetricsReporters()
     if (metricReporters.nonEmpty) {
       metricReporters.foreach { reporter =>
@@ -38,15 +41,6 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
       LiteEngineInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, prefix, metricsConfig)
     }
     new JmxMetricsReporter().createAndRunReporter(metricRegistry, prefix, metricsConfig)
-  }
-
-  private def preparePrefix(conf: CommonMetricConfig): MetricName = {
-    conf.prefix
-      .map(MetricName.build(_))
-      .getOrElse(MetricName.empty())
-      .tagged("instanceId", conf.instanceId.getOrElse(defaultInstanceId))
-      .tagged("env", conf.environment)
-      .tagged(conf.additionalTags.asJava)
   }
 
   private def loadMetricsReporters(): List[MetricsReporter] = {
@@ -61,20 +55,12 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
     }
   }
 
-  case class CommonMetricConfig(
-      prefix: Option[String],
-      instanceId: Option[String],
-      environment: String,
-      additionalTags: Map[String, String] = Map.empty
-  )
-
 }
 
 object LiteMetricRegistryFactory extends LazyLogging {
 
-  def usingHostnameAsDefaultInstanceId = new LiteMetricRegistryFactory(hostname)
-
-  def usingHostnameAndPortAsDefaultInstanceId(port: Int) = new LiteMetricRegistryFactory(s"$hostname:$port")
+  def usingHostnameAsDefaultInstanceId(namespace: Option[Namespace]) =
+    new LiteMetricRegistryFactory(hostname, namespace)
 
   def hostname: String = {
     // Checking COMPUTERNAME to make it works also on windows, see: https://stackoverflow.com/a/33112997/1370301
@@ -83,5 +69,29 @@ object LiteMetricRegistryFactory extends LazyLogging {
       "localhost"
     }
   }
+
+  private[dropwizard] def prepareMetricPrefix(
+      conf: CommonMetricConfig,
+      defaultInstanceId: => String,
+      namespace: Option[Namespace]
+  ): MetricName = {
+    val metricPrefix = conf.prefix
+      .map(MetricName.build(_))
+      .getOrElse(MetricName.empty())
+      .tagged("instanceId", conf.instanceId.getOrElse(defaultInstanceId))
+      .tagged("env", conf.environment)
+      .tagged(conf.additionalTags.asJava)
+    namespace match {
+      case Some(Namespace(value, _)) => metricPrefix.tagged("namespace", value)
+      case None                      => metricPrefix
+    }
+  }
+
+  private[dropwizard] case class CommonMetricConfig(
+      prefix: Option[String],
+      instanceId: Option[String],
+      environment: String,
+      additionalTags: Map[String, String] = Map.empty
+  )
 
 }

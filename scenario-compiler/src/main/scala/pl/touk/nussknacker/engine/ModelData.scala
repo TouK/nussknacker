@@ -40,10 +40,13 @@ object ModelData extends LazyLogging {
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
 
-  def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
-    val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
+  def apply(
+      processingTypeConfig: ProcessingTypeConfig,
+      dependencies: ModelDependencies,
+      modelClassLoader: ModelClassLoader
+  ): ModelData = {
     ClassLoaderModelData(
-      _.resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
+      _.resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader),
       modelClassLoader,
       Some(processingTypeConfig.category),
       dependencies.determineDesignerWideId,
@@ -79,8 +82,8 @@ object ModelData extends LazyLogging {
     def resolveInputConfigDuringExecution(modelConfigLoader: ModelConfigLoader): InputConfigDuringExecution = {
       if (resolveConfigs) {
         modelConfigLoader.resolveInputConfigDuringExecution(
-          ConfigWithUnresolvedVersion(modelClassLoader.classLoader, modelConfigs.modelInputConfig),
-          modelClassLoader.classLoader
+          ConfigWithUnresolvedVersion(modelClassLoader, modelConfigs.modelInputConfig),
+          modelClassLoader
         )
       } else {
         InputConfigDuringExecution(modelConfigs.modelInputConfig)
@@ -125,8 +128,6 @@ case class ClassLoaderModelData private (
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     // This property is for easier testing when for some reason, some jars with ComponentProvider are
     // on the test classpath and CPs collide with other once with the same name.
-    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
-    // add liteKafkaComponents (which are in test scope), see comment next to designer module
     shouldIncludeConfigCreator: ProcessConfigCreator => Boolean,
     shouldIncludeComponentProvider: ComponentProvider => Boolean,
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
@@ -137,10 +138,10 @@ case class ClassLoaderModelData private (
 
   // this is not lazy, to be able to detect if creator can be created...
   override val configCreator: ProcessConfigCreator =
-    new ProcessConfigCreatorLoader(shouldIncludeConfigCreator).justOne(modelClassLoader.classLoader)
+    new ProcessConfigCreatorLoader(shouldIncludeConfigCreator).justOne(modelClassLoader)
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
-    Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {
+    Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader)) match {
       case Empty()                => new DefaultModelConfigLoader(shouldIncludeComponentProvider)
       case One(modelConfigLoader) => modelConfigLoader
       case Many(moreThanOne) =>
@@ -153,11 +154,16 @@ case class ClassLoaderModelData private (
   )
 
   override lazy val migrations: ProcessMigrations = {
-    Multiplicity(ScalaServiceLoader.load[ProcessMigrations](modelClassLoader.classLoader)) match {
+    Multiplicity(ScalaServiceLoader.load[ProcessMigrations](modelClassLoader)) match {
       case Empty()            => ProcessMigrations.empty
       case One(migrationsDef) => migrationsDef
       case Many(moreThanOne) =>
-        throw new IllegalArgumentException(s"More than one ProcessMigrations instance found: $moreThanOne")
+        ProcessMigrations
+          .combine(moreThanOne)
+          .fold(
+            error => throw new IllegalArgumentException(s"Cannot combine many migrations list because of: $error"),
+            identity
+          )
     }
   }
 
@@ -226,7 +232,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   final lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
     val modelDefinitions = withThisAsContextClassLoader {
       extractModelDefinitionFun(
-        modelClassLoader.classLoader,
+        modelClassLoader,
         ProcessObjectDependencies(modelConfig, namingStrategy),
         determineDesignerWideId,
         additionalConfigsFromProvider
@@ -239,11 +245,12 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition =
+  final def modelDefinition: ModelDefinition = withThisAsContextClassLoader {
     modelDefinitionWithClasses.modelDefinition
+  }
 
   private lazy val dictServicesFactory: DictServicesFactory =
-    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
+    DictServicesFactoryLoader.justOne(modelClassLoader)
 
   final lazy val designerDictServices: UiDictServices =
     dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, modelConfig)
@@ -253,23 +260,21 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   // TODO: remove it, see notice in CustomProcessValidatorFactory
   final def customProcessValidator: CustomProcessValidator = {
-    CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, modelConfig)
+    CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader, modelConfig)
   }
 
   final def withThisAsContextClassLoader[T](block: => T): T = {
-    ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {
+    ThreadUtils.withThisAsContextClassLoader(modelClassLoader) {
       block
     }
   }
 
-  final override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
-
-  def modelClassLoader: ModelClassLoader
+  override def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 
   final override lazy val modelConfig: Config =
-    modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+    modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader)
 
   final lazy val componentsUiConfig: ComponentsUiConfig = ComponentsUiConfigParser.parse(modelConfig)
 

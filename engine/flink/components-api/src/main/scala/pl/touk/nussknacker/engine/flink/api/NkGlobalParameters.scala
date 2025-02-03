@@ -17,6 +17,7 @@ import scala.jdk.CollectionConverters._
 //Also, those configuration properties will be exposed via Flink REST API/webconsole
 case class NkGlobalParameters(
     buildInfo: String,
+    deploymentId: String, // TODO: Pass here DeploymentId?
     processVersion: ProcessVersion,
     configParameters: Option[ConfigGlobalParameters],
     namespaceParameters: Option[NamespaceMetricsTags],
@@ -51,7 +52,7 @@ object NamespaceMetricsTags {
       NamespaceMetricsTags(
         Map(
           originalNameTag -> scenarioName,
-          namespaceTag    -> namespace
+          namespaceTag    -> namespace.value
         )
       )
     }
@@ -63,13 +64,21 @@ object NkGlobalParameters {
 
   def create(
       buildInfo: String,
+      deploymentId: String, // TODO: Pass here DeploymentId?
       processVersion: ProcessVersion,
       modelConfig: Config,
       namespaceTags: Option[NamespaceMetricsTags],
       additionalInformation: Map[String, String]
   ): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namespaceTags, additionalInformation)
+    NkGlobalParameters(
+      buildInfo,
+      deploymentId,
+      processVersion,
+      configGlobalParameters,
+      namespaceTags,
+      additionalInformation
+    )
   }
 
   def fromMap(jobParameters: java.util.Map[String, String]): Option[NkGlobalParameters] =
@@ -79,11 +88,12 @@ object NkGlobalParameters {
 
     def encode(parameters: NkGlobalParameters): Map[String, String] = {
       def encodeWithKeyPrefix(map: Map[String, String], prefix: String): Map[String, String] = {
-        map.map { case (key, value) => s"$prefix$key" -> value }
+        map.map { case (key, value) => s"$prefix.$key" -> value }
       }
 
       val baseProperties = Map[String, String](
         "buildInfo"    -> parameters.buildInfo,
+        "deploymentId" -> parameters.deploymentId,
         "versionId"    -> parameters.processVersion.versionId.value.toString,
         "processId"    -> parameters.processVersion.processId.value.toString,
         "modelVersion" -> parameters.processVersion.modelVersion.map(_.toString).orNull,
@@ -95,9 +105,11 @@ object NkGlobalParameters {
       val configMap = parameters.configParameters
         .map(ConfigGlobalParametersToMapEncoder.encode)
         .getOrElse(Map.empty)
+
       val namespaceTagsMap = parameters.namespaceParameters
         .map(p => encodeWithKeyPrefix(p.tags, namespaceTagsMapPrefix))
         .getOrElse(Map.empty)
+
       val additionalInformationMap =
         encodeWithKeyPrefix(parameters.additionalInformation, additionalInformationMapPrefix)
 
@@ -107,8 +119,8 @@ object NkGlobalParameters {
     def decode(map: Map[String, String]): Option[NkGlobalParameters] = {
       def decodeWithKeyPrefix(map: Map[String, String], prefix: String): Map[String, String] = {
         map.view
-          .filter { case (key, _) => key.startsWith(prefix) }
-          .map { case (key, value) => key.stripPrefix(prefix) -> value }
+          .filter { case (key, _) => key.startsWith(s"$prefix.") }
+          .map { case (key, value) => key.stripPrefix(s"$prefix.") -> value }
           .toMap
       }
 
@@ -134,7 +146,15 @@ object NkGlobalParameters {
       for {
         processVersion <- processVersionOpt
         buildInfo      <- buildInfoOpt
-      } yield NkGlobalParameters(buildInfo, processVersion, configParameters, namespaceTags, additionalInformation)
+        deploymentId   <- map.get("deploymentId")
+      } yield NkGlobalParameters(
+        buildInfo,
+        deploymentId,
+        processVersion,
+        configParameters,
+        namespaceTags,
+        additionalInformation
+      )
     }
 
     private object ConfigGlobalParametersToMapEncoder {

@@ -8,9 +8,10 @@ object StatefulSampleProcess {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  def prepareProcess(name: ProcessName): CanonicalProcess = {
+  def prepareProcess(name: ProcessName, parallelism: Int = 1): CanonicalProcess = {
     ScenarioBuilder
       .streaming(name.value)
+      .parallelism(parallelism)
       .source("state", "oneSource")
       .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input".spel)
       .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "#stateVar".spel)

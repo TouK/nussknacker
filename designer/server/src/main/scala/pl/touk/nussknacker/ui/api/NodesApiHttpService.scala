@@ -216,7 +216,7 @@ class NodesApiHttpService(
       modelData: ModelData
   ): EitherT[Future, NodesError, NodeValidationRequest] = {
     EitherT.fromEither(
-      fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData.modelClassLoader.classLoader))
+      fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData.modelClassLoader))
     )
   }
 
@@ -263,7 +263,7 @@ class NodesApiHttpService(
       localVariables <- EitherT.fromEither[Future](
         decodeVariableTypes(
           request.variableTypes,
-          prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
+          prepareTypingResultDecoder(modelData.modelClassLoader)
         )
       )
       suggestions <- EitherT.right(
@@ -301,7 +301,7 @@ class NodesApiHttpService(
       request: ParametersValidationRequestDto,
       modelData: ModelData
   ): Either[NodesError, ParametersValidationRequest] = {
-    val typingResultDecoder = prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
+    val typingResultDecoder = prepareTypingResultDecoder(modelData.modelClassLoader)
     for {
       parameters <- request.parameters.map { parameter =>
         typingResultDecoder

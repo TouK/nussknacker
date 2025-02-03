@@ -33,7 +33,12 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener}
+import pl.touk.nussknacker.test.mock.{
+  MockDeploymentManager,
+  MockManagerProvider,
+  TestProcessChangeListener,
+  WithTestDeploymentManagerClassLoader
+}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
@@ -46,6 +51,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -67,6 +73,7 @@ trait NuResourcesTest
     with WithClock
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
+    with WithTestDeploymentManagerClassLoader
     with EitherValuesDetailedMessage
     with OptionValues
     with BeforeAndAfterEach
@@ -98,7 +105,7 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
+  protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
 
@@ -124,10 +131,19 @@ trait NuResourcesTest
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
-  protected val deploymentManagerProvider: DeploymentManagerProvider =
-    new MockManagerProvider(deploymentManager)
+  protected val deploymentManagerProvider: DeploymentManagerProvider = new MockManagerProvider(deploymentManager)
 
-  private val modelData = ModelData(processingTypeConfig, modelDependencies)
+  private val modelClassLoaderProvider = ModelClassLoaderProvider(
+    Map(Streaming.stringify -> ModelClassLoaderDependencies(processingTypeConfig.classPath, None)),
+    deploymentManagersClassLoader
+  )
+
+  private val modelData =
+    ModelData(
+      processingTypeConfig,
+      modelDependencies,
+      modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
+    )
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
@@ -135,6 +151,7 @@ trait NuResourcesTest
         Streaming.stringify,
         modelData,
         deploymentManagerProvider,
+        SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
@@ -148,10 +165,15 @@ trait NuResourcesTest
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val designerConfig = DesignerConfig.from(testConfig)
     ProcessingTypeDataProvider(
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+        () => IO.pure(designerConfig.processingTypeConfigs),
+        deploymentManagersClassLoader
+      )
         .loadProcessingTypeData(
           _ => modelDependencies,
-          _ => deploymentManagerDependencies
+          _ => deploymentManagerDependencies,
+          modelClassLoaderProvider,
+          Some(testDbRef),
         )
         .unsafeRunSync()
     )

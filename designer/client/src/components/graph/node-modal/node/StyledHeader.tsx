@@ -19,6 +19,29 @@ export const StyledContent = styled(Window.Content)(({ theme }) => {
         "body :has(>&)": {
             scrollPadding: theme.spacing(3.5),
             scrollPaddingTop: theme.spacing(6),
+            "::-webkit-scrollbar-track": {
+                width: "8px",
+                height: "8px",
+                background: blendLighten(theme.palette.background.paper, 0.1),
+            },
+            "::-webkit-scrollbar-thumb": {
+                background: blendLighten(theme.palette.background.paper, 0.5),
+                backgroundClip: "content-box",
+                border: "2px solid transparent",
+                borderRadius: "100px",
+                height: "15px",
+            },
+            "::-webkit-scrollbar-thumb:hover": {
+                background: blendLighten(theme.palette.background.paper, 0.5),
+            },
+            "::-webkit-scrollbar-corner": {
+                background: theme.palette.background.paper,
+            },
+            "::-webkit-scrollbar": {
+                paddingTop: theme.spacing(2),
+                width: "8px",
+                height: "8px",
+            },
         },
     };
 });

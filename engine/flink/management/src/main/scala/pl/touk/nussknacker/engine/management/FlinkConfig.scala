@@ -1,8 +1,12 @@
 package pl.touk.nussknacker.engine.management
 
-import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
+import net.ceedubs.ficus.Ficus
+import net.ceedubs.ficus.readers.ValueReader
+import org.apache.flink.configuration.Configuration
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterConfig
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.jdk.CollectionConverters._
 
 /**
   * FlinkConfig deployment configuration.
@@ -21,6 +25,7 @@ final case class FlinkConfig(
       FlinkWaitForDuringDeployFinishedConfig(enabled = true, Some(180), Some(1 second)),
     scenarioStateRequestTimeout: FiniteDuration = 3 seconds,
     jobConfigsCacheSize: Int = 1000,
+    miniCluster: FlinkMiniClusterConfig = FlinkMiniClusterConfig()
 )
 
 object FlinkConfig {

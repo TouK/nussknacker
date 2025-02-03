@@ -1,5 +1,5 @@
 import { ExpressionObj } from "../types";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Cron from "react-cron-generator";
 import "react-cron-generator/dist/cron-builder.css";
 import Input from "../../field/Input";
@@ -33,9 +33,12 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter;
 
-    function encode(value) {
-        return value == "" ? "" : cronFormatter.encode(value);
-    }
+    const encode = useCallback(
+        (value: string): string => {
+            return value === "" ? "" : cronFormatter.encode(value);
+        },
+        [cronFormatter],
+    );
 
     function decode(expression: string): CronExpression {
         const result = cronFormatter.decode(expression);
@@ -65,7 +68,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
 
     useEffect(() => {
         onValueChange(encode(value));
-    }, [value]);
+    }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {
         if (!readOnly) {

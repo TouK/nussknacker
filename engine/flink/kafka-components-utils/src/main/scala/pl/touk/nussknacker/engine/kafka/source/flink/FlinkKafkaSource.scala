@@ -138,9 +138,9 @@ class FlinkKafkaSource[T](
     )
   }
 
-  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {
-    case Some(overridden) => overridden
-    case None             => ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
+  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
+    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
+    namingStrategy.prepareName(baseName)
   }
 
 }

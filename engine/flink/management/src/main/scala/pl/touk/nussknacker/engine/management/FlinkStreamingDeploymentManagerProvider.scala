@@ -2,6 +2,10 @@ package pl.touk.nussknacker.engine.management
 
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.Ficus
+import net.ceedubs.ficus.readers.ValueReader
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
@@ -13,13 +17,17 @@ import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
+class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
+
+  private implicit val flinkConfigurationValueReader: ValueReader[Configuration] =
+    Ficus.mapValueReader[String].map(map => Configuration.fromMap(map.asJava))
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -27,15 +35,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
-    createDeploymentManagerWithCapabilities(modelData, dependencies, deploymentConfig, scenarioStateCacheTTL)
-  }
-
-  def createDeploymentManagerWithCapabilities(
-      modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config,
-      scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] = {
+    logger.info("Creating FlinkStreamingDeploymentManager")
     import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>

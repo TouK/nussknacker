@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -35,15 +36,12 @@ class ScenarioTestService(
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(
-      implicit user: LoggedUser
   ): TestingCapabilities = {
-    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     testInfoProvider.getTestingCapabilities(processVersion, canonical)
   }
 
-  def testParametersDefinition(
+  def validateAndGetTestParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
@@ -56,12 +54,16 @@ class ScenarioTestService(
   def testUISourceParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean
-  )(implicit user: LoggedUser): List[UISourceParameters] =
-    testParametersDefinition(scenarioGraph, processVersion, isFragment)
+  ): List[UISourceParameters] = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+    testInfoProvider
+      .getTestParameters(processVersion, canonical)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
-      .map { assignUserFriendlyEditor }
+      .map {
+        assignUserFriendlyEditor
+      }
       .toList
+  }
 
   def generateData(
       scenarioGraph: ScenarioGraph,
