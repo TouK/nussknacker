@@ -1,12 +1,17 @@
 package pl.touk.nussknacker.ui.definition
 
+import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
+import pl.touk.nussknacker.engine.definition.component.{Components, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.definition._
@@ -30,12 +35,18 @@ class DefinitionsService(
     staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository,
-    fragmentPropertiesDocsUrl: Option[String]
-)(implicit ec: ExecutionContext) {
+    fragmentPropertiesDocsUrl: Option[String],
+)(implicit ec: ExecutionContext)
+    extends LazyLogging {
+
+  private val fragmentComponentsCache: Cache[(ProcessingType, Boolean), (List[CanonicalProcess], Components)] =
+    Caffeine
+      .newBuilder()
+      .expireAfterAccess(java.time.Duration.ofDays(1))
+      .build[(ProcessingType, Boolean), (List[CanonicalProcess], Components)]
 
   def prepareUIDefinitions(
       processingType: ProcessingType,
@@ -45,10 +56,7 @@ class DefinitionsService(
       implicit user: LoggedUser
   ): Future[UIDefinitions] = {
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
-      val alignedComponentsDefinition =
-        alignedComponentsDefinitionProvider
-          .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
-
+      val alignedComponentsDefinition = getComponents(processingType, forFragment, fragments)
       val withStaticDefinition = {
         val (components, cachedStaticDefinitionsForDynamicComponents) = componentUiConfigMode match {
           case ComponentUiConfigMode.EnrichedWithUiConfig =>
@@ -92,6 +100,39 @@ class DefinitionsService(
         finalizedScenarioPropertiesConfig,
         scenarioPropertiesDocsUrl
       )
+    }
+  }
+
+  // Components are fetched from cache, as long as the value in cache exists and fragment definitions did not change since last cache update.
+  // Otherwise, the cache in updated.
+  private def getComponents(
+      processingType: ProcessingType,
+      forFragment: Boolean,
+      fragments: List[CanonicalProcess],
+  ): Components = {
+    Option(fragmentComponentsCache.getIfPresent((processingType, forFragment))) match {
+      case Some((cachedFragments, cachedComponents)) if cachedFragments == fragments =>
+        logger.debug(
+          s"Up-to-date components present in cache for processingType=$processingType, forFragment=$forFragment"
+        )
+        cachedComponents
+      case cacheContent @ (Some(_) | None) =>
+        cacheContent match {
+          case Some(_) =>
+            logger.debug(
+              s"Out-of-date components present in cache for processingType=$processingType, forFragment=$forFragment"
+            )
+          case None =>
+            logger.debug(
+              s"Components not present in cache for processingType=$processingType, forFragment=$forFragment"
+            )
+        }
+        val updatedComponents =
+          alignedComponentsDefinitionProvider
+            .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
+        fragmentComponentsCache.put((processingType, forFragment), (fragments, updatedComponents))
+        logger.debug(s"Updated components for processingType=$processingType, forFragment=$forFragment")
+        updatedComponents
     }
   }
 
@@ -151,7 +192,6 @@ object DefinitionsService {
       processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
       processingTypeData.deploymentData.scenarioPropertiesConfig,
       processingTypeData.deploymentData.fragmentPropertiesConfig,
-      processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository,
