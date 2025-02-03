@@ -167,6 +167,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
   }
 
+  private def prepareSourceObj(
+      source: SourceNodeData
+  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
+    nodeCompiler.compileSource(source).compiledObject
+  }
+
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
     modelData.withThisAsContextClassLoader {
       val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
@@ -175,12 +181,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       }
       ListUtil.mergeLists(sourceTestDataList.toList, size)
     }
-  }
-
-  private def prepareSourceObj(
-      source: SourceNodeData
-  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
-    nodeCompiler.compileSource(source).compiledObject
   }
 
   override def prepareTestData(
