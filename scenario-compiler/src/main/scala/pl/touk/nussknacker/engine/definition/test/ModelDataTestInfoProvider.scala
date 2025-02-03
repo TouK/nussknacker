@@ -110,15 +110,55 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): Either[String, PreliminaryScenarioTestData] = {
     for {
       generators <- prepareTestDataGenerators(processVersion, scenario)
-      generatedData = generateTestData(generators, size)
-      // Records without timestamp are put at the end of the list.
-      sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-      preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
-      nonEmptyPreliminaryTestRecords <- NonEmptyList
-        .fromList(preliminaryTestRecords)
-        .map(Right(_))
-        .getOrElse(Left("Empty list of generated data"))
-    } yield PreliminaryScenarioTestData(nonEmptyPreliminaryTestRecords)
+      result     <- createPreliminaryTestData(generators, size)
+    } yield result
+  }
+
+  def generateTestDataForSource(
+      metaData: MetaData,
+      sourceNodeData: SourceNodeData,
+      size: Int
+  ): Either[String, PreliminaryScenarioTestData] = {
+    val jobData = JobData(metaData, ProcessVersion.empty)
+    val nodeId  = NodeId(sourceNodeData.id)
+    val testDataGenerator = prepareSourceObj(
+      sourceNodeData
+    )(jobData, nodeId).toList
+      .flatMap(_.cast[TestDataGenerator])
+    val validatedGenerators = NonEmptyList
+      .fromList(testDataGenerator)
+      .map(x => Right(x))
+      .getOrElse(Left("Provided source didn't produce any data"))
+
+    for {
+      generators <- validatedGenerators
+      result     <- createPreliminaryTestData(generators.map(nodeId -> _), size)
+    } yield result
+  }
+
+  private def createPreliminaryTestData(
+      generators: NonEmptyList[(NodeId, TestDataGenerator)],
+      size: Int
+  ): Either[String, PreliminaryScenarioTestData] = {
+    val generatedData = generateTestData(generators, size)
+    // Records without timestamp are put at the end of the list.
+    val sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+    val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
+    NonEmptyList
+      .fromList(preliminaryTestRecords)
+      .map(Right(_))
+      .getOrElse(Left("Empty list of generated data"))
+      .map(PreliminaryScenarioTestData.apply)
+  }
+
+  private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
+    modelData.withThisAsContextClassLoader {
+      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+      }
+      ListUtil.mergeLists(sourceTestDataList.toList, size)
+    }
   }
 
   private def prepareTestDataGenerators(
@@ -141,45 +181,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       source: SourceNodeData
   )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
     nodeCompiler.compileSource(source).compiledObject
-  }
-
-  def generateTestDataForSource(
-      metaData: MetaData,
-      sourceNodeData: SourceNodeData,
-      size: Int
-  ): Either[String, PreliminaryScenarioTestData] = {
-    val jobData = JobData(metaData, ProcessVersion.empty)
-    val nodeId  = NodeId(sourceNodeData.id)
-    val testDataGenerator = prepareSourceObj(
-      sourceNodeData
-    )(jobData, nodeId).toList
-      .flatMap(_.cast[TestDataGenerator])
-    val gen = NonEmptyList
-      .fromList(testDataGenerator)
-      .map(x => Right(x))
-      .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
-
-    for {
-      generators <- gen
-      generatedData = generateTestData(generators.map(nodeId -> _), size)
-      // Records without timestamp are put at the end of the list.
-      sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-      preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
-      nonEmptyPreliminaryTestRecords <- NonEmptyList
-        .fromList(preliminaryTestRecords)
-        .map(Right(_))
-        .getOrElse(Left("Empty list of generated data"))
-    } yield PreliminaryScenarioTestData(nonEmptyPreliminaryTestRecords)
-  }
-
-  private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
-    modelData.withThisAsContextClassLoader {
-      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
-      }
-      ListUtil.mergeLists(sourceTestDataList.toList, size)
-    }
   }
 
   override def prepareTestData(
