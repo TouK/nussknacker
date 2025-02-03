@@ -91,6 +91,26 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     )
   }
 
+  override def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
+      query: ScenarioQuery
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestProcessByQueryAction(
+        { process =>
+          expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
+        },
+      )
+    )
+  }
+
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
       isDeployed: Option[Boolean]
@@ -133,6 +153,20 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           // For optimisation reasons we don't return history when querying for list of processes
           history = None
         )
+      }).map(_.toList)
+  }
+
+  private def fetchLatestProcessByQueryAction[PS: ScenarioShapeFetchStrategy](
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): DBIOAction[List[PS], NoStream, Effect.All with Effect.Read] = {
+    (for {
+      latestProcesses <- fetchLatestProcessesQuery(query).result
+    } yield latestProcesses
+      .map { case ((_, _), processVersion) =>
+        convertToTargetShape(processVersion)
       }).map(_.toList)
   }
 
