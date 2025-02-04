@@ -1,9 +1,12 @@
 import { ModuleUrl } from "@touk/federated-component";
 import { isEmpty } from "lodash";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { getAdditionalComponents, getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
+import { getComponentGroups } from "../../../reducers/selectors/getComponentGroups";
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
@@ -34,6 +37,14 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const [filter, setFilter] = useState("");
     const clearFilter = useCallback(() => setFilter(""), []);
 
+    const dispatch = useDispatch();
+    useEffect(() => {
+        dispatch(getAdditionalComponents());
+        dispatch(getConfiguredAdditionalComponents());
+    }, [dispatch]);
+
+    const componentGroups = useSelector(getComponentGroups);
+
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
             <SearchInputWithIcon
@@ -47,6 +58,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             </SearchInputWithIcon>
             <ToolBox
                 filter={filter}
+                data={componentGroups}
                 addGroupLabelElement={({ name }) => (
                     <AddGroupElement
                         url={additionalParams?.addGroupElement}
