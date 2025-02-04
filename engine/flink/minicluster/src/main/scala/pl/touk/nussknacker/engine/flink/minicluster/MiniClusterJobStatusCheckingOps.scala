@@ -18,8 +18,6 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
 
   private val InitializingJobStatuses = Set(JobStatus.INITIALIZING, JobStatus.CREATED)
 
-  private val GloballyTerminalJobStatuses = JobStatus.values().filter(_.isGloballyTerminalState).toSet
-
   private val FailingJobStatuses = Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING)
 
   implicit class Ops(miniCluster: MiniCluster)(implicit ec: ExecutionContext) {
@@ -46,7 +44,7 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
             // It occurs for example when job was already finished when we cancel it
             case ex: CompletionException if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
           }
-          _      <- waitForJobIsInAnyGloballyTerminalState(jobID)(terminalCheckRetryPolicy)
+          _      <- waitForJobIsInCancelledOrFinished(jobID)(terminalCheckRetryPolicy)
           result <- Future.fromTry(resultTry)
         } yield result
       }
@@ -62,13 +60,13 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
       )(retryPolicy)
     }
 
-    private def waitForJobIsInAnyGloballyTerminalState(
+    private def waitForJobIsInCancelledOrFinished(
         jobID: JobID
     )(retryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
       waitForJobState(
         jobID,
-        GloballyTerminalJobStatuses,
-        Set(ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)
+        Set(JobStatus.CANCELED, JobStatus.FINISHED),
+        Set(ExecutionState.CANCELED, ExecutionState.FINISHED)
       )(retryPolicy)
     }
 
