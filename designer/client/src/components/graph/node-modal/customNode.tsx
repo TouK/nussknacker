@@ -21,6 +21,10 @@ export type CustomNodeProps = {
     showValidation?: boolean;
 };
 
+export function isAggregate(node: NodeType) {
+    return ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
+}
+
 export function CustomNode({
     children,
     errors,
@@ -40,9 +44,8 @@ export function CustomNode({
     );
 
     const ParametersComponent = useMemo(() => {
-        const isAggregate = ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
-        return isAggregate ? AggregateParametersList : ParametersList;
-    }, [node.nodeType]);
+        return isAggregate(node) ? AggregateParametersList : ParametersList;
+    }, [node]);
 
     return (
         <>

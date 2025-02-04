@@ -1,21 +1,21 @@
 import { css } from "@emotion/css";
 import React, { SetStateAction } from "react";
 import { useSelector } from "react-redux";
+import { RootState } from "../../../../reducers";
 import { Edge, NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
+import { NodeDetailsContent } from "../NodeDetailsContent";
 import { ContentSize } from "./ContentSize";
 import { FragmentContent } from "./FragmentContent";
 import { getNodeErrors } from "./selectors";
-import { RootState } from "../../../../reducers";
-import { NodeDetailsContent } from "../NodeDetailsContent";
 
-interface Props {
+export interface NodeGroupContentProps {
     node: NodeType;
     edges: Edge[];
     onChange?: (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => void;
 }
 
-export function NodeGroupContent({ node, edges, onChange }: Props): JSX.Element {
+export function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
     const errors = useSelector((state: RootState) => {
         return getNodeErrors(state, node.id);
     });
