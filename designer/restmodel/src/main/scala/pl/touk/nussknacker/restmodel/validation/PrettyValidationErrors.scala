@@ -262,7 +262,7 @@ object PrettyValidationErrors {
       case IncompatibleParameterDefinitionModification(paramName, language, parameterEditor, _) =>
         node(
           message =
-            "There was an incompatible change to the component's parameter definition. Please choose new valid value",
+            "There was an incompatible change to the component's parameter definition. Please choose a new valid value",
           description =
             s"Incompatible change to the parameter's definition detected. $parameterEditor editor doesn't support '$language' language",
           paramName = Some(paramName)
