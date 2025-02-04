@@ -13,7 +13,7 @@ import scala.language.implicitConversions
 object ScalatestMiniClusterJobStatusCheckingOps {
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
-    PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(10, Millis)))
+    PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(50, Millis)))
 
   implicit def miniClusterWithServicesToOps(miniClusterWithServices: FlinkMiniClusterWithServices): Ops = new Ops(
     miniClusterWithServices.miniCluster
@@ -23,14 +23,14 @@ object ScalatestMiniClusterJobStatusCheckingOps {
 
     def waitForJobIsFinished(jobID: JobID): Unit = {
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .waitForJobIsFinished(jobID)(toRetryPolicy(WaitForJobStatusPatience))
+        .waitForJobIsFinished(jobID)(PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience))
         .futureValue
         .toTry
         .get
     }
 
     def withRunningJob[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
-      val retryPolicy = toRetryPolicy(WaitForJobStatusPatience)
+      val retryPolicy = PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
         .withRunningJob(jobID, retryPolicy, retryPolicy) {
           Future {
@@ -52,13 +52,6 @@ object ScalatestMiniClusterJobStatusCheckingOps {
         .get
     }
 
-  }
-
-  private def toRetryPolicy(patience: PatienceConfig) = {
-    val maxAttempts = Math.max(Math.round(patience.timeout / patience.interval).toInt, 1)
-    val delta       = Span(50, Millis)
-    val interval    = (patience.timeout - delta) / maxAttempts
-    retry.Pause(maxAttempts, interval)
   }
 
 }
