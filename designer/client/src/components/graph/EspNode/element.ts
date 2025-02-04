@@ -1,19 +1,19 @@
 /* eslint-disable i18next/no-literal-string */
-import { attributes, dia, shapes } from "jointjs";
-import { cloneDeepWith, isEmpty, toString } from "lodash";
-import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
-import { NodeType, ProcessDefinitionData } from "../../../types";
-import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
-import { setLinksHovered } from "../utils/dragHelpers";
-import { isConnected, isModelElement } from "../GraphPartialsInTS";
-import { Events } from "../types";
-import NodeUtils from "../NodeUtils";
-import { EspNodeShape } from "./esp";
-import millify from "millify";
-import { UserSettings } from "../../../reducers/userSettings";
 import { Theme } from "@mui/material";
 import { blend } from "@mui/system";
+import { attributes, dia, shapes } from "jointjs";
+import { cloneDeepWith, isEmpty, toString } from "lodash";
+import millify from "millify";
 import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
+import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
+import { UserSettings } from "../../../reducers/userSettings";
+import { NodeType, ProcessDefinitionData } from "../../../types";
+import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
+import { isConnected, isModelElement } from "../GraphPartialsInTS";
+import NodeUtils from "../NodeUtils";
+import { Events } from "../types";
+import { setLinksHovered } from "../utils/dragHelpers";
+import { EspNodeShape } from "./esp";
 
 const maxLineLength = 24;
 const maxLineCount = 2;

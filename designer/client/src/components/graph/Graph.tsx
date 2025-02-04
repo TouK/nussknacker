@@ -17,6 +17,7 @@ import { NotificationActions } from "../../http/HttpService";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { UserSettings } from "../../reducers/userSettings";
 import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { StickyNoteType } from "../../types/stickyNote";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { ConfirmDialogData } from "../modals/GenericConfirmDialog";
 import { Scenario } from "../Process/types";
@@ -466,10 +467,12 @@ export class Graph extends React.Component<Props> {
 
     addNode(node: NodeType, position: Position): void {
         if (this.props.isFragment === true) return;
+        if (!this.props.capabilities.editFrontend) return;
 
-        const canAddNode = this.props.capabilities.editFrontend && NodeUtils.isAvailable(node, this.props.processDefinitionData);
-
-        if (canAddNode) {
+        if (node.type === StickyNoteType) {
+            this.addStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, position);
+        } else {
+            if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) return;
             this.props.nodeAdded(node, position);
         }
     }
