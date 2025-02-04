@@ -46,6 +46,7 @@ import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
 import java.util.Properties
+import scala.collection.immutable
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
@@ -212,7 +213,7 @@ object FlinkKafkaSource {
   sealed trait OffsetResetStrategy extends EnumEntry with UpperSnakecase
 
   object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
-    override def values: IndexedSeq[OffsetResetStrategy] = findValues
+    override def values: immutable.IndexedSeq[OffsetResetStrategy] = findValues
 
     case object None       extends OffsetResetStrategy
     case object ToEarliest extends OffsetResetStrategy
