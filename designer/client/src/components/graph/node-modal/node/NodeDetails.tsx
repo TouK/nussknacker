@@ -9,6 +9,8 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { RootState } from "../../../../reducers";
+import { getConfiguredAdditionalComponents } from "../../../../reducers/selectors/getComponentGroups";
+import { getCreatorType } from "../../../../reducers/selectors/getCreator";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
@@ -17,6 +19,7 @@ import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { NodeSwitcher } from "../NodeSwitcher";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
 
@@ -115,6 +118,21 @@ export function useNodeDetailsButtons({
     return { apply, cancel };
 }
 
+function useTitleData(node: NodeType) {
+    const creatorType = node.type === "VariableBuilder" ? getCreatorType(node) : null;
+    if (creatorType) {
+        return {
+            title: `${creatorType} creator`,
+            icon: <NodeDetailsModalIcon node={node} />,
+        };
+    }
+    return {
+        title: getNodeDetailsModalTitle(node),
+        icon: <NodeDetailsModalIcon node={node} />,
+        subheader: <NodeDetailsModalSubheader node={node} />,
+    };
+}
+
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
@@ -141,24 +159,38 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
         };
     }, [editedNode, t]);
 
+    const titleData = useTitleData(node);
+    const selector = useSelector(getConfiguredAdditionalComponents);
+
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
         return null;
     }
 
+    const creatorType = getCreatorType(editedNode);
     return (
         <WindowContent
             {...props}
             closeWithEsc
             buttons={[openFragment, cancel, apply]}
-            title={getNodeDetailsModalTitle(node)}
-            icon={<NodeDetailsModalIcon node={node} />}
-            subheader={<NodeDetailsModalSubheader node={node} />}
+            {...titleData}
             classnames={{
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
-            <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+            <NodeSwitcher
+                node={editedNode}
+                edges={outputEdges}
+                onChange={!readOnly && onChange}
+                componentsNamesToSelect={
+                    creatorType === "aggregate"
+                        ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
+                        : selector[creatorType]?.map((c) => c.componentId) || []
+                }
+            />
+            {creatorType && editedNode.type === "VariableBuilder" ? null : (
+                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+            )}
         </WindowContent>
     );
 }

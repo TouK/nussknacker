@@ -1,16 +1,17 @@
 import { AnyAction, Reducer as ReduxReducer } from "redux";
 import { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
+import { RootState } from "../reducers";
+import { CloudDataActions } from "../reducers/cloudData";
 
 import { ActionTypes } from "./actionTypes";
-import { CountsActions, NodeActions, ScenarioActions, SelectionActions, NodeDetailsActions, PropertiesActions } from "./nk";
-import { UserSettingsActions } from "./nk/userSettings";
-import { UiActions } from "./nk/ui/uiActions";
-import { SettingsActions } from "./settingsActions";
-import { ToolbarActions } from "./nk/toolbars";
-import { RootState } from "../reducers";
-import { NotificationActions } from "./nk/notifications";
+import { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
 import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
+import { NotificationActions } from "./nk/notifications";
 import { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
+import { ToolbarActions } from "./nk/toolbars";
+import { UiActions } from "./nk/ui/uiActions";
+import { UserSettingsActions } from "./nk/userSettings";
+import { SettingsActions } from "./settingsActions";
 
 type TypedAction =
     | UiActions
@@ -26,7 +27,8 @@ type TypedAction =
     | DisplayTestResultsDetailsAction
     | CountsActions
     | ScenarioActions
-    | PropertiesActions;
+    | PropertiesActions
+    | CloudDataActions;
 
 interface UntypedAction extends AnyAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;

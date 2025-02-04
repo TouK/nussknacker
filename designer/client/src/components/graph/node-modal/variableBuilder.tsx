@@ -1,9 +1,9 @@
-import { NodeType, NodeValidationError, VariableTypes } from "../../../types";
+import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
+import { NodeType, NodeValidationError, VariableTypes } from "../../../types";
 import MapVariable from "./MapVariable";
-import React from "react";
+import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 
 export function VariableBuilder({
     addElement,
