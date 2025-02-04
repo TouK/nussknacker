@@ -2,11 +2,9 @@ import { lighten, styled } from "@mui/material";
 import { getLuminance } from "@mui/system/colorManipulator";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import "react-treeview/react-treeview.css";
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
-import { getComponentGroups } from "../../../reducers/selectors/getComponentGroups";
 import { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
@@ -108,17 +106,16 @@ type ToolBoxProps = {
     filter: string;
     addTreeElement?: (group: ComponentGroup) => React.ReactElement | null;
     addGroupLabelElement?: (group: ComponentGroup) => React.ReactElement | null;
+    data: ComponentGroup[];
 };
 
-export default function ToolBox(props: ToolBoxProps): JSX.Element {
-    const componentGroups = useSelector(getComponentGroups);
-
+export default function ToolBox({ data = [], ...props }: ToolBoxProps): JSX.Element {
     const { t } = useTranslation();
 
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
     const groups = useMemo(() => {
-        return componentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
-    }, [componentGroups, filters]);
+        return data.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
+    }, [data, filters]);
 
     return (
         <StyledToolbox id="toolbox">

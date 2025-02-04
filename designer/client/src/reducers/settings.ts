@@ -27,11 +27,7 @@ export type BaseAuthenticationSettings = {
     anonymousAccessAllowed?: boolean;
 };
 
-export type AuthenticationSettings =
-    | BaseAuthenticationSettings
-    | BrowserAuthenticationSettings
-    | RemoteAuthenticationSettings
-    | OAuth2Settings;
+export type AuthenticationSettings = BrowserAuthenticationSettings | RemoteAuthenticationSettings | OAuth2Settings;
 
 export type BrowserAuthenticationSettings = {
     strategy: AuthStrategy.BROWSER;
@@ -53,7 +49,7 @@ export type OAuth2Settings = {
 const initialState: SettingsState = {
     loggedUser: {},
     featuresSettings: {},
-    authenticationSettings: {},
+    authenticationSettings: null,
     processDefinitionData: {
         edgesForNodes: [],
     },
