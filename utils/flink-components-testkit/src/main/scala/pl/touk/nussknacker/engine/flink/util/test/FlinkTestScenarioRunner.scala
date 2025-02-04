@@ -189,7 +189,7 @@ class FlinkTestScenarioRunner(
     )
 
     flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
-      Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
+      TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
         val compilerFactory =
           FlinkProcessCompilerDataFactoryWithTestComponents(
             testExtensionsHolder,

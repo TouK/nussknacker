@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
+import cats.effect.unsafe.IORuntime
 import io.circe.Json
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
@@ -17,8 +18,7 @@ import pl.touk.nussknacker.engine.testmode.{
   TestServiceInvocationCollector
 }
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 
 object FlinkScenarioTestingJob {
 
@@ -41,8 +41,9 @@ class FlinkScenarioTestingJob(modelData: ModelData) {
       scenarioTestData: ScenarioTestData,
       streamExecutionEnv: StreamExecutionEnvironment,
   ): Future[TestResults[Json]] = {
-    val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
-    val resultCollector    = new TestServiceInvocationCollector(collectingListener)
+    val (collectingListener, closeCollectingListener) =
+      ResultsCollectingListenerHolder.registerTestEngineListener.allocated.unsafeRunSync()(IORuntime.global)
+    val resultCollector = new TestServiceInvocationCollector(collectingListener)
     // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
     val processVersion = ProcessVersion.empty.copy(processName = scenario.name)
     val deploymentData = DeploymentData.empty.copy(additionalModelConfigs =
@@ -65,10 +66,10 @@ class FlinkScenarioTestingJob(modelData: ModelData) {
         streamExecutionEnv.execute(scenario.name.value)
         collectingListener.results
       }
-    }
+    }(ExecutionContext.global)
     resultFuture.onComplete { _ =>
-      collectingListener.clean()
-    }
+      closeCollectingListener.unsafeRunSync()(IORuntime.global)
+    }(ExecutionContext.global)
     resultFuture
   }
 

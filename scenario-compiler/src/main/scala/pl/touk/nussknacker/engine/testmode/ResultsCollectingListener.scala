@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -17,22 +19,30 @@ object TestRunId {
   def apply(id: String): TestRunId = throw new IllegalArgumentException("Please use generate instead of apply")
 }
 
-//TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
-case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, variableEncoder: Any => T)
-    extends ProcessListener
-    with Serializable {
+trait ResultsCollectingListener[T] extends ProcessListener with Serializable {
 
-  def results: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
+  def results: TestResults[T]
 
-  // FIXME abr: verify wrong usage of close() instead of clean()
+  def clean(): Unit
+
+  private[testmode] def updateResults(action: TestResults[Any] => TestResults[Any]): Unit
+
+  private[testmode] def variableEncoder: Any => T
+}
+
+private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: TestRunId, variableEncoder: Any => T)
+    extends ResultsCollectingListener[T] {
+
+  override def results: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
+
   // Warning! close can't clean resources because listener is passed into each scenario subpart and it will be closed few times
   // We have to use dedicated clean() method when we are sure that we consumed results instead.
   override final def close(): Unit = {}
 
-  def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
+  override def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, context, variableEncoder))
+    updateResults(_.updateNodeResult(nodeId, context, variableEncoder))
   }
 
   override def endEncountered(
@@ -56,10 +66,7 @@ case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, v
       processMetaData: MetaData,
       result: Any
   ): Unit = {
-    ResultsCollectingListenerHolder.updateResults(
-      runId,
-      _.updateExpressionResult(nodeId, context, expressionId, result, variableEncoder)
-    )
+    updateResults(_.updateExpressionResult(nodeId, context, expressionId, result, variableEncoder))
   }
 
   override def serviceInvoked(
@@ -71,33 +78,58 @@ case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, v
   ): Unit = {}
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo, variableEncoder))
+    updateResults(_.updateExceptionResult(exceptionInfo, variableEncoder))
 
+  private[testmode] override def updateResults(action: TestResults[Any] => TestResults[Any]): Unit = {
+    ResultsCollectingListenerHolder.updateResults(runId, action)
+  }
+
+}
+
+private object NoopResultsCollectingListener extends ResultsCollectingListener[Any] with EmptyProcessListener {
+  override def results: TestResults[Any] = TestResults(Map.empty, Map.empty, Map.empty, List.empty)
+
+  override def clean(): Unit = {}
+
+  override private[testmode] def updateResults(action: TestResults[Any] => TestResults[Any]): Unit = {}
+
+  override private[testmode] def variableEncoder: Any => Any = identity
 }
 
 object ResultsCollectingListenerHolder {
 
   private val results = new ConcurrentHashMap[TestRunId, TestResults[Any]]()
 
-  // TODO: casting is not so nice, but currently no other idea...
-  def resultsForId[T](id: TestRunId): TestResults[T] = results.get(id).asInstanceOf[TestResults[T]]
+  private[testmode] def resultsForId[T](id: TestRunId): TestResults[T] = results.get(id).asInstanceOf[TestResults[T]]
 
-  def registerTestEngineListener: ResultsCollectingListener[Json] = {
-    registerListener(TestInterpreterRunner.testResultsVariableEncoder)
+  def withTestEngineListener[T](action: ResultsCollectingListener[Json] => T): T = {
+    registerTestEngineListener.use(env => IO(action(env))).unsafeRunSync()
   }
 
-  def registerListener: ResultsCollectingListener[Any] = {
-    registerListener(identity)
+  def registerTestEngineListener: Resource[IO, ResultsCollectingListener[Json]] = {
+    Resource.make(IO(registerListener(TestInterpreterRunner.testResultsVariableEncoder)))(listener =>
+      IO(listener.clean())
+    )
   }
 
-  def cleanResult(runId: TestRunId): Unit = {
+  def withListener[T](action: ResultsCollectingListener[Any] => T): T = {
+    registerListener.use(env => IO(action(env))).unsafeRunSync()
+  }
+
+  def registerListener: Resource[IO, ResultsCollectingListener[Any]] = {
+    Resource.make(IO(registerListener(identity)))(listener => IO(listener.clean()))
+  }
+
+  val noopListener: ResultsCollectingListener[Any] = NoopResultsCollectingListener
+
+  private[testmode] def cleanResult(runId: TestRunId): Unit = {
     results.remove(runId)
   }
 
   private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = {
     val runId = TestRunId.generate
     results.put(runId, TestResults(Map(), Map(), Map(), List()))
-    ResultsCollectingListener(getClass.getCanonicalName, runId, variableEncoder)
+    ResultsCollectingListenerImpl(getClass.getCanonicalName, runId, variableEncoder)
   }
 
   private[testmode] def updateResults(runId: TestRunId, action: TestResults[Any] => TestResults[Any]): Unit = {

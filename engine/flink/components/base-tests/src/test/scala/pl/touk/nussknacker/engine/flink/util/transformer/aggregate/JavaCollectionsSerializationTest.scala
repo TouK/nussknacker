@@ -51,16 +51,17 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       set = mutable.Set("def").asJava
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val model              = modelData(collectingListener, List(record))
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(collectingListener, List(record))
 
-    runProcess(model, process)
+      runScenario(model, process)
 
-    val result = collectingListener.results
-      .nodeResults("end")
-      .map(_.variableTyped[Record]("input"))
+      val result = collectingListener.results
+        .nodeResults("end")
+        .map(_.variableTyped[Record]("input"))
 
-    result shouldBe List(Some(record))
+      result shouldBe List(Some(record))
+    }
   }
 
   def modelData(collectingListener: ResultsCollectingListener[Any], list: List[Record] = List()): LocalModelData = {
@@ -77,12 +78,12 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     )
   }
 
-  protected def runProcess(
+  protected def runScenario(
       model: LocalModelData,
-      testProcess: CanonicalProcess
+      testScenario: CanonicalProcess
   ): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testScenario, env)
       flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
     }
   }

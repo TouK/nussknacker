@@ -89,20 +89,21 @@ class UnionTransformersTestModeSpec
         unionPart
           .emptySink(endSinkId, "dead-end")
       )
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val modelData          = createModelData(data, collectingListener)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val modelData = createModelData(data, collectingListener)
 
-    val testResults = collectTestResults(modelData, scenario, collectingListener)
+      val testResults = collectTestResults(modelData, scenario, collectingListener)
 
-    val contextIds = extractContextIds(testResults)
-    contextIds should have size (data.size * 2)
-    contextIds should contain theSameElementsAs contextIds.toSet
-    contextIds should contain only (
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId",
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId",
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId",
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId",
-    )
+      val contextIds = extractContextIds(testResults)
+      contextIds should have size (data.size * 2)
+      contextIds should contain theSameElementsAs contextIds.toSet
+      contextIds should contain only (
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId",
+      )
+    }
   }
 
   private def createModelData(
@@ -124,10 +125,10 @@ class UnionTransformersTestModeSpec
 
   private def collectTestResults[T](
       modelData: LocalModelData,
-      testProcess: CanonicalProcess,
+      testScenario: CanonicalProcess,
       collectingListener: ResultsCollectingListener[T]
   ): TestProcess.TestResults[T] = {
-    runProcess(modelData, testProcess)
+    runScenario(modelData, testScenario)
     collectingListener.results
   }
 
@@ -135,7 +136,7 @@ class UnionTransformersTestModeSpec
     .nodeResults(endSinkId)
     .map(_.id)
 
-  private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
+  private def runScenario(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env)
       flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)

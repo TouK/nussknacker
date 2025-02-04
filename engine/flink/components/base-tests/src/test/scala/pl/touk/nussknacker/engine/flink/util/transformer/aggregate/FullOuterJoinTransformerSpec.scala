@@ -105,27 +105,28 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       }
     }
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    withRunningScenario(process, input1, input2, collectingListener) { jobID =>
-      input.foreach {
-        case Left(x)  => addTo1(x)
-        case Right(x) => addTo2(x)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      withRunningScenario(process, input1, input2, collectingListener) { jobID =>
+        input.foreach {
+          case Left(x)  => addTo1(x)
+          case Right(x) => addTo2(x)
+        }
+
+        input1.finish()
+        input2.finish()
+
+        flinkMiniCluster.waitForJobIsFinished(jobID)
+
+        val outValues = collectingListener.results
+          .nodeResults(EndNodeId)
+          .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
+          .map(_.mapValuesNow {
+            case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
+            case x                                                      => x
+          })
+
+        outValues shouldEqual expected
       }
-
-      input1.finish()
-      input2.finish()
-
-      flinkMiniCluster.waitForJobIsFinished(jobID)
-
-      val outValues = collectingListener.results
-        .nodeResults(EndNodeId)
-        .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
-        .map(_.mapValuesNow {
-          case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
-          case x                                                      => x
-        })
-
-      outValues shouldEqual expected
     }
   }
 
@@ -456,9 +457,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
-    val model            = modelData(sourceFoo, sourceBar, collectingListener)
+    val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
     assert(validationResult.isInvalid)
@@ -500,11 +499,10 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           .emptySink(EndNodeId, "dead-end")
       )
 
-    val sourceFoo          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val sourceBar          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val model            = modelData(sourceFoo, sourceBar, collectingListener)
+    val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
     assert(validationResult.isInvalid)

@@ -74,27 +74,27 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
-    def outValues = {
-      collectingListener.results
-        .nodeResults(EndNodeId)
-        .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
-    }
-
-    withProcess(process, sourceFoo, sourceBar, collectingListener) {
-      sourceFoo.add(OneRecord(key, 0, 123))
-      eventually {
-        outValues shouldEqual List(
-          Map("key" -> key, BranchFooId -> 123)
-        )
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      def outValues = {
+        collectingListener.results
+          .nodeResults(EndNodeId)
+          .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
       }
-      sourceBar.add(OneRecord(key, 1, 234))
-      eventually {
-        outValues shouldEqual List(
-          Map("key" -> key, BranchFooId -> 123),
-          Map("key" -> key, BranchFooId -> 123, BranchBarId -> 234)
-        )
+
+      withProcess(process, sourceFoo, sourceBar, collectingListener) {
+        sourceFoo.add(OneRecord(key, 0, 123))
+        eventually {
+          outValues shouldEqual List(
+            Map("key" -> key, BranchFooId -> 123)
+          )
+        }
+        sourceBar.add(OneRecord(key, 1, 234))
+        eventually {
+          outValues shouldEqual List(
+            Map("key" -> key, BranchFooId -> 123),
+            Map("key" -> key, BranchFooId -> 123, BranchBarId -> 234)
+          )
+        }
       }
     }
   }
@@ -135,12 +135,9 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
     val model = LocalModelData(
       ConfigFactory.empty(),
-      prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
+      prepareComponents(sourceFoo, sourceBar)
     )
     val processValidator          = ProcessValidator.default(model)
     implicit val jobData: JobData = jobDataFor(process)
@@ -188,12 +185,9 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator          = ProcessValidator.default(model)
     implicit val jobData: JobData = jobDataFor(process)
@@ -206,7 +200,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   }
 
   private def withProcess(
-      testProcess: CanonicalProcess,
+      testScenario: CanonicalProcess,
       sourceFoo: BlockingQueueSource[OneRecord],
       sourceBar: BlockingQueueSource[OneRecord],
       collectingListener: ResultsCollectingListener[Any]
@@ -217,7 +211,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      val executionResult = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testScenario, env)
       flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
     }
   }

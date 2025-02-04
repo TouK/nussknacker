@@ -26,29 +26,30 @@ class EventGeneratorSourceFactorySpec
     val sinkId = "sinkId"
     val input  = "some value"
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val model = LocalModelData(
-      ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
-    )
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source(
-        "event-generator",
-        "event-generator",
-        "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
-        "count"    -> "1".spel,
-        "value"    -> s"'$input'".spel
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = LocalModelData(
+        ConfigFactory.empty(),
+        FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+        configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
       )
-      .emptySink(sinkId, "dead-end")
+      val scenario = ScenarioBuilder
+        .streaming("test")
+        .source(
+          "event-generator",
+          "event-generator",
+          "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+          "count"    -> "1".spel,
+          "value"    -> s"'$input'".spel
+        )
+        .emptySink(sinkId, "dead-end")
 
-    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
-      flinkMiniCluster.withRunningJob(executionResult.getJobID) {
-        eventually {
-          val results = collectingListener.results.nodeResults.get(sinkId)
-          results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
+        flinkMiniCluster.withRunningJob(executionResult.getJobID) {
+          eventually {
+            val results = collectingListener.results.nodeResults.get(sinkId)
+            results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
+          }
         }
       }
     }
@@ -58,32 +59,33 @@ class EventGeneratorSourceFactorySpec
   test("should produce n individually evaluated results for n count") {
     val sinkId = "sinkId"
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val model = LocalModelData(
-      ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
-    )
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source(
-        "event-generator",
-        "event-generator",
-        "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
-        "count"    -> "2".spel,
-        "value"    -> s"T(java.util.UUID).randomUUID".spel
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = LocalModelData(
+        ConfigFactory.empty(),
+        FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+        configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
       )
-      .emptySink(sinkId, "dead-end")
+      val scenario = ScenarioBuilder
+        .streaming("test")
+        .source(
+          "event-generator",
+          "event-generator",
+          "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+          "count"    -> "2".spel,
+          "value"    -> s"T(java.util.UUID).randomUUID".spel
+        )
+        .emptySink(sinkId, "dead-end")
 
-    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
 
-      flinkMiniCluster.withRunningJob(executionResult.getJobID) {
-        eventually {
-          val results        = collectingListener.results.nodeResults.get(sinkId)
-          val emittedResults = results.toList.flatten.flatMap(_.variableTyped("input"))
-          emittedResults.size should be > 1
-          emittedResults.distinct.size shouldBe emittedResults.size
+        flinkMiniCluster.withRunningJob(executionResult.getJobID) {
+          eventually {
+            val results        = collectingListener.results.nodeResults.get(sinkId)
+            val emittedResults = results.toList.flatten.flatMap(_.variableTyped("input"))
+            emittedResults.size should be > 1
+            emittedResults.distinct.size shouldBe emittedResults.size
+          }
         }
       }
     }
