@@ -64,7 +64,7 @@ function ExpressionField(props: Props): JSX.Element {
         [exprLanguagePath, exprTextPath, setNodeDataAt, editor],
     );
 
-    if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR || editor.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR) {
+    if (editor?.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR || editor?.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR) {
         return (
             <EditableEditor
                 fieldLabel={fieldLabel}
