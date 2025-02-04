@@ -1,6 +1,6 @@
 import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../reducers/selectors/graph";
@@ -36,12 +36,20 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const scenarioGraph = useSelector(getScenarioGraph);
+    const [parametersDefinition, setParametersDefinition] = useState([]);
+    const [values, setValues] = useState({});
 
-    const actionParameters = useCallback(async () => {
-        await HttpService.getActionParameters(processName, scenarioGraph);
+    const getActionParameters = useCallback(async () => {
+        const response = await HttpService.getActionParameters(processName, scenarioGraph);
+        const definition = response.data["DEPLOY"] || ([] as ActionNodeParameters[]);
+        const initialValues = initialNodesData(definition);
+        setParametersDefinition(definition);
+        setValues(initialValues);
     }, [processName, scenarioGraph]);
-    const actionNodeParameters = actionParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
-    const [values, setValues] = useState(() => initialNodesData(actionNodeParameters));
+
+    useEffect(() => {
+        getActionParameters();
+    }, [processName, scenarioGraph, getActionParameters]);
 
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
@@ -86,45 +94,47 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 <FormHelperText title={validationError} error>
                     {validationError}
                 </FormHelperText>
-                {actionNodeParameters && actionNodeParameters.length > 0 ? (
-                    <Typography
-                        sx={(theme) => ({
-                            color: theme.palette.primary.main,
-                            pt: "1em",
-                            textTransform: "uppercase",
-                            textDecoration: "none",
-                        })}
-                    >
-                        {t("dialog.advancedParameters.title", "Advanced parameters")}
-                    </Typography>
-                ) : null}
-                {actionNodeParameters.map((nodeParameters: ActionNodeParameters) => (
-                    <AdvancedParametersSection key={nodeParameters.nodeId} nodeId={nodeParameters.nodeId}>
-                        <NodeTable>
-                            {Object.entries(nodeParameters.parameters).map(([paramName, paramConfig]) => {
-                                return (
-                                    <ActionParameter
-                                        key={paramName}
-                                        nodeName={nodeParameters.nodeId}
-                                        propertyName={paramName}
-                                        propertyConfig={paramConfig}
-                                        errors={[]}
-                                        onChange={(nodeId, paramName, newValue) => {
-                                            setValues({
-                                                ...values,
-                                                [nodeId]: {
-                                                    ...values[nodeId],
-                                                    [paramName]: newValue,
-                                                },
-                                            });
-                                        }}
-                                        nodesData={values}
-                                    />
-                                );
+                {parametersDefinition ? (
+                    <div>
+                        <Typography
+                            sx={(theme) => ({
+                                color: theme.palette.primary.main,
+                                pt: "1em",
+                                textTransform: "uppercase",
+                                textDecoration: "none",
                             })}
-                        </NodeTable>
-                    </AdvancedParametersSection>
-                ))}
+                        >
+                            {t("dialog.advancedParameters.title", "Advanced parameters")}
+                        </Typography>
+                        {parametersDefinition.map((nodeParameters: ActionNodeParameters) => (
+                            <AdvancedParametersSection key={nodeParameters.nodeId} nodeId={nodeParameters.nodeId}>
+                                <NodeTable>
+                                    {Object.entries(nodeParameters.parameters).map(([paramName, paramConfig]) => {
+                                        return (
+                                            <ActionParameter
+                                                key={paramName}
+                                                nodeName={nodeParameters.nodeId}
+                                                propertyName={paramName}
+                                                propertyConfig={paramConfig}
+                                                errors={[]}
+                                                onChange={(nodeId, paramName, newValue) => {
+                                                    setValues({
+                                                        ...values,
+                                                        [nodeId]: {
+                                                            ...values[nodeId],
+                                                            [paramName]: newValue,
+                                                        },
+                                                    });
+                                                }}
+                                                nodesData={values}
+                                            />
+                                        );
+                                    })}
+                                </NodeTable>
+                            </AdvancedParametersSection>
+                        ))}
+                    </div>
+                ) : null}
             </div>
         </PromptContent>
     );
