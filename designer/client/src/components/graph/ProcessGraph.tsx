@@ -1,15 +1,9 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { g } from "jointjs";
 import { mapValues } from "lodash";
+import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenario, getLayout, getProcessCounts, getStickyNotes } from "../../reducers/selectors/graph";
-import { setLinksHovered } from "./utils/dragHelpers";
-import { Graph } from "./Graph";
-import GraphWrapped from "./GraphWrapped";
-import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
-import NodeUtils from "./NodeUtils";
-import { DndTypes } from "../toolbars/creator/Tool";
+import { bindActionCreators } from "redux";
 import {
     injectNode,
     layoutChanged,
@@ -18,14 +12,19 @@ import {
     nodesDisconnected,
     resetSelection,
     stickyNoteAdded,
-    stickyNoteUpdated,
     stickyNoteDeleted,
+    stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
-import { NodeType } from "../../types";
+import { getLayout, getProcessCounts, getScenario, getStickyNotes } from "../../reducers/selectors/graph";
 import { Capabilities } from "../../reducers/selectors/other";
-import { bindActionCreators } from "redux";
-import { StickyNoteType } from "../../types/stickyNote";
+import { NodeType } from "../../types";
+import { DndTypes } from "../toolbars/creator/Tool";
+import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
+import { Graph } from "./Graph";
+import GraphWrapped from "./GraphWrapped";
+import NodeUtils from "./NodeUtils";
+import { setLinksHovered } from "./utils/dragHelpers";
 
 export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(function ProcessGraph(
     { capabilities },
@@ -46,12 +45,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             const relOffset = graph.current.processGraphPaper.clientToLocalPoint(clientOffset);
             // to make node horizontally aligned
             const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-            if (item?.type === StickyNoteType) {
-                graph.current.addStickyNote(scenario.name, scenario.processVersionId, mapValues(nodeInputRelOffset, Math.round));
-            } else {
-                graph.current.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round));
-                setLinksHovered(graph.current.graph);
-            }
+            graph.current.addNode(item, mapValues(nodeInputRelOffset, Math.round));
+            setLinksHovered(graph.current.graph);
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
