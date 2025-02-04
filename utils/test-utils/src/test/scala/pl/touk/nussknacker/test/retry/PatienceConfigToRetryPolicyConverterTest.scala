@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.test
+package pl.touk.nussknacker.test.retry
 
 import org.scalatest.concurrent.ScalaFutures.PatienceConfig
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.time.{Millis, Seconds, Span}
 
-import concurrent.duration._
+import scala.concurrent.duration._
 
 class PatienceConfigToRetryPolicyConverterTest extends AnyFunSuiteLike with Matchers {
 

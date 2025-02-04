@@ -106,7 +106,7 @@ object ResultsCollectingListenerHolder {
     registerTestEngineListener.use(env => IO(action(env))).unsafeRunSync()
   }
 
-  def registerTestEngineListener: Resource[IO, ResultsCollectingListener[Json]] = {
+  private[nussknacker] def registerTestEngineListener: Resource[IO, ResultsCollectingListener[Json]] = {
     Resource.make(IO(registerListener(TestInterpreterRunner.testResultsVariableEncoder)))(listener =>
       IO(listener.clean())
     )
@@ -116,7 +116,7 @@ object ResultsCollectingListenerHolder {
     registerListener.use(env => IO(action(env))).unsafeRunSync()
   }
 
-  def registerListener: Resource[IO, ResultsCollectingListener[Any]] = {
+  private def registerListener: Resource[IO, ResultsCollectingListener[Any]] = {
     Resource.make(IO(registerListener(identity)))(listener => IO(listener.clean()))
   }
 

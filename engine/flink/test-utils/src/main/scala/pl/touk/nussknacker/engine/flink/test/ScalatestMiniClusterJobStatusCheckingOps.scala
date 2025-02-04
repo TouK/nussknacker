@@ -5,6 +5,7 @@ import org.apache.flink.runtime.minicluster.MiniCluster
 import org.scalatest.concurrent.ScalaFutures.{PatienceConfig, convertScalaFuture, scaled}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterWithServices, MiniClusterJobStatusCheckingOps}
+import pl.touk.nussknacker.test.retry.PatienceConfigToRetryPolicyConverter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
@@ -22,8 +23,9 @@ object ScalatestMiniClusterJobStatusCheckingOps {
   implicit class Ops(miniCluster: MiniCluster) {
 
     def waitForJobIsFinished(jobID: JobID): Unit = {
+      val retryPolicy = PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .waitForJobIsFinished(jobID)(PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience))
+        .waitForJobIsFinished(jobID)(retryPolicy, retryPolicy)
         .futureValue
         .toTry
         .get
@@ -32,7 +34,7 @@ object ScalatestMiniClusterJobStatusCheckingOps {
     def withRunningJob[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
       val retryPolicy = PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .withRunningJob(jobID, retryPolicy, retryPolicy) {
+        .withRunningJob(jobID)(retryPolicy, retryPolicy) {
           Future {
             blocking {
               actionToInvokeWithJobRunning

@@ -28,8 +28,8 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
 import pl.touk.nussknacker.engine.util.test._
+import pl.touk.nussknacker.test.retry.PatienceConfigToRetryPolicyConverter
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 import scala.util.Using
 
@@ -222,8 +222,9 @@ class FlinkTestScenarioRunner(
           )
 
           val jobExecutionResult = env.execute(scenario.name.value)
-          flinkMiniClusterWithServices.miniCluster
+          flinkMiniClusterWithServices
             .waitForJobIsFinished(jobExecutionResult.getJobID)(
+              PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience),
               PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
             )
             .futureValue

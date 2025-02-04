@@ -31,7 +31,7 @@ class FlinkScenarioJobSpec extends AnyFlatSpec with Matchers with Inside with Be
           .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])".spel)
           .emptySink("out", "monitor")
 
-      val executionResult = FlinkScenarioJob.runScenario(
+      val executionResult = FlinkScenarioJob.run(
         process,
         ProcessVersion.empty,
         DeploymentData.empty,

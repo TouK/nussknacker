@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 
 object FlinkScenarioJob {
 
-  def runScenario(
+  def run(
       scenario: CanonicalProcess,
       processVersion: ProcessVersion,
       deploymentData: DeploymentData,

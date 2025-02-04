@@ -28,7 +28,7 @@ class BaseFlinkStreamingProcessMain extends LazyLogging {
           s"Model version ${processVersion.modelVersion}. Deploying user [id=${deploymentData.user.id}, name=${deploymentData.user.name}]"
       )
       val modelConfig = readModelConfigFromArgs(args)
-      FlinkScenarioJob.runScenario(
+      FlinkScenarioJob.run(
         process,
         processVersion,
         deploymentData,

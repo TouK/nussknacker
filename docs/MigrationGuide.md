@@ -89,18 +89,22 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * Test class should extend `BeforeAndAfterAll`
       * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
       * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
-  * From perspective of `flink-test-utils` module usage
+  * From perspective of `flink-test-utils` module usage. Caution: this module is deprecated; to avoid further migrations issues, tests should be rewritten to testkit stack
     * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
       `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
     * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead
       * To access methods such as `withJobRunning`, import `ScalatestMiniClusterJobStatusCheckingOps._` 
         and then invoke these methods on `flinkMiniCluster`
       * Method `withJobRunning` was renamed to `withRunningJob` and it doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
+      * Method `executeAndWaitForFinished` was renamed to `waitForJobIsFinished` and it doesn't invoke `StreamExecutionEnvironment.execute`. 
+        It should be called before this method; also, this method cancel job if check ended up with error now
+      * Method `assertJobNotFailing` was renamed to `checkJobIsNotFailing`
       * Some methods are not available in `ScalatestMiniClusterJobStatusCheckingOps`:
-        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - test should be rewritten to testkit stack (`TestScenarioRunner.flinkBased`) or should be used `withRunningJob` instead
-        * `executeAndWaitForFinished` - should be used `StreamExecutionEnvironment.execute` and then `flinkMiniCluster.waitForJobIsFinished`
-        * `assertJobNotFailing` was renamed to `checkJobIsNotFailing`
+        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - should be used `withRunningJob`/`waitForJobIsFinished` 
+          or `FlinkMiniClusterWithServices.miniCluster` methods directly instead
         * Other methods were considered too much low-level and were removed
+    * Instead of using `ResultsCollectingListenerHolder.registerListener` or `ResultsCollectingListenerHolder.registerTestEngineListener`
+      should be used `withListener`/`withTestEngineListener` methods which properly cleanup allocated resources. 
 
 ## In version 1.18.0
 

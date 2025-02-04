@@ -12,24 +12,28 @@ import java.util.concurrent.CompletionException
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
+import scala.language.implicitConversions
 
-// FIXME abr: unit tests with plain flink jobs
 object MiniClusterJobStatusCheckingOps extends LazyLogging {
 
   private val InitializingJobStatuses = Set(JobStatus.INITIALIZING, JobStatus.CREATED)
 
   private val FailingJobStatuses = Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING)
 
+  implicit def miniClusterWithServicesToOps(miniClusterWithServices: FlinkMiniClusterWithServices): Ops = new Ops(
+    miniClusterWithServices.miniCluster
+  )(ExecutionContext.global)
+
   implicit class Ops(miniCluster: MiniCluster)(implicit ec: ExecutionContext) {
 
-    // FIXME abr: cancel job when not finished
     def waitForJobIsFinished(
         jobID: JobID
-    )(retryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
-      waitForJobState(jobID, Set(JobStatus.FINISHED), Set(ExecutionState.FINISHED))(retryPolicy)
+    )(retryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
+      val resultFuture = waitForJobState(jobID, Set(JobStatus.FINISHED), Set(ExecutionState.FINISHED))(retryPolicy)
+      finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicy)
     }
 
-    def withRunningJob[T](jobID: JobID, runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy)(
+    def withRunningJob[T](jobID: JobID)(runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy)(
         actionToInvokeWithJobRunning: => Future[T]
     ): Future[Either[JobStateCheckError, T]] = {
       val resultFuture = (for {
@@ -37,16 +41,28 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
         result <- EitherT.right(actionToInvokeWithJobRunning)
         _      <- doCheckJobIsNotFailing[JobStateCheckError](jobID)
       } yield result).value
+      finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicy)
+    }
+
+    private def finallyCancelJobAndWaitForCancelled[T](
+        resultFuture: Future[Either[JobStateCheckError, T]],
+        jobID: JobID,
+        terminalCheckRetryPolicy: retry.Policy
+    ): Future[Either[JobStateCheckError, T]] = {
       // It is a kind of asynchronous "finally" block
       resultFuture.transformWith { resultTry =>
-        for {
-          _ <- miniCluster.cancelJob(jobID).toScala.recover {
-            // It occurs for example when job was already finished when we cancel it
-            case ex: CompletionException if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
-          }
-          _      <- waitForJobIsInCancelledOrFinished(jobID)(terminalCheckRetryPolicy)
-          result <- Future.fromTry(resultTry)
-        } yield result
+        (for {
+          _ <- EitherT.right(
+            miniCluster.cancelJob(jobID).toScala.recover {
+              // It occurs for example when job was already finished when we cancel it
+              case ex: CompletionException
+                  if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
+            }
+          )
+          _ <- EitherT(waitForJobIsInCancelledOrFinished(jobID)(terminalCheckRetryPolicy))
+            .leftMap(JobStateCheckErrorAfterCancel)
+          result <- EitherT(Future.fromTry(resultTry))
+        } yield result).value
       }
     }
 
@@ -157,19 +173,29 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
 
   }
 
-  sealed abstract class JobStateCheckError(msg: String) extends Exception(msg)
+  sealed abstract class JobStateCheckError(msg: String, cause: JobStateCheckError) extends Exception(msg, cause) {
+    def this(msg: String) = this(msg, null)
 
-  case class JobIsNotInitializedError(jobID: JobID, jobName: String)
+    def jobID: JobID
+    def jobName: String
+  }
+
+  case class JobIsNotInitializedError(override val jobID: JobID, override val jobName: String)
       extends JobStateCheckError(s"Job [id=$jobID, name=$jobName] is not initialized")
 
   case class JobIsFailingError(executionGraph: AccessExecutionGraph)
       extends JobStateCheckError(
         s"Job [id=${executionGraph.getJobID}, name=${executionGraph.getJobName}] is in failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
-      )
+      ) {
+
+    override def jobID: JobID = executionGraph.getJobID
+
+    override def jobName: String = executionGraph.getJobName
+  }
 
   case class JobVerticesInUnexpectedStateError(
-      jobID: JobID,
-      jobName: String,
+      override val jobID: JobID,
+      override val jobName: String,
       verticesNotInExpectedState: Iterable[AccessExecutionVertex],
       expectedVerticesStates: Set[ExecutionState]
   ) extends JobStateCheckError(
@@ -190,5 +216,16 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
   ) extends JobStateCheckError(
         s"Job [id=${jobID}, name=${jobName}] is not in expected (${expectedStatuses.mkString(" or ")} state: $jobStatus"
       )
+
+  case class JobStateCheckErrorAfterCancel(cause: JobStateCheckError)
+      extends JobStateCheckError(
+        s"Job [id=${cause.jobID}, name=${cause.jobID}] has unexpected state after cancelling it",
+        cause
+      ) {
+
+    override def jobID: JobID = cause.jobID
+
+    override def jobName: String = cause.jobName
+  }
 
 }
