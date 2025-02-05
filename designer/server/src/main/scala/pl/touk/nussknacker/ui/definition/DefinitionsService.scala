@@ -107,30 +107,32 @@ class DefinitionsService(
       forFragment: Boolean,
       fragments: List[CanonicalProcess],
   ): Components = {
-    Option(fragmentComponentsCache.getIfPresent((processingType, forFragment))) match {
-      case Some((cachedFragments, cachedComponents)) if cachedFragments == fragments =>
-        logger.debug(
-          s"Up-to-date components present in cache for processingType=$processingType, forFragment=$forFragment"
-        )
-        cachedComponents
-      case cacheContent @ (Some(_) | None) =>
-        cacheContent match {
-          case Some(_) =>
-            logger.debug(
-              s"Out-of-date components present in cache for processingType=$processingType, forFragment=$forFragment"
-            )
-          case None =>
-            logger.debug(
-              s"Components not present in cache for processingType=$processingType, forFragment=$forFragment"
-            )
-        }
-        val updatedComponents =
-          alignedComponentsDefinitionProvider
-            .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
-        fragmentComponentsCache.put((processingType, forFragment), (fragments, updatedComponents))
-        logger.debug(s"Updated components for processingType=$processingType, forFragment=$forFragment")
-        updatedComponents
-    }
+    alignedComponentsDefinitionProvider
+      .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
+//    Option(fragmentComponentsCache.getIfPresent((processingType, forFragment))) match {
+    //      case Some((cachedFragments, cachedComponents)) if cachedFragments == fragments =>
+    //        logger.debug(
+    //          s"Up-to-date components present in cache for processingType=$processingType, forFragment=$forFragment"
+    //        )
+    //        cachedComponents
+    //      case cacheContent @ (Some(_) | None) =>
+    //        cacheContent match {
+    //          case Some(_) =>
+    //            logger.debug(
+    //              s"Out-of-date components present in cache for processingType=$processingType, forFragment=$forFragment"
+    //            )
+    //          case None =>
+    //            logger.debug(
+    //              s"Components not present in cache for processingType=$processingType, forFragment=$forFragment"
+    //            )
+    //        }
+    //        val updatedComponents =
+    //          alignedComponentsDefinitionProvider
+    //            .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
+    //        fragmentComponentsCache.put((processingType, forFragment), (fragments, updatedComponents))
+    //        logger.debug(s"Updated components for processingType=$processingType, forFragment=$forFragment")
+    //        updatedComponents
+    //    }
   }
 
   private def prepareUIDefinitions(

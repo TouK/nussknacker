@@ -26,7 +26,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(
       modelData.modelClassLoader.classLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions.all
+      modelData.modelDefinitionWithClasses.classDefinitions,
     ),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,

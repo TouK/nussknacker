@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.permittedTypesForEditors
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParameterTypingParser
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -50,7 +50,7 @@ object FragmentParameterValidator {
 
 }
 
-case class FragmentParameterValidator(classDefinitions: Set[ClassDefinition] = Set.empty) {
+case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
 
   // This method doesn't fully validate valueEditor (see ValueEditorValidator.validateAndGetEditor comments)
   def validateAgainstClazzRefAndGetEditor(

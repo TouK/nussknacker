@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -63,7 +63,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       override protected def adjustDefinitions(
           originalModelDefinition: ModelDefinition,
           definitionContext: ComponentDefinitionContext,
-          classDefinitions: Set[ClassDefinition]
+          classDefinitions: ClassDefinitionSet,
       ): ModelDefinition = {
         val testComponents =
           ComponentDefinitionWithImplementation.forList(
