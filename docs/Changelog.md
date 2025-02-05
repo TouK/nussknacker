@@ -88,7 +88,8 @@
     * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
     * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
 * [#6860](https://github.com/TouK/nussknacker/pull/6860) Ability to configure deploy action parameters and apply those parameters in deploy http request. 
-  Kafka source has "offset reset strategy" parameter that controls starting point for reading events. 
+  * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
+  * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`
 
 ## 1.18
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
+import org.apache.kafka.clients.consumer.OffsetResetStrategy
 import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
 import pl.touk.nussknacker.engine.kafka.KafkaConfig._
 
@@ -40,8 +41,8 @@ case class KafkaConfig(
     avroAsJsonSerialization
   )
 
-  def forceLatestRead: Option[Boolean] =
-    kafkaEspProperties.flatMap(_.get(DefaultForceLatestReadPath)).map(_.toBoolean)
+  def defaultOffsetResetStrategy: Option[OffsetResetStrategy] =
+    kafkaEspProperties.flatMap(_.get(DefaultOffsetResetStrategyPath)).map(OffsetResetStrategy.valueOf)
 
   def defaultMaxOutOfOrdernessMillis: java.time.Duration =
     kafkaEspProperties
@@ -78,7 +79,7 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.EnumerationReader._
 
   val DefaultGlobalKafkaConfigPath                              = "kafka"
-  val DefaultForceLatestReadPath                                = "forceLatestRead"
+  val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 

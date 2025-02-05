@@ -83,8 +83,7 @@ class FlinkKafkaSource[T](
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
-  private val defaultOffsetResetStrategy =
-    if (kafkaConfig.forceLatestRead.contains(true)) OffsetResetStrategy.ToLatest else OffsetResetStrategy.None
+  private val defaultOffsetResetStrategy = kafkaConfig.defaultOffsetResetStrategy.getOrElse(OffsetResetStrategy.None)
 
   override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
     Map(
@@ -128,7 +127,7 @@ class FlinkKafkaSource[T](
         .map(OffsetResetStrategy.withName)
         .getOrElse(defaultOffsetResetStrategy)
     logger.info(
-      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} forceLatestRead=${kafkaConfig.forceLatestRead}, offsetResetStrategy=${offsetResetStrategy}"
+      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} defaultOffsetResetStrategy=${kafkaConfig.defaultOffsetResetStrategy}, offsetResetStrategy=${offsetResetStrategy}"
     )
 
     offsetResetStrategy match {
