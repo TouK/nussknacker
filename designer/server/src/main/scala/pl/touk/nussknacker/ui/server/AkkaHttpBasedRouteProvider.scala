@@ -48,6 +48,7 @@ import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationS
 import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{
+  ActionInfoService,
   ActionService,
   DefaultProcessingTypeActionService,
   DefaultProcessingTypeDeployedScenariosProvider,
@@ -60,7 +61,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.newactivity.{ActionInfoService, ActivityService}
+import pl.touk.nussknacker.ui.process.newactivity.ActivityService
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationConfig,
   DeploymentsStatusesSynchronizationScheduler,

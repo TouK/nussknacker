@@ -20,10 +20,10 @@ class ModelDataActionInfoProvider(modelData: ModelData)
   ): Map[ScenarioActionName, Map[NodeId, Map[ParameterName, ParameterConfig]]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     modelData.withThisAsContextClassLoader {
-      val nodeToActivityToParameters = collectAllSources(scenario)
+      val nodeToActionToParameters = collectAllSources(scenario)
         .map(source => NodeId(source.id) -> getActionParameters(source, jobData))
         .toMap
-      groupByAction(nodeToActivityToParameters)
+      groupByAction(nodeToActionToParameters)
     }
   }
 

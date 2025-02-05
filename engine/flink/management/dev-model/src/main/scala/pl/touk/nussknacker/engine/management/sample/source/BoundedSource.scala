@@ -33,7 +33,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
 
       override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
         Map(
-          ScenarioActionName.Deploy -> deployActivityParameters
+          ScenarioActionName.Deploy -> deployParameters
         )
       }
 
@@ -55,7 +55,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
 
     }
 
-  private def deployActivityParameters: Map[ParameterName, ParameterConfig] = {
+  private def deployParameters: Map[ParameterName, ParameterConfig] = {
     Map(
       OFFSET_PARAMETER_NAME -> ParameterConfig(
         defaultValue = None,
