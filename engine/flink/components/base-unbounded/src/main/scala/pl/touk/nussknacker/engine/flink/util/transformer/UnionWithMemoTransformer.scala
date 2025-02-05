@@ -152,7 +152,7 @@ class UnionWithMemoTransformer(
 class UnionMemoFunction(stateTimeout: Duration, typeInfo: TypeInformation[java.util.Map[String, AnyRef]])
     extends LatelyEvictableStateFunction[ValueWithContext[
       StringKeyedValue[java.util.Map[String, AnyRef]]
-    ], ValueWithContext[java.util.Map[String, AnyRef]], java.util.Map[String, AnyRef]] {
+    ], ValueWithContext[java.util.Map[String, AnyRef]], java.util.Map[String, AnyRef], String] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[
     StringKeyedValue[java.util.Map[String, AnyRef]]

@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration
 object transformers {
 
   def slidingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -70,7 +70,7 @@ object transformers {
   }
 
   def tumblingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -91,7 +91,7 @@ object transformers {
 
   @silent("deprecated")
   def tumblingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -156,7 +156,7 @@ object transformers {
   // Experimental component, API may change in the future
   @silent("deprecated")
   def sessionWindowTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       sessionTimeout: Duration,
@@ -178,7 +178,7 @@ object transformers {
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val baseTrigger =
-            ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+            ClosingEndEventTrigger[ValueWithContext[KeyedValue[AnyRef, (AnyRef, java.lang.Boolean)]], TimeWindow](
               EventTimeTrigger.create(),
               _.value.value._2
             )

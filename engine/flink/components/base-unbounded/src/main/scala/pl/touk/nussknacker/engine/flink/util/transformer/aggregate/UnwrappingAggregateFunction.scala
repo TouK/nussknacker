@@ -4,6 +4,7 @@ import org.apache.flink.api.common.functions.AggregateFunction
 import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 /**
  * This class unwraps value from input's KeyedValue.
@@ -16,7 +17,7 @@ class UnwrappingAggregateFunction[Input](
     aggregator: Aggregator,
     passedType: TypingResult,
     unwrapAggregatedValue: Input => AnyRef
-) extends AggregateFunction[ValueWithContext[StringKeyedValue[Input]], AnyRef, AnyRef] {
+) extends AggregateFunction[ValueWithContext[KeyedValue[AnyRef, Input]], AnyRef, AnyRef] {
 
   private val expectedType = aggregator
     .computeOutputType(passedType)
@@ -24,7 +25,7 @@ class UnwrappingAggregateFunction[Input](
 
   override def createAccumulator(): AnyRef = aggregator.createAccumulator()
 
-  override def add(wrappedInput: ValueWithContext[StringKeyedValue[Input]], accumulator: AnyRef): AnyRef = {
+  override def add(wrappedInput: ValueWithContext[KeyedValue[AnyRef, Input]], accumulator: AnyRef): AnyRef = {
     aggregator.add(unwrapAggregatedValue(wrappedInput.value.value), accumulator)
   }
 
