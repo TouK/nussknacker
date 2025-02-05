@@ -77,6 +77,16 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     results.nodeResults shouldNot contain key sinkId
   }
 
+  test("should not produce any results when elements parameter is null") {
+    val collectingListener = initializeListener
+    val model              = modelData(List(TestRecord()), collectingListener)
+
+    val testProcess = aProcessWithForEachNode(elements = "null")
+
+    val results = collectTestResults[String](model, testProcess, collectingListener)
+    results.nodeResults shouldNot contain key sinkId
+  }
+
   private def initializeListener = ResultsCollectingListenerHolder.registerListener
 
   private def modelData(
