@@ -1,19 +1,21 @@
 package pl.touk.nussknacker.ui.api.description
 
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
-import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
-import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.definition.UiActionParameterConfig
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.NoScenario
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Examples.noScenarioExample
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints._
-import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.{UiActionNodeParameters, UiActionParameters}
+import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.{
+  UiActionNodeParameters,
+  UiActionParameterConfig,
+  UiActionParameters
+}
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -34,11 +36,13 @@ class ActionInfoEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
               List(
                 Example.of(
                   summary = Some("Valid action parameters for given scenario"),
-                  value = Map(
-                    ScenarioActionName.Deploy -> List(
-                      UiActionNodeParameters(
-                        NodeId("sample node id"),
-                        Map("param name" -> UiActionParameterConfig.empty)
+                  value = UiActionParameters(
+                    Map(
+                      ScenarioActionName.Deploy -> List(
+                        UiActionNodeParameters(
+                          NodeId("sample node id"),
+                          Map("param name" -> UiActionParameterConfig.empty)
+                        )
                       )
                     )
                   )
