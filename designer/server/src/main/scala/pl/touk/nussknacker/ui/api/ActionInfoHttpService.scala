@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService
+import pl.touk.nussknacker.ui.process.deployment.ActionInfoService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import sttp.tapir.{Codec, CodecFormat}

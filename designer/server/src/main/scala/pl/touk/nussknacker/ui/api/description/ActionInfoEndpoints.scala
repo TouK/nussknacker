@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Examples.noScenarioExample
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints._
-import pl.touk.nussknacker.ui.process.newactivity.ActionInfoService.{UiActionNodeParameters, UiActionParameters}
+import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.{UiActionNodeParameters, UiActionParameters}
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
