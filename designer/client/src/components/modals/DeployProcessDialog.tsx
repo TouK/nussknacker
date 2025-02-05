@@ -11,9 +11,10 @@ import CommentInput from "../comment/CommentInput";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import { FormHelperText, Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { ScenarioActionResult, ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/types";
 
 export type ToggleProcessActionModalData = {
-    action: (processName: ProcessName, processVersionId: ProcessVersionId, comment: string) => Promise<unknown>;
+    action: (processName: ProcessName, processVersionId: ProcessVersionId, comment: string) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
 };
 
@@ -30,11 +31,18 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
     const confirmAction = useCallback(async () => {
-        try {
-            await action(processName, processVersionId, comment);
-            props.close();
-        } catch (error) {
-            setValidationError(error?.response?.data);
+        const response = await action(processName, processVersionId, comment);
+        switch (response.scenarioActionResultType) {
+            case ScenarioActionResultType.Success:
+            case ScenarioActionResultType.UnhandledError:
+                props.close();
+                break;
+            case ScenarioActionResultType.ValidationError:
+                setValidationError(response.msg);
+                break;
+            default:
+                console.log("Unexpected result type:", response.scenarioActionResultType);
+                break;
         }
     }, [action, comment, processName, props, processVersionId]);
 
