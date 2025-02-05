@@ -46,19 +46,29 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
 
 }
 
-abstract class LatelyEvictableStateFunction[In, Out, StateType]
-    extends KeyedProcessFunction[String, In, Out]
+abstract class GenericLatelyEvictableStateFunction[In, Out, StateType, Key]
+    extends KeyedProcessFunction[Key, In, Out]
+    with LatelyEvictableStateFunctionMixin[StateType] {
+
+  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[Key, In, Out]#Context): Unit = {
+    doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
+  }
+
+}
+
+abstract class LatelyEvictableStateFunction[In, Out, StateType, Key]
+    extends KeyedProcessFunction[Key, In, Out]
     with LatelyEvictableStateFunctionMixin[StateType] {
 
   override def onTimer(
       timestamp: Long,
-      ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext,
+      ctx: KeyedProcessFunction[Key, In, Out]#OnTimerContext,
       out: Collector[Out]
   ): Unit = {
     handleOnTimer(timestamp, ctx.timerService)
   }
 
-  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context): Unit = {
+  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[Key, In, Out]#Context): Unit = {
     doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
   }
 
