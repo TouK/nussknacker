@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.ActionInfoService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthManager
@@ -37,14 +38,17 @@ class ActionInfoHttpService(
     endpoints.actionParametersEndpoint
       .serverSecurityLogic(authorizeKnownUser[ActionInfoError])
       .serverLogicEitherT { implicit loggedUser => actionParametersInput =>
-        val (scenarioName, scenarioGraph) = actionParametersInput
+        val scenarioName = actionParametersInput
         for {
-          scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+          scenarioWithDetails <- getScenarioWithDetailsByName(
+            scenarioName,
+            GetScenarioWithDetailsOptions.withScenarioGraph
+          )
           actionInfoService = processingTypeToActionInfoService.forProcessingTypeUnsafe(
             scenarioWithDetails.processingType
           )
           actionParameters = actionInfoService.getActionParameters(
-            scenarioGraph,
+            scenarioWithDetails.scenarioGraphUnsafe,
             scenarioWithDetails.processVersionUnsafe,
             scenarioWithDetails.isFragment
           )

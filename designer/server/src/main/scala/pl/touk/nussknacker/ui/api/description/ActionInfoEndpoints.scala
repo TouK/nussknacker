@@ -11,7 +11,6 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.NoScenario
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Examples.noScenarioExample
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints._
 import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.{UiActionNodeParameters, UiActionParameters}
@@ -22,17 +21,12 @@ import sttp.tapir.json.circe.jsonBody
 
 class ActionInfoEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  lazy val actionParametersEndpoint
-      : SecuredEndpoint[(ProcessName, ScenarioGraph), ActionInfoError, UiActionParameters, Any] =
+  lazy val actionParametersEndpoint: SecuredEndpoint[ProcessName, ActionInfoError, UiActionParameters, Any] =
     baseNuApiEndpoint
       .summary("Get action parameters")
       .tag("Deployments")
-      .post
-      .in("actionInfo" / path[ProcessName]("scenarioName") / "actionParameters")
-      .in(
-        jsonBody[ScenarioGraph]
-          .example(simpleGraphExample)
-      )
+      .get
+      .in("actionInfo" / path[ProcessName]("scenarioName") / "parameters")
       .out(
         statusCode(Ok).and(
           jsonBody[UiActionParameters]
@@ -59,14 +53,6 @@ class ActionInfoEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
         )
       )
       .withSecurity(auth)
-
-  private val simpleGraphExample: Example[ScenarioGraph] = Example.of(
-    ScenarioGraph(
-      ProcessProperties(StreamMetaData()),
-      List(),
-      List(),
-    )
-  )
 
 }
 

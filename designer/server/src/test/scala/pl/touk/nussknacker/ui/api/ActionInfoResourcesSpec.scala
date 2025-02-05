@@ -2,14 +2,12 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.hamcrest.Matchers.{equalTo, notNullValue}
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil
 
 class ActionInfoResourcesSpec
     extends AnyFreeSpecLike
@@ -33,8 +31,7 @@ class ActionInfoResourcesSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
+        .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
         .Then()
         .statusCode(200)
         .equalsJsonBody("""|{
@@ -66,8 +63,7 @@ class ActionInfoResourcesSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
+        .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -84,8 +80,7 @@ class ActionInfoResourcesSpec
       given()
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
+        .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
         .Then()
         .statusCode(404)
         .equalsPlainBody(
