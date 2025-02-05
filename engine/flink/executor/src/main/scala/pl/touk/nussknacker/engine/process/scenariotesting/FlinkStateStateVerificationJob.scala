@@ -37,27 +37,22 @@ class FlinkStateStateVerificationJob(modelData: ModelData) {
       savepointPath: String,
       streamExecutionEnv: StreamExecutionEnvironment
   ): Unit = {
-    val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
-    try {
-      val resultCollector = new TestServiceInvocationCollector(collectingListener)
-      val registrar       = prepareRegistrar(scenario)
-      val deploymentData  = DeploymentData.empty
+    val resultCollector = new TestServiceInvocationCollector(ResultsCollectingListenerHolder.noopListener)
+    val registrar       = prepareRegistrar(scenario)
+    val deploymentData  = DeploymentData.empty
 
-      registrar.register(
-        streamExecutionEnv,
-        scenario,
-        processVersion,
-        deploymentData,
-        resultCollector
-      )
-      streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
-      val streamGraph = streamExecutionEnv.getStreamGraph
-      streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savepointPath, true))
+    registrar.register(
+      streamExecutionEnv,
+      scenario,
+      processVersion,
+      deploymentData,
+      resultCollector
+    )
+    streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
+    val streamGraph = streamExecutionEnv.getStreamGraph
+    streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savepointPath, true))
 
-      streamExecutionEnv.execute(streamGraph)
-    } finally {
-      collectingListener.clean()
-    }
+    streamExecutionEnv.execute(streamGraph)
   }
 
   protected def prepareRegistrar(scenario: CanonicalProcess): FlinkProcessRegistrar = {

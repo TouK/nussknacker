@@ -5,18 +5,19 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.SourceFactory
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -73,27 +74,27 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
-    def outValues = {
-      collectingListener.results
-        .nodeResults(EndNodeId)
-        .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
-    }
-
-    withProcess(process, sourceFoo, sourceBar, collectingListener) {
-      sourceFoo.add(OneRecord(key, 0, 123))
-      eventually {
-        outValues shouldEqual List(
-          Map("key" -> key, BranchFooId -> 123)
-        )
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      def outValues = {
+        collectingListener.results
+          .nodeResults(EndNodeId)
+          .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
       }
-      sourceBar.add(OneRecord(key, 1, 234))
-      eventually {
-        outValues shouldEqual List(
-          Map("key" -> key, BranchFooId -> 123),
-          Map("key" -> key, BranchFooId -> 123, BranchBarId -> 234)
-        )
+
+      withProcess(process, sourceFoo, sourceBar, collectingListener) {
+        sourceFoo.add(OneRecord(key, 0, 123))
+        eventually {
+          outValues shouldEqual List(
+            Map("key" -> key, BranchFooId -> 123)
+          )
+        }
+        sourceBar.add(OneRecord(key, 1, 234))
+        eventually {
+          outValues shouldEqual List(
+            Map("key" -> key, BranchFooId -> 123),
+            Map("key" -> key, BranchFooId -> 123, BranchBarId -> 234)
+          )
+        }
       }
     }
   }
@@ -134,12 +135,9 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
     val model = LocalModelData(
       ConfigFactory.empty(),
-      prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
+      prepareComponents(sourceFoo, sourceBar)
     )
     val processValidator          = ProcessValidator.default(model)
     implicit val jobData: JobData = jobDataFor(process)
@@ -187,12 +185,9 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator          = ProcessValidator.default(model)
     implicit val jobData: JobData = jobDataFor(process)
@@ -205,7 +200,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   }
 
   private def withProcess(
-      testProcess: CanonicalProcess,
+      testScenario: CanonicalProcess,
       sourceFoo: BlockingQueueSource[OneRecord],
       sourceBar: BlockingQueueSource[OneRecord],
       collectingListener: ResultsCollectingListener[Any]
@@ -215,9 +210,10 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       prepareComponents(sourceFoo, sourceBar),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.withJobRunning(testProcess.name.value)(action)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testScenario, env)
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
+    }
   }
 
   def prepareComponents(

@@ -39,10 +39,10 @@ class FlinkMiniClusterScenarioStateVerifier(
     legacyFallbackToSingleUseMiniClusterHandler.withSharedOrSingleUseCluster(sharedMiniClusterServicesOpt, scenario) {
       miniClusterWithServices =>
         val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
-          .map(_ => scenario.overrideParallelismIfNeeded(StateVerificationParallelism))
+          .map(_ => scenario.overrideParallelism(StateVerificationParallelism))
           .getOrElse(scenario)
         val scenarioName = processVersion.processName
-        Using.resource(miniClusterWithServices.createStreamExecutionEnvironment(attached = true)) { env =>
+        miniClusterWithServices.withAttachedStreamExecutionEnvironment { env =>
           try {
             logger.info(s"Starting to verify $scenarioName")
             jobInvoker.invokeStaticMethod(

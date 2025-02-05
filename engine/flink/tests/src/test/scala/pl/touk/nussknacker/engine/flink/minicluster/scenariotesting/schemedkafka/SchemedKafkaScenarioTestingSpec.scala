@@ -39,7 +39,7 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, PatientScalaFutures}
 
 import java.util.Collections
-import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class SchemedKafkaScenarioTestingSpec
     extends AnyFunSuite
@@ -131,7 +131,7 @@ class SchemedKafkaScenarioTestingSpec
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
     val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
 
-    val results = testRunner.runTests(process, scenarioTestData)(ExecutionContext.global).futureValue
+    val results = testRunner.runTests(process, scenarioTestData).futureValue
 
     val testResultVars = results.nodeResults("end").head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
@@ -163,7 +163,7 @@ class SchemedKafkaScenarioTestingSpec
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
-    val results = testRunner.runTests(process, scenarioTestData)(ExecutionContext.global).futureValue
+    val results = testRunner.runTests(process, scenarioTestData).futureValue
     results
       .invocationResults("end")
       .head
@@ -185,7 +185,7 @@ class SchemedKafkaScenarioTestingSpec
       ParameterName("in") -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
-    val results          = testRunner.runTests(fragment, scenarioTestData)(ExecutionContext.global).futureValue
+    val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
     results.nodeResults("fragment1").loneElement shouldBe ResultContext(
       "fragment1-fragment1-0-0",

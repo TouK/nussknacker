@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
+import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -10,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -31,25 +34,25 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     val scenario                  = ScenarioBuilder.streaming("test").sources(start, rest: _*)
     val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
 
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(
-      env,
-      LocalModelData(config, sourceComponentDefinition :: components),
-      scenario
-    )
-
-    env.executeAndWaitForFinished("test")()
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = runScenario(
+        env,
+        LocalModelData(config, sourceComponentDefinition :: components),
+        scenario
+      )
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
+    }
     RecordingExceptionConsumer.exceptionsFor(runId) should have length generator.count
   }
 
   /**
-    * TestFlinkRunner should be invoked, it's not accessible in this module
+    * FlinkScenarioUnitTestJob.run should be invoked, but it's not accessible in this module
     */
-  protected def registerInEnvironment(
-      env: MiniClusterExecutionEnvironment,
+  protected def runScenario(
+      env: StreamExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit
+  ): JobExecutionResult
 
   class ExceptionGenerator {
 

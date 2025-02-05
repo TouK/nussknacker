@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, ProcessTestHelpersConfigCreator}
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -23,10 +23,11 @@ trait FlinkStreamGraphSpec
 
   protected def streamGraph(process: CanonicalProcess, config: Config = ConfigFactory.load()): StreamGraph = {
     val components = ProcessTestHelpers.prepareComponents(List.empty)
-    val env        = flinkMiniCluster.createExecutionEnvironment()
-    val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    env.getStreamGraph
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val modelData = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
+      new FlinkScenarioUnitTestJob(modelData).registerInEnvironmentWithModel(process, env)
+      env.getStreamGraph
+    }
   }
 
   implicit class EnhancedStreamGraph(graph: StreamGraph) {

@@ -7,7 +7,7 @@ object ScenarioParallelismOverride {
 
   implicit class Ops(scenario: CanonicalProcess) {
 
-    def overrideParallelismIfNeeded(parallelismOverride: Int): CanonicalProcess = {
+    def overrideParallelism(parallelismOverride: Int): CanonicalProcess = {
       scenario.copy(metaData =
         scenario.metaData.copy(additionalFields =
           scenario.metaData.additionalFields.copy(properties =

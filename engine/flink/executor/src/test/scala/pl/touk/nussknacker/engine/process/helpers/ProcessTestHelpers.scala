@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
@@ -12,20 +11,16 @@ import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.api.process.{
-  BasicFlinkSink,
-  FlinkCustomNodeContext,
-  FlinkLazyParameterFunctionHelper,
-  FlinkSink
-}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
@@ -37,21 +32,21 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
         config: Config = config
     ): Unit = {
       val defaultComponents = ProcessTestHelpers.prepareComponents(data)
-      val env               = flinkMiniCluster.createExecutionEnvironment()
-      val modelData = LocalModelData(
-        config,
-        defaultComponents,
-        configCreator = ProcessTestHelpersConfigCreator
-      )
-      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-
       ProcessTestHelpers.logServiceResultsHolder.clear()
       ProcessTestHelpers.sinkForStringsResultsHolder.clear()
       ProcessTestHelpers.sinkForIntsResultsHolder.clear()
       ProcessTestHelpers.eagerOptionalParameterSinkResultsHolder.clear()
       ProcessTestHelpers.genericParameterSinkResultsHolder.clear()
       ProcessTestHelpers.optionalEndingCustomResultsHolder.clear()
-      env.executeAndWaitForFinished(process.name.value)()
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val modelData = LocalModelData(
+          config,
+          defaultComponents,
+          configCreator = ProcessTestHelpersConfigCreator
+        )
+        val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
+        flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
+      }
     }
 
   }

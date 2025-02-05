@@ -4,14 +4,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
-
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - max count of sticky notes inside one scenario/fragment
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
-
 
 ### Other changes
 
@@ -84,6 +82,30 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing. As an entry point to all migration steps, assume that `FlinkMiniClusterWithServices` is a new `FlinkMiniClusterHolder`
+  * From perspective of testkit (`TestScenarioRunner.flinkBased`) module usage
+    * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-2ccffe37f56882fa91afb457ba45c98f399c40f7667b2de9ea3453b6e8a76989).
+      * `FlinkSpec` inheritance should be removed from test class
+      * Test class should extend `BeforeAndAfterAll`
+      * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
+      * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
+  * From perspective of `flink-test-utils` module usage follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-8ca39d67972d329a5eb6ce59d2338eba626dc0fd36ffdd8d0d679b8190d9f15c).
+    Caution: this module is deprecated; to avoid further migrations issues, tests should be rewritten to testkit stack
+    * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
+      `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
+    * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead
+      * To access methods such as `withJobRunning`, import `ScalatestMiniClusterJobStatusCheckingOps._` 
+        and then invoke these methods on `flinkMiniCluster`
+      * Method `withJobRunning` was renamed to `withRunningJob` and it doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
+      * Method `executeAndWaitForFinished` was renamed to `waitForJobIsFinished` and it doesn't invoke `StreamExecutionEnvironment.execute`. 
+        It should be called before this method; also, this method cancel job if check ended up with error now
+      * Method `assertJobNotFailing` was renamed to `checkJobIsNotFailing`
+      * Some methods are not available in `ScalatestMiniClusterJobStatusCheckingOps`:
+        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - should be used `withRunningJob`/`waitForJobIsFinished` 
+          or `FlinkMiniClusterWithServices.miniCluster` methods directly instead
+        * Other methods were considered too much low-level and were removed
+    * Instead of using `ResultsCollectingListenerHolder.registerListener` or `ResultsCollectingListenerHolder.registerTestEngineListener`
+      should be used `withListener`/`withTestEngineListener` methods which properly cleanup allocated resources. 
 
 ## In version 1.18.0
 
