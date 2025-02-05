@@ -33,7 +33,16 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, LayoutData, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import {
+    Expression,
+    LayoutData,
+    NodeId,
+    NodeType,
+    ProcessAdditionalFields,
+    ProcessDefinitionData,
+    ScenarioGraph,
+    VariableTypes,
+} from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
@@ -349,15 +358,9 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(
-        processName: string,
-        comment?: string,
-        nodesDeploymentData?: NodesDeploymentData
-    ): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = {
-            ...(nodesDeploymentData && { nodesDeploymentData: nodesDeploymentData }),
-            ...(comment && { comment: comment }),
-        };
+    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = { nodesDeploymentData, comment };
+        console.log(runDeploymentRequest);
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {

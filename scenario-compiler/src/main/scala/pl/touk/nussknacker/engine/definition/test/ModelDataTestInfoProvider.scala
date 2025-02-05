@@ -9,17 +9,13 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ScenarioTestDataGenerationError,
   SourceTestDataGenerationError,
   TestDataPreparationError
 }
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
 
@@ -27,22 +23,6 @@ class ModelDataTestInfoProvider(modelData: ModelData)
     extends CommonModelDataInfoProvider(modelData)
     with TestInfoProvider
     with LazyLogging {
-
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
-
-  private lazy val nodeCompiler = new NodeCompiler(
-    modelData.modelDefinition,
-    new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions,
-    ),
-    expressionCompiler,
-    modelData.modelClassLoader,
-    Seq.empty,
-    ProductionServiceInvocationCollector,
-    ComponentUseCase.TestDataGeneration,
-    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-  )
 
   override def getTestingCapabilities(
       processVersion: ProcessVersion,
@@ -167,12 +147,6 @@ class ModelDataTestInfoProvider(modelData: ModelData)
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
     NonEmptyList.fromList(generatorsForSourcesSupportingTestDataGeneration)
-  }
-
-  private def compileSourceNode(
-      source: SourceNodeData
-  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
-    nodeCompiler.compileSource(source).compiledObject
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
