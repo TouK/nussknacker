@@ -37,12 +37,21 @@ class ActionInfoResourcesSpec
         .post(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/actionParameters")
         .Then()
         .statusCode(200)
-        .body(
-          "DEPLOY[0].nodeId",
-          equalTo("sourceWithParametersId"),
-          "DEPLOY[0].parameters.offset",
-          notNullValue(),
-        )
+        .equalsJsonBody("""|{
+             |  "DEPLOY":[
+             |    {
+             |      "nodeId":"sourceWithParametersId",
+             |      "parameters":{
+             |        "offset":{
+             |          "defaultValue":null,
+             |          "editor":{"type":"RawParameterEditor"},
+             |          "label":"Offset",
+             |          "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
+             |        }
+             |      }
+             |    }
+             |  ]
+             |}""".stripMargin)
     }
 
     "return empty map when no action parameters" in {

@@ -10,6 +10,7 @@ import CommentInput from "../comment/CommentInput";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import { FormHelperText, Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/types";
 import { ActionNodeParameters } from "../../types/action";
 import { AdvancedParametersSection } from "./AdvancedParametersSection";
 import { mapValues } from "lodash";
@@ -57,11 +58,18 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
     const confirmAction = useCallback(async () => {
-        try {
-            await action(processName, processVersionId, comment, values);
-            props.close();
-        } catch (error) {
-            setValidationError(error?.response?.data);
+        const response = await action(processName, processVersionId, comment, values);
+        switch (response.scenarioActionResultType) {
+            case ScenarioActionResultType.Success:
+            case ScenarioActionResultType.UnhandledError:
+                props.close();
+                break;
+            case ScenarioActionResultType.ValidationError:
+                setValidationError(response.msg);
+                break;
+            default:
+                console.log("Unexpected result type:", response.scenarioActionResultType);
+                break;
         }
     }, [action, comment, processName, props, processVersionId, values]);
 
@@ -113,20 +121,20 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                                         return (
                                             <ActionParameter
                                                 key={paramName}
-                                                nodeName={nodeParameters.nodeId}
-                                                propertyName={paramName}
-                                                propertyConfig={paramConfig}
+                                                nodeId={nodeParameters.nodeId}
+                                                parameterName={paramName}
+                                                parameterConfig={paramConfig}
                                                 errors={[]}
-                                                onChange={(nodeId, paramName, newValue) => {
+                                                onChange={(nodeId, parameterName, newValue) => {
                                                     setValues({
                                                         ...values,
                                                         [nodeId]: {
                                                             ...values[nodeId],
-                                                            [paramName]: newValue,
+                                                            [parameterName]: newValue,
                                                         },
                                                     });
                                                 }}
-                                                nodesData={values}
+                                                parameterValue={values[nodeParameters.nodeId][paramName] || ""}
                                             />
                                         );
                                     })}
