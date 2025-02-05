@@ -43,6 +43,15 @@ object keyed {
     )
   }
 
+  type GenericKeyedValue[K, V] = KeyedValue[K, V]
+
+  object GenericKeyedValue {
+
+    def apply[K, V](key: K, value: V): GenericKeyedValue[K, V] = GenericKeyedValue(key, value)
+
+    def unapply[K, V](keyedValue: GenericKeyedValue[K, V]): Option[(K, V)] = KeyedValue.unapply(keyedValue)
+  }
+
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <: AnyRef: TypeTag]
       extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
       with LazyParameterInterpreterFunction {
@@ -80,6 +89,54 @@ object keyed {
     private lazy val interpreter = prepareInterpreter(key, value)
 
     override protected def interpret(ctx: Context): KeyedValue[AnyRef, AnyRef] = interpreter(ctx)
+
+  }
+
+  class GenericKeyedValueMapper[Value <: AnyRef: TypeTag, Key <: AnyRef: TypeTag](
+      protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+      key: LazyParameter[Key],
+      value: LazyParameter[Value]
+  ) extends BaseKeyedValueMapper[Key, Value] {
+
+    def this(customNodeContext: FlinkCustomNodeContext, key: LazyParameter[Key], value: LazyParameter[Value]) =
+      this(customNodeContext.lazyParameterHelper, key, value)
+
+    private lazy val interpreter = prepareInterpreter(key, value)
+
+//    private def transformKey(keyValue: CharSequence): String = {
+//      Option(keyValue).map(_.toString).getOrElse("")
+//    }
+
+//    protected def prepareInterpreter(
+//                                      key: LazyParameter[String],
+//                                      value: LazyParameter[Value]
+//                                    ): Context => KeyedValue[Key, Value] = {
+//      toEvaluateFunctionConverter.toEvaluateFunction[KeyedValue[Key, Value]](
+//        key.product(value).map(tuple => KeyedValue(tuple._1, tuple._2))
+//      )
+//    }
+
+    override protected def interpret(ctx: Context): KeyedValue[Key, Value] = interpreter(ctx)
+
+  }
+
+  class GenericKeyOnlyMapper[K <: AnyRef: TypeTag](
+      protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+      key: LazyParameter[K]
+  ) extends RichFlatMapFunction[Context, ValueWithContext[K]]
+      with LazyParameterInterpreterFunction {
+
+    protected implicit def toEvaluateFunctionConverterImpl: ToEvaluateFunctionConverter = toEvaluateFunctionConverter
+
+    private lazy val interpreter = toEvaluateFunctionConverter.toEvaluateFunction(key)
+
+    protected def interpret(ctx: Context): K = interpreter(ctx)
+
+    override def flatMap(ctx: Context, out: Collector[ValueWithContext[K]]): Unit = {
+      collectHandlingErrors(ctx, out) {
+        ValueWithContext(interpret(ctx), ctx)
+      }
+    }
 
   }
 
@@ -128,10 +185,10 @@ object keyed {
 
   object KeyEnricher {
 
-    def enrichWithKey[V](ctx: Context, keyedValue: StringKeyedValue[V]): Context =
+    def enrichWithKey[K, V](ctx: Context, keyedValue: KeyedValue[K, V]): Context =
       enrichWithKey(ctx, keyedValue.key)
 
-    def enrichWithKey[V](ctx: Context, key: String): Context =
+    def enrichWithKey[K, V](ctx: Context, key: K): Context =
       ctx.withVariable(VariableConstants.KeyVariableName, key)
 
     def contextTransformation(ctx: ValidationContext)(

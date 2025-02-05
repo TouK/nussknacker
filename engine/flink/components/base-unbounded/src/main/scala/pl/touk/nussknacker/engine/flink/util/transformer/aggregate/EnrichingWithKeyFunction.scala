@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 import java.lang
 
 class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext, nodeId: String)
-    extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
+    extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow] {
 
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
@@ -22,8 +22,8 @@ class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => 
   }
 
   override def process(
-      key: String,
-      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow]#Context,
+      key: AnyRef,
+      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow]#Context,
       values: lang.Iterable[AnyRef],
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {

@@ -9,9 +9,10 @@ import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, Engine
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
-import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.language.higherKinds
 
@@ -24,12 +25,13 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
     override val nodeId: NodeId,
     protected val aggregateElementType: TypingResult,
     override protected val aggregateTypeInformation: TypeInformation[AnyRef],
-    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
 )(implicit override val rangeMap: FlinkRangeMap[MapT])
     extends LatelyEvictableStateFunction[
-      ValueWithContext[StringKeyedValue[AnyRef]],
+      ValueWithContext[KeyedValue[AnyRef, AnyRef]],
       ValueWithContext[AnyRef],
-      MapT[Long, AnyRef]
+      MapT[Long, AnyRef],
+      AnyRef
     ]
     with AggregatorFunctionMixin[MapT] {
 
@@ -37,9 +39,9 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
   private var contextIdGenerator: ContextIdGenerator = _
 
   type FlinkCtx =
-    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
+    KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx =
-    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
+    KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
@@ -47,7 +49,7 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
   }
 
   override def processElement(
-      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
