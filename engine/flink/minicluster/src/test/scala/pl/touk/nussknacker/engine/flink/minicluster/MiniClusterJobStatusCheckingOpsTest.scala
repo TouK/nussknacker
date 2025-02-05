@@ -18,7 +18,6 @@ import retry.Directly
 
 import java.lang.{Long => JLong}
 import scala.compat.java8.FutureConverters.CompletionStageOps
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 

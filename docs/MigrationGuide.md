@@ -84,12 +84,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
 * [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing. As an entry point to all migration steps, assume that `FlinkMiniClusterWithServices` is a new `FlinkMiniClusterHolder`
   * From perspective of testkit (`TestScenarioRunner.flinkBased`) module usage
-    * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps:
+    * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-2ccffe37f56882fa91afb457ba45c98f399c40f7667b2de9ea3453b6e8a76989).
       * `FlinkSpec` inheritance should be removed from test class
       * Test class should extend `BeforeAndAfterAll`
       * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
       * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
-  * From perspective of `flink-test-utils` module usage. Caution: this module is deprecated; to avoid further migrations issues, tests should be rewritten to testkit stack
+  * From perspective of `flink-test-utils` module usage follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-8ca39d67972d329a5eb6ce59d2338eba626dc0fd36ffdd8d0d679b8190d9f15c).
+    Caution: this module is deprecated; to avoid further migrations issues, tests should be rewritten to testkit stack
     * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
       `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
     * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead

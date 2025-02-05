@@ -16,13 +16,15 @@ import scala.language.implicitConversions
 
 object MiniClusterJobStatusCheckingOps extends LazyLogging {
 
+  implicit val ec: ExecutionContext = ExecutionContext.global
+
   private val InitializingJobStatuses = Set(JobStatus.INITIALIZING, JobStatus.CREATED)
 
   private val FailingJobStatuses = Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING)
 
   implicit def miniClusterWithServicesToOps(miniClusterWithServices: FlinkMiniClusterWithServices): Ops = new Ops(
     miniClusterWithServices.miniCluster
-  )(ExecutionContext.global)
+  )
 
   implicit class Ops(miniCluster: MiniCluster)(implicit ec: ExecutionContext) {
 

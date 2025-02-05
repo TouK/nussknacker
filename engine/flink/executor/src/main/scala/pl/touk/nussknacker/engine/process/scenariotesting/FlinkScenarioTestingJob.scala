@@ -41,8 +41,11 @@ class FlinkScenarioTestingJob(modelData: ModelData) {
       scenarioTestData: ScenarioTestData,
       streamExecutionEnv: StreamExecutionEnvironment,
   ): Future[TestResults[Json]] = {
+    implicit val ioRuntime: IORuntime = IORuntime.global
+    implicit val ec: ExecutionContext = ExecutionContext.global
+
     val (collectingListener, closeCollectingListener) =
-      ResultsCollectingListenerHolder.registerTestEngineListener.allocated.unsafeRunSync()(IORuntime.global)
+      ResultsCollectingListenerHolder.registerTestEngineListener.allocated.unsafeRunSync()
     val resultCollector = new TestServiceInvocationCollector(collectingListener)
     // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
     val processVersion = ProcessVersion.empty.copy(processName = scenario.name)
@@ -66,10 +69,10 @@ class FlinkScenarioTestingJob(modelData: ModelData) {
         streamExecutionEnv.execute(scenario.name.value)
         collectingListener.results
       }
-    }(ExecutionContext.global)
+    }
     resultFuture.onComplete { _ =>
-      closeCollectingListener.unsafeRunSync()(IORuntime.global)
-    }(ExecutionContext.global)
+      closeCollectingListener.unsafeRunSync()
+    }
     resultFuture
   }
 

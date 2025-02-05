@@ -46,7 +46,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   }
 
   /**
-    * TestFlinkRunner should be invoked, it's not accessible in this module
+    * FlinkScenarioUnitTestJob.run should be invoked, but it's not accessible in this module
     */
   protected def runScenario(
       env: StreamExecutionEnvironment,

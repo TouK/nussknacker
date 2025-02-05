@@ -14,7 +14,11 @@ class PatienceConfigToRetryPolicyConverter(private[test] val delta: Span) {
     retry.Pause(maxAttempts, interval)
   }
 
-  private[test] def toRetryPolicyInternal(patience: AbstractPatienceConfiguration#PatienceConfig): (Int, FiniteDuration) = {
+  // This is necessary because retry.Pause.apply is a constructor for CountingPolicy and CountingPolicy doesn't expose
+  // information such as maxAttempts, interval. Due to this, it is impossible to do verification based on that class in tests.
+  private[test] def toRetryPolicyInternal(
+      patience: AbstractPatienceConfiguration#PatienceConfig
+  ): (Int, FiniteDuration) = {
     val totalTime   = patience.timeout - delta
     val maxAttempts = Math.max(Math.round(totalTime / patience.interval).toInt, 1)
     val interval    = totalTime / maxAttempts

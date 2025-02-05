@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.{JobExecutionResult, JobID}
+import org.apache.flink.api.common.JobID
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
