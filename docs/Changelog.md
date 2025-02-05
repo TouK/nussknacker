@@ -39,6 +39,7 @@
 * [#7420](https://github.com/TouK/nussknacker/pull/7420) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
 * [#7438](https://github.com/TouK/nussknacker/pull/7438) Map int32 integer format in OpenAPI schema to the `Integer` type
 * [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
+* [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
 
 ## 1.18
 
