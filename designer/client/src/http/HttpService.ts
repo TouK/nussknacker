@@ -698,10 +698,7 @@ class HttpService {
     }
 
     getActionParameters(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(
-            `/actionInfo/${encodeURIComponent(processName)}/actionParameters`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
-        );
+        const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetActionParameters", "Failed to get action parameters definition"),

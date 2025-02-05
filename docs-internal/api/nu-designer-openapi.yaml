@@ -221,12 +221,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/actionInfo/{scenarioName}/actionParameters:
-    post:
+  /api/actionInfo/{scenarioName}/parameters:
+    get:
       tags:
       - Deployments
       summary: Get action parameters
-      operationId: postApiActioninfoScenarionameActionparameters
+      operationId: getApiActioninfoScenarionameParameters
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -240,24 +240,6 @@ paths:
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-            example:
-              properties:
-                additionalFields:
-                  properties:
-                    parallelism: ''
-                    spillStateToDisk: 'true'
-                    useAsyncInterpretation: ''
-                    checkpointIntervalInSeconds: ''
-                  metaDataType: StreamMetaData
-                  showDescription: false
-              nodes: []
-              edges: []
-        required: true
       responses:
         '200':
           description: ''
@@ -276,8 +258,7 @@ paths:
                           editor:
                             type: RawParameterEditor
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
