@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
-import enumeratum.{Enum, EnumEntry}
-import enumeratum.EnumEntry.UpperSnakecase
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -38,15 +36,11 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
-  OFFSET_RESET_STRATEGY_PARAM_NAME,
-  OffsetResetStrategy
-}
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
 import java.util.Properties
-import scala.collection.immutable
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
@@ -208,17 +202,6 @@ class FlinkKafkaSource[T](
 
 object FlinkKafkaSource {
   val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
-
-  sealed trait OffsetResetStrategy extends EnumEntry with UpperSnakecase
-
-  object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
-    override def values: immutable.IndexedSeq[OffsetResetStrategy] = findValues
-
-    case object None       extends OffsetResetStrategy
-    case object ToEarliest extends OffsetResetStrategy
-    case object ToLatest   extends OffsetResetStrategy
-  }
-
 }
 
 // TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
