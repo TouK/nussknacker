@@ -11,7 +11,6 @@ export const determineLangaugeBasedOnEditor = (editor: $TodoType): ExpressionLan
         case EditorType.FIXED_VALUES_PARAMETER_EDITOR:
             return ExpressionLang.SpEL;
         case EditorType.DUAL_PARAMETER_EDITOR:
-            if (editor.simpleEditor.type === EditorType.DICT_PARAMETER_EDITOR) return ExpressionLang.DictKeyWithLabel;
             if (editor.simpleEditor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR) return ExpressionLang.SpEL;
             if (editor.simpleEditor.type === EditorType.STRING_PARAMETER_EDITOR) return ExpressionLang.SpEL;
             return null;
