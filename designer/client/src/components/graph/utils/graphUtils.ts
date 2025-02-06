@@ -1,13 +1,13 @@
-import NodeUtils from "../NodeUtils";
+import { dia } from "jointjs";
 import { cloneDeep, isEqual, map, reject } from "lodash";
-import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+import { isTouchEvent } from "../../../helpers/detectDevice";
 import {
     adjustBranchParametersAfterDisconnect,
     enrichNodeWithProcessDependentData,
     removeBranchParameter,
 } from "../../../reducers/graph/utils";
-import { dia } from "jointjs";
-import { isTouchEvent } from "../../../helpers/detectDevice";
+import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+import NodeUtils from "../NodeUtils";
 
 export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType): ScenarioGraph {
     return {
@@ -52,6 +52,16 @@ export function mapProcessWithNewEdge(scenarioGraph: ScenarioGraph, before: Edge
             }
         }),
     };
+}
+
+export function cleanupNodeInputEdges(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType) {
+    if (!NodeUtils.hasInputs(after)) {
+        return {
+            ...scenarioGraph,
+            edges: scenarioGraph.edges.filter(({ to }) => to !== before.id),
+        };
+    }
+    return scenarioGraph;
 }
 
 export function replaceNodeOutputEdges(
