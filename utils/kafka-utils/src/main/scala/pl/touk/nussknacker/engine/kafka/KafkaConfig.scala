@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
-import org.apache.kafka.clients.consumer.OffsetResetStrategy
+import enumeratum.{Enum, EnumEntry}
 import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
 import pl.touk.nussknacker.engine.kafka.KafkaConfig._
 
+import scala.collection.immutable
 import scala.concurrent.duration._
 
 case class SchemaRegistryClientKafkaConfig(
@@ -42,7 +43,7 @@ case class KafkaConfig(
   )
 
   def defaultOffsetResetStrategy: Option[OffsetResetStrategy] =
-    kafkaEspProperties.flatMap(_.get(DefaultOffsetResetStrategyPath)).map(OffsetResetStrategy.valueOf)
+    kafkaEspProperties.flatMap(_.get(DefaultOffsetResetStrategyPath)).map(OffsetResetStrategy.withName)
 
   def defaultMaxOutOfOrdernessMillis: java.time.Duration =
     kafkaEspProperties
@@ -125,4 +126,14 @@ object SinkDeliveryGuarantee extends Enumeration {
   val ExactlyOnce: SinkDeliveryGuarantee.Value = Value("EXACTLY_ONCE")
   val AtLeastOnce: SinkDeliveryGuarantee.Value = Value("AT_LEAST_ONCE")
   val None: SinkDeliveryGuarantee.Value        = Value("NONE")
+}
+
+sealed trait OffsetResetStrategy extends EnumEntry
+
+object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
+  override def values: immutable.IndexedSeq[OffsetResetStrategy] = findValues
+
+  case object None       extends OffsetResetStrategy
+  case object ToEarliest extends OffsetResetStrategy
+  case object ToLatest   extends OffsetResetStrategy
 }

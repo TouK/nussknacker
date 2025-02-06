@@ -18,6 +18,7 @@ import HttpService from "../../http/HttpService";
 import { ActionParameter } from "./ActionParameter";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ToggleProcessActionModalData } from "./DeployProcessDialog";
+import LoaderSpinner from "../spinner/Spinner";
 
 function initialNodesData(params: ActionNodeParameters[]) {
     return params.reduce(
@@ -37,15 +38,26 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const scenarioGraph = useSelector(getScenarioGraph);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoadingError, setIsLoadingError] = useState<boolean>(false);
     const [parametersDefinition, setParametersDefinition] = useState([]);
-    const [values, setValues] = useState({});
+    const [parametersValues, setParametersValues] = useState({});
 
     const getActionParameters = useCallback(async () => {
-        const response = await HttpService.getActionParameters(processName, scenarioGraph);
-        const definition = response.data["DEPLOY"] || ([] as ActionNodeParameters[]);
-        const initialValues = initialNodesData(definition);
-        setParametersDefinition(definition);
-        setValues(initialValues);
+        setIsLoading(true);
+        await HttpService.getActionParameters(processName, scenarioGraph)
+            .then((response) => {
+                const definition = response.data["DEPLOY"] || ([] as ActionNodeParameters[]);
+                const initialValues = initialNodesData(definition);
+                setParametersDefinition(definition);
+                setParametersValues(initialValues);
+            })
+            .catch(() => {
+                setIsLoadingError(true);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }, [processName, scenarioGraph]);
 
     useEffect(() => {
@@ -58,7 +70,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, values);
+        const response = await action(processName, processVersionId, comment, parametersValues);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.UnhandledError:
@@ -71,16 +83,20 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 console.log("Unexpected result type:", response.scenarioActionResultType);
                 break;
         }
-    }, [action, comment, processName, props, processVersionId, values]);
+    }, [action, comment, processName, props, processVersionId, parametersValues]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
+            { title: t("dialog.button.ok", "Ok"), action: () => confirmAction(), disabled: isLoadingError },
         ],
-        [confirmAction, props, t],
+        [confirmAction, props, t, isLoadingError],
     );
+
+    if (isLoading) {
+        return <LoaderSpinner show={true} />;
+    }
 
     return (
         <PromptContent {...props} buttons={buttons}>
@@ -126,15 +142,15 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                                                 parameterConfig={paramConfig}
                                                 errors={[]}
                                                 onChange={(nodeId, parameterName, newValue) => {
-                                                    setValues({
-                                                        ...values,
+                                                    setParametersValues({
+                                                        ...parametersValues,
                                                         [nodeId]: {
-                                                            ...values[nodeId],
+                                                            ...parametersValues[nodeId],
                                                             [parameterName]: newValue,
                                                         },
                                                     });
                                                 }}
-                                                parameterValue={values[nodeParameters.nodeId][paramName] || ""}
+                                                parameterValue={parametersValues[nodeParameters.nodeId][paramName] || ""}
                                             />
                                         );
                                     })}
