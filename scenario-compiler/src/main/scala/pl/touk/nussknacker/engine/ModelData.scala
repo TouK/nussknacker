@@ -269,9 +269,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     }
   }
 
-  final override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
-
-  def modelClassLoader: ModelClassLoader
+  override def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 

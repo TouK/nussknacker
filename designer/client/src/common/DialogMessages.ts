@@ -47,6 +47,10 @@ export const cantArchiveRunningProcess = () => {
     );
 };
 
+export const deleteStickyNote = () => {
+    return i18next.t("dialogMessages.deleteStickyNote", "Are you sure you want to delete this note?");
+};
+
 export const valueAlreadyTaken = () => {
     return i18next.t("validation.duplicateValue", "This value is already taken");
 };

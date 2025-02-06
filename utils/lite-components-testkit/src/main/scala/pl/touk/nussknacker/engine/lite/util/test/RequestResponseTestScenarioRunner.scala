@@ -59,33 +59,33 @@ class RequestResponseTestScenarioRunner(
   def runWithRequests[T](
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
-    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
-    val modelData = ModelWithTestExtensions(
-      config,
-      LiteBaseComponentProvider.Components :::
-        RequestResponseComponentProvider.Components :::
-        components,
-      globalVariables
-    )
-    RequestResponseInterpreter[Id](
-      scenario,
-      ProcessVersion.empty,
-      LiteEngineRuntimeContextPreparer.noOp,
-      modelData,
-      additionalListeners = Nil,
-      resultCollector = testScenarioCollectorHandler.resultCollector,
-      componentUseCase = componentUseCase
-    ).map { interpreter =>
-      interpreter.open()
-      try {
-        val handler = new RequestResponseHttpHandler(interpreter)
-        run(req => {
-          val entity = req.entity.asInstanceOf[HttpEntity.Strict].data.toArray(implicitly[ClassTag[Byte]])
-          handler.invoke(req, entity)
-        })
-      } finally {
-        testScenarioCollectorHandler.close()
-        interpreter.close()
+    TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
+      val modelData = ModelWithTestExtensions(
+        config,
+        LiteBaseComponentProvider.Components :::
+          RequestResponseComponentProvider.Components :::
+          components,
+        globalVariables
+      )
+      RequestResponseInterpreter[Id](
+        scenario,
+        ProcessVersion.empty,
+        LiteEngineRuntimeContextPreparer.noOp,
+        modelData,
+        additionalListeners = Nil,
+        resultCollector = testScenarioCollectorHandler.resultCollector,
+        componentUseCase = componentUseCase
+      ).map { interpreter =>
+        interpreter.open()
+        try {
+          val handler = new RequestResponseHttpHandler(interpreter)
+          run(req => {
+            val entity = req.entity.asInstanceOf[HttpEntity.Strict].data.toArray(implicitly[ClassTag[Byte]])
+            handler.invoke(req, entity)
+          })
+        } finally {
+          interpreter.close()
+        }
       }
     }
   }

@@ -49,26 +49,26 @@ object SynchronousLiteInterpreter {
       componentUseCase: ComponentUseCase,
       runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): SynchronousResult = {
-    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
-    ScenarioInterpreterFactory
-      .createInterpreter[Id, Any, AnyRef](
-        scenario,
-        jobData,
-        modelData,
-        Nil,
-        testScenarioCollectorHandler.resultCollector,
-        componentUseCase
-      )
-      .map { interpreter =>
-        interpreter.open(runtimeContextPreparer.prepare(jobData))
-        try {
-          val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
-          value.run
-        } finally {
-          testScenarioCollectorHandler.close()
-          interpreter.close()
+    TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
+      ScenarioInterpreterFactory
+        .createInterpreter[Id, Any, AnyRef](
+          scenario,
+          jobData,
+          modelData,
+          Nil,
+          testScenarioCollectorHandler.resultCollector,
+          componentUseCase
+        )
+        .map { interpreter =>
+          interpreter.open(runtimeContextPreparer.prepare(jobData))
+          try {
+            val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
+            value.run
+          } finally {
+            interpreter.close()
+          }
         }
-      }
+    }
   }
 
 }

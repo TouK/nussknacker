@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.management
 
 import net.ceedubs.ficus.Ficus
 import net.ceedubs.ficus.readers.ValueReader
-import org.apache.flink.configuration.{Configuration, CoreOptions, MemorySize, RestOptions, TaskManagerOptions}
+import org.apache.flink.configuration.Configuration
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterConfig
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.jdk.CollectionConverters._
@@ -18,14 +19,13 @@ import scala.jdk.CollectionConverters._
 final case class FlinkConfig(
     restUrl: Option[String],
     jobManagerTimeout: FiniteDuration = 1 minute,
-    // TODO: move to scenarioTesting
     shouldVerifyBeforeDeploy: Boolean = true,
     shouldCheckAvailableSlots: Boolean = true,
     waitForDuringDeployFinish: FlinkWaitForDuringDeployFinishedConfig =
       FlinkWaitForDuringDeployFinishedConfig(enabled = true, Some(180), Some(1 second)),
     scenarioStateRequestTimeout: FiniteDuration = 3 seconds,
     jobConfigsCacheSize: Int = 1000,
-    scenarioTesting: ScenarioTestingConfig = ScenarioTestingConfig()
+    miniCluster: FlinkMiniClusterConfig = FlinkMiniClusterConfig()
 )
 
 object FlinkConfig {
@@ -56,33 +56,3 @@ final case class FlinkWaitForDuringDeployFinishedConfig(
 }
 
 final case class EnabledFlinkWaitForDuringDeployFinishedConfig(maxChecks: Int, delay: FiniteDuration)
-
-final case class ScenarioTestingConfig(
-    reuseMiniClusterForScenarioTesting: Boolean = true,
-    reuseMiniClusterForScenarioStateVerification: Boolean = true,
-    parallelism: Int = 1,
-    miniClusterConfig: Configuration = ScenarioTestingConfig.defaultMiniClusterConfig,
-    streamExecutionConfig: Configuration = new Configuration
-)
-
-object ScenarioTestingConfig {
-
-  import Ficus._
-
-  implicit val flinkConfigurationValueReader: ValueReader[Configuration] =
-    Ficus.mapValueReader[String].map(map => Configuration.fromMap(map.asJava))
-
-  private[nussknacker] val defaultMiniClusterConfig: Configuration = {
-    val config = new Configuration
-    config.set[Integer](RestOptions.PORT, 0)
-    // FIXME: reversing flink default order
-    config.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
-    // In some setups we create a few Flink DMs. Each of them creates its own mini cluster.
-    // To reduce footprint we decrease off-heap memory buffers size and managed memory
-    config.set(TaskManagerOptions.NETWORK_MEMORY_MIN, MemorySize.parse("16m"))
-    config.set(TaskManagerOptions.NETWORK_MEMORY_MAX, MemorySize.parse("16m"))
-    config.set(TaskManagerOptions.MANAGED_MEMORY_SIZE, MemorySize.parse("50m"))
-    config
-  }
-
-}

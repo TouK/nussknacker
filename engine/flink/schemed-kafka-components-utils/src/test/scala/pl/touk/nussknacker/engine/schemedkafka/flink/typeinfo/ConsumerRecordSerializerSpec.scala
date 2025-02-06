@@ -4,6 +4,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.serialization.SerializerConfigImpl
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
@@ -12,7 +13,6 @@ import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -30,8 +30,7 @@ class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableD
 
   private val serializerConfig = {
     val executionConfig = new ExecutionConfig()
-    val configuration   = FlinkTestConfiguration.configuration()
-    new SerializerConfigImpl(configuration, executionConfig)
+    new SerializerConfigImpl(new Configuration, executionConfig)
   }
 
   test("should serialize and deserialize simple record") {

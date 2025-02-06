@@ -145,7 +145,7 @@ class PeriodicProcessServiceIntegrationTest
       )
     }
 
-    def testHeader(str: String) = "\n\n" + "*" * 100 + s"\n***** $str\n" + "*" * 100 + "\n"
+    def testHeader(str: String) = "\n\n" + "#" * 100 + s"\n##### $str\n" + "#" * 100 + "\n"
     logger.info(testHeader("Running test with legacy hsql-based repository"))
     runWithLegacyRepository(hsqlConfig)
     cleanDB()

@@ -12,10 +12,11 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -88,20 +89,21 @@ class UnionTransformersTestModeSpec
         unionPart
           .emptySink(endSinkId, "dead-end")
       )
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val modelData          = createModelData(data, collectingListener)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val modelData = createModelData(data, collectingListener)
 
-    val testResults = collectTestResults(modelData, scenario, collectingListener)
+      val testResults = collectTestResults(modelData, scenario, collectingListener)
 
-    val contextIds = extractContextIds(testResults)
-    contextIds should have size (data.size * 2)
-    contextIds should contain theSameElementsAs contextIds.toSet
-    contextIds should contain only (
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId",
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId",
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId",
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId",
-    )
+      val contextIds = extractContextIds(testResults)
+      contextIds should have size (data.size * 2)
+      contextIds should contain theSameElementsAs contextIds.toSet
+      contextIds should contain only (
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId",
+      )
+    }
   }
 
   private def createModelData(
@@ -123,10 +125,10 @@ class UnionTransformersTestModeSpec
 
   private def collectTestResults[T](
       modelData: LocalModelData,
-      testProcess: CanonicalProcess,
+      testScenario: CanonicalProcess,
       collectingListener: ResultsCollectingListener[T]
   ): TestProcess.TestResults[T] = {
-    runProcess(modelData, testProcess)
+    runScenario(modelData, testScenario)
     collectingListener.results
   }
 
@@ -134,10 +136,11 @@ class UnionTransformersTestModeSpec
     .nodeResults(endSinkId)
     .map(_.id)
 
-  private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, modelData)(scenario)
-    stoppableEnv.executeAndWaitForFinished(scenario.name.value)()
+  private def runScenario(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
+    }
   }
 
 }
