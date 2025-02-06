@@ -410,14 +410,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  private val simpleGraphExample: Example[ScenarioGraph] = Example.of(
-    ScenarioGraph(
-      ProcessProperties(StreamMetaData()),
-      List(),
-      List(),
-    )
-  )
-
   lazy val parametersValidationEndpoint: SecuredEndpoint[
     (ProcessingType, ParametersValidationRequestDto),
     NodesError,
