@@ -1,15 +1,15 @@
+import { defaultsDeep } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
-import { NodeRowFieldsProvider } from "./node-row-fields-provider";
 import { DndItems } from "../../common/dndItems/DndItems";
-import { EdgeFields } from "./EdgeFields";
-import { ExpressionLang } from "./editors/expression/types";
 import NodeUtils from "../NodeUtils";
+import { EdgeFields } from "./EdgeFields";
 import { EdgeTypeOption } from "./EdgeTypeSelect";
-import { defaultsDeep } from "lodash";
+import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { NodeRowFieldsProvider } from "./node-row-fields-provider";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
@@ -61,7 +61,7 @@ function getDefaultEdge(kind: EdgeKind): Edge {
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
-    return defaultsDeep(edge, getDefaultEdge(edge.edgeType.type));
+    return defaultsDeep(edge, getDefaultEdge(edge.edgeType?.type));
 }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
@@ -102,7 +102,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const edgeItems = useMemo(() => {
         return edges.map((edge, index, array) => {
             const types = edgeTypes.filter(
-                (t) => t.value === edge.edgeType.type || (!t.disabled && (!t.onlyOne || !array.some((e) => e.edgeType?.type === t.value))),
+                (t) => t.value === edge.edgeType?.type || (!t.disabled && (!t.onlyOne || !array.some((e) => e.edgeType?.type === t.value))),
             );
 
             return {
