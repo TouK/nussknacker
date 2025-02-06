@@ -51,7 +51,7 @@ trait CollectionUtils extends HideToString {
       @ParamName("map") map: java.util.Map[K, V],
       @ParamName("maps") maps: java.util.Map[K, V]*
   ): java.util.Map[K, V] = {
-    val merged = new java.util.HashMap[K, V](map.size() + maps.map(_.size()).sum)
+    val merged = new java.util.LinkedHashMap[K, V](map.size() + maps.map(_.size()).sum)
     merged.putAll(map)
     maps.foreach(merged.putAll)
     merged
@@ -59,11 +59,17 @@ trait CollectionUtils extends HideToString {
 
   @Documentation(description = "Returns the smallest element (elements must be comparable)")
   @GenericType(typingFunction = classOf[ListElementTyping])
-  def min[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): T = Collections.min[T](list)
+  def min[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): T = {
+    checkIfComparable(list)
+    Collections.min[T](list)
+  }
 
   @Documentation(description = "Returns the largest element (elements must be comparable)")
   @GenericType(typingFunction = classOf[ListElementTyping])
-  def max[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): T = Collections.max[T](list)
+  def max[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): T = {
+    checkIfComparable(list)
+    Collections.max[T](list)
+  }
 
   @Documentation(description =
     "Returns a slice of the list starting with start index (inclusive) and ending at stop index (exclusive)"
@@ -212,7 +218,7 @@ trait CollectionUtils extends HideToString {
   @Documentation(description = "Returns a list that contains unique elements from the given list")
   @GenericType(typingFunction = classOf[ListTyping])
   def distinct[T](@ParamName("list") list: java.util.List[T]): java.util.List[T] =
-    new java.util.ArrayList(new java.util.HashSet[T](list))
+    new java.util.ArrayList(new java.util.LinkedHashSet[T](list))
 
   @Documentation(description = "Returns a copy of the list with its elements shuffled")
   @GenericType(typingFunction = classOf[ListTyping])
