@@ -50,9 +50,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         editorMode,
         placeholder,
     } = props;
-
-    const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
-    const language = useMemo(() => expressionObj.language, [expressionObj.language]);
+    const { expression: value = "", language = ExpressionLang.SpEL } = expressionObj || {};
 
     const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(() => {
         const properties: ExpressionSuggestProps["inputProps"] = {

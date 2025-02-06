@@ -28,7 +28,6 @@ export const getCreator = (type: string): Component => ({
         type: "VariableBuilder",
         varName: getFakeVarName(type),
         additionalFields: {
-            description: `fake node to create **${type}** datasource`,
             virtualNode: type,
         },
         fields: [],

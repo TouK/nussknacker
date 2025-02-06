@@ -1,15 +1,15 @@
+import { cx } from "@emotion/css";
+import { FormControl, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
+import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
-import { cx } from "@emotion/css";
-import { FormControl, FormLabel } from "@mui/material";
-import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -36,8 +36,8 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorType], [editorType]);
 
     const formatter = useMemo(
-        () => (expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
-        [expressionObj.language, param?.typ?.refClazzName],
+        () => (expressionObj?.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
+        [expressionObj?.language, param?.typ?.refClazzName],
     );
 
     return (
