@@ -1,9 +1,12 @@
-import { defaultsDeep } from "lodash";
+import { cloneDeep, defaultsDeep, isArray, mergeWith } from "lodash";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
+import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { NodeType } from "../../../types";
+import NodeUtils from "../NodeUtils";
 import { NodeGroupContentProps } from "./node/NodeGroupContent";
 
 type NodeSwitcherProps = NodeGroupContentProps & {
@@ -11,11 +14,14 @@ type NodeSwitcherProps = NodeGroupContentProps & {
 };
 
 export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = [] }: NodeSwitcherProps) {
-    const { componentGroups } = useSelector(getProcessDefinitionData);
+    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const graph = useSelector(getScenarioGraph);
 
     const componentsToSelect = useMemo(() => {
-        return componentGroups.flatMap((g) => g.components).filter((c) => componentsNamesToSelect.includes(c.componentId));
-    }, [componentGroups, componentsNamesToSelect]);
+        return processDefinitionData.componentGroups
+            .flatMap((g) => g.components)
+            .filter((c) => componentsNamesToSelect.includes(c.componentId));
+    }, [componentsNamesToSelect, processDefinitionData.componentGroups]);
 
     const creatorType = useMemo(() => getCreatorType(node), [node]);
 
@@ -25,23 +31,28 @@ export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = 
     }, [dispatch]);
 
     const switchNode = useCallback(
-        (component) => {
-            onChange(
-                defaultsDeep(
-                    {
-                        id: node.id,
-                        additionalFields: {
-                            virtualNode: creatorType,
-                        },
-                    },
-                    component.node,
-                    node,
-                ),
-                edges,
+        (selectedNode: NodeType) => {
+            const { type, ...source } = node;
+
+            const customizer = (arg1, arg2, key: string) => {
+                if (key === "parameters" && isArray(arg1)) {
+                    return arg1.map((parameter) => arg2.find(({ name }) => name === parameter.name) || parameter);
+                }
+            };
+
+            const nextNode = defaultsDeep(
+                { additionalFields: { virtualNode: creatorType } },
+                mergeWith(cloneDeep(selectedNode), source, customizer),
             );
+
+            return onChange(nextNode, NodeUtils.hasOutputs(nextNode, processDefinitionData) ? edges : []);
         },
-        [creatorType, edges, node, onChange],
+        [creatorType, edges, node, onChange, processDefinitionData],
     );
+
+    if (!creatorType) {
+        return null;
+    }
 
     return (
         <>
@@ -50,7 +61,7 @@ export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = 
             {componentsToSelect.map((c) => (
                 <div key={c.componentId}>
                     {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <button onClick={() => switchNode(c)}>switch to {c.componentId}</button>
+                    <button onClick={() => switchNode(c.node)}>switch to {c.componentId}</button>
                 </div>
             ))}
         </>
