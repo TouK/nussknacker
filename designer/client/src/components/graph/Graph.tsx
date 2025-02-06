@@ -51,6 +51,8 @@ import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
 import { STICKY_NOTE_CONSTRAINTS } from "./EspNode/stickyNote";
 import { NotificationActions } from "../../http/HttpService";
 import i18next from "i18next";
+import * as DialogMessages from "../../common/DialogMessages";
+import { ConfirmDialogData } from "../modals/GenericConfirmDialog";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -63,6 +65,7 @@ type Props = GraphProps & {
     selectionState: NodeId[];
     userSettings: UserSettings;
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
+    showConfirmationWindow: (data: ConfirmDialogData) => void;
     isPristine?: boolean;
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
@@ -395,6 +398,7 @@ export class Graph extends React.Component<Props> {
             this.processGraphPaper.hideTools();
             if (isStickyNoteElement(cellView.model)) {
                 if (!this.props.isPristine) return;
+                if (this.props.selectionState.length > 0) this.props.resetSelection(...[]);
                 showStickyNoteTools(cellView);
             }
             if (this.props.nodeSelectionEnabled) {
@@ -531,8 +535,15 @@ export class Graph extends React.Component<Props> {
                     );
                     return;
                 }
-                const noteId = Number(cell.get("noteId"));
-                this.deleteStickyNote(this.props.scenario.name, noteId);
+                this.props.showConfirmationWindow({
+                    text: DialogMessages.deleteStickyNote(),
+                    onConfirmCallback: (confirmed) => {
+                        const noteId = Number(cell.get("noteId"));
+                        confirmed && this.deleteStickyNote(this.props.scenario.name, noteId);
+                    },
+                    confirmText: i18next.t("panels.actions.delete-stickynote.yes", "Yes"),
+                    denyText: i18next.t("panels.actions.delete-stickynote.no", "No"),
+                });
             }
         });
 
