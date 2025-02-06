@@ -286,7 +286,7 @@ val flinkCommonsIOV       = "2.15.1"
 val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV                = "3.8.1"
-//TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
+// to update we need configurable SpEL length limit from 6.0.9, but 6.x requires JDK 17
 val springV               = "5.2.23.RELEASE"
 val scalaTestV            = "3.2.18"
 val scalaCheckV           = "1.17.1"
@@ -1565,9 +1565,7 @@ lazy val extensionsApi = (project in file("extensions-api"))
   .settings(
     name := "nussknacker-extensions-api",
     libraryDependencies ++= Seq(
-      "org.springframework"      % "spring-expression" % springV,
-      // needed by scala-compiler for spring-expression...
-      "com.google.code.findbugs" % "jsr305"            % findBugsV,
+      "org.springframework" % "spring-expression" % springV,
     )
   )
   .dependsOn(testUtils % Test, componentsApi, scenarioApi)
