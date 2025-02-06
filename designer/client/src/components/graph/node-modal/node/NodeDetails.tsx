@@ -160,7 +160,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [editedNode, t]);
 
     const titleData = useTitleData(node);
-    const selector = useSelector(getConfiguredAdditionalComponents);
+    const configuredAdditionalComponents = useSelector(getConfiguredAdditionalComponents);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
@@ -185,7 +185,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                 componentsNamesToSelect={
                     creatorType === "aggregate"
                         ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
-                        : selector[creatorType]?.map((c) => c.componentId) || []
+                        : configuredAdditionalComponents[creatorType]?.map((c) => c.componentId) || []
                 }
             />
             <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
