@@ -1,4 +1,4 @@
-describe.skip("Fragment", () => {
+describe("Fragment", () => {
     const seed = "fragment";
     before(() => {
         cy.deleteAllTestProcesses({
