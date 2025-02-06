@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
   fragmentWithValidationName,
   processWithFragmentParameterValidation
 }
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -100,7 +101,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val testRunner =
-        prepareTestRunner(useIOMonadInInterpreter, waitForJobIsFinishedRetryPolicy = 1.seconds.toPausePolicy)
+        prepareTestRunner(useIOMonadInInterpreter, waitForJobIsFinishedRetryPolicy = 0.seconds.toPausePolicy)
 
       def runTests = testRunner
         .runTests(
@@ -929,8 +930,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       enrichDefaultConfig: Config => Config = identity,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
       useLegacySingleUseMiniCluster: Boolean = false,
-      // It must be lower than retry policy to return inner errors
-      waitForJobIsFinishedRetryPolicy: retry.Policy = 5.seconds.toPausePolicy
+      waitForJobIsFinishedRetryPolicy: retry.Policy =
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 100.millis, patienceConfig.interval)
   ): FlinkMiniClusterScenarioTestRunner = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))

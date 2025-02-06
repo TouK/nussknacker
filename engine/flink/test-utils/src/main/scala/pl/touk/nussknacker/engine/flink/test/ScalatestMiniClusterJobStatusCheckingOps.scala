@@ -14,8 +14,6 @@ import scala.language.implicitConversions
 
 object ScalatestMiniClusterJobStatusCheckingOps {
 
-  private val Delta = 100.millis
-
   private implicit val WaitForJobStatusPatience: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(50, Millis)))
 
@@ -25,10 +23,9 @@ object ScalatestMiniClusterJobStatusCheckingOps {
 
   implicit class Ops(miniCluster: MiniCluster) {
 
-    // We have to subtract delta to ensure that inner exception will be thrown
     private val retryPolicy =
       DurationToRetryPolicyConverter.toPausePolicy(
-        WaitForJobStatusPatience.timeout - Delta,
+        WaitForJobStatusPatience.timeout - 100.millis,
         WaitForJobStatusPatience.interval
       )
 

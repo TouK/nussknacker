@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
-import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -67,7 +67,8 @@ class KafkaScenarioTestingSpec
       modelData,
       Some(miniClusterWithServices),
       parallelism = 1,
-      waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
+      waitForJobIsFinishedRetryPolicy =
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 100.millis, patienceConfig.interval)
     )
 
   override protected def afterAll(): Unit = {
