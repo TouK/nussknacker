@@ -188,9 +188,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                         : selector[creatorType]?.map((c) => c.componentId) || []
                 }
             />
-            {creatorType && editedNode.type === "VariableBuilder" ? null : (
-                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-            )}
+            <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
         </WindowContent>
     );
 }

@@ -1,8 +1,11 @@
+import { cx } from "@emotion/css";
+import { FormControl, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
-import { editors, OnValueChange } from "./expression/Editor";
+import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { editors, OnValueChange, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { EditorType, ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
@@ -38,8 +41,8 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     );
 
     const formatter = useMemo(
-        () => (expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
-        [expressionObj.language, param?.typ?.refClazzName],
+        () => (expressionObj?.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
+        [expressionObj?.language, param?.typ?.refClazzName],
     );
 
     return (
