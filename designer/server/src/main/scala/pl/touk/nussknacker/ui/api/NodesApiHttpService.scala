@@ -177,10 +177,12 @@ class NodesApiHttpService(
                 Left(InvalidNodeType("SourceNodeData", other.getClass.getSimpleName))
             })
             parametersDefinition <- EitherT[Future, NodesError, String](
+              // The service is expected to limit the number of returned records if the response is too large.
+              // If it does not, we may need to implement client-side pagination or request size limits.
               scenarioTestService.getDataFromSource(
                 recordsRequestDto.processProperties.toMetaData(scenarioName),
                 sourceNodeData,
-                numberOfRecords.getOrElse(100)
+                numberOfRecords
               ) match {
                 case Left(SourceCompilationError(nodeId, errors)) =>
                   Future(Left(SourceCompilation(nodeId, errors)))

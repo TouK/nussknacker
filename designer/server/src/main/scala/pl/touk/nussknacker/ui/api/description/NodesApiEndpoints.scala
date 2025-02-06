@@ -360,7 +360,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
   }
 
   lazy val recordsEndpoint: SecuredEndpoint[
-    (ProcessName, Option[Int], RecordsRequestDto),
+    (ProcessName, Int, RecordsRequestDto),
     NodesError,
     String,
     Any
@@ -370,7 +370,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("nodes" / path[ProcessName]("scenarioName") / "records")
-      .in(query[Option[Int]]("limit").description("Limit the number of records returned"))
+      .in(
+        query[Int]("limit")
+          .default(10)
+          .description("Limit the number of records returned")
+      )
       .in(
         jsonBody[RecordsRequestDto]
           .example(
