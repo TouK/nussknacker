@@ -149,8 +149,6 @@ class FlinkRestManager(
       case JobStatus.RECONCILING | JobStatus.SUSPENDED => DeploymentStatus.Running
       case JobStatus.FAILING | JobStatus.FAILED =>
         DeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
-      case _ =>
-        throw new IllegalStateException() // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
   }
 

@@ -25,8 +25,8 @@ object ScalatestMiniClusterJobStatusCheckingOps {
 
     private val retryPolicy =
       DurationToRetryPolicyConverter.toPausePolicy(
-        WaitForJobStatusPatience.timeout - 100.millis,
-        WaitForJobStatusPatience.interval
+        WaitForJobStatusPatience.timeout - 3.seconds,
+        WaitForJobStatusPatience.interval * 2
       )
 
     def waitForJobIsFinished(jobID: JobID): Unit = {

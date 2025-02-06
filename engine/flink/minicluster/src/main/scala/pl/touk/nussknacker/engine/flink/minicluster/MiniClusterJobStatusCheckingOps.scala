@@ -7,8 +7,10 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.{AccessExecutionGraph, AccessExecutionVertex}
 import org.apache.flink.runtime.messages.FlinkJobTerminatedWithoutCancellationException
 import org.apache.flink.runtime.minicluster.MiniCluster
+import retry.Success
 
 import java.util.concurrent.CompletionException
+import scala.annotation.tailrec
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -34,7 +36,7 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
         retryPolicy: retry.Policy,
         terminalCheckRetryPolicyOpt: Option[retry.Policy]
     ): Future[Either[JobStateCheckError, Unit]] = {
-      val resultFuture = waitForJobState(jobID, Set(JobStatus.FINISHED), Set(ExecutionState.FINISHED))(retryPolicy)
+      val resultFuture = waitForJobState(jobID, Set(JobStatus.FINISHED), expectedVerticesStatesOpt = None)(retryPolicy)
       finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicyOpt)
     }
 
@@ -83,7 +85,7 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
       waitForJobState(
         jobID,
         Set(JobStatus.RUNNING, JobStatus.FINISHED),
-        Set(ExecutionState.RUNNING, ExecutionState.FINISHED)
+        expectedVerticesStatesOpt = Some(Set(ExecutionState.RUNNING, ExecutionState.FINISHED))
       )(retryPolicy)
     }
 
@@ -93,7 +95,7 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
       waitForJobState(
         jobID,
         Set(JobStatus.CANCELED, JobStatus.FINISHED),
-        Set(ExecutionState.CANCELED, ExecutionState.FINISHED)
+        expectedVerticesStatesOpt = None
       )(retryPolicy)
     }
 
@@ -103,7 +105,7 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
         // - for checking RUNNING state, it is better to check vertices states because Flink reports job as RUNNING even if some of the vertices are only scheduled (not running yet)
         // - for checking FINISHED state, it is better to check job states because Flink reports vertices as FINISHED even if job is not FINISHED yet
         expectedJobStatuses: Set[JobStatus],
-        expectedVerticesStates: Set[ExecutionState],
+        expectedVerticesStatesOpt: Option[Set[ExecutionState]],
     )(
         retryPolicy: retry.Policy
     ): Future[Either[JobStateCheckError, Unit]] =
@@ -130,19 +132,21 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
           )
           // we check failing status separately to provide more detailed information about job state in error case
           _ <-
-            if (expectedJobStatuses.intersect(FailingJobStatuses).nonEmpty)
+            if (expectedJobStatuses.intersect(FailingJobStatuses).isEmpty)
               doCheckJobIsNotFailing(executionGraph)
             else
               EitherT.rightT[Future, JobStateCheckError](())
-          // we check vertices states before job state for more precise information about vertices in error
-          _ <- checkVerticesStates(executionGraph, expectedVerticesStates)
           _ <- EitherT.cond[Future][JobStateCheckError, Unit](
             expectedJobStatuses.contains(executionGraph.getState),
             (),
             JobInUnexpectedStateError(jobID, executionGraph.getJobName, executionGraph.getState, expectedJobStatuses)
           )
+          // this check have to be after job state checks because we don't want to break fail-fast behavior - see jobStateCheckResultSuccess
+          _ <- expectedVerticesStatesOpt
+            .map(checkVerticesStates(executionGraph, _))
+            .getOrElse(EitherT.rightT[Future, JobStateCheckError](()))
         } yield ()).value
-      }
+      }(jobStateCheckResultSuccess, ec)
 
     def checkJobIsNotFailing(jobID: JobID): Future[Either[JobIsFailingError, Unit]] =
       doCheckJobIsNotFailing[JobIsFailingError](jobID).value
@@ -182,6 +186,21 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
       )
     }
 
+    private val jobStateCheckResultSuccess = Success[Either[JobStateCheckError, Unit]] {
+      case Right(_)    => true
+      case Left(error) => !shouldRepeat(error)
+    }
+
+    @tailrec
+    private def shouldRepeat(err: JobStateCheckError): Boolean = err match {
+      case _: JobIsNotInitializedError => true
+      // unexpected state which is globally terminal means that it won't be better so there is no sense in next attempts
+      case JobIsFailingError(executionGraph)             => !executionGraph.getState.isGloballyTerminalState
+      case JobInUnexpectedStateError(_, _, jobStatus, _) => !jobStatus.isGloballyTerminalState
+      case _: JobVerticesInUnexpectedStateError          => true
+      case JobStateCheckErrorAfterCancel(cause)          => shouldRepeat(cause)
+    }
+
   }
 
   sealed abstract class JobStateCheckError(msg: String, cause: JobStateCheckError) extends Exception(msg, cause) {
@@ -196,13 +215,23 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
 
   case class JobIsFailingError(executionGraph: AccessExecutionGraph)
       extends JobStateCheckError(
-        s"Job [id=${executionGraph.getJobID}, name=${executionGraph.getJobName}] is in failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
+        s"Job [id=${executionGraph.getJobID}, name=${executionGraph.getJobName}] is in ${executionGraph.getState} state. " +
+          s"Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
       ) {
 
     override def jobID: JobID = executionGraph.getJobID
 
     override def jobName: String = executionGraph.getJobName
   }
+
+  case class JobInUnexpectedStateError(
+      jobID: JobID,
+      jobName: String,
+      jobStatus: JobStatus,
+      expectedStatuses: Set[JobStatus]
+  ) extends JobStateCheckError(
+        s"Job [id=$jobID, name=$jobName] is not in expected (${expectedStatuses.mkString(" or ")}) state: $jobStatus"
+      )
 
   case class JobVerticesInUnexpectedStateError(
       override val jobID: JobID,
@@ -213,24 +242,15 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
         verticesNotInExpectedState
           .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
           .mkString(
-            s"Some vertices of ob [id=$jobID, name=$jobName] are not in expected (${expectedVerticesStates.mkString(" or ")}) state: ",
+            s"Some vertices of job [id=$jobID, name=$jobName] are not in expected (${expectedVerticesStates.mkString(" or ")}) state: ",
             ", ",
             ""
           )
       )
 
-  case class JobInUnexpectedStateError(
-      jobID: JobID,
-      jobName: String,
-      jobStatus: JobStatus,
-      expectedStatuses: Set[JobStatus]
-  ) extends JobStateCheckError(
-        s"Job [id=${jobID}, name=${jobName}] is not in expected (${expectedStatuses.mkString(" or ")} state: $jobStatus"
-      )
-
   case class JobStateCheckErrorAfterCancel(cause: JobStateCheckError)
       extends JobStateCheckError(
-        s"Job [id=${cause.jobID}, name=${cause.jobID}] has unexpected state after cancelling it",
+        s"Job [id=${cause.jobID}, name=${cause.jobName}] has unexpected state after cancelling it",
         cause
       ) {
 

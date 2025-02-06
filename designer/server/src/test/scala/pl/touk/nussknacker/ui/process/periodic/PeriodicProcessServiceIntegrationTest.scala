@@ -773,8 +773,9 @@ class PeriodicProcessServiceIntegrationTest
 
     def tryWithFailedListener[T](action: () => Future[T]): Unit = {
       f.failListener = true
-      val exception = intercept[TestFailedException](action().futureValue)
-      exception.getCause shouldBe a[PeriodicProcessException]
+      intercept[TestFailedException](action().futureValue) should matchPattern {
+        case ex: TestFailedException if ex.getCause.isInstanceOf[PeriodicProcessException] =>
+      }
       f.failListener = false
     }
 

@@ -29,7 +29,7 @@ class MiniClusterJobStatusCheckingOpsTest
     with Matchers {
 
   private val retry =
-    DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 100.millis, patienceConfig.interval)
+    DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.seconds, patienceConfig.interval * 2)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 

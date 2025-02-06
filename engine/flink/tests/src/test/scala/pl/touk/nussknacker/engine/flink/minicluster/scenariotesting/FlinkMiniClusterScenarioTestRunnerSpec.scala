@@ -42,7 +42,7 @@ import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext
@@ -55,7 +55,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
-    with VeryPatientScalaFutures {
+    with PatientScalaFutures {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -91,8 +91,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
   private def runTests(useIOMonadInInterpreter: Boolean): Unit = {
     "should wait configured amount of time for scenario finishing and cancel job if it is not finished during this time" in {
-      // This time have to be longer than total time that we need to make scenario running to show what we meant to show - that we limit time for job run
-      val sleepSecondsInScenario = 10
+      val sleepSecondsInScenario = (patienceConfig.timeout * 2).toSeconds
       val process =
         ScenarioBuilder
           .streaming(scenarioName)
@@ -115,7 +114,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         // We have to wait a shorter time than scenario total time to show limiting of scenario execution time
         .futureValue(Timeout((sleepSecondsInScenario - 1).seconds))
 
-      intercept[TestFailedException](runTests).getCause should matchPattern { case _: JobStateCheckError =>
+      intercept[TestFailedException](runTests) should matchPattern {
+        case ex: TestFailedException if ex.getCause.isInstanceOf[JobStateCheckError] =>
       }
     }
 
@@ -480,7 +480,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      intercept[TestFailedException](runTests).getCause shouldBe a[JobStateCheckError]
+      intercept[TestFailedException](runTests) should matchPattern {
+        case e: TestFailedException if e.getCause.isInstanceOf[JobStateCheckError] =>
+      }
     }
 
     "handle json input" in {
@@ -931,7 +933,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
       useLegacySingleUseMiniCluster: Boolean = false,
       waitForJobIsFinishedRetryPolicy: retry.Policy =
-        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 100.millis, patienceConfig.interval)
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.second, patienceConfig.interval * 2)
   ): FlinkMiniClusterScenarioTestRunner = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))

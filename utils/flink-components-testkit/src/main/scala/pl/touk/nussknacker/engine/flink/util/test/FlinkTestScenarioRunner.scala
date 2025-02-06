@@ -82,8 +82,8 @@ class FlinkTestScenarioRunner(
     PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(50, Millis)))
 
   private val WaitForJobStatusRetryPolicy = DurationToRetryPolicyConverter.toPausePolicy(
-    WaitForJobStatusPatience.timeout - 100.millis,
-    WaitForJobStatusPatience.interval
+    WaitForJobStatusPatience.timeout - 3.seconds,
+    WaitForJobStatusPatience.interval * 2
   )
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {

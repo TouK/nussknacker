@@ -68,7 +68,7 @@ class KafkaScenarioTestingSpec
       Some(miniClusterWithServices),
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy =
-        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 100.millis, patienceConfig.interval)
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.seconds, patienceConfig.interval * 2)
     )
 
   override protected def afterAll(): Unit = {
