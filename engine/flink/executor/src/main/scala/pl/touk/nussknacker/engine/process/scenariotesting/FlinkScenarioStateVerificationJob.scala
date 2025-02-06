@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestServiceInvocationCollector}
 
-object FlinkStateStateVerificationJob {
+object FlinkScenarioStateVerificationJob {
 
   def run(
       modelData: ModelData,
@@ -20,7 +20,7 @@ object FlinkStateStateVerificationJob {
       savepointPath: String,
       streamExecutionEnv: StreamExecutionEnvironment
   ): Unit =
-    new FlinkStateStateVerificationJob(modelData).run(
+    new FlinkScenarioStateVerificationJob(modelData).run(
       scenario,
       processVersion,
       savepointPath,
@@ -29,7 +29,7 @@ object FlinkStateStateVerificationJob {
 
 }
 
-class FlinkStateStateVerificationJob(modelData: ModelData) {
+private class FlinkScenarioStateVerificationJob(modelData: ModelData) {
 
   def run(
       scenario: CanonicalProcess,

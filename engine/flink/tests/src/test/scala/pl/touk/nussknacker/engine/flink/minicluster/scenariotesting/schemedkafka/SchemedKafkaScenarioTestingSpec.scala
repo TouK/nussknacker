@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka
 
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec._
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
@@ -39,7 +41,8 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, PatientScalaFutures}
 
 import java.util.Collections
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 class SchemedKafkaScenarioTestingSpec
     extends AnyFunSuite
@@ -50,6 +53,9 @@ class SchemedKafkaScenarioTestingSpec
     with LoneElement
     with BeforeAndAfterAll
     with PatientScalaFutures {
+
+  private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val ioRuntime: IORuntime = IORuntime.global
 
   private val creator: KafkaAvroTestProcessConfigCreator =
     new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
@@ -78,7 +84,12 @@ class SchemedKafkaScenarioTestingSpec
   private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
   private val testRunner =
-    new FlinkMiniClusterScenarioTestRunner(modelData, Some(miniClusterWithServices))
+    new FlinkMiniClusterScenarioTestRunner(
+      modelData,
+      Some(miniClusterWithServices),
+      parallelism = 1,
+      waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
+    )
 
   override protected def afterAll(): Unit = {
     super.afterAll()

@@ -4,14 +4,17 @@ import org.apache.flink.api.common.JobID
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.scalatest.concurrent.ScalaFutures.{PatienceConfig, convertScalaFuture, scaled}
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterWithServices, MiniClusterJobStatusCheckingOps}
-import pl.touk.nussknacker.test.retry.PatienceConfigToRetryPolicyConverter
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, blocking}
 import scala.language.implicitConversions
 
 object ScalatestMiniClusterJobStatusCheckingOps {
+
+  private val Delta = 100.millis
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(50, Millis)))
@@ -22,19 +25,24 @@ object ScalatestMiniClusterJobStatusCheckingOps {
 
   implicit class Ops(miniCluster: MiniCluster) {
 
+    // We have to subtract delta to ensure that inner exception will be thrown
+    private val retryPolicy =
+      DurationToRetryPolicyConverter.toPausePolicy(
+        WaitForJobStatusPatience.timeout - Delta,
+        WaitForJobStatusPatience.interval
+      )
+
     def waitForJobIsFinished(jobID: JobID): Unit = {
-      val retryPolicy = PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .waitForJobIsFinished(jobID)(retryPolicy, retryPolicy)
+        .waitForJobIsFinished(jobID)(retryPolicy, Some(retryPolicy))
         .futureValue
         .toTry
         .get
     }
 
     def withRunningJob[T](jobID: JobID)(actionToInvokeWithJobRunning: => T): T = {
-      val retryPolicy = PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
       new MiniClusterJobStatusCheckingOps.Ops(miniCluster)
-        .withRunningJob(jobID)(retryPolicy, retryPolicy) {
+        .withRunningJob(jobID)(retryPolicy, Some(retryPolicy)) {
           Future {
             blocking {
               actionToInvokeWithJobRunning

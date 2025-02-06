@@ -30,12 +30,17 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
 
     def waitForJobIsFinished(
         jobID: JobID
-    )(retryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy): Future[Either[JobStateCheckError, Unit]] = {
+    )(
+        retryPolicy: retry.Policy,
+        terminalCheckRetryPolicyOpt: Option[retry.Policy]
+    ): Future[Either[JobStateCheckError, Unit]] = {
       val resultFuture = waitForJobState(jobID, Set(JobStatus.FINISHED), Set(ExecutionState.FINISHED))(retryPolicy)
-      finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicy)
+      finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicyOpt)
     }
 
-    def withRunningJob[T](jobID: JobID)(runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicy: retry.Policy)(
+    def withRunningJob[T](
+        jobID: JobID
+    )(runningCheckRetryPolicy: retry.Policy, terminalCheckRetryPolicyOpt: Option[retry.Policy])(
         actionToInvokeWithJobRunning: => Future[T]
     ): Future[Either[JobStateCheckError, T]] = {
       val resultFuture = (for {
@@ -43,13 +48,13 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
         result <- EitherT.right(actionToInvokeWithJobRunning)
         _      <- doCheckJobIsNotFailing[JobStateCheckError](jobID)
       } yield result).value
-      finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicy)
+      finallyCancelJobAndWaitForCancelled(resultFuture, jobID, terminalCheckRetryPolicyOpt)
     }
 
     private def finallyCancelJobAndWaitForCancelled[T](
         resultFuture: Future[Either[JobStateCheckError, T]],
         jobID: JobID,
-        terminalCheckRetryPolicy: retry.Policy
+        terminalCheckRetryPolicyOpt: Option[retry.Policy]
     ): Future[Either[JobStateCheckError, T]] = {
       // It is a kind of asynchronous "finally" block
       resultFuture.transformWith { resultTry =>
@@ -61,8 +66,12 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
                   if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
             }
           )
-          _ <- EitherT(waitForJobIsInCancelledOrFinished(jobID)(terminalCheckRetryPolicy))
-            .leftMap(JobStateCheckErrorAfterCancel)
+          _ <- terminalCheckRetryPolicyOpt
+            .map { terminalCheckRetryPolicy =>
+              EitherT(waitForJobIsInCancelledOrFinished(jobID)(terminalCheckRetryPolicy))
+                .leftMap(JobStateCheckErrorAfterCancel)
+            }
+            .getOrElse(EitherT.rightT[Future, JobStateCheckError](()))
           result <- EitherT(Future.fromTry(resultTry))
         } yield result).value
       }

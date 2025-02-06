@@ -1129,8 +1129,6 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.softwaremill.sttp.tapir"   %% "tapir-core"                % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"        % tapirV,
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"        % openapiCirceYamlV,
-        // for patience -> retry conversion
-        "com.softwaremill.retry"        %% "retry"                     % retryV,
       ) ++ restAssuredDependency(scalaVersion.value)
     }
   )
@@ -1213,9 +1211,11 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
     }
   )
   .dependsOn(
-    extensionsApi % Provided,
-    utilsInternal % Provided,
-    testUtils     % Test,
+    extensionsApi    % Provided,
+    utilsInternal    % Provided,
+    // For ResultsCollectingListener purpose
+    scenarioCompiler % Provided,
+    testUtils        % Test,
   )
 
 lazy val flinkTestUtils = (project in flink("test-utils"))
@@ -1916,6 +1916,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka"             %% "akka-actor"   % akkaV,
+        "org.typelevel"                 %% "cats-effect"  % catsEffectV,
         "com.softwaremill.sttp.client3" %% "core"         % sttpV,
         "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
         "org.scalatestplus"             %% "mockito-5-10" % scalaTestPlusV % Test

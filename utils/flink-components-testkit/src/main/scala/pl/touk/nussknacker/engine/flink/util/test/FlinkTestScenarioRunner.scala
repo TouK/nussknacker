@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
@@ -28,8 +29,8 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
 import pl.touk.nussknacker.engine.util.test._
-import pl.touk.nussknacker.test.retry.PatienceConfigToRetryPolicyConverter
 
+import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 import scala.util.Using
 
@@ -79,6 +80,11 @@ class FlinkTestScenarioRunner(
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(50, Millis)))
+
+  private val WaitForJobStatusRetryPolicy = DurationToRetryPolicyConverter.toPausePolicy(
+    WaitForJobStatusPatience.timeout - 100.millis,
+    WaitForJobStatusPatience.interval
+  )
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     runWithTestSourceComponent(
@@ -224,8 +230,8 @@ class FlinkTestScenarioRunner(
           val jobExecutionResult = env.execute(scenario.name.value)
           flinkMiniClusterWithServices
             .waitForJobIsFinished(jobExecutionResult.getJobID)(
-              PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience),
-              PatienceConfigToRetryPolicyConverter.toRetryPolicy(WaitForJobStatusPatience)
+              WaitForJobStatusRetryPolicy,
+              Some(WaitForJobStatusRetryPolicy)
             )
             .futureValue
             .toTry

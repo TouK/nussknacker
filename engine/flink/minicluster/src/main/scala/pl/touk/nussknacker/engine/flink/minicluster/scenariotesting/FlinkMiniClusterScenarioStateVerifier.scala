@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingle
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try, Using}
+import scala.util.{Failure, Success, Try}
 
 class FlinkMiniClusterScenarioStateVerifier(
     modelData: BaseModelData,
@@ -24,7 +24,7 @@ class FlinkMiniClusterScenarioStateVerifier(
   // Other option would be to add flinkExecutor.jar to classpath from which DM is loaded
   private val jobInvoker = new ReflectiveMethodInvoker[Unit](
     modelData.modelClassLoader,
-    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkStateStateVerificationJob",
+    "pl.touk.nussknacker.engine.process.scenariotesting.FlinkScenarioStateVerificationJob",
     "run"
   )
 
