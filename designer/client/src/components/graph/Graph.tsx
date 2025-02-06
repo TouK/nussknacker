@@ -398,7 +398,7 @@ export class Graph extends React.Component<Props> {
             this.processGraphPaper.hideTools();
             if (isStickyNoteElement(cellView.model)) {
                 if (!this.props.isPristine) return;
-                if (this.props.selectionState.length > 0) this.props.resetSelection(...[]);
+                if (this.props.selectionState.length > 0) this.props.resetSelection();
                 showStickyNoteTools(cellView);
             }
             if (this.props.nodeSelectionEnabled) {
