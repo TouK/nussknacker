@@ -160,14 +160,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
   )(
       implicit loggedUser: LoggedUser,
-      ec: ExecutionContext
   ): DBIOAction[List[PS], NoStream, Effect.All with Effect.Read] = {
-    (for {
-      latestProcesses <- fetchLatestProcessesQuery(query).result
-    } yield latestProcesses
-      .map { case ((_, _), processVersion) =>
+    for {
+      latestProcessEntities <- fetchLatestProcessesQuery(query).result
+      latestProcesses = latestProcessEntities.map { case ((_, _), processVersion) =>
         convertToTargetShape(processVersion)
-      }).map(_.toList)
+      }.toList
+    } yield latestProcesses
   }
 
   private def fetchActionsOrEmpty[PS: ScenarioShapeFetchStrategy](
