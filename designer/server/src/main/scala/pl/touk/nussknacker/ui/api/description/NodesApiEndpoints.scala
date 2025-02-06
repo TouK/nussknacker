@@ -54,10 +54,10 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
-  FetchLatestRecordsError,
   MalformedTypingResult,
   NoProcessingType,
-  NoScenario
+  NoScenario,
+  RecordsError
 }
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
@@ -350,27 +350,24 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  lazy val fetchLatestRecordsForNodeEndpoint: SecuredEndpoint[
-    (ProcessName, Int, FetchLatestRecordsRequestDto),
+  lazy val recordsEndpoint: SecuredEndpoint[
+    (ProcessName, Option[Int], RecordsRequestDto),
     NodesError,
     String,
     Any
   ] = {
     baseNuApiEndpoint
-      .summary("Fetch latest records for specific node")
+      .summary("Fetch records for specific node")
       .tag("Nodes")
       .post
+      .in(path[ProcessName]("scenarioName") / "records")
+      .in(query[Option[Int]]("limit").description("Limit the number of records returned"))
       .in(
-        "nodes" / path[ProcessName]("scenarioName") / "fetchLatestRecordsForNode" / path[Int](
-          "numberOfRecords"
-        )
-      )
-      .in(
-        jsonBody[FetchLatestRecordsRequestDto]
+        jsonBody[RecordsRequestDto]
           .example(
             Example.of(
               summary = Some("Basic fetch request"),
-              value = FetchLatestRecordsRequestDto(
+              value = RecordsRequestDto(
                 ProcessProperties(StreamMetaData()),
                 Source("sourceId", SourceRef("source", List.empty), None)
               )
@@ -392,7 +389,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          fetchLatestRecordsErrorExample,
+          recordsErrorExample,
           noScenarioExample
         )
       )
@@ -619,14 +616,14 @@ object NodesApiEndpoints {
           )
       )
 
-    val fetchLatestRecordsErrorExample: EndpointOutput.OneOfVariant[FetchLatestRecordsError] =
+    val recordsErrorExample: EndpointOutput.OneOfVariant[RecordsError] =
       oneOfVariantFromMatchType(
         NotFound,
-        plainBody[FetchLatestRecordsError]
+        plainBody[RecordsError]
           .example(
             Example.of(
-              summary = Some("Fetching error"),
-              value = FetchLatestRecordsError("Fetching error")
+              summary = Some("Records fetching error"),
+              value = RecordsError("Records fetching error")
             )
           )
       )
@@ -1542,11 +1539,17 @@ object NodesApiEndpoints {
     sealed trait NodesError
 
     object NodesError {
-      final case class FetchLatestRecordsError(msg: String)             extends NodesError
+      final case class RecordsError(msg: String)                        extends NodesError
       final case class NoScenario(scenarioName: ProcessName)            extends NodesError
       final case class NoProcessingType(processingType: ProcessingType) extends NodesError
       final case object NoPermission                                    extends NodesError with CustomAuthorizationError
       final case class MalformedTypingResult(msg: String)               extends NodesError
+
+      implicit val recordsErrorCodec: Codec[String, RecordsError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[RecordsError](e =>
+          s"Error during fetching records: \n${e.msg}"
+        )
+      }
 
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
@@ -1566,16 +1569,10 @@ object NodesApiEndpoints {
         )
       }
 
-      implicit val fetchLatestRecordsErrorCodec: Codec[String, FetchLatestRecordsError, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[FetchLatestRecordsError](e =>
-          s"Error during fetching latest records: \n${e.msg}"
-        )
-      }
-
     }
 
     @derive(schema, encoder, decoder)
-    final case class FetchLatestRecordsRequestDto(
+    final case class RecordsRequestDto(
         processProperties: ProcessProperties,
         nodeData: NodeData
     )

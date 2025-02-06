@@ -17,11 +17,11 @@ import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
-  FetchLatestRecordsError,
   MalformedTypingResult,
   NoPermission,
   NoProcessingType,
-  NoScenario
+  NoScenario,
+  RecordsError
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
@@ -149,7 +149,7 @@ class NodesApiHttpService(
   }
 
   expose {
-    nodesApiEndpoints.fetchLatestRecordsForNodeEndpoint
+    nodesApiEndpoints.recordsEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, numberOfRecords, fetchLatestRecordsDto) =>
@@ -161,17 +161,17 @@ class NodesApiHttpService(
             sourceNodeData <- EitherT.fromEither[Future](fetchLatestRecordsDto.nodeData match {
               case source: SourceNodeData => Right(source)
               case other =>
-                Left(FetchLatestRecordsError(s"Expected SourceNodeData but got: ${other.getClass.getSimpleName}"))
+                Left(RecordsError(s"Expected SourceNodeData but got: ${other.getClass.getSimpleName}"))
             })
             parametersDefinition <- EitherT[Future, NodesError, String](
               scenarioTestService.getDataFromSource(
                 fetchLatestRecordsDto.processProperties.toMetaData(scenarioName),
                 sourceNodeData,
-                numberOfRecords
+                numberOfRecords.getOrElse(100)
               ) match {
                 case Left(error) =>
                   logger.error(s"Error during fetching latest records for node=[${sourceNodeData.id}]: $error")
-                  Future(Left(FetchLatestRecordsError(error)))
+                  Future(Left(RecordsError(error)))
                 case Right(rawScenarioTestData) =>
                   Future(Right(rawScenarioTestData.content))
               }

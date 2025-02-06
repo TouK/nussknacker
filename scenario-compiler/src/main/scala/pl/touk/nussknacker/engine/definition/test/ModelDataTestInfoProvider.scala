@@ -58,7 +58,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def getTestingCapabilities(source: SourceNodeData, jobData: JobData): TestingCapabilities =
     modelData.withThisAsContextClassLoader {
       val testingCapabilities = for {
-        sourceObj <- prepareSourceObj(source)(jobData, NodeId(source.id))
+        sourceObj <- compileSourceNode(source)(jobData, NodeId(source.id))
         canTest         = sourceObj.isInstanceOf[SourceTestSupport[_]]
         canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
         canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
@@ -90,7 +90,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   //       We can go even further and merge both endpoints
   private def getTestParameters(source: SourceNodeData, jobData: JobData): List[Parameter] =
     modelData.withThisAsContextClassLoader {
-      prepareSourceObj(source)(jobData, NodeId(source.id)) match {
+      compileSourceNode(source)(jobData, NodeId(source.id)) match {
         case Valid(s: TestWithParametersSupport[_]) => s.testParametersDefinition
         case Valid(sourceWithoutTestWithParametersSupport) =>
           throw new UnsupportedOperationException(
@@ -121,18 +121,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): Either[String, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
-    val testDataGenerator = prepareSourceObj(
-      sourceNodeData
-    )(jobData, nodeId).toList
-      .flatMap(_.cast[TestDataGenerator])
-    val validatedGenerators = NonEmptyList
-      .fromList(testDataGenerator)
-      .map(x => Right(x))
-      .getOrElse(Left("Provided source didn't produce any data"))
 
     for {
-      generators <- validatedGenerators
-      result     <- createPreliminaryTestData(generators.map(nodeId -> _), size)
+      compiledSource <- compileSourceNode(sourceNodeData)(jobData, nodeId).toEither.left.map(errors =>
+        s"Source node can't be compiled. Problems: ${errors.toList.mkString(", ")}"
+      )
+      testDataGenerator <- compiledSource
+        .cast[TestDataGenerator]
+        .toRight(s"Source '${sourceNodeData.id}' doesn't support records preview")
+      result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), size)
     } yield result
   }
 
@@ -147,7 +144,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     NonEmptyList
       .fromList(preliminaryTestRecords)
       .map(Right(_))
-      .getOrElse(Left("Empty list of generated data"))
+      .getOrElse(Left("No test data was generated"))
       .map(PreliminaryScenarioTestData.apply)
   }
 
@@ -158,7 +155,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val jobData = JobData(scenario.metaData, processVersion)
     val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
-      sourceObj         <- prepareSourceObj(source)(jobData, NodeId(source.id)).toList
+      sourceObj         <- compileSourceNode(source)(jobData, NodeId(source.id)).toList
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
     NonEmptyList
@@ -167,7 +164,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
   }
 
-  private def prepareSourceObj(
+  private def compileSourceNode(
       source: SourceNodeData
   )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
     nodeCompiler.compileSource(source).compiledObject
