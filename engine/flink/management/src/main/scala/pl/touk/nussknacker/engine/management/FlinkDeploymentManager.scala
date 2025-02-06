@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
@@ -12,12 +11,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import pl.touk.nussknacker.engine.management.scenariotesting.{
-  FlinkProcessTestRunner,
-  FlinkProcessVerifier,
-  ScenarioTestingMiniClusterWrapperFactory
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
+  FlinkMiniClusterScenarioStateVerifier,
+  FlinkMiniClusterScenarioTestRunner
 }
+import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterConfig, FlinkMiniClusterFactory}
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -27,26 +26,29 @@ abstract class FlinkDeploymentManager(
     dependencies: DeploymentManagerDependencies,
     shouldVerifyBeforeDeploy: Boolean,
     mainClassName: String,
-    scenarioTestingConfig: ScenarioTestingConfig
+    scenarioTestingConfig: FlinkMiniClusterConfig
 ) extends DeploymentManager
     with LazyLogging {
 
   import dependencies._
 
-  private val scenarioTestingMiniClusterWrapperOpt =
-    ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
-      modelData.asInvokableModelData.modelClassLoader,
+  private val miniClusterWithServicesOpt = {
+    FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
+      modelData.modelClassLoader,
       scenarioTestingConfig
     )
+  }
 
-  private val testRunner = new FlinkProcessTestRunner(
-    modelData.asInvokableModelData,
-    scenarioTestingMiniClusterWrapperOpt.filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
+  private val testRunner = new FlinkMiniClusterScenarioTestRunner(
+    modelData,
+    miniClusterWithServicesOpt
+      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
   )
 
-  private val verification = new FlinkProcessVerifier(
-    modelData.asInvokableModelData,
-    scenarioTestingMiniClusterWrapperOpt.filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
+  private val verification = new FlinkMiniClusterScenarioStateVerifier(
+    modelData,
+    miniClusterWithServicesOpt
+      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
   )
 
   /**
@@ -133,7 +135,7 @@ abstract class FlinkDeploymentManager(
           makeSavepoint(_, savepointDir)
         }
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-        testRunner.runTestsAsync(canonicalProcess, scenarioTestData)
+        testRunner.runTests(canonicalProcess, scenarioTestData)
       case _: DMRunOffScheduleCommand => notImplemented
     }
 
@@ -242,7 +244,7 @@ abstract class FlinkDeploymentManager(
       processVersion: ProcessVersion
   ): Future[Unit] =
     if (shouldVerifyBeforeDeploy)
-      verification.verify(processVersion, canonicalProcess, savepointPath)
+      Future.fromTry(verification.verify(processVersion, canonicalProcess, savepointPath))
     else Future.successful(())
 
   private def stopSavingSavepoint(
@@ -282,7 +284,7 @@ abstract class FlinkDeploymentManager(
 
   override def close(): Unit = {
     logger.info("Closing Flink Deployment Manager")
-    scenarioTestingMiniClusterWrapperOpt.foreach(_.close())
+    miniClusterWithServicesOpt.foreach(_.close())
   }
 
 }

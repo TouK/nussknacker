@@ -15,14 +15,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterConfig
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
-import pl.touk.nussknacker.engine.management.{
-  FlinkDeploymentManager,
-  FlinkStreamingDeploymentManagerProvider,
-  ScenarioTestingConfig
-}
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
@@ -90,7 +85,7 @@ class MockDeploymentManager private (
       ),
       shouldVerifyBeforeDeploy = false,
       mainClassName = "UNUSED",
-      scenarioTestingConfig = ScenarioTestingConfig()
+      scenarioTestingConfig = FlinkMiniClusterConfig()
     ) {
 
   import MockDeploymentManager._

@@ -5,28 +5,18 @@ import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  DateParameterEditor,
-  LiteralIntegerValidator,
-  MandatoryParameterValidator,
-  StringParameterEditor
-}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.{FlinkStreamingPropertiesConfig, ScenarioTestingConfig}
-import pl.touk.nussknacker.engine.management.scenariotesting.{
-  FlinkProcessTestRunner,
-  ScenarioTestingMiniClusterWrapperFactory
-}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 
-import java.net.URI
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
@@ -41,7 +31,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
   import SimpleStateStatus._
-  import pl.touk.nussknacker.engine.ModelData._
 
   // Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"
@@ -53,14 +42,19 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random                                      = new scala.util.Random()
 
-  private lazy val scenarioTestingMiniClusterWrapperOpt =
-    ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
-      modelData.asInvokableModelData.modelClassLoader,
-      ScenarioTestingConfig()
-    )
+  private val miniClusterWithServices =
+    FlinkMiniClusterFactory
+      .createMiniClusterWithServices(
+        modelData.modelClassLoader,
+        new Configuration,
+        new Configuration
+      )
 
   private lazy val flinkTestRunner =
-    new FlinkProcessTestRunner(modelData.asInvokableModelData, scenarioTestingMiniClusterWrapperOpt)
+    new FlinkMiniClusterScenarioTestRunner(
+      modelData,
+      Some(miniClusterWithServices)
+    )
 
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
 
@@ -95,7 +89,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     case command: DMRunOffScheduleCommand  => runOffSchedule(command)
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
     case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-      flinkTestRunner.runTestsAsync(
+      flinkTestRunner.runTests(
         canonicalProcess,
         scenarioTestData
       ) // it's just for streaming e2e tests from file purposes
@@ -164,7 +158,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   }
 
   override def close(): Unit = {
-    scenarioTestingMiniClusterWrapperOpt.foreach(_.close())
+    miniClusterWithServices.close()
   }
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =

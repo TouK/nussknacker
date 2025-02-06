@@ -3,16 +3,16 @@ package pl.touk.nussknacker.engine.flink.table.source
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
 import org.apache.flink.types.Row
-import org.scalatest.LoneElement
+import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData, SqlFilteringExpression}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, StubbedCatalogFactory}
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -23,11 +23,11 @@ import java.nio.charset.StandardCharsets
 
 class TableSourceTest
     extends AnyFunSuite
-    with FlinkSpec
     with Matchers
     with PatientScalaFutures
     with LoneElement
-    with ValidatedValuesDetailedMessage {
+    with ValidatedValuesDetailedMessage
+    with BeforeAndAfterAll {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -61,11 +61,18 @@ class TableSourceTest
     ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(tableComponents)
     .build()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   test("be possible to use table declared inside a database other than the default one") {
     val scenario = ScenarioBuilder
@@ -108,7 +115,7 @@ class TableSourceTest
       )
 
     val runnerWithCatalogConfiguration: FlinkTestScenarioRunner = TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
       .withExecutionMode(ExecutionMode.Batch)
       .withExtraComponents(tableComponentsBasedOnCatalogConfiguration)
       .build()

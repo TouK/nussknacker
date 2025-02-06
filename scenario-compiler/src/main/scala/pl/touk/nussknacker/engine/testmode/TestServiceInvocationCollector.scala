@@ -21,8 +21,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
   ): F[A] = {
     mockValue match {
       case Some(mockVal) =>
-        ResultsCollectingListenerHolder.updateResults(
-          resultsCollectingListener.runId,
+        resultsCollectingListener.updateResults(
           _.updateExternalInvocationResult(
             nodeId.id,
             contextId,
@@ -35,8 +34,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
       case None =>
         action.map { case CollectableAction(resultToCollect, result) =>
           val invocationResult = Map("request" -> request, "response" -> resultToCollect())
-          ResultsCollectingListenerHolder.updateResults(
-            resultsCollectingListener.runId,
+          resultsCollectingListener.updateResults(
             _.updateExternalInvocationResult(
               nodeId.id,
               contextId,
@@ -63,8 +61,7 @@ final class SinkInvocationCollector(
 ) extends Serializable {
 
   def collect(context: Context, result: Any): Unit = {
-    ResultsCollectingListenerHolder.updateResults(
-      resultsCollectingListener.runId,
+    resultsCollectingListener.updateResults(
       _.updateExternalInvocationResult(
         nodeId,
         ContextId(context.id),

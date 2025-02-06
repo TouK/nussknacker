@@ -29,7 +29,7 @@ class FlinkRestManager(
       dependencies,
       config.shouldVerifyBeforeDeploy,
       mainClassName,
-      config.scenarioTesting
+      config.miniCluster
     )
     with LazyLogging {
 

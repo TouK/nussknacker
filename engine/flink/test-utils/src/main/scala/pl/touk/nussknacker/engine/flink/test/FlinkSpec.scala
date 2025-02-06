@@ -4,7 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.configuration.Configuration
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Suite}
-import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
+import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.WithConfig
 
 import java.util.UUID
@@ -16,12 +17,15 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
    */
   protected val runId: String = UUID.randomUUID().toString
 
-  var flinkMiniCluster: FlinkMiniClusterHolder = _
+  var flinkMiniCluster: FlinkMiniClusterWithServices = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    flinkMiniCluster = createFlinkMiniClusterHolder()
-    flinkMiniCluster.start()
+    flinkMiniCluster = FlinkMiniClusterFactory.createMiniClusterWithServices(
+      ModelClassLoader.flinkWorkAroundEmptyClassloader,
+      prepareFlinkConfiguration(),
+      new Configuration()
+    )
   }
 
   override protected def resolveConfig(config: Config): Config =
@@ -33,26 +37,15 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
       ) // avoid long waits for closing on test Flink minicluster, it's needed for proper testing
 
   /**
-    * Override this when you use own Configuration implementation (e.g. Flink 1.9)
+    * Override this when you use own Configuration implementation
     */
   protected def prepareFlinkConfiguration(): Configuration = {
-    FlinkTestConfiguration.configuration()
-  }
-
-  protected def prepareEnvConfig(): AdditionalEnvironmentConfig = {
-    AdditionalEnvironmentConfig()
-  }
-
-  /**
-    * Override this when you use own FlikMiniClusterHolder implementation (e.g. Flink 1.9)
-    */
-  protected def createFlinkMiniClusterHolder(): FlinkMiniClusterHolder = {
-    FlinkMiniClusterHolder(prepareFlinkConfiguration(), prepareEnvConfig())
+    new Configuration
   }
 
   override protected def afterAll(): Unit = {
     try {
-      flinkMiniCluster.stop()
+      flinkMiniCluster.close()
     } finally {
       super.afterAll()
     }

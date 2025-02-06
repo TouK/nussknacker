@@ -64,25 +64,22 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
 object TestScenarioCollectorHandler {
 
-  def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
+  def withHandler[T](componentUseCase: ComponentUseCase)(action: TestScenarioCollectorHandler => T): T = {
+    ResultsCollectingListenerHolder.withListener { resultsCollectingListener =>
+      val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
+        new TestServiceInvocationCollector(resultsCollectingListener)
+      } else {
+        ProductionServiceInvocationCollector
+      }
 
-    val resultsCollectingListener = ResultsCollectingListenerHolder.registerListener
-
-    val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
-      new TestServiceInvocationCollector(resultsCollectingListener)
-    } else {
-      ProductionServiceInvocationCollector
+      action(new TestScenarioCollectorHandler(resultCollector, resultsCollectingListener))
     }
-
-    new TestScenarioCollectorHandler(resultCollector, resultsCollectingListener)
   }
 
   final class TestScenarioCollectorHandler(
       val resultCollector: ResultCollector,
       val resultsCollectingListener: ResultsCollectingListener[Any]
-  ) extends AutoCloseable {
-    def close(): Unit = resultsCollectingListener.close()
-  }
+  )
 
 }
 

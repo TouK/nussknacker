@@ -5,16 +5,16 @@ import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.types.Row
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, LoneElement}
+import org.scalatest.{BeforeAndAfterAll, Inside, LoneElement}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.{FlinkTableComponentProvider, SpelValues}
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct._
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -23,11 +23,11 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class TableJoinTest
     extends AnyFunSuite
-    with FlinkSpec
     with Matchers
     with Inside
     with ValidatedValuesDetailedMessage
-    with LoneElement {
+    with LoneElement
+    with BeforeAndAfterAll {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -37,11 +37,18 @@ class TableJoinTest
   private lazy val additionalComponents: List[ComponentDefinition] =
     FlinkTableComponentProvider.configIndependentComponents ::: Nil
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
   private lazy val runner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   private val mainBranchId   = "main"
   private val joinedBranchId = "joined"

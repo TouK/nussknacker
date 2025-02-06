@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.common.JobID
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -16,13 +16,14 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.function.ProcessFunctionInterceptor
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -103,28 +104,29 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       }
     }
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      withRunningScenario(process, input1, input2, collectingListener) { jobID =>
+        input.foreach {
+          case Left(x)  => addTo1(x)
+          case Right(x) => addTo2(x)
+        }
 
-    input.foreach {
-      case Left(x)  => addTo1(x)
-      case Right(x) => addTo2(x)
+        input1.finish()
+        input2.finish()
+
+        flinkMiniCluster.waitForJobIsFinished(jobID)
+
+        val outValues = collectingListener.results
+          .nodeResults(EndNodeId)
+          .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
+          .map(_.mapValuesNow {
+            case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
+            case x                                                      => x
+          })
+
+        outValues shouldEqual expected
+      }
     }
-
-    input1.finish()
-    input2.finish()
-
-    stoppableEnv.waitForJobStateWithNotFailingCheck(id.getJobID, process.name.value, ExecutionState.FINISHED)()
-
-    val outValues = collectingListener.results
-      .nodeResults(EndNodeId)
-      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
-      .map(_.mapValuesNow {
-        case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
-        case x                                                      => x
-      })
-
-    outValues shouldEqual expected
   }
 
   test("simple join") {
@@ -454,9 +456,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-
-    val model            = modelData(sourceFoo, sourceBar, collectingListener)
+    val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
     assert(validationResult.isInvalid)
@@ -498,27 +498,26 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           .emptySink(EndNodeId, "dead-end")
       )
 
-    val sourceFoo          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val sourceBar          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val model            = modelData(sourceFoo, sourceBar, collectingListener)
+    val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
     assert(validationResult.isInvalid)
   }
 
-  private def runProcess(
+  private def withRunningScenario(
       testProcess: CanonicalProcess,
       input1: BlockingQueueSource[OneRecord],
       input2: BlockingQueueSource[OneRecord],
       collectingListener: ResultsCollectingListener[Any]
-  ) = {
-    val model        = modelData(input1, input2, collectingListener)
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    val id = stoppableEnv.executeAndWaitForStart(testProcess.name.value)
-    (id, stoppableEnv)
+  )(action: JobID => Unit): Unit = {
+    val model = modelData(input1, input2, collectingListener)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val result = new FlinkScenarioUnitTestJob(model).run(testProcess, env)
+      flinkMiniCluster.withRunningJob(result.getJobID)(action(result.getJobID))
+    }
   }
 
   private def modelData(
