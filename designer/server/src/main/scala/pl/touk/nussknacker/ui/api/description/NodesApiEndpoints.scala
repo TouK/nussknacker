@@ -54,6 +54,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  InvalidNodeType,
   MalformedTypingResult,
   NoDataGenerated,
   NoProcessingType,
@@ -402,7 +403,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           noDataGeneratedExample,
           noSourcesWithTestDataGenerationExample,
           serializationExample,
-          noScenarioExample
+          noScenarioExample,
+          invalidNodeTypeExample
         )
       )
       .withSecurity(auth)
@@ -710,6 +712,18 @@ object NodesApiEndpoints {
             Example.of(
               summary = Some("Serialization error"),
               value = Serialization("Failed to serialize test data")
+            )
+          )
+      )
+
+    val invalidNodeTypeExample: EndpointOutput.OneOfVariant[InvalidNodeType] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[InvalidNodeType]
+          .example(
+            Example.of(
+              summary = Some("Invalid node type error"),
+              value = InvalidNodeType("Filter", "Source")
             )
           )
       )

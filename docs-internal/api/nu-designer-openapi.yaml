@@ -1975,12 +1975,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/{scenarioName}/records:
+  /api/nodes/{scenarioName}/records:
     post:
       tags:
       - Nodes
       summary: Fetch records for specific node
-      operationId: postApiScenarionameRecords
+      operationId: postApiNodesScenarionameRecords
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -2047,10 +2047,11 @@ paths:
                 anyOf:
                 - type: string
                 - type: string
+                - type: string
               examples:
                 Example:
-                  summary: Serialization error
-                  value: 'Error during serialization: Failed to serialize test data'
+                  summary: Invalid node type error
+                  value: 'Expected Filter but got: Source'
         '401':
           description: ''
           content:

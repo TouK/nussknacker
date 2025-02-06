@@ -931,7 +931,7 @@ class NodesApiHttpServiceBusinessSpec
              |  }
              |}""".stripMargin
         )
-        .post(s"$nuDesignerHttpAddress/api/nodes/${sourceTestingScenario.name}/fetchLatestRecordsForNode/10")
+        .post(s"$nuDesignerHttpAddress/api/nodes/${sourceTestingScenario.name}/records?limit=10")
         .Then()
         .statusCode(200)
         .equalsPlainBody(
@@ -978,10 +978,10 @@ class NodesApiHttpServiceBusinessSpec
              |  }
              |}""".stripMargin
         )
-        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/fetchLatestRecordsForNode/10")
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/records?limit=10")
         .Then()
-        .statusCode(404)
-        .body(equalTo("Error during fetching latest records: \nExpected SourceNodeData but got: Sink"))
+        .statusCode(400)
+        .body(equalTo("Expected SourceNodeData but got: Sink"))
     }
 
     "return 404 for not existent scenario" in {
@@ -1013,7 +1013,7 @@ class NodesApiHttpServiceBusinessSpec
              |  }
              |}""".stripMargin
         )
-        .post(s"$nuDesignerHttpAddress/api/nodes/$nonExistingScenarioName/fetchLatestRecordsForNode/10")
+        .post(s"$nuDesignerHttpAddress/api/nodes/$nonExistingScenarioName/records?limit=10")
         .Then()
         .statusCode(404)
         .body(equalTo(s"No scenario $nonExistingScenarioName found"))

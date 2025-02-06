@@ -165,20 +165,20 @@ class NodesApiHttpService(
     nodesApiEndpoints.recordsEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (scenarioName, numberOfRecords, fetchLatestRecordsDto) =>
+        { case (scenarioName, numberOfRecords, recordsRequestDto) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            sourceNodeData <- EitherT.fromEither[Future](fetchLatestRecordsDto.nodeData match {
+            sourceNodeData <- EitherT.fromEither[Future](recordsRequestDto.nodeData match {
               case source: SourceNodeData => Right(source)
               case other =>
                 Left(InvalidNodeType("SourceNodeData", other.getClass.getSimpleName))
             })
             parametersDefinition <- EitherT[Future, NodesError, String](
               scenarioTestService.getDataFromSource(
-                fetchLatestRecordsDto.processProperties.toMetaData(scenarioName),
+                recordsRequestDto.processProperties.toMetaData(scenarioName),
                 sourceNodeData,
                 numberOfRecords.getOrElse(100)
               ) match {
