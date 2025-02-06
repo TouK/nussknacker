@@ -17,11 +17,16 @@ import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  InvalidNodeType,
   MalformedTypingResult,
+  NoDataGenerated,
   NoPermission,
   NoProcessingType,
   NoScenario,
-  RecordsError
+  NoSourcesWithTestDataGeneration,
+  Serialization,
+  SourceCompilation,
+  UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
@@ -42,6 +47,14 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError.{
+  NoDataGeneratedError,
+  NoSourcesWithTestDataGenerationError,
+  SourceCompilationError,
+  UnsupportedSourcePreviewError,
+  _
+}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -161,7 +174,7 @@ class NodesApiHttpService(
             sourceNodeData <- EitherT.fromEither[Future](fetchLatestRecordsDto.nodeData match {
               case source: SourceNodeData => Right(source)
               case other =>
-                Left(RecordsError(s"Expected SourceNodeData but got: ${other.getClass.getSimpleName}"))
+                Left(InvalidNodeType("SourceNodeData", other.getClass.getSimpleName))
             })
             parametersDefinition <- EitherT[Future, NodesError, String](
               scenarioTestService.getDataFromSource(
@@ -169,9 +182,16 @@ class NodesApiHttpService(
                 sourceNodeData,
                 numberOfRecords.getOrElse(100)
               ) match {
-                case Left(error) =>
-                  logger.error(s"Error during fetching latest records for node=[${sourceNodeData.id}]: $error")
-                  Future(Left(RecordsError(error)))
+                case Left(SourceCompilationError(nodeId, errors)) =>
+                  Future(Left(SourceCompilation(nodeId, errors)))
+                case Left(UnsupportedSourcePreviewError(nodeId)) =>
+                  Future(Left(UnsupportedSourcePreview(nodeId)))
+                case Left(NoDataGeneratedError) =>
+                  Future(Left(NoDataGenerated))
+                case Left(NoSourcesWithTestDataGenerationError) =>
+                  Future(Left(NoSourcesWithTestDataGeneration))
+                case Left(SerializationError(message)) =>
+                  Future(Left(Serialization(message)))
                 case Right(rawScenarioTestData) =>
                   Future(Right(rawScenarioTestData.content))
               }

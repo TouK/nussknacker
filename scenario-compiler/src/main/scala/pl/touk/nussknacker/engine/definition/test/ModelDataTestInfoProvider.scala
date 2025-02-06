@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{TestDataGenerationError, TestDataPreparationError}
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.ListUtil
@@ -107,7 +108,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
       size: Int
-  ): Either[String, PreliminaryScenarioTestData] = {
+  ): Either[TestDataGenerationError, PreliminaryScenarioTestData] = {
     for {
       generators <- prepareTestDataGenerators(processVersion, scenario)
       result     <- createPreliminaryTestData(generators, size)
@@ -118,17 +119,17 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       size: Int
-  ): Either[String, PreliminaryScenarioTestData] = {
+  ): Either[TestDataGenerationError, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
 
     for {
       compiledSource <- compileSourceNode(sourceNodeData)(jobData, nodeId).toEither.left.map(errors =>
-        s"Source node can't be compiled. Problems: ${errors.toList.mkString(", ")}"
+        TestDataGenerationError.SourceCompilationError(sourceNodeData.id, errors.toList)
       )
       testDataGenerator <- compiledSource
         .cast[TestDataGenerator]
-        .toRight(s"Source '${sourceNodeData.id}' doesn't support records preview")
+        .toRight(TestDataGenerationError.UnsupportedSourceError(sourceNodeData.id))
       result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), size)
     } yield result
   }
@@ -136,22 +137,21 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def createPreliminaryTestData(
       generators: NonEmptyList[(NodeId, TestDataGenerator)],
       size: Int
-  ): Either[String, PreliminaryScenarioTestData] = {
-    val generatedData = generateTestData(generators, size)
-    // Records without timestamp are put at the end of the list.
+  ): Either[TestDataGenerationError, PreliminaryScenarioTestData] = {
+    val generatedData          = generateTestData(generators, size)
     val sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
     val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
     NonEmptyList
       .fromList(preliminaryTestRecords)
       .map(Right(_))
-      .getOrElse(Left("No test data was generated"))
+      .getOrElse(Left(TestDataGenerationError.NoDataGenerated))
       .map(PreliminaryScenarioTestData.apply)
   }
 
   private def prepareTestDataGenerators(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Either[String, NonEmptyList[(NodeId, TestDataGenerator)]] = {
+  ): Either[TestDataGenerationError, NonEmptyList[(NodeId, TestDataGenerator)]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
@@ -161,7 +161,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     NonEmptyList
       .fromList(generatorsForSourcesSupportingTestDataGeneration)
       .map(Right(_))
-      .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
+      .getOrElse(Left(TestDataGenerationError.NoSourcesWithTestDataGeneration))
   }
 
   private def compileSourceNode(
@@ -183,7 +183,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   override def prepareTestData(
       preliminaryTestData: PreliminaryScenarioTestData,
       scenario: CanonicalProcess
-  ): Either[String, ScenarioTestData] = {
+  ): Either[TestDataPreparationError, ScenarioTestData] = {
     import cats.implicits._
 
     val allScenarioSourceIds = collectAllSources(scenario).map(_.id).toSet
@@ -193,12 +193,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
         case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
-          Left(formatError(s"scenario does not have source id: '$sourceId'", recordIdx))
+          Left(TestDataPreparationError.MissingSourceError(sourceId, recordIdx))
         case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
           val sourceId = allScenarioSourceIds.head
           Right(ScenarioTestJsonRecord(sourceId, record))
         case (_: PreliminaryScenarioTestRecord.Simplified, recordIdx) =>
-          Left(formatError("scenario has multiple sources but got record without source id", recordIdx))
+          Left(TestDataPreparationError.MultipleSourcesError(recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))

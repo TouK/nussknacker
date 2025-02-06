@@ -55,9 +55,13 @@ import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
+  NoDataGenerated,
   NoProcessingType,
   NoScenario,
-  RecordsError
+  NoSourcesWithTestDataGeneration,
+  Serialization,
+  SourceCompilation,
+  UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
@@ -223,8 +227,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          noScenarioExample,
-          malformedTypingResultExample
+          sourceCompilationExample,
+          unsupportedSourcePreviewExample,
+          noDataGeneratedExample,
+          noSourcesWithTestDataGenerationExample,
+          serializationExample,
+          noScenarioExample
         )
       )
       .withSecurity(auth)
@@ -360,7 +368,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Fetch records for specific node")
       .tag("Nodes")
       .post
-      .in(path[ProcessName]("scenarioName") / "records")
+      .in("nodes" / path[ProcessName]("scenarioName") / "records")
       .in(query[Option[Int]]("limit").description("Limit the number of records returned"))
       .in(
         jsonBody[RecordsRequestDto]
@@ -389,7 +397,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          recordsErrorExample,
+          sourceCompilationExample,
+          unsupportedSourcePreviewExample,
+          noDataGeneratedExample,
+          noSourcesWithTestDataGenerationExample,
+          serializationExample,
           noScenarioExample
         )
       )
@@ -616,18 +628,6 @@ object NodesApiEndpoints {
           )
       )
 
-    val recordsErrorExample: EndpointOutput.OneOfVariant[RecordsError] =
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[RecordsError]
-          .example(
-            Example.of(
-              summary = Some("Records fetching error"),
-              value = RecordsError("Records fetching error")
-            )
-          )
-      )
-
     val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
       oneOfVariantFromMatchType(
         BadRequest,
@@ -650,6 +650,66 @@ object NodesApiEndpoints {
             Example.of(
               summary = Some("ProcessingType type: {processingType} not found"),
               value = NoProcessingType("'processingType'")
+            )
+          )
+      )
+
+    val sourceCompilationExample: EndpointOutput.OneOfVariant[SourceCompilation] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[SourceCompilation]
+          .example(
+            Example.of(
+              summary = Some("Source compilation error"),
+              value = SourceCompilation("sourceId", List("Invalid source configuration", "Missing required parameter"))
+            )
+          )
+      )
+
+    val unsupportedSourcePreviewExample: EndpointOutput.OneOfVariant[UnsupportedSourcePreview] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[UnsupportedSourcePreview]
+          .example(
+            Example.of(
+              summary = Some("Source preview not supported"),
+              value = UnsupportedSourcePreview("sourceId")
+            )
+          )
+      )
+
+    val noDataGeneratedExample: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoDataGenerated.type]
+          .example(
+            Example.of(
+              summary = Some("No test data generated"),
+              value = NoDataGenerated
+            )
+          )
+      )
+
+    val noSourcesWithTestDataGenerationExample: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoSourcesWithTestDataGeneration.type]
+          .example(
+            Example.of(
+              summary = Some("No sources support test data"),
+              value = NoSourcesWithTestDataGeneration
+            )
+          )
+      )
+
+    val serializationExample: EndpointOutput.OneOfVariant[Serialization] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[Serialization]
+          .example(
+            Example.of(
+              summary = Some("Serialization error"),
+              value = Serialization("Failed to serialize test data")
             )
           )
       )
@@ -1539,15 +1599,51 @@ object NodesApiEndpoints {
     sealed trait NodesError
 
     object NodesError {
-      final case class RecordsError(msg: String)                        extends NodesError
-      final case class NoScenario(scenarioName: ProcessName)            extends NodesError
-      final case class NoProcessingType(processingType: ProcessingType) extends NodesError
-      final case object NoPermission                                    extends NodesError with CustomAuthorizationError
-      final case class MalformedTypingResult(msg: String)               extends NodesError
+      final case class SourceCompilation(nodeId: String, errors: List[String])   extends NodesError
+      final case class UnsupportedSourcePreview(nodeId: String)                  extends NodesError
+      final case object NoDataGenerated                                          extends NodesError
+      final case object NoSourcesWithTestDataGeneration                          extends NodesError
+      final case class Serialization(msg: String)                                extends NodesError
+      final case class InvalidNodeType(expectedType: String, actualType: String) extends NodesError
+      final case class NoScenario(scenarioName: ProcessName)                     extends NodesError
+      final case class NoProcessingType(processingType: ProcessingType)          extends NodesError
+      final case object NoPermission                      extends NodesError with CustomAuthorizationError
+      final case class MalformedTypingResult(msg: String) extends NodesError
 
-      implicit val recordsErrorCodec: Codec[String, RecordsError, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[RecordsError](e =>
-          s"Error during fetching records: \n${e.msg}"
+      implicit val sourceCompilationCodec: Codec[String, SourceCompilation, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[SourceCompilation](e =>
+          s"Cannot compile source '${e.nodeId}'. Errors: ${e.errors.mkString(", ")}"
+        )
+      }
+
+      implicit val unsupportedSourcePreviewCodec: Codec[String, UnsupportedSourcePreview, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[UnsupportedSourcePreview](e =>
+          s"Source '${e.nodeId}' doesn't support records preview"
+        )
+      }
+
+      implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
+          "No test data was generated"
+        )
+      }
+
+      implicit val noSourcesWithTestDataGenerationCodec
+          : Codec[String, NoSourcesWithTestDataGeneration.type, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoSourcesWithTestDataGeneration.type](_ =>
+          "No sources available that support test data generation"
+        )
+      }
+
+      implicit val serializationCodec: Codec[String, Serialization, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[Serialization](e =>
+          s"Error during serialization: ${e.msg}"
+        )
+      }
+
+      implicit val invalidNodeTypeCodec: Codec[String, InvalidNodeType, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[InvalidNodeType](e =>
+          s"Expected ${e.expectedType} but got: ${e.actualType}"
         )
       }
 

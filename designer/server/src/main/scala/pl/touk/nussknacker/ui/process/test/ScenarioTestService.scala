@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataGenerationError
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -81,7 +83,7 @@ class ScenarioTestService(
         (),
         s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}"
       )
-      generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize)
+      generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize).left.map(_.message)
       rawTestData   <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
@@ -90,10 +92,26 @@ class ScenarioTestService(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       size: Int
-  ): Either[String, RawScenarioTestData] = {
-    testInfoProvider.generateTestDataForSource(metaData, sourceNodeData, size).flatMap { generatedData =>
-      preliminaryScenarioTestDataSerDe.serialize(generatedData)
-    }
+  ): Either[ScenarioTestError, RawScenarioTestData] = {
+    testInfoProvider
+      .generateTestDataForSource(metaData, sourceNodeData, size)
+      .left
+      .map {
+        case TestDataGenerationError.SourceCompilationError(nodeId, errors) =>
+          ScenarioTestError.SourceCompilationError(nodeId, errors.map(_.toString))
+        case TestDataGenerationError.UnsupportedSourceError(nodeId) =>
+          ScenarioTestError.UnsupportedSourcePreviewError(nodeId)
+        case TestDataGenerationError.NoDataGenerated =>
+          ScenarioTestError.NoDataGeneratedError
+        case TestDataGenerationError.NoSourcesWithTestDataGeneration =>
+          ScenarioTestError.NoSourcesWithTestDataGenerationError
+      }
+      .flatMap { generatedData =>
+        preliminaryScenarioTestDataSerDe
+          .serialize(generatedData)
+          .left
+          .map(msg => ScenarioTestError.SerializationError(s"Failed to serialize test data: $msg"))
+      }
   }
 
   def performTest(
@@ -113,7 +131,8 @@ class ScenarioTestService(
       )
       scenarioTestData <- testInfoProvider
         .prepareTestData(preliminaryScenarioTestData, canonical)
-        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
+        // TODO: handle error from prepareTestData in better way
+        .fold(error => Future.failed(new IllegalArgumentException(error.message)), Future.successful)
       testResults <- testExecutorService.testProcess(
         processVersion,
         canonical,
@@ -188,6 +207,23 @@ class ScenarioTestService(
       )
     }
     processCounter.computeCounts(canonical, isFragment, counts.get)
+  }
+
+}
+
+object ScenarioTestService {
+  sealed trait ScenarioTestError
+
+  object ScenarioTestError {
+    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends ScenarioTestError
+
+    final case class UnsupportedSourcePreviewError(nodeId: String) extends ScenarioTestError
+
+    case object NoDataGeneratedError extends ScenarioTestError
+
+    case object NoSourcesWithTestDataGenerationError extends ScenarioTestError
+
+    final case class SerializationError(message: String) extends ScenarioTestError
   }
 
 }
