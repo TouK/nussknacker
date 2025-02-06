@@ -52,7 +52,8 @@ abstract class FlinkDeploymentManager(
   private val verification = new FlinkMiniClusterScenarioStateVerifier(
     modelData,
     miniClusterWithServicesOpt
-      .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster)
+      .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster),
+    flinkConfig.scenarioStateVerification.timeout.toPausePolicy
   )
 
   /**
@@ -248,8 +249,9 @@ abstract class FlinkDeploymentManager(
       processVersion: ProcessVersion
   ): Future[Unit] =
     if (flinkConfig.scenarioStateVerification.enabled)
-      Future.fromTry(verification.verify(processVersion, canonicalProcess, savepointPath))
-    else Future.successful(())
+      verification.verify(processVersion, canonicalProcess, savepointPath)
+    else
+      Future.successful(())
 
   private def stopSavingSavepoint(
       processVersion: ProcessVersion,

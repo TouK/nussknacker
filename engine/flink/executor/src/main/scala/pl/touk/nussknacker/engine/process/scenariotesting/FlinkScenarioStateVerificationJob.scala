@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
+import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
@@ -19,7 +20,7 @@ object FlinkScenarioStateVerificationJob {
       processVersion: ProcessVersion,
       savepointPath: String,
       streamExecutionEnv: StreamExecutionEnvironment
-  ): Unit =
+  ): JobExecutionResult =
     new FlinkScenarioStateVerificationJob(modelData).run(
       scenario,
       processVersion,
@@ -36,7 +37,7 @@ private class FlinkScenarioStateVerificationJob(modelData: ModelData) {
       processVersion: ProcessVersion,
       savepointPath: String,
       streamExecutionEnv: StreamExecutionEnvironment
-  ): Unit = {
+  ): JobExecutionResult = {
     val resultCollector = new TestServiceInvocationCollector(ResultsCollectingListenerHolder.noopListener)
     val registrar       = prepareRegistrar(scenario)
     val deploymentData  = DeploymentData.empty

@@ -5,6 +5,7 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import io.circe.Json
 import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioParallelismOverride._
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacyFallbackToSingleUseMiniClusterHandler
-import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
@@ -46,21 +47,25 @@ class FlinkMiniClusterScenarioTestRunner(
       val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
         .map(_ => scenario.overrideParallelism(parallelism))
         .getOrElse(scenario)
+      def runJob(
+          collectingListener: ResultsCollectingListener[Json],
+          env: StreamExecutionEnvironment
+      ): JobExecutionResult = {
+        jobInvoker.invokeStaticMethod(
+          modelData,
+          scenarioWithOverrodeParallelism,
+          scenarioTestData,
+          collectingListener,
+          env
+        )
+      }
       (for {
-        env                <- miniClusterWithServices.createStreamExecutionEnvironment(attached = false)
+        env                <- miniClusterWithServices.createDetachedStreamExecutionEnvironment
         collectingListener <- ResultsCollectingListenerHolder.registerTestEngineListener
       } yield (env, collectingListener))
         .use { case (env, collectingListener) =>
           (for {
-            executionResult <- EitherT.right(IO {
-              jobInvoker.invokeStaticMethod(
-                modelData,
-                scenarioWithOverrodeParallelism,
-                scenarioTestData,
-                collectingListener,
-                env
-              )
-            })
+            executionResult <- EitherT.right(IO(runJob(collectingListener, env)))
             _ <- EitherT(IO.fromFuture(IO {
               miniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)(
                 waitForJobIsFinishedRetryPolicy,
@@ -70,8 +75,8 @@ class FlinkMiniClusterScenarioTestRunner(
             }))
           } yield collectingListener.results).value
         }
-        // TODO: business error returned to endpoint
         .unsafeToFuture()
+        // TODO: business error returned to endpoint
         .map(_.toTry.get)
     }
   }

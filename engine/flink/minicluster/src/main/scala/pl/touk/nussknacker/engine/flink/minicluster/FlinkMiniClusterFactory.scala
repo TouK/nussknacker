@@ -112,17 +112,11 @@ class FlinkMiniClusterWithServices(
 ) extends AutoCloseable {
 
   def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
-    createStreamExecutionEnvironment(attached = false).use(env => IO(action(env))).unsafeRunSync()
+    createDetachedStreamExecutionEnvironment.use(env => IO(action(env))).unsafeRunSync()
   }
 
-  // TODO: attached variant shouldn't be used. It blocks current thread infinitely during execution.
-  //       Instead, we should use detached variant + waitForFinished
-  def withAttachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
-    createStreamExecutionEnvironment(attached = true).use(env => IO(action(env))).unsafeRunSync()
-  }
-
-  def createStreamExecutionEnvironment(attached: Boolean): Resource[IO, StreamExecutionEnvironment] = {
-    Resource.fromAutoCloseable(IO(streamExecutionEnvironmentFactory(attached)))
+  def createDetachedStreamExecutionEnvironment: Resource[IO, StreamExecutionEnvironment] = {
+    Resource.fromAutoCloseable(IO(streamExecutionEnvironmentFactory(false)))
   }
 
   override def close(): Unit = miniCluster.close()
