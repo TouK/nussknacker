@@ -161,8 +161,6 @@ trait PeriodicProcessesRepository {
 
   def fetchCanonicalProcess(
       periodicProcessId: PeriodicProcessId,
-      processName: ProcessName,
-      versionId: VersionId,
   ): Action[Option[CanonicalProcess]]
 
   def fetchProcessVersion(
@@ -558,8 +556,6 @@ class SlickPeriodicProcessesRepository(
 
   override def fetchCanonicalProcess(
       periodicProcessId: PeriodicProcessId,
-      processName: ProcessName,
-      versionId: VersionId,
   ): Action[Option[CanonicalProcess]] = {
     PeriodicProcessesWithDeploymentDetails
       .filter(p => p.id === periodicProcessId)

@@ -391,11 +391,9 @@ class PeriodicProcessService(
   ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
-      _            <- periodicProcessesRepository.markFinished(deployment.id).run
-      currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
-      canonicalProcessOpt <- periodicProcessesRepository
-        .fetchCanonicalProcess(deployment.periodicProcessId, processName, versionId)
-        .run
+      _                   <- periodicProcessesRepository.markFinished(deployment.id).run
+      currentState        <- periodicProcessesRepository.findProcessData(deployment.id).run
+      canonicalProcessOpt <- periodicProcessesRepository.fetchCanonicalProcess(deployment.periodicProcessId).run
       canonicalProcess = canonicalProcessOpt.getOrElse {
         throw new PeriodicProcessException(
           s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
@@ -490,9 +488,7 @@ class PeriodicProcessService(
       )
       processName = deploymentWithJarData.processName
       versionId   = deploymentWithJarData.versionId
-      canonicalProcessOpt <- periodicProcessesRepository
-        .fetchCanonicalProcess(deployment.periodicProcess.id, processName, versionId)
-        .run
+      canonicalProcessOpt <- periodicProcessesRepository.fetchCanonicalProcess(deployment.periodicProcess.id).run
       canonicalProcess = canonicalProcessOpt.getOrElse {
         throw new PeriodicProcessException(
           s"Could not fetch CanonicalProcess for processName=$processName, versionId=$versionId"

@@ -414,8 +414,6 @@ class SlickLegacyPeriodicProcessesRepository(
 
   override def fetchCanonicalProcess(
       periodicProcessId: PeriodicProcessId,
-      processName: ProcessName,
-      versionId: VersionId,
   ): Action[Option[CanonicalProcess]] = {
     PeriodicProcessesWithJson
       .filter(p => p.id === periodicProcessId)
