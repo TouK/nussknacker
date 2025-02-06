@@ -27,7 +27,7 @@ on:
 env:
   #we use this variable in ciRunSbt.sh
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
-  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+  CROSS_BUILD: false
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -63,7 +63,12 @@ jobs:
           NK_SNAPSHOT_VERSION=`cat version.sbt | sed -e 's/.*:= *"//' -e 's/" *//' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/"`
           echo "git_source_branch=$GIT_SOURCE_BRANCH" >> $GITHUB_OUTPUT
           echo "nk_snapshot_version=$NK_SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
-          echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
+          if [[ $CROSS_BUILD == 'true' ]]; then
+            echo "scala_version_matrix=[\"2.12\",\"2.13\"]" >> $GITHUB_OUTPUT
+          else
+            echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
+          fi
+
 
   build:
     name: Build
@@ -98,7 +103,7 @@ jobs:
       - name: Build
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
+        run: CROSS_BUILD=false ./ciRunSbt.sh Compile/compile Test/compile
       - name: Tar artifacts
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
