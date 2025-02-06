@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
-import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeType } from "../../../types";
 import NodeUtils from "../NodeUtils";
@@ -15,7 +14,6 @@ type NodeSwitcherProps = NodeGroupContentProps & {
 
 export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = [] }: NodeSwitcherProps) {
     const processDefinitionData = useSelector(getProcessDefinitionData);
-    const graph = useSelector(getScenarioGraph);
 
     const componentsToSelect = useMemo(() => {
         return processDefinitionData.componentGroups
