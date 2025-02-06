@@ -38,7 +38,7 @@ import scala.util.Try
  */
 class FragmentParametersDefinitionExtractor(
     classLoader: ClassLoader,
-    val classDefinitions: Set[ClassDefinition] = Set.empty
+    val classDefinitions: ClassDefinitionSet,
 ) {
 
   private val fragmentParameterTypingParser = new FragmentParameterTypingParser(classLoader, classDefinitions)

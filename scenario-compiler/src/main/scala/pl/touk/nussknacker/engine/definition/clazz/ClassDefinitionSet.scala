@@ -27,6 +27,10 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
 
   def all: Set[ClassDefinition] = classDefinitionsMap.values.toSet
 
+  def byName: Map[String, ClassDefinition] = classDefinitionsMap.values.map { definition =>
+    definition.clazzName.display -> definition
+  }.toMap
+
   def get(clazz: Class[_]): Option[ClassDefinition] = classDefinitionsMap.get(clazz)
 
   def isParameterlessMethodAllowed(targetClass: Class[_], methodName: String, staticMethodsOnly: Boolean): Boolean = {

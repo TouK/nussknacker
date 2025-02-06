@@ -23,7 +23,7 @@ import pl.touk.nussknacker.restmodel.definition.UIDefinitions
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{ComponentUiConfigMode, createUIScenarioPropertyConfig}
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
@@ -296,7 +296,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
-        model.modelDefinitionWithClasses.classDefinitions.all,
+        model.modelDefinitionWithClasses.classDefinitions,
         Some(_),
         DesignerWideComponentId.default(processingType.stringify, _)
       ),
@@ -315,7 +315,6 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ),
       fragmentPropertiesConfig = Map.empty,
       scenarioPropertiesConfig = Map.empty,
-      deploymentManager = MockDeploymentManager.create(),
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),
