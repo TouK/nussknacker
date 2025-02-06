@@ -17,7 +17,7 @@ import * as NotificationActions from "../../actions/notificationActions";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
-    const { openNodeWindow } = useWindows();
+    const { openNodeWindow, confirm } = useWindows();
     const dispatch = useDispatch();
     const userSettings = useSelector(getUserSettings);
     const pristine = useSelector(isPristine);
@@ -40,6 +40,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     ref={ref}
                     userSettings={userSettings}
                     showModalNodeDetails={openNodeWindow}
+                    showConfirmationWindow={confirm}
                     isPristine={pristine}
                     processCategory={processCategory}
                     loggedUser={loggedUser}
