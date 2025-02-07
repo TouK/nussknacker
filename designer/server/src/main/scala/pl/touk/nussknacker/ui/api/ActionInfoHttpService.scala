@@ -3,14 +3,20 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
-import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
+import pl.touk.nussknacker.ui.api.ActionInfoHttpService.{ActionInfoError, toUiParameters}
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{NoPermission, NoScenario}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints
+import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Dtos.{
+  UiActionNodeParametersDto,
+  UiActionParameterConfigDto,
+  UiActionParametersDto
+}
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.ActionInfoService
+import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.UiActionParameters
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import sttp.tapir.{Codec, CodecFormat}
@@ -47,12 +53,12 @@ class ActionInfoHttpService(
           actionInfoService = processingTypeToActionInfoService.forProcessingTypeUnsafe(
             scenarioWithDetails.processingType
           )
-          actionParameters = actionInfoService.getActionParameters(
+          actionNodeParameters = actionInfoService.getActionParameters(
             scenarioWithDetails.scenarioGraphUnsafe,
             scenarioWithDetails.processVersionUnsafe,
             scenarioWithDetails.isFragment
           )
-        } yield actionParameters
+        } yield toUiParameters(actionNodeParameters)
       }
   }
 
@@ -70,6 +76,25 @@ object ActionInfoHttpService {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
     }
 
+  }
+
+  private def toUiParameters(actionNodeParameters: UiActionParameters): UiActionParametersDto = {
+    val parameters = actionNodeParameters.actionNameToParameters.map { case (scenarioActionName, nodeParamsMap) =>
+      scenarioActionName -> nodeParamsMap.map { nodeParams =>
+        UiActionNodeParametersDto(
+          nodeParams.nodeId,
+          nodeParams.parameters.map { case (name, config) =>
+            name -> UiActionParameterConfigDto(
+              config.defaultValue,
+              config.editor,
+              config.label,
+              config.hintText
+            )
+          }
+        )
+      }
+    }
+    UiActionParametersDto(parameters)
   }
 
 }
