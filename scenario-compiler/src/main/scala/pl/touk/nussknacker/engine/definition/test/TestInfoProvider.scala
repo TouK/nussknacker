@@ -66,15 +66,6 @@ object TestInfoProvider {
 
   object ScenarioTestDataGenerationError {
 
-    final case class SourceCompilationError(nodeId: String, errors: List[ProcessCompilationError])
-        extends ScenarioTestDataGenerationError {
-      override def message: String = s"Source node can't be compiled. Problems: ${errors.mkString(", ")}"
-    }
-
-    final case class UnsupportedSourceError(nodeId: String) extends ScenarioTestDataGenerationError {
-      override def message: String = s"Source '$nodeId' doesn't support records preview"
-    }
-
     final case object NoDataGenerated extends ScenarioTestDataGenerationError {
       override def message: String = "No test data was generated"
     }
