@@ -5,7 +5,11 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{TestDataGenerationError, TestDataPreparationError}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ScenarioTestDataGenerationError,
+  SourceTestDataGenerationError,
+  TestDataPreparationError
+}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 
 trait TestInfoProvider {
@@ -18,7 +22,7 @@ trait TestInfoProvider {
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
       size: Int
-  ): Either[TestDataGenerationError, PreliminaryScenarioTestData]
+  ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData]
 
   def prepareTestData(
       preliminaryTestData: PreliminaryScenarioTestData,
@@ -29,7 +33,7 @@ trait TestInfoProvider {
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       size: Int
-  ): Either[TestDataGenerationError, PreliminaryScenarioTestData]
+  ): Either[SourceTestDataGenerationError, PreliminaryScenarioTestData]
 
 }
 
@@ -39,24 +43,43 @@ object TestInfoProvider {
     def message: String
   }
 
-  sealed trait TestDataGenerationError extends TestDataError
+  sealed trait SourceTestDataGenerationError extends TestDataError
 
-  object TestDataGenerationError {
+  object SourceTestDataGenerationError {
 
     final case class SourceCompilationError(nodeId: String, errors: List[ProcessCompilationError])
-        extends TestDataGenerationError {
+        extends SourceTestDataGenerationError {
       override def message: String = s"Source node can't be compiled. Problems: ${errors.mkString(", ")}"
     }
 
-    final case class UnsupportedSourceError(nodeId: String) extends TestDataGenerationError {
+    final case class UnsupportedSourceError(nodeId: String) extends SourceTestDataGenerationError {
       override def message: String = s"Source '$nodeId' doesn't support records preview"
     }
 
-    final case object NoDataGenerated extends TestDataGenerationError {
+    final case object NoDataGenerated extends SourceTestDataGenerationError {
       override def message: String = "No test data was generated"
     }
 
-    final case object NoSourcesWithTestDataGeneration extends TestDataGenerationError {
+  }
+
+  sealed trait ScenarioTestDataGenerationError extends TestDataError
+
+  object ScenarioTestDataGenerationError {
+
+    final case class SourceCompilationError(nodeId: String, errors: List[ProcessCompilationError])
+        extends ScenarioTestDataGenerationError {
+      override def message: String = s"Source node can't be compiled. Problems: ${errors.mkString(", ")}"
+    }
+
+    final case class UnsupportedSourceError(nodeId: String) extends ScenarioTestDataGenerationError {
+      override def message: String = s"Source '$nodeId' doesn't support records preview"
+    }
+
+    final case object NoDataGenerated extends ScenarioTestDataGenerationError {
+      override def message: String = "No test data was generated"
+    }
+
+    final case object NoSourcesWithTestDataGeneration extends ScenarioTestDataGenerationError {
       override def message: String = "Scenario doesn't have any valid source supporting test data generation"
     }
 

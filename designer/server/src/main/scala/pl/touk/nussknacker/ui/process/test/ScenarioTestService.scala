@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataGenerationError
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.SourceTestDataGenerationError
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -19,8 +19,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError.TooManySamplesRequestedError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError.TooManySamplesRequestedError
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -91,26 +91,24 @@ class ScenarioTestService(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       size: Int
-  ): Either[ScenarioTestError, RawScenarioTestData] = {
+  ): Either[SourceTestError, RawScenarioTestData] = {
     for {
       _ <- validateSampleSize(size)
       result <- testInfoProvider
         .generateTestDataForSource(metaData, sourceNodeData, size)
         .left
         .map {
-          case TestDataGenerationError.SourceCompilationError(nodeId, errors) =>
-            ScenarioTestError.SourceCompilationError(nodeId, errors.map(_.toString))
-          case TestDataGenerationError.UnsupportedSourceError(nodeId) =>
-            ScenarioTestError.UnsupportedSourcePreviewError(nodeId)
-          case TestDataGenerationError.NoDataGenerated =>
-            ScenarioTestError.NoDataGeneratedError
-          case TestDataGenerationError.NoSourcesWithTestDataGeneration =>
-            ScenarioTestError.NoSourcesWithTestDataGenerationError
+          case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
+            SourceTestError.SourceCompilationError(nodeId, errors.map(_.toString))
+          case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
+            SourceTestError.UnsupportedSourcePreviewError(nodeId)
+          case SourceTestDataGenerationError.NoDataGenerated =>
+            SourceTestError.NoDataGeneratedError
         }
       rawTestData <- preliminaryScenarioTestDataSerDe
         .serialize(result)
         .left
-        .map(msg => ScenarioTestError.SerializationError(s"Failed to serialize test data: $msg"))
+        .map(msg => SourceTestError.SerializationError(s"Failed to serialize test data: $msg"))
     } yield rawTestData
   }
 
@@ -165,7 +163,7 @@ class ScenarioTestService(
     Either.cond(
       size <= testDataSettings.maxSamplesCount,
       (),
-      ScenarioTestError.TooManySamplesRequestedError(testDataSettings.maxSamplesCount)
+      SourceTestError.TooManySamplesRequestedError(testDataSettings.maxSamplesCount)
     )
   }
 
@@ -220,15 +218,14 @@ class ScenarioTestService(
 }
 
 object ScenarioTestService {
-  sealed trait ScenarioTestError
+  sealed trait SourceTestError
 
-  object ScenarioTestError {
-    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends ScenarioTestError
-    final case class UnsupportedSourcePreviewError(nodeId: String)                extends ScenarioTestError
-    case object NoDataGeneratedError                                              extends ScenarioTestError
-    case object NoSourcesWithTestDataGenerationError                              extends ScenarioTestError
-    final case class SerializationError(message: String)                          extends ScenarioTestError
-    final case class TooManySamplesRequestedError(maxSamples: Int)                extends ScenarioTestError
+  object SourceTestError {
+    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
+    final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
+    case object NoDataGeneratedError                                              extends SourceTestError
+    final case class SerializationError(message: String)                          extends SourceTestError
+    final case class TooManySamplesRequestedError(maxSamples: Int)                extends SourceTestError
   }
 
 }

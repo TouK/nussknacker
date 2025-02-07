@@ -59,7 +59,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoDataGenerated,
   NoProcessingType,
   NoScenario,
-  NoSourcesWithTestDataGeneration,
   Serialization,
   SourceCompilation,
   TooManySamplesRequested,
@@ -67,7 +66,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 }
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Examples._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOuts._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
@@ -229,14 +228,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          sourceCompilationErrorOutput,
-          unsupportedSourcePreviewErrorOutput,
-          noDataGeneratedErrorOutput,
-          noSourcesWithTestDataGenerationErrorOutput,
-          serializationErrorOutput,
           scenarioNotFoundErrorOutput,
-          invalidNodeTypeErrorOutput,
-          tooManySamplesErrorOutput
+          malformedTypingResultErrorOutput
         )
       )
       .withSecurity(auth)
@@ -405,14 +398,50 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          sourceCompilationErrorOutput,
-          unsupportedSourcePreviewErrorOutput,
-          noDataGeneratedErrorOutput,
-          noSourcesWithTestDataGenerationErrorOutput,
-          serializationErrorOutput,
-          scenarioNotFoundErrorOutput,
-          invalidNodeTypeErrorOutput,
-          tooManySamplesErrorOutput
+          oneOfVariant[BadRequestNodesError](
+            BadRequest,
+            plainBody[BadRequestNodesError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Source compilation error"),
+                    value = SourceCompilation("sourceId", List("Invalid source configuration"))
+                  ),
+                  Example.of(
+                    summary = Some("Unsupported source preview"),
+                    value = UnsupportedSourcePreview("sourceId")
+                  ),
+                  Example.of(
+                    summary = Some("Invalid node type"),
+                    value = InvalidNodeType("Filter", "Source")
+                  ),
+                  Example.of(
+                    summary = Some("Too many samples requested"),
+                    value = TooManySamplesRequested(100)
+                  ),
+                  Example.of(
+                    summary = Some("Serialization error"),
+                    value = Serialization("Failed to serialize test data")
+                  )
+                )
+              )
+          ),
+          oneOfVariant[NotFoundNodesError](
+            NotFound,
+            plainBody[NotFoundNodesError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("No scenario found"),
+                    value = NoScenario(ProcessName("'example scenario'"))
+                  ),
+                  Example.of(
+                    summary = Some("No test data generated"),
+                    value = NoDataGenerated
+                  )
+                )
+              )
+          )
         )
       )
       .withSecurity(auth)
@@ -602,7 +631,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
 object NodesApiEndpoints {
 
-  object Examples {
+  object ErrorOuts {
 
     val scenarioNotFoundErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
       oneOfVariantFromMatchType(
@@ -678,21 +707,9 @@ object NodesApiEndpoints {
           )
       )
 
-    val noSourcesWithTestDataGenerationErrorOutput: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[NoSourcesWithTestDataGeneration.type]
-          .example(
-            Example.of(
-              summary = Some("No sources support test data"),
-              value = NoSourcesWithTestDataGeneration
-            )
-          )
-      )
-
     val serializationErrorOutput: EndpointOutput.OneOfVariant[Serialization] =
       oneOfVariantFromMatchType(
-        InternalServerError,
+        BadRequest,
         plainBody[Serialization]
           .example(
             Example.of(
@@ -1609,19 +1626,46 @@ object NodesApiEndpoints {
     }
 
     sealed trait NodesError
+    sealed trait BadRequestNodesError extends NodesError
+    sealed trait NotFoundNodesError   extends NodesError
+    sealed trait ForbiddenNodesError  extends NodesError
 
     object NodesError {
-      final case class SourceCompilation(nodeId: String, errors: List[String])   extends NodesError
-      final case class UnsupportedSourcePreview(nodeId: String)                  extends NodesError
-      final case object NoDataGenerated                                          extends NodesError
-      final case object NoSourcesWithTestDataGeneration                          extends NodesError
-      final case class Serialization(msg: String)                                extends NodesError
-      final case class InvalidNodeType(expectedType: String, actualType: String) extends NodesError
-      final case class TooManySamplesRequested(maxSamples: Int)                  extends NodesError
-      final case class NoScenario(scenarioName: ProcessName)                     extends NodesError
-      final case class NoProcessingType(processingType: ProcessingType)          extends NodesError
-      final case object NoPermission                      extends NodesError with CustomAuthorizationError
-      final case class MalformedTypingResult(msg: String) extends NodesError
+      // 400 Bad Request
+      case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
+      case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
+      case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
+      case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
+      case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
+      case class Serialization(msg: String)                                extends BadRequestNodesError
+
+      // 404 Not Found
+      case class NoScenario(scenarioName: ProcessName)            extends NotFoundNodesError
+      case object NoDataGenerated                                 extends NotFoundNodesError
+      case class NoProcessingType(processingType: ProcessingType) extends NotFoundNodesError
+
+      // 500 Internal Server Error
+
+      // 403 Forbidden
+      case object NoPermission extends ForbiddenNodesError with CustomAuthorizationError
+
+      implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
+          case SourceCompilation(nodeId, errors) =>
+            s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
+          case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
+          case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
+          case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
+          case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
+          case Serialization(msg)                        => s"Error during serialization: ${msg}"
+        }
+
+      implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
+          case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
+          case NoDataGenerated                  => "No test data was generated"
+          case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
+        }
 
       implicit val sourceCompilationCodec: Codec[String, SourceCompilation, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[SourceCompilation](e =>
@@ -1638,13 +1682,6 @@ object NodesApiEndpoints {
       implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
           "No test data was generated"
-        )
-      }
-
-      implicit val noSourcesWithTestDataGenerationCodec
-          : Codec[String, NoSourcesWithTestDataGeneration.type, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoSourcesWithTestDataGeneration.type](_ =>
-          "No sources available that support test data generation"
         )
       }
 

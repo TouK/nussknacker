@@ -13,7 +13,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{TestDataGenerationError, TestDataPreparationError}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ScenarioTestDataGenerationError,
+  SourceTestDataGenerationError,
+  TestDataPreparationError
+}
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.ListUtil
@@ -108,10 +112,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
       size: Int
-  ): Either[TestDataGenerationError, PreliminaryScenarioTestData] = {
+  ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData] = {
     for {
       generators <- prepareTestDataGenerators(processVersion, scenario)
-      result     <- createPreliminaryTestData(generators, size)
+        .toRight(ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration)
+      result <- createPreliminaryTestData(generators, size)
+        .toRight(ScenarioTestDataGenerationError.NoDataGenerated)
     } yield result
   }
 
@@ -119,49 +125,45 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       size: Int
-  ): Either[TestDataGenerationError, PreliminaryScenarioTestData] = {
+  ): Either[SourceTestDataGenerationError, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
 
     for {
       compiledSource <- compileSourceNode(sourceNodeData)(jobData, nodeId).toEither.left.map(errors =>
-        TestDataGenerationError.SourceCompilationError(sourceNodeData.id, errors.toList)
+        SourceTestDataGenerationError.SourceCompilationError(sourceNodeData.id, errors.toList)
       )
       testDataGenerator <- compiledSource
         .cast[TestDataGenerator]
-        .toRight(TestDataGenerationError.UnsupportedSourceError(sourceNodeData.id))
+        .toRight(SourceTestDataGenerationError.UnsupportedSourceError(sourceNodeData.id))
       result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), size)
+        .toRight(SourceTestDataGenerationError.NoDataGenerated)
     } yield result
   }
 
   private def createPreliminaryTestData(
       generators: NonEmptyList[(NodeId, TestDataGenerator)],
       size: Int
-  ): Either[TestDataGenerationError, PreliminaryScenarioTestData] = {
+  ): Option[PreliminaryScenarioTestData] = {
     val generatedData          = generateTestData(generators, size)
     val sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
     val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
     NonEmptyList
       .fromList(preliminaryTestRecords)
-      .map(Right(_))
-      .getOrElse(Left(TestDataGenerationError.NoDataGenerated))
       .map(PreliminaryScenarioTestData.apply)
   }
 
   private def prepareTestDataGenerators(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Either[TestDataGenerationError, NonEmptyList[(NodeId, TestDataGenerator)]] = {
+  ): Option[NonEmptyList[(NodeId, TestDataGenerator)]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
       sourceObj         <- compileSourceNode(source)(jobData, NodeId(source.id)).toList
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
-    NonEmptyList
-      .fromList(generatorsForSourcesSupportingTestDataGeneration)
-      .map(Right(_))
-      .getOrElse(Left(TestDataGenerationError.NoSourcesWithTestDataGeneration))
+    NonEmptyList.fromList(generatorsForSourcesSupportingTestDataGeneration)
   }
 
   private def compileSourceNode(

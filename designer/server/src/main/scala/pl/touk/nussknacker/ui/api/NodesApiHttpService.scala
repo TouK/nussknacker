@@ -23,7 +23,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoPermission,
   NoProcessingType,
   NoScenario,
-  NoSourcesWithTestDataGeneration,
   Serialization,
   SourceCompilation,
   TooManySamplesRequested,
@@ -48,8 +47,8 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError._
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError._
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -185,8 +184,6 @@ class NodesApiHttpService(
                   Future(Left(UnsupportedSourcePreview(nodeId)))
                 case Left(NoDataGeneratedError) =>
                   Future(Left(NoDataGenerated))
-                case Left(NoSourcesWithTestDataGenerationError) =>
-                  Future(Left(NoSourcesWithTestDataGeneration))
                 case Left(SerializationError(message)) =>
                   Future(Left(Serialization(message)))
                 case Left(TooManySamplesRequestedError(maxSamples)) =>
