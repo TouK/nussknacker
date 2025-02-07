@@ -11,11 +11,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   FlinkMiniClusterScenarioStateVerifier,
   FlinkMiniClusterScenarioTestRunner
 }
-import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterConfig, FlinkMiniClusterFactory}
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps.DurationOps
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
@@ -24,9 +25,8 @@ import scala.concurrent.Future
 abstract class FlinkDeploymentManager(
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
-    shouldVerifyBeforeDeploy: Boolean,
     mainClassName: String,
-    scenarioTestingConfig: FlinkMiniClusterConfig
+    flinkConfig: FlinkConfig
 ) extends DeploymentManager
     with LazyLogging {
 
@@ -35,20 +35,25 @@ abstract class FlinkDeploymentManager(
   private val miniClusterWithServicesOpt = {
     FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
       modelData.modelClassLoader,
-      scenarioTestingConfig
+      flinkConfig.miniCluster,
+      flinkConfig.scenarioTesting,
+      flinkConfig.scenarioStateVerification
     )
   }
 
   private val testRunner = new FlinkMiniClusterScenarioTestRunner(
     modelData,
     miniClusterWithServicesOpt
-      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioTesting)
+      .filter(_ => flinkConfig.scenarioTesting.reuseSharedMiniCluster),
+    flinkConfig.scenarioTesting.parallelism,
+    flinkConfig.scenarioTesting.timeout.toPausePolicy
   )
 
   private val verification = new FlinkMiniClusterScenarioStateVerifier(
     modelData,
     miniClusterWithServicesOpt
-      .filter(_ => scenarioTestingConfig.reuseMiniClusterForScenarioStateVerification)
+      .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster),
+    flinkConfig.scenarioStateVerification.timeout.toPausePolicy
   )
 
   /**
@@ -243,9 +248,10 @@ abstract class FlinkDeploymentManager(
       canonicalProcess: CanonicalProcess,
       processVersion: ProcessVersion
   ): Future[Unit] =
-    if (shouldVerifyBeforeDeploy)
-      Future.fromTry(verification.verify(processVersion, canonicalProcess, savepointPath))
-    else Future.successful(())
+    if (flinkConfig.scenarioStateVerification.enabled)
+      verification.verify(processVersion, canonicalProcess, savepointPath)
+    else
+      Future.successful(())
 
   private def stopSavingSavepoint(
       processVersion: ProcessVersion,

@@ -46,8 +46,11 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       definitionContext: ComponentDefinitionContext,
       classDefinitions: ClassDefinitionSet,
   ): ModelDefinition = {
-    val usedSourceIds = process.allStartNodes
-      .map(_.head.data)
+    val allStartNodesData = process.allStartNodes.toList
+      .flatMap(_.headOption)
+      .map(_.data)
+
+    val usedSourceIds = allStartNodesData
       .collect { case source: Source =>
         ComponentIdExtractor.fromScenarioNode(source)
       }
@@ -71,7 +74,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     )
 
     val stubbedSourceForFragments =
-      process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
+      allStartNodesData.collect { case frag: FragmentInputDefinition =>
         // We create source definition only to reuse prepareSourceFactory method.
         // Source will have fragment component type to avoid collisions with normal sources
         val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)

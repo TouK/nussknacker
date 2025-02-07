@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import _root_.sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import akka.actor.ActorSystem
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.effect.unsafe.IORuntime
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
@@ -15,15 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{
-  ConfigWithUnresolvedVersion,
-  DeploymentManagerDependencies,
-  ModelData,
-  ModelDependencies,
-  ProcessingTypeConfig
-}
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 
 object FlinkStreamingDeploymentManagerProviderHelper {
 
@@ -51,6 +44,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
       actorSystem.dispatcher,
+      IORuntime.global,
       actorSystem,
       backend
     )

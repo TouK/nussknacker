@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting
 
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
-import org.apache.flink.runtime.JobException
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -25,7 +26,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunnerSpec._
+import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps.JobStateCheckError
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunnerSpec.{
+  fragmentWithValidationName,
+  processWithFragmentParameterValidation
+}
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -35,13 +42,11 @@ import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-
-import ExecutionContext.Implicits.global
 
 class FlinkMiniClusterScenarioTestRunnerSpec
     extends AnyWordSpec
@@ -50,10 +55,13 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
-    with PatientScalaFutures {
+    with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+  private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val ioRuntime: IORuntime = IORuntime.global
 
   private val scenarioName      = "proc1"
   private val sourceNodeId      = "id"
@@ -82,6 +90,35 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   }
 
   private def runTests(useIOMonadInInterpreter: Boolean): Unit = {
+    "should wait configured amount of time for scenario finishing and cancel job if it is not finished during this time" in {
+      val sleepSecondsInScenario = (patienceConfig.timeout * 2).toSeconds
+      val process =
+        ScenarioBuilder
+          .streaming(scenarioName)
+          .source(sourceNodeId, "input")
+          .customNodeNoOutput("sleep", "sleep", "seconds" -> sleepSecondsInScenario.toString.spel)
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
+
+      val testRunner =
+        prepareTestRunner(useIOMonadInInterpreter, waitForJobIsFinishedRetryPolicy = 0.seconds.toPausePolicy)
+
+      def runTests = testRunner
+        .runTests(
+          process,
+          ScenarioTestData(
+            List(
+              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
+            )
+          )
+        )
+        // We have to wait a shorter time than scenario total time to show limiting of scenario execution time
+        .futureValue(Timeout((sleepSecondsInScenario - 1).seconds))
+
+      intercept[TestFailedException](runTests) should matchPattern {
+        case ex: TestFailedException if ex.getCause.isInstanceOf[JobStateCheckError] =>
+      }
+    }
+
     "be able to return test results" in {
       val process =
         ScenarioBuilder
@@ -436,14 +473,16 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .emptySink("out", "monitor")
 
       val runner = prepareTestRunner(useIOMonadInInterpreter)
-      runner
+      def runTests = runner
         .runTests(
           process,
           ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
         )
-        .failed
         .futureValue
-        .getCause shouldBe a[JobException]
+
+      intercept[TestFailedException](runTests) should matchPattern {
+        case e: TestFailedException if e.getCause.isInstanceOf[JobStateCheckError] =>
+      }
     }
 
     "handle json input" in {
@@ -892,7 +931,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       useIOMonadInInterpreter: Boolean,
       enrichDefaultConfig: Config => Config = identity,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
-      useLegacySingleUseMiniCluster: Boolean = false
+      useLegacySingleUseMiniCluster: Boolean = false,
+      waitForJobIsFinishedRetryPolicy: retry.Policy =
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.second, patienceConfig.interval * 2)
   ): FlinkMiniClusterScenarioTestRunner = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
@@ -906,7 +947,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     )
     new FlinkMiniClusterScenarioTestRunner(
       modelData,
-      Some(miniClusterWithServices).filterNot(_ => useLegacySingleUseMiniCluster)
+      Some(miniClusterWithServices).filterNot(_ => useLegacySingleUseMiniCluster),
+      parallelism = 1,
+      waitForJobIsFinishedRetryPolicy
     )
   }
 
