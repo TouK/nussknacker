@@ -78,8 +78,9 @@ export const getTestParameters = createSelector(getGraph, (g) => g.testFormParam
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
-export const getStickyNotes = createSelector([getGraph, getStickyNotesSettings], (g, settings) =>
-   (settings?.enabled ? g.stickyNotes : []) as StickyNote[],
+export const getStickyNotes = createSelector(
+    [getGraph, getStickyNotesSettings],
+    (g, settings) => (settings?.enabled ? g.stickyNotes || ([] as StickyNote[]) : []) as StickyNote[],
 );
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],
