@@ -118,7 +118,6 @@ object ProcessingTypeData {
               PeriodicDeploymentManagerDecorator.decorate(
                 underlying = deploymentManager,
                 schedulingSupported = supported,
-                modelData = modelData,
                 deploymentConfig = deploymentConfig,
                 dependencies = deploymentManagerDependencies,
                 dbRef = dbRef,

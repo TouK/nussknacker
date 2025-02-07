@@ -605,7 +605,8 @@ class PeriodicProcessServiceIntegrationTest
     val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
+    activities.length shouldBe 2
+    activities should contain(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
         scenarioActivityId = firstActivity.scenarioActivityId,
@@ -618,7 +619,9 @@ class PeriodicProcessServiceIntegrationTest
         createdAt = firstActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
-      ),
+      )
+    )
+    activities should contain(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
         scenarioActivityId = secondActivity.scenarioActivityId,
@@ -631,7 +634,7 @@ class PeriodicProcessServiceIntegrationTest
         createdAt = secondActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
-      ),
+      )
     )
   }
 

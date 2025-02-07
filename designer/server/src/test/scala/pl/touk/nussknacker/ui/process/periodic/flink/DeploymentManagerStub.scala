@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
+import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
@@ -8,13 +9,20 @@ import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentId
 
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
 
-  var jobStatus: Map[ProcessName, List[StatusDetails]] = Map.empty
+  val jobStatus: Cache[ProcessName, List[StatusDetails]] = Caffeine
+    .newBuilder()
+    .build[ProcessName, List[StatusDetails]]
+
+  def getJobStatus(processName: ProcessName): Option[List[StatusDetails]] = {
+    Option(jobStatus.getIfPresent(processName))
+  }
 
   def setEmptyStateStatus(): Unit = {
-    jobStatus = Map.empty
+    jobStatus.invalidateAll()
   }
 
   def addStateStatus(
@@ -22,8 +30,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       status: StateStatus,
       deploymentIdOpt: Option[PeriodicProcessDeploymentId]
   ): Unit = {
-    jobStatus = jobStatus ++ Map(
-      processName -> List(
+    jobStatus.put(
+      processName,
+      List(
         StatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           externalDeploymentId = Some(ExternalDeploymentId("1")),
@@ -42,8 +51,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       status: StateStatus,
       deploymentIdOpt: Option[PeriodicProcessDeploymentId]
   ): Unit = {
-    jobStatus = Map(
-      processName -> List(
+    jobStatus.put(
+      processName,
+      List(
         StatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           externalDeploymentId = Some(ExternalDeploymentId("1")),
@@ -77,7 +87,7 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(jobStatus.get(name).toList.flatten))
+    Future.successful(WithDataFreshnessStatus.fresh(getJobStatus(name).toList.flatten))
   }
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
@@ -90,7 +100,7 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       override def getAllProcessesStates()(
           implicit freshnessPolicy: DataFreshnessPolicy
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
-        Future.successful(WithDataFreshnessStatus.fresh(jobStatus))
+        Future.successful(WithDataFreshnessStatus.fresh(jobStatus.asMap().asScala.toMap))
 
     }
 

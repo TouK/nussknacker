@@ -2,43 +2,32 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus
-import net.ceedubs.ficus.readers.ValueReader
 import org.apache.flink.api.common.JobID
-import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExecutionPerformer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkScheduledExecutionPerformer.jarFileNameRuntimeParam
-import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
+import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
+import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 
 object FlinkScheduledExecutionPerformer {
 
   val jarFileNameRuntimeParam = "jarFileName"
 
   def create(
+      flinkClient: FlinkClient,
       modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      config: Config,
+      rawSchedulingConfig: Config,
   ): ScheduledExecutionPerformer = {
-    import dependencies._
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    implicit val flinkConfigurationValueReader: ValueReader[Configuration] =
-      Ficus.mapValueReader[String].map(map => Configuration.fromMap(map.asJava))
-    val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkScheduledExecutionPerformer(
-      flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
-      jarsDir = Paths.get(config.getString("scheduling.jarsDir")),
+      flinkClient = flinkClient,
+      jarsDir = Paths.get(rawSchedulingConfig.getString("jarsDir")),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
     )
