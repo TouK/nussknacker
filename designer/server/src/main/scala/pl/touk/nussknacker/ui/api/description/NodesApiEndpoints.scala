@@ -76,7 +76,7 @@ import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectTyping
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedTaggedSchemaHelper.typedTaggedTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedUnionSchemaHelper.typedUnionTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.UnknownSchemaHelper.unknownTypeSchema
-import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
 import sttp.tapir.SchemaType.{SProduct, SProductField, SString, SchemaWithValue}
@@ -133,7 +133,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
         )
       )
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(oneOf[NodesError](scenarioNotFoundErrorOutput))
       .withSecurity(auth)
   }
 
@@ -228,12 +228,13 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          sourceCompilationExample,
-          unsupportedSourcePreviewExample,
-          noDataGeneratedExample,
-          noSourcesWithTestDataGenerationExample,
-          serializationExample,
-          noScenarioExample
+          sourceCompilationErrorOutput,
+          unsupportedSourcePreviewErrorOutput,
+          noDataGeneratedErrorOutput,
+          noSourcesWithTestDataGenerationErrorOutput,
+          serializationErrorOutput,
+          scenarioNotFoundErrorOutput,
+          invalidNodeTypeErrorOutput
         )
       )
       .withSecurity(auth)
@@ -268,7 +269,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
         )
       )
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(oneOf[NodesError](scenarioNotFoundErrorOutput))
       .withSecurity(auth)
   }
 
@@ -355,7 +356,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
         )
       )
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(oneOf[NodesError](scenarioNotFoundErrorOutput))
       .withSecurity(auth)
   }
 
@@ -402,13 +403,13 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          sourceCompilationExample,
-          unsupportedSourcePreviewExample,
-          noDataGeneratedExample,
-          noSourcesWithTestDataGenerationExample,
-          serializationExample,
-          noScenarioExample,
-          invalidNodeTypeExample
+          sourceCompilationErrorOutput,
+          unsupportedSourcePreviewErrorOutput,
+          noDataGeneratedErrorOutput,
+          noSourcesWithTestDataGenerationErrorOutput,
+          serializationErrorOutput,
+          scenarioNotFoundErrorOutput,
+          invalidNodeTypeErrorOutput
         )
       )
       .withSecurity(auth)
@@ -492,8 +493,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          noProcessingTypeExample,
-          malformedTypingResultExample
+          processingTypeNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
         )
       )
       .withSecurity(auth)
@@ -573,26 +574,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          noProcessingTypeExample,
-          malformedTypingResultExample
+          processingTypeNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
         )
       )
       .withSecurity(auth)
   }
-
-  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[NodesError, NodesError] =
-    oneOf[NodesError](
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoScenario]
-          .example(
-            Example.of(
-              summary = Some("No scenario {scenarioName} found"),
-              value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
-      )
-    )
 
   private val validPropertiesAdditionalFields =
     ProcessAdditionalFields(
@@ -614,7 +601,7 @@ object NodesApiEndpoints {
 
   object Examples {
 
-    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
+    val scenarioNotFoundErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoScenario]
@@ -626,7 +613,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
+    val malformedTypingResultErrorOutput: EndpointOutput.OneOfVariant[MalformedTypingResult] =
       oneOfVariantFromMatchType(
         BadRequest,
         plainBody[MalformedTypingResult]
@@ -640,7 +627,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
+    val processingTypeNotFoundErrorOutput: EndpointOutput.OneOfVariant[NoProcessingType] =
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoProcessingType]
@@ -652,7 +639,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val sourceCompilationExample: EndpointOutput.OneOfVariant[SourceCompilation] =
+    val sourceCompilationErrorOutput: EndpointOutput.OneOfVariant[SourceCompilation] =
       oneOfVariantFromMatchType(
         BadRequest,
         plainBody[SourceCompilation]
@@ -664,9 +651,9 @@ object NodesApiEndpoints {
           )
       )
 
-    val unsupportedSourcePreviewExample: EndpointOutput.OneOfVariant[UnsupportedSourcePreview] =
+    val unsupportedSourcePreviewErrorOutput: EndpointOutput.OneOfVariant[UnsupportedSourcePreview] =
       oneOfVariantFromMatchType(
-        NotFound,
+        BadRequest,
         plainBody[UnsupportedSourcePreview]
           .example(
             Example.of(
@@ -676,7 +663,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val noDataGeneratedExample: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
+    val noDataGeneratedErrorOutput: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoDataGenerated.type]
@@ -688,9 +675,9 @@ object NodesApiEndpoints {
           )
       )
 
-    val noSourcesWithTestDataGenerationExample: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
+    val noSourcesWithTestDataGenerationErrorOutput: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
       oneOfVariantFromMatchType(
-        NotFound,
+        BadRequest,
         plainBody[NoSourcesWithTestDataGeneration.type]
           .example(
             Example.of(
@@ -700,9 +687,9 @@ object NodesApiEndpoints {
           )
       )
 
-    val serializationExample: EndpointOutput.OneOfVariant[Serialization] =
+    val serializationErrorOutput: EndpointOutput.OneOfVariant[Serialization] =
       oneOfVariantFromMatchType(
-        BadRequest,
+        InternalServerError,
         plainBody[Serialization]
           .example(
             Example.of(
@@ -712,7 +699,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val invalidNodeTypeExample: EndpointOutput.OneOfVariant[InvalidNodeType] =
+    val invalidNodeTypeErrorOutput: EndpointOutput.OneOfVariant[InvalidNodeType] =
       oneOfVariantFromMatchType(
         BadRequest,
         plainBody[InvalidNodeType]
