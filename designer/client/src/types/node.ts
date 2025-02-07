@@ -21,6 +21,7 @@ export type NodeType<F extends Field = Field> = {
         description?: string;
         layoutData?: LayoutData;
         virtualNode?: string;
+        componentId?: string;
     };
     parameters?: Parameter[];
     branchParameters?: BranchParams[];
