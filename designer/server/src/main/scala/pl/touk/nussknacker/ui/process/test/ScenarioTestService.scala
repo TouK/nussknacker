@@ -68,14 +68,6 @@ class ScenarioTestService(
       .toList
   }
 
-  private def validateSampleSize(size: Int): Either[TooManySamplesRequestedError, Unit] = {
-    Either.cond(
-      size <= testDataSettings.maxSamplesCount,
-      (),
-      ScenarioTestError.TooManySamplesRequestedError(testDataSettings.maxSamplesCount)
-    )
-  }
-
   def generateData(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
@@ -167,6 +159,14 @@ class ScenarioTestService(
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+  }
+
+  private def validateSampleSize(size: Int): Either[TooManySamplesRequestedError, Unit] = {
+    Either.cond(
+      size <= testDataSettings.maxSamplesCount,
+      (),
+      ScenarioTestError.TooManySamplesRequestedError(testDataSettings.maxSamplesCount)
+    )
   }
 
   private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
