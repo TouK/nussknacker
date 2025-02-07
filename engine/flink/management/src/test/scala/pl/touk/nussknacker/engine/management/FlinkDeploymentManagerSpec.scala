@@ -40,7 +40,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO move some tests to FlinkHttpClientTest
-class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
@@ -78,7 +78,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       statusCode: StatusCode = StatusCode.Ok,
       exceptionOnDeploy: Option[Exception] = None,
       freeSlots: Int = 1
-  ): FlinkRestManager =
+  ): DeploymentManager =
     createManagerWithHistory(
       statuses,
       acceptSavepoint,
@@ -101,7 +101,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       statusCode: StatusCode = StatusCode.Ok,
       exceptionOnDeploy: Option[Exception] = None,
       freeSlots: Int = 1
-  ): (FlinkRestManager, mutable.Buffer[HistoryEntry]) = {
+  ): (DeploymentManager, mutable.Buffer[HistoryEntry]) = {
     import scala.jdk.CollectionConverters._
     val history: mutable.Buffer[HistoryEntry] =
       Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
@@ -546,7 +546,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   private def createDeploymentManager(
       config: FlinkConfig = defaultConfig,
       sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
-  ): FlinkRestManager = {
+  ): DeploymentManager = {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
@@ -556,12 +556,11 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       ActorSystem(getClass.getSimpleName),
       sttpBackend
     )
-    new FlinkRestManager(
-      client = HttpFlinkClient.createUnsafe(config)(sttpBackend, ExecutionContext.global),
-      config = config,
-      modelData = LocalModelData(ConfigFactory.empty, List.empty),
+    new FlinkDeploymentManager(
+      LocalModelData(ConfigFactory.empty, List.empty),
       deploymentManagerDependencies,
-      mainClassName = "UNUSED"
+      config,
+      HttpFlinkClient.createUnsafe(config)(sttpBackend, ExecutionContext.global),
     )
   }
 

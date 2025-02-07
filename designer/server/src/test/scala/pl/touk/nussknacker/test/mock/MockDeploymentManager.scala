@@ -9,22 +9,17 @@ import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
 import sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
-import pl.touk.nussknacker.engine.management.{
-  FlinkConfig,
-  FlinkDeploymentManager,
-  FlinkStreamingDeploymentManagerProvider
-}
+import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import shapeless.syntax.typeable.typeableOps
+import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 
 import java.time.Instant
 import java.util.UUID
@@ -35,9 +30,6 @@ import scala.util.Try
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
 object MockDeploymentManager {
-  val savepointPath     = "savepoints/123-savepoint"
-  val stopSavepointPath = "savepoints/246-stop-savepoint"
-  val maxParallelism    = 10
 
   def create(
       defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
@@ -46,7 +38,6 @@ object MockDeploymentManager {
       actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
       scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
-      deploymentManagersClassLoader: Option[DeploymentManagersClassLoader] = None
   ): MockDeploymentManager = {
     new MockDeploymentManager(
       defaultProcessStateStatus,
@@ -88,21 +79,21 @@ class MockDeploymentManager private (
         ActorSystem("MockDeploymentManager"),
         SttpBackendStub.asynchronousFuture
       ),
-      mainClassName = "UNUSED",
-      flinkConfig = FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false))
+      FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
+      FlinkClientStub
     ) {
 
-  import MockDeploymentManager._
+  private val deployResult = LinkedHashMultimap.create[ProcessName, Future[Option[ExternalDeploymentId]]]
 
-  private def prepareProcessState(status: StateStatus, deploymentId: DeploymentId): List[StatusDetails] =
-    List(prepareProcessState(status, deploymentId, Some(ProcessVersion.empty)))
+  private var cancelResult: Future[Unit] = Future.successful(())
 
-  private def prepareProcessState(
-      status: StateStatus,
-      deploymentId: DeploymentId,
-      version: Option[ProcessVersion]
-  ): StatusDetails =
-    StatusDetails(status, Some(deploymentId), Some(ExternalDeploymentId("1")), version)
+  private val managerProcessStates = new ConcurrentHashMap[ProcessName, List[StatusDetails]]
+
+  @volatile
+  private var delayBeforeStateReturn: FiniteDuration = 0 seconds
+
+  // queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
+  val deploys = new ConcurrentLinkedQueue[ProcessName]()
 
   // Pass correct deploymentId
   private def fallbackDeploymentId = DeploymentId(UUID.randomUUID().toString)
@@ -123,6 +114,15 @@ class MockDeploymentManager private (
       )
     }
   }
+
+  private def prepareProcessState(status: StateStatus, deploymentId: DeploymentId): List[StatusDetails] =
+    List(prepareProcessState(status, deploymentId, Some(ProcessVersion.empty)))
+
+  private def prepareProcessState(
+      status: StateStatus,
+      deploymentId: DeploymentId,
+      version: Option[ProcessVersion]
+  ): StatusDetails = StatusDetails(status, Some(deploymentId), Some(ExternalDeploymentId("1")), version)
 
   override protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
@@ -157,22 +157,16 @@ class MockDeploymentManager private (
     } yield externalDeploymentId
   }
 
-  override protected def waitForDuringDeployFinished(
-      processName: ProcessName,
-      deploymentId: ExternalDeploymentId
-  ): Future[Unit] = Future.successful(())
+  override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
 
-  private val deployResult = LinkedHashMultimap.create[ProcessName, Future[Option[ExternalDeploymentId]]]
+  // We override this field, because currently, this mock bases on fallback for not defined scenarios states.
+  // To make it work with state stateQueryForAllScenarios we should remove this fallback
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 
-  private var cancelResult: Future[Unit] = Future.successful(())
-
-  private val managerProcessStates = new ConcurrentHashMap[ProcessName, List[StatusDetails]]
-
-  @volatile
-  private var delayBeforeStateReturn: FiniteDuration = 0 seconds
-
-  // queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
-  val deploys = new ConcurrentLinkedQueue[ProcessName]()
+  override def close(): Unit = {
+    super.close()
+    deploymentManagersClassLoader._2.unsafeRunSync()
+  }
 
   def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
     val promise = Promise[Option[ExternalDeploymentId]]()
@@ -261,56 +255,10 @@ class MockDeploymentManager private (
     }
   }
 
-  override protected def makeSavepoint(
-      deploymentId: ExternalDeploymentId,
-      savepointDir: Option[String]
-  ): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
-
-  override protected def stop(
-      deploymentId: ExternalDeploymentId,
-      savepointDir: Option[String]
-  ): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
-
-  override protected def runProgram(
-      processName: ProcessName,
-      mainClass: String,
-      args: List[String],
-      savepointPath: Option[String],
-      deploymentId: Option[newdeployment.DeploymentId]
-  ): Future[Option[ExternalDeploymentId]] = ???
-
-  override def close(): Unit = {
-    deploymentManagersClassLoader._2.unsafeRunSync()
-  }
-
-  override def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = Future.successful(())
-
-  override def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
-
-  override protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
-
-  override protected def checkRequiredSlotsExceedAvailableSlots(
-      canonicalProcess: CanonicalProcess,
-      currentlyDeployedJobsIds: List[ExternalDeploymentId]
-  ): Future[Unit] =
-    if (canonicalProcess.metaData.typeSpecificData
-        .cast[StreamMetaData]
-        .flatMap(_.parallelism)
-        .exists(_ > maxParallelism)) {
-      Future.failed(new IllegalArgumentException("Parallelism too large"))
-    } else {
-      Future.successful(())
-    }
-
-  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
-
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
-
-  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }
 
 class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentManager.create())
-    extends FlinkStreamingDeploymentManagerProvider {
+    extends FlinkDeploymentManagerProvider {
 
   override def createDeploymentManager(
       modelData: BaseModelData,

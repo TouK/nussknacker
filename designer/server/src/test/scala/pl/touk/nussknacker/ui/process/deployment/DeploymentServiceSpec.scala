@@ -27,6 +27,7 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
+import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
@@ -52,8 +53,6 @@ class DeploymentServiceSpec
     with WithHsqlDbTesting
     with WithClock
     with EitherValuesDetailedMessage {
-
-  import VersionId._
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
@@ -420,8 +419,9 @@ class DeploymentServiceSpec
 
   test("Should skip notifications and deployment on validation errors") {
     val processName: ProcessName = generateProcessName
+    val requestedParallelism     = FlinkClientStub.maxParallelism + 1
     val processIdWithName =
-      prepareProcess(processName, Some(MockDeploymentManager.maxParallelism + 1)).dbioActionValues
+      prepareProcess(processName, Some(requestedParallelism)).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
       val result =
@@ -435,7 +435,8 @@ class DeploymentServiceSpec
           )
           .failed
           .futureValue
-      result.getMessage shouldBe "Parallelism too large"
+      result.getMessage shouldBe s"Not enough free slots on Flink cluster. Available slots: ${FlinkClientStub.maxParallelism}, requested: $requestedParallelism. " +
+        s"Decrease scenario's parallelism or extend Flink cluster resources"
       deploymentManager.deploys should not contain processName
       fetchingProcessRepository
         .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
