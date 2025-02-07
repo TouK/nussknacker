@@ -19,6 +19,10 @@
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
 ### 1.18-esp
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
+    * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
+    * implementation provided for Flink DM
+    * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
   * new API available under `processes/{scenarioName}/stickyNotes`

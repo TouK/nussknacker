@@ -30,9 +30,9 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   var processEntities: mutable.ListBuffer[TestPeriodicProcessEntity]              = ListBuffer.empty
   var deploymentEntities: mutable.ListBuffer[TestPeriodicProcessDeploymentEntity] = ListBuffer.empty
 
-  private def canonicalProcess(processName: ProcessName) = {
+  private val canonicalProcess = {
     ScenarioBuilder
-      .streaming(processName.value)
+      .streaming("test")
       .source("start", "source")
       .emptySink("end", "KafkaSink")
   }
@@ -345,12 +345,17 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     Future.successful(deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now)))
   }
 
-  override def fetchCanonicalProcessWithVersion(
+  override def fetchCanonicalProcess(
       periodicProcessId: PeriodicProcessId,
+  ): Future[Option[CanonicalProcess]] = Future.successful {
+    Some(canonicalProcess)
+  }
+
+  override def fetchProcessVersion(
       processName: ProcessName,
-      versionId: VersionId
-  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = Future.successful {
-    Some(canonicalProcess(processName), ProcessVersion.empty)
+      versionId: VersionId,
+  ): Future[Option[ProcessVersion]] = Future.successful {
+    Some(ProcessVersion.empty)
   }
 
   override def fetchInputConfigDuringExecutionJson(

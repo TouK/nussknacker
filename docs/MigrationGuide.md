@@ -16,6 +16,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Other changes
 
 * [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
     * the PeriodicDeploymentManager is no longer a separate DM type
     * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
   ```hocon   

@@ -54,19 +54,16 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
 
   import api._
 
-  override def getCanonicalProcessWithVersion(
+  override def getProcessVersion(
       processName: ProcessName,
       versionId: VersionId
   )(
       implicit user: LoggedUser,
-  ): F[Option[(CanonicalProcess, ProcessVersion)]] = {
+  ): F[Option[ProcessVersion]] = {
     val result = for {
       processId <- OptionT(fetchProcessId(processName))
       details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
-    } yield (
-      details.json,
-      details.toEngineProcessVersion,
-    )
+    } yield details.toEngineProcessVersion
     result.value
   }
 
