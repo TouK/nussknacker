@@ -295,8 +295,6 @@ val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"
-// this is used in cloud, official JsonEncoder uses different field layout
-val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
 val circeV                  = "0.14.10"
 val circeGenericExtrasV     = "0.14.4"
@@ -1333,15 +1331,12 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
     name := "nussknacker-lite-runtime",
     libraryDependencies ++= {
       Seq(
-        "io.dropwizard.metrics5"         % "metrics-core"         % dropWizardV,
-        "io.dropwizard.metrics5"         % "metrics-influxdb"     % dropWizardV,
-        "io.dropwizard.metrics5"         % "metrics-jmx"          % dropWizardV,
-        "com.softwaremill.sttp.client3" %% "core"                 % sttpV,
-        "ch.qos.logback"                 % "logback-classic"      % logbackV,
-        "ch.qos.logback.contrib"         % "logback-json-classic" % logbackJsonV,
-        "ch.qos.logback.contrib"         % "logback-jackson"      % logbackJsonV,
-        "com.fasterxml.jackson.core"     % "jackson-databind"     % jacksonV,
-        "com.typesafe.akka"             %% "akka-http"            % akkaHttpV
+        "io.dropwizard.metrics5"         % "metrics-core"     % dropWizardV,
+        "io.dropwizard.metrics5"         % "metrics-influxdb" % dropWizardV,
+        "io.dropwizard.metrics5"         % "metrics-jmx"      % dropWizardV,
+        "com.softwaremill.sttp.client3" %% "core"             % sttpV,
+        "ch.qos.logback"                 % "logback-classic"  % logbackV,
+        "com.typesafe.akka"             %% "akka-http"        % akkaHttpV
       )
     },
   )
@@ -2007,9 +2002,6 @@ lazy val designer = (project in file("designer/server"))
         "com.cronutils"                  % "cron-utils"                     % cronParserV,
         "ch.qos.logback"                 % "logback-core"                   % logbackV,
         "ch.qos.logback"                 % "logback-classic"                % logbackV,
-        "ch.qos.logback.contrib"         % "logback-json-classic"           % logbackJsonV,
-        "ch.qos.logback.contrib"         % "logback-jackson"                % logbackJsonV,
-        "com.fasterxml.jackson.core"     % "jackson-databind"               % jacksonV,
         "org.slf4j"                      % "log4j-over-slf4j"               % slf4jV,
         "com.carrotsearch"               % "java-sizeof"                    % "0.0.5",
         "org.typelevel"                 %% "case-insensitive"               % "1.4.0",
