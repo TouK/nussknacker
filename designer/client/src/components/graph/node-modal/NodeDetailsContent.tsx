@@ -1,17 +1,20 @@
-import React, { SetStateAction, useMemo } from "react";
-import { Edge, NodeType, NodeValidationError } from "../../../types";
-import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
-import { useSelector } from "react-redux";
-import { getCurrentErrors } from "./NodeDetailsContent/selectors";
-import { RootState } from "../../../reducers";
-import { NodeTable } from "./NodeDetailsContent/NodeTable";
 import { partition } from "lodash";
-import NodeErrors from "./NodeErrors";
-import { TestResultsWrapper } from "./TestResultsWrapper";
-import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
-import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
+import React, { SetStateAction, useMemo } from "react";
+import { useSelector } from "react-redux";
 import { useUserSettings } from "../../../common/userSettings";
 import HttpService from "../../../http/HttpService";
+import { RootState } from "../../../reducers";
+import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/getComponentGroups";
+import { getCreatorType } from "../../../reducers/selectors/getCreator";
+import { Edge, NodeType, NodeValidationError } from "../../../types";
+import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
+import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
+import { NodeTable } from "./NodeDetailsContent/NodeTable";
+import { getCurrentErrors } from "./NodeDetailsContent/selectors";
+import NodeErrors from "./NodeErrors";
+import { NodeSwitcher } from "./NodeSwitcher";
+import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
+import { TestResultsWrapper } from "./TestResultsWrapper";
 
 export const NodeDetailsContent = ({
     node,
@@ -35,8 +38,21 @@ export const NodeDetailsContent = ({
 
     const [userSettings] = useUserSettings();
 
+    const configuredAdditionalComponents = useSelector(getConfiguredAdditionalComponents);
+    const creatorType = getCreatorType(node);
+
     return (
         <NodeTable>
+            <NodeSwitcher
+                node={node}
+                edges={edges}
+                onChange={onChange}
+                componentsNamesToSelect={
+                    creatorType === "aggregate"
+                        ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
+                        : configuredAdditionalComponents[creatorType]?.map((c) => c.componentId) || []
+                }
+            />
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
             <TestResultsWrapper nodeId={node.id} showTestResults={showTestResults}>
                 <NodeTypeDetailsContent

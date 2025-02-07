@@ -1,12 +1,17 @@
+import { FormControl } from "@mui/material";
 import { cloneDeep, defaultsDeep, isArray, mergeWith } from "lodash";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { NodeType } from "../../../types";
+import { Component } from "../../../types";
 import NodeUtils from "../NodeUtils";
+import { editors, EditorType } from "./editors/expression/Editor";
+import { ExpressionLang } from "./editors/expression/types";
+import { FieldLabel } from "./FieldLabel";
 import { NodeGroupContentProps } from "./node/NodeGroupContent";
+import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 type NodeSwitcherProps = NodeGroupContentProps & {
     componentsNamesToSelect: string[];
@@ -25,11 +30,13 @@ export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = 
 
     const dispatch = useDispatch();
     useEffect(() => {
-        dispatch(getConfiguredAdditionalComponents());
-    }, [dispatch]);
+        if (processDefinitionData) {
+            dispatch(getConfiguredAdditionalComponents());
+        }
+    }, [dispatch, processDefinitionData]);
 
     const switchNode = useCallback(
-        (selectedNode: NodeType) => {
+        (selectedComponent: Component) => {
             const { type, ...source } = node;
 
             const customizer = (arg1, arg2, key: string) => {
@@ -39,8 +46,8 @@ export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = 
             };
 
             const nextNode = defaultsDeep(
-                { additionalFields: { virtualNode: creatorType } },
-                mergeWith(cloneDeep(selectedNode), source, customizer),
+                { additionalFields: { virtualNode: creatorType, componentId: selectedComponent.componentId } },
+                mergeWith(cloneDeep(selectedComponent.node), source, customizer),
             );
 
             return onChange(nextNode, NodeUtils.hasOutputs(nextNode, processDefinitionData) ? edges : []);
@@ -48,20 +55,37 @@ export function NodeSwitcher({ node, onChange, edges, componentsNamesToSelect = 
         [creatorType, edges, node, onChange, processDefinitionData],
     );
 
+    const Editor = editors[EditorType.FIXED_VALUES_PARAMETER_EDITOR];
+
     if (!creatorType) {
         return null;
     }
 
     return (
-        <>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <h1>type: {creatorType}</h1>
-            {componentsToSelect.map((c) => (
-                <div key={c.componentId}>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <button onClick={() => switchNode(c.node)}>switch to {c.componentId}</button>
-                </div>
-            ))}
-        </>
+        <FormControl sx={{ padding: "16px", marginX: "-16px", background: "rgba(0,0,0,.25)" }}>
+            <FieldLabel label={"Component"} />
+            <Editor
+                editorConfig={{
+                    possibleValues: [
+                        { expression: "$NEW", label: "create new..." },
+                        ...componentsToSelect.map((c) => ({ expression: c.componentId, label: c.label })),
+                    ],
+                }}
+                className={nodeValue}
+                fieldErrors={[]}
+                onValueChange={(id) => {
+                    if (id === "$NEW") {
+                        const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
+                        window.open(`https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`);
+                    }
+                    const component = componentsToSelect.find((c) => c.componentId === id);
+                    switchNode(component);
+                }}
+                expressionObj={{
+                    language: ExpressionLang.String,
+                    expression: componentsToSelect.find((c) => c.componentId === node.additionalFields.componentId)?.componentId,
+                }}
+            />
+        </FormControl>
     );
 }
