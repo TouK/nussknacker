@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoSourcesWithTestDataGeneration,
   Serialization,
   SourceCompilation,
+  TooManySamplesRequested,
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
@@ -48,13 +49,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError.{
-  NoDataGeneratedError,
-  NoSourcesWithTestDataGenerationError,
-  SourceCompilationError,
-  UnsupportedSourcePreviewError,
-  _
-}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ScenarioTestError._
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -194,6 +189,8 @@ class NodesApiHttpService(
                   Future(Left(NoSourcesWithTestDataGeneration))
                 case Left(SerializationError(message)) =>
                   Future(Left(Serialization(message)))
+                case Left(TooManySamplesRequestedError(maxSamples)) =>
+                  Future(Left(TooManySamplesRequested(maxSamples)))
                 case Right(rawScenarioTestData) =>
                   Future(Right(rawScenarioTestData.content))
               }

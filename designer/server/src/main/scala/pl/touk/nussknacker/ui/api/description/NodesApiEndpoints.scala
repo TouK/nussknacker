@@ -62,6 +62,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoSourcesWithTestDataGeneration,
   Serialization,
   SourceCompilation,
+  TooManySamplesRequested,
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
@@ -234,7 +235,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           noSourcesWithTestDataGenerationErrorOutput,
           serializationErrorOutput,
           scenarioNotFoundErrorOutput,
-          invalidNodeTypeErrorOutput
+          invalidNodeTypeErrorOutput,
+          tooManySamplesErrorOutput
         )
       )
       .withSecurity(auth)
@@ -409,7 +411,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           noSourcesWithTestDataGenerationErrorOutput,
           serializationErrorOutput,
           scenarioNotFoundErrorOutput,
-          invalidNodeTypeErrorOutput
+          invalidNodeTypeErrorOutput,
+          tooManySamplesErrorOutput
         )
       )
       .withSecurity(auth)
@@ -707,6 +710,18 @@ object NodesApiEndpoints {
             Example.of(
               summary = Some("Invalid node type error"),
               value = InvalidNodeType("Filter", "Source")
+            )
+          )
+      )
+
+    val tooManySamplesErrorOutput: EndpointOutput.OneOfVariant[TooManySamplesRequested] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[TooManySamplesRequested]
+          .example(
+            Example.of(
+              summary = Some("Too many samples requested"),
+              value = TooManySamplesRequested(100)
             )
           )
       )
@@ -1602,6 +1617,7 @@ object NodesApiEndpoints {
       final case object NoSourcesWithTestDataGeneration                          extends NodesError
       final case class Serialization(msg: String)                                extends NodesError
       final case class InvalidNodeType(expectedType: String, actualType: String) extends NodesError
+      final case class TooManySamplesRequested(maxSamples: Int)                  extends NodesError
       final case class NoScenario(scenarioName: ProcessName)                     extends NodesError
       final case class NoProcessingType(processingType: ProcessingType)          extends NodesError
       final case object NoPermission                      extends NodesError with CustomAuthorizationError
@@ -1644,6 +1660,12 @@ object NodesApiEndpoints {
         )
       }
 
+      implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested](e =>
+          s"Too many samples requested, limit is ${e.maxSamples}"
+        )
+      }
+
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
           s"No scenario ${e.scenarioName} found"
@@ -1656,7 +1678,7 @@ object NodesApiEndpoints {
         )
       }
 
-      implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
+      implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
           s"The request content was malformed:\n${e.msg}"
         )
