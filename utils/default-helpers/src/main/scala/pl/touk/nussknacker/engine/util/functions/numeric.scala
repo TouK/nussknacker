@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.util.functions.NumericUtils.{
   ToNumberTypingFunction
 }
 
+import scala.collection.compat.immutable.LazyList
 import scala.util.{Success, Try}
 
 object numeric extends NumericUtils
