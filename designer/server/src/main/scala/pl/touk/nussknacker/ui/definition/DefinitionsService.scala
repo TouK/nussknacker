@@ -30,11 +30,10 @@ class DefinitionsService(
     staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository,
-    fragmentPropertiesDocsUrl: Option[String]
+    fragmentPropertiesDocsUrl: Option[String],
 )(implicit ec: ExecutionContext) {
 
   def prepareUIDefinitions(
@@ -151,7 +150,6 @@ object DefinitionsService {
       processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
       processingTypeData.deploymentData.scenarioPropertiesConfig,
       processingTypeData.deploymentData.fragmentPropertiesConfig,
-      processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository,

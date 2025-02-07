@@ -24,6 +24,10 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]]
 
+  def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
+      query: ScenarioQuery
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]]
+
   def getProcessVersion(
       processName: ProcessName,
       versionId: VersionId
