@@ -18,7 +18,10 @@ abstract class CommonModelDataInfoProvider(modelData: ModelData) {
 
   private lazy val nodeCompiler = new NodeCompiler(
     modelData.modelDefinition,
-    new FragmentParametersDefinitionExtractor(modelData.modelClassLoader),
+    new FragmentParametersDefinitionExtractor(
+      modelData.modelClassLoader,
+      modelData.modelDefinitionWithClasses.classDefinitions,
+    ),
     expressionCompiler,
     modelData.modelClassLoader,
     Seq.empty,
