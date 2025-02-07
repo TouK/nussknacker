@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -20,9 +21,8 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   FlinkMiniClusterScenarioTestRunner
 }
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps.DurationOps
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{MainClassName, ParsedJobConfig, prepareProgramArgs}
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{MainClassName, prepareProgramArgs}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
@@ -65,6 +65,8 @@ class FlinkDeploymentManager(
       .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster),
     flinkConfig.scenarioStateVerification.timeout.toPausePolicy
   )
+
+  private val statusDeterminer = new FlinkStatusDetailsDeterminer(modelData.namingStrategy, client.getJobConfig)
 
   /**
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
@@ -169,42 +171,17 @@ class FlinkDeploymentManager(
     import command._
     val processName = processVersion.processName
 
-    val stoppingResult = command.updateStrategy match {
-      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
-        for {
-          oldJobs <- oldJobsToStop(processVersion)
-          externalDeploymentIds = oldJobs
-            .sortBy(_.startTime)(Ordering[Option[Long]].reverse)
-            .flatMap(_.externalDeploymentId)
-          savepoints <- Future.sequence(
-            externalDeploymentIds.map(stopSavingSavepoint(processVersion, _, canonicalProcess))
-          )
-        } yield {
-          logger.info(s"Deploying $processName. ${Option(savepoints)
-              .filter(_.nonEmpty)
-              .map(_.mkString("Saving savepoints finished: ", ", ", "."))
-              .getOrElse("There was no job to stop.")}")
-          savepoints
-        }
-      case DeploymentUpdateStrategy.DontReplaceDeployment =>
-        Future.successful(List.empty)
-    }
     for {
-      savepointList <- stoppingResult
+      stoppedJobsSavepoints <- stopOldJobsIfNeeded(command)
+      _ = {
+        logger.info(s"Deploying $processName. ${NonEmptyList
+            .fromList(stoppedJobsSavepoints)
+            .map(_.toList.mkString("Saving savepoints finished: ", ", ", "."))
+            .getOrElse("There was no job to stop.")}")
+      }
+      savepointPath = determineSavepointPath(command.updateStrategy, stoppedJobsSavepoints)
       // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, List.empty)
-      savepointPath = command.updateStrategy match {
-        case DeploymentUpdateStrategy.DontReplaceDeployment => None
-        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
-              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
-            ) =>
-          // TODO: Better handle situation with more than one jobs stopped
-          savepointList.headOption
-        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
-              StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
-            ) =>
-          Some(savepointPath)
-      }
       runResult <- runProgram(
         processName,
         MainClassName,
@@ -221,11 +198,44 @@ class FlinkDeploymentManager(
     } yield runResult
   }
 
+  private def stopOldJobsIfNeeded(command: DMRunDeploymentCommand) = {
+    import command._
+
+    command.updateStrategy match {
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+        for {
+          oldJobs <- oldJobsToStop(processVersion)
+          externalDeploymentIds = oldJobs
+            .sortBy(_.startTime)(Ordering[Option[Long]].reverse)
+            .flatMap(_.externalDeploymentId)
+          savepoints <- Future.sequence(
+            externalDeploymentIds.map(stopSavingSavepoint(processVersion, _, canonicalProcess))
+          )
+        } yield savepoints
+      case DeploymentUpdateStrategy.DontReplaceDeployment =>
+        Future.successful(List.empty)
+    }
+  }
+
   private def oldJobsToStop(processVersion: ProcessVersion): Future[List[StatusDetails]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getProcessStates(processVersion.processName)
       .map(_.value.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
   }
+
+  private def determineSavepointPath(updateStrategy: DeploymentUpdateStrategy, stoppedJobsSavepoints: List[String]) =
+    updateStrategy match {
+      case DeploymentUpdateStrategy.DontReplaceDeployment => None
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          ) =>
+        // TODO: Better handle situation with more than one jobs stopped
+        stoppedJobsSavepoints.headOption
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
+          ) =>
+        Some(savepointPath)
+    }
 
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
       action: ExternalDeploymentId => Future[T]
@@ -289,7 +299,8 @@ class FlinkDeploymentManager(
                 client
                   .getJobDetails(toJobId(deploymentId))
                   .map(_.map { jobDetails =>
-                    deploymentId -> toDeploymentStatus(JobStatus.valueOf(jobDetails.state), jobDetails.`status-counts`)
+                    deploymentId -> FlinkStatusDetailsDeterminer
+                      .toDeploymentStatus(JobStatus.valueOf(jobDetails.state), jobDetails.`status-counts`)
                   })
               }
           )
@@ -307,18 +318,13 @@ class FlinkDeploymentManager(
 
     }
 
-  override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
+  override def schedulingSupport: SchedulingSupport = new BaseSchedulingSupported {
 
     override def createScheduledExecutionPerformer(
         modelData: BaseModelData,
         dependencies: DeploymentManagerDependencies,
         config: Config,
     ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(modelData, dependencies, config)
-
-    override def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
-    override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]         = None
-    override def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]   = None
-    override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
 
   }
 
@@ -328,67 +334,12 @@ class FlinkDeploymentManager(
     client
       .getJobsOverviews()
       .flatMap { result =>
-        statusDetailsFromJobOverviews(result.value).map(
-          WithDataFreshnessStatus(_, cached = result.cached)
-        ) // TODO: How to do it nicer?
+        statusDeterminer
+          .statusDetailsFromJobOverviews(result.value)
+          .map(
+            WithDataFreshnessStatus(_, cached = result.cached)
+          ) // TODO: How to do it nicer?
       }
-  }
-
-  private def statusDetailsFromJobOverviews(
-      jobOverviews: List[JobOverview]
-  ): Future[Map[ProcessName, List[StatusDetails]]] = Future
-    .sequence {
-      jobOverviews
-        .groupBy(_.name)
-        .flatMap { case (name, jobs) =>
-          modelData.namingStrategy.decodeName(name).map(decoded => (ProcessName(decoded), jobs))
-        }
-        .map { case (name, jobs) =>
-          val statusDetails = jobs.map { job =>
-            withParsedJobConfig(job.jid, name).map { jobConfig =>
-              // TODO: return error when there's no correct version in process
-              // currently we're rather lax on this, so that this change is backward-compatible
-              // we log debug here for now, since it's invoked v. often
-              if (jobConfig.isEmpty) {
-                logger.debug(s"No correct job details in deployed scenario: ${job.name}")
-              }
-              StatusDetails(
-                SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
-                jobConfig.flatMap(_.deploymentId),
-                Some(ExternalDeploymentId(job.jid)),
-                version = jobConfig.map(_.version),
-                startTime = Some(job.`start-time`),
-                attributes = Option.empty,
-                errors = List.empty
-              )
-            }
-          }
-          Future.sequence(statusDetails).map((name, _))
-        }
-
-    }
-    .map(_.toMap)
-
-  private def toDeploymentStatus(jobStatus: JobStatus, jobStatusCounts: BaseJobStatusCounts): DeploymentStatus = {
-    jobStatus match {
-      case JobStatus.RUNNING if ensureTasksRunning(jobStatusCounts)       => DeploymentStatus.Running
-      case JobStatus.RUNNING | JobStatus.INITIALIZING | JobStatus.CREATED => DeploymentStatus.DuringDeploy
-      case JobStatus.FINISHED                                             => DeploymentStatus.Finished
-      case JobStatus.RESTARTING                                           => DeploymentStatus.Restarting
-      case JobStatus.CANCELED                                             => DeploymentStatus.Canceled
-      case JobStatus.CANCELLING                                           => DeploymentStatus.DuringCancel
-      // The job is not technically running, but should be in a moment
-      case JobStatus.RECONCILING | JobStatus.SUSPENDED => DeploymentStatus.Running
-      case JobStatus.FAILING | JobStatus.FAILED =>
-        DeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
-    }
-  }
-
-  private def ensureTasksRunning(jobStatusCount: BaseJobStatusCounts): Boolean = {
-    // We sum running and finished tasks because for batch jobs some tasks can be already finished but the others are still running.
-    // We don't handle correctly case when job creates some tasks lazily e.g. in batch case. Without knowledge about what
-    // kind of job is deployed, we don't know if it is such case or it is just a streaming job which is not fully running yet
-    jobStatusCount.running + jobStatusCount.finished == jobStatusCount.total
   }
 
   private def waitForDuringDeployFinished(
@@ -420,23 +371,6 @@ class FlinkDeploymentManager(
           )
       }
       .getOrElse(Future.successful(()))
-  }
-
-  private def withParsedJobConfig(jobId: String, name: ProcessName): Future[Option[ParsedJobConfig]] = {
-    client.getJobConfig(jobId).map { executionConfig =>
-      val userConfig = executionConfig.`user-config`
-      for {
-        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
-        user    <- userConfig.get("user").map(_.asString.getOrElse(""))
-        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
-        processId    = ProcessId(userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L))
-        labels       = userConfig.get("labels").flatMap(_.asArray).map(_.toList.flatMap(_.asString)).toList.flatten
-        deploymentId = userConfig.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
-      } yield {
-        val versionDetails = ProcessVersion(version, name, processId, labels, user, modelVersion)
-        ParsedJobConfig(versionDetails, deploymentId)
-      }
-    }
   }
 
   protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
@@ -516,10 +450,6 @@ class FlinkDeploymentManager(
 }
 
 object FlinkDeploymentManager {
-
-  // TODO: deploymentId is optional to handle situation when on Flink there is old version of runtime and in designer is the new one.
-  //       After fully deploy of new version it should be mandatory
-  private case class ParsedJobConfig(version: ProcessVersion, deploymentId: Option[DeploymentId])
 
   private[management] val MainClassName = "pl.touk.nussknacker.engine.process.runner.FlinkStreamingProcessMain"
 

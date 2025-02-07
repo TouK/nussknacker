@@ -139,6 +139,13 @@ case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisation
 
 sealed trait SchedulingSupport
 
+trait BaseSchedulingSupported extends SchedulingSupported {
+  override def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
+  override def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]         = None
+  override def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]   = None
+  override def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
+}
+
 trait SchedulingSupported extends SchedulingSupport {
 
   def createScheduledExecutionPerformer(
