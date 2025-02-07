@@ -412,11 +412,26 @@ class SlickLegacyPeriodicProcessesRepository(
     update.map(_ => ())
   }
 
-  override def fetchCanonicalProcessWithVersion(
+  override def fetchCanonicalProcess(
+      periodicProcessId: PeriodicProcessId,
+  ): Action[Option[CanonicalProcess]] = {
+    PeriodicProcessesWithJson
+      .filter(p => p.id === periodicProcessId)
+      .result
+      .headOption
+      .map(_.map(_.processJson))
+  }
+
+  override def fetchProcessVersion(
       processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[(CanonicalProcess, ProcessVersion)]] =
-    fetchingProcessRepository.getCanonicalProcessWithVersion(processName, versionId)(NussknackerInternalUser.instance)
+  ): Future[Option[ProcessVersion]] = {
+    fetchingProcessRepository
+      .getProcessVersion(
+        processName,
+        versionId
+      )(NussknackerInternalUser.instance)
+  }
 
   def fetchInputConfigDuringExecutionJson(periodicProcessId: PeriodicProcessId): Action[Option[String]] =
     PeriodicProcessesWithJson
@@ -462,6 +477,7 @@ class SlickLegacyPeriodicProcessesRepository(
   private def scheduleDeploymentData(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
+      deployment.periodicProcessId,
       deployment.createdAt,
       deployment.runAt,
       deployment.deployedAt,

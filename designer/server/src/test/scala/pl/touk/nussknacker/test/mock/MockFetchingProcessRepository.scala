@@ -45,16 +45,14 @@ class MockFetchingProcessRepository private (
     extends FetchingProcessRepository[Future]
     with BasicRepository {
 
-  override def getCanonicalProcessWithVersion(processName: ProcessName, versionId: VersionId)(
-      implicit user: LoggedUser
-  ): Future[Option[(CanonicalProcess, ProcessVersion)]] = {
+  override def getProcessVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  )(implicit user: LoggedUser): Future[Option[ProcessVersion]] = {
     val result = for {
       processId <- OptionT(fetchProcessId(processName))
       details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
-    } yield (
-      details.json,
-      details.toEngineProcessVersion,
-    )
+    } yield details.toEngineProcessVersion
     result.value
   }
 
