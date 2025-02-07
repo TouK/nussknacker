@@ -9,7 +9,6 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { RootState } from "../../../../reducers";
-import { getConfiguredAdditionalComponents } from "../../../../reducers/selectors/getComponentGroups";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
@@ -19,7 +18,6 @@ import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
-import { NodeSwitcher } from "../NodeSwitcher";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
 
@@ -160,14 +158,12 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [editedNode, t]);
 
     const titleData = useTitleData(node);
-    const configuredAdditionalComponents = useSelector(getConfiguredAdditionalComponents);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
         return null;
     }
 
-    const creatorType = getCreatorType(editedNode);
     return (
         <WindowContent
             {...props}
@@ -178,16 +174,6 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
-            <NodeSwitcher
-                node={editedNode}
-                edges={outputEdges}
-                onChange={!readOnly && onChange}
-                componentsNamesToSelect={
-                    creatorType === "aggregate"
-                        ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
-                        : configuredAdditionalComponents[creatorType]?.map((c) => c.componentId) || []
-                }
-            />
             <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
         </WindowContent>
     );
