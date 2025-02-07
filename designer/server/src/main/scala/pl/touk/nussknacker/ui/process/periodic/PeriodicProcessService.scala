@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => _, _}
-import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -392,14 +391,9 @@ class PeriodicProcessService(
   ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
-      _            <- periodicProcessesRepository.markFinished(deployment.id).run
-      currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
-      canonicalProcessOpt <- periodicProcessesRepository
-        .fetchCanonicalProcessWithVersion(
-          processName,
-          versionId
-        )
-        .map(_.map(_._1))
+      _                   <- periodicProcessesRepository.markFinished(deployment.id).run
+      currentState        <- periodicProcessesRepository.findProcessData(deployment.id).run
+      canonicalProcessOpt <- periodicProcessesRepository.fetchCanonicalProcess(deployment.periodicProcessId).run
       canonicalProcess = canonicalProcessOpt.getOrElse {
         throw new PeriodicProcessException(
           s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
@@ -494,14 +488,16 @@ class PeriodicProcessService(
       )
       processName = deploymentWithJarData.processName
       versionId   = deploymentWithJarData.versionId
-      canonicalProcessWithVersionOpt <- periodicProcessesRepository
-        .fetchCanonicalProcessWithVersion(
-          processName,
-          versionId
-        )
-      canonicalProcessWithVersion = canonicalProcessWithVersionOpt.getOrElse {
+      canonicalProcessOpt <- periodicProcessesRepository.fetchCanonicalProcess(deployment.periodicProcess.id).run
+      canonicalProcess = canonicalProcessOpt.getOrElse {
         throw new PeriodicProcessException(
-          s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
+          s"Could not fetch CanonicalProcess for processName=$processName, versionId=$versionId"
+        )
+      }
+      processVersionOpt <- periodicProcessesRepository.fetchProcessVersion(processName, versionId)
+      processVersion = processVersionOpt.getOrElse {
+        throw new PeriodicProcessException(
+          s"Could not fetch ProcessVersion for processName=$processName, versionId=$versionId"
         )
       }
       inputConfigDuringExecutionJsonOpt <- periodicProcessesRepository
@@ -514,8 +510,8 @@ class PeriodicProcessService(
       }
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
         ProcessConfigEnricher.DeployData(
-          canonicalProcessWithVersion._1,
-          canonicalProcessWithVersion._2,
+          canonicalProcess,
+          processVersion,
           inputConfigDuringExecutionJson,
           deployment.toDetails
         )
@@ -524,8 +520,8 @@ class PeriodicProcessService(
         deploymentWithJarData,
         enrichedProcessConfig.inputConfigDuringExecutionJson,
         deploymentData,
-        canonicalProcessWithVersion._1,
-        canonicalProcessWithVersion._2,
+        canonicalProcess,
+        processVersion,
       )
     } yield externalDeploymentId
     deploymentAction

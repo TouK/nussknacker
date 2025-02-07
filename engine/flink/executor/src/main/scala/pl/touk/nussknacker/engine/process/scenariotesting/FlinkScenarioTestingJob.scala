@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
-import cats.effect.unsafe.IORuntime
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -11,14 +12,7 @@ import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, Deployment
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.testmode.{
-  ResultsCollectingListener,
-  ResultsCollectingListenerHolder,
-  TestServiceInvocationCollector
-}
-
-import scala.concurrent.{ExecutionContext, Future, blocking}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestServiceInvocationCollector}
 
 object FlinkScenarioTestingJob {
 
@@ -27,26 +21,27 @@ object FlinkScenarioTestingJob {
       modelData: ModelData,
       scenario: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
+      collectingListener: ResultsCollectingListener[Json],
       streamExecutionEnv: StreamExecutionEnvironment,
-  ): Future[TestResults[Json]] = {
-    new FlinkScenarioTestingJob(modelData).run(scenario, scenarioTestData, streamExecutionEnv)
+  ): JobExecutionResult = {
+    new FlinkScenarioTestingJob(modelData).run(
+      scenario,
+      scenarioTestData,
+      collectingListener.asInstanceOf[ResultsCollectingListener[Json]],
+      streamExecutionEnv
+    )
   }
 
 }
 
-class FlinkScenarioTestingJob(modelData: ModelData) {
+private class FlinkScenarioTestingJob(modelData: ModelData) extends LazyLogging {
 
   def run(
       scenario: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
+      collectingListener: ResultsCollectingListener[Json],
       streamExecutionEnv: StreamExecutionEnvironment,
-  ): Future[TestResults[Json]] = {
-    implicit val ioRuntime: IORuntime = IORuntime.global
-    implicit val ec: ExecutionContext = ExecutionContext.global
-
-    val (collectingListener, closeCollectingListener) =
-      ResultsCollectingListenerHolder.registerTestEngineListener.allocated.unsafeRunSync()
-    val resultCollector = new TestServiceInvocationCollector(collectingListener)
+  ): JobExecutionResult = {
     // ProcessVersion can't be passed from DM because testing mechanism can be used with not saved scenario
     val processVersion = ProcessVersion.empty.copy(processName = scenario.name)
     val deploymentData = DeploymentData.empty.copy(additionalModelConfigs =
@@ -59,21 +54,11 @@ class FlinkScenarioTestingJob(modelData: ModelData) {
       scenario,
       processVersion,
       deploymentData,
-      resultCollector
+      new TestServiceInvocationCollector(collectingListener)
     )
     streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
 
-    // TODO: Non-blocking future periodically checking if job is finished
-    val resultFuture = Future {
-      blocking {
-        streamExecutionEnv.execute(scenario.name.value)
-        collectingListener.results
-      }
-    }
-    resultFuture.onComplete { _ =>
-      closeCollectingListener.unsafeRunSync()
-    }
-    resultFuture
+    streamExecutionEnv.execute(scenario.name.value)
   }
 
   protected def prepareRegistrar(

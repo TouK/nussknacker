@@ -131,7 +131,7 @@ class DynamicNodeValidator(
               processRemainingTransformationSteps(parametersCombined, state, newErrorsCombined, newNodeParameters)
           }
         case Failure(ex) =>
-          logger.debug(
+          logger.warn(
             s"Exception thrown during handling of transformation step: $transformationStep. " +
               s"Will be returned fallback results with fallback context and errors collected during parameters validation.",
             ex

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
@@ -44,10 +44,13 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   override protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext,
-      classDefinitions: Set[ClassDefinition]
+      classDefinitions: ClassDefinitionSet,
   ): ModelDefinition = {
-    val usedSourceIds = process.allStartNodes
-      .map(_.head.data)
+    val allStartNodesData = process.allStartNodes.toList
+      .flatMap(_.headOption)
+      .map(_.data)
+
+    val usedSourceIds = allStartNodesData
       .collect { case source: Source =>
         ComponentIdExtractor.fromScenarioNode(source)
       }
@@ -64,14 +67,14 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
 
     val fragmentParametersDefinitionExtractor = new FragmentParametersDefinitionExtractor(
       definitionContext.userCodeClassLoader,
-      classDefinitions
+      classDefinitions,
     )
     val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       fragmentParametersDefinitionExtractor
     )
 
     val stubbedSourceForFragments =
-      process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
+      allStartNodesData.collect { case frag: FragmentInputDefinition =>
         // We create source definition only to reuse prepareSourceFactory method.
         // Source will have fragment component type to avoid collisions with normal sources
         val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)

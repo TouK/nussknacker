@@ -140,6 +140,7 @@ object TestFactory {
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
       actorSystem.dispatcher,
+      IORuntime.global,
       actorSystem,
       SttpBackendStub.asynchronousFuture
     )

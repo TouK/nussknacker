@@ -12,13 +12,14 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOpsTest.GeneratorFunctionStub
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.retry.PatienceConfigToRetryPolicyConverter
 import retry.Directly
 
 import java.lang.{Long => JLong}
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
 class MiniClusterJobStatusCheckingOpsTest
@@ -27,7 +28,8 @@ class MiniClusterJobStatusCheckingOpsTest
     with BeforeAndAfterAll
     with Matchers {
 
-  private val retry = PatienceConfigToRetryPolicyConverter.toRetryPolicy(patienceConfig)
+  private val retry =
+    DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.seconds, patienceConfig.interval * 2)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
@@ -41,7 +43,7 @@ class MiniClusterJobStatusCheckingOpsTest
       env.fromData(List(1).asJava).sinkTo(new DiscardingSink[Int]())
       val jobID = env.execute().getJobID
 
-      flinkMiniClusterWithServices.waitForJobIsFinished(jobID)(retry, retry).futureValue.toTry.get
+      flinkMiniClusterWithServices.waitForJobIsFinished(jobID)(retry, Some(retry)).futureValue.toTry.get
       flinkMiniClusterWithServices.miniCluster.getJobStatus(jobID).toScala.futureValue shouldBe JobStatus.FINISHED
     }
   }
@@ -62,7 +64,7 @@ class MiniClusterJobStatusCheckingOpsTest
       val jobID = env.execute().getJobID
 
       flinkMiniClusterWithServices
-        .withRunningJob(jobID)(retry, retry) {
+        .withRunningJob(jobID)(retry, Some(retry)) {
           Future {
             GeneratorFunctionStub.isOpened shouldBe true
           }
@@ -83,8 +85,9 @@ class MiniClusterJobStatusCheckingOpsTest
 
       val jobID = env.execute().getJobID
 
-      flinkMiniClusterWithServices.waitForJobIsFinished(jobID)(Directly(0), retry).futureValue should matchPattern {
-        case Left(_) =>
+      flinkMiniClusterWithServices
+        .waitForJobIsFinished(jobID)(Directly(0), Some(retry))
+        .futureValue should matchPattern { case Left(_) =>
       }
 
       flinkMiniClusterWithServices.miniCluster.getJobStatus(jobID).toScala.futureValue shouldBe JobStatus.CANCELED
@@ -100,7 +103,7 @@ class MiniClusterJobStatusCheckingOpsTest
         flinkMiniClusterWithServices.miniCluster.getJobStatus(jobID).toScala.futureValue shouldBe JobStatus.FINISHED
       }
 
-      flinkMiniClusterWithServices.waitForJobIsFinished(jobID)(retry, retry).futureValue.toTry.get
+      flinkMiniClusterWithServices.waitForJobIsFinished(jobID)(retry, Some(retry)).futureValue.toTry.get
     }
   }
 

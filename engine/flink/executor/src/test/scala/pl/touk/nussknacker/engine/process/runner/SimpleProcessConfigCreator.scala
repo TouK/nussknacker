@@ -37,7 +37,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "stateCustom"                       -> WithCategories.anyCategory(StateCustomNode),
     "transformWithTime"                 -> WithCategories.anyCategory(TransformerWithTime),
     "joinBranchExpression"              -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
-    "transformerAddingComponentUseCase" -> WithCategories.anyCategory(TransformerAddingComponentUseCase)
+    "transformerAddingComponentUseCase" -> WithCategories.anyCategory(TransformerAddingComponentUseCase),
+    "sleep"                             -> WithCategories.anyCategory(SimpleSleepTransformer),
   )
 
   override def sourceFactories(

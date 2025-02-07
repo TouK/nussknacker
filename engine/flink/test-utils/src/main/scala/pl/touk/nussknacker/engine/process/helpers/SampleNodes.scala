@@ -536,6 +536,25 @@ object SampleNodes {
 
   }
 
+  object SimpleSleepTransformer extends CustomStreamTransformer with Serializable {
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(@ParamName("seconds") seconds: Int) = {
+      FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
+        start
+          .map(
+            { (ctx: Context) =>
+              // In production-ready implementation, here we would use timers
+              Thread.sleep(seconds * 1000)
+              ValueWithContext[AnyRef](null, ctx)
+            },
+            flinkCustomNodeContext.valueWithContextInfo.forNull
+          )
+      })
+    }
+
+  }
+
   class OptionalEndingCustom(resultsHolder: => TestResultsHolder[AnyRef])
       extends CustomStreamTransformer
       with Serializable {

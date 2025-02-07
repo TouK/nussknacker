@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentType,
   DesignerWideComponentId
 }
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -22,7 +23,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
       getClass.getClassLoader,
-      Set.empty,
+      ClassDefinitionSet(Set.empty[ClassDefinition]),
       Some(_),
       DesignerWideComponentId.default(Streaming.stringify, _)
     )

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -176,7 +177,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
-      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Set.empty, Some(_), determineDesignerWideId),
+      new FragmentComponentDefinitionExtractor(
+        getClass.getClassLoader,
+        ClassDefinitionSet(Set.empty[ClassDefinition]),
+        Some(_),
+        determineDesignerWideId
+      ),
       modelDefinition,
       ProcessingMode.UnboundedStream
     )

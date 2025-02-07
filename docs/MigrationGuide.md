@@ -10,6 +10,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - max count of sticky notes inside one scenario/fragment
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
+* [#7534](https://github.com/TouK/nussknacker/pull/7534) `shouldVerifyBeforeDeploy` configuration entry available for Flink deployment
+  was renamed to `scenarioStateVerification.enabled`
 
 ### Other changes
 
@@ -39,13 +41,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   If there were any custom actions defined in some custom DeploymentManager implementation, 
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 * [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
     * the PeriodicDeploymentManager is no longer a separate DM type
     * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
   ```hocon   
     deploymentConfig: {
       type: "flinkPeriodic"
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
       deploymentManager {
         db: { <config of the custom db data source> },
         processingType: streaming,
@@ -68,13 +70,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         legacyDb: { <OPTIONAL config of the custom db data source> },
       }
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
     }
     ```
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
-* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: by default mini cluster is created once and reused each time
-  To revert previous behaviour (creating minicluster each time), change `deploymentConfig.miniCluster.reuseMiniClusterForScenarioTesting` or/and 
-  `deploymentConfig.miniCluster.reuseMiniClusterForScenarioStateVerification` to `false` 
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) [#7534](https://github.com/TouK/nussknacker/pull/7534) Flink scenario testing mechanism and scenario state verification mechanism changes
+  * By default, shared mini cluster is created once and reused each time. To revert previous behaviour (creating minicluster each time), 
+    switch `deploymentConfig.scenarioTesting.reuseSharedMiniCluster` or/and `deploymentConfig.scenarioStateVerification.reuseSharedMiniCluster` to `false`
+  * Scenario testing and scenario state verification is now limited by a timeout to ensure proper resources cleaning. In some cases it might be needed to change the timeout
+    value. To do that, set `deploymentConfig.scenarioTesting.timeout` or/and `deploymentConfig.scenarioStateVerification.timeout` to desired values. Notice that this properties should be configured along with `akka.http.server.request-timeout`
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.

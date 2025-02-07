@@ -2,6 +2,7 @@ package pl.touk.nussknacker.development.manager
 
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import io.circe.Json
 import org.apache.flink.configuration.Configuration
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
@@ -21,9 +23,8 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Try
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -35,8 +36,10 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] =
+  ): ValidatedNel[String, DeploymentManager] = {
+    import deploymentManagerDependencies._
     valid(new MockableDeploymentManager(Some(modelData)))
+  }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
@@ -54,8 +57,10 @@ object MockableDeploymentManagerProvider {
 
   type ScenarioName = String
 
-  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])
-      extends DeploymentManager
+  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])(
+      implicit executionContext: ExecutionContext,
+      ioRuntime: IORuntime
+  ) extends DeploymentManager
       with ManagerSpecificScenarioActivitiesStoredByManager
       with StubbingCommands {
 
@@ -71,7 +76,9 @@ object MockableDeploymentManagerProvider {
       modelDataOpt.map { modelData =>
         new FlinkMiniClusterScenarioTestRunner(
           modelData,
-          miniClusterWithServicesOpt
+          miniClusterWithServicesOpt,
+          parallelism = 1,
+          waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
         )
       }
 

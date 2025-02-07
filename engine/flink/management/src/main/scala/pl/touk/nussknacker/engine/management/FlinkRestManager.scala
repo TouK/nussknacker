@@ -27,9 +27,8 @@ class FlinkRestManager(
 ) extends FlinkDeploymentManager(
       modelData,
       dependencies,
-      config.shouldVerifyBeforeDeploy,
       mainClassName,
-      config.miniCluster
+      config
     )
     with LazyLogging {
 
@@ -138,21 +137,18 @@ class FlinkRestManager(
     }
     .map(_.toMap)
 
-  // NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
-  protected def toDeploymentStatus(jobState: String, jobStatusCounts: BaseJobStatusCounts): DeploymentStatus = {
+  private def toDeploymentStatus(jobState: String, jobStatusCounts: BaseJobStatusCounts): DeploymentStatus = {
     toJobStatus(jobState) match {
-      case JobStatus.RUNNING if ensureTasksRunning(jobStatusCounts) => DeploymentStatus.Running
-      case s if checkDuringDeployForNotRunningJob(s)                => DeploymentStatus.DuringDeploy
-      case JobStatus.FINISHED                                       => DeploymentStatus.Finished
-      case JobStatus.RESTARTING                                     => DeploymentStatus.Restarting
-      case JobStatus.CANCELED                                       => DeploymentStatus.Canceled
-      case JobStatus.CANCELLING                                     => DeploymentStatus.DuringCancel
+      case JobStatus.RUNNING if ensureTasksRunning(jobStatusCounts)       => DeploymentStatus.Running
+      case JobStatus.RUNNING | JobStatus.INITIALIZING | JobStatus.CREATED => DeploymentStatus.DuringDeploy
+      case JobStatus.FINISHED                                             => DeploymentStatus.Finished
+      case JobStatus.RESTARTING                                           => DeploymentStatus.Restarting
+      case JobStatus.CANCELED                                             => DeploymentStatus.Canceled
+      case JobStatus.CANCELLING                                           => DeploymentStatus.DuringCancel
       // The job is not technically running, but should be in a moment
-      case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => DeploymentStatus.Running
+      case JobStatus.RECONCILING | JobStatus.SUSPENDED => DeploymentStatus.Running
       case JobStatus.FAILING | JobStatus.FAILED =>
         DeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
-      case _ =>
-        throw new IllegalStateException() // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
   }
 
@@ -166,12 +162,6 @@ class FlinkRestManager(
     // We don't handle correctly case when job creates some tasks lazily e.g. in batch case. Without knowledge about what
     // kind of job is deployed, we don't know if it is such case or it is just a streaming job which is not fully running yet
     jobStatusCount.running + jobStatusCount.finished == jobStatusCount.total
-  }
-
-  // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
-  protected def checkDuringDeployForNotRunningJob(s: JobStatus): Boolean = {
-    // Flink return running status even if some tasks are scheduled or initializing
-    s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
   }
 
   override protected def waitForDuringDeployFinished(

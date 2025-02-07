@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.kafka
 
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -27,6 +29,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigPropert
 
 import java.util.Collections
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 class KafkaScenarioTestingSpec
     extends AnyFunSuite
@@ -36,6 +39,9 @@ class KafkaScenarioTestingSpec
     with OptionValues
     with BeforeAndAfterAll
     with PatientScalaFutures {
+
+  private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val ioRuntime: IORuntime = IORuntime.global
 
   private val config = ConfigFactory
     .empty()
@@ -57,7 +63,13 @@ class KafkaScenarioTestingSpec
   private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
   private val testRunner =
-    new FlinkMiniClusterScenarioTestRunner(modelData, Some(miniClusterWithServices))
+    new FlinkMiniClusterScenarioTestRunner(
+      modelData,
+      Some(miniClusterWithServices),
+      parallelism = 1,
+      waitForJobIsFinishedRetryPolicy =
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.seconds, patienceConfig.interval * 2)
+    )
 
   override protected def afterAll(): Unit = {
     super.afterAll()
@@ -107,9 +119,7 @@ class KafkaScenarioTestingSpec
       )
 
     val results = testRunner
-      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))(
-        ExecutionContext.global
-      )
+      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
       .futureValue
 
     val testResultVars = results.nodeResults("end").head.variables
@@ -140,9 +150,7 @@ class KafkaScenarioTestingSpec
       )
 
     val results = testRunner
-      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))(
-        ExecutionContext.global
-      )
+      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
       .futureValue
 
     results.nodeResults shouldBe Symbol("nonEmpty")

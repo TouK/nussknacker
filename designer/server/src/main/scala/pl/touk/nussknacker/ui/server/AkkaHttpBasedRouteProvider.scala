@@ -66,15 +66,13 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
-import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -723,6 +721,8 @@ class AkkaHttpBasedRouteProvider(
       featureTogglesConfig: FeatureTogglesConfig,
       globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
       modelClassLoaderProvider: ModelClassLoaderProvider
+  )(
+      implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
   ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
@@ -763,7 +763,7 @@ class AkkaHttpBasedRouteProvider(
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
-  ) = {
+  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
@@ -775,7 +775,8 @@ class AkkaHttpBasedRouteProvider(
         scenarioActivityRepository,
         dbioActionRunner,
       ),
-      system.dispatcher,
+      executionContextWithIORuntime,
+      executionContextWithIORuntime.ioRuntime,
       system,
       sttpBackend,
       additionalConfigsFromProvider
