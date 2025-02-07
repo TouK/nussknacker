@@ -5,7 +5,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
-import { getAdditionalComponents, getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
+import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getComponentGroups } from "../../../reducers/selectors/getComponentGroups";
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
@@ -40,7 +40,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const dispatch = useDispatch();
     useEffect(() => {
         dispatch(getAdditionalComponents());
-        dispatch(getConfiguredAdditionalComponents());
     }, [dispatch]);
 
     const componentGroups = useSelector(getComponentGroups);

@@ -33,13 +33,15 @@ export type CloudDataActions =
           data: { name: string; type: string }[];
       };
 
+const host = `nu.test.localhost:4000`;
+const appId = `staging-tenants-gitlab-adapter`;
+const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
+
 export function getAdditionalComponents(): ThunkAction {
     return async (dispatch) => {
         dispatch({ type: "GET_ADDITIONAL_COMPONENTS" });
 
-        const { data } = await api.get(
-            "http://tenant-manager-api.staging-cloud.nu.test.localhost:4000/api/applications/staging-tenants-gitlab-adapter",
-        );
+        const { data } = await api.get(`http://tenant-manager-api.staging-cloud.${host}/api/applications/${appId}`);
 
         dispatch({
             type: "ADDITIONAL_COMPONENTS_FETCHED",
@@ -53,7 +55,7 @@ export function getConfiguredAdditionalComponents(): ThunkAction {
         dispatch({ type: "GET_CONFIGURED_ADDITIONAL_COMPONENTS" });
 
         const { data } = await api.get(
-            "http://tenant-manager-api.staging-cloud.nu.test.localhost:4000/api/applications/staging-tenants-gitlab-adapter/tenants/55cf1666-e91e-42cb-80cd-f34f8b08e2b1/enrichers",
+            `http://tenant-manager-api.staging-cloud.${host}/api/applications/${appId}/tenants/${tenantId}/enrichers`,
         );
 
         dispatch({
