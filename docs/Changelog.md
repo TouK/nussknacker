@@ -76,6 +76,7 @@
     * For `aggregate-session` - default `endSessionCondition` is now false
 * Improved scenario visualization loading time
     * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
+    * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
 * [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
 * [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier `ScenarioTestRunner` creation - see [Migration guide](MigrationGuide.md) for details
 * [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
