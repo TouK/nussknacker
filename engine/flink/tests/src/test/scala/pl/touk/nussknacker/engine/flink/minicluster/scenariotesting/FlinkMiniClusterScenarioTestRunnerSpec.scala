@@ -42,7 +42,7 @@ import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext
@@ -55,7 +55,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
-    with PatientScalaFutures {
+    with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
