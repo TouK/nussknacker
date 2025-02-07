@@ -72,7 +72,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoProcessingType,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOuputs._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOutputs._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
@@ -637,7 +637,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
 object NodesApiEndpoints {
 
-  object ErrorOuputs {
+  object ErrorOutputs {
 
     val scenarioNotFoundErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
       oneOfVariantFromMatchType(
