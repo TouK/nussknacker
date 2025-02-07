@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
+import cats.effect.unsafe.IORuntime
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -22,7 +23,8 @@ import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
 import java.time.{Clock, Instant, ZoneOffset}
-import scala.concurrent.ExecutionContext.Implicits.global
+
+import scala.concurrent.ExecutionContext
 import scala.util.Failure
 
 class DeploymentServiceTest
@@ -34,6 +36,9 @@ class DeploymentServiceTest
     with DBIOActionValues
     with EitherValuesDetailedMessage
     with BeforeAndAfterEach {
+
+  private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val ioRuntime: IORuntime = IORuntime.global
 
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 

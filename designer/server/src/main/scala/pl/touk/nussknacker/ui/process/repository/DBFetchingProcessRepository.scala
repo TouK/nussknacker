@@ -54,19 +54,16 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
 
   import api._
 
-  override def getCanonicalProcessWithVersion(
+  override def getProcessVersion(
       processName: ProcessName,
       versionId: VersionId
   )(
       implicit user: LoggedUser,
-  ): F[Option[(CanonicalProcess, ProcessVersion)]] = {
+  ): F[Option[ProcessVersion]] = {
     val result = for {
       processId <- OptionT(fetchProcessId(processName))
       details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
-    } yield (
-      details.json,
-      details.toEngineProcessVersion,
-    )
+    } yield details.toEngineProcessVersion
     result.value
   }
 
@@ -87,6 +84,26 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
         },
         query.isDeployed
+      )
+    )
+  }
+
+  override def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
+      query: ScenarioQuery
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestProcessByQueryAction(
+        { process =>
+          expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
+        },
       )
     )
   }
@@ -134,6 +151,19 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           history = None
         )
       }).map(_.toList)
+  }
+
+  private def fetchLatestProcessByQueryAction[PS: ScenarioShapeFetchStrategy](
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+  )(
+      implicit loggedUser: LoggedUser,
+  ): DBIOAction[List[PS], NoStream, Effect.All with Effect.Read] = {
+    for {
+      latestProcessEntities <- fetchLatestProcessesQuery(query).result
+      latestProcesses = latestProcessEntities.map { case ((_, _), processVersion) =>
+        convertToTargetShape(processVersion)
+      }.toList
+    } yield latestProcesses
   }
 
   private def fetchActionsOrEmpty[PS: ScenarioShapeFetchStrategy](

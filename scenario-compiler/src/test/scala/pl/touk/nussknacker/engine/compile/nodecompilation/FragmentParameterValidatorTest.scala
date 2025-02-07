@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.permittedTypesForEditors
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentClazzRef
 
 class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
@@ -23,7 +24,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     forAll(permittedTypesForEditors) { fragmentParameterType: FragmentClazzRef =>
       {
         val dictId = "someDictId"
-        val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+        val result = FragmentParameterValidator(emptyClassDefinitionSet).validateAgainstClazzRefAndGetEditor(
           valueEditor = ValueInputWithDictEditor(dictId, allowOtherValue = false),
           initialValue = None,
           refClazz = fragmentParameterType,
@@ -39,7 +40,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     forAll(permittedTypesForEditors) { fragmentParameterType: FragmentClazzRef =>
       {
         val fixedValuesList = List(FixedExpressionValue("someExpression", "someLabel"))
-        val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+        val result = FragmentParameterValidator(emptyClassDefinitionSet).validateAgainstClazzRefAndGetEditor(
           valueEditor = ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue = false),
           initialValue = None,
           refClazz = fragmentParameterType,
@@ -55,7 +56,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     val paramName            = ParameterName("someParamName")
     val invalidParameterType = FragmentClazzRef[java.lang.Double]
     val nodeIds              = Set("someNodeId")
-    val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+    val result = FragmentParameterValidator(emptyClassDefinitionSet).validateAgainstClazzRefAndGetEditor(
       valueEditor = ValueInputWithDictEditor("someDictId", allowOtherValue = false),
       initialValue = None,
       refClazz = invalidParameterType,
@@ -71,7 +72,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     val paramName            = ParameterName("someParamName")
     val invalidParameterType = FragmentClazzRef[java.lang.Double]
     val nodeIds              = Set("someNodeId")
-    val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+    val result = FragmentParameterValidator(emptyClassDefinitionSet).validateAgainstClazzRefAndGetEditor(
       valueEditor = ValueInputWithFixedValuesProvided(
         List(FixedExpressionValue("someExpression", "someLabel")),
         allowOtherValue = false
@@ -83,5 +84,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     )
     result shouldBe invalidNel(UnsupportedFixedValuesType(paramName, invalidParameterType.refClazzName, nodeIds))
   }
+
+  private def emptyClassDefinitionSet = ClassDefinitionSet(Set.empty[ClassDefinition])
 
 }

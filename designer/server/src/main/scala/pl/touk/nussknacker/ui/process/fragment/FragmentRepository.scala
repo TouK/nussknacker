@@ -35,10 +35,9 @@ class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Fut
       processingType: ProcessingType
   )(implicit user: LoggedUser): Future[List[CanonicalProcess]] = {
     processRepository
-      .fetchLatestProcessesDetails[CanonicalProcess](
+      .fetchLatestProcesses[CanonicalProcess](
         ScenarioQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
       )
-      .map(_.map(_.json))
   }
 
   override def fetchLatestFragment(

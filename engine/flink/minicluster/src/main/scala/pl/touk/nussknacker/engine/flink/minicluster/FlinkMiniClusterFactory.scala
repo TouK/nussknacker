@@ -1,10 +1,17 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
+  ScenarioStateVerificationConfig,
+  ScenarioTestingConfig
+}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
@@ -35,9 +42,11 @@ object FlinkMiniClusterFactory extends LazyLogging {
 
   def createMiniClusterWithServicesIfConfigured(
       modelClassLoader: URLClassLoader,
-      config: FlinkMiniClusterConfig
+      config: FlinkMiniClusterConfig,
+      scenarioTestingConfig: ScenarioTestingConfig,
+      stateVerificationConfig: ScenarioStateVerificationConfig
   ): Option[FlinkMiniClusterWithServices] = {
-    if (config.reuseMiniClusterForScenarioTesting || config.reuseMiniClusterForScenarioStateVerification) {
+    if (scenarioTestingConfig.reuseSharedMiniCluster || stateVerificationConfig.reuseSharedMiniCluster) {
       Some(createMiniClusterWithServices(modelClassLoader, config.config, config.streamExecutionEnvConfig))
     } else {
       None
@@ -102,8 +111,13 @@ class FlinkMiniClusterWithServices(
     streamExecutionEnvironmentFactory: Boolean => StreamExecutionEnvironment
 ) extends AutoCloseable {
 
-  def createStreamExecutionEnvironment(attached: Boolean): StreamExecutionEnvironment =
-    streamExecutionEnvironmentFactory(attached)
+  def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
+    createDetachedStreamExecutionEnvironment.use(env => IO(action(env))).unsafeRunSync()
+  }
+
+  def createDetachedStreamExecutionEnvironment: Resource[IO, StreamExecutionEnvironment] = {
+    Resource.fromAutoCloseable(IO(streamExecutionEnvironmentFactory(false)))
+  }
 
   override def close(): Unit = miniCluster.close()
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import akka.actor.ActorSystem
+import cats.effect.unsafe.IORuntime
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -43,7 +45,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   // We don't test scenario's json here
-  private val defaultConfig = FlinkConfig(Some("http://test.pl"), shouldVerifyBeforeDeploy = false)
+  private val defaultConfig =
+    FlinkConfig(Some("http://test.pl"), scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false))
 
   private var statuses: List[JobOverview] = List()
 
@@ -549,6 +552,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
       ExecutionContext.global,
+      IORuntime.global,
       ActorSystem(getClass.getSimpleName),
       sttpBackend
     )

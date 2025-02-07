@@ -295,8 +295,6 @@ val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"
-// this is used in cloud, official JsonEncoder uses different field layout
-val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
 val circeV                  = "0.14.10"
 val circeGenericExtrasV     = "0.14.4"
@@ -694,11 +692,9 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-base"       % flinkV               % Test,
-        "org.apache.flink" % "flink-streaming-java"       % flinkV               % Test,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV               % Test,
-        "org.apache.flink" % "flink-connector-kafka"      % flinkConnectorKafkaV % Test,
-        "org.apache.flink" % "flink-json"                 % flinkV               % Test
+        "org.apache.flink" % "flink-connector-base"  % flinkV               % Test,
+        "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV % Test,
+        "org.apache.flink" % "flink-json"            % flinkV               % Test
       )
     }
   )
@@ -785,7 +781,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
     // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
     httpUtils,
-    flinkTestUtils % Test
+    flinkTestUtils % Test,
   )
 
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
@@ -1033,14 +1029,14 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     name := "nussknacker-flink-components-testkit",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
   )
   .dependsOn(
     componentsTestkit,
     flinkExecutor,
-    flinkTestUtils,
+    flinkMiniCluster,
     flinkBaseComponents,
     flinkBaseUnboundedComponents,
     defaultModel
@@ -1208,12 +1204,16 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
         "org.apache.flink"            % "flink-statebackend-rocksdb" % flinkV,
         "org.scala-lang.modules"     %% "scala-collection-compat"    % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"              % scalaLoggingV           % Provided,
+        "com.softwaremill.retry"     %% "retry"                      % retryV,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
   .dependsOn(
-    extensionsApi % Provided,
-    utilsInternal % Provided,
+    extensionsApi    % Provided,
+    utilsInternal    % Provided,
+    // For ResultsCollectingListener purpose
+    scenarioCompiler % Provided,
+    testUtils        % Test,
   )
 
 lazy val flinkTestUtils = (project in flink("test-utils"))
@@ -1222,21 +1222,13 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"           % flinkV % Provided,
-        // intellij has some problems with provided...
-        "org.apache.flink" % "flink-statebackend-rocksdb"     % flinkV,
-        "org.apache.flink" % "flink-test-utils"               % flinkV excludeAll (
-          // we use logback in NK
-          ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
-        ),
-        "org.apache.flink" % "flink-runtime"                  % flinkV % Compile classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard"       % flinkV,
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV,
         "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV,
-      ) ++ flinkLibScalaDeps(scalaVersion.value)
+      )
     }
   )
-  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, componentsUtils, scenarioCompiler)
+  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, scenarioCompiler, flinkMiniCluster)
 
 lazy val requestResponseComponentsUtils = (project in lite("request-response/components-utils"))
   .settings(commonSettings)
@@ -1339,15 +1331,12 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
     name := "nussknacker-lite-runtime",
     libraryDependencies ++= {
       Seq(
-        "io.dropwizard.metrics5"         % "metrics-core"         % dropWizardV,
-        "io.dropwizard.metrics5"         % "metrics-influxdb"     % dropWizardV,
-        "io.dropwizard.metrics5"         % "metrics-jmx"          % dropWizardV,
-        "com.softwaremill.sttp.client3" %% "core"                 % sttpV,
-        "ch.qos.logback"                 % "logback-classic"      % logbackV,
-        "ch.qos.logback.contrib"         % "logback-json-classic" % logbackJsonV,
-        "ch.qos.logback.contrib"         % "logback-jackson"      % logbackJsonV,
-        "com.fasterxml.jackson.core"     % "jackson-databind"     % jacksonV,
-        "com.typesafe.akka"             %% "akka-http"            % akkaHttpV
+        "io.dropwizard.metrics5"         % "metrics-core"     % dropWizardV,
+        "io.dropwizard.metrics5"         % "metrics-influxdb" % dropWizardV,
+        "io.dropwizard.metrics5"         % "metrics-jmx"      % dropWizardV,
+        "com.softwaremill.sttp.client3" %% "core"             % sttpV,
+        "ch.qos.logback"                 % "logback-classic"  % logbackV,
+        "com.typesafe.akka"             %% "akka-http"        % akkaHttpV
       )
     },
   )
@@ -1825,6 +1814,7 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   )
   .dependsOn(
     flinkComponentsTestkit  % Test,
+    flinkTestUtils          % Test,
     flinkTableApiComponents % Test
   )
 
@@ -1921,6 +1911,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka"             %% "akka-actor"   % akkaV,
+        "org.typelevel"                 %% "cats-effect"  % catsEffectV,
         "com.softwaremill.sttp.client3" %% "core"         % sttpV,
         "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
         "org.scalatestplus"             %% "mockito-5-10" % scalaTestPlusV % Test
@@ -2012,9 +2003,6 @@ lazy val designer = (project in file("designer/server"))
         "com.cronutils"                  % "cron-utils"                     % cronParserV,
         "ch.qos.logback"                 % "logback-core"                   % logbackV,
         "ch.qos.logback"                 % "logback-classic"                % logbackV,
-        "ch.qos.logback.contrib"         % "logback-json-classic"           % logbackJsonV,
-        "ch.qos.logback.contrib"         % "logback-jackson"                % logbackJsonV,
-        "com.fasterxml.jackson.core"     % "jackson-databind"               % jacksonV,
         "org.slf4j"                      % "log4j-over-slf4j"               % slf4jV,
         "com.carrotsearch"               % "java-sizeof"                    % "0.0.5",
         "org.typelevel"                 %% "case-insensitive"               % "1.4.0",

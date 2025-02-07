@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka
 
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec._
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
@@ -40,6 +42,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigPropert
 
 import java.util.Collections
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 class SchemedKafkaScenarioTestingSpec
     extends AnyFunSuite
@@ -50,6 +53,9 @@ class SchemedKafkaScenarioTestingSpec
     with LoneElement
     with BeforeAndAfterAll
     with PatientScalaFutures {
+
+  private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val ioRuntime: IORuntime = IORuntime.global
 
   private val creator: KafkaAvroTestProcessConfigCreator =
     new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
@@ -78,7 +84,13 @@ class SchemedKafkaScenarioTestingSpec
   private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
   private val testRunner =
-    new FlinkMiniClusterScenarioTestRunner(modelData, Some(miniClusterWithServices))
+    new FlinkMiniClusterScenarioTestRunner(
+      modelData,
+      Some(miniClusterWithServices),
+      parallelism = 1,
+      waitForJobIsFinishedRetryPolicy =
+        DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.seconds, patienceConfig.interval * 2)
+    )
 
   override protected def afterAll(): Unit = {
     super.afterAll()
@@ -131,7 +143,7 @@ class SchemedKafkaScenarioTestingSpec
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
     val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
 
-    val results = testRunner.runTests(process, scenarioTestData)(ExecutionContext.global).futureValue
+    val results = testRunner.runTests(process, scenarioTestData).futureValue
 
     val testResultVars = results.nodeResults("end").head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
@@ -163,7 +175,7 @@ class SchemedKafkaScenarioTestingSpec
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
-    val results = testRunner.runTests(process, scenarioTestData)(ExecutionContext.global).futureValue
+    val results = testRunner.runTests(process, scenarioTestData).futureValue
     results
       .invocationResults("end")
       .head
@@ -185,7 +197,7 @@ class SchemedKafkaScenarioTestingSpec
       ParameterName("in") -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
-    val results          = testRunner.runTests(fragment, scenarioTestData)(ExecutionContext.global).futureValue
+    val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
     results.nodeResults("fragment1").loneElement shouldBe ResultContext(
       "fragment1-fragment1-0-0",

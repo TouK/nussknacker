@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.development.manager
 
-import akka.actor.ActorSystem
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -15,22 +14,23 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseModelData)
+class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, modelData: BaseModelData)
     extends DeploymentManager
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
   import SimpleStateStatus._
+  import dependencies._
 
   // Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"
@@ -53,7 +53,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   private lazy val flinkTestRunner =
     new FlinkMiniClusterScenarioTestRunner(
       modelData,
-      Some(miniClusterWithServices)
+      Some(miniClusterWithServices),
+      parallelism = 1,
+      waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
 
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
@@ -213,7 +215,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
-    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem, modelData))
+    Validated.valid(new DevelopmentDeploymentManager(dependencies, modelData))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

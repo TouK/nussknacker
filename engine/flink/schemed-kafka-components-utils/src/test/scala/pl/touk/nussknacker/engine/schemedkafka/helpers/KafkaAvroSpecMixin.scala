@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.graph.expression
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -31,7 +33,7 @@ import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,
   UnoptimizedSerializationPreparer
 }
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
@@ -47,7 +49,6 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSin
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.test.{NuScalaTestAssertions, VeryPatientScalaFutures}
 
 trait KafkaAvroSpecMixin
@@ -212,9 +213,10 @@ trait KafkaAvroSpecMixin
   }
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    env.withJobRunning(process.name.value)(action)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
+    }
   }
 
   sealed trait SourceAvroParam {

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import com.typesafe.config.ConfigFactory
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -8,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -16,10 +18,23 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSpec with ValidatedValuesDetailedMessage {
+class FlinkTestScenarioRunnerSpec
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with BeforeAndAfterAll {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  private val config = ConfigFactory.empty()
+
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   test("should return service invoke value") {
     val input = "input"
@@ -33,7 +48,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
 
     val runResults =
       TestScenarioRunner
-        .flinkBased(config, flinkMiniCluster)
+        .flinkBased(config, flinkMiniClusterWithServices)
         .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .build()
         .runWithData[String, String](scenario, List(input))
@@ -53,7 +68,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
 
     val runResults =
       TestScenarioRunner
-        .flinkBased(config, flinkMiniCluster)
+        .flinkBased(config, flinkMiniClusterWithServices)
         .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .inTestRuntimeMode
         .build()
@@ -71,7 +86,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
 
     val runResults =
       TestScenarioRunner
-        .flinkBased(config, flinkMiniCluster)
+        .flinkBased(config, flinkMiniClusterWithServices)
         .withExtraGlobalVariables(Map("SAMPLE" -> SampleHelper))
         .build()
         .runWithData[String, String](scenario, List("lcl"))
@@ -88,7 +103,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
 
     val runResults =
       TestScenarioRunner
-        .flinkBased(config, flinkMiniCluster)
+        .flinkBased(config, flinkMiniClusterWithServices)
         .build()
         .runWithData[String, String](
           scenario,
@@ -111,7 +126,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
 
     val runResults =
       TestScenarioRunner
-        .flinkBased(config, flinkMiniCluster)
+        .flinkBased(config, flinkMiniClusterWithServices)
         .build()
         .runWithData[Int, Int](scenario, List(123))
 
@@ -128,7 +143,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
 
     val runResults =
       TestScenarioRunner
-        .flinkBased(config, flinkMiniCluster)
+        .flinkBased(config, flinkMiniClusterWithServices)
         .inTestRuntimeMode
         .build()
         .runWithData[Int, Int](scenario, List(10))

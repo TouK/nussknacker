@@ -4,14 +4,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
-
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - max count of sticky notes inside one scenario/fragment
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
-
+* [#7534](https://github.com/TouK/nussknacker/pull/7534) `shouldVerifyBeforeDeploy` configuration entry available for Flink deployment
+  was renamed to `scenarioStateVerification.enabled`
 
 ### Other changes
 
@@ -41,13 +41,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   If there were any custom actions defined in some custom DeploymentManager implementation, 
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 * [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
     * the PeriodicDeploymentManager is no longer a separate DM type
     * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
   ```hocon   
     deploymentConfig: {
       type: "flinkPeriodic"
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
       deploymentManager {
         db: { <config of the custom db data source> },
         processingType: streaming,
@@ -70,13 +70,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         legacyDb: { <OPTIONAL config of the custom db data source> },
       }
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
     }
     ```
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
-* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: by default mini cluster is created once and reused each time
-  To revert previous behaviour (creating minicluster each time), change `deploymentConfig.miniCluster.reuseMiniClusterForScenarioTesting` or/and 
-  `deploymentConfig.miniCluster.reuseMiniClusterForScenarioStateVerification` to `false` 
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) [#7534](https://github.com/TouK/nussknacker/pull/7534) Flink scenario testing mechanism and scenario state verification mechanism changes
+  * By default, shared mini cluster is created once and reused each time. To revert previous behaviour (creating minicluster each time), 
+    switch `deploymentConfig.scenarioTesting.reuseSharedMiniCluster` or/and `deploymentConfig.scenarioStateVerification.reuseSharedMiniCluster` to `false`
+  * Scenario testing and scenario state verification is now limited by a timeout to ensure proper resources cleaning. In some cases it might be needed to change the timeout
+    value. To do that, set `deploymentConfig.scenarioTesting.timeout` or/and `deploymentConfig.scenarioStateVerification.timeout` to desired values. Notice that this properties should be configured along with `akka.http.server.request-timeout`
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.
@@ -84,6 +85,30 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing. As an entry point to all migration steps, assume that `FlinkMiniClusterWithServices` is a new `FlinkMiniClusterHolder`
+  * From perspective of testkit (`TestScenarioRunner.flinkBased`) module usage
+    * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-2ccffe37f56882fa91afb457ba45c98f399c40f7667b2de9ea3453b6e8a76989).
+      * `FlinkSpec` inheritance should be removed from test class
+      * Test class should extend `BeforeAndAfterAll`
+      * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
+      * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
+  * From perspective of `flink-test-utils` module usage follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-8ca39d67972d329a5eb6ce59d2338eba626dc0fd36ffdd8d0d679b8190d9f15c).
+    Caution: this module is deprecated; to avoid further migrations issues, tests should be rewritten to testkit stack
+    * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
+      `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
+    * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead
+      * To access methods such as `withJobRunning`, import `ScalatestMiniClusterJobStatusCheckingOps._` 
+        and then invoke these methods on `flinkMiniCluster`
+      * Method `withJobRunning` was renamed to `withRunningJob` and it doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
+      * Method `executeAndWaitForFinished` was renamed to `waitForJobIsFinished` and it doesn't invoke `StreamExecutionEnvironment.execute`. 
+        It should be called before this method; also, this method cancel job if check ended up with error now
+      * Method `assertJobNotFailing` was renamed to `checkJobIsNotFailing`
+      * Some methods are not available in `ScalatestMiniClusterJobStatusCheckingOps`:
+        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - should be used `withRunningJob`/`waitForJobIsFinished` 
+          or `FlinkMiniClusterWithServices.miniCluster` methods directly instead
+        * Other methods were considered too much low-level and were removed
+    * Instead of using `ResultsCollectingListenerHolder.registerListener` or `ResultsCollectingListenerHolder.registerTestEngineListener`
+      should be used `withListener`/`withTestEngineListener` methods which properly cleanup allocated resources. 
 
 ## In version 1.18.0
 
