@@ -16,17 +16,19 @@ import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
-  NoDataGenerated,
-  NoPermission,
-  NoProcessingType,
-  NoScenario,
   Serialization,
   SourceCompilation,
   TooManySamplesRequested,
   UnsupportedSourcePreview
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.ForbiddenNodesError.NoPermission
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
+  NoDataGenerated,
+  NoProcessingType,
+  NoScenario
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,

@@ -53,19 +53,25 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidatio
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  BadRequestNodesError,
+  NotFoundNodesError
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
-  NoDataGenerated,
-  NoProcessingType,
-  NoScenario,
   Serialization,
   SourceCompilation,
   TooManySamplesRequested,
   UnsupportedSourcePreview
 }
-import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
+  NoDataGenerated,
+  NoProcessingType,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOuts._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
@@ -1626,99 +1632,103 @@ object NodesApiEndpoints {
     }
 
     sealed trait NodesError
-    sealed trait BadRequestNodesError extends NodesError
-    sealed trait NotFoundNodesError   extends NodesError
-    sealed trait ForbiddenNodesError  extends NodesError
 
     object NodesError {
-      // 400 Bad Request
-      case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
-      case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
-      case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
-      case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
-      case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
-      case class Serialization(msg: String)                                extends BadRequestNodesError
+      sealed trait BadRequestNodesError extends NodesError
+      sealed trait NotFoundNodesError   extends NodesError
+      sealed trait ForbiddenNodesError  extends NodesError
 
-      // 404 Not Found
-      case class NoScenario(scenarioName: ProcessName)            extends NotFoundNodesError
-      case object NoDataGenerated                                 extends NotFoundNodesError
-      case class NoProcessingType(processingType: ProcessingType) extends NotFoundNodesError
+      object BadRequestNodesError {
+        case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
+        case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
+        case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
+        case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
+        case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
+        case class Serialization(msg: String)                                extends BadRequestNodesError
 
-      // 500 Internal Server Error
+        implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
+            case SourceCompilation(nodeId, errors) =>
+              s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
+            case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
+            case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
+            case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
+            case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
+            case Serialization(msg)                        => s"Error during serialization: ${msg}"
+          }
 
-      // 403 Forbidden
-      case object NoPermission extends ForbiddenNodesError with CustomAuthorizationError
-
-      implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
-          case SourceCompilation(nodeId, errors) =>
-            s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
-          case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
-          case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
-          case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
-          case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
-          case Serialization(msg)                        => s"Error during serialization: ${msg}"
+        implicit val sourceCompilationCodec: Codec[String, SourceCompilation, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[SourceCompilation](e =>
+            s"Cannot compile source '${e.nodeId}'. Errors: ${e.errors.mkString(", ")}"
+          )
         }
 
-      implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
-          case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
-          case NoDataGenerated                  => "No test data was generated"
-          case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
+        implicit val unsupportedSourcePreviewCodec: Codec[String, UnsupportedSourcePreview, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[UnsupportedSourcePreview](e =>
+            s"Source '${e.nodeId}' doesn't support records preview"
+          )
         }
 
-      implicit val sourceCompilationCodec: Codec[String, SourceCompilation, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[SourceCompilation](e =>
-          s"Cannot compile source '${e.nodeId}'. Errors: ${e.errors.mkString(", ")}"
-        )
+        implicit val serializationCodec: Codec[String, Serialization, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[Serialization](e =>
+            s"Error during serialization: ${e.msg}"
+          )
+        }
+
+        implicit val invalidNodeTypeCodec: Codec[String, InvalidNodeType, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[InvalidNodeType](e =>
+            s"Expected ${e.expectedType} but got: ${e.actualType}"
+          )
+        }
+
+        implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested](e =>
+            s"Too many samples requested, limit is ${e.maxSamples}"
+          )
+        }
+
+        implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
+            s"The request content was malformed:\n${e.msg}"
+          )
+        }
+
       }
 
-      implicit val unsupportedSourcePreviewCodec: Codec[String, UnsupportedSourcePreview, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[UnsupportedSourcePreview](e =>
-          s"Source '${e.nodeId}' doesn't support records preview"
-        )
+      object NotFoundNodesError {
+        case class NoScenario(scenarioName: ProcessName)            extends NotFoundNodesError
+        case object NoDataGenerated                                 extends NotFoundNodesError
+        case class NoProcessingType(processingType: ProcessingType) extends NotFoundNodesError
+
+        implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
+            case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
+            case NoDataGenerated                  => "No test data was generated"
+            case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
+          }
+
+        implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
+            "No test data was generated"
+          )
+        }
+
+        implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+            s"No scenario ${e.scenarioName} found"
+          )
+        }
+
+        implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
+            s"ProcessingType type: ${e.processingType} not found"
+          )
+        }
+
       }
 
-      implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
-          "No test data was generated"
-        )
-      }
-
-      implicit val serializationCodec: Codec[String, Serialization, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[Serialization](e =>
-          s"Error during serialization: ${e.msg}"
-        )
-      }
-
-      implicit val invalidNodeTypeCodec: Codec[String, InvalidNodeType, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[InvalidNodeType](e =>
-          s"Expected ${e.expectedType} but got: ${e.actualType}"
-        )
-      }
-
-      implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested](e =>
-          s"Too many samples requested, limit is ${e.maxSamples}"
-        )
-      }
-
-      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
-          s"No scenario ${e.scenarioName} found"
-        )
-      }
-
-      implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
-          s"ProcessingType type: ${e.processingType} not found"
-        )
-      }
-
-      implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
-          s"The request content was malformed:\n${e.msg}"
-        )
+      object ForbiddenNodesError {
+        case object NoPermission extends ForbiddenNodesError with CustomAuthorizationError
       }
 
     }
