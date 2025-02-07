@@ -47,7 +47,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     deploymentConfig: {
       type: "flinkPeriodic"
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
       deploymentManager {
         db: { <config of the custom db data source> },
         processingType: streaming,
@@ -70,7 +69,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         legacyDb: { <OPTIONAL config of the custom db data source> },
       }
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
     }
     ```
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.

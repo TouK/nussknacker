@@ -44,7 +44,7 @@ class FlinkMiniClusterScenarioTestRunner(
       sharedMiniClusterServicesOpt,
       scenario
     ) { miniClusterWithServices =>
-      val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
+      val scenarioWithOverriddenParallelism = sharedMiniClusterServicesOpt
         .map(_ => scenario.overrideParallelism(parallelism))
         .getOrElse(scenario)
       def runJob(
@@ -53,7 +53,7 @@ class FlinkMiniClusterScenarioTestRunner(
       ): JobExecutionResult = {
         jobInvoker.invokeStaticMethod(
           modelData,
-          scenarioWithOverrodeParallelism,
+          scenarioWithOverriddenParallelism,
           scenarioTestData,
           collectingListener,
           env

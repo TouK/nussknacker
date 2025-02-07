@@ -45,13 +45,13 @@ class FlinkMiniClusterScenarioStateVerifier(
   ): Future[Unit] = {
     legacyFallbackToSingleUseMiniClusterHandler.withSharedOrSingleUseCluster(sharedMiniClusterServicesOpt, scenario) {
       miniClusterWithServices =>
-        val scenarioWithOverrodeParallelism = sharedMiniClusterServicesOpt
+        val scenarioWithOverriddenParallelism = sharedMiniClusterServicesOpt
           .map(_ => scenario.overrideParallelism(StateVerificationParallelism))
           .getOrElse(scenario)
         def runJob(env: StreamExecutionEnvironment): JobExecutionResult =
           jobInvoker.invokeStaticMethod(
             modelData,
-            scenarioWithOverrodeParallelism,
+            scenarioWithOverriddenParallelism,
             processVersion,
             savepointPath,
             env
