@@ -35,19 +35,21 @@ class ActionInfoResourcesSpec
         .Then()
         .statusCode(200)
         .equalsJsonBody("""|{
-             |  "DEPLOY":[
-             |    {
-             |      "nodeId":"sourceWithParametersId",
-             |      "parameters":{
-             |        "offset":{
-             |          "defaultValue":null,
-             |          "editor":{"type":"RawParameterEditor"},
-             |          "label":"Offset",
-             |          "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
+             |  "actionNameToParameters":{
+             |    "DEPLOY":[
+             |      {
+             |        "nodeId":"sourceWithParametersId",
+             |        "parameters":{
+             |          "offset":{
+             |            "defaultValue":null,
+             |            "editor":{"type":"RawParameterEditor"},
+             |            "label":"Offset",
+             |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
+             |          }
              |        }
              |      }
-             |    }
-             |  ]
+             |    ]
+             |  }
              |}""".stripMargin)
     }
 
@@ -66,9 +68,7 @@ class ActionInfoResourcesSpec
         .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
         .Then()
         .statusCode(200)
-        .equalsJsonBody(
-          "{}"
-        )
+        .equalsJsonBody("""{"actionNameToParameters":{}}""")
     }
 
     "return no data found when there is no scenario" in {

@@ -360,7 +360,6 @@ class HttpService {
 
     deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
         const runDeploymentRequest = { nodesDeploymentData, comment };
-        console.log(runDeploymentRequest);
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {

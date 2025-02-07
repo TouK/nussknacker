@@ -19,6 +19,7 @@ import { ActionParameter } from "./ActionParameter";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ToggleProcessActionModalData } from "./DeployProcessDialog";
 import LoaderSpinner from "../spinner/Spinner";
+import { useErrorBoundary } from "react-error-boundary";
 
 function initialNodesData(params: ActionNodeParameters[]) {
     return params.reduce(
@@ -38,8 +39,8 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const scenarioGraph = useSelector(getScenarioGraph);
+    const { showBoundary } = useErrorBoundary();
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [isLoadingError, setIsLoadingError] = useState<boolean>(false);
     const [parametersDefinition, setParametersDefinition] = useState([]);
     const [parametersValues, setParametersValues] = useState({});
 
@@ -47,18 +48,18 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
         setIsLoading(true);
         await HttpService.getActionParameters(processName, scenarioGraph)
             .then((response) => {
-                const definition = response.data["DEPLOY"] || ([] as ActionNodeParameters[]);
+                const definition = response.data.actionNameToParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
                 const initialValues = initialNodesData(definition);
                 setParametersDefinition(definition);
                 setParametersValues(initialValues);
             })
-            .catch(() => {
-                setIsLoadingError(true);
+            .catch((error) => {
+                showBoundary(error);
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [processName, scenarioGraph]);
+    }, [processName, scenarioGraph, showBoundary]);
 
     useEffect(() => {
         getActionParameters();
@@ -89,9 +90,9 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.ok", "Ok"), action: () => confirmAction(), disabled: isLoadingError },
+            { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
         ],
-        [confirmAction, props, t, isLoadingError],
+        [confirmAction, props, t],
     );
 
     if (isLoading) {

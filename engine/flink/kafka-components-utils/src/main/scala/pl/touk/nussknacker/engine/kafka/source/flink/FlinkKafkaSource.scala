@@ -93,11 +93,11 @@ class FlinkKafkaSource[T](
                 ),
                 FixedExpressionValue(
                   OffsetResetStrategy.ToLatest.toString,
-                  "Start reading new events only"
+                  "Read new messages only"
                 ),
                 FixedExpressionValue(
                   OffsetResetStrategy.ToEarliest.toString,
-                  "Read all events from the topic"
+                  "Read all messages from the topic"
                 ),
               )
             )

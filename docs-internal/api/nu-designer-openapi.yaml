@@ -246,17 +246,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/UiActionParametersDto'
               examples:
                 Example:
                   summary: Valid action parameters for given scenario
                   value:
-                    DEPLOY:
-                    - nodeId: sample node id
-                      parameters:
-                        param name:
-                          editor:
-                            type: RawParameterEditor
+                    actionNameToParameters:
+                      DEPLOY: []
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -6015,6 +6011,13 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Expression'
+    Map_ScenarioActionName_List_UiActionNodeParametersDto:
+      title: Map_ScenarioActionName_List_UiActionNodeParametersDto
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/UiActionNodeParametersDto'
     Map_String:
       title: Map_String
       type: object
@@ -6038,6 +6041,11 @@ components:
         - $ref: '#/components/schemas/TypedTaggedValue'
         - $ref: '#/components/schemas/TypedUnion'
         - $ref: '#/components/schemas/Unknown'
+    Map_UiActionParameterConfigDto:
+      title: Map_UiActionParameterConfigDto
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/UiActionParameterConfigDto'
     MarkdownAdditionalInfo:
       title: MarkdownAdditionalInfo
       type: object
@@ -7692,6 +7700,45 @@ components:
           - $ref: '#/components/schemas/Unknown'
         expression:
           $ref: '#/components/schemas/Expression'
+    UiActionNodeParametersDto:
+      title: UiActionNodeParametersDto
+      type: object
+      required:
+      - nodeId
+      - parameters
+      properties:
+        nodeId:
+          type: string
+        parameters:
+          $ref: '#/components/schemas/Map_UiActionParameterConfigDto'
+    UiActionParameterConfigDto:
+      title: UiActionParameterConfigDto
+      type: object
+      required:
+      - editor
+      properties:
+        defaultValue:
+          type:
+          - string
+          - 'null'
+        editor:
+          $ref: '#/components/schemas/ParameterEditor'
+        label:
+          type:
+          - string
+          - 'null'
+        hintText:
+          type:
+          - string
+          - 'null'
+    UiActionParametersDto:
+      title: UiActionParametersDto
+      type: object
+      required:
+      - actionNameToParameters
+      properties:
+        actionNameToParameters:
+          $ref: '#/components/schemas/Map_ScenarioActionName_List_UiActionNodeParametersDto'
     Unknown:
       title: Unknown
       type: object
