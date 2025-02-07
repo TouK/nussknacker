@@ -1391,13 +1391,13 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Serialization error
-                  value: 'Error during serialization: Failed to serialize test data'
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
         '401':
           description: ''
           content:
@@ -1426,11 +1426,7 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
                   summary: No scenario {scenarioName} found
@@ -1999,9 +1995,8 @@ paths:
         description: Limit the number of records returned
         required: false
         schema:
-          type:
-          - integer
-          - 'null'
+          default: 10
+          type: integer
           format: int32
       requestBody:
         content:
@@ -2044,14 +2039,24 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
-                - type: string
+                type: string
               examples:
-                Example:
-                  summary: Invalid node type error
+                Example0:
+                  summary: Source compilation error
+                  value: 'Cannot compile source ''sourceId''. Errors: Invalid source
+                    configuration'
+                Example1:
+                  summary: Unsupported source preview
+                  value: Source 'sourceId' doesn't support records preview
+                Example2:
+                  summary: Invalid node type
                   value: 'Expected Filter but got: Source'
+                Example3:
+                  summary: Too many samples requested
+                  value: Too many samples requested, limit is 100
+                Example4:
+                  summary: Serialization error
+                  value: 'Error during serialization: Failed to serialize test data'
         '401':
           description: ''
           content:
@@ -2080,15 +2085,14 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
-                - type: string
-                - type: string
+                type: string
               examples:
-                Example:
-                  summary: No scenario {scenarioName} found
+                Example0:
+                  summary: No scenario found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No test data generated
+                  value: No test data was generated
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
