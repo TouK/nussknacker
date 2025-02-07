@@ -677,78 +677,6 @@ object NodesApiEndpoints {
           )
       )
 
-    val sourceCompilationErrorOutput: EndpointOutput.OneOfVariant[SourceCompilation] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[SourceCompilation]
-          .example(
-            Example.of(
-              summary = Some("Source compilation error"),
-              value = SourceCompilation("sourceId", List("Invalid source configuration", "Missing required parameter"))
-            )
-          )
-      )
-
-    val unsupportedSourcePreviewErrorOutput: EndpointOutput.OneOfVariant[UnsupportedSourcePreview] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[UnsupportedSourcePreview]
-          .example(
-            Example.of(
-              summary = Some("Source preview not supported"),
-              value = UnsupportedSourcePreview("sourceId")
-            )
-          )
-      )
-
-    val noDataGeneratedErrorOutput: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoDataGenerated.type]
-          .example(
-            Example.of(
-              summary = Some("No test data generated"),
-              value = NoDataGenerated
-            )
-          )
-      )
-
-    val serializationErrorOutput: EndpointOutput.OneOfVariant[Serialization] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[Serialization]
-          .example(
-            Example.of(
-              summary = Some("Serialization error"),
-              value = Serialization("Failed to serialize test data")
-            )
-          )
-      )
-
-    val invalidNodeTypeErrorOutput: EndpointOutput.OneOfVariant[InvalidNodeType] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[InvalidNodeType]
-          .example(
-            Example.of(
-              summary = Some("Invalid node type error"),
-              value = InvalidNodeType("Filter", "Source")
-            )
-          )
-      )
-
-    val tooManySamplesErrorOutput: EndpointOutput.OneOfVariant[TooManySamplesRequested] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[TooManySamplesRequested]
-          .example(
-            Example.of(
-              summary = Some("Too many samples requested"),
-              value = TooManySamplesRequested(100)
-            )
-          )
-      )
-
   }
 
   object Dtos {
@@ -1657,36 +1585,6 @@ object NodesApiEndpoints {
             case Serialization(msg)                        => s"Error during serialization: ${msg}"
           }
 
-        implicit val sourceCompilationCodec: Codec[String, SourceCompilation, CodecFormat.TextPlain] = {
-          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[SourceCompilation](e =>
-            s"Cannot compile source '${e.nodeId}'. Errors: ${e.errors.mkString(", ")}"
-          )
-        }
-
-        implicit val unsupportedSourcePreviewCodec: Codec[String, UnsupportedSourcePreview, CodecFormat.TextPlain] = {
-          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[UnsupportedSourcePreview](e =>
-            s"Source '${e.nodeId}' doesn't support records preview"
-          )
-        }
-
-        implicit val serializationCodec: Codec[String, Serialization, CodecFormat.TextPlain] = {
-          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[Serialization](e =>
-            s"Error during serialization: ${e.msg}"
-          )
-        }
-
-        implicit val invalidNodeTypeCodec: Codec[String, InvalidNodeType, CodecFormat.TextPlain] = {
-          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[InvalidNodeType](e =>
-            s"Expected ${e.expectedType} but got: ${e.actualType}"
-          )
-        }
-
-        implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
-          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested](e =>
-            s"Too many samples requested, limit is ${e.maxSamples}"
-          )
-        }
-
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
             s"The request content was malformed:\n${e.msg}"
@@ -1706,12 +1604,6 @@ object NodesApiEndpoints {
             case NoDataGenerated                  => "No test data was generated"
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
-
-        implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
-          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
-            "No test data was generated"
-          )
-        }
 
         implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
