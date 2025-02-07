@@ -39,6 +39,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   If there were any custom actions defined in some custom DeploymentManager implementation, 
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 * [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
     * the PeriodicDeploymentManager is no longer a separate DM type
     * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
   ```hocon   
