@@ -54,7 +54,7 @@ class ProcessUtils {
 
     //fixme maybe return hasErrors flag from backend?
     hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-        return !!scenario.validationResult && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
+        return this.isValidationResultPresent(scenario) && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
     };
 
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
