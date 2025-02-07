@@ -1,5 +1,5 @@
 import { ThunkAction } from "../reduxTypes";
-import { displayTestCapabilities, fetchStickyNotesForScenario, fetchValidatedProcess } from "./process";
+import { displayTestCapabilities, fetchStickyNotesForScenario } from "./process";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
 import { ProcessName } from "../../components/Process/types";

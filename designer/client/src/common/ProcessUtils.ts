@@ -49,7 +49,7 @@ class ProcessUtils {
     };
 
     isValidationResultPresent = (scenario: Scenario) => {
-        return !!scenario.validationResult;
+        return Boolean(scenario.validationResult);
     };
 
     //fixme maybe return hasErrors flag from backend?
