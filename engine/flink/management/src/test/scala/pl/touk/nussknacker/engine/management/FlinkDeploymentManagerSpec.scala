@@ -114,7 +114,19 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
             history.append(HistoryEntry("config", Some(jobId)))
             JobConfig(
               jobId,
-              configs.getOrElse(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
+              configs.getOrElse(
+                jobId,
+                ExecutionConfig(
+                  `job-parallelism` = 1,
+                  `user-config` = Map(
+                    "processId"    -> fromString("123"),
+                    "versionId"    -> fromString("1"),
+                    "deploymentId" -> fromString(jobId),
+                    "user"         -> fromString("user1"),
+                    "labels"       -> fromValues(List.empty)
+                  )
+                )
+              )
             )
           case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
             history.append(HistoryEntry("cancel", Some(jobId)))
@@ -378,8 +390,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
-        None,
+        Some(DeploymentId("1111")),
         Some(ExternalDeploymentId("1111")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(30L),
         errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
       )
@@ -398,8 +420,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
-        None,
+        Some(DeploymentId("1111")),
         Some(ExternalDeploymentId("1111")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(30L),
         errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
       )
@@ -419,8 +451,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Running,
-        None,
+        Some(DeploymentId("2343")),
         Some(ExternalDeploymentId("2343")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(10L)
       )
     )
@@ -438,8 +480,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Finished,
-        None,
+        Some(DeploymentId("2343")),
         Some(ExternalDeploymentId("2343")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(10L)
       )
     )
@@ -458,14 +510,24 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Restarting,
-        None,
+        Some(DeploymentId("1111")),
         Some(ExternalDeploymentId("1111")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(30L)
       )
     )
   }
 
-  test("return process version if in config") {
+  test("return process version the same as configured") {
     val jid          = "2343"
     val processName  = ProcessName("p1")
     val version      = 15L

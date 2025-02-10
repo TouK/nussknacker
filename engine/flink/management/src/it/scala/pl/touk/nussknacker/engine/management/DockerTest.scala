@@ -44,27 +44,13 @@ trait DockerTest
         ConfigValueFactory.fromAnyRef("false")
       )
     if (useMiniClusterForDeployment) {
-      /*
-              "SAVEPOINT_DIR_NAME"                -> savepointDir.getFileName.toString,
-        "FLINK_PROPERTIES"                  -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
-        "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString
-       */
-
       baseConfig
         .withValue("deploymentConfig.useMiniClusterForDeployment", fromAnyRef(true))
-        .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
         .withValue(
           "deploymentConfig.miniCluster.config.\"state.savepoints.dir\"",
           fromAnyRef(savepointDir.resolve("savepoint").toFile.toURI.toString)
         )
-        .withValue(
-          "deploymentConfig.miniCluster.config.\"state.checkpoints.dir\"",
-          fromAnyRef(savepointDir.resolve("checkpoint").toFile.toURI.toString)
-        )
-        .withValue(
-          "deploymentConfig.miniCluster.config.\"state.backend.type\"",
-          fromAnyRef("filesystem")
-        )
+        .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
     } else {
       baseConfig
         .withValue("deploymentConfig.restUrl", fromAnyRef(jobManagerRestUrl))
