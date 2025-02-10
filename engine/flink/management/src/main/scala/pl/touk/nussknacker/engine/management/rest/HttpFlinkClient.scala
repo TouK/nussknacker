@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.management.rest
 
-import cats.data.Validated.{invalid, valid}
-import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
@@ -16,15 +13,18 @@ import sttp.client3.circe._
 import sttp.model.Uri
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.TimeoutException
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
-class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
+class HttpFlinkClient(restUrl: URL, scenarioStateRequestTimeout: FiniteDuration, jobManagerTimeout: FiniteDuration)(
     implicit backend: SttpBackend[Future, Any],
     ec: ExecutionContext
 ) extends FlinkClient
     with LazyLogging {
+
+  private val flinkUrl = Uri(restUrl.toURI)
 
   import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
 
@@ -86,7 +86,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
   ): Future[WithDataFreshnessStatus[List[JobOverview]]] = {
     logger.trace(s"Fetching jobs overview")
     basicRequest
-      .readTimeout(config.scenarioStateRequestTimeout)
+      .readTimeout(scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
       .response(asJson[JobsResponse])
       .send(backend)
@@ -126,7 +126,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
   def waitForSavepoint(
       jobId: ExternalDeploymentId,
       savepointId: String,
-      timeoutLeft: Long = config.jobManagerTimeout.toMillis
+      timeoutLeft: Long = jobManagerTimeout.toMillis
   ): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
@@ -263,27 +263,10 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
 
 }
 
-object HttpFlinkClient {
-
-  def createUnsafe(
-      config: FlinkConfig
-  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): HttpFlinkClient = {
-    create(config).valueOr(err =>
-      throw new IllegalArgumentException(err.toList.mkString("Cannot create HttpFlinkClient: ", ", ", ""))
-    )
-  }
-
-  def create(
-      config: FlinkConfig
-  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ValidatedNel[String, HttpFlinkClient] = {
-    config.restUrl.map(valid).getOrElse(invalid("Invalid configuration: missing restUrl")).andThen { restUrl =>
-      Try(uri"$restUrl")
-        .map(valid)
-        .getOrElse(invalid(s"Invalid configuration: restUrl is not a valid url [$restUrl]"))
-        .map { parsedRestUrl =>
-          new HttpFlinkClient(config, parsedRestUrl)
-        }
-    }
-  }.toValidatedNel
-
-}
+case class ParsedHttpFlinkClientConfig(
+    restUrl: URL,
+    scenarioStateRequestTimeout: FiniteDuration,
+    jobManagerTimeout: FiniteDuration,
+    scenarioStateCacheTTL: Option[FiniteDuration],
+    jobConfigsCacheSize: Int
+)

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import cats.data.ValidatedNel
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
@@ -20,7 +21,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class FlinkDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
+class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -35,13 +36,10 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider with Lazy
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
-    logger.info("Creating FlinkStreamingDeploymentManager")
-    import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
-    FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>
-      val underlying = new FlinkDeploymentManager(modelData, dependencies, flinkConfig, client)
-      CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
-    }
+    FlinkDeploymentManagerProvider
+      .createDeploymentManager(modelData, dependencies, flinkConfig, scenarioStateCacheTTL)
+      .toValidatedNel
   }
 
   override def name: String = "flinkStreaming"
@@ -59,6 +57,37 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider with Lazy
     // cause generation of wrong identity. We also use a Try to handle missing or invalid rest url path
     Try(config.getString(RestUrlPath)).toOption
   }
+
+}
+
+object FlinkDeploymentManagerProvider extends LazyLogging {
+
+  private[management] def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      flinkConfig: FlinkConfig,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): Validated[String, DeploymentManager] = {
+    logger.info("Creating FlinkStreamingDeploymentManager")
+    import dependencies._
+    flinkConfig
+      .parseHttpClientConfig(scenarioStateCacheTTL)
+      .map { parsedHttpClientConfig =>
+        val miniClusterWithServicesOpt = createMiniClusterIfNeeded(modelData, flinkConfig)
+        val client                     = FlinkClient.create(parsedHttpClientConfig)
+        val underlying =
+          new FlinkDeploymentManager(modelData, dependencies, flinkConfig, miniClusterWithServicesOpt, client)
+        CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
+      }
+  }
+
+  private def createMiniClusterIfNeeded(modelData: BaseModelData, flinkConfig: FlinkConfig) =
+    FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
+      modelData.modelClassLoader,
+      flinkConfig.miniCluster,
+      flinkConfig.scenarioTesting,
+      flinkConfig.scenarioStateVerification
+    )
 
 }
 

@@ -5,6 +5,7 @@ import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
+import org.apache.flink.configuration.Configuration
 import sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -12,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment._
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
@@ -43,6 +45,10 @@ class MockDeploymentManager private (
       modelData,
       deploymentManagerDependencies,
       FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
+      Some(
+        FlinkMiniClusterFactory
+          .createMiniClusterWithServices(modelData.modelClassLoader, new Configuration, new Configuration)
+      ),
       FlinkClientStub
     ) {
 

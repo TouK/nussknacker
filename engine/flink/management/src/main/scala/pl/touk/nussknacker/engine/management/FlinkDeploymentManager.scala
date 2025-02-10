@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   FlinkMiniClusterScenarioStateVerifier,
   FlinkMiniClusterScenarioTestRunner
@@ -32,6 +32,7 @@ class FlinkDeploymentManager(
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
     flinkConfig: FlinkConfig,
+    miniClusterWithServicesOpt: Option[FlinkMiniClusterWithServices],
     client: FlinkClient,
 ) extends DeploymentManager
     with LazyLogging {
@@ -41,15 +42,6 @@ class FlinkDeploymentManager(
   private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
 
   private val slotsChecker = new FlinkSlotsChecker(client)
-
-  private val miniClusterWithServicesOpt = {
-    FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
-      modelData.modelClassLoader,
-      flinkConfig.miniCluster,
-      flinkConfig.scenarioTesting,
-      flinkConfig.scenarioStateVerification
-    )
-  }
 
   private val testRunner = new FlinkMiniClusterScenarioTestRunner(
     modelData,
@@ -324,7 +316,7 @@ class FlinkDeploymentManager(
         modelData: BaseModelData,
         dependencies: DeploymentManagerDependencies,
         config: Config,
-    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(modelData, dependencies, config)
+    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(modelData, client, config)
 
   }
 
