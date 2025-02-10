@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManagerProvider
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 
 object FlinkStreamingDeploymentManagerProviderHelper {
@@ -48,7 +48,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       actorSystem,
       backend
     )
-    new FlinkStreamingDeploymentManagerProvider()
+    new FlinkDeploymentManagerProvider()
       .createDeploymentManager(
         modelData,
         deploymentManagerDependencies,

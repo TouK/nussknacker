@@ -109,6 +109,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * Other methods were considered too much low-level and were removed
     * Instead of using `ResultsCollectingListenerHolder.registerListener` or `ResultsCollectingListenerHolder.registerTestEngineListener`
       should be used `withListener`/`withTestEngineListener` methods which properly cleanup allocated resources. 
+* [#7540](https://github.com/TouK/nussknacker/pull/7540) `FlinkStreamingDeploymentManagerProvider` was renamed to `FlinkDeploymentManagerProvider`,
+  `FlinkStreamingRestManager` and `FlinkRestManager` abstraction layers were removed - only `FlinkDeploymentManager` exists
 
 ## In version 1.18.0
 

@@ -105,7 +105,7 @@ class FlinkScheduledExecutionPerformer(
         )
         flinkClient.runProgram(
           jarFile,
-          FlinkStreamingRestManager.MainClassName,
+          FlinkDeploymentManager.MainClassName,
           args,
           None,
           deploymentData.deploymentId.toNewDeploymentIdOpt.map(toJobId)

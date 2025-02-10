@@ -22,12 +22,13 @@ import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
-import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
+import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
@@ -286,10 +287,11 @@ class ManagementResourcesSpec
   }
 
   test("should return failure for not validating deployment") {
+    val requestedParallelism = FlinkClientStub.maxParallelism + 1
     val largeParallelismScenario = ProcessTestData.sampleScenario.copy(metaData =
       MetaData(
         ProcessTestData.sampleScenario.name.value,
-        StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))
+        StreamMetaData(parallelism = Some(requestedParallelism))
       )
     )
     saveCanonicalProcessAndAssertSuccess(largeParallelismScenario)
@@ -297,7 +299,10 @@ class ManagementResourcesSpec
     deploymentManager.withFailingDeployment(largeParallelismScenario.name) {
       deployProcess(largeParallelismScenario.name) ~> check {
         status shouldBe StatusCodes.BadRequest
-        responseAs[String] shouldBe "Parallelism too large"
+        responseAs[
+          String
+        ] shouldBe s"Not enough free slots on Flink cluster. Available slots: ${FlinkClientStub.maxParallelism}, requested: ${requestedParallelism}. " +
+          s"Decrease scenario's parallelism or extend Flink cluster resources"
       }
     }
   }
@@ -317,7 +322,7 @@ class ManagementResourcesSpec
     deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
       snapshot(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe MockDeploymentManager.savepointPath
+        responseAs[String] shouldBe FlinkClientStub.savepointPath
       }
     }
   }
@@ -327,7 +332,7 @@ class ManagementResourcesSpec
     deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
       stop(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
+        responseAs[String] shouldBe FlinkClientStub.stopSavepointPath
       }
     }
   }
