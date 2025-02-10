@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 
 import scala.jdk.CollectionConverters._
