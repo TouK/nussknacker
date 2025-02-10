@@ -5,15 +5,10 @@ import org.apache.flink.api.common
 
 object flinkRestModel {
 
-  /*
-  When #programArgsList is not set in request Flink warns that
-  <pre>Configuring the job submission via query parameters is deprecated. Please migrate to submitting a JSON request instead.</pre>
-  But now we can't add #programArgsList support because of back compatibility of Flink 1.6..
-   */
   @JsonCodec(encodeOnly = true) case class DeployProcessRequest(
       entryClass: String,
       savepointPath: Option[String],
-      programArgs: String,
+      programArgsList: List[String],
       parallelism: Int = common.ExecutionConfig.PARALLELISM_DEFAULT,
       allowNonRestoredState: Boolean = true,
       jobId: Option[String]
