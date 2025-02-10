@@ -318,7 +318,7 @@ class FlinkDeploymentManager(
 
     }
 
-  override def schedulingSupport: SchedulingSupport = new BaseSchedulingSupported {
+  override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
 
     override def createScheduledExecutionPerformer(
         modelData: BaseModelData,
