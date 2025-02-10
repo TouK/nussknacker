@@ -19,6 +19,10 @@
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
 ### 1.18-esp
+* Improved scenario visualization loading time
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order
+    * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
+    * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
     * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
     * implementation provided for Flink DM
