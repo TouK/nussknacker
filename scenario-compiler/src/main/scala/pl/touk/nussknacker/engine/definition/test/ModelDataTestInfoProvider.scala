@@ -183,8 +183,4 @@ class ModelDataTestInfoProvider(modelData: ModelData)
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
   }
 
-  private def formatError(error: String, recordIdx: Int): String = {
-    s"Record ${recordIdx + 1} - $error"
-  }
-
 }

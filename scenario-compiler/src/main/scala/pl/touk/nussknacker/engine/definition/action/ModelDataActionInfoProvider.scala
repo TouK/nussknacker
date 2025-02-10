@@ -44,7 +44,7 @@ class ModelDataActionInfoProvider(modelData: ModelData)
       jobData: JobData
   ): Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
     modelData.withThisAsContextClassLoader {
-      val compiledSource = prepareSourceObj(source)(jobData, NodeId(source.id))
+      val compiledSource = compileSourceNode(source)(jobData, NodeId(source.id))
       compiledSource match {
         case Valid(s: WithActionParametersSupport) => s.actionParametersDefinition
         case _                                     => Map.empty
