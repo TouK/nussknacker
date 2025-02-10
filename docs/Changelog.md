@@ -84,6 +84,9 @@
 * [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
 * [#7539](https://github.com/TouK/nussknacker/pull/7539) Remove old workaround for passing job arguments to Flink, now they are sent using `programArgsList`
 * [#7542](https://github.com/TouK/nussknacker/pull/7542) Use `restart-strategy.type` Flink config key instead of the deprecated `restart-strategy`
+* [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
+    * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
+    * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
 
 ## 1.18
 
