@@ -1971,6 +1971,142 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/nodes/{scenarioName}/records:
+    post:
+      tags:
+      - Nodes
+      summary: Fetch records for specific node
+      operationId: postApiNodesScenarionameRecords
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Limit the number of records returned
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsRequestDto'
+            examples:
+              Example:
+                summary: Basic fetch request
+                value:
+                  processProperties:
+                    additionalFields:
+                      properties:
+                        parallelism: ''
+                        spillStateToDisk: 'true'
+                        useAsyncInterpretation: ''
+                        checkpointIntervalInSeconds: ''
+                      metaDataType: StreamMetaData
+                      showDescription: false
+                  nodeData:
+                    id: sourceId
+                    ref:
+                      typ: source
+                      parameters: []
+                    type: Source
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Simple scenario test data in json stringify form
+                  value: '{name: John}'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Source compilation error
+                  value: 'Cannot compile source ''sourceId''. Errors: Invalid source
+                    configuration'
+                Example1:
+                  summary: Unsupported source preview
+                  value: Source 'sourceId' doesn't support records preview
+                Example2:
+                  summary: Invalid node type
+                  value: 'Expected Filter but got: Source'
+                Example3:
+                  summary: Too many samples requested
+                  value: Too many samples requested, limit is 100
+                Example4:
+                  summary: Serialization error
+                  value: 'Error during serialization: Failed to serialize test data'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No test data generated
+                  value: No test data was generated
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -6635,6 +6771,15 @@ components:
     RawParameterEditor:
       title: RawParameterEditor
       type: object
+    RecordsRequestDto:
+      title: RecordsRequestDto
+      type: object
+      required:
+      - processProperties
+      - nodeData
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
     RegisterStatisticsRequestDto:
       title: RegisterStatisticsRequestDto
       type: object

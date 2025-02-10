@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -15,9 +16,17 @@ import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
+  InvalidNodeType,
   MalformedTypingResult,
-  NoPermission,
+  Serialization,
+  SourceCompilation,
+  TooManySamplesRequested,
+  UnsupportedSourcePreview
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.ForbiddenNodesError.NoPermission
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
+  NoDataGenerated,
   NoProcessingType,
   NoScenario
 }
@@ -34,11 +43,14 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   decodeVariableTypes,
   prepareTypingResultDecoder
 }
-import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
+import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError._
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -52,6 +64,7 @@ class NodesApiHttpService(
     processingTypeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     processingTypeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
+    processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -140,6 +153,48 @@ class NodesApiHttpService(
               validationPerformed = true
             )
           } yield validation
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.recordsEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, numberOfRecords, recordsRequestDto) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            sourceNodeData <- EitherT.fromEither[Future](recordsRequestDto.nodeData match {
+              case source: SourceNodeData => Right(source)
+              case other =>
+                Left(InvalidNodeType("SourceNodeData", other.getClass.getSimpleName))
+            })
+            parametersDefinition <- EitherT[Future, NodesError, String](
+              // The service is expected to limit the number of returned records if the response is too large.
+              // If it does not, we may need to implement client-side pagination or request size limits.
+              scenarioTestService.getDataFromSource(
+                recordsRequestDto.processProperties.toMetaData(scenarioName),
+                sourceNodeData,
+                numberOfRecords
+              ) match {
+                case Left(SourceCompilationError(nodeId, errors)) =>
+                  Future(Left(SourceCompilation(nodeId, errors)))
+                case Left(UnsupportedSourcePreviewError(nodeId)) =>
+                  Future(Left(UnsupportedSourcePreview(nodeId)))
+                case Left(NoDataGeneratedError) =>
+                  Future(Left(NoDataGenerated))
+                case Left(SerializationError(message)) =>
+                  Future(Left(Serialization(message)))
+                case Left(TooManySamplesRequestedError(maxSamples)) =>
+                  Future(Left(TooManySamplesRequested(maxSamples)))
+                case Right(rawScenarioTestData) =>
+                  Future(Right(rawScenarioTestData.content))
+              }
+            )
+          } yield parametersDefinition
         }
       }
   }

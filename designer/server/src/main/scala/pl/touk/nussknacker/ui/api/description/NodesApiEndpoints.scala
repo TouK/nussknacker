@@ -10,7 +10,7 @@ import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -53,14 +53,26 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidatio
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  BadRequestNodesError,
+  NotFoundNodesError
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
+  InvalidNodeType,
   MalformedTypingResult,
+  Serialization,
+  SourceCompilation,
+  TooManySamplesRequested,
+  UnsupportedSourcePreview
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
+  NoDataGenerated,
   NoProcessingType,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Examples._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOutputs._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
@@ -70,7 +82,7 @@ import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectTyping
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedTaggedSchemaHelper.typedTaggedTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedUnionSchemaHelper.typedUnionTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.UnknownSchemaHelper.unknownTypeSchema
-import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
 import sttp.tapir.SchemaType.{SProduct, SProductField, SString, SchemaWithValue}
@@ -127,7 +139,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
         )
       )
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(oneOf[NodesError](scenarioNotFoundErrorOutput))
       .withSecurity(auth)
   }
 
@@ -222,8 +234,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          noScenarioExample,
-          malformedTypingResultExample
+          scenarioNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
         )
       )
       .withSecurity(auth)
@@ -258,7 +270,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
         )
       )
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(oneOf[NodesError](scenarioNotFoundErrorOutput))
       .withSecurity(auth)
   }
 
@@ -345,7 +357,99 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
         )
       )
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(oneOf[NodesError](scenarioNotFoundErrorOutput))
+      .withSecurity(auth)
+  }
+
+  lazy val recordsEndpoint: SecuredEndpoint[
+    (ProcessName, Int, RecordsRequestDto),
+    NodesError,
+    String,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Fetch records for specific node")
+      .tag("Nodes")
+      .post
+      .in("nodes" / path[ProcessName]("scenarioName") / "records")
+      .in(
+        query[Int]("limit")
+          .default(10)
+          .description("Limit the number of records returned")
+      )
+      .in(
+        jsonBody[RecordsRequestDto]
+          .example(
+            Example.of(
+              summary = Some("Basic fetch request"),
+              value = RecordsRequestDto(
+                ProcessProperties(StreamMetaData()),
+                Source("sourceId", SourceRef("source", List.empty), None)
+              )
+            )
+          )
+      )
+      .out(
+        statusCode(Ok).and(
+          stringBody
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Simple scenario test data in json stringify form"),
+                  value = "{name: John}"
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          oneOfVariant[BadRequestNodesError](
+            BadRequest,
+            plainBody[BadRequestNodesError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Source compilation error"),
+                    value = SourceCompilation("sourceId", List("Invalid source configuration"))
+                  ),
+                  Example.of(
+                    summary = Some("Unsupported source preview"),
+                    value = UnsupportedSourcePreview("sourceId")
+                  ),
+                  Example.of(
+                    summary = Some("Invalid node type"),
+                    value = InvalidNodeType("Filter", "Source")
+                  ),
+                  Example.of(
+                    summary = Some("Too many samples requested"),
+                    value = TooManySamplesRequested(100)
+                  ),
+                  Example.of(
+                    summary = Some("Serialization error"),
+                    value = Serialization("Failed to serialize test data")
+                  )
+                )
+              )
+          ),
+          oneOfVariant[NotFoundNodesError](
+            NotFound,
+            plainBody[NotFoundNodesError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("No scenario found"),
+                    value = NoScenario(ProcessName("'example scenario'"))
+                  ),
+                  Example.of(
+                    summary = Some("No test data generated"),
+                    value = NoDataGenerated
+                  )
+                )
+              )
+          )
+        )
+      )
       .withSecurity(auth)
   }
 
@@ -427,8 +531,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          noProcessingTypeExample,
-          malformedTypingResultExample
+          processingTypeNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
         )
       )
       .withSecurity(auth)
@@ -508,26 +612,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
-          noProcessingTypeExample,
-          malformedTypingResultExample
+          processingTypeNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
         )
       )
       .withSecurity(auth)
   }
-
-  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[NodesError, NodesError] =
-    oneOf[NodesError](
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoScenario]
-          .example(
-            Example.of(
-              summary = Some("No scenario {scenarioName} found"),
-              value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
-      )
-    )
 
   private val validPropertiesAdditionalFields =
     ProcessAdditionalFields(
@@ -547,9 +637,9 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
 object NodesApiEndpoints {
 
-  object Examples {
+  object ErrorOutputs {
 
-    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
+    val scenarioNotFoundErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoScenario]
@@ -561,7 +651,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
+    val malformedTypingResultErrorOutput: EndpointOutput.OneOfVariant[MalformedTypingResult] =
       oneOfVariantFromMatchType(
         BadRequest,
         plainBody[MalformedTypingResult]
@@ -575,7 +665,7 @@ object NodesApiEndpoints {
           )
       )
 
-    val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
+    val processingTypeNotFoundErrorOutput: EndpointOutput.OneOfVariant[NoProcessingType] =
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoProcessingType]
@@ -1472,30 +1562,74 @@ object NodesApiEndpoints {
     sealed trait NodesError
 
     object NodesError {
-      final case class NoScenario(scenarioName: ProcessName)            extends NodesError
-      final case class NoProcessingType(processingType: ProcessingType) extends NodesError
-      final case object NoPermission                                    extends NodesError with CustomAuthorizationError
-      final case class MalformedTypingResult(msg: String)               extends NodesError
+      sealed trait BadRequestNodesError extends NodesError
+      sealed trait NotFoundNodesError   extends NodesError
+      sealed trait ForbiddenNodesError  extends NodesError
 
-      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
-          s"No scenario ${e.scenarioName} found"
-        )
+      object BadRequestNodesError {
+        case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
+        case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
+        case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
+        case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
+        case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
+        case class Serialization(msg: String)                                extends BadRequestNodesError
+
+        implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
+            case SourceCompilation(nodeId, errors) =>
+              s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
+            case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
+            case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
+            case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
+            case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
+            case Serialization(msg)                        => s"Error during serialization: ${msg}"
+          }
+
+        implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
+            s"The request content was malformed:\n${e.msg}"
+          )
+        }
+
       }
 
-      implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
-          s"ProcessingType type: ${e.processingType} not found"
-        )
+      object NotFoundNodesError {
+        case class NoScenario(scenarioName: ProcessName)            extends NotFoundNodesError
+        case object NoDataGenerated                                 extends NotFoundNodesError
+        case class NoProcessingType(processingType: ProcessingType) extends NotFoundNodesError
+
+        implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
+            case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
+            case NoDataGenerated                  => "No test data was generated"
+            case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
+          }
+
+        implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+            s"No scenario ${e.scenarioName} found"
+          )
+        }
+
+        implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
+            s"ProcessingType type: ${e.processingType} not found"
+          )
+        }
+
       }
 
-      implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
-          s"The request content was malformed:\n${e.msg}"
-        )
+      object ForbiddenNodesError {
+        case object NoPermission extends ForbiddenNodesError with CustomAuthorizationError
       }
 
     }
+
+    @derive(schema, encoder, decoder)
+    final case class RecordsRequestDto(
+        processProperties: ProcessProperties,
+        nodeData: NodeData
+    )
 
   }
 
