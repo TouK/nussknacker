@@ -15,12 +15,13 @@ import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploy
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
+import pl.touk.nussknacker.engine.management.jobrunner.{FlinkMiniClusterScenarioJobRunner, RemoteFlinkScenarioJobRunner}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
-import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters._
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -76,17 +77,32 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
     val miniClusterJobManagerUriOpt = miniClusterWithServicesOpt
       .filter(_ => flinkConfig.useMiniClusterForDeployment)
       .map { miniClusterWithServices =>
-        Await.result(
+        val uri = Await.result(
           miniClusterWithServices.miniCluster.getRestAddress.toScala,
           flinkConfig.miniCluster.waitForJobManagerRestAPIAvailableTimeout
         )
+        logger.info(
+          s"useMiniClusterForDeployment is enabled, MiniCluster exposed on $uri address will be used for deployment"
+        )
+        uri
       }
     flinkConfig
       .parseHttpClientConfig(miniClusterJobManagerUriOpt, scenarioStateCacheTTL)
       .map { parsedHttpClientConfig =>
         val client = FlinkClient.create(parsedHttpClientConfig)
+        val jobRunner = miniClusterWithServicesOpt
+          .filter(_ => flinkConfig.useMiniClusterForDeployment)
+          .map(new FlinkMiniClusterScenarioJobRunner(_, modelData))
+          .getOrElse(new RemoteFlinkScenarioJobRunner(modelData, client))
         val underlying =
-          new FlinkDeploymentManager(modelData, dependencies, flinkConfig, miniClusterWithServicesOpt, client)
+          new FlinkDeploymentManager(
+            modelData,
+            dependencies,
+            flinkConfig,
+            miniClusterWithServicesOpt,
+            client,
+            jobRunner
+          )
         CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
       }
   }

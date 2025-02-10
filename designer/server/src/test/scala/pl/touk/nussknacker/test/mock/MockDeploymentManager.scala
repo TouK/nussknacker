@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
+import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
@@ -49,7 +50,8 @@ class MockDeploymentManager private (
         FlinkMiniClusterFactory
           .createMiniClusterWithServices(modelData.modelClassLoader, new Configuration, new Configuration)
       ),
-      FlinkClientStub
+      FlinkClientStub,
+      FlinkScenarioJobRunnerStub
     ) {
 
   import deploymentManagerDependencies._
@@ -108,6 +110,17 @@ class MockDeploymentManager private (
     super.close()
     closeCreatedDeps()
   }
+
+}
+
+// This stub won't be used because we override the whole runDeployment method
+object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
+
+  override def runScenarioJob(
+      command: DMRunDeploymentCommand,
+      savepointPathOpt: Option[String]
+  ): Future[Option[ExternalDeploymentId]] =
+    Future.failed(new IllegalAccessException("This implementation shouldn't be used"))
 
 }
 

@@ -271,7 +271,7 @@ class ScenarioParametersServiceTest
   // want to introduce dependency between designer module and this step to make it run on CI.
   // Alternatively we could introduce a separate sbt project that would depend on designer and dist/Universal/stage
   // but it seems to be a very heavy solution
-  ignore("should allow to run docker image without flink") {
+  test("should allow to run docker image without flink") {
     val resourcesDir            = Path.of(getClass.getResource("/").toURI)
     val designerServerModuleDir = resourcesDir.getParent.getParent.getParent
     val distModuleDir           = designerServerModuleDir.getParent.getParent.resolve("nussknacker-dist")

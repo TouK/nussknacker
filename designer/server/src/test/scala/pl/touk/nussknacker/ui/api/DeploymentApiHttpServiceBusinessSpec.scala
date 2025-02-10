@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
@@ -34,7 +34,7 @@ class DeploymentApiHttpServiceBusinessSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with LazyLogging
+    with StrictLogging
     with VeryPatientScalaFutures
     with Matchers
     with LoneElement {

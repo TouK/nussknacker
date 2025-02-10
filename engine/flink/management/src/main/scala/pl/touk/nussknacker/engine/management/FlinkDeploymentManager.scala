@@ -4,7 +4,6 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -14,14 +13,15 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   FlinkMiniClusterScenarioStateVerifier,
   FlinkMiniClusterScenarioTestRunner
 }
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps.DurationOps
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{MainClassName, prepareProgramArgs}
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
+import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
@@ -34,12 +34,11 @@ class FlinkDeploymentManager(
     flinkConfig: FlinkConfig,
     miniClusterWithServicesOpt: Option[FlinkMiniClusterWithServices],
     client: FlinkClient,
+    jobRunner: FlinkScenarioJobRunner
 ) extends DeploymentManager
     with LazyLogging {
 
   import dependencies._
-
-  private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
 
   private val slotsChecker = new FlinkSlotsChecker(client)
 
@@ -174,17 +173,12 @@ class FlinkDeploymentManager(
       savepointPath = determineSavepointPath(command.updateStrategy, stoppedJobsSavepoints)
       // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, List.empty)
-      runResult <- runProgram(
-        processName,
-        MainClassName,
-        prepareProgramArgs(
-          modelData.inputConfigDuringExecution.serialized,
-          processVersion,
-          deploymentData,
-          canonicalProcess
-        ),
+      _ = {
+        logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
+      }
+      runResult <- jobRunner.runScenarioJob(
+        command,
         savepointPath,
-        command.deploymentData.deploymentId.toNewDeploymentIdOpt
       )
       _ <- runResult.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
     } yield runResult
@@ -289,7 +283,7 @@ class FlinkDeploymentManager(
             deploymentIdsToCheck.toSeq
               .map { deploymentId =>
                 client
-                  .getJobDetails(toJobId(deploymentId))
+                  .getJobDetails(deploymentId.toJobID)
                   .map(_.map { jobDetails =>
                     deploymentId -> FlinkStatusDetailsDeterminer
                       .toDeploymentStatus(JobStatus.valueOf(jobDetails.state), jobDetails.`status-counts`)
@@ -401,27 +395,6 @@ class FlinkDeploymentManager(
     }
   }
 
-  private def runProgram(
-      processName: ProcessName,
-      mainClass: String,
-      args: List[String],
-      savepointPath: Option[String],
-      deploymentId: Option[newdeployment.DeploymentId]
-  ): Future[Option[ExternalDeploymentId]] = {
-    logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
-    client.runProgram(
-      modelJarProvider.getJobJar(),
-      mainClass,
-      args,
-      savepointPath,
-      deploymentId.map(toJobId)
-    )
-  }
-
-  private def toJobId(did: newdeployment.DeploymentId) = {
-    new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits).toHexString
-  }
-
   private def checkRequiredSlotsExceedAvailableSlots(
       canonicalProcess: CanonicalProcess,
       currentlyDeployedJobsIds: List[ExternalDeploymentId]
@@ -443,19 +416,9 @@ class FlinkDeploymentManager(
 
 object FlinkDeploymentManager {
 
-  private[management] val MainClassName = "pl.touk.nussknacker.engine.process.runner.FlinkStreamingProcessMain"
-
-  def prepareProgramArgs(
-      serializedConfig: String,
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): List[String] =
-    List(
-      canonicalProcess.asJson.spaces2,
-      processVersion.asJson.spaces2,
-      deploymentData.asJson.spaces2,
-      serializedConfig
-    )
+  implicit class DeploymentIdOps(did: newdeployment.DeploymentId) {
+    def toJobID: String =
+      new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits).toHexString
+  }
 
 }

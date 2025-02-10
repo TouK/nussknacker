@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
@@ -25,7 +25,14 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with LazyLogging {
+class FlinkStreamingDeploymentManagerSpec
+    extends AnyFunSuite
+    with Matchers
+    with StreamingDockerTest
+    with StrictLogging {
+
+  // FIXME abr: separate tests
+  override protected def useMiniClusterForDeployment: Boolean = true
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
@@ -43,7 +50,10 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(process, version)
     try {
-      processVersion(processName) shouldBe List(version)
+      // FIXME abr: At the beginning job is RUNNING but has no version, so we have to repeat that check
+      eventually {
+        processVersion(processName) shouldBe List(version)
+      }
     } finally {
       cancelProcess(processName)
     }

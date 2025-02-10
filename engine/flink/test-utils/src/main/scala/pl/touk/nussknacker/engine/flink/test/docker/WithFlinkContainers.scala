@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test.docker
 
 import com.dimafeng.testcontainers.{GenericContainer, LazyContainer}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
 import org.scalatest.Suite
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
@@ -14,7 +14,7 @@ import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLogging =>
+trait WithFlinkContainers extends WithDockerContainers { self: Suite with StrictLogging =>
 
   protected val FlinkJobManagerRestPort = 8081
 
@@ -31,7 +31,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
 
   protected lazy val savepointDir: Path = prepareSavepointVolumeDir()
 
-  protected lazy val jobManagerContainer: GenericContainer = {
+  private lazy val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
@@ -53,7 +53,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
     }
   }
 
-  protected lazy val taskManagerContainer: GenericContainer = {
+  private lazy val taskManagerContainer: GenericContainer = {
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
       command = "taskmanager" :: Nil,
