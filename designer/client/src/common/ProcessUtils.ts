@@ -48,9 +48,13 @@ class ProcessUtils {
         return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
     };
 
+    isValidationResultPresent = (scenario: Scenario) => {
+        return Boolean(scenario.validationResult);
+    };
+
     //fixme maybe return hasErrors flag from backend?
     hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-        return this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
+        return this.isValidationResultPresent(scenario) && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
     };
 
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
