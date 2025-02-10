@@ -429,7 +429,7 @@ describe("Fragment", () => {
                 });
 
             cy.wait(100); // Small delay to ensure drag completed
-
+            // make sure dropped on edge
             cy.dragNode("dead-end", {
                 x: left,
                 y: top + node.height() / 2,
