@@ -56,6 +56,11 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       evaluateAny(expression) shouldBe expected
     }
 
+    // should preserve maps order
+    val result = evaluateAny("#COLLECTION.merge({a: 1, c: 1}, {a: 2, b: 2}, {b: 3, d: 3})")
+    result shouldBe Map("a" -> 2, "b" -> 3, "c" -> 1, "d" -> 3).asJava
+    result.asInstanceOf[java.util.Map[String, Int]].asScala.toList shouldBe List("a" -> 2, "c" -> 1, "b" -> 3, "d" -> 3)
+
     Table(
       ("expression", "expected"),
       (
@@ -320,7 +325,14 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
   }
 
   test("distinct") {
-    evaluateAny("#COLLECTION.distinct({'1','2','2','3'})") shouldBe List("1", "2", "3").asJava
+    evaluateAny("#COLLECTION.distinct({'1','5','4','6','5','6','2','2','3'})") shouldBe List(
+      "1",
+      "5",
+      "4",
+      "6",
+      "2",
+      "3"
+    ).asJava
 
     evaluateType("#COLLECTION.distinct({'1','2','3'})") shouldBe "List[String]".valid
     evaluateType("#COLLECTION.distinct({1,2,3})") shouldBe "List[Integer]".valid
