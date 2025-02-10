@@ -323,34 +323,19 @@ class PeriodicProcessServiceIntegrationTest
     //       and state of deployment
     inactiveStates.firstScheduleData.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
-    val schedule1Activity   = performedActivities.find(_.scheduleName == "schedule1").get
-    val schedule2Activity   = performedActivities.find(_.scheduleName == "schedule2").get
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = schedule1Activity.scenarioActivityId,
+        scenarioActivityId = firstActivity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = schedule1Activity.date,
+        date = firstActivity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = schedule1Activity.dateFinished,
-        scheduleName = "schedule1",
+        dateFinished = firstActivity.dateFinished,
+        scheduleName = "[default]",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = schedule1Activity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = schedule2Activity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = schedule2Activity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = schedule2Activity.dateFinished,
-        scheduleName = "schedule2",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = schedule2Activity.createdAt,
+        createdAt = firstActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
