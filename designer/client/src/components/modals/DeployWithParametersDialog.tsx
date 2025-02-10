@@ -119,7 +119,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 <FormHelperText title={validationError} error>
                     {validationError}
                 </FormHelperText>
-                {parametersDefinition ? (
+                {parametersDefinition.length ? (
                     <div>
                         <Typography
                             sx={(theme) => ({
