@@ -76,11 +76,17 @@
     * For all - default `windowLength` is 1 hour
     * For `aggregate-session` - default `endSessionCondition` is now false
 * Improved scenario visualization loading time
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order
     * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
     * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
 * [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
 * [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier `ScenarioTestRunner` creation - see [Migration guide](MigrationGuide.md) for details
 * [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
+* [#7539](https://github.com/TouK/nussknacker/pull/7539) Remove old workaround for passing job arguments to Flink, now they are sent using `programArgsList`
+* [#7542](https://github.com/TouK/nussknacker/pull/7542) Use `restart-strategy.type` Flink config key instead of the deprecated `restart-strategy`
+* [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
+    * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
+    * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
 
 ## 1.18
 
