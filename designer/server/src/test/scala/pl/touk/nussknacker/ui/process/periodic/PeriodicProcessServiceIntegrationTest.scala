@@ -323,19 +323,34 @@ class PeriodicProcessServiceIntegrationTest
     //       and state of deployment
     inactiveStates.firstScheduleData.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
+    val schedule1Activity   = performedActivities.find(_.scheduleName == "schedule1").get
+    val schedule2Activity   = performedActivities.find(_.scheduleName == "schedule2").get
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = firstActivity.scenarioActivityId,
+        scenarioActivityId = schedule1Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
+        date = schedule1Activity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
-        scheduleName = "[default]",
+        dateFinished = schedule1Activity.dateFinished,
+        scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
+        createdAt = schedule1Activity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = schedule2Activity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = schedule2Activity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = schedule2Activity.dateFinished,
+        scheduleName = "schedule2",
+        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
+        createdAt = schedule2Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
@@ -443,8 +458,9 @@ class PeriodicProcessServiceIntegrationTest
     service.deploy(toBeRetried).futureValue
     service.findToBeDeployed.futureValue.toList shouldBe Nil
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
+    val firstActivity       = performedActivities.head
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
@@ -602,33 +618,34 @@ class PeriodicProcessServiceIntegrationTest
     def service           = f.periodicProcessService(startTime)
     val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
 
-    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
+    val schedule1Activity   = performedActivities.find(_.scheduleName == "schedule1").get
+    val schedule2Activity   = performedActivities.find(_.scheduleName == "schedule2").get
     activities should contain theSameElementsAs List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
-        scenarioActivityId = firstActivity.scenarioActivityId,
+        scenarioActivityId = schedule1Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
+        date = schedule1Activity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
+        dateFinished = schedule1Activity.dateFinished,
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
+        createdAt = schedule1Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
-        scenarioActivityId = secondActivity.scenarioActivityId,
+        scenarioActivityId = schedule2Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = secondActivity.date,
+        date = schedule2Activity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = secondActivity.dateFinished,
+        dateFinished = schedule2Activity.dateFinished,
         scheduleName = "schedule2",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = secondActivity.createdAt,
+        createdAt = schedule2Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
@@ -835,8 +852,9 @@ class PeriodicProcessServiceIntegrationTest
     val stateAfterHandleFinished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
+    val firstActivity       = performedActivities.head
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
