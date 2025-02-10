@@ -44,6 +44,9 @@
 * [#7438](https://github.com/TouK/nussknacker/pull/7438) Map int32 integer format in OpenAPI schema to the `Integer` type
 * [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
 * [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
+* [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
+    * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
+    * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
 
 ## 1.18
 
