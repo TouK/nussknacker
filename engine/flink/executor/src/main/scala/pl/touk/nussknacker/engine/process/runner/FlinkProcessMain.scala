@@ -14,10 +14,8 @@ import scala.util.control.NonFatal
 
 trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
 
-  def main(argsWithHack: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
     try {
-      val args = FlinkArgsDecodeHack.prepareProgramArgs(argsWithHack)
-
       require(args.nonEmpty, "Scenario json should be passed as a first argument")
       val process        = readProcessFromArg(args(0))
       val processVersion = parseProcessVersion(args(1))

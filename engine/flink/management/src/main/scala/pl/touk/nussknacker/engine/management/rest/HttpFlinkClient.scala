@@ -7,7 +7,7 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
+import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
@@ -209,7 +209,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       DeployProcessRequest(
         entryClass = mainClass,
         savepointPath = savepointPath,
-        programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "),
+        programArgsList = args,
         jobId = jobId
       )
     uploadJarFileIfNotExists(jarFile).flatMap { flinkJarFile =>
