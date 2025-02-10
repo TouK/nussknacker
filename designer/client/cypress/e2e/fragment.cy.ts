@@ -410,6 +410,9 @@ describe("Fragment", () => {
 
         cy.get("@output").should("be.visible").and("not.be.disabled").click();
 
+        // There is a race condition
+        // and it can be a situation that dead-end node is dropped before the scenario is visible.
+        // To be sure that element is visible, let's click on it first
         cy.get("@output").then((node) => {
             const { left, top } = node.position();
 
