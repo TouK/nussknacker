@@ -13,18 +13,18 @@ import sttp.client3.circe._
 import sttp.model.Uri
 
 import java.io.File
-import java.net.URL
+import java.net.URI
 import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class HttpFlinkClient(restUrl: URL, scenarioStateRequestTimeout: FiniteDuration, jobManagerTimeout: FiniteDuration)(
+class HttpFlinkClient(restUrl: URI, scenarioStateRequestTimeout: FiniteDuration, jobManagerTimeout: FiniteDuration)(
     implicit backend: SttpBackend[Future, Any],
     ec: ExecutionContext
 ) extends FlinkClient
     with LazyLogging {
 
-  private val flinkUrl = Uri(restUrl.toURI)
+  private val flinkUrl = Uri(restUrl)
 
   import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
 
@@ -264,7 +264,7 @@ class HttpFlinkClient(restUrl: URL, scenarioStateRequestTimeout: FiniteDuration,
 }
 
 case class ParsedHttpFlinkClientConfig(
-    restUrl: URL,
+    restUrl: URI,
     scenarioStateRequestTimeout: FiniteDuration,
     jobManagerTimeout: FiniteDuration,
     scenarioStateCacheTTL: Option[FiniteDuration],

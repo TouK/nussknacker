@@ -13,7 +13,7 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
-import java.net.{ConnectException, URL}
+import java.net.{ConnectException, URI}
 import java.util.Collections
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -122,7 +122,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Any]): FlinkSlotsChecker = {
     implicit val b: SttpBackend[Future, Any] = backend
-    val client = new HttpFlinkClient(new URL("http://localhost:12345/"), 10.seconds, 10.seconds)
+    val client = new HttpFlinkClient(new URI("http://localhost:12345/"), 10.seconds, 10.seconds)
     new FlinkSlotsChecker(client)
   }
 

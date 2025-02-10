@@ -16,7 +16,7 @@ import sttp.model.{Method, StatusCode}
 import sttp.monad.FutureMonad
 
 import java.io.File
-import java.net.URL
+import java.net.URI
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
@@ -138,6 +138,6 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
   }
 
   private def createHttpClientUnsafe(implicit backend: SttpBackend[Future, Any]) =
-    new HttpFlinkClient(new URL("http://localhost:12345/"), 10.seconds, 10.seconds)
+    new HttpFlinkClient(new URI("http://localhost:12345/"), 10.seconds, 10.seconds)
 
 }

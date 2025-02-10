@@ -43,10 +43,11 @@ object FlinkMiniClusterFactory extends LazyLogging {
   def createMiniClusterWithServicesIfConfigured(
       modelClassLoader: URLClassLoader,
       config: FlinkMiniClusterConfig,
+      useMiniClusterForDeployment: Boolean,
       scenarioTestingConfig: ScenarioTestingConfig,
-      stateVerificationConfig: ScenarioStateVerificationConfig
+      stateVerificationConfig: ScenarioStateVerificationConfig,
   ): Option[FlinkMiniClusterWithServices] = {
-    if (scenarioTestingConfig.reuseSharedMiniCluster || stateVerificationConfig.reuseSharedMiniCluster) {
+    if (useMiniClusterForDeployment || scenarioTestingConfig.reuseSharedMiniCluster || stateVerificationConfig.reuseSharedMiniCluster) {
       Some(createMiniClusterWithServices(modelClassLoader, config.config, config.streamExecutionEnvConfig))
     } else {
       None

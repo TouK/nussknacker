@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
+import scala.compat.java8.FutureConverters._
+import scala.concurrent.Await
 import scala.util.Try
 
 class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -70,11 +72,19 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
   ): Validated[String, DeploymentManager] = {
     logger.info("Creating FlinkStreamingDeploymentManager")
     import dependencies._
+    val miniClusterWithServicesOpt = createMiniClusterIfNeeded(modelData, flinkConfig)
+    val miniClusterJobManagerUriOpt = miniClusterWithServicesOpt
+      .filter(_ => flinkConfig.useMiniClusterForDeployment)
+      .map { miniClusterWithServices =>
+        Await.result(
+          miniClusterWithServices.miniCluster.getRestAddress.toScala,
+          flinkConfig.miniCluster.waitForJobManagerRestAPIAvailableTimeout
+        )
+      }
     flinkConfig
-      .parseHttpClientConfig(scenarioStateCacheTTL)
+      .parseHttpClientConfig(miniClusterJobManagerUriOpt, scenarioStateCacheTTL)
       .map { parsedHttpClientConfig =>
-        val miniClusterWithServicesOpt = createMiniClusterIfNeeded(modelData, flinkConfig)
-        val client                     = FlinkClient.create(parsedHttpClientConfig)
+        val client = FlinkClient.create(parsedHttpClientConfig)
         val underlying =
           new FlinkDeploymentManager(modelData, dependencies, flinkConfig, miniClusterWithServicesOpt, client)
         CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
@@ -85,6 +95,7 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
     FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
       modelData.modelClassLoader,
       flinkConfig.miniCluster,
+      flinkConfig.useMiniClusterForDeployment,
       flinkConfig.scenarioTesting,
       flinkConfig.scenarioStateVerification
     )
