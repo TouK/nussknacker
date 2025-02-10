@@ -83,6 +83,7 @@
 * [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier `ScenarioTestRunner` creation - see [Migration guide](MigrationGuide.md) for details
 * [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
 * [#7539](https://github.com/TouK/nussknacker/pull/7539) Remove old workaround for passing job arguments to Flink, now they are sent using `programArgsList`
+* [#7542](https://github.com/TouK/nussknacker/pull/7542) Use `restart-strategy.type` Flink config key instead of the deprecated `restart-strategy`
 
 ## 1.18
 
