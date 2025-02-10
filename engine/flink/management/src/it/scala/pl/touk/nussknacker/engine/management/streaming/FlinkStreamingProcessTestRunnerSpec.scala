@@ -27,7 +27,7 @@ class FlinkStreamingProcessTestRunnerSpec
     with WithConfig
     with BeforeAndAfterAll {
 
-  private val classPath: List[String] = ClassPaths.scalaClasspath
+  private val classPath: List[String] = TestModelClassPaths.scalaClasspath
 
   override protected val configFilename: Option[String] = Some("application.conf")
 

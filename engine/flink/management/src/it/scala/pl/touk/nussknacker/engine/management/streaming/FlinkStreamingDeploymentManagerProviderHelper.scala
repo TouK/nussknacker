@@ -32,7 +32,6 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition,
       ),
       modelClassLoader

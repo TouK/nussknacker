@@ -35,7 +35,7 @@ trait DockerTest
   override def resolveConfig(config: Config): Config = {
     val baseConfig = super
       .resolveConfig(config)
-      .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
+      .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(modelClassPath.asJava))
       .withValue("modelConfig.enableObjectReuse", fromAnyRef(false))
       .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
       .withValue("category", fromAnyRef("Category1"))
@@ -74,6 +74,6 @@ trait DockerTest
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithUnresolvedVersion(config))
 
-  protected def classPath: List[String]
+  protected def modelClassPath: List[String]
 
 }

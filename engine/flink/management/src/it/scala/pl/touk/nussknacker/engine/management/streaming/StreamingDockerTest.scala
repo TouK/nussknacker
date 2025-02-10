@@ -41,10 +41,11 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   protected lazy val (deploymentManagerClassLoader, releaseDeploymentManagerClassLoaderResources) =
     DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
 
-  protected lazy val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(
-    ConfigWithUnresolvedVersion(config),
-    deploymentManagerClassLoader
-  )
+  protected lazy val deploymentManager: DeploymentManager =
+    FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(
+      ConfigWithUnresolvedVersion(config),
+      deploymentManagerClassLoader
+    )
 
   override def afterAll(): Unit = {
     releaseKafkaClient.unsafeToFuture()

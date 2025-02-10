@@ -20,7 +20,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
   override protected def useMiniClusterForDeployment: Boolean = false
 
-  override protected def classPath: List[String] = ClassPaths.javaClasspath
+  override protected def modelClassPath: List[String] = TestModelClassPaths.javaClasspath
 
   test("deploy java scenario in running flink") {
     val processId = "runningJavaFlink"

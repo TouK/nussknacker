@@ -793,7 +793,6 @@ class AkkaHttpBasedRouteProvider(
       additionalConfigsFromProvider,
       DesignerWideComponentId.default(processingType, _),
       workingDirectoryOpt = None, // we use the default working directory
-      _ => true,
       componentDefinitionExtractionMode,
     )
   }

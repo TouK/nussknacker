@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import com.typesafe.config.{Config, ConfigValueFactory}
-import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
+import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils

@@ -36,7 +36,7 @@ class FlinkStreamingDeploymentManagerSpec
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
-  override protected def classPath: List[String] = ClassPaths.scalaClasspath
+  override protected def modelClassPath: List[String] = TestModelClassPaths.scalaClasspath
 
   private val defaultDeploymentData = DeploymentData.empty
 
@@ -291,7 +291,6 @@ class FlinkStreamingDeploymentManagerSpec
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
       ModelClassLoader(processingTypeConfig.classPath, None, deploymentManagerClassLoader)

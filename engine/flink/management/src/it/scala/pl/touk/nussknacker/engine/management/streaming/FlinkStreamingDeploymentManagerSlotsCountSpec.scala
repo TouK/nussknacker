@@ -18,7 +18,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec
 
   override protected def useMiniClusterForDeployment: Boolean = false
 
-  override protected def classPath: List[String] = ClassPaths.scalaClasspath
+  override protected def modelClassPath: List[String] = TestModelClassPaths.scalaClasspath
 
   override lazy val taskManagerSlotCount: Int = 1
 
