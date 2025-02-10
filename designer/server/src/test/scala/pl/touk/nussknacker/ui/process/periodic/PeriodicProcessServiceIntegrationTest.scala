@@ -602,14 +602,10 @@ class PeriodicProcessServiceIntegrationTest
     def service           = f.periodicProcessService(startTime)
     val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
 
-    val activities = service
-      .getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None)
-      .futureValue
-      .sortBy(_.scenarioId.value)
-
+    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
+    activities should contain theSameElementsAs List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
         scenarioActivityId = firstActivity.scenarioActivityId,
