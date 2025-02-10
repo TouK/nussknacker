@@ -147,13 +147,13 @@ trait SchedulingSupported extends SchedulingSupport {
       deploymentConfig: Config,
   ): ScheduledExecutionPerformer
 
-  def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory]
+  def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
 
-  def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]
+  def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory] = None
 
-  def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]
+  def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory] = None
 
-  def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]
+  def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
 
 }
 

@@ -20,7 +20,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
+class FlinkDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -39,7 +39,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
     import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>
-      val underlying = new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies)
+      val underlying = new FlinkDeploymentManager(modelData, dependencies, flinkConfig, client)
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
     }
   }

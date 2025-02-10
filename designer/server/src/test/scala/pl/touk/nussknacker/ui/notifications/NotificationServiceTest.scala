@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.notifications
 import akka.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
-import org.scalatest.OptionValues
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
@@ -59,7 +59,8 @@ class NotificationServiceTest
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage
     with OptionValues
-    with DBIOActionValues {
+    with DBIOActionValues
+    with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
@@ -92,6 +93,11 @@ class NotificationServiceTest
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    system.terminate().futureValue
+  }
 
   test("Should return only events for user in given time") {
     val processName       = ProcessName("fooProcess")
