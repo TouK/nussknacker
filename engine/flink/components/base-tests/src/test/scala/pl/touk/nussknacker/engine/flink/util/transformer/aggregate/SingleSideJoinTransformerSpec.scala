@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionInterceptor
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
@@ -26,6 +25,7 @@ import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingLis
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Duration
@@ -146,7 +146,7 @@ object SingleSideJoinTransformerSpec {
 
   private val customElementName = "single-side-join-in-test"
 
-  private val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
+  private val elementsAddedToState = new ConcurrentLinkedQueue[KeyedValue[AnyRef, AnyRef]]()
 
   private def prepareComponents(
       mainRecordsSource: BlockingQueueSource[OneRecord],
@@ -175,8 +175,8 @@ object SingleSideJoinTransformerSpec {
             aggregateElementType: TypingResult,
             storedTypeInfo: TypeInformation[AnyRef],
             convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-        )(implicit nodeId: NodeId): CoProcessFunction[ValueWithContext[String], ValueWithContext[
-          StringKeyedValue[AnyRef]
+        )(implicit nodeId: NodeId): CoProcessFunction[ValueWithContext[AnyRef], ValueWithContext[
+          KeyedValue[AnyRef, AnyRef]
         ], ValueWithContext[AnyRef]] = {
           new CoProcessFunctionInterceptor(
             super.prepareAggregatorFunction(
@@ -187,7 +187,7 @@ object SingleSideJoinTransformerSpec {
               convertToEngineRuntimeContext
             )
           ) {
-            override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
+            override protected def afterProcessElement2(value: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): Unit = {
               elementsAddedToState.add(value.value)
             }
           }
