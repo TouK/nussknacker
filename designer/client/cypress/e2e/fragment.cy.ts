@@ -381,9 +381,13 @@ describe("Fragment", () => {
         cy.get("#nk-graph-main").should("be.visible");
 
         // Wait for fragments panel and ensure it's loaded
+        cy.log("Attempting to find fragments panel...");
         cy.contains("fragments", { timeout: 10000 })
-            .should("exist")
-            .and("be.visible")
+            .should(($el) => {
+                cy.log(`Found element: ${$el.prop("tagName")}, classes: ${$el.attr("class")}`);
+                expect($el).to.exist;
+                expect($el).to.be.visible;
+            })
             .scrollIntoView()
             .then(($el) => {
                 if (!$el.is(":visible")) {
