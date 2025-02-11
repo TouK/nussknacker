@@ -8,6 +8,7 @@ export enum WindowKind {
     addFragment,
     saveProcess,
     deployProcess,
+    deployWithParameters,
     calculateCounts,
     generateTestData,
     generateDataAndTest,

@@ -26,6 +26,9 @@ const AdhocTestingDialog = loadable(() => import("../components/modals/AdhocTest
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
     fallback: <LoaderSpinner show />,
 });
+const DeployWithParametersDialog = loadable(() => import("../components/modals/DeployWithParametersDialog"), {
+    fallback: <LoaderSpinner show />,
+});
 const GenericConfirmDialog = loadable(() => import("../components/modals/GenericConfirmDialog"), {
     fallback: <LoaderSpinner show />,
 });
@@ -64,6 +67,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <SaveProcessDialog {...props} />;
         case WindowKind.deployProcess:
             return <DeployProcessDialog {...props} />;
+        case WindowKind.deployWithParameters:
+            return <DeployWithParametersDialog {...props} />;
         case WindowKind.calculateCounts:
             return <CountsDialog {...props} />;
         case WindowKind.generateTestData:

@@ -33,7 +33,16 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, LayoutData, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import {
+    Expression,
+    LayoutData,
+    NodeId,
+    NodeType,
+    ProcessAdditionalFields,
+    ProcessDefinitionData,
+    ScenarioGraph,
+    VariableTypes,
+} from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
@@ -107,6 +116,8 @@ export type SourceWithParametersTest = {
         [paramName: string]: Expression;
     };
 };
+
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
 export type NodeUsageData = {
     fragmentNodeId?: string;
@@ -347,9 +358,10 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(processName: string, comment?: string): Promise<ScenarioActionResult> {
+    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = { nodesDeploymentData, comment };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
                 return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
             })
@@ -685,6 +697,18 @@ class HttpService {
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    getActionParameters(processName: string) {
+        const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetActionParameters", "Failed to get action parameters definition"),
                 error,
                 true,
             ),
