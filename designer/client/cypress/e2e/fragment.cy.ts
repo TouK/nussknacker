@@ -383,13 +383,10 @@ describe("Fragment", () => {
         // Wait for fragments panel and ensure it's loaded
         cy.log("Attempting to find fragments panel...");
         cy.contains("fragments", { timeout: 10000 })
-            .should(($el) => {
-                cy.log(`Found element: ${$el.prop("tagName")}, classes: ${$el.attr("class")}`);
-                expect($el).to.exist;
-                expect($el).to.be.visible;
-            })
-            .scrollIntoView()
+            .should("exist")
+            .and("be.visible")
             .then(($el) => {
+                cy.log(`Found element: ${$el.prop("tagName")}, classes: ${$el.attr("class")}`);
                 if (!$el.is(":visible")) {
                     const parentVisibility = $el.parent().is(":visible") ? "visible" : "hidden";
                     const parentDisplay = $el.parent().css("display");
@@ -397,7 +394,8 @@ describe("Fragment", () => {
                         `Fragments panel found but not visible. Parent visibility: ${parentVisibility}, display: ${parentDisplay}`,
                     );
                 }
-            });
+            })
+            .scrollIntoView();
 
         // Wait for enricher node
         cy.getNode("enricher").should("exist").and("be.visible").as("enricher");
