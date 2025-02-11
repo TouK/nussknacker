@@ -28,14 +28,15 @@ trait ScenarioHttpServiceExtensions {
   protected def noPermissionError: BusinessErrorType with CustomAuthorizationError
 
   protected def getScenarioWithDetailsByName(
-      scenarioName: ProcessName
+      scenarioName: ProcessName,
+      options: GetScenarioWithDetailsOptions = GetScenarioWithDetailsOptions.detailsOnly
   )(implicit loggedUser: LoggedUser): EitherT[Future, BusinessErrorType, ScenarioWithDetails] =
     for {
       scenarioId <- EitherT.fromOptionF(scenarioService.getProcessId(scenarioName), noScenarioError(scenarioName))
       scenarioDetails <- eitherifyErrors(
         scenarioService.getLatestProcessWithDetails(
           ProcessIdWithName(scenarioId, scenarioName),
-          GetScenarioWithDetailsOptions.detailsOnly
+          options
         )
       )
     } yield scenarioDetails

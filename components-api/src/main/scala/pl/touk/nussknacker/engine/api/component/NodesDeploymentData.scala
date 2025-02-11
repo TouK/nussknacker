@@ -1,12 +1,17 @@
 package pl.touk.nussknacker.engine.api.component
 
-import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 
 final case class NodesDeploymentData(dataByNodeId: Map[NodeId, NodeDeploymentData])
 
 object NodesDeploymentData {
+
+  // Raw deployment parameters (name -> value) that are used as additional node configuration during deployment.
+  // Each node can be provided with dedicated set of parameters.
+  // TODO: consider replacing NodeDeploymentData with Json
+  type NodeDeploymentData = Map[String, String]
 
   val empty: NodesDeploymentData = NodesDeploymentData(Map.empty)
 
@@ -16,21 +21,5 @@ object NodesDeploymentData {
 
   implicit val nodesDeploymentDataDecoder: Decoder[NodesDeploymentData] =
     Decoder.decodeMap[NodeId, NodeDeploymentData].map(NodesDeploymentData(_))
-
-}
-
-sealed trait NodeDeploymentData
-
-final case class SqlFilteringExpression(sqlExpression: String) extends NodeDeploymentData
-
-object NodeDeploymentData {
-
-  implicit val nodeDeploymentDataEncoder: Encoder[NodeDeploymentData] =
-    deriveUnwrappedEncoder[SqlFilteringExpression].contramap { case sqlExpression: SqlFilteringExpression =>
-      sqlExpression
-    }
-
-  implicit val nodeDeploymentDataDecoder: Decoder[NodeDeploymentData] =
-    deriveUnwrappedDecoder[SqlFilteringExpression].map(identity)
 
 }

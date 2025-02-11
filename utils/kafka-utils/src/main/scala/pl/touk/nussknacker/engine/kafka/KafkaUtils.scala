@@ -48,19 +48,23 @@ trait KafkaUtils extends LazyLogging {
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
-  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: TopicName.ForSource, consumerGroupId: String): Unit = {
-    val setToLatestOffset = config.forceLatestRead.contains(true)
-    if (setToLatestOffset) {
-      KafkaUtils.setOffsetToLatest(topic.name, consumerGroupId, config)
-    }
-  }
-
   def setOffsetToLatest(topic: String, groupId: String, config: KafkaConfig): Unit = {
     val timeoutMillis = readTimeoutForTempConsumer(config)
     logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
     val consumerAfterWork = Future {
       doWithTempKafkaConsumer(config, Some(groupId)) { consumer =>
         setOffsetToLatest(topic, consumer)
+      }
+    }
+    Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
+  }
+
+  def setOffsetToEarliest(topic: String, groupId: String, config: KafkaConfig): Unit = {
+    val timeoutMillis = readTimeoutForTempConsumer(config)
+    logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
+    val consumerAfterWork = Future {
+      doWithTempKafkaConsumer(config, Some(groupId)) { consumer =>
+        setOffsetToEarliest(topic, consumer)
       }
     }
     Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
@@ -168,6 +172,16 @@ trait KafkaUtils extends LazyLogging {
     consumer.assign(partitions.asJava)
     consumer.seekToEnd(partitions.asJava)
     partitions.foreach(p => consumer.position(p)) // `seekToEnd` is lazy, we have to invoke `position` to change offset
+    consumer.commitSync()
+  }
+
+  private def setOffsetToEarliest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
+    val partitions = consumer.partitionsFor(topic).asScala.map { partition =>
+      new TopicPartition(partition.topic(), partition.partition())
+    }
+    consumer.assign(partitions.asJava)
+    consumer.seekToBeginning(partitions.asJava)
+    partitions.foreach(p => consumer.position(p))
     consumer.commitSync()
   }
 

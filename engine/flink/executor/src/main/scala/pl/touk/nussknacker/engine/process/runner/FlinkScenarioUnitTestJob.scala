@@ -15,13 +15,12 @@ import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConf
 // At the end we should rewrite all tests to TestScenarioRunner.flinkBased
 class FlinkScenarioUnitTestJob(modelData: ModelData) {
 
-  def run(scenario: CanonicalProcess, env: StreamExecutionEnvironment): JobExecutionResult = {
-    registerInEnvironmentWithModel(scenario, env)
+  def run(scenario: CanonicalProcess, env: StreamExecutionEnvironment, deploymentData: DeploymentData = DeploymentData.empty): JobExecutionResult = {
+    registerInEnvironmentWithModel(scenario, env, deploymentData)
     env.execute(scenario.name.value)
   }
 
-  def registerInEnvironmentWithModel(scenario: CanonicalProcess, env: StreamExecutionEnvironment): Unit = {
-    val deploymentData = DeploymentData.empty
+  def registerInEnvironmentWithModel(scenario: CanonicalProcess, env: StreamExecutionEnvironment, deploymentData: DeploymentData = DeploymentData.empty): Unit = {
     val version        = ProcessVersion.empty
     val registrar =
       FlinkProcessRegistrar(

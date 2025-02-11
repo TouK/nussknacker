@@ -179,6 +179,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-sink-monitor",
     "streaming-sink-sendsms",
     "streaming-source-boundedsource",
+    "streaming-source-boundedsourcewithoffset",
     "streaming-source-classinstancesource",
     "streaming-source-communicationsource",
     "streaming-source-csv-source",
