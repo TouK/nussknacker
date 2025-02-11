@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.action.ModelDataActionInfoProvider
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
@@ -47,6 +48,7 @@ import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationS
 import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{
+  ActionInfoService,
   ActionService,
   DefaultProcessingTypeActionService,
   DefaultProcessingTypeDeployedScenariosProvider,
@@ -223,6 +225,12 @@ class AkkaHttpBasedRouteProvider(
             counter,
             new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
           )
+      }
+      val actionInfoService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
+        new ActionInfoService(
+          new ModelDataActionInfoProvider(modelData),
+          processResolver
+        )
       }
 
       val processValidator = scenarioTestServiceDeps.mapValues(_._1)
@@ -402,6 +410,7 @@ class AkkaHttpBasedRouteProvider(
         processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
+        processingTypeToScenarioTestServices = scenarioTestService,
         scenarioService = processService,
       )
 
@@ -411,6 +420,12 @@ class AkkaHttpBasedRouteProvider(
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
         processingTypeToScenarioTestServices = scenarioTestService,
+        scenarioService = processService,
+      )
+
+      val actionInfoHttpService = new ActionInfoHttpService(
+        authManager = authManager,
+        processingTypeToActionInfoService = actionInfoService,
         scenarioService = processService,
       )
 
@@ -611,6 +626,7 @@ class AkkaHttpBasedRouteProvider(
           migrationApiHttpService,
           nodesApiHttpService,
           testingApiHttpService,
+          actionInfoHttpService,
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioLabelsApiHttpService,

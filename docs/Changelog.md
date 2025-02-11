@@ -62,10 +62,10 @@
   * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
 * [#7443](https://github.com/TouK/nussknacker/pull/7443) Indexing on record is more similar to indexing on map. The change lets us access record values dynamically. For example now spel expression "{a: 5, b: 10}[#input.field]" compiles and has type "Integer" inferred from types of values of the record. This lets us access record value based on user input, for instance if user passes "{"field": "b"}" to scenario we will get value "10", whereas input {"field": "c"} would result in "null". Expression "{a: 5}["b"]" still does not compile because it is known at compile time that record does not have property "b".
 * [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
-* [#7335](https://github.com/TouK/nussknacker/pull/7335) Introduced `managersDirs` config to configure deployment managers directory paths. The default is `./managers`.
+* [#7335](https://github.com/TouK/nussknacker/pull/7335) introduced `managersDirs` config to configure deployment managers directory paths (you can use `MANAGERS_DIR` env in case of docker-based deployments). The default is `./managers`.
 * [#7481](https://github.com/TouK/nussknacker/pull/7481) Ignore jobs in CANCELLING status when checking for duplicate jobs on Flink
 * [#7483](https://github.com/TouK/nussknacker/pull/7483) It's possible to configure kafka source to work without schema registry. To do that you should not provide property "schema.registry.url" in kafkaProperties config.
-* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: Flink MiniCluster created once and reused each time
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: mini cluster created once and reused each time
 * [#7498](https://github.com/TouK/nussknacker/pull/7498) Support many migrations loaded using SPI. Loaded migration numbers
   cannot overlap, if they do, an exception is thrown.
 * [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
@@ -87,6 +87,9 @@
 * [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
     * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
     * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Ability to configure deploy action parameters and apply those parameters in deploy http request. 
+  * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
+  * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 
 ## 1.18

@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, Source, VersionId}
 
 import java.time.Instant
 import java.util.UUID
@@ -64,6 +66,9 @@ object ScenarioActionName {
   implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
   implicit val decoder: Decoder[ScenarioActionName] = deriveUnwrappedDecoder
 
+  implicit val keyEncoder: KeyEncoder[ScenarioActionName] = KeyEncoder.encodeKeyString.contramap(_.value)
+  implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName(_))
+
   val Deploy: ScenarioActionName    = ScenarioActionName("DEPLOY")
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
@@ -89,4 +94,11 @@ object ScenarioActionName {
     case other              => ScenarioActionName(other)
   }
 
+}
+
+/**
+ * Used to define Source parameters for each action
+ */
+trait WithActionParametersSupport { self: Source =>
+  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }

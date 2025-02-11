@@ -1,40 +1,28 @@
 package pl.touk.nussknacker.engine.definition.test
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ScenarioTestDataGenerationError,
+  SourceTestDataGenerationError,
+  TestDataPreparationError
+}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
 
-class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
-
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
-
-  private lazy val nodeCompiler = new NodeCompiler(
-    modelData.modelDefinition,
-    new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions,
-    ),
-    expressionCompiler,
-    modelData.modelClassLoader,
-    Seq.empty,
-    ProductionServiceInvocationCollector,
-    ComponentUseCase.TestDataGeneration,
-    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-  )
+class ModelDataTestInfoProvider(modelData: ModelData)
+    extends CommonModelDataInfoProvider(modelData)
+    with TestInfoProvider
+    with LazyLogging {
 
   override def getTestingCapabilities(
       processVersion: ProcessVersion,
@@ -58,7 +46,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def getTestingCapabilities(source: SourceNodeData, jobData: JobData): TestingCapabilities =
     modelData.withThisAsContextClassLoader {
       val testingCapabilities = for {
-        sourceObj <- prepareSourceObj(source)(jobData, NodeId(source.id))
+        sourceObj <- compileSourceNode(source)(jobData, NodeId(source.id))
         canTest         = sourceObj.isInstanceOf[SourceTestSupport[_]]
         canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
         canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
@@ -90,7 +78,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   //       We can go even further and merge both endpoints
   private def getTestParameters(source: SourceNodeData, jobData: JobData): List[Parameter] =
     modelData.withThisAsContextClassLoader {
-      prepareSourceObj(source)(jobData, NodeId(source.id)) match {
+      compileSourceNode(source)(jobData, NodeId(source.id)) match {
         case Valid(s: TestWithParametersSupport[_]) => s.testParametersDefinition
         case Valid(sourceWithoutTestWithParametersSupport) =>
           throw new UnsupportedOperationException(
@@ -107,40 +95,58 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
       size: Int
-  ): Either[String, PreliminaryScenarioTestData] = {
+  ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData] = {
     for {
       generators <- prepareTestDataGenerators(processVersion, scenario)
-      generatedData = generateTestData(generators, size)
-      // Records without timestamp are put at the end of the list.
-      sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-      preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
-      nonEmptyPreliminaryTestRecords <- NonEmptyList
-        .fromList(preliminaryTestRecords)
-        .map(Right(_))
-        .getOrElse(Left("Empty list of generated data"))
-    } yield PreliminaryScenarioTestData(nonEmptyPreliminaryTestRecords)
+        .toRight(ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration)
+      result <- createPreliminaryTestData(generators, size)
+        .toRight(ScenarioTestDataGenerationError.NoDataGenerated)
+    } yield result
+  }
+
+  def generateTestDataForSource(
+      metaData: MetaData,
+      sourceNodeData: SourceNodeData,
+      size: Int
+  ): Either[SourceTestDataGenerationError, PreliminaryScenarioTestData] = {
+    val jobData = JobData(metaData, ProcessVersion.empty)
+    val nodeId  = NodeId(sourceNodeData.id)
+
+    for {
+      compiledSource <- compileSourceNode(sourceNodeData)(jobData, nodeId).toEither.left.map(errors =>
+        SourceTestDataGenerationError.SourceCompilationError(sourceNodeData.id, errors.toList)
+      )
+      testDataGenerator <- compiledSource
+        .cast[TestDataGenerator]
+        .toRight(SourceTestDataGenerationError.UnsupportedSourceError(sourceNodeData.id))
+      result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), size)
+        .toRight(SourceTestDataGenerationError.NoDataGenerated)
+    } yield result
+  }
+
+  private def createPreliminaryTestData(
+      generators: NonEmptyList[(NodeId, TestDataGenerator)],
+      size: Int
+  ): Option[PreliminaryScenarioTestData] = {
+    val generatedData          = generateTestData(generators, size)
+    val sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+    val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
+    NonEmptyList
+      .fromList(preliminaryTestRecords)
+      .map(PreliminaryScenarioTestData.apply)
   }
 
   private def prepareTestDataGenerators(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Either[String, NonEmptyList[(NodeId, TestDataGenerator)]] = {
+  ): Option[NonEmptyList[(NodeId, TestDataGenerator)]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
-      sourceObj         <- prepareSourceObj(source)(jobData, NodeId(source.id)).toList
+      sourceObj         <- compileSourceNode(source)(jobData, NodeId(source.id)).toList
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
-    NonEmptyList
-      .fromList(generatorsForSourcesSupportingTestDataGeneration)
-      .map(Right(_))
-      .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
-  }
-
-  private def prepareSourceObj(
-      source: SourceNodeData
-  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
-    nodeCompiler.compileSource(source).compiledObject
+    NonEmptyList.fromList(generatorsForSourcesSupportingTestDataGeneration)
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
@@ -156,7 +162,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   override def prepareTestData(
       preliminaryTestData: PreliminaryScenarioTestData,
       scenario: CanonicalProcess
-  ): Either[String, ScenarioTestData] = {
+  ): Either[TestDataPreparationError, ScenarioTestData] = {
     import cats.implicits._
 
     val allScenarioSourceIds = collectAllSources(scenario).map(_.id).toSet
@@ -166,23 +172,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
         case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
-          Left(formatError(s"scenario does not have source id: '$sourceId'", recordIdx))
+          Left(TestDataPreparationError.MissingSourceError(sourceId, recordIdx))
         case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
           val sourceId = allScenarioSourceIds.head
           Right(ScenarioTestJsonRecord(sourceId, record))
         case (_: PreliminaryScenarioTestRecord.Simplified, recordIdx) =>
-          Left(formatError("scenario has multiple sources but got record without source id", recordIdx))
+          Left(TestDataPreparationError.MultipleSourcesError(recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
-  }
-
-  private def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
-  }
-
-  private def formatError(error: String, recordIdx: Int): String = {
-    s"Record ${recordIdx + 1} - $error"
   }
 
 }
