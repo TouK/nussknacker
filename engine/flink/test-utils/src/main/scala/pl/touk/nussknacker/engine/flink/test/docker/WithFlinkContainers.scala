@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test.docker
 
 import com.dimafeng.testcontainers.{GenericContainer, LazyContainer}
-import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
+import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.Suite
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy

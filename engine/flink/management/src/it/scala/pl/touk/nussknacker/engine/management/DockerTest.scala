@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.management
 
 import com.dimafeng.testcontainers._
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
+import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}

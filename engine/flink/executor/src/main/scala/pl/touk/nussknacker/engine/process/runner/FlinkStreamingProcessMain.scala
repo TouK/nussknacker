@@ -32,8 +32,6 @@ object FlinkStreamingProcessMain extends LazyLogging {
         process,
         processVersion,
         deploymentData,
-        // During running job using jub submitting rest api, Flink is responsible for state recovery so we don't need to do this in the job itself
-        savepointPathOpt = None,
         StreamExecutionEnvironment.getExecutionEnvironment,
       )
     } catch {

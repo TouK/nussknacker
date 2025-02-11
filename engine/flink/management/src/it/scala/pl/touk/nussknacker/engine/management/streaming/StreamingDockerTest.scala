@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.streaming
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
-import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
+import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -42,7 +42,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
     DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
 
   protected lazy val deploymentManager: DeploymentManager =
-    FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(
+    FlinkDeploymentManagerProviderHelper.createDeploymentManager(
       ConfigWithUnresolvedVersion(config),
       deploymentManagerClassLoader
     )

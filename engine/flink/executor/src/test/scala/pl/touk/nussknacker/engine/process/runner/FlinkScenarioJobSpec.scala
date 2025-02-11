@@ -37,7 +37,6 @@ class FlinkScenarioJobSpec extends AnyFlatSpec with Matchers with Inside with Be
         process,
         ProcessVersion.empty,
         DeploymentData.empty,
-        None,
         env
       )
       flinkMiniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)

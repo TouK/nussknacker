@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
 import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
@@ -30,13 +32,17 @@ class FlinkMiniClusterScenarioJobRunner(
   ): Future[Option[ExternalDeploymentId]] = {
     Future {
       miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
+        savepointPathOpt.foreach { savepointPath =>
+          val conf = new Configuration()
+          SavepointRestoreSettings.toConfiguration(SavepointRestoreSettings.forPath(savepointPath, true), conf)
+          env.configure(conf)
+        }
         val jobID = jobInvoker
           .invokeStaticMethod(
             modelData,
             command.canonicalProcess,
             command.processVersion,
             command.deploymentData,
-            savepointPathOpt,
             env
           )
           .getJobID

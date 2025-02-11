@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 
-class FlinkStreamingDeploymentManagerSlotsCountSpec
+class FlinkDeploymentManagerSlotsCountSpec
     extends AnyFunSuite
     with Matchers
     with StreamingDockerTest

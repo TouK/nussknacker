@@ -6,8 +6,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -20,15 +20,15 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import scala.concurrent.ExecutionContext.Implicits._
 
-class RemoteFlinkStreamingDeploymentManagerSpec extends BaseFlinkStreamingDeploymentManagerSpec {
+class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
   override protected def useMiniClusterForDeployment: Boolean = false
 }
 
-class MiniClusterFlinkStreamingDeploymentManagerSpec extends BaseFlinkStreamingDeploymentManagerSpec {
+class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
   override protected def useMiniClusterForDeployment: Boolean = true
 }
 
-trait BaseFlinkStreamingDeploymentManagerSpec
+trait BaseFlinkDeploymentManagerSpec
     extends AnyFunSuiteLike
     with Matchers
     with StreamingDockerTest
