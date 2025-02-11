@@ -381,7 +381,19 @@ describe("Fragment", () => {
         cy.get("#nk-graph-main").should("be.visible");
 
         // Wait for fragments panel and ensure it's loaded
-        cy.contains("fragments", { timeout: 10000 }).should("exist").and("be.visible").scrollIntoView();
+        cy.contains("fragments", { timeout: 10000 })
+            .should("exist")
+            .and("be.visible")
+            .scrollIntoView()
+            .then(($el) => {
+                if (!$el.is(":visible")) {
+                    const parentVisibility = $el.parent().is(":visible") ? "visible" : "hidden";
+                    const parentDisplay = $el.parent().css("display");
+                    throw new Error(
+                        `Fragments panel found but not visible. Parent visibility: ${parentVisibility}, display: ${parentDisplay}`,
+                    );
+                }
+            });
 
         // Wait for enricher node
         cy.getNode("enricher").should("exist").and("be.visible").as("enricher");
@@ -460,7 +472,19 @@ describe("Fragment", () => {
         cy.getNode("sendSms", { timeout: 10000 }).should("exist").and("be.visible").as("sendSms");
 
         // Wait for fragments panel again
-        cy.contains("fragments", { timeout: 10000 }).should("exist").and("be.visible").scrollIntoView();
+        cy.contains("fragments", { timeout: 10000 })
+            .should("exist")
+            .and("be.visible")
+            .scrollIntoView()
+            .then(($el) => {
+                if (!$el.is(":visible")) {
+                    const parentVisibility = $el.parent().is(":visible") ? "visible" : "hidden";
+                    const parentDisplay = $el.parent().css("display");
+                    throw new Error(
+                        `Fragments panel found but not visible. Parent visibility: ${parentVisibility}, display: ${parentDisplay}`,
+                    );
+                }
+            });
 
         // Wait for second fragment and ensure it's fully loaded
         cy.contains(`${deadEndFragmentName}-test`, { timeout: 10000 })
