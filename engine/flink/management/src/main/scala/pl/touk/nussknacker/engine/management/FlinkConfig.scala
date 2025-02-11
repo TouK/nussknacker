@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import cats.implicits.catsSyntaxValidatedId
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterConfig
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   ScenarioStateVerificationConfig,
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
 import pl.touk.nussknacker.engine.management.FlinkConfig.parseRestUrl
 import pl.touk.nussknacker.engine.management.rest.ParsedHttpFlinkClientConfig
 
-import java.net.{URI, URL}
+import java.net.URI
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Try
 
@@ -34,15 +35,27 @@ final case class FlinkConfig(
     miniCluster: FlinkMiniClusterConfig = FlinkMiniClusterConfig(),
     scenarioTesting: ScenarioTestingConfig = ScenarioTestingConfig(),
     scenarioStateVerification: ScenarioStateVerificationConfig = ScenarioStateVerificationConfig()
-) {
+) extends LazyLogging {
 
   def parseHttpClientConfig(
       miniClusterJobManagerUrlOpt: Option[URI],
       scenarioStateCacheTTL: Option[FiniteDuration],
   ): Validated[String, ParsedHttpFlinkClientConfig] = {
     miniClusterJobManagerUrlOpt
-      .map(_.valid)
-      .getOrElse(parseRestUrl(restUrl))
+      .map { miniClusterJobManagerUrl =>
+        logger.info(
+          s"useMiniClusterForDeployment is enabled, MiniCluster exposed on $miniClusterJobManagerUrl address will be used for the deployment"
+        )
+        miniClusterJobManagerUrl.valid
+      }
+      .getOrElse {
+        parseRestUrl(restUrl).map { parsedUrl =>
+          logger.info(
+            s"useMiniClusterForDeployment is disabled, a remote Flink exposed on $parsedUrl address will be used for the deployment"
+          )
+          parsedUrl
+        }
+      }
       .map(
         ParsedHttpFlinkClientConfig(
           _,

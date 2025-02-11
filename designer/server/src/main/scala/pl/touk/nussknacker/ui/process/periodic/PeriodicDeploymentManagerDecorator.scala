@@ -93,8 +93,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       delegate = underlying,
       dependencies = dependencies,
       periodicProcessesRepository = periodicProcessesRepository,
-      scheduledExecutionPerformer =
-        schedulingSupported.createScheduledExecutionPerformer(modelData, dependencies, deploymentConfig),
+      scheduledExecutionPerformer = schedulingSupported.createScheduledExecutionPerformer(deploymentConfig),
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
       processConfigEnricherFactory = processConfigEnricherFactory,
       listenerFactory = periodicProcessListenerFactory,

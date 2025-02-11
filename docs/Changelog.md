@@ -65,7 +65,7 @@
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Introduced `managersDirs` config to configure deployment managers directory paths. The default is `./managers`.
 * [#7481](https://github.com/TouK/nussknacker/pull/7481) Ignore jobs in CANCELLING status when checking for duplicate jobs on Flink
 * [#7483](https://github.com/TouK/nussknacker/pull/7483) It's possible to configure kafka source to work without schema registry. To do that you should not provide property "schema.registry.url" in kafkaProperties config.
-* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: mini cluster created once and reused each time
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: Flink MiniCluster created once and reused each time
 * [#7498](https://github.com/TouK/nussknacker/pull/7498) Support many migrations loaded using SPI. Loaded migration numbers
   cannot overlap, if they do, an exception is thrown.
 * [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
@@ -87,6 +87,7 @@
 * [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
     * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
     * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
+* [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 
 ## 1.18
 

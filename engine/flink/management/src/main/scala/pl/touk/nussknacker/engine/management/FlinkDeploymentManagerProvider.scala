@@ -77,21 +77,17 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
     val miniClusterJobManagerUriOpt = miniClusterWithServicesOpt
       .filter(_ => flinkConfig.useMiniClusterForDeployment)
       .map { miniClusterWithServices =>
-        val uri = Await.result(
+        Await.result(
           miniClusterWithServices.miniCluster.getRestAddress.toScala,
           flinkConfig.miniCluster.waitForJobManagerRestAPIAvailableTimeout
         )
-        logger.info(
-          s"useMiniClusterForDeployment is enabled, MiniCluster exposed on $uri address will be used for deployment"
-        )
-        uri
       }
     flinkConfig
       .parseHttpClientConfig(miniClusterJobManagerUriOpt, scenarioStateCacheTTL)
       .map { parsedHttpClientConfig =>
         val client = FlinkClient.create(parsedHttpClientConfig)
         val jobRunner = miniClusterWithServicesOpt
-          .filter(_ => flinkConfig.useMiniClusterForDeployment)
+          .filter { _ => flinkConfig.useMiniClusterForDeployment }
           .map(new FlinkMiniClusterScenarioJobRunner(_, modelData))
           .getOrElse(new RemoteFlinkScenarioJobRunner(modelData, client))
         val underlying =

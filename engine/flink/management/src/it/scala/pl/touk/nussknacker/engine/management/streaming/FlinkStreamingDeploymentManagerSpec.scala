@@ -115,6 +115,7 @@ trait BaseFlinkStreamingDeploymentManagerSpec
   }
 
   test("redeploy scenario with greater parallelism than configured in mini cluster") {
+    // For useMiniClusterForDeployment mode, this test has no sense
     if (!useMiniClusterForDeployment) {
       val greaterParallelism = FlinkMiniClusterFactory.DefaultTaskSlots + 1
       val processEmittingOneElementAfterStart =

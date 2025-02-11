@@ -37,6 +37,7 @@ object FlinkScheduledExecutionPerformer {
 }
 
 // Used by [[PeriodicProcessService]].
+// Warning: This won't work correctly with useMiniClusterForDeployment mode because it uses always the same model classpath
 class FlinkScheduledExecutionPerformer(
     flinkClient: FlinkClient,
     jarsDir: Path,
