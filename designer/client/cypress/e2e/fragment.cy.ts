@@ -376,22 +376,30 @@ describe("Fragment", () => {
         cy.visitNewProcess(seed, "testProcess").as("scenarioName");
         cy.createTestFragment(deadEndFragmentName, "deadEndFragment");
 
+        // Wait for initial layout
         cy.layoutScenario();
         cy.get("#nk-graph-main").should("be.visible");
 
-        cy.contains("fragments").should("exist").scrollIntoView();
-        cy.getNode("enricher").should("be.visible").as("enricher");
+        // Wait for fragments panel and ensure it's loaded
+        cy.contains("fragments", { timeout: 10000 }).should("exist").and("be.visible").scrollIntoView();
 
-        cy.contains(`${fragmentName}-test`)
-            .last()
-            .should("be.visible")
+        // Wait for enricher node
+        cy.getNode("enricher").should("exist").and("be.visible").as("enricher");
+
+        // Wait for fragment and ensure it's fully loaded
+        cy.contains(`${fragmentName}-test`, { timeout: 10000 })
+            .should("exist")
+            .and("be.visible")
             .and("not.be.disabled")
-            .drag("@enricher", {
-                target: {
-                    x: 250,
-                    y: -20,
-                },
-                force: true,
+            .then(($el) => {
+                // Ensure element is properly loaded before drag
+                cy.wrap($el).drag("@enricher", {
+                    target: {
+                        x: 250,
+                        y: -20,
+                    },
+                    force: true,
+                });
             });
 
         cy.layoutScenario();
@@ -448,30 +456,44 @@ describe("Fragment", () => {
         cy.get("#nk-graph-main").should("be.visible");
         cy.layoutScenario();
 
-        cy.getNode("sendSms").should("be.visible").as("sendSms");
-        cy.contains("fragments").should("exist").scrollIntoView();
+        // Wait for sendSms node
+        cy.getNode("sendSms", { timeout: 10000 }).should("exist").and("be.visible").as("sendSms");
 
-        cy.contains(`${deadEndFragmentName}-test`)
-            .last()
-            .should("be.visible")
+        // Wait for fragments panel again
+        cy.contains("fragments", { timeout: 10000 }).should("exist").and("be.visible").scrollIntoView();
+
+        // Wait for second fragment and ensure it's fully loaded
+        cy.contains(`${deadEndFragmentName}-test`, { timeout: 10000 })
+            .should("exist")
+            .and("be.visible")
             .and("not.be.disabled")
-            .drag("@sendSms", {
-                target: {
-                    x: 240,
-                    y: -20,
-                },
-                force: true,
+            .then(($el) => {
+                // Ensure element is properly loaded before drag
+                cy.wrap($el).drag("@sendSms", {
+                    target: {
+                        x: 240,
+                        y: -20,
+                    },
+                    force: true,
+                });
             });
 
+        // Wait for viewport and layout changes
         cy.viewport("macbook-16");
         cy.layoutScenario();
+
+        // Wait for graph to be ready
         cy.get("#nk-graph-main").should("be.visible");
 
-        cy.get('[joint-selector="layers"]')
-            .should("be.visible")
-            .matchImage({
-                maxDiffThreshold: 0.015,
-                screenshotConfig: { padding: 16 },
+        // Wait for layers and ensure they're visible before screenshot
+        cy.get('[joint-selector="layers"]', { timeout: 10000 })
+            .should("exist")
+            .and("be.visible")
+            .then(($el) => {
+                cy.wrap($el).matchImage({
+                    maxDiffThreshold: 0.015,
+                    screenshotConfig: { padding: 16 },
+                });
             });
     });
 });
