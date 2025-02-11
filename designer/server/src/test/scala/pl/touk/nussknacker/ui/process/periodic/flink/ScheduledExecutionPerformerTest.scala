@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExecutionPerformer
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.management.{FlinkModelJarProvider, FlinkScheduledExecutionPerformer}
+import pl.touk.nussknacker.engine.management.FlinkScheduledExecutionPerformer
+import pl.touk.nussknacker.engine.management.jobrunner.FlinkModelJarProvider
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 

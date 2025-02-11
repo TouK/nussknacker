@@ -34,7 +34,6 @@ object TestFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.namingStrategy,
       ComponentUseCase.TestRuntime,
       modelData.additionalConfigsFromProvider
     ) {

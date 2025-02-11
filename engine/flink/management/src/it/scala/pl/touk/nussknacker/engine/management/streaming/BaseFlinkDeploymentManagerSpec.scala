@@ -1,35 +1,42 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.funsuite.AnyFunSuite
+import com.typesafe.scalalogging.StrictLogging
+import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.{
-  DMCancelScenarioCommand,
-  DMMakeScenarioSavepointCommand,
-  DMRunDeploymentCommand,
-  DMStopScenarioCommand,
-  DeploymentUpdateStrategy
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with LazyLogging {
+class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
+  override protected def useMiniClusterForDeployment: Boolean = false
+}
+
+class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
+  override protected def useMiniClusterForDeployment: Boolean = true
+}
+
+trait BaseFlinkDeploymentManagerSpec
+    extends AnyFunSuiteLike
+    with Matchers
+    with StreamingDockerTest
+    with StrictLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
-  override protected def classPath: List[String] = ClassPaths.scalaClasspath
+  override protected def modelClassPath: List[String] = TestModelClassPaths.scalaClasspath
 
   private val defaultDeploymentData = DeploymentData.empty
 
@@ -108,9 +115,16 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   }
 
   test("redeploy scenario with greater parallelism than configured in mini cluster") {
-    val processEmittingOneElementAfterStart =
-      StatefulSampleProcess.prepareProcess(ProcessName("redeploy-parallelism-2"), parallelism = 2)
-    testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)
+    // For useMiniClusterForDeployment mode, this test has no sense
+    if (!useMiniClusterForDeployment) {
+      val greaterParallelism = FlinkMiniClusterFactory.DefaultTaskSlots + 1
+      val processEmittingOneElementAfterStart =
+        StatefulSampleProcess.prepareProcess(
+          ProcessName(s"redeploy-parallelism-$greaterParallelism"),
+          parallelism = greaterParallelism
+        )
+      testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)
+    }
   }
 
   private def testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart: CanonicalProcess) = {
@@ -281,7 +295,6 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
       ModelClassLoader(processingTypeConfig.classPath, None, deploymentManagerClassLoader)

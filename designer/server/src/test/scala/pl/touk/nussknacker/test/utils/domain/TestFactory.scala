@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -129,7 +129,6 @@ object TestFactory {
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      _ => true,
       ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
 

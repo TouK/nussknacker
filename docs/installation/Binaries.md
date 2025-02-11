@@ -3,12 +3,12 @@
 Released versions are available at [GitHub](https://github.com/TouK/nussknacker/releases).
 
 Please note, that while you can install Designer from `.tgz` with Lite engine configured, you still
-need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
-
+need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for
+that mode.
 
 :::note
-While you can install Designer from `.tgz` and you want to use the Lite engine on production, you will need 
-a configured Kubernetes cluster to have a production setup. Using [Helm Installation](HelmChart.md) is recommended 
+While you can install Designer from `.tgz` and you want to use the Lite engine on production, you will need
+a configured Kubernetes cluster to have a production setup. Using [Helm Installation](HelmChart.md) is recommended
 in this case.
 :::
 
@@ -17,9 +17,11 @@ in this case.
 We assume that `java` (recommended version is JDK 11) is on PATH.
 
 Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
-running on `localhost` with their default ports configured. See [environment variables](../configuration/Common.md#environment-variables) section
+running on `localhost` with their default ports configured.
+See [environment variables](../configuration/Common.md#environment-variables) section
 for the details. Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy
-like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/nginx) is used to access both Designer and
+like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/nginx) is used to access both
+Designer and
 Grafana. For other setups you should change this value to absolute Grafana URL.
 
 `WORKING_DIR` environment variable is used as base place where Nussknacker stores its data such as:
@@ -49,8 +51,7 @@ We provide following scripts:
 | $NUSSKNACKER_DIR/model/flinkExecutor.jar |                                                         | JAR with Flink executor, used by scenarios running on Flink                                                                                  |
 | $NUSSKNACKER_DIR/components              |                                                         | Directory with Nussknacker Component Provider JARS                                                                                           |
 | $NUSSKNACKER_DIR/lib                     |                                                         | Directory with Nussknacker base libraries                                                                                                    |
-| $NUSSKNACKER_DIR/managers                | Configured by MANAGERS_DIR property                     | Directory with Nussknacker Deployment Managers                                                                                               |
-
+| $NUSSKNACKER_DIR/managers                |                                                         | Directory with Nussknacker Deployment Managers                                                                                               |
 
 ## Logging
 
@@ -101,7 +102,8 @@ WantedBy=default.target
 
 ## Configuring the Designer with Nginx-http-public-path
 
-Sample nginx proxy configuration serving Nussknacker Designer UI under specified `my-custom-path` path. It assumes Nussknacker itself is available under `http://designer:8080`
+Sample nginx proxy configuration serving Nussknacker Designer UI under specified `my-custom-path` path. It assumes
+Nussknacker itself is available under `http://designer:8080`
 Don't forget to specify `HTTP_PUBLIC_PATH=/my-custom-path` environment variable in Nussknacker Designer.
 
 ```

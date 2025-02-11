@@ -44,7 +44,9 @@ trait KafkaSourceFactoryProcessMixin
     resultHolders().clear()
   }
 
-  protected def run(process: CanonicalProcess, deploymentData: DeploymentData = DeploymentData.empty)(action: => Unit): Unit = {
+  protected def run(process: CanonicalProcess, deploymentData: DeploymentData = DeploymentData.empty)(
+      action: => Unit
+  ): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env, deploymentData)
       flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)

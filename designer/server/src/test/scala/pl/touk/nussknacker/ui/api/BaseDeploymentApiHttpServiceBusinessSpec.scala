@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
 import org.hamcrest.Matchers.{anyOf, equalTo}
-import org.scalatest.{LoneElement, Suite}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.concurrent.PatienceConfiguration.{Interval, Timeout}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
+import org.scalatest.{LoneElement, Suite}
 import org.testcontainers.containers.BindMode
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -30,7 +30,7 @@ import java.nio.file.{Files, Path}
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
     with Suite
-    with LazyLogging
+    with StrictLogging
     with Matchers
     with Eventually
     with LoneElement

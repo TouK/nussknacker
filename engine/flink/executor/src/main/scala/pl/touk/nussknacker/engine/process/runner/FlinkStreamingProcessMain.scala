@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.runner
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -13,7 +14,7 @@ import java.nio.charset.StandardCharsets
 import scala.util.Using
 import scala.util.control.NonFatal
 
-class BaseFlinkStreamingProcessMain extends LazyLogging {
+object FlinkStreamingProcessMain extends LazyLogging {
 
   def main(args: Array[String]): Unit = {
     try {
@@ -26,12 +27,12 @@ class BaseFlinkStreamingProcessMain extends LazyLogging {
           s"Model version ${processVersion.modelVersion}. Deploying user [id=${deploymentData.user.id}, name=${deploymentData.user.name}]"
       )
       val modelConfig = readModelConfigFromArgs(args)
-      FlinkScenarioJob.run(
+      val modelData   = ModelData.duringFlinkExecution(ModelConfigs(modelConfig, deploymentData.additionalModelConfigs))
+      new FlinkScenarioJob(modelData).run(
         process,
         processVersion,
         deploymentData,
-        modelConfig,
-        StreamExecutionEnvironment.getExecutionEnvironment
+        StreamExecutionEnvironment.getExecutionEnvironment,
       )
     } catch {
       // marker exception for graph optimalization
@@ -75,5 +76,3 @@ class BaseFlinkStreamingProcessMain extends LazyLogging {
     }
 
 }
-
-object FlinkStreamingProcessMain extends BaseFlinkStreamingProcessMain

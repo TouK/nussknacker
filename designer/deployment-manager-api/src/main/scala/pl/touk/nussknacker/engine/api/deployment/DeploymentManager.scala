@@ -141,11 +141,7 @@ sealed trait SchedulingSupport
 
 trait SchedulingSupported extends SchedulingSupport {
 
-  def createScheduledExecutionPerformer(
-      modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config,
-  ): ScheduledExecutionPerformer
+  def createScheduledExecutionPerformer(deploymentConfig: Config): ScheduledExecutionPerformer
 
   def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
 

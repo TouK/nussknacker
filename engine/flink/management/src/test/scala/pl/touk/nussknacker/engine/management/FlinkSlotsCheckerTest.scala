@@ -13,16 +13,15 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
-import java.net.ConnectException
+import java.net.{ConnectException, URI}
 import java.util.Collections
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-
-  private val config = FlinkConfig(Some("http://test.pl"))
 
   private val availableSlotsCount = 1000
 
@@ -123,7 +122,8 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Any]): FlinkSlotsChecker = {
     implicit val b: SttpBackend[Future, Any] = backend
-    new FlinkSlotsChecker(HttpFlinkClient.createUnsafe(config))
+    val client = new HttpFlinkClient(new URI("http://localhost:12345/"), 10.seconds, 10.seconds)
+    new FlinkSlotsChecker(client)
   }
 
   private def prepareCanonicalProcess(parallelism: Option[Int]) = {

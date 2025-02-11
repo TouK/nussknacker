@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.management
+package pl.touk.nussknacker.engine.management.jobrunner
+
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.io.{FileUtils, IOUtils}
 
 import java.io.{File, FileOutputStream}
 import java.net.URL
 import java.nio.file.Files
 import java.util.jar.{JarEntry, JarOutputStream}
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.{FileUtils, IOUtils}
-
 import scala.util.Using
 
 class FlinkModelJarProvider(modelUrls: List[URL], includeDropwizardLibsImplicitly: Boolean = true) extends LazyLogging {
