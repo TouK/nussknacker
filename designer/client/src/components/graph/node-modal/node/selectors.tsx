@@ -13,12 +13,6 @@ export const getNodeErrors = createSelector(
     },
 );
 
-export const getNode = createSelector(
-    getScenario,
-    (state: RootState, nodeId: NodeId) => nodeId,
-    (process, nodeId) => process.scenarioGraph.nodes.find((node) => node.id === nodeId),
-);
-
 export const getPropertiesErrors = createSelector(
     getScenario,
     (process) => ProcessUtils.getValidationErrors(process)?.processPropertiesErrors || [],

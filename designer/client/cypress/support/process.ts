@@ -84,7 +84,7 @@ function visitProcess(processName: string) {
     cy.visit(`/visualization/${processName}`);
     cy.wait("@fetch").its("response.statusCode").should("eq", 200);
     // lazy loaded panel moves other toolbars/button just before click
-    cy.contains(/we are happy/i).should("exist");
+    cy.contains(/Everything seems to be OK/i).should("exist");
     return cy.wrap(processName);
 }
 

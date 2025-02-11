@@ -9,7 +9,7 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { RootState } from "../../../../reducers";
-import { getScenario } from "../../../../reducers/selectors/graph";
+import { getScenario, getScenarioGraph, isValidationResultPresent } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
@@ -19,6 +19,7 @@ import { applyIdFromFakeName } from "../IdField";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
+import { Box, CircularProgress } from "@mui/material";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -119,6 +120,8 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
+    const validationResultPresent = useSelector(isValidationResultPresent);
+    const scenarioGraph = useSelector(getScenarioGraph);
 
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, performNodeEdit, close, readOnly });
@@ -146,6 +149,9 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
         return null;
     }
 
+    const updatedEditedNode = scenarioGraph.nodes.find((node) => node.id === editedNode.id);
+    const updatedReferenceEditedNode = { ...editedNode, ref: updatedEditedNode.ref };
+
     return (
         <WindowContent
             {...props}
@@ -158,7 +164,15 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
-            <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+            {validationResultPresent ? (
+                <NodeGroupContent node={updatedReferenceEditedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+            ) : (
+                <Box width={"100%"} height={"100px"} mt={1}>
+                    <Box display={"flex"} justifyContent={"center"} height={"100%"} alignItems={"center"}>
+                        <CircularProgress />
+                    </Box>
+                </Box>
+            )}
         </WindowContent>
     );
 }

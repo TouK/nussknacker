@@ -29,11 +29,6 @@ import { Split } from "./split";
 import { Switch } from "./switch";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
-import { isValidationResultPresent } from "../../../reducers/selectors/graph";
-import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
-import { Box, CircularProgress } from "@mui/material";
-import { RootState } from "../../../reducers";
-import { getNode } from "./node/selectors";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -47,15 +42,9 @@ export type NodeTypeDetailsContentProps = {
 };
 
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
-    const { onChange, node: originalNode, edges, showValidation } = props;
-
-    const node = useSelector((state: RootState) => {
-        return getNode(state, originalNode.id);
-    });
-
-    const validationResultPresent = useSelector(isValidationResultPresent);
+    const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
-    const isEditMode = !!onChange && validationResultPresent;
+    const isEditMode = !!onChange;
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
@@ -157,7 +146,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     }, [adjustNode, setEditedNode]);
 
     return {
-        validationResultPresent,
+        ...props,
         isEditMode,
         processDefinitionData,
         findAvailableVariables,
@@ -168,15 +157,11 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         removeElement,
         addElement,
         setProperty,
-        node,
-        edges,
-        showValidation,
     };
 }
 
 export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTypeDetailsContentProps): JSX.Element {
     const {
-        validationResultPresent,
         isEditMode,
         processDefinitionData,
         findAvailableVariables,
@@ -191,23 +176,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
         edges,
         showValidation,
     } = useNodeTypeDetailsContentLogic(props);
-
-    if (!validationResultPresent) {
-        return (
-            <NodeCommonDetailsDefinition
-                node={node}
-                setProperty={setProperty}
-                readOnly={!isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                errors={errors}
-            >
-                <Box display={"flex"} justifyContent={"center"} height={"20%"} alignItems={"center"}>
-                    <CircularProgress />
-                </Box>
-            </NodeCommonDetailsDefinition>
-        );
-    }
 
     switch (node.type) {
         case "Source":
