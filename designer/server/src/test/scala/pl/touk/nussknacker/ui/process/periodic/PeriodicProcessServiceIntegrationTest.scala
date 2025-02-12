@@ -620,9 +620,7 @@ class PeriodicProcessServiceIntegrationTest
         createdAt = schedule1Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
-      )
-    )
-    activities should contain(
+      ),
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
         scenarioActivityId = schedule2Activity.scenarioActivityId,
@@ -635,7 +633,7 @@ class PeriodicProcessServiceIntegrationTest
         createdAt = schedule2Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
-      )
+      ),
     )
   }
 
