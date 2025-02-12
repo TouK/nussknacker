@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, PatientScalaFutures}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
 
 import java.util.Collections
 import scala.concurrent.ExecutionContext
@@ -38,7 +38,7 @@ class KafkaScenarioTestingSpec
     with EitherValuesDetailedMessage
     with OptionValues
     with BeforeAndAfterAll
-    with PatientScalaFutures {
+    with VeryPatientScalaFutures {
 
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val ioRuntime: IORuntime = IORuntime.global

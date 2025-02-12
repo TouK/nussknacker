@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.test.config
 
-import com.dimafeng.testcontainers.{Container, ForAllTestContainer, LazyContainer, MultipleContainers}
+import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.flink.test.docker.WithFlinkContainers
@@ -15,7 +15,7 @@ trait WithFlinkContainersDeploymentManager
     with ForAllTestContainer
     with WithFlinkContainers
     with BeforeAndAfterAll {
-  self: Suite with LazyLogging =>
+  self: Suite with StrictLogging =>
 
   override val container: Container = MultipleContainers(flinkContainers: _*)
 

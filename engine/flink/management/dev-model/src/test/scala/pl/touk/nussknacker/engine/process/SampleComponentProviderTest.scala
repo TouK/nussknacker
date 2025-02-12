@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
-import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -41,12 +40,6 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
       category = None,
       componentId => DesignerWideComponentId(componentId.toString),
       additionalConfigsFromProvider = Map.empty,
-      // This ugly hack is because of Idea classloader issue, see comment in ClassLoaderModelData
-      shouldIncludeConfigCreator = {
-        case _: DevProcessConfigCreator => true
-        case _                          => false
-      },
-      shouldIncludeComponentProvider = _ => true,
       ComponentDefinitionExtractionMode.FinalDefinition
     )
 

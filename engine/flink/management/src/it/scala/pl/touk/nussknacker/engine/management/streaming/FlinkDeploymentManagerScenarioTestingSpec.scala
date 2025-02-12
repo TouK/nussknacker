@@ -20,14 +20,14 @@ import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
 
-class FlinkStreamingProcessTestRunnerSpec
+class FlinkDeploymentManagerScenarioTestingSpec
     extends AnyFlatSpec
     with Matchers
     with VeryPatientScalaFutures
     with WithConfig
     with BeforeAndAfterAll {
 
-  private val classPath: List[String] = ClassPaths.scalaClasspath
+  private val classPath: List[String] = TestModelClassPaths.scalaClasspath
 
   override protected val configFilename: Option[String] = Some("application.conf")
 
@@ -48,7 +48,7 @@ class FlinkStreamingProcessTestRunnerSpec
   )
 
   private lazy val (deploymentManager, releaseDeploymentMangerResources) =
-    FlinkStreamingDeploymentManagerProviderHelper
+    FlinkDeploymentManagerProviderHelper
       .createDeploymentManager(ConfigWithUnresolvedVersion(config))
       .allocated
       .unsafeRunSync()

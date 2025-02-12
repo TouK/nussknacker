@@ -16,7 +16,6 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.namingStrategy,
       componentUseCase = ComponentUseCase.Validation,
       modelData.additionalConfigsFromProvider
     ) {

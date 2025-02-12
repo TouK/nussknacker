@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManagerProvider
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 
-object FlinkStreamingDeploymentManagerProviderHelper {
+object FlinkDeploymentManagerProviderHelper {
 
   def createDeploymentManager(
       processingTypeConfig: ConfigWithUnresolvedVersion,
@@ -32,7 +32,6 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition,
       ),
       modelClassLoader

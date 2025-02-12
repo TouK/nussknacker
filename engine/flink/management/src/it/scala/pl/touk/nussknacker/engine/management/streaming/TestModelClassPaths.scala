@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.management.streaming
 
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
-object ClassPaths {
+object TestModelClassPaths {
 
-  val commonClasspath = List(
+  private val commonClasspath = List(
     s"./engine/flink/components/base/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkBase.jar",
     s"./engine/flink/components/base-unbounded/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkBaseUnbounded.jar",
     s"./engine/flink/components/kafka/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkKafka.jar",

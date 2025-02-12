@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
-import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -115,7 +114,19 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
             history.append(HistoryEntry("config", Some(jobId)))
             JobConfig(
               jobId,
-              configs.getOrElse(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
+              configs.getOrElse(
+                jobId,
+                ExecutionConfig(
+                  `job-parallelism` = 1,
+                  `user-config` = Map(
+                    "processId"    -> fromString("123"),
+                    "versionId"    -> fromString("1"),
+                    "deploymentId" -> fromString(jobId),
+                    "user"         -> fromString("user1"),
+                    "labels"       -> fromValues(List.empty)
+                  )
+                )
+              )
             )
           case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
             history.append(HistoryEntry("cancel", Some(jobId)))
@@ -379,8 +390,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
-        None,
+        Some(DeploymentId("1111")),
         Some(ExternalDeploymentId("1111")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(30L),
         errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
       )
@@ -399,8 +420,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
-        None,
+        Some(DeploymentId("1111")),
         Some(ExternalDeploymentId("1111")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(30L),
         errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
       )
@@ -420,8 +451,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Running,
-        None,
+        Some(DeploymentId("2343")),
         Some(ExternalDeploymentId("2343")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(10L)
       )
     )
@@ -439,8 +480,18 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Finished,
-        None,
+        Some(DeploymentId("2343")),
         Some(ExternalDeploymentId("2343")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(10L)
       )
     )
@@ -459,14 +510,24 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Restarting,
-        None,
+        Some(DeploymentId("1111")),
         Some(ExternalDeploymentId("1111")),
+        Some(
+          ProcessVersion(
+            VersionId(1),
+            ProcessName("p1"),
+            ProcessId(123),
+            List.empty,
+            "user1",
+            None
+          )
+        ),
         startTime = Some(30L)
       )
     )
   }
 
-  test("return process version if in config") {
+  test("return process version the same as configured") {
     val jid          = "2343"
     val processName  = ProcessName("p1")
     val version      = 15L
@@ -556,12 +617,14 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       ActorSystem(getClass.getSimpleName),
       sttpBackend
     )
-    new FlinkDeploymentManager(
-      LocalModelData(ConfigFactory.empty, List.empty),
-      deploymentManagerDependencies,
-      config,
-      HttpFlinkClient.createUnsafe(config)(sttpBackend, ExecutionContext.global),
-    )
+    FlinkDeploymentManagerProvider
+      .createDeploymentManager(
+        LocalModelData(ConfigFactory.empty, List.empty),
+        deploymentManagerDependencies,
+        config,
+        scenarioStateCacheTTL = None
+      )
+      .valueOr(message => throw new IllegalStateException(message))
   }
 
   private def buildRunningJobOverview(processName: ProcessName): JobOverview = {

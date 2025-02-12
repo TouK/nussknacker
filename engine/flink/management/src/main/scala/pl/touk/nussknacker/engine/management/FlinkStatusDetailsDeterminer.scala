@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkStatusDetailsDeterminer.{ParsedJobConfig, toDeploymentStatus}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
+import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,36 +24,39 @@ class FlinkStatusDetailsDeterminer(
   def statusDetailsFromJobOverviews(jobOverviews: List[JobOverview]): Future[Map[ProcessName, List[StatusDetails]]] =
     Future
       .sequence {
-        jobOverviews
-          .groupBy(_.name)
-          .flatMap { case (name, jobs) =>
-            namingStrategy.decodeName(name).map(decoded => (ProcessName(decoded), jobs))
+        for {
+          job  <- jobOverviews
+          name <- namingStrategy.decodeName(job.name).map(ProcessName(_))
+        } yield withParsedJobConfig(job.jid, name).map { jobConfigOpt =>
+          val details = jobConfigOpt.map { jobConfig =>
+            StatusDetails(
+              SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
+              jobConfig.deploymentId,
+              Some(ExternalDeploymentId(job.jid)),
+              version = Some(jobConfig.version),
+              startTime = Some(job.`start-time`),
+              attributes = Option.empty,
+              errors = List.empty
+            )
+          } getOrElse {
+            logger.debug(
+              s"No correct job config in deployed scenario: $name. Returning ${SimpleStateStatus.DuringDeploy} without version"
+            )
+            StatusDetails(
+              SimpleStateStatus.DuringDeploy,
+              // For scheduling mechanism this fallback is probably wrong // TODO: switch scheduling mechanism deployment ids to UUIDs
+              Some(DeploymentId(job.jid)),
+              Some(ExternalDeploymentId(job.jid)),
+              version = None,
+              startTime = Some(job.`start-time`),
+              attributes = Option.empty,
+              errors = List.empty
+            )
           }
-          .map { case (name, jobs) =>
-            val statusDetails = jobs.map { job =>
-              withParsedJobConfig(job.jid, name).map { jobConfig =>
-                // TODO: return error when there's no correct version in process
-                // currently we're rather lax on this, so that this change is backward-compatible
-                // we log debug here for now, since it's invoked v. often
-                if (jobConfig.isEmpty) {
-                  logger.debug(s"No correct job details in deployed scenario: ${job.name}")
-                }
-                StatusDetails(
-                  SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
-                  jobConfig.flatMap(_.deploymentId),
-                  Some(ExternalDeploymentId(job.jid)),
-                  version = jobConfig.map(_.version),
-                  startTime = Some(job.`start-time`),
-                  attributes = Option.empty,
-                  errors = List.empty
-                )
-              }
-            }
-            Future.sequence(statusDetails).map((name, _))
-          }
-
+          name -> details
+        }
       }
-      .map(_.toMap)
+      .map(_.toGroupedMap)
 
   private def withParsedJobConfig(jobId: String, name: ProcessName): Future[Option[ParsedJobConfig]] = {
     getJobConfig(jobId).map { executionConfig =>

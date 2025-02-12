@@ -12,9 +12,15 @@ import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import { FormHelperText, Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { ScenarioActionResult, ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/types";
+import { NodesDeploymentData } from "../../http/HttpService";
 
 export type ToggleProcessActionModalData = {
-    action: (processName: ProcessName, processVersionId: ProcessVersionId, comment: string) => Promise<ScenarioActionResult>;
+    action: (
+        processName: ProcessName,
+        processVersionId: ProcessVersionId,
+        comment: string,
+        nodeData?: NodesDeploymentData,
+    ) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
 };
 

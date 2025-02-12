@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class FlinkScenarioJobSpec extends AnyFlatSpec with Matchers with Inside with BeforeAndAfterAll {
 
@@ -31,11 +32,11 @@ class FlinkScenarioJobSpec extends AnyFlatSpec with Matchers with Inside with Be
           .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])".spel)
           .emptySink("out", "monitor")
 
-      val executionResult = FlinkScenarioJob.run(
+      val modelData = LocalModelData(ConfigFactory.empty(), List.empty, configCreator = new SimpleProcessConfigCreator)
+      val executionResult = new FlinkScenarioJob(modelData).run(
         process,
         ProcessVersion.empty,
         DeploymentData.empty,
-        ConfigFactory.empty(),
         env
       )
       flinkMiniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)
