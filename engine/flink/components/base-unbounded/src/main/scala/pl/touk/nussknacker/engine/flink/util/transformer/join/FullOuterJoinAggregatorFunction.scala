@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{Aggregator, AggregatorFunctionMixin}
-import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.language.higherKinds
 
@@ -36,20 +35,12 @@ class FullOuterJoinAggregatorFunction[MapT[_, _]](
     KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
 
   override def processElement(
-      in: ValueWithContext[KeyedValue[String, AnyRef]],
-      ctx: FlinkCtx,
-      out: Collector[ValueWithContext[AnyRef]]
-  ): Unit = {
-    doProcessElement(in.map(_.mapKey[AnyRef](identity)), ctx, out)
-  }
-
-  def doProcessElement(
-      in: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
+      in: ValueWithContext[StringKeyedValue[AnyRef]],
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     val current: MapT[Long, aggregator.Aggregate] = addElementToState(in, ctx.timestamp(), ctx.timerService(), out)
-    val res = computeFinalValue(current, ctx.timestamp()).asInstanceOf[java.util.Map[AnyRef, AnyRef]]
+    val res = computeFinalValue(current, ctx.timestamp()).asInstanceOf[java.util.Map[String, AnyRef]]
     res.put(keyFieldName, in.value.key)
     out.collect(ValueWithContext(res, in.context.clearUserVariables))
   }

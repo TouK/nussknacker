@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.join
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
@@ -21,10 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformati
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
-import pl.touk.nussknacker.engine.flink.util.keyed.{
-  GenericKeyOnlyMapper,
-  GenericKeyedValueMapper
-}
+import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
@@ -113,10 +110,10 @@ class SingleSideJoinTransformer(
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
-    val branchTypeByBranchId: Map[String, BranchType]     = BranchTypeParamDeclaration.extractValueUnsafe(params)
-    val keyByBranchId: Map[String, LazyParameter[AnyRef]] = KeyParamDeclaration.extractValueUnsafe(params)
-    val aggregator: Aggregator                            = AggregatorParamDeclaration.extractValueUnsafe(params)
-    val window: Duration                                  = WindowLengthParamDeclaration.extractValueUnsafe(params)
+    val branchTypeByBranchId: Map[String, BranchType]           = BranchTypeParamDeclaration.extractValueUnsafe(params)
+    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParamDeclaration.extractValueUnsafe(params)
+    val aggregator: Aggregator                                  = AggregatorParamDeclaration.extractValueUnsafe(params)
+    val window: Duration                   = WindowLengthParamDeclaration.extractValueUnsafe(params)
     val aggregateBy: LazyParameter[AnyRef] = params.extractUnsafe[LazyParameter[AnyRef]](AggregateByParamName)
     val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
@@ -129,27 +126,23 @@ class SingleSideJoinTransformer(
 
         val keyedMainBranchStream = inputs(mainBranchId)
           .flatMap(
-            new GenericKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainBranchId)),
-            context.valueWithContextInfo.forBranch[AnyRef](mainBranchId, Typed.typedClass[String])
+            new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainBranchId)),
+            context.valueWithContextInfo.forBranch[String](mainBranchId, Typed.typedClass[String])
           )
 
         val joinedBranchId = joinedId(branchTypeByBranchId).get
 
-        val joinedTypeInfo: TypeInformation[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
+        val joinedTypeInfo: TypeInformation[ValueWithContext[KeyedValue[String, AnyRef]]] =
           context.valueWithContextInfo.forBranch(
             joinedBranchId,
-            KeyedValueType.info(
-              TypeInformationDetection.instance.forType[AnyRef](aggregateBy.returnType),
-              TypeInformationDetection.instance.forType[AnyRef](keyByBranchId.values.head.returnType)
-            )
+            KeyedValueType.info(TypeInformationDetection.instance.forType[AnyRef](aggregateBy.returnType))
           )
 
-        val keyedJoinedStream: SingleOutputStreamOperator[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
-          inputs(joinedBranchId)
-            .flatMap(
-              new GenericKeyedValueMapper(context, keyByBranchId(joinedBranchId), aggregateBy),
-              joinedTypeInfo
-            )
+        val keyedJoinedStream = inputs(joinedBranchId)
+          .flatMap(
+            new StringKeyedValueMapper(context, keyByBranchId(joinedBranchId), aggregateBy),
+            joinedTypeInfo
+          )
 
         val storedTypeInfo = TypeInformationDetection.instance
           .forType[AnyRef](aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
@@ -165,8 +158,8 @@ class SingleSideJoinTransformer(
         val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)
           .keyBy(
-            (v: ValueWithContext[AnyRef]) => v.value,
-            (v: ValueWithContext[KeyedValue[AnyRef, AnyRef]]) => v.value.key
+            (v: ValueWithContext[String]) => v.value,
+            (v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key
           )
           // TODO: Add TypeInfo, it's probably outputType from AggregatorFunctionMixin?
           .process(aggregatorFunction)
@@ -198,9 +191,7 @@ class SingleSideJoinTransformer(
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
   )(
       implicit nodeId: NodeId
-  ): CoProcessFunction[ValueWithContext[AnyRef], ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[
-    AnyRef
-  ]] =
+  ): CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
     new SingleSideJoinAggregatorFunction[SortedMap](
       aggregator,
       stateTimeout.toMillis,
