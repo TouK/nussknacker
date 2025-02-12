@@ -90,7 +90,9 @@
     * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
 * [#6860](https://github.com/TouK/nussknacker/pull/6860) Ability to configure deploy action parameters and apply those parameters in deploy http request. 
   * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
+  * The request for `deploy` action requires valid json instead of plain text message.
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`
+* [#7562](https://github.com/TouK/nussknacker/pull/7562) The request for `cancel` action requires valid json instead of plain text message.  
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
 
