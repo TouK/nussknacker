@@ -154,7 +154,6 @@ class ProcessesResources(
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
             (skipValidateAndResolve, skipNodeResults) =>
               complete {
-                if (!skipValidateAndResolve) Thread.sleep(3000)
                 processService.getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
