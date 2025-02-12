@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 
-import java.{util => jutil}
+import java.{util, util => jutil}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 
@@ -24,7 +24,7 @@ case class TypedJavaMapSerializer(
   override def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[jutil.Map[String, AnyRef]] =
     TypedJavaMapSerializer(serializers)
 
-  override def createInstance(): jutil.Map[String, AnyRef] = new jutil.HashMap()
+  override def createInstance(): jutil.Map[String, AnyRef] = new util.LinkedHashMap(serializers.length)
 
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]
