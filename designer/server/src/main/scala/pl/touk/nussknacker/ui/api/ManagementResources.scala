@@ -85,8 +85,10 @@ class ManagementResources(
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
 
-  // TODO: This is workaround for touk/nussknacker-example-scenarios-library that deploys tests with plain text comment.
+  // TODO: This (deployRequestEntity and cancelRequestEntity) is used as a transition from comment-as-plain-text-body to json.
+  //  e.g. touk/nussknacker-example-scenarios-library, that is used in e2e tests, uses plain text comment.
   // https://github.com/TouK/nussknacker-scenario-examples-library/pull/7
+  // To be replaced by `entity(as[DeployRequest]))` and `entity(as[CancelRequest]))`.
   private def deployRequestEntity: Directive1[DeployRequest] = {
     entity(as[Option[String]]).flatMap { optStr =>
       {

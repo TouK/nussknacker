@@ -22,8 +22,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessAction.buildInfo` field was renamed to `ProcessAction.modelInfo` and is optional now. 
   `ProcessAction` type is used in `ScenarioWithDetails.lastDeployedAction`, `ScenarioWithDetails.lastStateAction` and `ScenarioWithDetails.lastAction`
   which are returned by `/processes`, `/processesDetails` endpoints. It is also used by `/components/$id/usages` endpoint
-* [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562) Deploy and cancel http requests require valid json in request body (see `DeployRequest` and `CancelRequest`) instead of plain text, e.g. `{"comment": "example text"}`.
-  For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "Reset"}}}`.
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562)
+    * Deploy and cancel http request requires valid json in request body (see `DeployRequest` and `CancelRequest`) instead of plain text, e.g. `{"comment": "example text"}`.
+    * For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "ToLatest"}}}`.
 
 ### Code API changes
 
@@ -154,6 +155,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     ```
 
 * [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
+  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
+  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
 
 ### Code API changes
 
@@ -198,12 +202,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 * [#7246](https://github.com/TouK/nussknacker/pull/7246) Changes in DictApiEndpoints:
     *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
-
-### Configuration changes
-
-* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
-  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
-  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
 
 ### Other changes
 
