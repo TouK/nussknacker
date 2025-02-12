@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{Aggregator, AggregatorFunctionMixin}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.language.higherKinds
 
@@ -24,17 +23,17 @@ class SingleSideJoinAggregatorFunction[MapT[K, V]](
     override protected val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
 )(implicit override val rangeMap: FlinkRangeMap[MapT])
-    extends LatelyEvictableStateCoFunction[ValueWithContext[AnyRef], ValueWithContext[
-      KeyedValue[AnyRef, AnyRef]
+    extends LatelyEvictableStateCoFunction[ValueWithContext[String], ValueWithContext[
+      StringKeyedValue[AnyRef]
     ], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
 
-  type FlinkCtx = CoProcessFunction[ValueWithContext[AnyRef], ValueWithContext[
-    KeyedValue[AnyRef, AnyRef]
+  type FlinkCtx = CoProcessFunction[ValueWithContext[String], ValueWithContext[
+    StringKeyedValue[AnyRef]
   ], ValueWithContext[AnyRef]]#Context
 
   override def processElement1(
-      in1: ValueWithContext[AnyRef],
+      in1: ValueWithContext[String],
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
@@ -44,7 +43,7 @@ class SingleSideJoinAggregatorFunction[MapT[K, V]](
   }
 
   override def processElement2(
-      in2: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
+      in2: ValueWithContext[StringKeyedValue[AnyRef]],
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {

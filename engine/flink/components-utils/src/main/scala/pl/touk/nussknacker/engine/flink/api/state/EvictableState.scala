@@ -46,16 +46,6 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
 
 }
 
-abstract class GenericLatelyEvictableStateFunction[In, Out, StateType, Key]
-    extends KeyedProcessFunction[Key, In, Out]
-    with LatelyEvictableStateFunctionMixin[StateType] {
-
-  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[Key, In, Out]#Context): Unit = {
-    doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
-  }
-
-}
-
 abstract class LatelyEvictableStateFunction[In, Out, StateType, Key]
     extends KeyedProcessFunction[Key, In, Out]
     with LatelyEvictableStateFunctionMixin[StateType] {
