@@ -280,7 +280,9 @@ class HttpService {
 
     fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
         const id = encodeURIComponent(processName);
-        const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
+        const url = versionId
+            ? `/processes/${id}/${versionId}?skipValidateAndResolve=false`
+            : `/processes/${id}?skipValidateAndResolve=false`;
         return api.get<Scenario>(url);
     }
 

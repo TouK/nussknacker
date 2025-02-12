@@ -84,19 +84,19 @@ function visitProcess(processName: string) {
     cy.visit(`/visualization/${processName}`);
     cy.wait("@fetch").its("response.statusCode").should("eq", 200);
     // lazy loaded panel moves other toolbars/button just before click
-    cy.contains(/Everything seems to be OK/i).should("exist");
+    cy.contains(/we are happy/i).should("exist");
     return cy.wrap(processName);
 }
 
 function visitNewProcess(name?: string, fixture?: string, category?: string) {
-    cy.intercept("GET", "/api/processes/*").as("fetch");
+    cy.intercept("GET", "/api/processes/*?skipValidateAndResolve=false").as("fetch");
     return cy.createTestProcess(name, fixture, category).then((processName) => {
         return cy.visitProcess(processName);
     });
 }
 
 function visitNewFragment(name?: string, fixture?: string, category?: string) {
-    cy.intercept("GET", "/api/processes/*").as("fetch");
+    cy.intercept("GET", "/api/processes/*?skipValidateAndResolve=false").as("fetch");
     return cy.createTestFragment(name, fixture, category).then((processName) => {
         return cy.visitProcess(processName);
     });
