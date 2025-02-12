@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
-import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
@@ -8,21 +7,19 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentId
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 
 class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
 
-  val jobStatus: Cache[ProcessName, List[StatusDetails]] = Caffeine
-    .newBuilder()
-    .build[ProcessName, List[StatusDetails]]
+  val jobStatus: TrieMap[ProcessName, List[StatusDetails]] = TrieMap.empty
 
   def getJobStatus(processName: ProcessName): Option[List[StatusDetails]] = {
-    Option(jobStatus.getIfPresent(processName))
+    jobStatus.get(processName)
   }
 
   def setEmptyStateStatus(): Unit = {
-    jobStatus.invalidateAll()
+    jobStatus.clear()
   }
 
   def addStateStatus(
@@ -100,7 +97,7 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       override def getAllProcessesStates()(
           implicit freshnessPolicy: DataFreshnessPolicy
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
-        Future.successful(WithDataFreshnessStatus.fresh(jobStatus.asMap().asScala.toMap))
+        Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toMap))
 
     }
 
