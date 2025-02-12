@@ -704,7 +704,7 @@ class HttpService {
         return promise;
     }
 
-    getActionParameters(processName: string, scenarioGraph: ScenarioGraph) {
+    getActionParameters(processName: string) {
         const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
             this.#addError(
