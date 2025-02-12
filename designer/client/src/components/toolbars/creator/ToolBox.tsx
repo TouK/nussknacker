@@ -113,7 +113,7 @@ export default function ToolBox(props: { filter: string }): JSX.Element {
     const pristine = useSelector(isPristine);
     const { t } = useTranslation();
 
-    const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups ?? [], [processDefinitionData]);
+    const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups, [processDefinitionData]);
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
     const stickyNoteToolGroup = useMemo(() => stickyNoteComponentGroup(pristine), [pristine]);
     const groups = useMemo(() => {

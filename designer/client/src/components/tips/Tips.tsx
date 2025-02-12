@@ -39,11 +39,7 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
                     renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
-                    <ValidTips
-                        loading={!ProcessUtils.isValidationResultPresent(scenario)}
-                        testing={!!testResults}
-                        hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(scenario)}
-                    />
+                    <ValidTips testing={!!testResults} hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(scenario)} />
                     {!ProcessUtils.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
                     {!ProcessUtils.hasNoWarnings(scenario) && (
                         <Warnings

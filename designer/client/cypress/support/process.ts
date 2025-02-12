@@ -89,14 +89,14 @@ function visitProcess(processName: string) {
 }
 
 function visitNewProcess(name?: string, fixture?: string, category?: string) {
-    cy.intercept("POST", "/api/processValidation/*").as("fetch");
+    cy.intercept("GET", "/api/processes/*").as("fetch");
     return cy.createTestProcess(name, fixture, category).then((processName) => {
         return cy.visitProcess(processName);
     });
 }
 
 function visitNewFragment(name?: string, fixture?: string, category?: string) {
-    cy.intercept("POST", "/api/processValidation/*").as("fetch");
+    cy.intercept("GET", "/api/processes/*").as("fetch");
     return cy.createTestFragment(name, fixture, category).then((processName) => {
         return cy.visitProcess(processName);
     });
