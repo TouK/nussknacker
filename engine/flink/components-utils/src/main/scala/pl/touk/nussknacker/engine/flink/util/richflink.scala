@@ -1,16 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, SingleOutputStreamOperator}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
-import pl.touk.nussknacker.engine.flink.util.keyed.{
-  GenericKeyOnlyMapper,
-  GenericKeyedValueMapper,
-  StringKeyOnlyMapper,
-  StringKeyedValueMapper
-}
+import pl.touk.nussknacker.engine.flink.util.keyed.{GenericKeyOnlyMapper, GenericKeyedValueMapper, StringKeyOnlyMapper}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.reflect.ClassTag
@@ -39,15 +33,6 @@ object richflink {
           ctx.valueWithContextInfo.forClass[K]
         )
         .keyBy((k: ValueWithContext[K]) => k.value)
-
-    //    def groupByWithValue[T <: AnyRef: TypeTag](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(
-//        implicit ctx: FlinkCustomNodeContext
-//    ): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] = {
-//      val typeInfo = keyed.typeInfo(ctx, groupBy.map[String]((k: CharSequence) => k.toString), value)
-//      dataStream
-//        .flatMap(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value), typeInfo)
-//        .keyBy((k: ValueWithContext[KeyedValue[String, T]]) => k.value.key)
-//    }
 
     def groupByWithValue[T <: AnyRef: TypeTag, K <: AnyRef: TypeTag](
         groupBy: LazyParameter[K],

@@ -76,6 +76,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         .filter(_.variableTyped[String](VariableConstants.KeyVariableName).contains(key))
     }
 
+    def keyVariables[T <: AnyRef]: List[T] = {
+      collectingListener.results
+        .nodeResults("end")
+        .map(_.variableTyped[T]("key").get)
+    }
+
   }
 
   private val processValidator: ProcessValidator =
@@ -163,6 +169,27 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
       aggregateVariables shouldBe List(1, 3, 7)
+    }
+  }
+
+  test("key variable can be something else than string") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(
+            GenericRecordHours(1, 0, 1, "a"),
+            GenericRecordHours("2", 1, 2, "b"),
+            GenericRecordHours(List(1), 2, 5, "b"),
+            GenericRecordHours(Map("a" -> 1), 3, 2, "c"),
+            GenericRecordHours(1.2, 4, 5, "b")
+          )
+        )
+      val testScenario = sliding("#AGG.first", "#input.str", emitWhenEventLeft = false)
+
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.keyVariables
+      aggregateVariables shouldBe List(1, "2", List(1), Map("a" -> 1), 1.2)
     }
   }
 
@@ -1058,7 +1085,7 @@ case class AggregateData(
 )
 
 trait TestRecord {
-  val id: String
+  val id: Any
   val eId: Int
   val str: String
 
@@ -1070,3 +1097,7 @@ case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) ex
 }
 
 case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord
+
+case class GenericRecordHours[T <: Any](id: T, timeHours: Int, eId: Int, str: String) extends TestRecord {
+  override def timestamp: Long = timeHours * 3600L * 1000
+}
