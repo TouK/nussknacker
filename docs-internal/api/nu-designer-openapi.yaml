@@ -221,91 +221,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/actionInfo/{scenarioName}/parameters:
-    get:
-      tags:
-      - Deployments
-      summary: Get action parameters
-      operationId: getApiActioninfoScenarionameParameters
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UiActionParametersDto'
-              examples:
-                Example:
-                  summary: Valid action parameters for given scenario
-                  value:
-                    actionNameToParameters:
-                      DEPLOY: []
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/app/healthCheck:
     get:
       tags:
@@ -5676,14 +5591,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValueWithIcon'
-    FixedValuesWithRadioParameterEditor:
-      title: FixedValuesWithRadioParameterEditor
-      type: object
-      properties:
-        possibleValues:
-          type: array
-          items:
-            $ref: '#/components/schemas/FixedExpressionValue'
     FragmentClazzRef:
       title: FragmentClazzRef
       type: object
@@ -5864,8 +5771,8 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_String:
-      title: Map_NodeId_String
+    Map_NodeId_NodeDeploymentData:
+      title: Map_NodeId_NodeDeploymentData
       type: object
       additionalProperties:
         type: string
@@ -5874,13 +5781,6 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Expression'
-    Map_ScenarioActionName_List_UiActionNodeParametersDto:
-      title: Map_ScenarioActionName_List_UiActionNodeParametersDto
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/UiActionNodeParametersDto'
     Map_String:
       title: Map_String
       type: object
@@ -5904,11 +5804,6 @@ components:
         - $ref: '#/components/schemas/TypedTaggedValue'
         - $ref: '#/components/schemas/TypedUnion'
         - $ref: '#/components/schemas/Unknown'
-    Map_UiActionParameterConfigDto:
-      title: Map_UiActionParameterConfigDto
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/UiActionParameterConfigDto'
     MarkdownAdditionalInfo:
       title: MarkdownAdditionalInfo
       type: object
@@ -6563,7 +6458,6 @@ components:
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
@@ -6758,7 +6652,7 @@ components:
         scenarioName:
           type: string
         nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_String'
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
         comment:
           type:
           - string
@@ -7025,7 +6919,6 @@ components:
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
@@ -7554,45 +7447,6 @@ components:
           - $ref: '#/components/schemas/Unknown'
         expression:
           $ref: '#/components/schemas/Expression'
-    UiActionNodeParametersDto:
-      title: UiActionNodeParametersDto
-      type: object
-      required:
-      - nodeId
-      - parameters
-      properties:
-        nodeId:
-          type: string
-        parameters:
-          $ref: '#/components/schemas/Map_UiActionParameterConfigDto'
-    UiActionParameterConfigDto:
-      title: UiActionParameterConfigDto
-      type: object
-      required:
-      - editor
-      properties:
-        defaultValue:
-          type:
-          - string
-          - 'null'
-        editor:
-          $ref: '#/components/schemas/ParameterEditor'
-        label:
-          type:
-          - string
-          - 'null'
-        hintText:
-          type:
-          - string
-          - 'null'
-    UiActionParametersDto:
-      title: UiActionParametersDto
-      type: object
-      required:
-      - actionNameToParameters
-      properties:
-        actionNameToParameters:
-          $ref: '#/components/schemas/Map_ScenarioActionName_List_UiActionNodeParametersDto'
     Unknown:
       title: Unknown
       type: object

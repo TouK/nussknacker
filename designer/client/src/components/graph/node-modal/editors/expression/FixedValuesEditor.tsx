@@ -5,8 +5,8 @@ import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
-import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
-import { EditorType, ExtendedEditor } from "./Editor";
+import { Stack, styled, Typography, useTheme } from "@mui/material";
+import { ExtendedEditor } from "./Editor";
 import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
@@ -58,16 +58,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
         selectStyled(theme);
-    return editorConfig.type === EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR ? (
-        <div className={cx(className)}>
-            <RadioGroup value={currentOption.value} onChange={(event) => onValueChange(event.target.value)}>
-                {options.map((option: Option) => {
-                    const label = option.value === props.param?.defaultValue ? `${option.label} (default)` : option.label;
-                    return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
-                })}
-            </RadioGroup>
-        </div>
-    ) : (
+    return (
         <div className={cx(className)}>
             <Creatable
                 value={currentOption}

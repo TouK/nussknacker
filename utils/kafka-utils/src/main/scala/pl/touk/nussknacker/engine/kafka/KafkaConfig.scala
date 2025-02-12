@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
-import enumeratum.{Enum, EnumEntry}
 import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
 import pl.touk.nussknacker.engine.kafka.KafkaConfig._
 
-import scala.collection.immutable
 import scala.concurrent.duration._
 
 case class SchemaRegistryClientKafkaConfig(
@@ -40,8 +38,8 @@ case class KafkaConfig(
     avroAsJsonSerialization
   )
 
-  def defaultOffsetResetStrategy: Option[OffsetResetStrategy] =
-    kafkaEspProperties.flatMap(_.get(DefaultOffsetResetStrategyPath)).map(OffsetResetStrategy.withName)
+  def forceLatestRead: Option[Boolean] =
+    kafkaEspProperties.flatMap(_.get(DefaultForceLatestReadPath)).map(_.toBoolean)
 
   def defaultMaxOutOfOrdernessMillis: java.time.Duration =
     kafkaEspProperties
@@ -78,7 +76,7 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.EnumerationReader._
 
   val DefaultGlobalKafkaConfigPath                              = "kafka"
-  val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
+  val DefaultForceLatestReadPath                                = "forceLatestRead"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 
@@ -124,14 +122,4 @@ object SinkDeliveryGuarantee extends Enumeration {
   val ExactlyOnce: SinkDeliveryGuarantee.Value = Value("EXACTLY_ONCE")
   val AtLeastOnce: SinkDeliveryGuarantee.Value = Value("AT_LEAST_ONCE")
   val None: SinkDeliveryGuarantee.Value        = Value("NONE")
-}
-
-sealed trait OffsetResetStrategy extends EnumEntry
-
-object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
-  override def values: immutable.IndexedSeq[OffsetResetStrategy] = findValues
-
-  case object None       extends OffsetResetStrategy
-  case object ToEarliest extends OffsetResetStrategy
-  case object ToLatest   extends OffsetResetStrategy
 }

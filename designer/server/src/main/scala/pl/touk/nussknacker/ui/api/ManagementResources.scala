@@ -6,7 +6,6 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
@@ -62,11 +61,6 @@ object ManagementResources {
 
   }
 
-  @JsonCodec final case class RunDeploymentRequest(
-      nodesDeploymentData: Option[NodesDeploymentData],
-      comment: Option[String]
-  )
-
 }
 
 class ManagementResources(
@@ -90,31 +84,6 @@ class ManagementResources(
   // TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
-
-  // TODO: This is workaround for touk/nussknacker-example-scenarios-library that deploys tests with plain text comment.
-  // https://github.com/TouK/nussknacker-scenario-examples-library/pull/7
-  private def deployRequestEntity: Directive1[RunDeploymentRequest] = {
-    entity(as[Option[String]]).flatMap { optStr =>
-      {
-        optStr match {
-          case None => provide(RunDeploymentRequest(None, None))
-          case Some(body) =>
-            io.circe.parser.parse(body) match {
-              case Right(json) =>
-                json.as[RunDeploymentRequest] match {
-                  case Right(request) =>
-                    provide(request)
-                  case Left(notValidDeployRequest) =>
-                    reject(MalformedRequestContentRejection("Invalid deployment request", notValidDeployRequest))
-                }
-              case Left(notJson) =>
-                // assume deployment request contains plaintext comment only
-                provide(RunDeploymentRequest(None, Some(body)))
-            }
-        }
-      }
-    }
-  }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("adminProcessManagement") {
@@ -145,16 +114,16 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & deployRequestEntity & parameters(Symbol("savepointPath"))) {
-            (processIdWithName, request, savepointPath) =>
+          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
+            (processIdWithName, comment, savepointPath) =>
               canDeploy(processIdWithName) {
                 complete {
                   deploymentService
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
-                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
+                        commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
+                        nodesDeploymentData = NodesDeploymentData.empty,
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
@@ -168,15 +137,15 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & deployRequestEntity) { (processIdWithName, request) =>
+        (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
           canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
-                      nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
+                      commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
+                      nodesDeploymentData = NodesDeploymentData.empty,
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )

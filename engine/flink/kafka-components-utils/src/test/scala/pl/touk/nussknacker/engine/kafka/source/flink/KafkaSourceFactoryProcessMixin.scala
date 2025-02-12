@@ -6,7 +6,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -43,23 +42,20 @@ trait KafkaSourceFactoryProcessMixin
     resultHolders().clear()
   }
 
-  protected def run(process: CanonicalProcess, deploymentData: DeploymentData = DeploymentData.empty)(
-      action: => Unit
-  ): Unit = {
+  protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process, deploymentData)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.name.value)(action)
   }
 
   protected def runAndVerifyResult(
       topicName: String,
       process: CanonicalProcess,
-      obj: ObjToSerialize,
-      deploymentData: DeploymentData = DeploymentData.empty
+      obj: ObjToSerialize
   ): Unit = {
     val topic = createTopic(topicName)
     pushMessage(objToSerializeSerializationSchema(topic), obj, timestamp = constTimestamp)
-    run(process, deploymentData) {
+    run(process) {
       eventually {
         RecordingExceptionConsumer.exceptionsFor(runId) should have size 0
         resultHolders().sinkForSimpleJsonRecordResultsHolder.results shouldBe List(obj.value)

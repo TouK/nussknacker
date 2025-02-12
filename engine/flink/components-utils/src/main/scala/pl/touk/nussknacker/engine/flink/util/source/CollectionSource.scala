@@ -26,16 +26,8 @@ case class CollectionSource[T](
 ) extends StandardFlinkSource[T]
     with ReturningType {
 
-  override def sourceStream(
-      env: StreamExecutionEnvironment,
-      flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[T] = {
-    createSourceStream(list, env, flinkNodeContext)
-  }
-
   @silent("deprecated")
-  protected def createSourceStream[T](
-      list: List[T],
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ProblemDeploymentStatus
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
@@ -31,9 +30,7 @@ class DeploymentApiHttpService(
               RunDeploymentCommand(
                 id = deploymentId,
                 scenarioName = request.scenarioName,
-                nodesDeploymentData = NodesDeploymentData(request.nodesDeploymentData.map { case (nodeId, paramValue) =>
-                  (nodeId, Map("sqlExpression" -> paramValue))
-                }),
+                nodesDeploymentData = request.nodesDeploymentData,
                 user = loggedUser
               ),
               request.comment.flatMap(Comment.from)

@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.{NodeDeploymentData, NodesDeploymentData, SqlFilteringExpression}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyProcess,
   ExpressionParserCompilationError,
@@ -47,7 +48,9 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
           .example(
             RunDeploymentRequest(
               scenarioName = ProcessName("scenario1"),
-              nodesDeploymentData = Map(NodeId("sourceNodeId1") -> "field1 = 'value'"),
+              NodesDeploymentData(
+                Map(NodeId("sourceNodeId1") -> SqlFilteringExpression("field1 = 'value'"))
+              ),
               comment = None
             )
           )
@@ -197,7 +200,7 @@ object DeploymentApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class RunDeploymentRequest(
         scenarioName: ProcessName,
-        nodesDeploymentData: Map[NodeId, String],
+        nodesDeploymentData: NodesDeploymentData,
         comment: Option[String]
     )
 
@@ -210,7 +213,13 @@ object DeploymentApiEndpoints {
         modifiedAt: Instant
     )
 
-    implicit val nodesDeploymentDataCodec: Schema[Map[NodeId, String]] = Schema.schemaForMap[NodeId, String](_.id)
+    implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.string[SqlFilteringExpression].as
+
+    implicit val nodesDeploymentDataCodec: Schema[NodesDeploymentData] = Schema
+      .schemaForMap[NodeId, NodeDeploymentData](_.id)
+      .map[NodesDeploymentData]((map: Map[NodeId, NodeDeploymentData]) => Some(NodesDeploymentData(map)))(
+        _.dataByNodeId
+      )
 
     sealed trait RunDeploymentError
 
