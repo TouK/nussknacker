@@ -10,6 +10,7 @@ import java.time._
 import java.util
 import java.util.UUID
 import scala.collection.immutable.{ListMap, ListSet}
+import scala.util.Random
 
 class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
 
@@ -70,6 +71,19 @@ class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
     map.put("key1", 1)
     map.put("key2", "value")
     encoder.encode(map) shouldEqual obj("key1" -> fromLong(1), "key2" -> fromString("value"))
+  }
+
+  it("should encode maps as a json without changing fields order") {
+    val sampleMap =
+      ('a' to 'z')
+        .map(x => x -> Random.nextInt())
+        .sortBy(_._2)
+    val linkedHashMap = new util.LinkedHashMap[String, AnyRef]()
+    sampleMap.foreach { case (char, int) => linkedHashMap.put(s"$char", Integer.valueOf(int)) }
+
+    val encoded  = encoder.encode(linkedHashMap)
+    val expected = obj(sampleMap.map { case (c, i) => s"$c" -> fromInt(i) }: _*)
+    encoded.asObject.map(_.keys.toList) shouldEqual expected.asObject.map(_.keys.toList)
   }
 
   it("should encode arrays as a json") {
