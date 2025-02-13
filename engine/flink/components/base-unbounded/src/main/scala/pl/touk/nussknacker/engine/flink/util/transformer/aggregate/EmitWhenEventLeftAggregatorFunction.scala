@@ -25,7 +25,7 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
     override val nodeId: NodeId,
     protected val aggregateElementType: TypingResult,
     override protected val aggregateTypeInformation: TypeInformation[AnyRef],
-    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
+    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
 )(implicit override val rangeMap: FlinkRangeMap[MapT])
     extends LatelyEvictableStateFunction[
       ValueWithContext[KeyedValue[AnyRef, AnyRef]],
