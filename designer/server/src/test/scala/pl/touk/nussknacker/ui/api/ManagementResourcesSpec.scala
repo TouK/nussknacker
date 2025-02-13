@@ -160,10 +160,12 @@ class ManagementResourcesSpec
     deployProcess(
       ProcessTestData.sampleScenario.name,
       comment = Some("deployComment")
-    ) ~> checkThatEventually {
-      getProcess(processName) ~> check {
-        val processDetails = responseAs[ScenarioWithDetails]
-        processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+    ) ~> check {
+      eventually {
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ScenarioWithDetails]
+          processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+        }
       }
       cancelProcess(
         ProcessTestData.sampleScenario.name,
@@ -188,7 +190,7 @@ class ManagementResourcesSpec
           ) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
             deploymentHistory.map(a =>
-              (a.processVersionId, a.user, a.actionName, a.commentId, a.comment, a.buildInfo)
+              (a.processVersionId, a.user, a.actionName, a.commentId, a.comment, a.modelInfo)
             ) shouldBe List(
               (
                 VersionId(2),
@@ -196,7 +198,7 @@ class ManagementResourcesSpec
                 ScenarioActionName.Cancel,
                 Some(secondCommentId),
                 Some(expectedStopComment),
-                Map()
+                None
               ),
               (
                 VersionId(2),
@@ -204,7 +206,7 @@ class ManagementResourcesSpec
                 ScenarioActionName.Deploy,
                 Some(firstCommentId),
                 Some(expectedDeployComment),
-                TestFactory.buildInfo
+                Some(TestFactory.modelInfo)
               )
             )
           }

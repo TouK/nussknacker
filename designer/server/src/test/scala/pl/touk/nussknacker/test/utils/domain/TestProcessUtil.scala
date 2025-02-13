@@ -185,7 +185,7 @@ object TestProcessUtil {
     failureMessage = None,
     commentId = None,
     comment = None,
-    buildInfo = Map.empty
+    modelInfo = None
   )
 
   private def generateId() = Math.abs(randomGenerator.nextLong())

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.test.utils.domain
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -39,10 +40,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(
-    dbRef,
-    mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
-  )
+  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(dbRef)
 
   private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
   private val stickyNotesRepository: StickyNotesRepository       = DbStickyNotesRepository.create(dbRef, clock)
@@ -99,7 +97,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   def createDeployedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -110,7 +108,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- Future(createSavedScenario(scenario, category, isFragment))
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -121,7 +119,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
       _  <- prepareCancel(id)
     } yield id).futureValue
   }
@@ -133,7 +131,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -155,7 +153,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       )
     )
 
-  private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
+  private def prepareDeploy(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Deploy
     val comment    = Comment.from("Deploy comment")
     dbioRunner.run(
@@ -164,7 +162,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
         VersionId.initialVersionId,
         actionName,
         comment,
-        Some(processingType)
+        Some(ModelInfo.fromMap(Map("engine-version" -> "0.1")))
       )
     )
   }
