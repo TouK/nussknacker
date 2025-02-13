@@ -127,7 +127,7 @@ class ManagementResources(
                     reject(MalformedRequestContentRejection("Invalid cancel request", notValidRequest))
                 }
               case Left(notJson) =>
-                // assume deployment request contains plaintext comment only
+                // assume cancel request contains plaintext comment only
                 provide(CancelRequest(Some(body)))
             }
         }
