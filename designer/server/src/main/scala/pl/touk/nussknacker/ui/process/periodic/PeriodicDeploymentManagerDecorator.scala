@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.periodic
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   SchedulePropertyExtractorFactory
 }
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, SchedulingSupported}
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
@@ -30,7 +30,6 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
   def decorate(
       underlying: DeploymentManager,
       schedulingSupported: SchedulingSupported,
-      modelData: ModelData,
       deploymentConfig: Config,
       dependencies: DeploymentManagerDependencies,
       dbRef: DbRef,
@@ -93,7 +92,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       delegate = underlying,
       dependencies = dependencies,
       periodicProcessesRepository = periodicProcessesRepository,
-      scheduledExecutionPerformer = schedulingSupported.createScheduledExecutionPerformer(deploymentConfig),
+      scheduledExecutionPerformer = schedulingSupported.createScheduledExecutionPerformer(rawSchedulingConfig),
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
       processConfigEnricherFactory = processConfigEnricherFactory,
       listenerFactory = periodicProcessListenerFactory,

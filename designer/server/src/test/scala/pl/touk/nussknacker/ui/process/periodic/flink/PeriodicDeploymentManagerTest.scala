@@ -482,7 +482,7 @@ class PeriodicDeploymentManagerTest
     f.periodicProcessService.handleFinished.futureValue
 
     // after some time Flink stops returning job status
-    f.delegateDeploymentManagerStub.jobStatus = Map.empty
+    f.delegateDeploymentManagerStub.jobStatus.clear()
 
     f.getMergedStatusDetails.status shouldEqual ProblemStateStatus.Failed
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed

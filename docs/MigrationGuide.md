@@ -42,6 +42,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 * [#7364](https://github.com/TouK/nussknacker/pull/7364)
     * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
+    * additionally modified in [#7552](https://github.com/TouK/nussknacker/pull/7552)
     * the PeriodicDeploymentManager is no longer a separate DM type
     * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
   ```hocon   
@@ -91,6 +92,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 * [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
 * [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
+  * interface modified in [#7552](https://github.com/TouK/nussknacker/pull/7552) 
 * [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing. As an entry point to all migration steps, assume that `FlinkMiniClusterWithServices` is a new `FlinkMiniClusterHolder`
   * From perspective of testkit (`TestScenarioRunner.flinkBased`) module usage
     * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-2ccffe37f56882fa91afb457ba45c98f399c40f7667b2de9ea3453b6e8a76989).

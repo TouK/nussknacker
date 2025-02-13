@@ -245,7 +245,7 @@ class PeriodicProcessServiceTest
       FinishedEvent(
         finished.toDetails,
         canonicalProcess,
-        f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+        f.delegateDeploymentManagerStub.getJobStatus(processName).flatMap(_.headOption)
       ),
       ScheduledEvent(scheduled.toDetails, firstSchedule = false)
     )
@@ -295,7 +295,7 @@ class PeriodicProcessServiceTest
     f.events.loneElement shouldBe FinishedEvent(
       event.toDetails,
       canonicalProcess,
-      f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+      f.delegateDeploymentManagerStub.getJobStatus(processName).flatMap(_.headOption)
     )
   }
 
@@ -378,7 +378,7 @@ class PeriodicProcessServiceTest
     f.events.toList shouldBe List(
       FailedOnRunEvent(
         expectedDetails.toDetails,
-        f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+        f.delegateDeploymentManagerStub.getJobStatus(processName).flatMap(_.headOption)
       )
     )
   }

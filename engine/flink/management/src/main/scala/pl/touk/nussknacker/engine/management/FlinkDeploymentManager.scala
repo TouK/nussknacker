@@ -306,8 +306,9 @@ class FlinkDeploymentManager(
 
   override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
 
-    override def createScheduledExecutionPerformer(config: Config): ScheduledExecutionPerformer =
-      FlinkScheduledExecutionPerformer.create(modelData, client, config)
+    override def createScheduledExecutionPerformer(
+        rawSchedulingConfig: Config,
+    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(client, modelData, rawSchedulingConfig)
 
   }
 

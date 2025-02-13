@@ -22,13 +22,13 @@ object FlinkScheduledExecutionPerformer {
   val jarFileNameRuntimeParam = "jarFileName"
 
   def create(
+      flinkClient: FlinkClient,
       modelData: BaseModelData,
-      client: FlinkClient,
-      config: Config,
+      rawSchedulingConfig: Config,
   ): ScheduledExecutionPerformer = {
     new FlinkScheduledExecutionPerformer(
-      flinkClient = client,
-      jarsDir = Paths.get(config.getString("scheduling.jarsDir")),
+      flinkClient = flinkClient,
+      jarsDir = Paths.get(rawSchedulingConfig.getString("jarsDir")),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
     )
