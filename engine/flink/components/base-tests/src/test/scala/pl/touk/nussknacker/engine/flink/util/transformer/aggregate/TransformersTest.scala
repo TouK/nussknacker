@@ -890,7 +890,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   test("key variable can be something else than string") {
     ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val modelData = modelData(
+      val model = modelData(
         collectingListener,
         List(
           GenericRecordHours(1, 0, 1, "a"),
@@ -902,7 +902,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       )
       val testScenario = sliding("#AGG.first", "#input.str", emitWhenEventLeft = false)
 
-      runScenario(modelData, testScenario)
+      runScenario(model, testScenario)
       val keyVariables = collectingListener.keyVariables
       keyVariables shouldBe List(1, "2", List(1), Map("a" -> 1), 1.2)
     }
