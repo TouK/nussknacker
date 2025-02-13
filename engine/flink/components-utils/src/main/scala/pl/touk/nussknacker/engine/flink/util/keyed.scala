@@ -103,19 +103,6 @@ object keyed {
 
     private lazy val interpreter = prepareInterpreter(key, value)
 
-//    private def transformKey(keyValue: CharSequence): String = {
-//      Option(keyValue).map(_.toString).getOrElse("")
-//    }
-
-//    protected def prepareInterpreter(
-//                                      key: LazyParameter[String],
-//                                      value: LazyParameter[Value]
-//                                    ): Context => KeyedValue[Key, Value] = {
-//      toEvaluateFunctionConverter.toEvaluateFunction[KeyedValue[Key, Value]](
-//        key.product(value).map(tuple => KeyedValue(tuple._1, tuple._2))
-//      )
-//    }
-
     override protected def interpret(ctx: Context): KeyedValue[Key, Value] = interpreter(ctx)
 
   }
