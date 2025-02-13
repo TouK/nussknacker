@@ -198,11 +198,7 @@ object transformers {
                 .window(windowDefinition)
                 .trigger(baseTrigger)
                 .aggregate(
-                  new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](
-                    aggregator,
-                    aggregateBy.returnType,
-                    _._1
-                  ),
+                  aggregatingFunction,
                   EnrichingWithKeyFunction(fctx),
                   typeInfos.storedTypeInfo,
                   typeInfos.returnTypeInfo,

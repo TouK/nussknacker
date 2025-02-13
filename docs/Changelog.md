@@ -92,6 +92,7 @@
   * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
 
 ## 1.18
 
