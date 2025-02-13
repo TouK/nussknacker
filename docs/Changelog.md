@@ -151,6 +151,7 @@
   if `followRedirect` is enabled then `Location` response header is also checked:
   * `forbiddenCidrs` - list of forbidden CIDR.
 * [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
 
 ## 1.18
 
