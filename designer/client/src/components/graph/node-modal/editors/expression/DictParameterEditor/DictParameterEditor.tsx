@@ -64,6 +64,16 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
         [dictId, scenario.processingType],
     );
 
+    const fetchProcessDefinitionDataDictByKey = useCallback(
+        async (key: string) => {
+            setIsFetching(true);
+            const { data } = await HttpService.fetchProcessDefinitionDataDictByKey(scenario.processingType, dictId, key);
+            setIsFetching(false);
+            return [data];
+        },
+        [dictId, scenario.processingType],
+    );
+
     const debouncedUpdateOptions = useMemo(() => {
         return debounce(async (value: string) => {
             const fetchedOptions = await fetchProcessDefinitionDataDict(value);
@@ -75,10 +85,10 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
 
     // This logic is needed, because scenario is initially loaded without full validation data.
     // In that case the label field is missing, and we need to fetch it separately.
-    let missingExpressionLabel = false;
+    let keyWithMissingLabel = null;
     useEffect(() => {
-        if (missingExpressionLabel) fetchProcessDefinitionDataDict("").then((data) => setOptions(data));
-    }, [fetchProcessDefinitionDataDict, missingExpressionLabel]);
+        if (keyWithMissingLabel) fetchProcessDefinitionDataDictByKey(keyWithMissingLabel).then((data) => setOptions(data));
+    }, [fetchProcessDefinitionDataDictByKey, keyWithMissingLabel]);
 
     return (
         <Box className={nodeValue}>
@@ -116,7 +126,8 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
                 getOptionLabel={(option) => {
-                    if (!option.label) missingExpressionLabel = true;
+                    if (!option.label) keyWithMissingLabel = option.key;
+                    else keyWithMissingLabel = null;
                     return option.label ?? options.find((opt) => opt.key == option.key)?.label ?? "";
                 }}
                 isOptionEqualToValue={() => true}
