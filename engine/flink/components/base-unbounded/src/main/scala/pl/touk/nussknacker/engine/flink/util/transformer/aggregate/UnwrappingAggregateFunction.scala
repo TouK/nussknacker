@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import org.apache.flink.api.common.functions.AggregateFunction
 import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 /**

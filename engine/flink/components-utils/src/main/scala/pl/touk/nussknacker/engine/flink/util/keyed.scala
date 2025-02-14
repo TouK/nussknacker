@@ -5,8 +5,8 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper,
@@ -41,15 +41,6 @@ object keyed {
         TypeInformationDetection.instance.forType[V](value.returnType)
       )
     )
-  }
-
-  type GenericKeyedValue[K, V] = KeyedValue[K, V]
-
-  object GenericKeyedValue {
-
-    def apply[K, V](key: K, value: V): GenericKeyedValue[K, V] = GenericKeyedValue(key, value)
-
-    def unapply[K, V](keyedValue: GenericKeyedValue[K, V]): Option[(K, V)] = KeyedValue.unapply(keyedValue)
   }
 
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <: AnyRef: TypeTag]
@@ -107,26 +98,6 @@ object keyed {
 
   }
 
-  class GenericKeyOnlyMapper[K <: AnyRef: TypeTag](
-      protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-      key: LazyParameter[K]
-  ) extends RichFlatMapFunction[Context, ValueWithContext[K]]
-      with LazyParameterInterpreterFunction {
-
-    protected implicit def toEvaluateFunctionConverterImpl: ToEvaluateFunctionConverter = toEvaluateFunctionConverter
-
-    private lazy val interpreter = toEvaluateFunctionConverter.toEvaluateFunction(key)
-
-    protected def interpret(ctx: Context): K = interpreter(ctx)
-
-    override def flatMap(ctx: Context, out: Collector[ValueWithContext[K]]): Unit = {
-      collectHandlingErrors(ctx, out) {
-        ValueWithContext(interpret(ctx), ctx)
-      }
-    }
-
-  }
-
   class StringKeyedValueMapper[T <: AnyRef: TypeTag](
       protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
       key: LazyParameter[CharSequence],
@@ -181,7 +152,7 @@ object keyed {
     def contextTransformation(ctx: ValidationContext)(
         implicit nodeId: NodeId
     ): ValidatedNel[ProcessCompilationError, ValidationContext] =
-      ctx.withVariableOverriden(VariableConstants.KeyVariableName, Typed[String], None)
+      ctx.withVariableOverriden(VariableConstants.KeyVariableName, Unknown, None)
 
   }
 
