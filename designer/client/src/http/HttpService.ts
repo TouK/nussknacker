@@ -953,6 +953,19 @@ class HttpService {
             );
     }
 
+    fetchProcessDefinitionDataDictByKey(processingType: ProcessingType, dictId: string, key: string) {
+        return api
+            .get<ProcessDefinitionDataDictOption>(`/processDefinitionData/${processingType}/dicts/${dictId}/entryByKey?key=${key}`)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"),
+                        error,
+                    ),
+                ),
+            );
+    }
+
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {

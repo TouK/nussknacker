@@ -201,6 +201,35 @@ class DictApiHttpServiceSpec
         .equalsJsonBody("""[]""".stripMargin)
     }
 
+    "return dict entry suggestions for existing key" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .get(
+          s"$nuDesignerHttpAddress/api/processDefinitionData/" +
+            s"${Streaming.stringify}/dicts/$existingDictId/entryByKey?key=H0000ff"
+        )
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""{
+                          |  "key" : "H0000ff",
+                          |  "label" : "Blue"
+                          |}""".stripMargin)
+    }
+
+    "fail to return dict entry suggestions for non-existing key" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .get(
+          s"$nuDesignerHttpAddress/api/processDefinitionData/" +
+            s"${Streaming.stringify}/dicts/$existingDictId/entryByKey?key=H1000ff"
+        )
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No dict item found in dictionary with id: $existingDictId for key: H1000ff".stripMargin)
+    }
+
     "fail to return entry suggestions for non-existing dictionary" in {
       given()
         .when()
