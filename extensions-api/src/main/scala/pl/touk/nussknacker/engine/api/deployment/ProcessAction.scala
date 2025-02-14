@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -28,7 +29,7 @@ import java.util.UUID
     failureMessage: Option[String],
     commentId: Option[Long],
     comment: Option[String],
-    buildInfo: Map[String, String]
+    modelInfo: Option[ModelInfo]
 )
 
 final case class ProcessActionId(value: UUID) {

@@ -49,7 +49,7 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, String> buildInfo() {
+    public Map<String, String> modelInfo() {
         return Collections.emptyMap();
     }
 }

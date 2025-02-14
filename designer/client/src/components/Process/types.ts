@@ -16,20 +16,12 @@ export type ActionName = string;
 
 export type ProcessVersionId = number;
 
-export type BuildInfoType = {
-    buildTime: string;
-    gitCommit: string;
-    name: string;
-    version: string;
-};
-
 export type ProcessActionType = {
     performedAt: Instant;
     user: string;
     actionName: ActionName;
     commentId?: number;
     comment?: string;
-    buildInfo?: BuildInfoType;
     processVersionId: ProcessVersionId;
 };
 

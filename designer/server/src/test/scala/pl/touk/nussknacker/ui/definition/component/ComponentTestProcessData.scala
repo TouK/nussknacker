@@ -63,7 +63,7 @@ private[component] object ComponentTestProcessData {
       failureMessage = Option.empty,
       commentId = Option.empty,
       comment = Option.empty,
-      buildInfo = Map.empty
+      modelInfo = Option.empty
     )
 
   val MarketingProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(

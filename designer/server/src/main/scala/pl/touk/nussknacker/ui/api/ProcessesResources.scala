@@ -17,11 +17,11 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  SkipAdditionalFields,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(
     protected val processService: ProcessService,
-    processStateService: ProcessStateProvider,
+    scenarioStateProvider: ScenarioStateProvider,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener
@@ -212,7 +212,9 @@ class ProcessesResources(
           currentlyPresentedVersionIdParameter { currentlyPresentedVersionId =>
             complete {
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-              processStateService.getProcessState(processId, currentlyPresentedVersionId).map(ToResponseMarshallable(_))
+              scenarioStateProvider
+                .getProcessState(processId, currentlyPresentedVersionId)
+                .map(ToResponseMarshallable(_))
             }
           }
         }

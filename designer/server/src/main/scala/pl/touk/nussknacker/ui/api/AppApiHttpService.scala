@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
@@ -26,7 +27,7 @@ class AppApiHttpService(
     config: Config,
     authManager: AuthManager,
     processingTypeDataReloader: ReloadableProcessingTypeDataProvider,
-    modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
+    modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
     shouldExposeConfig: Boolean
@@ -106,14 +107,14 @@ class AppApiHttpService(
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
-          val modelBuildInfo: Map[ProcessingType, Map[String, String]] =
-            modelBuildInfos.all(NussknackerInternalUser.instance)
+          val modelInfo: Map[ProcessingType, ModelInfo] =
+            modelInfos.all(NussknackerInternalUser.instance)
           BuildInfoDto(
             BuildInfo.name,
             BuildInfo.gitCommit,
             BuildInfo.buildTime,
             BuildInfo.version,
-            modelBuildInfo,
+            modelInfo,
             configuredBuildInfo
           )
         }

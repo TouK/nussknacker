@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -200,7 +201,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   //       do we have. See AdditionalInfoProviders as well
   def migrations: ProcessMigrations
 
-  final def buildInfo: Map[String, String] = configCreator.buildInfo()
+  final def info: ModelInfo = configCreator.modelInfo()
 
   def configCreator: ProcessConfigCreator
 

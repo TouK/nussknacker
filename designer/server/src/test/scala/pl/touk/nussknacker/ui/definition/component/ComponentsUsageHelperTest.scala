@@ -83,7 +83,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         failureMessage = Option.empty,
         commentId = Option.empty,
         comment = Option.empty,
-        buildInfo = Map.empty
+        modelInfo = Option.empty
       )
     )
   )

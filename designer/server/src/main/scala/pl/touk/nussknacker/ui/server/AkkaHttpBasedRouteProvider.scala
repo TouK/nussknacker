@@ -56,6 +56,8 @@ import pl.touk.nussknacker.ui.process.deployment.{
   DeploymentService => LegacyDeploymentService,
   RepositoryBasedScenarioActivityManager,
   ScenarioResolver,
+  ScenarioStateProvider,
+  ScenarioStateProviderImpl,
   ScenarioTestExecutorServiceImpl
 }
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
@@ -172,12 +174,12 @@ class AkkaHttpBasedRouteProvider(
         }
       )
     } yield {
-      val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
-      val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
+      val migrations = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
+      val modelInfos = processingTypeDataProvider.mapValues(_.designerModelData.modelData.info)
 
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
       val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
-      val actionRepository                              = DbScenarioActionRepository.create(dbRef, modelBuildInfo)
+      val actionRepository                              = DbScenarioActionRepository.create(dbRef)
       val stickyNotesRepository                         = DbStickyNotesRepository.create(dbRef, designerClock)
       val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
@@ -254,21 +256,28 @@ class AkkaHttpBasedRouteProvider(
         processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
       }
 
-      val legacyDeploymentService = new LegacyDeploymentService(
+      val scenarioStateProvider =
+        ScenarioStateProvider(
+          dmDispatcher,
+          processRepository,
+          actionRepository,
+          dbioRunner,
+          featureTogglesConfig.scenarioStateTimeout
+        )
+      val actionService = new ActionService(
         dmDispatcher,
         processRepository,
         actionRepository,
         dbioRunner,
-        processValidator,
-        scenarioResolver,
         processChangeListener,
-        featureTogglesConfig.scenarioStateTimeout,
+        scenarioStateProvider,
         featureTogglesConfig.deploymentCommentSettings,
-        additionalComponentConfigs
+        modelInfos,
+        designerClock
       )
-      legacyDeploymentService.invalidateInProgressActions()
+      actionService.invalidateInProgressActions()
 
-      actionServiceSupplier.set(legacyDeploymentService)
+      actionServiceSupplier.set(actionService)
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
@@ -303,7 +312,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val processService = new DBProcessService(
-        legacyDeploymentService,
+        scenarioStateProvider,
         newProcessPreparer,
         processingTypeDataProvider.mapCombined(_.parametersService),
         processResolver,
@@ -350,7 +359,7 @@ class AkkaHttpBasedRouteProvider(
         config = resolvedDesignerConfig,
         authManager = authManager,
         processingTypeDataReloader = processingTypeDataProvider,
-        modelBuildInfos = modelBuildInfo,
+        modelInfos = modelInfos,
         categories = processingTypeDataProvider.mapValues(_.category),
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
@@ -501,10 +510,17 @@ class AkkaHttpBasedRouteProvider(
       initMetrics(metricsRegistry, resolvedDesignerConfig, futureProcessRepository)
 
       val apiResourcesWithAuthentication: List[RouteWithUser] = {
+        val legacyDeploymentService = new LegacyDeploymentService(
+          dmDispatcher,
+          processValidator,
+          scenarioResolver,
+          actionService,
+          additionalComponentConfigs
+        )
         val routes = List(
           new ProcessesResources(
             processService = processService,
-            processStateService = legacyDeploymentService,
+            scenarioStateProvider = scenarioStateProvider,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
