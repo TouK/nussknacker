@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Autocomplete, Box, SxProps, Theme, useTheme } from "@mui/material";
 import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
 import { getScenario } from "../../../../../../reducers/selectors/graph";
@@ -73,6 +73,13 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
 
     const isValid = isEmpty(fieldErrors);
 
+    // This logic is needed, because scenario is initially loaded without full validation data.
+    // In that case the label field is missing, and we need to fetch it separately.
+    let missingExpressionLabel = false;
+    useEffect(() => {
+        if (missingExpressionLabel) fetchProcessDefinitionDataDict("").then((data) => setOptions(data));
+    }, [fetchProcessDefinitionDataDict, missingExpressionLabel]);
+
     return (
         <Box className={nodeValue}>
             <Autocomplete
@@ -108,7 +115,10 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 }}
                 open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
-                getOptionLabel={(option) => option.label}
+                getOptionLabel={(option) => {
+                    if (!option.label) missingExpressionLabel = true;
+                    return option.label ?? options.find((opt) => opt.key == option.key)?.label ?? "";
+                }}
                 isOptionEqualToValue={() => true}
                 value={value}
                 inputValue={inputValue}
