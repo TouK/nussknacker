@@ -161,7 +161,8 @@ describe("Process", () => {
             cy.viewport("macbook-15");
             cy.contains(/^deploy$/i).click();
             cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-            cy.contains(/^ok$/i).should("be.enabled").click();
+            cy.contains(/^ok$/i).should("be.enabled").as("okButton");
+            cy.get("@okButton").click();
             cy.wait("@deploy", { timeout: 20000 }).its("response.statusCode").should("eq", 400);
             cy.contains(/^Comment is required.$/i).should("exist");
         });
