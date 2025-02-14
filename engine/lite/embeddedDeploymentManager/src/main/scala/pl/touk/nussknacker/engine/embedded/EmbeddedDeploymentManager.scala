@@ -27,8 +27,7 @@ class EmbeddedDeploymentManager(
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)
     extends LiteDeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
 

@@ -26,8 +26,7 @@ import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, modelData: BaseModelData)
     extends DeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   import SimpleStateStatus._
   import dependencies._

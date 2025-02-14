@@ -11,20 +11,19 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -61,8 +60,7 @@ object MockableDeploymentManagerProvider {
       implicit executionContext: ExecutionContext,
       ioRuntime: IORuntime
   ) extends DeploymentManager
-      with ManagerSpecificScenarioActivitiesStoredByManager
-      with StubbingCommands {
+      with ManagerSpecificScenarioActivitiesStoredByManager {
 
     private lazy val miniClusterWithServicesOpt = modelDataOpt.map { modelData =>
       FlinkMiniClusterFactory.createMiniClusterWithServices(
@@ -82,24 +80,6 @@ object MockableDeploymentManagerProvider {
         )
       }
 
-    override def resolve(
-        idWithName: ProcessIdWithName,
-        statusDetails: List[StatusDetails],
-        lastStateAction: Option[ProcessAction],
-        latestVersionId: VersionId,
-        deployedVersionId: Option[VersionId],
-        currentlyPresentedVersionId: Option[VersionId],
-    ): Future[ProcessState] = {
-      Future.successful(
-        processStateDefinitionManager.processState(
-          statusDetails.head,
-          latestVersionId,
-          deployedVersionId,
-          currentlyPresentedVersionId
-        )
-      )
-    }
-
     override def processStateDefinitionManager: ProcessStateDefinitionManager =
       SimpleProcessStateDefinitionManager
 
@@ -112,6 +92,7 @@ object MockableDeploymentManagerProvider {
 
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
       command match {
+        case _: DMValidateScenarioCommand => Future.successful(())
         case DMRunDeploymentCommand(_, deploymentData, _, _) =>
           Future {
             deploymentData.deploymentId.toNewDeploymentIdOpt
@@ -129,8 +110,9 @@ object MockableDeploymentManagerProvider {
                 s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
               )
             )
-        case other =>
-          super.processCommand(other)
+        case _: DMCancelScenarioCommand | _: DMStopScenarioCommand | _: DMStopDeploymentCommand |
+            _: DMCancelDeploymentCommand | _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand =>
+          notImplemented
       }
     }
 

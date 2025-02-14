@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process._
@@ -255,17 +256,21 @@ private class ScenarioStateProviderImpl(
       processDetails,
       inProgressActionNames,
       currentlyPresentedVersionId,
-      manager =>
-        manager
-          .resolve(
-            processDetails.idWithName,
-            prefetchedStatusDetails.value,
-            processDetails.lastStateAction,
-            processDetails.processVersionId,
-            processDetails.lastDeployedAction.map(_.processVersionId),
-            currentlyPresentedVersionId,
-          )
-          .map(prefetchedStatusDetails.withValue)
+      { manager =>
+        // FIXME abr: handle finished
+        Future {
+          prefetchedStatusDetails.map { prefetchedStatusDetailsValue =>
+            val resolved =
+              InconsistentStateDetector.resolve(prefetchedStatusDetailsValue, processDetails.lastStateAction)
+            manager.processStateDefinitionManager.processState(
+              resolved,
+              processDetails.processVersionId,
+              processDetails.lastDeployedAction.map(_.processVersionId),
+              currentlyPresentedVersionId
+            )
+          }
+        }
+      }
     )
   }
 
@@ -396,14 +401,14 @@ private class ScenarioStateProviderImpl(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
 
+    // FIXME abr: handle finished
     val state = deploymentManager
-      .getProcessState(
-        processIdWithName,
-        lastStateAction,
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId,
-      )
+      .getProcessStates(processIdWithName.name)
+      .map(_.map { statusDetails =>
+        val resolved = InconsistentStateDetector.resolve(statusDetails, lastStateAction)
+        deploymentManager.processStateDefinitionManager
+          .processState(resolved, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
+      })
       .recover { case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetProcessState(latestVersionId)

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtype
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 
 import scala.concurrent.Future
@@ -22,24 +22,6 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(List(stubbedStatus)))
-  }
-
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] = {
-    Future.successful(
-      processStateDefinitionManager.processState(
-        stubbedStatus,
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId
-      )
-    )
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager

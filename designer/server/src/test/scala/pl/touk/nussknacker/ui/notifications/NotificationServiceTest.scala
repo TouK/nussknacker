@@ -4,15 +4,14 @@ import akka.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -102,8 +101,8 @@ class NotificationServiceTest
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                                       = mock[DeploymentManager]
-    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
+    val deploymentManager                           = mock[DeploymentManager]
+    val (deploymentService, _, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
@@ -288,16 +287,8 @@ class NotificationServiceTest
     )
 
   private def createServices(deploymentManager: DeploymentManager) = {
-    when(
-      deploymentManager.getProcessState(
-        any[ProcessIdWithName],
-        any[Option[ProcessAction]],
-        any[VersionId],
-        any[Option[VersionId]],
-        any[Option[VersionId]],
-      )(any[DataFreshnessPolicy])
-    )
-      .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(notDeployed)))
+    when(deploymentManager.getProcessStates(any[ProcessName])(any[DataFreshnessPolicy]))
+      .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(List.empty[StatusDetails])))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)

@@ -7,7 +7,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
@@ -125,7 +125,7 @@ class PeriodicDeploymentManagerTest
     state shouldEqual SimpleStateStatus.NotDeployed
   }
 
-  test("getProcessState - should be scheduled when scenario scheduled and no job on Flink") {
+  test("getProcessStates - should be scheduled when scenario scheduled and no job on Flink") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
@@ -136,15 +136,10 @@ class PeriodicDeploymentManagerTest
       ScenarioActionName.Deploy
     )
     f.periodicDeploymentManager
-      .getProcessState(
-        idWithName,
-        None,
-        processVersion.versionId,
-        Some(processVersion.versionId),
-        Some(processVersion.versionId)
-      )
+      .getProcessStates(idWithName.name)
       .futureValue
       .value
+      .loneElement
       .status shouldBe a[ScheduledStatus]
   }
 
@@ -172,13 +167,20 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
     f.periodicProcessService.deactivate(processName).futureValue
 
-    val state =
+    val statusDetails =
       f.periodicDeploymentManager
-        .getProcessState(idWithName, None, processVersion.versionId, None, Some(processVersion.versionId))
+        .getProcessStates(processName)
         .futureValue
         .value
+        .loneElement
 
-    state.status shouldBe SimpleStateStatus.Finished
+    statusDetails.status shouldBe SimpleStateStatus.Finished
+    val state = f.periodicDeploymentManager.processStateDefinitionManager.processState(
+      statusDetails,
+      processVersion.versionId,
+      None,
+      Some(processVersion.versionId)
+    )
     state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 

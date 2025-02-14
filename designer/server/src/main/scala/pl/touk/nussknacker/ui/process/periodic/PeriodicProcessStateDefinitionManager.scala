@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.ui.process.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.defaultVisibleActions
-import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, ScenarioActionName, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  OverridingProcessStateDefinitionManager,
+  ProcessStateDefinitionManager,
+  ScenarioActionName,
+  StateStatus
+}
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{PeriodicDeploymentStatus, PeriodicProcessStatus}
 
 class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager)
@@ -18,7 +23,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   override def statusTooltip(stateStatus: StateStatus): String = {
     stateStatus match {
       case periodic: PeriodicProcessStatus => PeriodicProcessStateDefinitionManager.statusTooltip(periodic)
-      case _                               => super.statusTooltip(stateStatus)
+      case other                           => throw new IllegalStateException(s"Unexpected status: $other")
     }
   }
 

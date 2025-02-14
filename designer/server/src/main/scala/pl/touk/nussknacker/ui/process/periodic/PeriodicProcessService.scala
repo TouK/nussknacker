@@ -615,7 +615,7 @@ class PeriodicProcessService(
       )
     } yield {
       val status = PeriodicProcessStatus(toDeploymentStatuses(activeSchedules), toDeploymentStatuses(inactiveSchedules))
-      status.mergedStatusDetails.copy(status = status)
+      status.mergedStatusDetails
     }
   }
 
@@ -651,8 +651,7 @@ class PeriodicProcessService(
           toDeploymentStatuses(processName, activeSchedulesForProcess),
           toDeploymentStatuses(processName, inactiveSchedulesForProcess)
         )
-        val mergedStatus = status.mergedStatusDetails.copy(status = status)
-        (processName, mergedStatus)
+        (processName, status.mergedStatusDetails)
       }.toMap
     }
   }
@@ -765,16 +764,12 @@ object PeriodicProcessService {
   case class PeriodicProcessStatus(
       activeDeploymentsStatuses: List[PeriodicDeploymentStatus],
       inactiveDeploymentsStatuses: List[PeriodicDeploymentStatus]
-  ) extends StateStatus
-      with LazyLogging {
+  ) extends LazyLogging {
 
     def limitedAndSortedDeployments: List[PeriodicDeploymentStatus] =
       (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
       )).sorted(PeriodicDeploymentStatus.ordering.reverse)
-
-    // We present merged name to be possible to filter scenario by status
-    override def name: StatusName = mergedStatusDetails.status.name
 
     // Currently we don't present deployments - theirs statuses are available only in tooltip - because of that we have to pick
     // one "merged" status that will be presented to users

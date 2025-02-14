@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentId
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
-class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
+class DeploymentManagerStub extends BaseDeploymentManager {
 
   val jobStatus: TrieMap[ProcessName, List[StatusDetails]] = TrieMap.empty
 
@@ -64,23 +62,6 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
     )
   }
 
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] =
-    Future.successful(
-      processStateDefinitionManager.processState(
-        statusDetails.headOption.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None)),
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId,
-      )
-    )
-
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
@@ -100,5 +81,14 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
         Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toMap))
 
     }
+
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
+    case _: DMValidateScenarioCommand => Future.successful(())
+    case _: DMRunDeploymentCommand    => Future.successful(None)
+    case _: DMCancelScenarioCommand   => Future.successful(())
+    case _: DMStopScenarioCommand | _: DMStopDeploymentCommand | _: DMCancelDeploymentCommand |
+        _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand | _: DMTestScenarioCommand =>
+      notImplemented
+  }
 
 }

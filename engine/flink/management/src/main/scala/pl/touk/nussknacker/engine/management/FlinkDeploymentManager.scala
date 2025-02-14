@@ -8,10 +8,9 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
@@ -59,31 +58,6 @@ class FlinkDeploymentManager(
 
   private val statusDeterminer = new FlinkStatusDetailsDeterminer(modelData.namingStrategy, client.getJobConfig)
 
-  /**
-    * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
-    */
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] = {
-    for {
-      actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
-      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(
-        statusDetails,
-        actionAfterPostprocessOpt.orElse(lastStateAction)
-      )
-    } yield processStateDefinitionManager.processState(
-      engineStateResolvedWithLastAction,
-      latestVersionId,
-      deployedVersionId,
-      currentlyPresentedVersionId,
-    )
-  }
-
   // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
   // - job is finished without troubles
   // - job has failed
@@ -91,6 +65,7 @@ class FlinkDeploymentManager(
   // and treat another case as ProblemStateStatus.shouldBeRunning (see InconsistentStateDetector)
   // TODO: We should synchronize the status of deployment more explicitly as we already do in periodic case
   //       See PeriodicProcessService.synchronizeDeploymentsStates and remove the InconsistentStateDetector
+  // FIXME abr move to reconciliation
   private def postprocess(
       idWithName: ProcessIdWithName,
       statusDetailsList: List[StatusDetails]

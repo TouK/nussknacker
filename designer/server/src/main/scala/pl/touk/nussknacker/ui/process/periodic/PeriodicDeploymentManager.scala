@@ -7,10 +7,9 @@ import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.ui.process.periodic.Utils._
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
@@ -198,34 +197,6 @@ class PeriodicDeploymentManager private[periodic] (
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     service.getStatusDetails(name).map(_.map(List(_)))
-  }
-
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetailsList: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] = {
-    val statusDetails = statusDetailsList match {
-      case head :: _ =>
-        head
-      case Nil =>
-        val status = PeriodicProcessStatus(List.empty, List.empty)
-        status.mergedStatusDetails.copy(status = status)
-    }
-    // TODO: add "real" presentation of deployments in GUI
-    val mergedStatus = processStateDefinitionManager
-      .processState(
-        statusDetails.copy(status =
-          statusDetails.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status
-        ),
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId,
-      )
-    Future.successful(mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(statusDetails.status)))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

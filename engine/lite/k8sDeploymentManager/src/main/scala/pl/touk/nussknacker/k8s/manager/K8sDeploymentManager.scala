@@ -49,8 +49,7 @@ class K8sDeploymentManager(
     rawConfig: Config,
     dependencies: DeploymentManagerDependencies
 ) extends LiteDeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   import dependencies._
 

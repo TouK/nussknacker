@@ -56,6 +56,7 @@ trait ProcessStateDefinitionManager {
   /**
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
     */
+  // FIXME abr: extract other class without most of fields from ProcessState
   def processState(
       statusDetails: StatusDetails,
       latestVersionId: VersionId,

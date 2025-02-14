@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName, StatusDetails}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
+// FIXME abr: move to core
 object InconsistentStateDetector extends InconsistentStateDetector
 
 class InconsistentStateDetector extends LazyLogging {
