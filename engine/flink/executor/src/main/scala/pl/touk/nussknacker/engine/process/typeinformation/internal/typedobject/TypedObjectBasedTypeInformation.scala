@@ -31,7 +31,7 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
     extends TypeInformation[T] {
 
   def this(fields: Map[String, TypeInformation[_]]) = {
-    this(fields.toArray.sortBy(_._1))
+    this(fields.toArray)
   }
 
   override def isBasicType: Boolean = false

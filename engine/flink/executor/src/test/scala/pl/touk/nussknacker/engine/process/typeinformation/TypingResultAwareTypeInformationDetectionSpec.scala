@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.CustomTypedObject
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
+import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
 @silent("deprecated")
@@ -43,7 +44,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
     val typingResult = Typed.record(
-      Map(
+      ListMap(
         "intF"         -> Typed[Int],
         "strF"         -> Typed[String],
         "longF"        -> Typed[Long],
@@ -61,10 +62,10 @@ class TypingResultAwareTypeInformationDetectionSpec
 
     assertMapSerializers(
       typeInfo.createSerializer(executionConfigWithoutKryo),
-      ("fixedLong", new LongSerializer),
       ("intF", new IntSerializer),
-      ("longF", new LongSerializer),
       ("strF", new StringSerializer),
+      ("longF", new LongSerializer),
+      ("fixedLong", new LongSerializer),
       ("taggedString", new StringSerializer)
     )
   }
@@ -87,7 +88,7 @@ class TypingResultAwareTypeInformationDetectionSpec
 
   test("test context serialization") {
     val ctx = Context("11").copy(variables =
-      Map(
+      ListMap(
         "one"            -> 11,
         "two"            -> "ala",
         "three"          -> Map("key" -> "value"),
@@ -96,7 +97,7 @@ class TypingResultAwareTypeInformationDetectionSpec
       )
     )
     val vCtx = ValidationContext(
-      Map(
+      ListMap(
         "one"            -> Typed[Int],
         "two"            -> Typed[String],
         "three"          -> Typed.record(Map("key" -> Typed[String]), Typed.typedClass[Map[String, Any]]),
@@ -117,11 +118,11 @@ class TypingResultAwareTypeInformationDetectionSpec
 
     assertSerializersInContext(
       typeInfo.createSerializer(executionConfigWithoutKryo),
-      ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
-      ("arrayOfStrings", _ shouldBe new StringArraySerializer),
       ("one", _ shouldBe new IntSerializer),
+      ("two", _ shouldBe new StringSerializer),
       ("three", assertMapSerializers(_, ("key", new StringSerializer))),
-      ("two", _ shouldBe new StringSerializer)
+      ("arrayOfStrings", _ shouldBe new StringArraySerializer),
+      ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
     )
   }
 
