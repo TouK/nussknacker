@@ -67,7 +67,7 @@ case class ToJsonEncoder(
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
           case a: scala.collection.Map[_, _] => encodeMap(a.toMap)
-          case a: java.util.Map[_, _]        => encode(ListMap.from(a.asScala))
+          case a: java.util.Map[_, _]        => encode(ListMap(a.asScala.toList: _*))
           case a: Iterable[_]                => fromValues(a.map(encode))
           case a: Enum[_]                    => safeString(a.toString)
           case a: java.util.Collection[_]    => fromValues(a.asScala.map(encode))
