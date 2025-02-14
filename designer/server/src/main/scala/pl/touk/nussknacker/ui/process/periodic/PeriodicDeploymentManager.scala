@@ -196,7 +196,7 @@ class PeriodicDeploymentManager private[periodic] (
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    service.getStatusDetails(name).map(_.map(List(_)))
+    service.getMergedStatusDetails(name).map(_.map(List(_)))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

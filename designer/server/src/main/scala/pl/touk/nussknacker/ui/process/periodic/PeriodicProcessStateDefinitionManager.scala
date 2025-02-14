@@ -7,7 +7,13 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ScenarioActionName,
   StateStatus
 }
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{PeriodicDeploymentStatus, PeriodicProcessStatus}
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{
+  MaxDeploymentsStatus,
+  PeriodicDeploymentStatus,
+  PeriodicProcessStatusWithMergedStatus
+}
+
+import java.net.URI
 
 class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager)
     extends OverridingProcessStateDefinitionManager(
@@ -20,10 +26,39 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       delegate = delegate
     ) {
 
+  override def statusActions(processStatus: ProcessStateDefinitionManager.ProcessStatus): List[ScenarioActionName] = {
+    super.statusActions(processStatus.copy(stateStatus = extractPeriodicStatus(processStatus.stateStatus).mergedStatus))
+  }
+
+  override def actionTooltips(
+      processStatus: ProcessStateDefinitionManager.ProcessStatus
+  ): Map[ScenarioActionName, String] = {
+    super.actionTooltips(
+      processStatus.copy(stateStatus = extractPeriodicStatus(processStatus.stateStatus).mergedStatus)
+    )
+  }
+
+  override def statusIcon(stateStatus: StateStatus): URI = {
+    super.statusIcon(extractPeriodicStatus(stateStatus).mergedStatus)
+  }
+
+  override def statusDescription(stateStatus: StateStatus): String = {
+    super.statusDescription(extractPeriodicStatus(stateStatus).mergedStatus)
+  }
+
   override def statusTooltip(stateStatus: StateStatus): String = {
+    val periodicStatus = extractPeriodicStatus(stateStatus)
+    PeriodicProcessStateDefinitionManager.statusTooltip(
+      activeDeploymentsStatuses = periodicStatus.activeDeploymentsStatuses,
+      inactiveDeploymentsStatuses = periodicStatus.inactiveDeploymentsStatuses
+    )
+  }
+
+  private def extractPeriodicStatus(stateStatus: StateStatus) = {
     stateStatus match {
-      case periodic: PeriodicProcessStatus => PeriodicProcessStateDefinitionManager.statusTooltip(periodic)
-      case other                           => throw new IllegalStateException(s"Unexpected status: $other")
+      case periodic: PeriodicProcessStatusWithMergedStatus =>
+        periodic
+      case other => throw new IllegalStateException(s"Unexpected status: $other")
     }
   }
 
@@ -31,8 +66,15 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
 
 object PeriodicProcessStateDefinitionManager {
 
-  def statusTooltip(processStatus: PeriodicProcessStatus): String = {
-    processStatus.limitedAndSortedDeployments
+  def statusTooltip(
+      activeDeploymentsStatuses: List[PeriodicDeploymentStatus],
+      inactiveDeploymentsStatuses: List[PeriodicDeploymentStatus]
+  ): String = {
+    val limitedAndSortedDeployments: List[PeriodicDeploymentStatus] =
+      (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
+        MaxDeploymentsStatus - activeDeploymentsStatuses.size
+      )).sorted(PeriodicDeploymentStatus.ordering.reverse)
+    limitedAndSortedDeployments
       .map { case d @ PeriodicDeploymentStatus(_, scheduleId, _, runAt, status, _, _) =>
         val refinedStatus = {
           if (d.isCanceled) {

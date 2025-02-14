@@ -86,8 +86,9 @@ class DeploymentManagerStub extends BaseDeploymentManager {
     case _: DMValidateScenarioCommand => Future.successful(())
     case _: DMRunDeploymentCommand    => Future.successful(None)
     case _: DMCancelScenarioCommand   => Future.successful(())
-    case _: DMStopScenarioCommand | _: DMStopDeploymentCommand | _: DMCancelDeploymentCommand |
-        _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand | _: DMTestScenarioCommand =>
+    case _: DMCancelDeploymentCommand => Future.successful(())
+    case _: DMStopScenarioCommand | _: DMStopDeploymentCommand | _: DMMakeScenarioSavepointCommand |
+        _: DMRunOffScheduleCommand | _: DMTestScenarioCommand =>
       notImplemented
   }
 

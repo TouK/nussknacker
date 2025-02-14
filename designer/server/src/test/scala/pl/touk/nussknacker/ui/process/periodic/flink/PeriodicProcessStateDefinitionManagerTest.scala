@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.P
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{PeriodicDeploymentStatus, PeriodicProcessStatus}
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessStateDefinitionManager.statusTooltip
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.ScheduledStatus
@@ -39,8 +39,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       processActive = true,
       None
     )
-    val status = PeriodicProcessStatus(List(deploymentStatus), List.empty)
-    statusTooltip(status) shouldEqual "Scheduled at: 2023-01-01 10:00 status: Scheduled"
+    statusTooltip(List(deploymentStatus), List.empty) shouldEqual "Scheduled at: 2023-01-01 10:00 status: Scheduled"
   }
 
   test("display sorted periodic deployment status for named schedules") {
@@ -64,8 +63,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       processActive = true,
       None
     )
-    val status = PeriodicProcessStatus(List(firstDeploymentStatus, secDeploymentStatus), List.empty)
-    statusTooltip(status) shouldEqual
+    statusTooltip(List(firstDeploymentStatus, secDeploymentStatus), List.empty) shouldEqual
       s"""Schedule ${secScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Scheduled,
          |Schedule ${firstScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Deployed""".stripMargin
   }

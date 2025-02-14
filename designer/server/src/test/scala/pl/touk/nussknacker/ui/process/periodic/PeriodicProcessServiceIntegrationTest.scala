@@ -30,7 +30,7 @@ import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatusWithMergedStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
@@ -669,14 +669,19 @@ class PeriodicProcessServiceIntegrationTest
     val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
     val timeToTriggerSchedule2 = startTime.plus(2, ChronoUnit.HOURS)
 
-    def mostImportantActiveDeployment = service
-      .getStatusDetails(processName)
-      .futureValue
-      .value
-      .status
-      .asInstanceOf[PeriodicProcessStatus]
-      .pickMostImportantActiveDeployment
-      .value
+    def mostImportantActiveDeployment = {
+      PeriodicProcessService
+        .pickMostImportantActiveDeployment(
+          service
+            .getMergedStatusDetails(processName)
+            .futureValue
+            .value
+            .status
+            .asInstanceOf[PeriodicProcessStatusWithMergedStatus]
+            .activeDeploymentsStatuses
+        )
+        .value
+    }
 
     val schedule1 = "schedule1"
     val schedule2 = "schedule2"

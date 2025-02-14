@@ -8,6 +8,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.be
+import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -42,7 +43,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id1"))
 
           MockableDeploymentManager.configureScenarioStatuses(
-            Map("id1" -> SimpleStateStatus.Running)
+            Map("id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
           )
         }
         .when()
@@ -70,9 +71,8 @@ class AppApiHttpServiceBusinessSpec
 
           MockableDeploymentManager.configureScenarioStatuses(
             Map(
-              "id1" -> ProblemStateStatus.FailedToGet,
-              "id2" -> SimpleStateStatus.Running,
-              "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+              "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+              "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
             )
           )
         }
@@ -94,10 +94,6 @@ class AppApiHttpServiceBusinessSpec
         .applicationState {
           createDeployedCanceledExampleScenario(ProcessName("id1"))
           createDeployedExampleScenario(ProcessName("id2"))
-
-          MockableDeploymentManager.configureScenarioStatuses(
-            Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"))
-          )
         }
         .when()
         .basicAuthAllPermUser()
@@ -120,8 +116,8 @@ class AppApiHttpServiceBusinessSpec
 
           MockableDeploymentManager.configureScenarioStatuses(
             Map(
-              "id1" -> SimpleStateStatus.Running,
-              "id2" -> SimpleStateStatus.Running,
+              "id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+              "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
             )
           )
         }
@@ -144,7 +140,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id1"))
 
           MockableDeploymentManager.configureScenarioStatuses(
-            Map("id1" -> SimpleStateStatus.Running)
+            Map("id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
           )
         }
         .when()
@@ -169,7 +165,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id1"))
 
           MockableDeploymentManager.configureScenarioStatuses(
-            Map("id1" -> SimpleStateStatus.Running)
+            Map("id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
           )
         }
         .basicAuthAllPermUser()
@@ -259,9 +255,8 @@ class AppApiHttpServiceBusinessSpec
 
           MockableDeploymentManager.configureScenarioStatuses(
             Map(
-              "id1" -> ProblemStateStatus.FailedToGet,
-              "id2" -> SimpleStateStatus.Running,
-              "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+              "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+              "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
             )
           )
         }

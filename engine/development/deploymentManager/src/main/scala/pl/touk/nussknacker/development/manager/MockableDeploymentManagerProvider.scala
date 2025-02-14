@@ -8,10 +8,11 @@ import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
@@ -86,8 +87,20 @@ object MockableDeploymentManagerProvider {
     override def getProcessStates(name: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-      val status = MockableDeploymentManager.scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
-      Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
+      val statusDetails = MockableDeploymentManager.scenarioStatuses
+        .get()
+        .getOrElse(name.value, BasicStatusDetails(SimpleStateStatus.NotDeployed, version = None))
+      Future.successful(
+        WithDataFreshnessStatus.fresh(
+          List(
+            StatusDetails(
+              statusDetails.status,
+              None,
+              version = statusDetails.version.map(vId => ProcessVersion.empty.copy(versionId = vId))
+            )
+          )
+        )
+      )
     }
 
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
@@ -138,12 +151,12 @@ object MockableDeploymentManagerProvider {
   //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager {
 
-    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, BasicStatusDetails]](Map.empty)
     private val testResults       = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
     private val deploymentResults = new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
     private val managerSpecificScenarioActivities = new AtomicReference[List[ScenarioActivity]](List.empty)
 
-    def configureScenarioStatuses(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
+    def configureScenarioStatuses(scenarioStates: Map[ScenarioName, BasicStatusDetails]): Unit = {
       MockableDeploymentManager.scenarioStatuses.set(scenarioStates)
     }
 
@@ -169,3 +182,5 @@ object MockableDeploymentManagerProvider {
   }
 
 }
+
+case class BasicStatusDetails(status: StateStatus, version: Option[VersionId])

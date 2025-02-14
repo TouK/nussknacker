@@ -554,7 +554,7 @@ class PeriodicProcessService(
 
   private def now(): LocalDateTime = LocalDateTime.now(clock)
 
-  def getStatusDetails(
+  def getMergedStatusDetails(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[StatusDetails]] = {
     delegateDeploymentManager.getProcessStates(name).flatMap { statusesWithFreshness =>
@@ -746,10 +746,8 @@ class PeriodicProcessService(
 
 object PeriodicProcessService {
 
-  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
-
   // TODO: some configuration?
-  private val MaxDeploymentsStatus = 5
+  private[periodic] val MaxDeploymentsStatus = 5
 
   private val DeploymentStatusesToReschedule =
     Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Failed)
@@ -761,45 +759,52 @@ object PeriodicProcessService {
   // for each historical and active deployments. mergedStatusDetails and methods below are for purpose of presentation
   // of single, merged status similar to this available for streaming job. This merged status should be a straightforward derivative
   // of these deployments statuses so it will be easy to figure out it by user.
-  case class PeriodicProcessStatus(
+  private case class PeriodicProcessStatus(
       activeDeploymentsStatuses: List[PeriodicDeploymentStatus],
       inactiveDeploymentsStatuses: List[PeriodicDeploymentStatus]
   ) extends LazyLogging {
 
-    def limitedAndSortedDeployments: List[PeriodicDeploymentStatus] =
-      (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
-        MaxDeploymentsStatus - activeDeploymentsStatuses.size
-      )).sorted(PeriodicDeploymentStatus.ordering.reverse)
-
     // Currently we don't present deployments - theirs statuses are available only in tooltip - because of that we have to pick
     // one "merged" status that will be presented to users
     def mergedStatusDetails: StatusDetails = {
-      pickMostImportantActiveDeployment
+      def toPeriodicProcessStatusWithMergedStatus(mergedStatus: StateStatus) = PeriodicProcessStatusWithMergedStatus(
+        activeDeploymentsStatuses,
+        inactiveDeploymentsStatuses,
+        mergedStatus
+      )
+
+      def createStatusDetails(mergedStatus: StateStatus, periodicDeploymentIdOpt: Option[PeriodicProcessDeploymentId]) =
+        StatusDetails(
+          status = toPeriodicProcessStatusWithMergedStatus(mergedStatus),
+          deploymentId = periodicDeploymentIdOpt.map(_.toString).map(DeploymentId(_)),
+        )
+
+      pickMostImportantActiveDeployment(activeDeploymentsStatuses)
         .map { deploymentStatus =>
-          def createStatusDetails(status: StateStatus) = StatusDetails(
-            status = status,
-            deploymentId = Some(DeploymentId(deploymentStatus.deploymentId.toString)),
-          )
           if (deploymentStatus.isWaitingForReschedule) {
             deploymentStatus.runtimeStatusOpt
-              .map(_.copy(status = WaitingForScheduleStatus))
-              .getOrElse(createStatusDetails(WaitingForScheduleStatus))
+              .map(_.copy(status = toPeriodicProcessStatusWithMergedStatus(WaitingForScheduleStatus)))
+              .getOrElse(createStatusDetails(WaitingForScheduleStatus, Some(deploymentStatus.deploymentId)))
           } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.Scheduled) {
-            createStatusDetails(ScheduledStatus(deploymentStatus.runAt))
+            createStatusDetails(ScheduledStatus(deploymentStatus.runAt), Some(deploymentStatus.deploymentId))
           } else if (Set(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
               .contains(deploymentStatus.status)) {
-            createStatusDetails(ProblemStateStatus.Failed)
+            createStatusDetails(ProblemStateStatus.Failed, Some(deploymentStatus.deploymentId))
           } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.RetryingDeploy) {
-            createStatusDetails(SimpleStateStatus.DuringDeploy)
+            createStatusDetails(SimpleStateStatus.DuringDeploy, Some(deploymentStatus.deploymentId))
           } else {
-            deploymentStatus.runtimeStatusOpt.getOrElse {
-              createStatusDetails(WaitingForScheduleStatus)
-            }
+            deploymentStatus.runtimeStatusOpt
+              .map(runtimeDetails =>
+                runtimeDetails.copy(status = toPeriodicProcessStatusWithMergedStatus(runtimeDetails.status))
+              )
+              .getOrElse {
+                createStatusDetails(WaitingForScheduleStatus, Some(deploymentStatus.deploymentId))
+              }
           }
         }
         .getOrElse {
           if (inactiveDeploymentsStatuses.isEmpty) {
-            StatusDetails(SimpleStateStatus.NotDeployed, None)
+            createStatusDetails(SimpleStateStatus.NotDeployed, None)
           } else {
             val latestInactiveProcessId =
               inactiveDeploymentsStatuses.maxBy(_.scheduleId.processId.value).scheduleId.processId
@@ -810,52 +815,64 @@ object PeriodicProcessService {
             if (latestDeploymentsForEachScheduleOfLatestProcessId.forall(
                 _.status == PeriodicProcessDeploymentStatus.Finished
               )) {
-              StatusDetails(SimpleStateStatus.Finished, None)
+              createStatusDetails(SimpleStateStatus.Finished, None)
             } else {
-              StatusDetails(SimpleStateStatus.Canceled, None)
+              createStatusDetails(SimpleStateStatus.Canceled, None)
             }
           }
         }
     }
 
-    /**
-      * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
-      * For multiple schedules only single schedule is returned in the following order:
-      * <ol>
-      * <li>If there are any deployed scenarios, then the first one is returned. Please be aware that deployment of previous
-      * schedule could fail.</li>
-      * <li>If there are any failed scenarios, then the last one is returned. We want to inform user, that some deployments
-      * failed and the scenario should be rescheduled/retried manually.
-      * <li>If there are any scheduled scenarios, then the first one to be run is returned.
-      * <li>If there are any finished scenarios, then the last one is returned. It should not happen because the scenario
-      * should be deactivated earlier.
-      * </ol>
-      */
-    def pickMostImportantActiveDeployment: Option[PeriodicDeploymentStatus] = {
-      val lastActiveDeploymentStatusForEachSchedule =
-        latestDeploymentForEachSchedule(activeDeploymentsStatuses).sorted
+  }
 
-      def first(status: PeriodicProcessDeploymentStatus) =
-        lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
+  /**
+   * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
+   * For multiple schedules only single schedule is returned in the following order:
+   * <ol>
+   * <li>If there are any deployed scenarios, then the first one is returned. Please be aware that deployment of previous
+   * schedule could fail.</li>
+   * <li>If there are any failed scenarios, then the last one is returned. We want to inform user, that some deployments
+   * failed and the scenario should be rescheduled/retried manually.
+   * <li>If there are any scheduled scenarios, then the first one to be run is returned.
+   * <li>If there are any finished scenarios, then the last one is returned. It should not happen because the scenario
+   * should be deactivated earlier.
+   * </ol>
+   */
+  private[periodic] def pickMostImportantActiveDeployment(
+      activeDeploymentsStatuses: List[PeriodicDeploymentStatus]
+  ): Option[PeriodicDeploymentStatus] = {
+    val lastActiveDeploymentStatusForEachSchedule =
+      latestDeploymentForEachSchedule(activeDeploymentsStatuses).sorted
 
-      def last(status: PeriodicProcessDeploymentStatus) =
-        lastActiveDeploymentStatusForEachSchedule.reverse.find(_.status == status)
+    def first(status: PeriodicProcessDeploymentStatus) =
+      lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
 
-      first(PeriodicProcessDeploymentStatus.Deployed)
-        .orElse(last(PeriodicProcessDeploymentStatus.Failed))
-        .orElse(last(PeriodicProcessDeploymentStatus.RetryingDeploy))
-        .orElse(last(PeriodicProcessDeploymentStatus.FailedOnDeploy))
-        .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
-        .orElse(last(PeriodicProcessDeploymentStatus.Finished))
-    }
+    def last(status: PeriodicProcessDeploymentStatus) =
+      lastActiveDeploymentStatusForEachSchedule.reverse.find(_.status == status)
 
-    private def latestDeploymentForEachSchedule(deploymentsStatuses: List[PeriodicDeploymentStatus]) = {
-      deploymentsStatuses
-        .groupBy(_.scheduleId)
-        .values
-        .toList
-        .map(_.min(PeriodicDeploymentStatus.ordering.reverse))
-    }
+    first(PeriodicProcessDeploymentStatus.Deployed)
+      .orElse(last(PeriodicProcessDeploymentStatus.Failed))
+      .orElse(last(PeriodicProcessDeploymentStatus.RetryingDeploy))
+      .orElse(last(PeriodicProcessDeploymentStatus.FailedOnDeploy))
+      .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
+      .orElse(last(PeriodicProcessDeploymentStatus.Finished))
+  }
+
+  private def latestDeploymentForEachSchedule(deploymentsStatuses: List[PeriodicDeploymentStatus]) = {
+    deploymentsStatuses
+      .groupBy(_.scheduleId)
+      .values
+      .toList
+      .map(_.min(PeriodicDeploymentStatus.ordering.reverse))
+  }
+
+  case class PeriodicProcessStatusWithMergedStatus(
+      activeDeploymentsStatuses: List[PeriodicDeploymentStatus],
+      inactiveDeploymentsStatuses: List[PeriodicDeploymentStatus],
+      mergedStatus: StateStatus
+  ) extends StateStatus {
+
+    override def name: StatusName = mergedStatus.name
 
   }
 

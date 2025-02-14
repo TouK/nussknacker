@@ -7,20 +7,20 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatusWithMergedStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.ui.process.periodic._
+import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
-import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -99,19 +99,21 @@ class PeriodicDeploymentManagerTest
 
     def getMergedStatusDetails: StatusDetails =
       periodicProcessService
-        .getStatusDetails(processName)
+        .getMergedStatusDetails(processName)
         .futureValue
         .value
-        .status
-        .asInstanceOf[PeriodicProcessStatus]
-        .mergedStatusDetails
 
+  }
+
+  implicit class MergedStatusDetailsOps(statusDetails: StatusDetails) {
+    def mergedStatus: StateStatus =
+      statusDetails.status.asInstanceOf[PeriodicProcessStatusWithMergedStatus].mergedStatus
   }
 
   test("getProcessState - should return not deployed for no job") {
     val f = new Fixture
 
-    val state = f.getMergedStatusDetails.status
+    val state = f.getMergedStatusDetails.mergedStatus
 
     state shouldEqual SimpleStateStatus.NotDeployed
   }
@@ -120,7 +122,7 @@ class PeriodicDeploymentManagerTest
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
 
-    val state = f.getMergedStatusDetails.status
+    val state = f.getMergedStatusDetails.mergedStatus
 
     state shouldEqual SimpleStateStatus.NotDeployed
   }
@@ -130,7 +132,7 @@ class PeriodicDeploymentManagerTest
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
     val statusDetails = f.getMergedStatusDetails
-    statusDetails.status shouldBe a[ScheduledStatus]
+    statusDetails.mergedStatus shouldBe a[ScheduledStatus]
     f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel,
       ScenarioActionName.Deploy
@@ -140,7 +142,7 @@ class PeriodicDeploymentManagerTest
       .futureValue
       .value
       .loneElement
-      .status shouldBe a[ScheduledStatus]
+      .mergedStatus shouldBe a[ScheduledStatus]
   }
 
   test("getProcessState - should be scheduled when scenario scheduled and job finished on Flink") {
@@ -149,7 +151,7 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
-    statusDetails.status shouldBe a[ScheduledStatus]
+    statusDetails.mergedStatus shouldBe a[ScheduledStatus]
     f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel,
       ScenarioActionName.Deploy
@@ -174,7 +176,7 @@ class PeriodicDeploymentManagerTest
         .value
         .loneElement
 
-    statusDetails.status shouldBe SimpleStateStatus.Finished
+    statusDetails.mergedStatus shouldBe SimpleStateStatus.Finished
     val state = f.periodicDeploymentManager.processStateDefinitionManager.processState(
       statusDetails,
       processVersion.versionId,
@@ -190,7 +192,7 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Running, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
-    statusDetails.status shouldBe SimpleStateStatus.Running
+    statusDetails.mergedStatus shouldBe SimpleStateStatus.Running
     f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     )
@@ -202,7 +204,7 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
-    statusDetails.status shouldBe WaitingForScheduleStatus
+    statusDetails.mergedStatus shouldBe WaitingForScheduleStatus
     f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     )
@@ -213,7 +215,7 @@ class PeriodicDeploymentManagerTest
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Failed)
 
     val statusDetails = f.getMergedStatusDetails
-    statusDetails.status shouldBe ProblemStateStatus.Failed
+    statusDetails.mergedStatus shouldBe ProblemStateStatus.Failed
     f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     )
@@ -300,7 +302,7 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     val statusDetails = f.getMergedStatusDetails
-    statusDetails.status shouldBe ProblemStateStatus.Failed
+    statusDetails.mergedStatus shouldBe ProblemStateStatus.Failed
     f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     )
@@ -311,7 +313,7 @@ class PeriodicDeploymentManagerTest
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
     val statusDetailsBeforeRedeploy = f.getMergedStatusDetails
-    statusDetailsBeforeRedeploy.status shouldBe ProblemStateStatus.Failed
+    statusDetailsBeforeRedeploy.mergedStatus shouldBe ProblemStateStatus.Failed
     f.getAllowedActions(
       statusDetailsBeforeRedeploy,
       processVersion.versionId,
@@ -339,7 +341,7 @@ class PeriodicDeploymentManagerTest
     )
     val statusDetailsAfterRedeploy = f.getMergedStatusDetails
     // Previous job is still visible as Failed.
-    statusDetailsAfterRedeploy.status shouldBe a[ScheduledStatus]
+    statusDetailsAfterRedeploy.mergedStatus shouldBe a[ScheduledStatus]
     f.getAllowedActions(
       statusDetailsAfterRedeploy,
       processVersion.versionId,
@@ -435,7 +437,7 @@ class PeriodicDeploymentManagerTest
     // this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
 
-    f.getMergedStatusDetails.status shouldEqual ProblemStateStatus.Failed
+    f.getMergedStatusDetails.mergedStatus shouldEqual ProblemStateStatus.Failed
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
@@ -444,7 +446,7 @@ class PeriodicDeploymentManagerTest
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
 
-    f.getMergedStatusDetails.status shouldEqual SimpleStateStatus.Canceled
+    f.getMergedStatusDetails.mergedStatus shouldEqual SimpleStateStatus.Canceled
   }
 
   test("should reschedule failed job after RescheduleActor handles finished when configured") {
@@ -455,7 +457,7 @@ class PeriodicDeploymentManagerTest
     // this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
 
-    f.getMergedStatusDetails.status shouldBe a[ScheduledStatus]
+    f.getMergedStatusDetails.mergedStatus shouldBe a[ScheduledStatus]
     f.repository.deploymentEntities.map(_.status) shouldBe List(
       PeriodicProcessDeploymentStatus.Failed,
       PeriodicProcessDeploymentStatus.Scheduled
@@ -472,7 +474,7 @@ class PeriodicDeploymentManagerTest
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
-    f.getMergedStatusDetails.status shouldEqual SimpleStateStatus.Canceled
+    f.getMergedStatusDetails.mergedStatus shouldEqual SimpleStateStatus.Canceled
   }
 
   test("should cancel failed scenario after disappeared from Flink console") {
@@ -486,7 +488,7 @@ class PeriodicDeploymentManagerTest
     // after some time Flink stops returning job status
     f.delegateDeploymentManagerStub.jobStatus.clear()
 
-    f.getMergedStatusDetails.status shouldEqual ProblemStateStatus.Failed
+    f.getMergedStatusDetails.mergedStatus shouldEqual ProblemStateStatus.Failed
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
@@ -494,7 +496,7 @@ class PeriodicDeploymentManagerTest
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
-    f.getMergedStatusDetails.status shouldBe SimpleStateStatus.Canceled
+    f.getMergedStatusDetails.mergedStatus shouldBe SimpleStateStatus.Canceled
   }
 
   test("should take into account only latest deployments of active schedules during merged status computation") {
@@ -508,7 +510,7 @@ class PeriodicDeploymentManagerTest
       firstDeploymentRunAt.plusHours(1)
     )
 
-    f.getMergedStatusDetails.status shouldBe WaitingForScheduleStatus
+    f.getMergedStatusDetails.mergedStatus shouldBe WaitingForScheduleStatus
   }
 
   test(
@@ -523,7 +525,7 @@ class PeriodicDeploymentManagerTest
     f.repository.addOnlyDeployment(secProcessId, PeriodicProcessDeploymentStatus.Finished)
     f.repository.markInactive(secProcessId)
 
-    f.getMergedStatusDetails.status shouldBe SimpleStateStatus.Finished
+    f.getMergedStatusDetails.mergedStatus shouldBe SimpleStateStatus.Finished
   }
 
 }

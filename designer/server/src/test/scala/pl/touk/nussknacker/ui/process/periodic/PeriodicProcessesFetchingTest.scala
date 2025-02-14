@@ -88,7 +88,7 @@ class PeriodicProcessesFetchingTest
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
 
     for (i <- 1 to n) {
-      f.periodicProcessService.getStatusDetails(processName(i)).futureValue
+      f.periodicProcessService.getMergedStatusDetails(processName(i)).futureValue
     }
 
     getLatestDeploymentQueryCount.get() shouldEqual 2 * n

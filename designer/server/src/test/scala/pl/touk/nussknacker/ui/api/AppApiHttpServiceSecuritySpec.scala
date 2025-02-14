@@ -6,6 +6,7 @@ import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -39,8 +40,8 @@ class AppApiHttpServiceSecuritySpec
 
           MockableDeploymentManager.configureScenarioStatuses(
             Map(
-              "id1" -> SimpleStateStatus.Running,
-              "id2" -> SimpleStateStatus.Running
+              "id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+              "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1)))
             )
           )
         }
@@ -70,9 +71,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -100,9 +100,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -124,9 +123,9 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> SimpleStateStatus.ProblemStateStatus.Failed,
-                "id2" -> SimpleStateStatus.ProblemStateStatus.Failed,
-                "id3" -> SimpleStateStatus.ProblemStateStatus.Failed
+                "id1" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None),
+                "id3" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None)
               )
             )
           }
@@ -156,8 +155,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> SimpleStateStatus.NotDeployed,
-                "id2" -> SimpleStateStatus.NotDeployed
+                "id1" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, None)
               )
             )
           }
@@ -185,9 +184,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -205,13 +203,6 @@ class AppApiHttpServiceSecuritySpec
           .applicationState {
             createDeployedExampleScenario(ProcessName("id1"), category = Category1)
             createDeployedExampleScenario(ProcessName("id2"), category = Category2)
-
-            MockableDeploymentManager.configureScenarioStatuses(
-              Map(
-                "id1" -> SimpleStateStatus.NotDeployed,
-                "id2" -> SimpleStateStatus.NotDeployed
-              )
-            )
           }
           .when()
           .noAuth()
@@ -319,9 +310,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -347,9 +337,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -371,9 +360,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -402,9 +390,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -423,9 +410,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -447,9 +433,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -471,9 +456,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
