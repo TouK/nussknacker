@@ -64,9 +64,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       should be used `withListener`/`withTestEngineListener` methods which properly cleanup allocated resources. 
 * [#7540](https://github.com/TouK/nussknacker/pull/7540) `FlinkStreamingDeploymentManagerProvider` was renamed to `FlinkDeploymentManagerProvider`,
   `FlinkStreamingRestManager` and `FlinkRestManager` abstraction layers were removed - only `FlinkDeploymentManager` exists
-* [7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessConfigCreator.buildInfo` was renamed to `modelInfo`.
-  Also, it returns a `ModelInfo` value class now. To create it from `Map`, use `ModelInfo.fromMap`
-
+* [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessConfigCreator.buildInfo` and `NkGlobalParameters.buildInfo` were renamed to `modelInfo`
+  Also, they return a `ModelInfo` value class now. To create it from `Map`, use `ModelInfo.fromMap`. To access underlying map, use `ModelInfo.parameters`.
+  
 
 ### Other changes
 

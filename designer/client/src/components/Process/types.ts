@@ -22,7 +22,6 @@ export type ProcessActionType = {
     actionName: ActionName;
     commentId?: number;
     comment?: string;
-    modelInfo?: any;
     processVersionId: ProcessVersionId;
 };
 
