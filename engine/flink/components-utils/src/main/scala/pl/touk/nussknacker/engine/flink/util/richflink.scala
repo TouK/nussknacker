@@ -4,10 +4,9 @@ import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, Singl
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
-import pl.touk.nussknacker.engine.flink.util.keyed.{GenericKeyOnlyMapper, GenericKeyedValueMapper, StringKeyOnlyMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.{GenericKeyedValueMapper, StringKeyOnlyMapper}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 
 object richflink {
@@ -23,16 +22,6 @@ object richflink {
           ctx.valueWithContextInfo.forClass[String]
         )
         .keyBy((k: ValueWithContext[String]) => k.value)
-
-    def groupBy[K <: AnyRef: TypeTag: ClassTag](
-        groupBy: LazyParameter[K]
-    )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[K], K] =
-      dataStream
-        .flatMap(
-          new GenericKeyOnlyMapper(ctx.lazyParameterHelper, groupBy),
-          ctx.valueWithContextInfo.forClass[K]
-        )
-        .keyBy((k: ValueWithContext[K]) => k.value)
 
     def groupByWithValue[T <: AnyRef: TypeTag, K <: AnyRef: TypeTag](
         groupBy: LazyParameter[K],
