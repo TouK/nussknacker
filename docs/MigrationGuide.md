@@ -19,6 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The `process-json` button in `processToolbarConfig` was renamed to `process-export`
 
 ### REST API changes
+
 * [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessAction.buildInfo` field was renamed to `ProcessAction.modelInfo` and is optional now. 
   `ProcessAction` type is used in `ScenarioWithDetails.lastDeployedAction`, `ScenarioWithDetails.lastStateAction` and `ScenarioWithDetails.lastAction`
   which are returned by `/processes`, `/processesDetails` endpoints. It is also used by `/components/$id/usages` endpoint
