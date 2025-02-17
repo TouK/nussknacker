@@ -86,7 +86,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     // This logic is needed, because scenario is initially loaded without full validation data.
     // In that case the label is missing, and we need to fetch it separately.
     useEffect(() => {
-        if (!value.label) {
+        if (value && !value?.label) {
             fetchProcessDefinitionDataDictByKey(value.key).then((data) => setValue(data));
         }
     }, [value, fetchProcessDefinitionDataDictByKey]);
