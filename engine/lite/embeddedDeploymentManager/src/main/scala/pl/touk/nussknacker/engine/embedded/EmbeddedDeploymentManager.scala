@@ -167,13 +167,13 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(
       WithDataFreshnessStatus.fresh(
         deployments
-          .get(name)
+          .get(scenarioName)
           .map { interpreterData =>
             StatusDetails(
               status = interpreterData.scenarioDeployment

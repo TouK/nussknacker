@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
@@ -958,7 +959,7 @@ class DeploymentServiceSpec
     deploymentManager.deploys.clear()
   }
 
-  private def checkIsFollowingDeploy(state: ProcessState, expected: Boolean) = {
+  private def checkIsFollowingDeploy(state: ScenarioStatusDto, expected: Boolean) = {
     withClue(state) {
       SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status) shouldBe expected
     }

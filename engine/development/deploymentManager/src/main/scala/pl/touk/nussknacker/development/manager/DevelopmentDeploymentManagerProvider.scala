@@ -57,14 +57,14 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
 
-  implicit private class ProcessStateExpandable(processState: StatusDetails) {
+  implicit private class StatusDetailsExpandable(statusDetails: StatusDetails) {
 
     def withStateStatus(stateStatus: StateStatus): StatusDetails = {
       StatusDetails(
         stateStatus,
-        processState.deploymentId,
-        processState.externalDeploymentId,
-        processState.version,
+        statusDetails.deploymentId,
+        statusDetails.externalDeploymentId,
+        statusDetails.version,
         Some(System.currentTimeMillis())
       )
     }
@@ -145,10 +145,10 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
     Future.unit
   }
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(scenarioName).toList))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -163,15 +163,16 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
   }
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach { processState =>
-      val newProcessState = processState.withStateStatus(stateStatus)
+    memory.get(name).foreach { statusDetails =>
+      val newProcessState = statusDetails.withStateStatus(stateStatus)
       memory.update(name, newProcessState)
-      logger.debug(s"Changed scenario $name state from ${processState.status.name} to ${stateStatus.name}.")
+      logger.debug(s"Changed scenario $name state from ${statusDetails.status.name} to ${stateStatus.name}.")
     }
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach { processState =>
-      logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
+    memory.get(name).foreach { statusDetails =>
+      logger
+        .debug(s"Starting async changing state for $name from ${statusDetails.status.name} to ${stateStatus.name}..")
       actorSystem.scheduler.scheduleOnce(
         sleepingTimeSeconds,
         new Runnable {
@@ -182,7 +183,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
     }
 
   private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): StatusDetails = {
-    val processState = StatusDetails(
+    val statusDetails = StatusDetails(
       stateStatus,
       None,
       Some(ExternalDeploymentId(UUID.randomUUID().toString)),
@@ -190,8 +191,8 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       startTime = Some(System.currentTimeMillis()),
     )
 
-    memory.update(processVersion.processName, processState)
-    processState
+    memory.update(processVersion.processName, statusDetails)
+    statusDetails
   }
 
   private def sleepingTimeSeconds = FiniteDuration(

@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.ui.process.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.defaultVisibleActions
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
+  ScenarioStatusWithScenarioContext,
+  defaultVisibleActions
+}
 import pl.touk.nussknacker.engine.api.deployment.{
   OverridingProcessStateDefinitionManager,
   ProcessStateDefinitionManager,
@@ -26,39 +29,52 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       delegate = delegate
     ) {
 
-  override def statusActions(processStatus: ProcessStateDefinitionManager.ProcessStatus): List[ScenarioActionName] = {
-    super.statusActions(processStatus.copy(stateStatus = extractPeriodicStatus(processStatus.stateStatus).mergedStatus))
+  override def statusActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] = {
+    super.statusActions(
+      extractPeriodicStatus(input.status)
+        .map(periodic => input.withStatus(periodic.mergedStatus))
+        .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
+    )
   }
 
-  override def actionTooltips(
-      processStatus: ProcessStateDefinitionManager.ProcessStatus
-  ): Map[ScenarioActionName, String] = {
+  override def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] = {
     super.actionTooltips(
-      processStatus.copy(stateStatus = extractPeriodicStatus(processStatus.stateStatus).mergedStatus)
+      extractPeriodicStatus(input.status)
+        .map(periodic => input.withStatus(periodic.mergedStatus))
+        .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
 
-  override def statusIcon(stateStatus: StateStatus): URI = {
-    super.statusIcon(extractPeriodicStatus(stateStatus).mergedStatus)
-  }
-
-  override def statusDescription(stateStatus: StateStatus): String = {
-    super.statusDescription(extractPeriodicStatus(stateStatus).mergedStatus)
-  }
-
-  override def statusTooltip(stateStatus: StateStatus): String = {
-    val periodicStatus = extractPeriodicStatus(stateStatus)
-    PeriodicProcessStateDefinitionManager.statusTooltip(
-      activeDeploymentsStatuses = periodicStatus.activeDeploymentsStatuses,
-      inactiveDeploymentsStatuses = periodicStatus.inactiveDeploymentsStatuses
+  override def statusIcon(input: ScenarioStatusWithScenarioContext): URI = {
+    super.statusIcon(
+      extractPeriodicStatus(input.status)
+        .map(periodic => input.withStatus(periodic.mergedStatus))
+        .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
+  }
+
+  override def statusDescription(input: ScenarioStatusWithScenarioContext): String = {
+    super.statusDescription(
+      extractPeriodicStatus(input.status)
+        .map(periodic => input.withStatus(periodic.mergedStatus))
+        .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
+    )
+  }
+
+  override def statusTooltip(input: ScenarioStatusWithScenarioContext): String = {
+    extractPeriodicStatus(input.status)
+      .map { periodicStatus =>
+        PeriodicProcessStateDefinitionManager.statusTooltip(
+          activeDeploymentsStatuses = periodicStatus.activeDeploymentsStatuses,
+          inactiveDeploymentsStatuses = periodicStatus.inactiveDeploymentsStatuses
+        )
+      }
+      .getOrElse(super.statusTooltip(input))
   }
 
   private def extractPeriodicStatus(stateStatus: StateStatus) = {
-    stateStatus match {
-      case periodic: PeriodicProcessStatusWithMergedStatus =>
-        periodic
-      case other => throw new IllegalStateException(s"Unexpected status: $other")
+    Option(stateStatus) collect { case periodic: PeriodicProcessStatusWithMergedStatus =>
+      periodic
     }
   }
 

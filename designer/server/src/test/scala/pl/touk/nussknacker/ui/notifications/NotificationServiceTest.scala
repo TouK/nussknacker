@@ -11,8 +11,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
@@ -278,16 +278,8 @@ class NotificationServiceTest
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId
   }
 
-  private val notDeployed =
-    SimpleProcessStateDefinitionManager.processState(
-      StatusDetails(SimpleStateStatus.NotDeployed, None),
-      VersionId(1),
-      None,
-      Some(VersionId(1)),
-    )
-
   private def createServices(deploymentManager: DeploymentManager) = {
-    when(deploymentManager.getProcessStates(any[ProcessName])(any[DataFreshnessPolicy]))
+    when(deploymentManager.getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy]))
       .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(List.empty[StatusDetails])))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))

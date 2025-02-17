@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process.exception
 
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ScenarioActionName, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui.IllegalOperationError
 
 final case class ProcessIllegalAction(message: String) extends IllegalOperationError(message, details = "")
@@ -11,7 +12,7 @@ object ProcessIllegalAction {
   def apply(
       actionName: ScenarioActionName,
       processName: ProcessName,
-      state: ProcessState
+      state: ScenarioStatusDto
   ): ProcessIllegalAction =
     apply(actionName, processName, state.status.name, state.allowedActions.toSet)
 

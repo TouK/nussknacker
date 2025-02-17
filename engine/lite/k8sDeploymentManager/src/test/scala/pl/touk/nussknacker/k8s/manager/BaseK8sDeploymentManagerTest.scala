@@ -145,14 +145,14 @@ class BaseK8sDeploymentManagerTest
       } finally {
         manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
         eventually {
-          manager.getProcessStates(version.processName).futureValue.value shouldBe List.empty
+          manager.getScenarioDeploymentsStatuses(version.processName).futureValue.value shouldBe List.empty
         }
       }
     }
 
     def waitForRunning(version: ProcessVersion): Assertion = {
       eventually {
-        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
+        val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
         logger.debug(s"Current process state: $state")
         state.flatMap(_.version) shouldBe List(version)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)

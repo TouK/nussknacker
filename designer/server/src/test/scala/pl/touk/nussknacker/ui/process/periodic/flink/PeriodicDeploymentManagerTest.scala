@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -93,7 +94,14 @@ class PeriodicDeploymentManagerTest
         currentlyPresentedVersionId: Option[VersionId],
     ): List[ScenarioActionName] = {
       periodicDeploymentManager.processStateDefinitionManager
-        .processState(statusDetails, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
+        .statusPresentation(
+          ScenarioStatusWithScenarioContext(
+            statusDetails,
+            latestVersionId,
+            deployedVersionId,
+            currentlyPresentedVersionId
+          )
+        )
         .allowedActions
     }
 
@@ -138,7 +146,7 @@ class PeriodicDeploymentManagerTest
       ScenarioActionName.Deploy
     )
     f.periodicDeploymentManager
-      .getProcessStates(idWithName.name)
+      .getScenarioDeploymentsStatuses(idWithName.name)
       .futureValue
       .value
       .loneElement
@@ -171,17 +179,19 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails =
       f.periodicDeploymentManager
-        .getProcessStates(processName)
+        .getScenarioDeploymentsStatuses(processName)
         .futureValue
         .value
         .loneElement
 
     statusDetails.mergedStatus shouldBe SimpleStateStatus.Finished
-    val state = f.periodicDeploymentManager.processStateDefinitionManager.processState(
-      statusDetails,
-      processVersion.versionId,
-      None,
-      Some(processVersion.versionId)
+    val state = f.periodicDeploymentManager.processStateDefinitionManager.statusPresentation(
+      ScenarioStatusWithScenarioContext(
+        statusDetails,
+        processVersion.versionId,
+        None,
+        Some(processVersion.versionId)
+      )
     )
     state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }

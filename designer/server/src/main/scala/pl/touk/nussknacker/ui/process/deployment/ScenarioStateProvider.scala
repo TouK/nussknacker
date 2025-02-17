@@ -6,17 +6,17 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.FailedToGet
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.{
-  WithDataFreshnessStatusMapOps,
-  WithDataFreshnessStatusOps
-}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.engine.deployment.DeploymentId
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions.Ops
 import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider.FragmentStateException
@@ -40,17 +40,17 @@ trait ScenarioStateProvider {
 
   def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto]
 
   def getProcessState(
       processIdWithName: ProcessIdWithName,
       currentlyPresentedVersionId: Option[VersionId],
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto]
 
   def getProcessStateDBIO(processDetails: ScenarioWithDetailsEntity[_], currentlyPresentedVersionId: Option[VersionId])(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): DB[ProcessState]
+  ): DB[ScenarioStatusDto]
 
 }
 
@@ -85,38 +85,39 @@ private class ScenarioStateProviderImpl(
   def getProcessState(
       processIdWithName: ProcessIdWithName,
       currentlyPresentedVersionId: Option[VersionId],
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto] = {
     dbioRunner.run(for {
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
-      result <- getProcessStateDBIO(
+      dto <- getProcessStateDBIO(
         processDetails,
         currentlyPresentedVersionId
       )
-    } yield result)
+    } yield dto)
   }
 
   def getProcessStateDBIO(
       processDetails: ScenarioWithDetailsEntity[_],
       currentlyPresentedVersionId: Option[VersionId]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[ScenarioStatusDto] = {
     for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      result <- getProcessStateFetchingStatusFromManager(
+      statusDetails <- getProcessStateFetchingStatusFromManager(
         processDetails,
-        inProgressActionNames,
-        currentlyPresentedVersionId
+        inProgressActionNames
       )
-    } yield result
+      dto = toDto(statusDetails, processDetails, currentlyPresentedVersionId)
+    } yield dto
   }
 
   def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto] = {
     dbioRunner.run(for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      result                <- getProcessStateFetchingStatusFromManager(processDetails, inProgressActionNames, None)
-    } yield result)
+      statusDetails         <- getProcessStateFetchingStatusFromManager(processDetails, inProgressActionNames)
+      dto = toDto(statusDetails, processDetails, None)
+    } yield dto)
   }
 
   def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
@@ -139,20 +140,21 @@ private class ScenarioStateProviderImpl(
                 // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
                 prefetchedState = prefetchedStatesForProcessingType.getOrElse(process.name, List.empty)
               } yield prefetchedState
-              prefetchedState match {
+              (prefetchedState match {
                 case Some(prefetchedStatusDetails) =>
                   getProcessStateUsingPrefetchedStatus(
                     process.toEntity,
                     actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
-                    None,
                     prefetchedStatusDetails,
-                  ).map(state => process.copy(state = Some(state)))
+                  )
                 case None =>
                   getProcessStateFetchingStatusFromManager(
                     process.toEntity,
                     actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
-                    None,
-                  ).map(state => process.copy(state = Some(state)))
+                  )
+              }).map { statusDetails =>
+                val dto = toDto(statusDetails, process.toEntity, None)
+                process.copy(state = Some(dto))
               }
           }
           .sequence[DB, ScenarioWithDetails]
@@ -160,23 +162,50 @@ private class ScenarioStateProviderImpl(
     )
   }
 
+  private def toDto(
+      statusDetails: StatusDetails,
+      processDetails: ScenarioWithDetailsEntity[_],
+      currentlyPresentedVersionId: Option[VersionId]
+  )(implicit user: LoggedUser) = {
+    val presentation = dispatcher
+      .deploymentManagerUnsafe(processDetails.processingType)
+      .processStateDefinitionManager
+      .statusPresentation(
+        ScenarioStatusWithScenarioContext(
+          statusDetails = statusDetails,
+          latestVersionId = processDetails.processVersionId,
+          deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId),
+          currentlyPresentedVersionId = currentlyPresentedVersionId
+        )
+      )
+    ScenarioStatusDto(
+      externalDeploymentId = statusDetails.externalDeploymentId,
+      status = statusDetails.status,
+      version = statusDetails.version,
+      visibleActions = presentation.visibleActions,
+      allowedActions = presentation.allowedActions,
+      actionTooltips = presentation.actionTooltips,
+      icon = presentation.icon,
+      tooltip = presentation.tooltip,
+      description = presentation.description,
+      startTime = statusDetails.startTime,
+      attributes = statusDetails.attributes,
+      errors = statusDetails.errors,
+    )
+  }
+
   private def getProcessStateFetchingStatusFromManager(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      currentlyPresentedVersionId: Option[VersionId],
-  )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
-    getProcessState(
+  )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[StatusDetails] = {
+    getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      currentlyPresentedVersionId,
       manager =>
         getStateFromDeploymentManager(
           manager,
           processDetails.idWithName,
           processDetails.lastStateAction,
-          processDetails.processVersionId,
-          processDetails.lastDeployedAction.map(_.processVersionId),
-          currentlyPresentedVersionId,
         )
     )
   }
@@ -241,7 +270,7 @@ private class ScenarioStateProviderImpl(
           .getInProgressActionNames(head.processIdUnsafe)
           .map(actionNames => Map(head.processIdUnsafe -> actionNames))
       case _ =>
-        // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
+        // We are getting only Deploy and Cancel InProgress actions as only these two impact scenario status
         actionRepository.getInProgressActionNames(Set(Deploy, Cancel))
     }
   }
@@ -249,66 +278,43 @@ private class ScenarioStateProviderImpl(
   private def getProcessStateUsingPrefetchedStatus(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      currentlyPresentedVersionId: Option[VersionId],
       prefetchedStatusDetails: WithDataFreshnessStatus[List[StatusDetails]],
-  )(implicit user: LoggedUser): DB[ProcessState] = {
-    getProcessState(
+  )(implicit user: LoggedUser): DB[StatusDetails] = {
+    getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      currentlyPresentedVersionId,
-      { manager =>
-        // FIXME abr: handle finished
+      { _ =>
+        // FIXME abr: handle finished, it has no sense for periodic but it shouldn't hurt us
         Future {
           prefetchedStatusDetails.map { prefetchedStatusDetailsValue =>
-            val resolved =
-              InconsistentStateDetector.resolve(prefetchedStatusDetailsValue, processDetails.lastStateAction)
-            manager.processStateDefinitionManager.processState(
-              resolved,
-              processDetails.processVersionId,
-              processDetails.lastDeployedAction.map(_.processVersionId),
-              currentlyPresentedVersionId
-            )
+            // FIXME abr: resolved states shouldn't be handled here
+            InconsistentStateDetector.resolve(prefetchedStatusDetailsValue, processDetails.lastStateAction)
           }
         }
       }
     )
   }
 
-  private def getProcessState(
+  private def getScenarioStatusDetails(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      currentlyPresentedVersionId: Option[VersionId],
-      fetchState: DeploymentManager => Future[WithDataFreshnessStatus[ProcessState]],
-  )(implicit user: LoggedUser): DB[ProcessState] = {
-    val processVersionId  = processDetails.processVersionId
-    val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
+      fetchState: DeploymentManager => Future[WithDataFreshnessStatus[StatusDetails]],
+  )(implicit user: LoggedUser): DB[StatusDetails] = {
     dispatcher
       .deploymentManager(processDetails.processingType)
       .map { manager =>
         if (processDetails.isFragment) {
           throw FragmentStateException
         } else if (processDetails.isArchived) {
-          getArchivedProcessState(processDetails, currentlyPresentedVersionId)(manager)
+          DBIOAction.successful(getArchivedProcessState(processDetails))
         } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
           DBIOAction.successful(
-            manager.processStateDefinitionManager.processState(
-              StatusDetails(SimpleStateStatus.DuringDeploy, None),
-              processVersionId,
-              deployedVersionId,
-              currentlyPresentedVersionId,
-            )
-          )
+            StatusDetails(SimpleStateStatus.DuringDeploy, None)
+          ) // FIXME abr: deploymentId from inProgressActionNames
         } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
-          DBIOAction.successful(
-            manager.processStateDefinitionManager.processState(
-              StatusDetails(SimpleStateStatus.DuringCancel, None),
-              processVersionId,
-              deployedVersionId,
-              currentlyPresentedVersionId,
-            )
-          )
+          DBIOAction.successful(StatusDetails(SimpleStateStatus.DuringCancel, None))
         } else {
           processDetails.lastStateAction match {
             case Some(_) =>
@@ -322,101 +328,61 @@ private class ScenarioStateProviderImpl(
                   statusWithFreshness.value
                 }
             case _ => // We assume that the process never deployed should have no state at the engine
+              // FIXME abr: it is a part of deployment => scenario status resolution
               logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
-              DBIOAction.successful(
-                manager.processStateDefinitionManager.processState(
-                  StatusDetails(SimpleStateStatus.NotDeployed, None),
-                  processVersionId,
-                  deployedVersionId,
-                  currentlyPresentedVersionId,
-                )
-              )
+              DBIOAction.successful(StatusDetails(SimpleStateStatus.NotDeployed, None))
           }
         }
       }
+      // FIXME abr: it is a part of deployment => scenario status resolution
       .getOrElse(
-        DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet(processVersionId))
+        DBIOAction.successful(StatusDetails(FailedToGet, None))
       )
   }
 
   // We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
-  private def getArchivedProcessState(
-      processDetails: ScenarioWithDetailsEntity[_],
-      currentlyPresentedVersionId: Option[VersionId],
-  )(implicit manager: DeploymentManager) = {
-    val processVersionId  = processDetails.processVersionId
-    val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
-    processDetails.lastStateAction.map(a => (a.actionName, a.state)) match {
-      case Some((Cancel, _)) =>
+  private def getArchivedProcessState(processDetails: ScenarioWithDetailsEntity[_]): StatusDetails = {
+    processDetails.lastStateAction.map(a => (a.actionName, a.state, a.id)) match {
+      case Some((Cancel, _, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
-        DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(
-            StatusDetails(SimpleStateStatus.Canceled, None),
-            processVersionId,
-            deployedVersionId,
-            currentlyPresentedVersionId,
-          )
-        )
-      case Some((Deploy, ProcessActionState.ExecutionFinished)) =>
+        StatusDetails(SimpleStateStatus.Canceled, None)
+      case Some((Deploy, ProcessActionState.ExecutionFinished, deploymentActionId)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Finished} ")
-        DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(
-            StatusDetails(SimpleStateStatus.Finished, None),
-            processVersionId,
-            deployedVersionId,
-            currentlyPresentedVersionId,
-          )
-        )
+        StatusDetails(SimpleStateStatus.Finished, Some(DeploymentId.fromActionId(deploymentActionId)))
       case Some(_) =>
         logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
-        DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(
-            StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None),
-            processVersionId,
-            deployedVersionId,
-            currentlyPresentedVersionId,
-          )
-        )
-      case _ =>
+        // FIXME abr: it is a part of deployment => scenario status resolution
+        StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None)
+      case None =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
-        DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(
-            StatusDetails(SimpleStateStatus.NotDeployed, None),
-            processVersionId,
-            deployedVersionId,
-            currentlyPresentedVersionId,
-          )
-        )
+        // FIXME abr: it is a part of deployment => scenario status resolution
+        StatusDetails(SimpleStateStatus.NotDeployed, None)
     }
   }
 
   private def getStateFromDeploymentManager(
       deploymentManager: DeploymentManager,
       processIdWithName: ProcessIdWithName,
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
+      lastStateAction: Option[ProcessAction]
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+  ): Future[WithDataFreshnessStatus[StatusDetails]] = {
 
-    // FIXME abr: handle finished
+    // FIXME abr: handle finished, it has no sense for periodic but it shouldn't hurt us
     val state = deploymentManager
-      .getProcessStates(processIdWithName.name)
+      .getScenarioDeploymentsStatuses(processIdWithName.name)
       .map(_.map { statusDetails =>
-        val resolved = InconsistentStateDetector.resolve(statusDetails, lastStateAction)
-        deploymentManager.processStateDefinitionManager
-          .processState(resolved, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
+        // FIXME abr: resolved states shouldn't be handled here
+        InconsistentStateDetector.resolve(statusDetails, lastStateAction)
       })
       .recover { case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
-        failedToGetProcessState(latestVersionId)
+        failedToGetProcessState
       }
 
     scenarioStateTimeout
       .map { timeout =>
-        state.withTimeout(timeout, timeoutResult = failedToGetProcessState(latestVersionId)).map {
+        state.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
           case CompletedNormally(value) =>
             value
           case CompletedByTimeout(value) =>
@@ -428,8 +394,8 @@ private class ScenarioStateProviderImpl(
       .getOrElse(state)
   }
 
-  private def failedToGetProcessState(versionId: VersionId) =
-    WithDataFreshnessStatus.fresh(SimpleProcessStateDefinitionManager.errorFailedToGet(versionId))
+  private val failedToGetProcessState =
+    WithDataFreshnessStatus.fresh(StatusDetails(FailedToGet, None))
 
   private def existsOrFail[T](checkThisOpt: Option[T], failWith: => Exception): DB[T] = {
     checkThisOpt match {

@@ -40,11 +40,11 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
       notImplemented
   }
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(
-      WithDataFreshnessStatus.fresh(scenarioStatusMap.get(name).map(StatusDetails(_, None)).toList)
+      WithDataFreshnessStatus.fresh(scenarioStatusMap.get(scenarioName).map(StatusDetails(_, None)).toList)
     )
   }
 

@@ -219,7 +219,7 @@ class PeriodicProcessService(
       toDeploy: PeriodicProcessDeployment
   ): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager
-      .getProcessStates(toDeploy.periodicProcess.deploymentData.processName)(DataFreshnessPolicy.Fresh)
+      .getScenarioDeploymentsStatuses(toDeploy.periodicProcess.deploymentData.processName)(DataFreshnessPolicy.Fresh)
       .map(
         _.value
           .map(_.status)
@@ -265,7 +265,9 @@ class PeriodicProcessService(
       schedules: SchedulesState
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
-      runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
+      runtimeStatuses <- delegateDeploymentManager
+        .getScenarioDeploymentsStatuses(processName)(DataFreshnessPolicy.Fresh)
+        .map(_.value)
       _ = logger.debug(s"Process '$processName' runtime statuses: ${runtimeStatuses.map(_.toString)}")
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap { scheduleData =>
         logger.debug(
@@ -302,22 +304,22 @@ class PeriodicProcessService(
       processName: ProcessName,
       versionId: VersionId,
       deployment: ScheduleDeploymentData,
-      processState: Option[StatusDetails],
+      statusDetails: Option[StatusDetails],
   ): Future[NeedsReschedule] = {
     implicit class RichFuture[Unit](a: Future[Unit]) {
       def needsReschedule(value: Boolean): Future[NeedsReschedule] = a.map(_ => value)
     }
-    processState.map(_.status) match {
+    statusDetails.map(_.status) match {
       case Some(status)
           if ProblemStateStatus.isProblemStatus(
             status
           ) && deployment.state.status != PeriodicProcessDeploymentStatus.Failed =>
-        markFailedAction(deployment, processState).needsReschedule(executionConfig.rescheduleOnFailure)
+        markFailedAction(deployment, statusDetails).needsReschedule(executionConfig.rescheduleOnFailure)
       case Some(status)
           if EngineStatusesToReschedule.contains(
             status
           ) && deployment.state.status != PeriodicProcessDeploymentStatus.Finished =>
-        markFinished(processName, versionId, deployment, processState).needsReschedule(value = true)
+        markFinished(processName, versionId, deployment, statusDetails).needsReschedule(value = true)
       case None
           if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed
             && deployment.deployedAt.exists(_.isBefore(LocalDateTime.now().minusMinutes(5))) =>
@@ -325,7 +327,7 @@ class PeriodicProcessService(
         // this can be caused by a race in e.g. FlinkRestManager
         // (because /jobs/overview used in getProcessStates isn't instantly aware of submitted jobs)
         // so freshly deployed deployments aren't considered
-        markFinished(processName, versionId, deployment, processState).needsReschedule(value = true)
+        markFinished(processName, versionId, deployment, statusDetails).needsReschedule(value = true)
       case _ =>
         Future.successful(()).needsReschedule(value = false)
     }
@@ -557,7 +559,7 @@ class PeriodicProcessService(
   def getMergedStatusDetails(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[StatusDetails]] = {
-    delegateDeploymentManager.getProcessStates(name).flatMap { statusesWithFreshness =>
+    delegateDeploymentManager.getScenarioDeploymentsStatuses(name).flatMap { statusesWithFreshness =>
       logger.debug(s"Statuses for $name: $statusesWithFreshness")
       mergeStatusWithDeployments(name, statusesWithFreshness.value).map { statusDetails =>
         statusesWithFreshness.copy(value = statusDetails)

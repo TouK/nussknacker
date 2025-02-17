@@ -4,23 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{
-  ProcessState,
-  ProcessStateDefinitionManager,
-  StateStatus,
-  StatusDetails
-}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateStatus, StatusDetails}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{
-  availableCondition,
-  crashLoopBackOffReason,
-  newReplicaSetAvailable,
-  progressingCondition,
-  replicaFailureCondition,
-  trueConditionStatus
-}
-import skuber.{Container, Pod}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper._
 import skuber.apps.v1.Deployment
+import skuber.{Container, Pod}
 
 object K8sDeploymentStatusMapper {
 

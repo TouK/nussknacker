@@ -62,10 +62,10 @@ class DeploymentManagerStub extends BaseDeploymentManager {
     )
   }
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(getJobStatus(name).toList.flatten))
+    Future.successful(WithDataFreshnessStatus.fresh(getJobStatus(scenarioName).toList.flatten))
   }
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport

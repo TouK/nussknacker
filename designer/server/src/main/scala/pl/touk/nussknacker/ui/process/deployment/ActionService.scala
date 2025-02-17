@@ -5,7 +5,8 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
@@ -195,8 +196,8 @@ class ActionService(
           _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
           // 1.4. check if action is allowed for current state
           processState <- scenarioStateProvider.getProcessStateDBIO(
-            processDetails,
-            None
+            processDetails = processDetails,
+            currentlyPresentedVersionId = None
           )
           _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
           // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
@@ -231,7 +232,7 @@ class ActionService(
     private def checkIfCanPerformActionInState(
         actionName: ScenarioActionName,
         processDetails: ScenarioWithDetailsEntity[LatestScenarioDetailsShape],
-        ps: ProcessState
+        ps: ScenarioStatusDto
     ): Unit = {
       val allowedActions = ps.allowedActions.toSet
       if (!allowedActions.contains(actionName)) {

@@ -193,10 +193,10 @@ class PeriodicDeploymentManager private[periodic] (
   override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
     service.stateQueryForAllScenariosSupport
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    service.getMergedStatusDetails(name).map(_.map(List(_)))
+    service.getMergedStatusDetails(scenarioName).map(_.map(List(_)))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

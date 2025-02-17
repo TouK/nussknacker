@@ -28,11 +28,7 @@ class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSp
   override protected def useMiniClusterForDeployment: Boolean = true
 }
 
-trait BaseFlinkDeploymentManagerSpec
-    extends AnyFunSuiteLike
-    with Matchers
-    with StreamingDockerTest
-    with StrictLogging {
+trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with StreamingDockerTest with StrictLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
@@ -203,7 +199,7 @@ trait BaseFlinkDeploymentManagerSpec
           .processCommand(DMStopScenarioCommand(processName, savepointDir = None, user = userToAct))
           .map(_.path)
       eventually {
-        val status = deploymentManager.getProcessStates(processName).futureValue
+        val status = deploymentManager.getScenarioDeploymentsStatuses(processName).futureValue
         status.value.map(_.status) shouldBe List(SimpleStateStatus.Canceled)
       }
 
@@ -314,5 +310,5 @@ trait BaseFlinkDeploymentManagerSpec
       .toList
 
   private def processVersion(name: ProcessName): List[ProcessVersion] =
-    deploymentManager.getProcessStates(name).futureValue.value.flatMap(_.version)
+    deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value.flatMap(_.version)
 }

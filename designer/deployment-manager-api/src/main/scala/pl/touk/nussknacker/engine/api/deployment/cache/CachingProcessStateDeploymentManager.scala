@@ -24,12 +24,12 @@ class CachingProcessStateDeploymentManager(
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
     .buildAsync[ProcessName, List[StatusDetails]]
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     def fetchAndUpdateCache(): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-      val resultFuture = delegate.getProcessStates(name)
-      cache.put(name, resultFuture.map(_.value).toJava.toCompletableFuture)
+      val resultFuture = delegate.getScenarioDeploymentsStatuses(scenarioName)
+      cache.put(scenarioName, resultFuture.map(_.value).toJava.toCompletableFuture)
       resultFuture
     }
 
@@ -37,7 +37,7 @@ class CachingProcessStateDeploymentManager(
       case DataFreshnessPolicy.Fresh =>
         fetchAndUpdateCache()
       case DataFreshnessPolicy.CanBeCached =>
-        Option(cache.getIfPresent(name))
+        Option(cache.getIfPresent(scenarioName))
           .map(_.toScala.map(WithDataFreshnessStatus.cached))
           .getOrElse(
             fetchAndUpdateCache()
@@ -72,7 +72,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
         )
       }
       .getOrElse {
-        logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
+        logger.debug(s"Skipping state caching for DeploymentManager: $delegate")
         delegate
       }
   }

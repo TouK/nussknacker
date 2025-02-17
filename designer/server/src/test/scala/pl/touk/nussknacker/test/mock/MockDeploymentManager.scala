@@ -75,14 +75,14 @@ class MockDeploymentManager private (
       case None          => super.processStateDefinitionManager
     }
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       WithDataFreshnessStatus.fresh(
         managerProcessStates.getOrDefault(
-          name,
+          scenarioName,
           List(sampleStatusDetails(defaultProcessStateStatus, sampleDeploymentId))
         )
       )

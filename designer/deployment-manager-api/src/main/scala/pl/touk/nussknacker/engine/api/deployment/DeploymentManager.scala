@@ -23,7 +23,7 @@ trait DeploymentManager extends AutoCloseable {
     * from the cache or not. If you use any kind of cache in your DM implementation please wrap result data
     * with WithDataFreshnessStatus.cached(data) in opposite situation use WithDataFreshnessStatus.fresh(data)
     */
-  def getProcessStates(name: ProcessName)(
+  def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 

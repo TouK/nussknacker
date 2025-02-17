@@ -386,7 +386,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
+    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
@@ -416,7 +416,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
+    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
@@ -447,7 +447,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
+    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Running,
@@ -476,7 +476,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
+    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Finished,
@@ -506,7 +506,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
+    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Restarting,
@@ -553,7 +553,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
 
     val manager = createManager(statuses)
-    manager.getProcessStates(processName).map(_.value).futureValue shouldBe List(
+    manager.getScenarioDeploymentsStatuses(processName).map(_.value).futureValue shouldBe List(
       StatusDetails(
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
@@ -589,13 +589,13 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       stubWithFixedDelay(durationLongerThanClientTimeout)
       a[SttpClientException.TimeoutException] shouldBe thrownBy {
         manager
-          .getProcessStates(ProcessName("p1"))
+          .getScenarioDeploymentsStatuses(ProcessName("p1"))
           .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
       val resultWithoutDelay = manager
-        .getProcessStates(ProcessName("p1"))
+        .getScenarioDeploymentsStatuses(ProcessName("p1"))
         .map(_.value)
         .futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual List.empty

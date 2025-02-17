@@ -180,7 +180,7 @@ class FlinkDeploymentManager(
 
   private def oldJobsToStop(processVersion: ProcessVersion): Future[List[StatusDetails]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(processVersion.processName)
+    getScenarioDeploymentsStatuses(processVersion.processName)
       .map(_.value.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
   }
 
@@ -202,7 +202,7 @@ class FlinkDeploymentManager(
       action: ExternalDeploymentId => Future[T]
   ): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(processName).flatMap { statuses =>
+    getScenarioDeploymentsStatuses(processName).flatMap { statuses =>
       val runningDeploymentIds = statuses.value.filter(statusDetailsPredicate).collect {
         case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
       }
@@ -241,10 +241,10 @@ class FlinkDeploymentManager(
     else
       Future.successful(())
 
-  override def getProcessStates(
-      name: ProcessName
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    getAllProcessesStatesFromFlink().map(_.getOrElse(name, List.empty))
+    getAllProcessesStatesFromFlink().map(_.getOrElse(scenarioName, List.empty))
   }
 
   override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
@@ -311,7 +311,7 @@ class FlinkDeploymentManager(
           .Pause(config.maxChecks, config.delay)
           .apply {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-            getProcessStates(processName).map { statuses =>
+            getScenarioDeploymentsStatuses(processName).map { statuses =>
               statuses.value
                 .find(details =>
                   details.externalDeploymentId
@@ -335,7 +335,7 @@ class FlinkDeploymentManager(
   protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
     import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(scenarioName).map(_.value).flatMap { statuses =>
+    getScenarioDeploymentsStatuses(scenarioName).map(_.value).flatMap { statuses =>
       cancelEachMatchingJob(scenarioName, None, statuses)
     }
   }
@@ -343,7 +343,7 @@ class FlinkDeploymentManager(
   private def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = {
     import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(scenarioName).map(_.value).flatMap { statuses =>
+    getScenarioDeploymentsStatuses(scenarioName).map(_.value).flatMap { statuses =>
       cancelEachMatchingJob(scenarioName, Some(deploymentId), statuses.filter(_.deploymentId.contains(deploymentId)))
     }
   }

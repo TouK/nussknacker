@@ -18,7 +18,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
     deploymentId = None
   )
 
-  override def getProcessStates(name: ProcessName)(
+  override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(List(stubbedStatus)))

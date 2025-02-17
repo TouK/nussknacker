@@ -1,11 +1,15 @@
-package pl.touk.nussknacker.engine.api.deployment
+package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.api.deployment.{
+  NoAttributesStateStatus,
+  ScenarioActionName,
+  ScenarioVersionId,
+  StateStatus
+}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
 
@@ -18,12 +22,12 @@ import java.net.URI
   * - which actions are allowed: allowedActions
   * - additional properties: attributes, errors
   *
-  * Statuses definition, allowed actions and current scenario ProcessState is defined by [[ProcessStateDefinitionManager]].
+  * Statuses definition, allowed actions and current scenario presentation is defined by [[ProcessStateDefinitionManager]].
   * @param description Short message displayed in top right panel of scenario diagram panel.
   * @param tooltip Message displayed when mouse is hoovering over an icon (both scenarios and diagram panel).
   *                May contain longer, detailed status description.
   */
-@JsonCodec case class ProcessState(
+@JsonCodec case class ScenarioStatusDto(
     externalDeploymentId: Option[ExternalDeploymentId],
     status: StateStatus,
     version: Option[ProcessVersion],
@@ -38,7 +42,7 @@ import java.net.URI
     errors: List[String]
 )
 
-object ProcessState {
+object ScenarioStatusDto {
   implicit val uriEncoder: Encoder[URI]                             = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI]                             = Decoder.decodeString.map(URI.create)
   implicit val scenarioVersionIdEncoder: Encoder[ScenarioVersionId] = Encoder.encodeLong.contramap(_.value)
@@ -54,11 +58,6 @@ object ProcessState {
   implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = (name: ScenarioActionName) =>
     ScenarioActionName.serialize(name)
 
-}
-
-object StateStatus {
-  type StatusName = String
-
   // StateStatus has to have Decoder defined because it is decoded along with ProcessState in the migration process
   // (see StandardRemoteEnvironment class).
   // In all cases (this one and for FE purposes) only info about the status name is essential. We could encode status
@@ -69,29 +68,4 @@ object StateStatus {
 
   implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(NoAttributesStateStatus)
 
-  // Temporary methods to simplify status creation
-  def apply(statusName: StatusName): StateStatus = NoAttributesStateStatus(statusName)
-
-}
-
-trait StateStatus {
-  // Status identifier, should be unique among all states registered within all processing types.
-  def name: StatusName
-}
-
-case class NoAttributesStateStatus(name: StatusName) extends StateStatus {
-  override def toString: String = name
-}
-
-case class StatusDetails(
-    status: StateStatus,
-    deploymentId: Option[DeploymentId],
-    externalDeploymentId: Option[ExternalDeploymentId] = None,
-    version: Option[ProcessVersion] = None,
-    startTime: Option[Long] = None,
-    attributes: Option[Json] = None,
-    errors: List[String] = List.empty
-) {
-  def externalDeploymentIdUnsafe: ExternalDeploymentId =
-    externalDeploymentId.getOrElse(throw new IllegalStateException(s"externalDeploymentId is missing"))
 }

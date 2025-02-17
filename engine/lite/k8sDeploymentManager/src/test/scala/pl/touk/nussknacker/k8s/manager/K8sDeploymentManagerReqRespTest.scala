@@ -179,7 +179,7 @@ class K8sDeploymentManagerReqRespTest
           )
           .futureValue
         eventually {
-          val state = f.manager.getProcessStates(secondVersionInfo.processName).map(_.value).futureValue
+          val state = f.manager.getScenarioDeploymentsStatuses(secondVersionInfo.processName).map(_.value).futureValue
           state.flatMap(_.version).map(_.versionId.value) shouldBe List(secondVersion)
           state.map(_.status) shouldBe List(SimpleStateStatus.Running)
         }

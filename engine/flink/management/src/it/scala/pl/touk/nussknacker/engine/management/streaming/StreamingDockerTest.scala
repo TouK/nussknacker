@@ -61,7 +61,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   ): Assertion = {
     deployProcess(process, processVersion, stateRestoringStrategy)
     eventually {
-      val jobStatuses = deploymentManager.getProcessStates(process.name).futureValue.value
+      val jobStatuses = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.name}, $jobStatuses")
 
       jobStatuses.map(_.status) should contain(SimpleStateStatus.Running)
@@ -89,7 +89,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
     deploymentManager.processCommand(DMCancelScenarioCommand(processName, user = userToAct)).futureValue
     eventually {
       val statuses = deploymentManager
-        .getProcessStates(processName)
+        .getScenarioDeploymentsStatuses(processName)
         .futureValue
         .value
       val runningOrDuringCancelJobs = statuses

@@ -41,7 +41,7 @@ class CachingProcessStateDeploymentManagerSpec
     results.map(_.cached) should contain only false
     results.map(_.value).distinct should have size 2
 
-    verify(delegate, times(2)).getProcessStates(any[ProcessName])(any[DataFreshnessPolicy])
+    verify(delegate, times(2)).getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy])
   }
 
   test("should cache state for DataFreshnessPolicy.CanBeCached") {
@@ -60,7 +60,7 @@ class CachingProcessStateDeploymentManagerSpec
     secondInvocation.cached shouldBe true
     List(firstInvocation, secondInvocation).map(_.value).distinct should have size 1
 
-    verify(delegate, times(1)).getProcessStates(any[ProcessName])(any[DataFreshnessPolicy])
+    verify(delegate, times(1)).getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy])
   }
 
   test("should reuse state updated by DataFreshnessPolicy.Fresh during reading with DataFreshnessPolicy.CanBeCached") {
@@ -79,13 +79,13 @@ class CachingProcessStateDeploymentManagerSpec
     resultForCanBeCached.cached shouldBe true
     List(resultForFresh, resultForCanBeCached).map(_.value).distinct should have size 1
 
-    verify(delegate, times(1)).getProcessStates(any[ProcessName])(any[DataFreshnessPolicy])
+    verify(delegate, times(1)).getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy])
   }
 
   implicit class DeploymentManagerOps(dm: DeploymentManager) {
 
     def getProcessStatesDeploymentIdNow(freshnessPolicy: DataFreshnessPolicy): WithDataFreshnessStatus[List[String]] =
-      dm.getProcessStates(ProcessName("foo"))(freshnessPolicy)
+      dm.getScenarioDeploymentsStatuses(ProcessName("foo"))(freshnessPolicy)
         .futureValue
         .map(_.map(_.externalDeploymentId.value.value))
 
@@ -93,13 +93,14 @@ class CachingProcessStateDeploymentManagerSpec
 
   private def prepareDMReturningRandomStates: DeploymentManager = {
     val delegate = mock[DeploymentManager]
-    when(delegate.getProcessStates(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
-      val randomState = StatusDetails(
-        SimpleStateStatus.Running,
-        deploymentId = None,
-        externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString))
-      )
-      Future.successful(WithDataFreshnessStatus.fresh(List(randomState)))
+    when(delegate.getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer {
+      _: InvocationOnMock =>
+        val randomState = StatusDetails(
+          SimpleStateStatus.Running,
+          deploymentId = None,
+          externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString))
+        )
+        Future.successful(WithDataFreshnessStatus.fresh(List(randomState)))
     }
     delegate
   }
