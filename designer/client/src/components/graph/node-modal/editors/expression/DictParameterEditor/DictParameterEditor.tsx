@@ -69,7 +69,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
             setIsFetching(true);
             const { data } = await HttpService.fetchProcessDefinitionDataDictByKey(scenario.processingType, dictId, key);
             setIsFetching(false);
-            return [data];
+            return data;
         },
         [dictId, scenario.processingType],
     );
@@ -84,11 +84,12 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const isValid = isEmpty(fieldErrors);
 
     // This logic is needed, because scenario is initially loaded without full validation data.
-    // In that case the label field is missing, and we need to fetch it separately.
-    let keyWithMissingLabel = null;
+    // In that case the label is missing, and we need to fetch it separately.
     useEffect(() => {
-        if (keyWithMissingLabel) fetchProcessDefinitionDataDictByKey(keyWithMissingLabel).then((data) => setOptions(data));
-    }, [fetchProcessDefinitionDataDictByKey, keyWithMissingLabel]);
+        if (!value.label) {
+            fetchProcessDefinitionDataDictByKey(value.key).then((data) => setValue(data));
+        }
+    }, [value, fetchProcessDefinitionDataDictByKey]);
 
     return (
         <Box className={nodeValue}>
@@ -125,11 +126,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 }}
                 open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
-                getOptionLabel={(option) => {
-                    if (!option.label) keyWithMissingLabel = option.key;
-                    else keyWithMissingLabel = null;
-                    return option.label ?? options.find((opt) => opt.key == option.key)?.label ?? "";
-                }}
+                getOptionLabel={(option) => option.label}
                 isOptionEqualToValue={() => true}
                 value={value}
                 inputValue={inputValue}
