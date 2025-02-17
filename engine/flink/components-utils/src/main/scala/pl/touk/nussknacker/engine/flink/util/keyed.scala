@@ -5,8 +5,8 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper,
@@ -83,6 +83,21 @@ object keyed {
 
   }
 
+  class GenericKeyedValueMapper[Value <: AnyRef: TypeTag, Key <: AnyRef: TypeTag](
+      protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+      key: LazyParameter[Key],
+      value: LazyParameter[Value]
+  ) extends BaseKeyedValueMapper[Key, Value] {
+
+    def this(customNodeContext: FlinkCustomNodeContext, key: LazyParameter[Key], value: LazyParameter[Value]) =
+      this(customNodeContext.lazyParameterHelper, key, value)
+
+    private lazy val interpreter = prepareInterpreter(key, value)
+
+    override protected def interpret(ctx: Context): KeyedValue[Key, Value] = interpreter(ctx)
+
+  }
+
   class StringKeyedValueMapper[T <: AnyRef: TypeTag](
       protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
       key: LazyParameter[CharSequence],
@@ -128,16 +143,16 @@ object keyed {
 
   object KeyEnricher {
 
-    def enrichWithKey[V](ctx: Context, keyedValue: StringKeyedValue[V]): Context =
+    def enrichWithKey[K, V](ctx: Context, keyedValue: KeyedValue[K, V]): Context =
       enrichWithKey(ctx, keyedValue.key)
 
-    def enrichWithKey[V](ctx: Context, key: String): Context =
+    def enrichWithKey[K, V](ctx: Context, key: K): Context =
       ctx.withVariable(VariableConstants.KeyVariableName, key)
 
     def contextTransformation(ctx: ValidationContext)(
         implicit nodeId: NodeId
     ): ValidatedNel[ProcessCompilationError, ValidationContext] =
-      ctx.withVariableOverriden(VariableConstants.KeyVariableName, Typed[String], None)
+      ctx.withVariableOverriden(VariableConstants.KeyVariableName, Unknown, None)
 
   }
 

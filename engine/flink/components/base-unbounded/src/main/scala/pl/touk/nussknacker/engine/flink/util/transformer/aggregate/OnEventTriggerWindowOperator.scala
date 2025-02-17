@@ -24,11 +24,12 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTrigge
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.lang
 
 object OnEventTriggerWindowOperator {
-  type Input[A] = ValueWithContext[StringKeyedValue[A]]
+  type Input[A] = ValueWithContext[KeyedValue[AnyRef, A]]
 
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
@@ -37,7 +38,7 @@ object OnEventTriggerWindowOperator {
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
 
-  implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], String])(
+  implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], AnyRef])(
       implicit fctx: FlinkCustomNodeContext
   ) {
 
@@ -58,13 +59,13 @@ object OnEventTriggerWindowOperator {
 
 @silent("deprecated")
 class OnEventTriggerWindowOperator[A](
-    stream: KeyedStream[Input[A], String],
+    stream: KeyedStream[Input[A], AnyRef],
     fctx: FlinkCustomNodeContext,
     assigner: WindowAssigner[_ >: Input[A], TimeWindow],
     types: AggregatorTypeInformations,
     aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
     trigger: Trigger[_ >: Input[A], TimeWindow]
-) extends WindowOperator[String, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
+) extends WindowOperator[AnyRef, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
       stream.getKeySelector,
@@ -77,12 +78,12 @@ class OnEventTriggerWindowOperator[A](
       new InternalSingleValueProcessWindowFunction(
         new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId)
       ),
-      FireOnEachEvent[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger),
+      FireOnEachEvent[ValueWithContext[KeyedValue[AnyRef, A]], TimeWindow](trigger),
       0L,  // lateness,
       null // tag
     ) {
 
-  override def processElement(element: StreamRecord[ValueWithContext[StringKeyedValue[A]]]): Unit = {
+  override def processElement(element: StreamRecord[ValueWithContext[KeyedValue[AnyRef, A]]]): Unit = {
     elementHolder.set(element.getValue.context)
     try {
       super.processElement(element)
@@ -96,7 +97,7 @@ class OnEventTriggerWindowOperator[A](
 private class ValueEmittingWindowFunction(
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: String
-) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
+) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow] {
 
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
@@ -106,8 +107,8 @@ private class ValueEmittingWindowFunction(
   }
 
   override def process(
-      key: String,
-      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow]#Context,
+      key: AnyRef,
+      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow]#Context,
       elements: lang.Iterable[AnyRef],
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {

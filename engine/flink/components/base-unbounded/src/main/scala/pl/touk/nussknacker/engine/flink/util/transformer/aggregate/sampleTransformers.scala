@@ -27,7 +27,7 @@ object sampleTransformers {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
-        @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
+        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
         @DualEditor(
@@ -85,7 +85,7 @@ object sampleTransformers {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
-        @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
+        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
         @DualEditor(
@@ -147,7 +147,7 @@ object sampleTransformers {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
-        @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
+        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
         @DualEditor(

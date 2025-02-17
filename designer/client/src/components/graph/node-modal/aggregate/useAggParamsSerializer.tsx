@@ -46,7 +46,7 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
 
         switch (paramName) {
             case "groupBy":
-                return `{ ${content} }.toString`;
+                return `${content}`;
         }
     }, []);
 

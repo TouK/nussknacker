@@ -70,10 +70,20 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       endVariablesForKey(key).map(_.variableTyped[T]("fragmentResult").get)
     }
 
-    def endVariablesForKey(key: String): List[TestProcess.ResultContext[Any]] = {
+    def fragmentResultEndVariable[K <: Any, T <: AnyRef](key: K): List[T] = {
+      endVariablesForKey(key).map(_.variableTyped[T]("fragmentResult").get)
+    }
+
+    def endVariablesForKey[K <: Any](key: K): List[TestProcess.ResultContext[Any]] = {
       collectingListener.results
         .nodeResults("end")
-        .filter(_.variableTyped[String](VariableConstants.KeyVariableName).contains(key))
+        .filter(_.variableTyped[K](VariableConstants.KeyVariableName).contains(key))
+    }
+
+    def keyVariables[T <: AnyRef]: List[T] = {
+      collectingListener.results
+        .nodeResults("end")
+        .map(_.variableTyped[T]("key").get)
     }
 
   }
@@ -860,6 +870,140 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }
   }
 
+  val intKey: Int              = 1
+  val stringKey: String        = "2"
+  val mapKey: Map[String, Int] = Map("a" -> 1)
+
+  def modelDataToCheckAggregations(collectingListener: ResultsCollectingListener[Any]): LocalModelData = {
+    modelData(
+      collectingListener,
+      List(
+        GenericRecordHours(intKey, 0, 1, "a"),
+        GenericRecordHours(stringKey, 1, 2, "b"),
+        GenericRecordHours(mapKey, 1, 3, "a"),
+        GenericRecordHours(intKey, 2, 5, "b"),
+        GenericRecordHours(stringKey, 3, 2, "c"),
+        GenericRecordHours(mapKey, 4, 5, "b")
+      )
+    )
+  }
+
+  test("key variable can be something else than string") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          GenericRecordHours(1, 0, 1, "a"),
+          GenericRecordHours("2", 1, 2, "b"),
+          GenericRecordHours(List(1), 2, 5, "b"),
+          GenericRecordHours(Map("a" -> 1), 3, 2, "c"),
+          GenericRecordHours(1.2, 4, 5, "b")
+        )
+      )
+      val testScenario = sliding("#AGG.first", "#input.str", emitWhenEventLeft = false)
+
+      runScenario(model, testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables shouldBe List(1, "2", List(1), Map("a" -> 1), 1.2)
+    }
+  }
+
+  test("sliding aggregation when emitWhenEventLeft is false should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = sliding("#AGG.first", "#input.eId", emitWhenEventLeft = false)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.distinct shouldBe List(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5)
+    }
+  }
+
+  test("sliding aggregation when emitWhenEventLeft is true should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = sliding("#AGG.first", "#input.eId", emitWhenEventLeft = true)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5, null)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2, null)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5, null)
+    }
+  }
+
+  test("tumbling aggregation when emitWhen is onEndWithExtraWindow should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = tumbling("#AGG.first", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5, null)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2, null)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, null, 5, null)
+    }
+  }
+
+  test("tumbling aggregation when emitWhen is onEvent should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = tumbling("#AGG.first", "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5)
+    }
+  }
+
+  test("session aggregation should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario =
+        session("#AGG.first", "#input.eId", emitWhen = SessionWindowTrigger.OnEvent, endSessionCondition = "false")
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 1)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5)
+    }
+  }
+
   private def runScenario(
       model: LocalModelData,
       testScenario: CanonicalProcess
@@ -1058,7 +1202,7 @@ case class AggregateData(
 )
 
 trait TestRecord {
-  val id: String
+  val id: Any
   val eId: Int
   val str: String
 
@@ -1070,3 +1214,7 @@ case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) ex
 }
 
 case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord
+
+case class GenericRecordHours[T <: Any](id: T, timeHours: Int, eId: Int, str: String) extends TestRecord {
+  override def timestamp: Long = timeHours * 3600L * 1000
+}
