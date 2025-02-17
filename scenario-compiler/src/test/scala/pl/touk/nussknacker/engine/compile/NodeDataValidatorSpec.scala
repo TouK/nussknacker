@@ -99,7 +99,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
-          )
+          ),
+          label = "sth"
         )
       ),
       configCreator = new EmptyProcessConfigCreator {
