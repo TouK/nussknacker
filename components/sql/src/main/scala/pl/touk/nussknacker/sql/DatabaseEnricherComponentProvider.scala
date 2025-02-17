@@ -38,14 +38,16 @@ object DatabaseEnricherComponentProvider {
           component = new DatabaseQueryEnricher(
             queryConfig.dbPool,
             factory.create(queryConfig.dbPool)
-          )
+          ),
+          label = Some("db query")
         ).withRelativeDocs("Enrichers#databasequeryenricher")
       )
     val dbLookupEnricher = readEnricherConfigIfPresent(componentConfig, "databaseLookupEnricher")
       .map(lookupConfig =>
         ComponentDefinition(
           name = lookupConfig.name,
-          component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool))
+          component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool)),
+          label = Some("db lookup")
         ).withRelativeDocs("Enrichers#databaselookupenricher")
       )
 

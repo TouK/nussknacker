@@ -36,21 +36,21 @@ object FlinkBaseComponentProvider {
     import docsConfig._
 
     List(
-      ComponentDefinition("for-each", ForEachTransformer)
+      ComponentDefinition("for-each", ForEachTransformer, label = Some("for each"))
         .withRelativeDocs("BasicNodes#foreach")
         .withDesignerWideId("for-each"),
       ComponentDefinition("union", UnionTransformer)
         .withRelativeDocs("BasicNodes#union")
         .withDesignerWideId("union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink))
+      ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink), label = Some("dead end"))
         .withRelativeDocs("DataSourcesAndSinks#deadend")
         .withDesignerWideId("dead-end"),
-      ComponentDefinition(name = "decision-table", component = DecisionTable)
+      ComponentDefinition(name = "decision-table", component = DecisionTable, label = Some("decision table"))
         .withRelativeDocs("Enrichers/#decision-table")
         .withDesignerWideId("decision-table"),
       ComponentDefinition("delay", DelayTransformer)
         .withRelativeDocs("DataSourcesAndSinks#delay"),
-      ComponentDefinition("previousValue", PreviousValueTransformer)
+      ComponentDefinition("previousValue", PreviousValueTransformer, label = Some("previous value"))
         .withRelativeDocs("DataSourcesAndSinks#previousvalue"),
     )
   }

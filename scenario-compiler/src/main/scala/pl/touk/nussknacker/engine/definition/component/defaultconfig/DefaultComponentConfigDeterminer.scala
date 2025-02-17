@@ -38,7 +38,8 @@ object DefaultComponentConfigDeterminer {
       icon = Some(configData.icon),
       docsUrl = None,
       componentGroup = Some(configData.componentGroup),
-      componentId = None
+      componentId = None,
+      label = None
     )
   }
 
@@ -54,7 +55,8 @@ object DefaultComponentConfigDeterminer {
       // TODO: move from defaultModelConfig.conf to here + convention instead of code
       docsUrl = None,
       componentGroup = Some(componentGroup),
-      componentId = Some(DesignerWideComponentId.forBuiltInComponent(id))
+      componentId = Some(DesignerWideComponentId.forBuiltInComponent(id)),
+      label = Some(id.name.replace("-", " "))
     )
   }
 
@@ -75,7 +77,8 @@ object DefaultComponentConfigDeterminer {
         .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
       icon = icon.getOrElse(DefaultsComponentIcon.FragmentIcon),
       docsUrl = docsUrl,
-      designerWideId = designerWideId
+      designerWideId = designerWideId,
+      label = Option(designerWideId.value)
     )
   }
 

@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.restmodel.definition.UIComponentNodeTemplate
 
+import scala.util.Random
+
 private[component] object ComponentNodeTemplatePreparer {
 
   def componentNodeTemplatesWithGroupNames(
@@ -76,7 +78,8 @@ private[component] object ComponentNodeTemplatePreparer {
       val componentNodeTemplate = UIComponentNodeTemplate.create(
         component.id,
         nodeTemplate,
-        branchParametersTemplate
+        branchParametersTemplate,
+        component.label.getOrElse(component.name)
       )
       ComponentNodeTemplateWithGroupNames(
         componentNodeTemplate,

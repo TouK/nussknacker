@@ -34,6 +34,8 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   protected def uiDefinition: ComponentUiDefinition
 
+  final def label: Option[String] = uiDefinition.label
+
   final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
   final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
@@ -69,7 +71,8 @@ final case class ComponentUiDefinition(
     componentGroup: ComponentGroupName,
     icon: String,
     docsUrl: Option[String],
-    designerWideId: DesignerWideComponentId
+    designerWideId: DesignerWideComponentId,
+    label: Option[String]
 )
 
 object ComponentDefinitionWithImplementation {
