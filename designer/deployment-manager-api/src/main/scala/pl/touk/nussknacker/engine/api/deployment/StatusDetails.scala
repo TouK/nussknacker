@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 case class StatusDetails(
     status: StateStatus,
     deploymentId: Option[DeploymentId],
-    // TODO: remove it after periodic will use UUID for DeploymentId
+    // TODO: remove it after periodic mechanism will use UUID for DeploymentId
     externalDeploymentId: Option[ExternalDeploymentId] = None,
     version: Option[ProcessVersion] = None,
     startTime: Option[Long] = None,

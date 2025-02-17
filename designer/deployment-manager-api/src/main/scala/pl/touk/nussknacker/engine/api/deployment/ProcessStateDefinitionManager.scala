@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.Json
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
   DefaultVisibleActions,
   ScenarioStatusPresentationDetails,
@@ -9,7 +7,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
 }
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
 
