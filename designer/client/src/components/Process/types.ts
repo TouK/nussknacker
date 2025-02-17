@@ -61,17 +61,13 @@ export type ProcessName = Scenario["name"];
 
 export type ProcessStateType = {
     status: StatusType;
-    externalDeploymentId?: string;
     visibleActions: Array<ActionName>;
     allowedActions: Array<ActionName>;
     actionTooltips: Record<ActionName, string>;
     icon: string;
     tooltip: string;
     description: string;
-    startTime?: Date;
-    attributes?: UnknownRecord;
     errors?: Array<string>;
-    version?: number | null;
 };
 
 export type StatusType = {

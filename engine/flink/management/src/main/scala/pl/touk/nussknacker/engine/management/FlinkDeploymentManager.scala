@@ -204,7 +204,7 @@ class FlinkDeploymentManager(
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getScenarioDeploymentsStatuses(processName).flatMap { statuses =>
       val runningDeploymentIds = statuses.value.filter(statusDetailsPredicate).collect {
-        case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
+        case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _) => deploymentId
       }
       runningDeploymentIds match {
         case Nil =>

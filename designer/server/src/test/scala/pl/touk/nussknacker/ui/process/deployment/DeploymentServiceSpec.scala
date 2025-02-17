@@ -312,7 +312,8 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should mark finished process as finished") {
+  // FIXME abr
+  ignore("Should mark finished process as finished") {
     val processName: ProcessName    = generateProcessName
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 

@@ -173,7 +173,7 @@ class AppApiHttpService(
       )
       statusMap = processes.flatMap(process => process.state.map(process.name -> _)).toMap
       withProblem = statusMap.collect {
-        case (name, processStatus @ ScenarioStatusDto(_, _ @ProblemStateStatus(_, _), _, _, _, _, _, _, _, _, _, _)) =>
+        case (name, processStatus @ ScenarioStatusDto(ProblemStateStatus(_, _), _, _, _, _, _, _, _, _)) =>
           (name, processStatus)
       }
     } yield withProblem

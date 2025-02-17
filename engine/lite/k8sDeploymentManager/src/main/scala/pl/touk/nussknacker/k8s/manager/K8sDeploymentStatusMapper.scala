@@ -59,7 +59,6 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
       None,
       parseVersionAnnotation(deployment),
       startTime,
-      attrs,
       errors
     )
   }

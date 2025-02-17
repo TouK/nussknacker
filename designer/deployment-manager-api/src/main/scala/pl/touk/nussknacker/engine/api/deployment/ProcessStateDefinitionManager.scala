@@ -94,13 +94,7 @@ object ProcessStateDefinitionManager {
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
   ) {
-    def status: StateStatus                                = statusDetails.status
-    def deploymentId: Option[DeploymentId]                 = statusDetails.deploymentId
-    def externalDeploymentId: Option[ExternalDeploymentId] = statusDetails.externalDeploymentId
-    def version: Option[ProcessVersion]                    = statusDetails.version
-    def startTime: Option[Long]                            = statusDetails.startTime
-    def attributes: Option[Json]                           = statusDetails.attributes
-    def errors: List[String]                               = statusDetails.errors
+    def status: StateStatus = statusDetails.status
 
     def withStatus(newStatus: StateStatus): ScenarioStatusWithScenarioContext =
       copy(statusDetails = statusDetails.copy(status = newStatus))

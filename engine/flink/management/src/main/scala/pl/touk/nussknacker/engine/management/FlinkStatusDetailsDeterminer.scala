@@ -35,7 +35,6 @@ class FlinkStatusDetailsDeterminer(
               Some(ExternalDeploymentId(job.jid)),
               version = Some(jobConfig.version),
               startTime = Some(job.`start-time`),
-              attributes = Option.empty,
               errors = List.empty
             )
           } getOrElse {
@@ -49,7 +48,6 @@ class FlinkStatusDetailsDeterminer(
               Some(ExternalDeploymentId(job.jid)),
               version = None,
               startTime = Some(job.`start-time`),
-              attributes = Option.empty,
               errors = List.empty
             )
           }

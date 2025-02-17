@@ -162,19 +162,15 @@ export const state: GraphState = {
             ],
         },
         state: {
-            externalDeploymentId: null,
             status: {
                 name: "NOT_DEPLOYED",
             },
-            version: null,
             visibleActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             allowedActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             actionTooltips: {},
             icon: "/assets/states/not-deployed.svg",
             tooltip: "The scenario is not deployed.",
             description: "The scenario is not deployed.",
-            startTime: null,
-            attributes: null,
             errors: [],
         },
         validationResult: {

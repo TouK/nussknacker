@@ -28,9 +28,7 @@ import java.net.URI
   *                May contain longer, detailed status description.
   */
 @JsonCodec case class ScenarioStatusDto(
-    externalDeploymentId: Option[ExternalDeploymentId],
     status: StateStatus,
-    version: Option[ProcessVersion],
     visibleActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
     actionTooltips: Map[ScenarioActionName, String],
@@ -38,7 +36,6 @@ import java.net.URI
     tooltip: String,
     description: String,
     startTime: Option[Long],
-    attributes: Option[Json],
     errors: List[String]
 )
 

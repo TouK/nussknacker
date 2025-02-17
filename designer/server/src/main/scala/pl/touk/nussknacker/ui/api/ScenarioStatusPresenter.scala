@@ -27,9 +27,7 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
         )
       )
     ScenarioStatusDto(
-      externalDeploymentId = statusDetails.externalDeploymentId,
       status = statusDetails.status,
-      version = statusDetails.version,
       visibleActions = presentation.visibleActions,
       allowedActions = presentation.allowedActions.toList.sortBy(_.value),
       actionTooltips = presentation.actionTooltips,
@@ -37,7 +35,6 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
       tooltip = presentation.tooltip,
       description = presentation.description,
       startTime = statusDetails.startTime,
-      attributes = statusDetails.attributes,
       errors = statusDetails.errors,
     )
   }

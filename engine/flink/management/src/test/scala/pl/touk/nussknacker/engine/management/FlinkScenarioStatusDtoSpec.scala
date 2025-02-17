@@ -27,22 +27,22 @@ class FlinkScenarioStatusDtoSpec extends AnyFunSpec with Matchers with Inside {
 
   it("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)
-    state.allowedActions shouldBe List(ScenarioActionName.Cancel)
+    state.allowedActions shouldBe Set(ScenarioActionName.Cancel)
   }
 
   it("scenario state should be running") {
     val state = createProcessState(SimpleStateStatus.Running)
-    state.allowedActions shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
+    state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
   }
 
   it("scenario state should be finished") {
     val state = createProcessState(SimpleStateStatus.Finished)
-    state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
+    state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 
   it("scenario state should be restarting") {
     val state = createProcessState(SimpleStateStatus.Restarting)
-    state.allowedActions shouldBe List(ScenarioActionName.Cancel)
+    state.allowedActions shouldBe Set(ScenarioActionName.Cancel)
   }
 
 }

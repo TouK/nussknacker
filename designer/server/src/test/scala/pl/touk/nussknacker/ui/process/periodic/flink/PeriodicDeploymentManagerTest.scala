@@ -193,7 +193,7 @@ class PeriodicDeploymentManagerTest
         Some(processVersion.versionId)
       )
     )
-    state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
+    state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 
   test("getProcessState - should be running when scenario deployed and job running on Flink") {

@@ -34,7 +34,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
           status = status,
           version = None,
           startTime = None,
-          attributes = None,
           errors = Nil
         )
       )
@@ -55,7 +54,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
           status = status,
           version = None,
           startTime = None,
-          attributes = None,
           errors = Nil
         )
       )
