@@ -144,11 +144,30 @@ case class NussknackerVersion(value: Semver)
 case class ComponentDefinition(
     name: String,
     component: Component,
-    icon: Option[String] = None,
-    docsUrl: Option[String] = None,
-    designerWideId: Option[DesignerWideComponentId] = None
+    icon: Option[String],
+    docsUrl: Option[String],
+    designerWideId: Option[DesignerWideComponentId],
+    label: String
 ) {
 
   def withDesignerWideId(id: String): ComponentDefinition = copy(designerWideId = Some(DesignerWideComponentId(id)))
+
+}
+
+object ComponentDefinition {
+
+  def apply(
+      name: String,
+      component: Component,
+      icon: Option[String] = None,
+      docsUrl: Option[String] = None,
+      designerWideId: Option[DesignerWideComponentId] = None,
+      label: Option[String] = None
+  ): ComponentDefinition = {
+    label match {
+      case Some(value) => ComponentDefinition(name, component, icon, docsUrl, designerWideId, value)
+      case None        => ComponentDefinition(name, component, icon, docsUrl, designerWideId, name)
+    }
+  }
 
 }

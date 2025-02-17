@@ -47,6 +47,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Switch",
+                    label: "union",
                 },
                 {
                     id: "variable 1",
@@ -63,6 +64,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Variable",
+                    label: "variable",
                 },
                 {
                     id: "variable 2",
@@ -79,6 +81,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Variable",
+                    label: "variable",
                 },
                 {
                     id: "union",
@@ -119,6 +122,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Join",
+                    label: "union",
                 },
             ],
             edges: [
@@ -687,6 +691,7 @@ export const nodesWithPositions: NodesWithPositions = [
                 },
             },
             type: "Variable",
+            label: "variable",
         },
         position: {
             x: 350,
@@ -709,6 +714,7 @@ export const nodesWithPositions: NodesWithPositions = [
                 },
             },
             type: "Variable",
+            label: "variable",
         },
         position: {
             x: 710,
@@ -755,6 +761,7 @@ export const nodesWithPositions: NodesWithPositions = [
                 },
             },
             type: "Join",
+            label: "union",
         },
         position: {
             x: 530,

@@ -74,7 +74,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     }));
 
     const colors = isOver ? nodeColorsHover : nodeColors;
-
+    console.log("halo");
     return (
         <div className={cx(colors, nodeStyles)}>
             <div className={cx(imageStyles, imageColors)}>
@@ -82,6 +82,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
             </div>
             <ContentStyled>
                 <span>{node?.id}</span>
+                <span>{node?.label}</span>
                 {NodeUtils.hasInputs(node) && <Port className={cx(css({ top: 0, transform: "translateY(-50%)" }), colors)} />}
                 {NodeUtils.hasOutputs(node) && <Port className={cx(css({ bottom: 0, transform: "translateY(50%)" }), colors)} />}
             </ContentStyled>

@@ -3,6 +3,9 @@ import { Component } from "../types";
 export function fixBranchParametersTemplate({ node, branchParametersTemplate, ...component }: Component): Component {
     // This is a walk-around for having part of node template (branch parameters) outside of itself.
     // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
+    console.log(node);
+    console.log(component);
+    console.log("next");
     return {
         ...component,
         node: {

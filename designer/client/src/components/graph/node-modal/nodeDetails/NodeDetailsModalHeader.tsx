@@ -29,6 +29,8 @@ type IconModalHeaderProps = PropsWithChildren<{
 }>;
 
 export function IconModalHeader({ subheader, className, ...props }: IconModalHeaderProps) {
+    console.log("From icon modal header");
+    console.log(className);
     return (
         <ModalHeader className={className}>
             <IconModalTitle

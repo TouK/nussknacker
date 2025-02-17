@@ -93,7 +93,7 @@ class DefinitionsService(
         scenarioPropertiesDocsUrl
       )
     }
-  }
+  } // This return stuff - currently not label
 
   private def prepareUIDefinitions(
       components: List[ComponentWithStaticDefinition],
@@ -137,7 +137,8 @@ class DefinitionsService(
       docsUrl = componentDefinition.component.docsUrl,
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
-      }
+      },
+      label = componentDefinition.component.label.getOrElse(componentDefinition.component.name)
     )
   }
 
