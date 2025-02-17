@@ -12,6 +12,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
 * [#7534](https://github.com/TouK/nussknacker/pull/7534) `shouldVerifyBeforeDeploy` configuration entry available for Flink deployment
   was renamed to `scenarioStateVerification.enabled`
+* [#7568](https://github.com/TouK/nussknacker/pull/7568) The `process-json` button in `processToolbarConfig` was renamed to `process-export`
 
 ### REST API changes
 

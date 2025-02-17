@@ -38,8 +38,8 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.generateAndTest: {
             return EventTrackingSelector.TestGenerateFile;
         }
-        case BuiltinButtonTypes.processJSON: {
-            return EventTrackingSelector.ScenarioJson;
+        case BuiltinButtonTypes.processExport: {
+            return EventTrackingSelector.ScenarioExport;
         }
         case BuiltinButtonTypes.processArchive: {
             return EventTrackingSelector.ScenarioArchive;

@@ -11,14 +11,14 @@ import HttpService from "../../../../http/HttpService";
 
 type Props = StateProps & ToolbarButtonProps;
 
-function JSONButton(props: Props) {
+function ExportButton(props: Props) {
     const { scenarioName, scenarioGraph, versionId, canExport, disabled, type } = props;
     const available = !disabled && canExport;
     const { t } = useTranslation();
 
     return (
         <ToolbarButton
-            name={t("panels.actions.process-JSON.button", "JSON")}
+            name={t("panels.actions.process-export.button", "export")}
             icon={<Icon />}
             disabled={!available}
             onClick={() => {
@@ -42,4 +42,4 @@ const mapDispatch = {};
 
 type StateProps = typeof mapDispatch & ReturnType<typeof mapState>;
 
-export default connect(mapState, mapDispatch)(JSONButton);
+export default connect(mapState, mapDispatch)(ExportButton);
