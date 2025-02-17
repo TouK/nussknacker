@@ -43,6 +43,15 @@ class ScenarioTestService(
   def validateAndGetTestParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
+  ): Map[String, List[Parameter]] = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+    testInfoProvider
+      .getTestParameters(processVersion, canonical)
+  }
+
+  def testParametersDefinition(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
       isFragment: Boolean
   )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)

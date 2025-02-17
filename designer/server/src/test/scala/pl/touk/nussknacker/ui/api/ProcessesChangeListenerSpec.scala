@@ -35,7 +35,7 @@ class ProcessesChangeListenerSpec
   test("listen to process create") {
     createProcessRequest(processName) { _ =>
       eventually {
-        processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+        processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L), false) => }
       }
     }
   }
@@ -45,7 +45,9 @@ class ProcessesChangeListenerSpec
 
     updateCanonicalProcess(ProcessTestData.validProcess) {
       eventually {
-        processChangeListener.events.toArray.last should matchPattern { case OnSaved(`processId`, VersionId(2L)) => }
+        processChangeListener.events.toArray.last should matchPattern {
+          case OnSaved(`processId`, VersionId(2L), false) =>
+        }
       }
     }
   }

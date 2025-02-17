@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
+import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.definition.component.FragmentSpecificData
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{
   ComponentUiConfigMode,
@@ -25,21 +24,68 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
+trait DefinitionsService {
+
+  def prepareUIDefinitions(
+      processingType: ProcessingType,
+      forFragment: Boolean,
+      componentUiConfigMode: ComponentUiConfigMode
+  )(
+      implicit user: LoggedUser
+  ): Future[UIDefinitions]
+
+}
+
+object DefinitionsService {
+
+  def createUIParameter(parameter: Parameter): UIParameter = {
+    UIParameter(
+      name = parameter.name.value,
+      typ = toUIType(parameter.typ),
+      editor = parameter.finalEditor,
+      defaultValue = parameter.finalDefaultValue,
+      additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
+      variablesToHide = parameter.variablesToHide,
+      branchParam = parameter.branchParam,
+      hintText = parameter.hintText,
+      label = parameter.label,
+      requiredParam = Some(!parameter.isOptional),
+    )
+  }
+
+  private def toUIType(typingResult: TypingResult): TypingResult = {
+    if (typingResult == Typed[TemplateEvaluationResult]) Typed[String] else typingResult
+  }
+
+  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
+    val editor = UiScenarioPropertyEditorDeterminer.determine(config)
+    UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
+  }
+
+  sealed trait ComponentUiConfigMode
+
+  object ComponentUiConfigMode {
+    case object EnrichedWithUiConfig extends ComponentUiConfigMode
+    case object BasicConfig          extends ComponentUiConfigMode
+  }
+
+}
+
 // This class only combines various views on definitions for the FE. It is executed for each request, when user
 // enters the scenario view. The core domain logic should be done during Model definition extraction
-class DefinitionsService(
+class DefinitionsServiceImpl(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository,
     fragmentPropertiesDocsUrl: Option[String]
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends DefinitionsService {
 
-  def prepareUIDefinitions(
+  override def prepareUIDefinitions(
       processingType: ProcessingType,
       forFragment: Boolean,
       componentUiConfigMode: ComponentUiConfigMode
@@ -145,7 +191,7 @@ class DefinitionsService(
 
 }
 
-object DefinitionsService {
+object DefinitionsServiceImpl {
 
   def apply(
       processingTypeData: ProcessingTypeData,
@@ -154,47 +200,15 @@ object DefinitionsService {
       fragmentRepository: FragmentRepository,
       fragmentPropertiesDocsUrl: Option[String]
   )(implicit ec: ExecutionContext) =
-    new DefinitionsService(
+    new DefinitionsServiceImpl(
       processingTypeData.designerModelData.modelData,
       processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
       processingTypeData.deploymentData.scenarioPropertiesConfig,
       processingTypeData.deploymentData.fragmentPropertiesConfig,
-      processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository,
       fragmentPropertiesDocsUrl
     )
-
-  def createUIParameter(parameter: Parameter): UIParameter = {
-    UIParameter(
-      name = parameter.name.value,
-      typ = toUIType(parameter.typ),
-      editor = parameter.finalEditor,
-      defaultValue = parameter.finalDefaultValue,
-      additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
-      variablesToHide = parameter.variablesToHide,
-      branchParam = parameter.branchParam,
-      hintText = parameter.hintText,
-      label = parameter.label,
-      requiredParam = Some(!parameter.isOptional),
-    )
-  }
-
-  private def toUIType(typingResult: TypingResult): TypingResult = {
-    if (typingResult == Typed[TemplateEvaluationResult]) Typed[String] else typingResult
-  }
-
-  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
-    val editor = UiScenarioPropertyEditorDeterminer.determine(config)
-    UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
-  }
-
-  sealed trait ComponentUiConfigMode
-
-  object ComponentUiConfigMode {
-    case object EnrichedWithUiConfig extends ComponentUiConfigMode
-    case object BasicConfig          extends ComponentUiConfigMode
-  }
 
 }
