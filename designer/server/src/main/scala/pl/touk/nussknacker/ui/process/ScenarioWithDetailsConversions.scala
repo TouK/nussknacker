@@ -63,7 +63,7 @@ object ScenarioWithDetailsConversions {
         failureMessage = None,
         commentId = None,
         comment = None,
-        buildInfo = Map.empty
+        modelInfo = None
       )
     )
     def getProcessAction(processAction: Option[ProcessAction]) =

@@ -17,11 +17,3 @@ class DefaultProcessingTypeActionService(
     actionService.getLastStateAction(processingType, processId)
 
 }
-
-trait ActionService {
-
-  def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId): Future[Boolean]
-
-  def getLastStateAction(processingType: ProcessingType, processId: ProcessId): Future[Option[ProcessAction]]
-
-}

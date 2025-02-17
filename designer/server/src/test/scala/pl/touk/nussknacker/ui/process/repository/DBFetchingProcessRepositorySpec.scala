@@ -18,7 +18,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataPr
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Comment
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
@@ -61,11 +60,7 @@ class DBFetchingProcessRepositorySpec
 
   private var currentTime: Instant = Instant.now()
 
-  private val actions =
-    DbScenarioActionRepository.create(
-      testDbRef,
-      ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
-    )
+  private val actions = DbScenarioActionRepository.create(testDbRef)
 
   private val fetching =
     DBFetchingProcessRepository.createFutureRepository(testDbRef, actions, scenarioLabelsRepository)

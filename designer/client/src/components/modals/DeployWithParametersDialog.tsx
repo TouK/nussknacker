@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
@@ -38,7 +38,6 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     } = props.data;
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
-    const scenarioGraph = useSelector(getScenarioGraph);
     const { showBoundary } = useErrorBoundary();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [parametersDefinition, setParametersDefinition] = useState([]);
@@ -46,7 +45,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
 
     const getActionParameters = useCallback(async () => {
         setIsLoading(true);
-        await HttpService.getActionParameters(processName, scenarioGraph)
+        await HttpService.getActionParameters(processName)
             .then((response) => {
                 const definition = response.data.actionNameToParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
                 const initialValues = initialNodesData(definition);
@@ -59,11 +58,11 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [processName, scenarioGraph, showBoundary]);
+    }, [processName, showBoundary]);
 
     useEffect(() => {
         getActionParameters();
-    }, [processName, scenarioGraph, getActionParameters]);
+    }, [processName, getActionParameters]);
 
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");

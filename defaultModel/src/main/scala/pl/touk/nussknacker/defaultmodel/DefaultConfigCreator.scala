@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.defaultmodel
 
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 
@@ -24,10 +25,12 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
     )
   }
 
-  override def buildInfo(): Map[String, String] = {
-    pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) =>
-      k -> v.toString
-    } + ("name" -> "defaultModel")
+  override def modelInfo(): ModelInfo = {
+    ModelInfo.fromMap(
+      pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) =>
+        k -> v.toString
+      } + ("name" -> "defaultModel")
+    )
   }
 
 }

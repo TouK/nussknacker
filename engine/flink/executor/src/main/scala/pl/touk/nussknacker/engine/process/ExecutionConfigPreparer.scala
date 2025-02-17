@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.flink.api.{NamespaceMetricsTags, NkGlobalParameters}
@@ -47,7 +47,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  class ProcessSettingsPreparer(modelConfig: Config, namingStrategy: NamingStrategy, buildInfo: String)
+  class ProcessSettingsPreparer(modelConfig: Config, namingStrategy: NamingStrategy, modelInfo: ModelInfo)
       extends ExecutionConfigPreparer {
 
     override def prepareExecutionConfig(
@@ -55,7 +55,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       config.setGlobalJobParameters(
         NkGlobalParameters.create(
-          buildInfo,
+          modelInfo,
           deploymentData.deploymentId.value,
           jobData.processVersion,
           modelConfig,
@@ -75,8 +75,7 @@ object ExecutionConfigPreparer extends LazyLogging {
   object ProcessSettingsPreparer {
 
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
-      val buildInfo = Encoder[Map[String, String]].apply(modelData.buildInfo).spaces2
-      new ProcessSettingsPreparer(modelData.modelConfig, modelData.namingStrategy, buildInfo)
+      new ProcessSettingsPreparer(modelData.modelConfig, modelData.namingStrategy, modelData.info)
     }
 
   }

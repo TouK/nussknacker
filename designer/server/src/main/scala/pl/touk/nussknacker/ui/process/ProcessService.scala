@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
+import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -177,7 +178,7 @@ trait ProcessService {
  * Each action includes verification based on actual process state and checking process is fragment / archived.
  */
 class DBProcessService(
-    processStateProvider: ProcessStateProvider,
+    processStateProvider: ScenarioStateProvider,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
     scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   RegExpParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -274,7 +275,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         )
       )
 
-    override def buildInfo(): Map[String, String] = Map()
+    override def modelInfo(): ModelInfo = ModelInfo.empty
   }
 
   object Transformer1 extends CustomStreamTransformer {

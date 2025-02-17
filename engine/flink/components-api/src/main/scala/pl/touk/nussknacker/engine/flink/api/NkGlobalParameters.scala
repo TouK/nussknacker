@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.flink.api
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
@@ -16,7 +18,7 @@ import scala.jdk.CollectionConverters._
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
 //Also, those configuration properties will be exposed via Flink REST API/webconsole
 case class NkGlobalParameters(
-    buildInfo: String,
+    modelInfo: ModelInfo,
     deploymentId: String, // TODO: Pass here DeploymentId?
     processVersion: ProcessVersion,
     configParameters: Option[ConfigGlobalParameters],
@@ -60,10 +62,10 @@ object NamespaceMetricsTags {
 
 }
 
-object NkGlobalParameters {
+object NkGlobalParameters extends LazyLogging {
 
   def create(
-      buildInfo: String,
+      modelInfo: ModelInfo,
       deploymentId: String, // TODO: Pass here DeploymentId?
       processVersion: ProcessVersion,
       modelConfig: Config,
@@ -72,7 +74,7 @@ object NkGlobalParameters {
   ): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
     NkGlobalParameters(
-      buildInfo,
+      modelInfo,
       deploymentId,
       processVersion,
       configGlobalParameters,
@@ -92,7 +94,8 @@ object NkGlobalParameters {
       }
 
       val baseProperties = Map[String, String](
-        "buildInfo"    -> parameters.buildInfo,
+        // TODO: rename to modelInfo
+        "buildInfo"    -> parameters.modelInfo.asJsonString,
         "deploymentId" -> parameters.deploymentId,
         "versionId"    -> parameters.processVersion.versionId.value.toString,
         "processId"    -> parameters.processVersion.processId.value.toString,
@@ -134,7 +137,18 @@ object NkGlobalParameters {
         val modelVersion = map.get("modelVersion").map(_.toInt)
         ProcessVersion(versionId, processName, processId, labels, user, modelVersion)
       }
-      val buildInfoOpt = map.get("buildInfo")
+      val modelInfoOpt = map
+        .get("buildInfo")
+        .map(ModelInfo.parseJsonString)
+        .map(
+          _.fold(
+            { err =>
+              logger.warn(s"Saved model info is not a json's object: ${err.getMessage}. Empty map will be returned")
+              ModelInfo.empty
+            },
+            identity
+          )
+        )
 
       val configParameters = ConfigGlobalParametersToMapEncoder.decode(map)
       val namespaceTags = {
@@ -145,10 +159,10 @@ object NkGlobalParameters {
 
       for {
         processVersion <- processVersionOpt
-        buildInfo      <- buildInfoOpt
+        modelInfo      <- modelInfoOpt
         deploymentId   <- map.get("deploymentId")
       } yield NkGlobalParameters(
-        buildInfo,
+        modelInfo,
         deploymentId,
         processVersion,
         configParameters,

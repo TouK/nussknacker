@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.conversion
 
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.javaapi.process
@@ -48,8 +49,8 @@ object ProcessConfigCreatorMapping {
           methodExecutionForUnknownAllowed = jec.isMethodExecutionForUnknownAllowed
         )
       }
-      override def buildInfo(): Map[String, String] = {
-        jcreator.buildInfo().asScala.toMap
+      override def modelInfo(): ModelInfo = {
+        ModelInfo.fromMap(jcreator.modelInfo().asScala.toMap)
       }
       override def asyncExecutionContextPreparer(
           modelDependencies: ProcessObjectDependencies
