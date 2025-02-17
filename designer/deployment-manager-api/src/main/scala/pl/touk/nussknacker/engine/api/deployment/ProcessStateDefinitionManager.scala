@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
+  DefaultVisibleActions,
   ScenarioStatusPresentationDetails,
-  ScenarioStatusWithScenarioContext,
-  defaultVisibleActions
+  ScenarioStatusWithScenarioContext
 }
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -51,7 +51,7 @@ trait ProcessStateDefinitionManager {
   /**
    * Actions that are applicable to scenario in general. They may be available only in particular states, as defined by `def statusActions`
    */
-  def visibleActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] = defaultVisibleActions
+  def visibleActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] = DefaultVisibleActions
 
   /**
    * Custom tooltips for actions
@@ -61,7 +61,7 @@ trait ProcessStateDefinitionManager {
   /**
     * Allowed transitions between states.
     */
-  def statusActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName]
+  def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName]
 
   /**
     * Returns presentations details of status
@@ -109,8 +109,8 @@ object ProcessStateDefinitionManager {
 
   final case class ScenarioStatusPresentationDetails(
       visibleActions: List[ScenarioActionName],
-      // This one is not exactly a part of presentation but for now we keep in this class
-      allowedActions: List[ScenarioActionName],
+      // This one is not exactly a part of presentation, it is rather a thing related with scenario lifecycle but for now it is kept here
+      allowedActions: Set[ScenarioActionName],
       actionTooltips: Map[ScenarioActionName, String],
       icon: URI,
       tooltip: String,
@@ -120,7 +120,7 @@ object ProcessStateDefinitionManager {
   /**
    * Actions, that are applicable in standard use-cases for most deployment managers.
    */
-  val defaultVisibleActions: List[ScenarioActionName] = List(
+  val DefaultVisibleActions: List[ScenarioActionName] = List(
     ScenarioActionName.Cancel,
     ScenarioActionName.Deploy,
     ScenarioActionName.Pause,

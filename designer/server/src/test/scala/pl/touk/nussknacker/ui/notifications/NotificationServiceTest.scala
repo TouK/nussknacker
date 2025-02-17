@@ -294,7 +294,7 @@ class NotificationServiceTest
       config,
       clock
     )
-    val scenarioStateProvider = ScenarioStateProvider(
+    val scenarioStateProvider = ScenarioStatusProvider(
       managerDispatcher,
       dbProcessRepository,
       actionRepository,

@@ -4,6 +4,7 @@ import org.scalatest.OptionValues
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.Deploy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -20,6 +21,8 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
+import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
+import pl.touk.nussknacker.ui.process.deployment.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -202,7 +205,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
   ): DBProcessService =
     new DBProcessService(
-      processStateProvider = TestFactory.processStateProvider(),
+      scenarioStatusProvider = mock[ScenarioStatusProvider],
+      scenarioStatusPresenter = mock[ScenarioStatusPresenter],
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
       scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,

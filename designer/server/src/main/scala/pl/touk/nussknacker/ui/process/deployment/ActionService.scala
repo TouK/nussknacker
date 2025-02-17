@@ -32,7 +32,7 @@ class ActionService(
     actionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     processChangeListener: ProcessChangeListener,
-    scenarioStateProvider: ScenarioStateProvider,
+    scenarioStatusProvider: ScenarioStatusProvider,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     clock: Clock
@@ -195,11 +195,8 @@ class ActionService(
           // 1.3. check if action is performed on proper scenario (not fragment, not archived)
           _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
           // 1.4. check if action is allowed for current state
-          processState <- scenarioStateProvider.getProcessStateDBIO(
-            processDetails = processDetails,
-            currentlyPresentedVersionId = None
-          )
-          _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
+          stateWithAllowedActions <- scenarioStatusProvider.getAllowedActionsForScenarioStatusDBIO(processDetails)
+          _ = checkIfCanPerformActionInState(actionName, processDetails, stateWithAllowedActions)
           // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
           versionOnWhichActionIsDone = extractVersionOnWhichActionIsDoneFromLatestScenarioDetails(processDetails)
           modelInfo                  = extractModelInfoFromLatestScenarioDetails(processDetails)
@@ -232,12 +229,13 @@ class ActionService(
     private def checkIfCanPerformActionInState(
         actionName: ScenarioActionName,
         processDetails: ScenarioWithDetailsEntity[LatestScenarioDetailsShape],
-        ps: ScenarioStatusDto
+        statusWithAllowedActions: StatusWithAllowedActions
     ): Unit = {
-      val allowedActions = ps.allowedActions.toSet
-      if (!allowedActions.contains(actionName)) {
-        logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
-        throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActions)
+      if (!statusWithAllowedActions.allowedActions.contains(actionName)) {
+        logger.debug(
+          s"Action: $actionName on process: ${processDetails.name} not allowed in ${statusWithAllowedActions.status} state"
+        )
+        throw ProcessIllegalAction(actionName, processDetails.name, statusWithAllowedActions)
       }
     }
 

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
-  ScenarioStatusWithScenarioContext,
-  defaultVisibleActions
+  DefaultVisibleActions,
+  ScenarioStatusWithScenarioContext
 }
 import pl.touk.nussknacker.engine.api.deployment.{
   OverridingProcessStateDefinitionManager,
@@ -24,12 +24,12 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
       statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
       customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
-      customVisibleActions = Some(defaultVisibleActions ::: ScenarioActionName.RunOffSchedule :: Nil),
+      customVisibleActions = Some(DefaultVisibleActions ::: ScenarioActionName.RunOffSchedule :: Nil),
       customActionTooltips = Some(PeriodicStateStatus.customActionTooltips),
       delegate = delegate
     ) {
 
-  override def statusActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] = {
+  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
     super.statusActions(
       extractPeriodicStatus(input.status)
         .map(periodic => input.withStatus(periodic.mergedStatus))

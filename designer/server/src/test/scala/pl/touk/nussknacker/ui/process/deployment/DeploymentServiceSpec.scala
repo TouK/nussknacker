@@ -10,6 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
@@ -29,7 +29,7 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
-import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider.FragmentStateException
+import pl.touk.nussknacker.ui.process.deployment.ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
@@ -135,7 +135,7 @@ class DeploymentServiceSpec
   }
 
   private def createScenarioStateProvider(scenarioStateTimeout: Option[FiniteDuration]) =
-    ScenarioStateProvider(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, scenarioStateTimeout)
+    ScenarioStatusProvider(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, scenarioStateTimeout)
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
   private def createDeploymentServiceWithCommentSettings = {
@@ -188,7 +188,7 @@ class DeploymentServiceSpec
 
     eventually {
       val status = scenarioStateProvider
-        .getProcessState(processIdWithName, Some(initialVersionId))
+        .getScenarioStatus(processIdWithName, Some(initialVersionId))
         .futureValue
         .status
 
@@ -219,7 +219,7 @@ class DeploymentServiceSpec
 
     eventually {
       scenarioStateProvider
-        .getProcessState(processIdWithName, Some(initialVersionId))
+        .getScenarioStatus(processIdWithName, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.Running
     }
@@ -239,7 +239,7 @@ class DeploymentServiceSpec
 
       eventually {
         val status = scenarioStateProvider
-          .getProcessState(processIdWithName, Some(initialVersionId))
+          .getScenarioStatus(processIdWithName, Some(initialVersionId))
           .futureValue
           .status
 
@@ -270,14 +270,14 @@ class DeploymentServiceSpec
         )
         .futureValue
       scenarioStateProvider
-        .getProcessState(processIdWithName, Some(initialVersionId))
+        .getScenarioStatus(processIdWithName, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.DuringDeploy
     }
 
     eventually {
       scenarioStateProvider
-        .getProcessState(processIdWithName, Some(initialVersionId))
+        .getScenarioStatus(processIdWithName, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.Running
     }
@@ -291,7 +291,7 @@ class DeploymentServiceSpec
       deploymentService.processCommand(CancelScenarioCommand(CommonCommandData(processId, None, user)))
       eventually {
         scenarioStateProvider
-          .getProcessState(processId, Some(initialVersionId))
+          .getScenarioStatus(processId, Some(initialVersionId))
           .futureValue
           .status shouldBe SimpleStateStatus.DuringCancel
       }
@@ -317,7 +317,7 @@ class DeploymentServiceSpec
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 
     checkIsFollowingDeploy(
-      scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue,
+      scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue,
       expected = true
     )
     fetchingProcessRepository
@@ -330,13 +330,13 @@ class DeploymentServiceSpec
       // we simulate what happens when retrieveStatus is called multiple times to check only one comment is added
       (1 to 5).foreach { _ =>
         checkIsFollowingDeploy(
-          scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue,
+          scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue,
           expected = false
         )
       }
-      val finishedStatus = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val finishedStatus = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       finishedStatus.status shouldBe SimpleStateStatus.Finished
-      finishedStatus.allowedActions shouldBe List(
+      getAllowedActions(finishedStatus) shouldBe Set(
         ScenarioActionName.Deploy,
         ScenarioActionName.Archive,
         ScenarioActionName.Rename
@@ -354,13 +354,13 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       val stateAfterJobRetention =
-        scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+        scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       stateAfterJobRetention.status shouldBe SimpleStateStatus.Finished
     }
 
     archiveProcess(processId).dbioActionValues
     scenarioStateProvider
-      .getProcessState(processId, Some(initialVersionId))
+      .getScenarioStatus(processId, Some(initialVersionId))
       .futureValue
       .status shouldBe SimpleStateStatus.Finished
   }
@@ -376,7 +376,7 @@ class DeploymentServiceSpec
         .flatMap(_.lastStateAction)
         .map(_.actionName) shouldBe expectedAction
       scenarioStateProvider
-        .getProcessState(processIdWithName, Some(initialVersionId))
+        .getScenarioStatus(processIdWithName, Some(initialVersionId))
         .futureValue
         .status shouldBe expectedStatus
     }
@@ -461,7 +461,7 @@ class DeploymentServiceSpec
       // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
       eventually {
         scenarioStateProvider
-          .getProcessState(processIdWithName, Some(initialVersionId))
+          .getScenarioStatus(processIdWithName, Some(initialVersionId))
           .futureValue
           .status shouldBe SimpleStateStatus.NotDeployed
       }
@@ -474,7 +474,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       scenarioStateProvider
-        .getProcessState(processId, Some(initialVersionId))
+        .getScenarioStatus(processId, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.Canceled
     }
@@ -492,7 +492,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       scenarioStateProvider
-        .getProcessState(processId, Some(initialVersionId))
+        .getScenarioStatus(processId, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.Canceled
     }
@@ -517,7 +517,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       scenarioStateProvider
-        .getProcessState(processId, Some(initialVersionId))
+        .getScenarioStatus(processId, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.Canceled
     }
@@ -535,13 +535,11 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -550,7 +548,7 @@ class DeploymentServiceSpec
     val processId                = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
@@ -560,7 +558,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringCancel) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       state.status shouldBe SimpleStateStatus.DuringCancel
     }
@@ -574,11 +572,10 @@ class DeploymentServiceSpec
       StatusDetails(SimpleStateStatus.Restarting, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessStates(processName, List(state)) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       state.status shouldBe SimpleStateStatus.Restarting
-      state.allowedActions shouldBe List(ScenarioActionName.Cancel)
-      state.description shouldBe "Scenario is restarting..."
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Cancel)
     }
   }
 
@@ -587,13 +584,11 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -602,13 +597,11 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -627,13 +620,11 @@ class DeploymentServiceSpec
     )
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, version) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -653,10 +644,10 @@ class DeploymentServiceSpec
 
     // FIXME: doesnt check recover from failed verifications ???
     deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.Failed, version) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       state.status shouldBe ProblemStateStatus.Failed
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -665,13 +656,11 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, Option.empty) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -681,13 +670,11 @@ class DeploymentServiceSpec
 
     // FIXME: doesnt check recover from failed future of findJobStatus ???
     deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.FailedToGet, Option.empty) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
 
       val expectedStatus = ProblemStateStatus.FailedToGet
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -702,7 +689,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       scenarioStateProvider
-        .getProcessState(ProcessIdWithName(processId.id, processName), Some(initialVersionId))
+        .getScenarioStatus(ProcessIdWithName(processId.id, processName), Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.NotDeployed
     }
@@ -724,7 +711,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       scenarioStateProvider
-        .getProcessState(processId, Some(initialVersionId))
+        .getScenarioStatus(processId, Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.NotDeployed
     }
@@ -746,7 +733,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       scenarioStateProvider
-        .getProcessState(ProcessIdWithName(processId.id, processName), Some(initialVersionId))
+        .getScenarioStatus(ProcessIdWithName(processId.id, processName), Some(initialVersionId))
         .futureValue
         .status shouldBe SimpleStateStatus.NotDeployed
     }
@@ -761,7 +748,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
-    val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+    val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
     state.status shouldBe SimpleStateStatus.NotDeployed
   }
 
@@ -772,7 +759,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
@@ -781,7 +768,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
-    val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+    val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
     state.status shouldBe SimpleStateStatus.Canceled
   }
 
@@ -790,7 +777,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       state.status shouldBe SimpleStateStatus.Canceled
     }
   }
@@ -799,7 +786,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
 
-    val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+    val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
     state.status shouldBe SimpleStateStatus.NotDeployed
   }
 
@@ -810,30 +797,23 @@ class DeploymentServiceSpec
       .addInProgressAction(processId.id, ScenarioActionName.Deploy, Some(VersionId(1)), None)
       .dbioActionValues
 
-    val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+    val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
     state.status shouldBe SimpleStateStatus.DuringDeploy
   }
 
-  test("Should enrich BaseProcessDetails") {
+  test("Should getScenariosStatuses bulk with the same result as for single scenario") {
     prepareProcessesInProgress
 
     val processesDetails = fetchingProcessRepository
       .fetchLatestProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
-    val processesDetailsWithState = scenarioStateProvider
-      .enrichDetailsWithProcessState(
-        processesDetails
-          .map(
-            ScenarioWithDetailsConversions
-              .fromEntityIgnoringGraphAndValidationResult(_, ProcessTestData.sampleScenarioParameters)
-          )
-      )
+    val statesBasedOnCachedInProgressActionTypes = scenarioStateProvider
+      .getScenariosStatuses(processesDetails)
       .futureValue
+      .map(_.map(_.status.name))
 
-    val statesBasedOnCachedInProgressActionTypes = processesDetailsWithState.map(_.state)
-
-    statesBasedOnCachedInProgressActionTypes.map(_.map(_.status.name)) shouldBe List(
+    statesBasedOnCachedInProgressActionTypes shouldBe List(
       Some("DURING_DEPLOY"),
       Some("DURING_CANCEL"),
       Some("RUNNING"),
@@ -842,7 +822,12 @@ class DeploymentServiceSpec
 
     val statesBasedOnNotCachedInProgressActionTypes =
       processesDetails
-        .map(pd => Option(pd).filterNot(_.isFragment).map(scenarioStateProvider.getProcessState).sequence)
+        .map(pd =>
+          Option(pd)
+            .filterNot(_.isFragment)
+            .map(scenarioStateProvider.getAllowedActionsForScenarioStatus(_).map(_.status.name))
+            .sequence
+        )
         .sequence
         .futureValue
 
@@ -856,7 +841,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
@@ -865,7 +850,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
 
-    val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+    val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
     state.status shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
   }
 
@@ -874,7 +859,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
-      val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       state.status shouldBe SimpleStateStatus.Canceled
     }
   }
@@ -884,12 +869,10 @@ class DeploymentServiceSpec
     val (processId, _)           = preparedUnArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state          = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
+      val state          = scenarioStateProvider.getScenarioStatus(processId, Some(initialVersionId)).futureValue
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-      state.description shouldBe expectedStatus.description
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -900,7 +883,7 @@ class DeploymentServiceSpec
     deploymentManager.withEmptyProcessState(processName) {
       val initialStatus = SimpleStateStatus.NotDeployed
       scenarioStateProvider
-        .getProcessState(processIdWithName, Some(initialVersionId))
+        .getScenarioStatus(processIdWithName, Some(initialVersionId))
         .futureValue
         .status shouldBe initialStatus
       deploymentManager.withWaitForDeployFinish(processName) {
@@ -914,13 +897,13 @@ class DeploymentServiceSpec
           )
           .futureValue
         scenarioStateProvider
-          .getProcessState(processIdWithName, Some(initialVersionId))
+          .getScenarioStatus(processIdWithName, Some(initialVersionId))
           .futureValue
           .status shouldBe SimpleStateStatus.DuringDeploy
 
         actionService.invalidateInProgressActions()
         scenarioStateProvider
-          .getProcessState(processIdWithName, Some(initialVersionId))
+          .getScenarioStatus(processIdWithName, Some(initialVersionId))
           .futureValue
           .status shouldBe initialStatus
       }
@@ -937,7 +920,7 @@ class DeploymentServiceSpec
     val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
     deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
       val status = serviceWithTimeout
-        .getProcessState(processId, Some(initialVersionId))
+        .getScenarioStatus(processId, Some(initialVersionId))
         .futureValueEnsuringInnerException(durationLongerThanTimeout)
         .status
       status shouldBe ProblemStateStatus.FailedToGet
@@ -949,7 +932,7 @@ class DeploymentServiceSpec
     val id                       = prepareFragment(processName).dbioActionValues
 
     assertThrowsWithParent[FragmentStateException.type] {
-      scenarioStateProvider.getProcessState(id, Some(initialVersionId)).futureValue
+      scenarioStateProvider.getScenarioStatus(id, Some(initialVersionId)).futureValue
     }
   }
 
@@ -959,7 +942,7 @@ class DeploymentServiceSpec
     deploymentManager.deploys.clear()
   }
 
-  private def checkIsFollowingDeploy(state: ScenarioStatusDto, expected: Boolean) = {
+  private def checkIsFollowingDeploy(state: StatusDetails, expected: Boolean) = {
     withClue(state) {
       SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status) shouldBe expected
     }
@@ -1088,5 +1071,14 @@ class DeploymentServiceSpec
   private def generateProcessName = {
     ProcessName("proces_" + UUID.randomUUID())
   }
+
+  private def getAllowedActions(status: StatusDetails) = deploymentManager.processStateDefinitionManager.statusActions(
+    ScenarioStatusWithScenarioContext(
+      statusDetails = status,
+      latestVersionId = VersionId(1),
+      deployedVersionId = None,
+      currentlyPresentedVersionId = None
+    )
+  )
 
 }

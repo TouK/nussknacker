@@ -29,7 +29,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
       )
     )
 
-    override def statusActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] = Nil
+    override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
   }
 
   test("should combine delegate state definitions with custom overrides") {

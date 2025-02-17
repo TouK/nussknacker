@@ -30,25 +30,25 @@ object PeriodicStateStatus {
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
-  val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, List[ScenarioActionName]] =
+  val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] =
     Function.unlift((input: ScenarioStatusWithScenarioContext) =>
       (input.status, input.deployedVersionId, input.currentlyPresentedVersionId) match {
         case (SimpleStateStatus.Running, _, _) =>
           // periodic processes cannot be redeployed from GUI
-          Some(List(ScenarioActionName.Cancel))
+          Some(Set(ScenarioActionName.Cancel))
         case (_: ScheduledStatus, deployedVersionId, Some(currentlyPresentedVersionId))
             if deployedVersionId.contains(currentlyPresentedVersionId) =>
-          Some(List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunOffSchedule))
+          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunOffSchedule))
         case (_: ScheduledStatus, _, None) =>
           // At the moment of deployment or validation, we may not have the information about the currently displayed version
           // In that case we assume, that it was validated before the deployment was initiated.
-          Some(List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunOffSchedule))
+          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunOffSchedule))
         case (_: ScheduledStatus, _, _) =>
-          Some(List(ScenarioActionName.Cancel, ScenarioActionName.Deploy))
+          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Deploy))
         case (WaitingForScheduleStatus, _, _) =>
-          Some(List(ScenarioActionName.Cancel)) // or maybe should it be empty??
+          Some(Set(ScenarioActionName.Cancel)) // or maybe should it be empty??
         case (_: ProblemStateStatus, _, _) =>
-          Some(List(ScenarioActionName.Cancel)) // redeploy is not allowed
+          Some(Set(ScenarioActionName.Cancel)) // redeploy is not allowed
         case _ =>
           None
       }

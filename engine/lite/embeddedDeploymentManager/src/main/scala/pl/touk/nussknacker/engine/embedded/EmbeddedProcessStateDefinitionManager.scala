@@ -12,6 +12,6 @@ object EmbeddedProcessStateDefinitionManager
     extends OverridingProcessStateDefinitionManager(
       delegate = SimpleProcessStateDefinitionManager,
       statusActionsPF = { case ScenarioStatusWithScenarioContext(SimpleStateStatus.Restarting, _, _, _) =>
-        List(ScenarioActionName.Cancel)
+        Set(ScenarioActionName.Cancel)
       }
     )

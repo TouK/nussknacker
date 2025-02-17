@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   */
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
 
-  override def statusActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] =
-    statusActionsPF.lift(input.status).getOrElse(DefaultActions)
+  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    statusActionsPF.lift(input.status).getOrElse(DefaultActions.toSet)
 
   override def statusDescription(input: ScenarioStatusWithScenarioContext): String = statusDescription(input.status)
 

@@ -14,7 +14,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
     Future.failed(new ProcessIllegalAction("Can't perform action because of an error in deployment configuration"))
 
   private val stubbedStatus = StatusDetails(
-    ProblemStateStatus("Error in deployment configuration", allowedActions = List.empty),
+    ProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
     deploymentId = None
   )
 

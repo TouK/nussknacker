@@ -21,7 +21,7 @@ import java.net.URI
   */
 class OverridingProcessStateDefinitionManager(
     delegate: ProcessStateDefinitionManager,
-    statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, List[ScenarioActionName]] =
+    statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] =
       PartialFunction.empty,
     statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
     statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
@@ -34,7 +34,7 @@ class OverridingProcessStateDefinitionManager(
   override def visibleActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] =
     customVisibleActions.getOrElse(delegate.visibleActions(input))
 
-  override def statusActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] =
+  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
     statusActionsPF.applyOrElse(input, delegate.statusActions)
 
   override def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] =

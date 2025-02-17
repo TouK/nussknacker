@@ -16,10 +16,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions.Ops
-import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider.FragmentStateException
+import pl.touk.nussknacker.ui.process.deployment.ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -31,30 +29,30 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
 
-trait ScenarioStateProvider {
+trait ScenarioStatusProvider {
 
-  def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
+  def getScenariosStatuses[F[_]: Traverse, ScenarioShape](processTraverse: F[ScenarioWithDetailsEntity[ScenarioShape]])(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[F[ScenarioWithDetails]]
+  ): Future[F[Option[StatusDetails]]]
 
-  def getProcessState(
-      processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto]
-
-  def getProcessState(
+  def getScenarioStatus(
       processIdWithName: ProcessIdWithName,
       currentlyPresentedVersionId: Option[VersionId],
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusDetails]
 
-  def getProcessStateDBIO(processDetails: ScenarioWithDetailsEntity[_], currentlyPresentedVersionId: Option[VersionId])(
+  def getAllowedActionsForScenarioStatus(
+      processDetails: ScenarioWithDetailsEntity[_]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusWithAllowedActions]
+
+  def getAllowedActionsForScenarioStatusDBIO(processDetails: ScenarioWithDetailsEntity[_])(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): DB[ScenarioStatusDto]
+  ): DB[StatusWithAllowedActions]
 
 }
 
-object ScenarioStateProvider {
+object ScenarioStatusProvider {
 
   def apply(
       dispatcher: DeploymentManagerDispatcher,
@@ -62,76 +60,55 @@ object ScenarioStateProvider {
       actionRepository: ScenarioActionRepository,
       dbioRunner: DBIOActionRunner,
       scenarioStateTimeout: Option[FiniteDuration]
-  )(implicit system: ActorSystem): ScenarioStateProvider =
-    new ScenarioStateProviderImpl(dispatcher, processRepository, actionRepository, dbioRunner, scenarioStateTimeout)
+  )(implicit system: ActorSystem): ScenarioStatusProvider =
+    new ScenarioStatusProviderImpl(dispatcher, processRepository, actionRepository, dbioRunner, scenarioStateTimeout)
 
   object FragmentStateException extends BadRequestError("Fragment doesn't have state.")
 
 }
 
-private class ScenarioStateProviderImpl(
+private class ScenarioStatusProviderImpl(
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
     actionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     scenarioStateTimeout: Option[FiniteDuration]
 )(implicit system: ActorSystem)
-    extends ScenarioStateProvider
+    extends ScenarioStatusProvider
     with LazyLogging {
 
   private implicit val ec: ExecutionContext = system.dispatcher
 
   // TODO: check deployment id to be sure that returned status is for given deployment
-  def getProcessState(
+  override def getScenarioStatus(
       processIdWithName: ProcessIdWithName,
       currentlyPresentedVersionId: Option[VersionId],
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusDetails] = {
     dbioRunner.run(for {
-      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
-      processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
-      dto <- getProcessStateDBIO(
-        processDetails,
-        currentlyPresentedVersionId
-      )
-    } yield dto)
-  }
-
-  def getProcessStateDBIO(
-      processDetails: ScenarioWithDetailsEntity[_],
-      currentlyPresentedVersionId: Option[VersionId]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[ScenarioStatusDto] = {
-    for {
+      processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
+      processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
       statusDetails <- getProcessStateFetchingStatusFromManager(
         processDetails,
         inProgressActionNames
       )
-      dto = toDto(statusDetails, processDetails, currentlyPresentedVersionId)
-    } yield dto
+    } yield statusDetails)
   }
 
-  def getProcessState(
-      processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusDto] = {
-    dbioRunner.run(for {
-      inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      statusDetails         <- getProcessStateFetchingStatusFromManager(processDetails, inProgressActionNames)
-      dto = toDto(statusDetails, processDetails, None)
-    } yield dto)
-  }
-
-  def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
+  override def getScenariosStatuses[F[_]: Traverse, ScenarioShape](
+      processTraverse: F[ScenarioWithDetailsEntity[ScenarioShape]]
+  )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[F[ScenarioWithDetails]] = {
+  ): Future[F[Option[StatusDetails]]] = {
     val scenarios = processTraverse.toList
     dbioRunner.run(
       for {
         actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
         prefetchedStates  <- DBIO.from(getPrefetchedStatesForSupportedManagers(scenarios))
-        processesWithState <- processTraverse
+        statusesDetails <- processTraverse
           .map {
-            case process if process.isFragment => DBIO.successful(process)
+            case process if process.isFragment => DBIO.successful(Option.empty[StatusDetails])
             case process =>
               val prefetchedState = for {
                 prefetchedStatesForProcessingType <- prefetchedStates.get(process.processingType)
@@ -143,34 +120,50 @@ private class ScenarioStateProviderImpl(
               (prefetchedState match {
                 case Some(prefetchedStatusDetails) =>
                   getProcessStateUsingPrefetchedStatus(
-                    process.toEntity,
-                    actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
+                    process,
+                    actionsInProgress.getOrElse(process.processId, Set.empty),
                     prefetchedStatusDetails,
                   )
                 case None =>
                   getProcessStateFetchingStatusFromManager(
-                    process.toEntity,
-                    actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
+                    process,
+                    actionsInProgress.getOrElse(process.processId, Set.empty),
                   )
-              }).map { statusDetails =>
-                val dto = toDto(statusDetails, process.toEntity, None)
-                process.copy(state = Some(dto))
-              }
+              }).map(Some(_))
           }
-          .sequence[DB, ScenarioWithDetails]
-      } yield processesWithState
+          .sequence[DB, Option[StatusDetails]]
+      } yield statusesDetails
     )
   }
 
-  private def toDto(
+  override def getAllowedActionsForScenarioStatus(
+      processDetails: ScenarioWithDetailsEntity[_]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusWithAllowedActions] = {
+    dbioRunner.run(getAllowedActionsForScenarioStatusDBIO(processDetails))
+  }
+
+  override def getAllowedActionsForScenarioStatusDBIO(
+      processDetails: ScenarioWithDetailsEntity[_]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[StatusWithAllowedActions] = {
+    for {
+      inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
+      statusDetails <- getProcessStateFetchingStatusFromManager(
+        processDetails,
+        inProgressActionNames
+      )
+      allowedActions = getAllowedActions(statusDetails, processDetails, None)
+    } yield StatusWithAllowedActions(statusDetails, allowedActions)
+  }
+
+  private def getAllowedActions(
       statusDetails: StatusDetails,
       processDetails: ScenarioWithDetailsEntity[_],
       currentlyPresentedVersionId: Option[VersionId]
-  )(implicit user: LoggedUser) = {
-    val presentation = dispatcher
+  )(implicit user: LoggedUser): Set[ScenarioActionName] = {
+    dispatcher
       .deploymentManagerUnsafe(processDetails.processingType)
       .processStateDefinitionManager
-      .statusPresentation(
+      .statusActions(
         ScenarioStatusWithScenarioContext(
           statusDetails = statusDetails,
           latestVersionId = processDetails.processVersionId,
@@ -178,20 +171,6 @@ private class ScenarioStateProviderImpl(
           currentlyPresentedVersionId = currentlyPresentedVersionId
         )
       )
-    ScenarioStatusDto(
-      externalDeploymentId = statusDetails.externalDeploymentId,
-      status = statusDetails.status,
-      version = statusDetails.version,
-      visibleActions = presentation.visibleActions,
-      allowedActions = presentation.allowedActions,
-      actionTooltips = presentation.actionTooltips,
-      icon = presentation.icon,
-      tooltip = presentation.tooltip,
-      description = presentation.description,
-      startTime = statusDetails.startTime,
-      attributes = statusDetails.attributes,
-      errors = statusDetails.errors,
-    )
   }
 
   private def getProcessStateFetchingStatusFromManager(
@@ -215,7 +194,7 @@ private class ScenarioStateProviderImpl(
   //  - DM has capability StateQueryForAllScenariosSupported
   //  - the query is about more than one scenario handled by that DM
   private def getPrefetchedStatesForSupportedManagers(
-      scenarios: List[ScenarioWithDetails],
+      scenarios: List[ScenarioWithDetailsEntity[_]],
   )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
@@ -261,14 +240,14 @@ private class ScenarioStateProviderImpl(
   // This is optimisation tweak. We want to reduce number of calls for in progress action types. So for >1 scenarios
   // we do one call for all in progress action types for all scenarios
   private def getInProgressActionTypesForScenarios(
-      scenarios: List[ScenarioWithDetails]
+      scenarios: List[ScenarioWithDetailsEntity[_]]
   ): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
     scenarios match {
       case Nil => DBIO.successful(Map.empty)
       case head :: Nil =>
         actionRepository
-          .getInProgressActionNames(head.processIdUnsafe)
-          .map(actionNames => Map(head.processIdUnsafe -> actionNames))
+          .getInProgressActionNames(head.processId)
+          .map(actionNames => Map(head.processId -> actionNames))
       case _ =>
         // We are getting only Deploy and Cancel InProgress actions as only these two impact scenario status
         actionRepository.getInProgressActionNames(Set(Deploy, Cancel))
@@ -403,5 +382,11 @@ private class ScenarioStateProviderImpl(
       case None          => DBIOAction.failed(failWith)
     }
   }
+
+}
+
+final case class StatusWithAllowedActions(statusDetails: StatusDetails, allowedActions: Set[ScenarioActionName]) {
+
+  def status: StateStatus = statusDetails.status
 
 }

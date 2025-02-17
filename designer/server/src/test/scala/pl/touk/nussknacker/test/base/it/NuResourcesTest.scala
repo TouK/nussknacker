@@ -116,7 +116,7 @@ trait NuResourcesTest
     futureFetchingScenarioRepository
   )
 
-  protected val scenarioStateProvider: ScenarioStateProvider = ScenarioStateProvider(
+  protected val scenarioStatusProvider: ScenarioStatusProvider = ScenarioStatusProvider(
     dmDispatcher,
     fetchingProcessRepository,
     actionRepository,
@@ -124,13 +124,15 @@ trait NuResourcesTest
     scenarioStateTimeout = None
   )
 
+  protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
+
   protected val actionService: ActionService = new ActionService(
     dmDispatcher,
     fetchingProcessRepository,
     actionRepository,
     dbioRunner,
     processChangeListener,
-    scenarioStateProvider,
+    scenarioStatusProvider,
     deploymentCommentSettings,
     modelInfoProvider,
     Clock.systemUTC()
@@ -196,7 +198,7 @@ trait NuResourcesTest
     )
   }
 
-  protected val processService: DBProcessService = createDBProcessService(scenarioStateProvider)
+  protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -208,7 +210,8 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    scenarioStateProvider = scenarioStateProvider,
+    scenarioStatusProvider = scenarioStatusProvider,
+    scenarioStatusPresenter = scenarioStatusPresenter,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener
@@ -227,9 +230,10 @@ trait NuResourcesTest
     RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(processStateProvider: ScenarioStateProvider): DBProcessService =
+  protected def createDBProcessService(processStateProvider: ScenarioStatusProvider): DBProcessService =
     new DBProcessService(
       processStateProvider,
+      scenarioStatusPresenter,
       newProcessPreparerByProcessingType,
       typeToConfig.mapCombined(_.parametersService),
       processResolverByProcessingType,
