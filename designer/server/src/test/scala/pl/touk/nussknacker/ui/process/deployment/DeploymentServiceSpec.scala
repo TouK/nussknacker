@@ -30,14 +30,14 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAsserti
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider.FragmentStateException
+import ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 

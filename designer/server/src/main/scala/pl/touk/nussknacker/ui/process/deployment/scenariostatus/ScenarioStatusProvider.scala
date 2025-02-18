@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.scenariostatus
+package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
 import akka.actor.ActorSystem
 import cats.Traverse
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider.FragmentStateException
+import ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import slick.dbio.{DBIO, DBIOAction}

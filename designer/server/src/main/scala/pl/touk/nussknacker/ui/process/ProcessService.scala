@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import cats._
 import cats.data.Ior.Both
-import cats.data.{Validated, ZipList}
-import cats.implicits.{catsSyntaxFoldOps, catsSyntaxTuple2Semigroupal, toAlignOps, toTraverseOps}
+import cats.data.Validated
+import cats.implicits.{toAlignOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -16,16 +16,15 @@ import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.copySyntax.apply
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand, ScenarioStatusDto, ScenarioWithDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter

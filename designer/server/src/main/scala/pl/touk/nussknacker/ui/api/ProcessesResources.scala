@@ -22,7 +22,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 

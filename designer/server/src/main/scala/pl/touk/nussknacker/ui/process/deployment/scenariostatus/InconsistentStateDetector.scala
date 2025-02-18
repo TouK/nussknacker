@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.scenariostatus
+package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -29,7 +29,7 @@ class InconsistentStateDetector extends LazyLogging {
       case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId.fromActionId(a.id)))
       case (Right(None), None)    => StatusDetails(SimpleStateStatus.NotDeployed, None)
     }
-    logger.debug(s"Resolved $deploymentStatuses , lastStateAction: $lastStateAction to status $status")
+    logger.debug(s"Resolved deployment statuses: $deploymentStatuses, lastStateAction: $lastStateAction to scenario status: $status")
     status
   }
 

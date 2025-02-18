@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
@@ -41,7 +42,6 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import pl.touk.nussknacker.ui.validation.UIProcessValidator

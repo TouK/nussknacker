@@ -47,6 +47,7 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionInfoService,
   ActionService,
@@ -75,7 +76,6 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
-import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
