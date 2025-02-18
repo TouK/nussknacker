@@ -186,7 +186,7 @@ type DictOption = {
     label: string;
 };
 
-type ResponseStatus = { status: "success" } | { status: "error"; error: AxiosError<string> };
+type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -977,17 +977,16 @@ class HttpService {
             );
     }
 
-    fetchProcessDefinitionDataDictByKey(processingType: ProcessingType, dictId: string, key: string) {
-        return api
-            .get<ProcessDefinitionDataDictOption>(`/processDefinitionData/${processingType}/dicts/${dictId}/entryByKey?key=${key}`)
-            .catch((error) =>
-                Promise.reject(
-                    this.#addError(
-                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"),
-                        error,
-                    ),
-                ),
+    async fetchProcessDefinitionDataDictByKey(processingType: ProcessingType, dictId: string, key: string): Promise<ResponseStatus> {
+        try {
+            const { data } = await api.get<ProcessDefinitionDataDictOption>(
+                `/processDefinitionData/${processingType}/dicts/${dictId}/entryByKey?key=${key}`,
             );
+            return { status: "success", data };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"), error);
+            return { status: "error", error };
+        }
     }
 
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {

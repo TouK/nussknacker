@@ -39,14 +39,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const { menuOption } = selectStyled(theme);
     const [options, setOptions] = useState<ProcessDefinitionDataDictOption[]>([]);
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(() => {
-        if (!expressionObj.expression) {
-            return null;
-        }
-
-        const parseObject = tryParseOrNull(expressionObj.expression);
-        return typeof parseObject === "object" ? parseObject : null;
-    });
+    const [value, setValue] = useState<ProcessDefinitionDataDictOption>();
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
 
@@ -67,9 +60,9 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const fetchProcessDefinitionDataDictByKey = useCallback(
         async (key: string) => {
             setIsFetching(true);
-            const { data } = await HttpService.fetchProcessDefinitionDataDictByKey(scenario.processingType, dictId, key);
+            const response = await HttpService.fetchProcessDefinitionDataDictByKey(scenario.processingType, dictId, key);
             setIsFetching(false);
-            return data;
+            return response;
         },
         [dictId, scenario.processingType],
     );
@@ -86,10 +79,21 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     // This logic is needed, because scenario is initially loaded without full validation data.
     // In that case the label is missing, and we need to fetch it separately.
     useEffect(() => {
-        if (value && !value?.label) {
-            fetchProcessDefinitionDataDictByKey(value.key).then((data) => setValue(data));
-        }
-    }, [value, fetchProcessDefinitionDataDictByKey]);
+        if (!expressionObj.expression) return null;
+        const parseObject = tryParseOrNull(expressionObj.expression);
+        if (!parseObject) return null;
+        fetchProcessDefinitionDataDictByKey(parseObject?.key).then((response) => {
+            if (response.status == "success") {
+                setValue(response.data);
+            } else {
+                setValue(parseObject);
+            }
+        });
+    }, [expressionObj, fetchProcessDefinitionDataDictByKey]);
+
+    if (!value) {
+        return;
+    }
 
     return (
         <Box className={nodeValue}>
