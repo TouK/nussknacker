@@ -126,7 +126,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 }}
                 open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
-                getOptionLabel={(option) => option.label}
+                getOptionLabel={(option) => option.label ?? ""}
                 isOptionEqualToValue={() => true}
                 value={value}
                 inputValue={inputValue}
