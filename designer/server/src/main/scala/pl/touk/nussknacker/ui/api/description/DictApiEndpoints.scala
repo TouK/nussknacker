@@ -158,7 +158,7 @@ object DictApiEndpoints {
 
     implicit val noDictEntryForKeyCodec: Codec[String, NoDictEntryForKey, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDictEntryForKey](e =>
-        s"No dict item found in dictionary with id: ${e.dictId} for key: ${e.key}"
+        s"No dict entry found in dictionary with id: ${e.dictId} for key: ${e.key}"
       )
     }
 
