@@ -227,7 +227,7 @@ class DictApiHttpServiceSpec
         )
         .Then()
         .statusCode(404)
-        .equalsPlainBody(s"No dict item found in dictionary with id: $existingDictId for key: H1000ff".stripMargin)
+        .equalsPlainBody(s"No dict entry found in dictionary with id: $existingDictId for key: H1000ff".stripMargin)
     }
 
     "fail to return entry suggestions for non-existing dictionary" in {
