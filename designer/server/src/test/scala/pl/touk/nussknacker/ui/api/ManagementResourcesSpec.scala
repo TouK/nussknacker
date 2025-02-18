@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -25,7 +26,6 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.ui.api.ManagementResources.RunDeploymentRequest
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
@@ -130,7 +130,7 @@ class ManagementResourcesSpec
   // TODO: To be removed. See comment in ManagementResources.deployRequestEntity
   test("deploys and cancels with plain text comment") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deployProcessCommentOnly(
+    deployProcessCommentDeprecated(
       ProcessTestData.sampleScenario.name,
       comment = Some("deployComment")
     ) ~> checkThatEventually {
@@ -138,19 +138,40 @@ class ManagementResourcesSpec
         val processDetails = responseAs[ScenarioWithDetails]
         processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
       }
+      cancelProcessCommentDeprecated(
+        ProcessTestData.sampleScenario.name,
+        comment = Some("cancelComment")
+      ) ~> checkThatEventually {
+        status shouldBe StatusCodes.OK
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ScenarioWithDetails]
+          processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+        }
+      }
     }
   }
 
   // TODO: To be removed. See comment in ManagementResources.deployRequestEntity
   test("deploys and cancels with plain text no comment") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deployProcessCommentOnly(
+    deployProcessCommentDeprecated(
       ProcessTestData.sampleScenario.name,
       comment = None
     ) ~> checkThatEventually {
+      status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         val processDetails = responseAs[ScenarioWithDetails]
         processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+      }
+      cancelProcessCommentDeprecated(
+        ProcessTestData.sampleScenario.name,
+        comment = None
+      ) ~> checkThatEventually {
+        status shouldBe StatusCodes.OK
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ScenarioWithDetails]
+          processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+        }
       }
     }
   }
@@ -271,7 +292,7 @@ class ManagementResourcesSpec
       s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}",
       HttpEntity(
         ContentTypes.`application/json`,
-        RunDeploymentRequest(None, None).asJson.noSpaces
+        DeployRequest(None, None).asJson.noSpaces
       )
     ) ~> withPermissions(
       deployRoute(),

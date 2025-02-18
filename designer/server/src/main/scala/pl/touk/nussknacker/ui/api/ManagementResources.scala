@@ -6,7 +6,6 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.restmodel.{RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -62,11 +61,6 @@ object ManagementResources {
 
   }
 
-  @JsonCodec final case class RunDeploymentRequest(
-      nodesDeploymentData: Option[NodesDeploymentData],
-      comment: Option[String]
-  )
-
 }
 
 class ManagementResources(
@@ -91,25 +85,50 @@ class ManagementResources(
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
 
-  // TODO: This is workaround for touk/nussknacker-example-scenarios-library that deploys tests with plain text comment.
+  // TODO: This (deployRequestEntity and cancelRequestEntity) is used as a transition from comment-as-plain-text-body to json.
+  //  e.g. touk/nussknacker-example-scenarios-library, that is used in e2e tests, uses plain text comment.
   // https://github.com/TouK/nussknacker-scenario-examples-library/pull/7
-  private def deployRequestEntity: Directive1[RunDeploymentRequest] = {
+  // To be replaced by `entity(as[DeployRequest]))` and `entity(as[CancelRequest]))`.
+  private def deployRequestEntity: Directive1[DeployRequest] = {
     entity(as[Option[String]]).flatMap { optStr =>
       {
         optStr match {
-          case None => provide(RunDeploymentRequest(None, None))
+          case None => provide(DeployRequest(None, None))
           case Some(body) =>
             io.circe.parser.parse(body) match {
               case Right(json) =>
-                json.as[RunDeploymentRequest] match {
+                json.as[DeployRequest] match {
                   case Right(request) =>
                     provide(request)
                   case Left(notValidDeployRequest) =>
-                    reject(MalformedRequestContentRejection("Invalid deployment request", notValidDeployRequest))
+                    reject(MalformedRequestContentRejection("Invalid deploy request", notValidDeployRequest))
                 }
               case Left(notJson) =>
                 // assume deployment request contains plaintext comment only
-                provide(RunDeploymentRequest(None, Some(body)))
+                provide(DeployRequest(Some(body), None))
+            }
+        }
+      }
+    }
+  }
+
+  private def cancelRequestEntity: Directive1[CancelRequest] = {
+    entity(as[Option[String]]).flatMap { optStr =>
+      {
+        optStr match {
+          case None => provide(CancelRequest(None))
+          case Some(body) =>
+            io.circe.parser.parse(body) match {
+              case Right(json) =>
+                json.as[CancelRequest] match {
+                  case Right(request) =>
+                    provide(request)
+                  case Left(notValidRequest) =>
+                    reject(MalformedRequestContentRejection("Invalid cancel request", notValidRequest))
+                }
+              case Left(notJson) =>
+                // assume cancel request contains plaintext comment only
+                provide(CancelRequest(Some(body)))
             }
         }
       }
@@ -187,13 +206,13 @@ class ManagementResources(
         }
       } ~
         path("cancel" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+          (post & processId(processName) & cancelRequestEntity) { (processIdWithName, request) =>
             canDeploy(processIdWithName) {
               complete {
                 measureTime("cancel", metricRegistry) {
                   deploymentService.processCommand(
                     CancelScenarioCommand(commonData =
-                      CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user)
+                      CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user)
                     )
                   )
                 }
