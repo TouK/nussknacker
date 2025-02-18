@@ -57,6 +57,7 @@ import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilde
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.util.functions.collection
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
@@ -795,6 +796,49 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             )
           ) =>
     }
+  }
+
+  test("validates fragment input definition while validating fragment - accepting absent variables") {
+    val fragmentWithValidParam =
+      CanonicalProcess(
+        MetaData("fragment1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter(
+                  ParameterName("param1"),
+                  FragmentClazzRef[String],
+                  initialValue = Some(FixedExpressionValue("#input", "inputValue")),
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("param2"),
+                  FragmentClazzRef[java.util.List[Boolean]],
+                  initialValue = Some(FixedExpressionValue("{1, 2}.![#this > 1]", "mappedValue")),
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation = None
+                ),
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val fragmentGraph =
+      CanonicalProcessConverter.toScenarioGraph(fragmentWithValidParam)
+
+    val validationResult = validateWithConfiguredProperties(fragmentGraph)
+
+    validationResult.errors.invalidNodes shouldBe empty
   }
 
   test("validates fragment input definition while validating fragment - ValueInputWithDictEditor") {
