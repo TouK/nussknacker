@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 import { isEqual, uniqBy } from "lodash";
 import ProcessUtils from "../../common/ProcessUtils";
-import { Edge, EdgeKind, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { createEdge } from "../../reducers/graph/utils";
+import { Edge, EdgeKind, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { Scenario } from "../Process/types";
 
 class NodeUtils {
@@ -11,10 +11,10 @@ class NodeUtils {
     };
 
     nodeIsJoin = (node: NodeType): boolean => {
-        return node && node.type === "Join";
+        return node?.type === "Join";
     };
 
-    nodesFromScenarioGraph = (scenarioGraph: ScenarioGraph): NodeType[] => scenarioGraph.nodes || [];
+    nodesFromScenarioGraph = (scenarioGraph?: ScenarioGraph): NodeType[] => scenarioGraph?.nodes || [];
 
     edgesFromScenarioGraph = (scenarioGraph: ScenarioGraph) => scenarioGraph.edges || [];
 
@@ -23,7 +23,8 @@ class NodeUtils {
         ...properties,
     });
 
-    getNodeById = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.id === nodeId);
+    getNodeById = (nodeId: NodeId, scenarioGraph?: ScenarioGraph) =>
+        this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.id === nodeId);
 
     getEdgeById = (edgeId: NodeId, scenarioGraph: ScenarioGraph) =>
         this.edgesFromScenarioGraph(scenarioGraph).find((e) => this.edgeId(e) === edgeId);
@@ -130,19 +131,25 @@ class NodeUtils {
         return false;
     };
 
-    canHaveMoreInputs = (node: NodeType, nodeInputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
+    getInputsMaxCount = (node: NodeType, processDefinitionData: ProcessDefinitionData): number => {
         const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData, true);
-        const maxEdgesForNode = edgesForNode.edges.length;
-        return this.hasInputs(node) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode);
+        const maxEdgesForNode = edgesForNode.canChooseNodes ? Infinity : edgesForNode.edges.length;
+        return this.hasInputs(node) ? maxEdgesForNode : 0;
+    };
+
+    getOutputsMaxCount = (node: NodeType, processDefinitionData: ProcessDefinitionData): number => {
+        const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData, false);
+        const maxEdgesForNode = edgesForNode.canChooseNodes ? Infinity : edgesForNode.edges.length;
+        return this.hasOutputs(node, processDefinitionData) ? maxEdgesForNode : 0;
+    };
+
+    canHaveMoreInputs = (node: NodeType, nodeInputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
+        return nodeInputs.length < this.getInputsMaxCount(node, processDefinitionData);
     };
 
     canHaveMoreOutputs = (node: NodeType, nodeOutputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
-        const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData, false);
-        const maxEdgesForNode = edgesForNode.edges.length;
-        return (
-            this.hasOutputs(node, processDefinitionData) &&
-            (edgesForNode.canChooseNodes || nodeOutputs.filter((e) => e.to).length < maxEdgesForNode)
-        );
+        const maxEdgesForNode = this.getOutputsMaxCount(node, processDefinitionData);
+        return nodeOutputs.filter((e) => e.to).length < maxEdgesForNode;
     };
 
     getFirstUnconnectedOutputEdge = (currentEdges: Edge[], availableEdges: EdgeType[], edgeType: EdgeType) => {
