@@ -118,9 +118,9 @@ function handleActionOnLongPress<T extends dia.CellView>(
     };
 }
 
-export function getNodeData(cell: dia.Cell, graph: ScenarioGraph): NodeType {
-    const { id } = cell.get("nodeData");
-    return NodeUtils.getNodeById(id, graph);
+export function getNodeData(cell: dia.Cell, graph?: ScenarioGraph): NodeType {
+    const nodeData = cell?.get(`nodeData`);
+    return NodeUtils.getNodeById(nodeData.id, graph) || nodeData;
 }
 
 export class Graph extends React.Component<Props> {
@@ -137,6 +137,7 @@ export class Graph extends React.Component<Props> {
             const [active] = filterDragHovered(cells);
             if (active) {
                 this.#highlightCell(active, dragHovered);
+                active.toBack();
             }
         }
 
@@ -510,7 +511,7 @@ export class Graph extends React.Component<Props> {
             const canInjectNode = GraphUtils.canInjectNode(
                 scenario.scenarioGraph,
                 sourceNode.id,
-                nodeData.id,
+                nodeData?.id,
                 targetNode.id,
                 processDefinitionData,
             );
@@ -825,7 +826,6 @@ export class Graph extends React.Component<Props> {
             })
             //we want to inject node during 'Drag and Drop' from graph paper
             .on(Events.CELL_MOVED, (cellView: dia.CellView) => {
-                cellView.model.toFront();
                 if (isModelElement(cellView.model)) {
                     const group = batchGroupBy.startOrContinue();
                     const cellBelow = this.getCellBelowCell();
@@ -838,6 +838,7 @@ export class Graph extends React.Component<Props> {
                     }
                     batchGroupBy.end(group);
                 }
+                cellView.model.toFront();
                 if (isStickyNoteElement(cellView.model)) {
                     this.processGraphPaper.hideTools();
                     if (!this.props.isPristine) {
