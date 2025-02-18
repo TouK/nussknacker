@@ -29,8 +29,6 @@ type IconModalHeaderProps = PropsWithChildren<{
 }>;
 
 export function IconModalHeader({ subheader, className, ...props }: IconModalHeaderProps) {
-    console.log("From icon modal header");
-    console.log(className);
     return (
         <ModalHeader className={className}>
             <IconModalTitle
@@ -57,10 +55,11 @@ export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactEl
     const docsUrl = useMemo(() => {
         return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
     }, [components, node]);
+    const label = useMemo(() => {
+        return ProcessUtils.extractComponentDefinition(node, components).label;
+    }, [components, node]);
 
-    const nodeClass = findNodeClass(node);
-
-    return <NodeDocs name={nodeClass} href={docsUrl} />;
+    return <NodeDocs name={label} href={docsUrl} />;
 };
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(ComponentIcon))(({ node, theme }) => ({
