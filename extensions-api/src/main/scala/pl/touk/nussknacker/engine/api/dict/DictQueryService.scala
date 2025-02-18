@@ -11,6 +11,10 @@ trait DictQueryService extends AutoCloseable {
       implicit ec: ExecutionContext
   ): Validated[DictRegistry.DictNotDeclared, Future[List[DictEntry]]]
 
+  def queryEntryByKey(dictId: String, key: String)(
+      implicit ec: ExecutionContext
+  ): Validated[DictRegistry.DictNotDeclared, Future[Option[DictEntry]]]
+
 }
 
 @JsonCodec case class DictEntry(key: String, label: String)

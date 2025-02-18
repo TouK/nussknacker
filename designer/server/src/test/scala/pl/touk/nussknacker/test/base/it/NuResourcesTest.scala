@@ -39,7 +39,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
-import pl.touk.nussknacker.ui.api.ManagementResources.RunDeploymentRequest
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser

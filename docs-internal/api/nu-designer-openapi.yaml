@@ -927,6 +927,92 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts/{dictId}/entryByKey:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntrybykey
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter key'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/processDefinitionData/{processingType}/dicts/{dictId}/entry:
     get:
       tags:

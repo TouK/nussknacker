@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Autocomplete, Box, SxProps, Theme, useTheme } from "@mui/material";
 import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
 import { getScenario } from "../../../../../../reducers/selectors/graph";
@@ -39,14 +39,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const { menuOption } = selectStyled(theme);
     const [options, setOptions] = useState<ProcessDefinitionDataDictOption[]>([]);
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(() => {
-        if (!expressionObj.expression) {
-            return null;
-        }
-
-        const parseObject = tryParseOrNull(expressionObj.expression);
-        return typeof parseObject === "object" ? parseObject : null;
-    });
+    const [value, setValue] = useState<ProcessDefinitionDataDictOption>();
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
 
@@ -64,6 +57,16 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
         [dictId, scenario.processingType],
     );
 
+    const fetchProcessDefinitionDataDictByKey = useCallback(
+        async (key: string) => {
+            setIsFetching(true);
+            const response = await HttpService.fetchProcessDefinitionDataDictByKey(scenario.processingType, dictId, key);
+            setIsFetching(false);
+            return response;
+        },
+        [dictId, scenario.processingType],
+    );
+
     const debouncedUpdateOptions = useMemo(() => {
         return debounce(async (value: string) => {
             const fetchedOptions = await fetchProcessDefinitionDataDict(value);
@@ -72,6 +75,28 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     }, [fetchProcessDefinitionDataDict]);
 
     const isValid = isEmpty(fieldErrors);
+
+    // This logic is needed, because scenario is initially loaded without full validation data.
+    // In that case the label is missing, and we need to fetch it separately.
+    useEffect(() => {
+        if (!expressionObj.expression) return;
+        const parseObject = tryParseOrNull(expressionObj.expression);
+        if (!parseObject) return;
+        fetchProcessDefinitionDataDictByKey(parseObject?.key).then((response) => {
+            if (response.status == "success") {
+                setValue(response.data);
+            } else {
+                setValue(parseObject);
+            }
+        });
+    }, [expressionObj, fetchProcessDefinitionDataDictByKey]);
+
+    // This condition means, that we should delay rendering this fragment when both conditions are met:
+    // - expression is defined, so we know that value is present, but we do not yet have enough information to render it (label)
+    // - value is not yet available - label is not yet loaded
+    if (!value && expressionObj?.expression) {
+        return;
+    }
 
     return (
         <Box className={nodeValue}>
@@ -108,7 +133,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 }}
                 open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
-                getOptionLabel={(option) => option.label}
+                getOptionLabel={(option) => option.label ?? ""}
                 isOptionEqualToValue={() => true}
                 value={value}
                 inputValue={inputValue}
