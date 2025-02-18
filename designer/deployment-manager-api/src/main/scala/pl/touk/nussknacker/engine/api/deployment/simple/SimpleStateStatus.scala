@@ -66,9 +66,6 @@ object SimpleStateStatus {
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
       ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
-    val ProcessWithoutAction: ProblemStateStatus =
-      ProblemStateStatus("Scenario state error - no actions found.")
-
     val MultipleJobsRunning: ProblemStateStatus =
       ProblemStateStatus("More than one deployment is running.", Set(ScenarioActionName.Cancel))
 

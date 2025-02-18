@@ -32,7 +32,6 @@ import scala.util.control.NonFatal
 
 trait ScenarioStatusProvider {
 
-  // FIXME abr: For Id[_] we shouldn't prefetch statuses
   def getScenariosStatuses[F[_]: Traverse, ScenarioShape](processTraverse: F[ScenarioWithDetailsEntity[ScenarioShape]])(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
@@ -193,26 +192,27 @@ private class ScenarioStatusProviderImpl(
     getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      _.getScenarioDeploymentsStatusesWithTimeoutOpt(processDetails.name, scenarioStateTimeout)
+      dispatcher.getScenarioDeploymentsStatusesWithTimeoutOpt(
+        processDetails.processingType,
+        processDetails.name,
+        scenarioStateTimeout
+      )
     )
   }
 
   // DeploymentManager's may support fetching state of all scenarios at once
   // State is prefetched only when:
   //  - DM has capability StateQueryForAllScenariosSupported
-  //  - the query is about more than one scenario handled by that DM
+  //  - the query is about more than one scenario handled by that DM - for one scenario prefetching would be non-optimal
+  //    and this is a common case for this method because it is invoked for Id Traverse - see usages
   private def getPrefetchedDeploymentStatusesForSupportedManagers(
       scenarios: List[ScenarioWithDetailsEntity[_]],
   )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[Map[ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]] = {
-    val allProcessingTypes = scenarios.map(_.processingType).toSet
-    val numberOfScenariosByProcessingType =
-      allProcessingTypes
-        .map(processingType => (processingType, scenarios.count(_.processingType == processingType)))
-        .toMap
-    val processingTypesWithMoreThanOneScenario = numberOfScenariosByProcessingType.filter(_._2 > 1).keys
+    // We assume that prefetching gives profits for at least two scenarios
+    val processingTypesWithMoreThanOneScenario = scenarios.groupBy(_.processingType).filter(_._2.size >= 2).keySet
 
     Future
       .sequence {
@@ -266,65 +266,57 @@ private class ScenarioStatusProviderImpl(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
       prefetchedDeploymentStatuses: WithDataFreshnessStatus[List[StatusDetails]],
-  )(implicit user: LoggedUser): DB[StatusDetails] = {
+  ): DB[StatusDetails] = {
     getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      _ => Future.successful(Right(prefetchedDeploymentStatuses))
+      Future.successful(Right(prefetchedDeploymentStatuses))
     )
   }
 
   private def getScenarioStatusDetails(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      fetchDeploymentStatuses: DeploymentManager => Future[
+      fetchDeploymentStatuses: => Future[
         Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[StatusDetails]]]
       ],
-  )(implicit user: LoggedUser): DB[StatusDetails] = {
-    dispatcher
-      .deploymentManager(processDetails.processingType)
-      .map { manager =>
-        if (processDetails.isFragment) {
-          throw FragmentStateException
-        } else if (processDetails.isArchived) {
-          DBIOAction.successful(getArchivedProcessState(processDetails))
-        } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
-          logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
-          DBIOAction.successful(
-            StatusDetails(SimpleStateStatus.DuringDeploy, None)
-          )
-        } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
-          logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
-          DBIOAction.successful(StatusDetails(SimpleStateStatus.DuringCancel, None))
-        } else {
-          processDetails.lastStateAction match {
-            case Some(_) =>
-              DBIOAction
-                .from(fetchDeploymentStatuses(manager))
-                .map {
-                  case Left(error) =>
-                    logger.warn("Failure during getting deployment statuses from deployment manager", error)
-                    StatusDetails(FailedToGet, None)
-                  case Right(statusWithFreshness) =>
-                    logger.debug(
-                      s"Deployment statuses for: '${processDetails.name}' are: ${statusWithFreshness.value}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
-                          .map(_.actionName)})"
-                    )
-                    // FIXME abr: resolved states shouldn't be handled here
-                    // FIXME abr: state action not an option
-                    InconsistentStateDetector.resolve(statusWithFreshness.value, processDetails.lastStateAction)
-                }
-            case _ => // We assume that the process never deployed should have no state at the engine
-              // FIXME abr: it is a part of deployment => scenario status resolution
-              logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
-              DBIOAction.successful(StatusDetails(SimpleStateStatus.NotDeployed, None))
-          }
-        }
-      }
-      // FIXME abr: it is a part of deployment => scenario status resolution
-      .getOrElse(
-        DBIOAction.successful(StatusDetails(FailedToGet, None))
+  ): DB[StatusDetails] = {
+
+    if (processDetails.isFragment) {
+      throw FragmentStateException
+    } else if (processDetails.isArchived) {
+      DBIOAction.successful(getArchivedProcessState(processDetails))
+    } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
+      logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
+      DBIOAction.successful(
+        StatusDetails(SimpleStateStatus.DuringDeploy, None)
       )
+    } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
+      logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
+      DBIOAction.successful(StatusDetails(SimpleStateStatus.DuringCancel, None))
+    } else {
+      processDetails.lastStateAction match {
+        case Some(lastStateActionValue) =>
+          DBIOAction
+            .from(fetchDeploymentStatuses)
+            .map {
+              case Left(error) =>
+                logger.warn("Failure during getting deployment statuses from deployment manager", error)
+                StatusDetails(FailedToGet, None)
+              case Right(statusWithFreshness) =>
+                logger.debug(
+                  s"Deployment statuses for: '${processDetails.name}' are: ${statusWithFreshness.value}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
+                      .map(_.actionName)})"
+                )
+                // FIXME abr: resolved states shouldn't be handled here
+                InconsistentStateDetector.resolveScenarioStatus(statusWithFreshness.value, lastStateActionValue)
+            }
+        case _ => // We assume that the process never deployed should have no state at the engine
+          // FIXME abr: it is a part of deployment => scenario status resolution
+          logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+          DBIOAction.successful(StatusDetails(SimpleStateStatus.NotDeployed, None))
+      }
+    }
   }
 
   // We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
