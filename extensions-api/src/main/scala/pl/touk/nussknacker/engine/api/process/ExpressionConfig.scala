@@ -23,8 +23,7 @@ case class ExpressionConfig(
     methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
     dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed,
     spelExpressionExcludeList: SpelExpressionExcludeList = SpelExpressionExcludeList.default,
-    customConversionsProviders: List[ConversionsProvider] = List.empty,
-    absentVariableReferenceAllowed: Boolean = defaultAbsentVariableReferenceAllowed
+    customConversionsProviders: List[ConversionsProvider] = List.empty
 )
 
 object ExpressionConfig {
@@ -43,5 +42,4 @@ object ExpressionConfig {
   val defaultStaticMethodInvocationsChecking  = true
   val defaultMethodExecutionForUnknownAllowed = false
   val defaultDynamicPropertyAccessAllowed     = false
-  val defaultAbsentVariableReferenceAllowed   = false
 }

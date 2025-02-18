@@ -17,6 +17,5 @@ final case class ExpressionConfigDefinition(
     methodExecutionForUnknownAllowed: Boolean,
     dynamicPropertyAccessAllowed: Boolean,
     spelExpressionExcludeList: SpelExpressionExcludeList,
-    customConversionsProviders: List[ConversionsProvider],
-    absentVariableReferenceAllowed: Boolean
+    customConversionsProviders: List[ConversionsProvider]
 )

@@ -803,7 +803,8 @@ object Typer {
       classLoader: ClassLoader,
       expressionConfig: ExpressionConfigDefinition,
       spelDictTyper: SpelDictTyper,
-      classDefinitionSet: ClassDefinitionSet
+      classDefinitionSet: ClassDefinitionSet,
+      absentVariableReferenceAllowed: Boolean
   ): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
 
@@ -815,7 +816,7 @@ object Typer {
       evaluationContextPreparer,
       expressionConfig.methodExecutionForUnknownAllowed,
       expressionConfig.dynamicPropertyAccessAllowed,
-      expressionConfig.absentVariableReferenceAllowed
+      absentVariableReferenceAllowed
     )
   }
 
