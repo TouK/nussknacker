@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 object FlinkStateStatus {
 
   val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] = {
-    case input if input.status == SimpleStateStatus.DuringDeploy => Set(ScenarioActionName.Cancel)
-    case input if input.status == SimpleStateStatus.Restarting   => Set(ScenarioActionName.Cancel)
+    case input if input.scenarioStatus == SimpleStateStatus.DuringDeploy => Set(ScenarioActionName.Cancel)
+    case input if input.scenarioStatus == SimpleStateStatus.Restarting   => Set(ScenarioActionName.Cancel)
   }
 
 }

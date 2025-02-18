@@ -12,7 +12,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def deploymentSynchronisationSupport: DeploymentSynchronisationSupport
 
-  def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport
+  def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport
 
   def schedulingSupport: SchedulingSupport
 
@@ -43,17 +43,17 @@ trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager
 
 }
 
-sealed trait StateQueryForAllScenariosSupport
+sealed trait DeploymentsStatusesQueryForAllScenariosSupport
 
-trait StateQueryForAllScenariosSupported extends StateQueryForAllScenariosSupport {
+trait DeploymentsStatusesQueryForAllScenariosSupported extends DeploymentsStatusesQueryForAllScenariosSupport {
 
-  def getAllDeploymentStatuses()(
+  def getAllScenariosDeploymentsStatuses()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]
 
 }
 
-case object NoStateQueryForAllScenariosSupport extends StateQueryForAllScenariosSupport
+case object NoDeploymentsStatusesQueryForAllScenariosSupport$ extends DeploymentsStatusesQueryForAllScenariosSupport
 
 sealed trait DeploymentSynchronisationSupport
 

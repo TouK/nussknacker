@@ -22,7 +22,7 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
 
   // DeploymentManager's may support fetching state of all scenarios at once
   // State is prefetched only when:
-  //  - DM has capability StateQueryForAllScenariosSupported
+  //  - DM has capability DeploymentsStatusesQueryForAllScenariosSupport
   //  - the query is about more than one scenario handled by that DM - for one scenario prefetching would be non-optimal
   //    and this is a common case for this method because it is invoked for Id Traverse - see usages
   def getPrefetchedDeploymentStatusesForSupportedManagers(
@@ -39,9 +39,9 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
         processingTypesWithMoreThanOneScenario.map { processingType =>
           (for {
             manager <- dispatcher.deploymentManager(processingType)
-            managerWithCapability <- manager.stateQueryForAllScenariosSupport match {
-              case supported: StateQueryForAllScenariosSupported => Some(supported)
-              case NoStateQueryForAllScenariosSupport            => None
+            managerWithCapability <- manager.deploymentsStatusesQueryForAllScenariosSupport match {
+              case supported: DeploymentsStatusesQueryForAllScenariosSupported => Some(supported)
+              case NoDeploymentsStatusesQueryForAllScenariosSupport$           => None
             }
           } yield getAllDeploymentStatuses(processingType, managerWithCapability))
             .getOrElse(Future.successful(None))
@@ -73,11 +73,14 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
       }
   }
 
-  private def getAllDeploymentStatuses(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
+  private def getAllDeploymentStatuses(
+      processingType: ProcessingType,
+      manager: DeploymentsStatusesQueryForAllScenariosSupported
+  )(
       implicit freshnessPolicy: DataFreshnessPolicy,
   ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
     manager
-      .getAllDeploymentStatuses()
+      .getAllScenariosDeploymentsStatuses()
       .map(states => Some((processingType, states)))
       .recover { case NonFatal(e) =>
         logger.warn(

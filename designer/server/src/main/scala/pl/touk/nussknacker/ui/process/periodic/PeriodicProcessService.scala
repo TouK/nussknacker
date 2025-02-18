@@ -567,16 +567,16 @@ class PeriodicProcessService(
     }
   }
 
-  def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
-    delegateDeploymentManager.stateQueryForAllScenariosSupport match {
-      case supported: StateQueryForAllScenariosSupported =>
-        new StateQueryForAllScenariosSupported {
+  def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    delegateDeploymentManager.deploymentsStatusesQueryForAllScenariosSupport match {
+      case supported: DeploymentsStatusesQueryForAllScenariosSupported =>
+        new DeploymentsStatusesQueryForAllScenariosSupported {
 
-          override def getAllDeploymentStatuses()(
+          override def getAllScenariosDeploymentsStatuses()(
               implicit freshnessPolicy: DataFreshnessPolicy
           ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
             for {
-              allStatusDetailsInDelegate <- supported.getAllDeploymentStatuses()
+              allStatusDetailsInDelegate <- supported.getAllScenariosDeploymentsStatuses()
               allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
               result = allStatusDetailsInPeriodic.map { case (name, status) => (name, List(status)) }
             } yield allStatusDetailsInDelegate.map(_ => result)
@@ -584,8 +584,8 @@ class PeriodicProcessService(
 
         }
 
-      case NoStateQueryForAllScenariosSupport =>
-        NoStateQueryForAllScenariosSupport
+      case NoDeploymentsStatusesQueryForAllScenariosSupport$ =>
+        NoDeploymentsStatusesQueryForAllScenariosSupport$
     }
 
   private def mergeStatusWithDeployments(

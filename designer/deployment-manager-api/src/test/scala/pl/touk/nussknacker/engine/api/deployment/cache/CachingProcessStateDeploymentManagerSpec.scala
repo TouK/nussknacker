@@ -30,7 +30,7 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoStateQueryForAllScenariosSupport,
+      NoDeploymentsStatusesQueryForAllScenariosSupport$,
       NoSchedulingSupport,
     )
 
@@ -50,7 +50,7 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoStateQueryForAllScenariosSupport,
+      NoDeploymentsStatusesQueryForAllScenariosSupport$,
       NoSchedulingSupport,
     )
 
@@ -69,7 +69,7 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoStateQueryForAllScenariosSupport,
+      NoDeploymentsStatusesQueryForAllScenariosSupport$,
       NoSchedulingSupport,
     )
 

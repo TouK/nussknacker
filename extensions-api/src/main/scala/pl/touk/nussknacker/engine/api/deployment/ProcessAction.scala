@@ -74,8 +74,9 @@ object ScenarioActionName {
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
-  val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
-  val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
+  // FIXME abr remove
+  val Pause: ScenarioActionName  = ScenarioActionName("PAUSE") // TODO: To implement in future..
+  val Rename: ScenarioActionName = ScenarioActionName("RENAME")
   // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
   //       In the future it can be changed to better name, according to convention, but that would require database migration
   //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.

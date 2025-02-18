@@ -15,7 +15,7 @@ class CachingProcessStateDeploymentManager(
     delegate: DeploymentManager,
     cacheTTL: FiniteDuration,
     override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport,
-    override val stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport,
+    override val deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport,
     override val schedulingSupport: SchedulingSupport,
 ) extends DeploymentManager {
 
@@ -67,7 +67,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
           delegate,
           cacheTTL,
           delegate.deploymentSynchronisationSupport,
-          delegate.stateQueryForAllScenariosSupport,
+          delegate.deploymentsStatusesQueryForAllScenariosSupport,
           delegate.schedulingSupport,
         )
       }

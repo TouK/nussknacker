@@ -70,10 +70,10 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
-    new StateQueryForAllScenariosSupported {
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    new DeploymentsStatusesQueryForAllScenariosSupported {
 
-      override def getAllDeploymentStatuses()(
+      override def getAllScenariosDeploymentsStatuses()(
           implicit freshnessPolicy: DataFreshnessPolicy
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
         Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toMap))

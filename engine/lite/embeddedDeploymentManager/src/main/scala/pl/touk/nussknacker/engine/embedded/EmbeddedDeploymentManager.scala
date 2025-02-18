@@ -210,7 +210,8 @@ class EmbeddedDeploymentManager(
 
     }
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport$
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 

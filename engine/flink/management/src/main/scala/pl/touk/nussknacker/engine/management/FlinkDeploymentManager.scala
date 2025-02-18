@@ -270,10 +270,10 @@ class FlinkDeploymentManager(
 
     }
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
-    new StateQueryForAllScenariosSupported {
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    new DeploymentsStatusesQueryForAllScenariosSupported {
 
-      override def getAllDeploymentStatuses()(
+      override def getAllScenariosDeploymentsStatuses()(
           implicit freshnessPolicy: DataFreshnessPolicy
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = getAllProcessesStatesFromFlink()
 

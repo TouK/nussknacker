@@ -31,38 +31,38 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
 
   override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
     super.statusActions(
-      extractPeriodicStatus(input.status)
-        .map(periodic => input.withStatus(periodic.mergedStatus))
+      extractPeriodicStatus(input.scenarioStatus)
+        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
 
   override def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] = {
     super.actionTooltips(
-      extractPeriodicStatus(input.status)
-        .map(periodic => input.withStatus(periodic.mergedStatus))
+      extractPeriodicStatus(input.scenarioStatus)
+        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
 
   override def statusIcon(input: ScenarioStatusWithScenarioContext): URI = {
     super.statusIcon(
-      extractPeriodicStatus(input.status)
-        .map(periodic => input.withStatus(periodic.mergedStatus))
+      extractPeriodicStatus(input.scenarioStatus)
+        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
 
   override def statusDescription(input: ScenarioStatusWithScenarioContext): String = {
     super.statusDescription(
-      extractPeriodicStatus(input.status)
-        .map(periodic => input.withStatus(periodic.mergedStatus))
+      extractPeriodicStatus(input.scenarioStatus)
+        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
 
   override def statusTooltip(input: ScenarioStatusWithScenarioContext): String = {
-    extractPeriodicStatus(input.status)
+    extractPeriodicStatus(input.scenarioStatus)
       .map { periodicStatus =>
         PeriodicProcessStateDefinitionManager.statusTooltip(
           activeDeploymentsStatuses = periodicStatus.activeDeploymentsStatuses,

@@ -32,7 +32,7 @@ object PeriodicStateStatus {
 
   val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] =
     Function.unlift((input: ScenarioStatusWithScenarioContext) =>
-      (input.status, input.deployedVersionId, input.currentlyPresentedVersionId) match {
+      (input.scenarioStatus, input.deployedVersionId, input.currentlyPresentedVersionId) match {
         case (SimpleStateStatus.Running, _, _) =>
           // periodic processes cannot be redeployed from GUI
           Some(Set(ScenarioActionName.Cancel))
@@ -78,7 +78,7 @@ object PeriodicStateStatus {
   )
 
   def customActionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] = {
-    input.status match {
+    input.scenarioStatus match {
       case _: ScheduledStatus if input.currentlyPresentedVersionId == input.deployedVersionId =>
         Map.empty
       case _: ScheduledStatus =>

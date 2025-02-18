@@ -52,7 +52,8 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport$
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 

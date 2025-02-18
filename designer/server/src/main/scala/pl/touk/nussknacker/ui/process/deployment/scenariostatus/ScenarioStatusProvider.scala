@@ -44,11 +44,11 @@ class ScenarioStatusProvider(
       processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      statusDetails <- getProcessStateFetchingStatusFromManager(
+      scenarioStatus <- getScenarioStatusFetchingDeploymentsStatusesFromManager(
         processDetails,
         inProgressActionNames
       )
-    } yield statusDetails)
+    } yield scenarioStatus)
   }
 
   def getScenariosStatuses[F[_]: Traverse, ScenarioShape](
@@ -64,14 +64,14 @@ class ScenarioStatusProvider(
         prefetchedDeploymentStatuses <- DBIO.from(
           deploymentStatusesProvider.getPrefetchedDeploymentStatusesForSupportedManagers(scenarios)
         )
-        finalDeploymentStatuses <- processTraverse
+        finalScenariosStatuses <- processTraverse
           .map {
             case process if process.isFragment => DBIO.successful(Option.empty[StatusDetails])
             case process =>
               getNonFragmentScenarioStatus(actionsInProgress, prefetchedDeploymentStatuses, process).map(Some(_))
           }
           .sequence[DB, Option[StatusDetails]]
-      } yield finalDeploymentStatuses
+      } yield finalScenariosStatuses
     )
   }
 
@@ -106,7 +106,7 @@ class ScenarioStatusProvider(
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[ScenarioStatusWithAllowedActions] = {
     for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      statusDetails <- getProcessStateFetchingStatusFromManager(
+      statusDetails <- getScenarioStatusFetchingDeploymentsStatusesFromManager(
         processDetails,
         inProgressActionNames
       )
@@ -124,7 +124,7 @@ class ScenarioStatusProvider(
       .processStateDefinitionManager
       .statusActions(
         ScenarioStatusWithScenarioContext(
-          statusDetails = statusDetails,
+          scenarioStatusDetails = statusDetails,
           latestVersionId = processDetails.processVersionId,
           deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId),
           currentlyPresentedVersionId = currentlyPresentedVersionId
@@ -132,7 +132,7 @@ class ScenarioStatusProvider(
       )
   }
 
-  private def getProcessStateFetchingStatusFromManager(
+  private def getScenarioStatusFetchingDeploymentsStatusesFromManager(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
   )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[StatusDetails] = {
@@ -174,7 +174,7 @@ class ScenarioStatusProvider(
     if (processDetails.isFragment) {
       throw FragmentStateException
     } else if (processDetails.isArchived) {
-      DBIOAction.successful(getArchivedProcessState(processDetails))
+      DBIOAction.successful(getArchivedScenarioStatus(processDetails))
     } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
       logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
       DBIOAction.successful(
@@ -207,7 +207,7 @@ class ScenarioStatusProvider(
   }
 
   // We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
-  private def getArchivedProcessState(processDetails: ScenarioWithDetailsEntity[_]): StatusDetails = {
+  private def getArchivedScenarioStatus(processDetails: ScenarioWithDetailsEntity[_]): StatusDetails = {
     processDetails.lastStateAction.map(a => (a.actionName, a.state, a.id)) match {
       case Some((Cancel, _, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")

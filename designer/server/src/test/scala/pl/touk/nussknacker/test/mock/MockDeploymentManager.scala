@@ -103,8 +103,9 @@ class MockDeploymentManager private (
   override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
 
   // We override this field, because currently, this mock returns fallback for not defined scenarios states.
-  // To make stateQueryForAllScenariosSupport consistent with this approach, we should remove this fallback.
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  // To make deploymentsStatusesQueryForAllScenariosSupport consistent with this approach, we should remove this fallback.
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport$
 
   override def close(): Unit = {
     super.close()

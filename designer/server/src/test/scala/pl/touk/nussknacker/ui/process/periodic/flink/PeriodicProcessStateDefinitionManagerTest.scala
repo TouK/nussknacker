@@ -71,7 +71,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   test("not display custom tooltip for perform single execution when latest version is deployed") {
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
-        statusDetails = StatusDetails(ScheduledStatus(nextRunAt = LocalDateTime.now()), None),
+        scenarioStatusDetails = StatusDetails(ScheduledStatus(nextRunAt = LocalDateTime.now()), None),
         latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(5)),
         currentlyPresentedVersionId = Some(VersionId(5)),
@@ -84,7 +84,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   ) {
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
-        statusDetails = StatusDetails(ScheduledStatus(nextRunAt = LocalDateTime.now()), None),
+        scenarioStatusDetails = StatusDetails(ScheduledStatus(nextRunAt = LocalDateTime.now()), None),
         latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),
@@ -97,7 +97,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   test("display custom tooltip for perform single execution in CANCELED state") {
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
-        statusDetails = StatusDetails(SimpleStateStatus.Canceled, None),
+        scenarioStatusDetails = StatusDetails(SimpleStateStatus.Canceled, None),
         latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),

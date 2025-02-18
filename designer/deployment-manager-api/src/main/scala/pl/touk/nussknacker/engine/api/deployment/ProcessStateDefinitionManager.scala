@@ -34,13 +34,13 @@ trait ProcessStateDefinitionManager {
     * e.g. handle schedule date in [[PeriodicProcessStateDefinitionManager]]
     */
   def statusTooltip(input: ScenarioStatusWithScenarioContext): String =
-    stateDefinitions(input.status.name).tooltip
+    stateDefinitions(input.scenarioStatus.name).tooltip
 
   def statusDescription(input: ScenarioStatusWithScenarioContext): String =
-    stateDefinitions(input.status.name).description
+    stateDefinitions(input.scenarioStatus.name).description
 
   def statusIcon(input: ScenarioStatusWithScenarioContext): URI =
-    statusIcon(input.status)
+    statusIcon(input.scenarioStatus)
 
   private[nussknacker] def statusIcon(status: StateStatus): URI =
     stateDefinitions(status.name).icon
@@ -81,20 +81,20 @@ object ProcessStateDefinitionManager {
   /**
    * ProcessStatus contains status of the scenario, it is used as argument of ProcessStateDefinitionManager methods
    *
-   * @param statusDetails     current scenario state
+   * @param scenarioStatusDetails     current scenario state
    * @param latestVersionId   latest saved versionId for the scenario
    * @param deployedVersionId currently deployed versionId of the scenario
    */
   final case class ScenarioStatusWithScenarioContext(
-      private val statusDetails: StatusDetails,
+      private val scenarioStatusDetails: StatusDetails,
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
   ) {
-    def status: StateStatus = statusDetails.status
+    def scenarioStatus: StateStatus = scenarioStatusDetails.status
 
-    def withStatus(newStatus: StateStatus): ScenarioStatusWithScenarioContext =
-      copy(statusDetails = statusDetails.copy(status = newStatus))
+    def withScenarioStatus(newStatus: StateStatus): ScenarioStatusWithScenarioContext =
+      copy(scenarioStatusDetails = scenarioStatusDetails.copy(status = newStatus))
 
   }
 

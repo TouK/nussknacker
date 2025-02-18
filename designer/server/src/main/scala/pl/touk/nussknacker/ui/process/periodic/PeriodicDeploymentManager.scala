@@ -190,8 +190,8 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
-    service.stateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    service.deploymentsStatusesQueryForAllScenariosSupport
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName

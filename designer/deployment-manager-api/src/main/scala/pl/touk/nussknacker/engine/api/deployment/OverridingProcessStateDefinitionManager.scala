@@ -43,19 +43,19 @@ class OverridingProcessStateDefinitionManager(
   override def statusIcon(input: ScenarioStatusWithScenarioContext): URI =
     statusIconsPF
       .orElse(stateDefinitionsPF(_.icon))
-      .lift(input.status)
+      .lift(input.scenarioStatus)
       .getOrElse(delegate.statusIcon(input))
 
   override def statusTooltip(input: ScenarioStatusWithScenarioContext): String =
     statusTooltipsPF
       .orElse(stateDefinitionsPF(_.tooltip))
-      .lift(input.status)
+      .lift(input.scenarioStatus)
       .getOrElse(delegate.statusTooltip(input))
 
   override def statusDescription(input: ScenarioStatusWithScenarioContext): String =
     statusDescriptionsPF
       .orElse(stateDefinitionsPF(_.description))
-      .lift(input.status)
+      .lift(input.scenarioStatus)
       .getOrElse(delegate.statusDescription(input))
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
