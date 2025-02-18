@@ -47,7 +47,7 @@ sealed trait StateQueryForAllScenariosSupport
 
 trait StateQueryForAllScenariosSupported extends StateQueryForAllScenariosSupport {
 
-  def getAllProcessesStates()(
+  def getAllDeploymentStatuses()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]
 

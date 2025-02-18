@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.scenariostatus.{ScenarioStatusProvider, ScenarioStatusWithAllowedActions}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
@@ -229,11 +229,11 @@ class ActionService(
     private def checkIfCanPerformActionInState(
         actionName: ScenarioActionName,
         processDetails: ScenarioWithDetailsEntity[LatestScenarioDetailsShape],
-        statusWithAllowedActions: StatusWithAllowedActions
+        statusWithAllowedActions: ScenarioStatusWithAllowedActions
     ): Unit = {
       if (!statusWithAllowedActions.allowedActions.contains(actionName)) {
         logger.debug(
-          s"Action: $actionName on process: ${processDetails.name} not allowed in ${statusWithAllowedActions.status} state"
+          s"Action: $actionName on process: ${processDetails.name} not allowed in ${statusWithAllowedActions.scenarioStatus} state"
         )
         throw ProcessIllegalAction(actionName, processDetails.name, statusWithAllowedActions)
       }

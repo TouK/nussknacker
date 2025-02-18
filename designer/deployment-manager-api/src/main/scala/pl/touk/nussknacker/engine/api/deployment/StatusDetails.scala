@@ -12,6 +12,11 @@ case class StatusDetails(
     startTime: Option[Long] = None,
     errors: List[String] = List.empty
 ) {
+
+  def deploymentIdUnsafe: DeploymentId =
+    deploymentId.getOrElse(throw new IllegalStateException(s"deploymentId is missing"))
+
   def externalDeploymentIdUnsafe: ExternalDeploymentId =
     externalDeploymentId.getOrElse(throw new IllegalStateException(s"externalDeploymentId is missing"))
+
 }

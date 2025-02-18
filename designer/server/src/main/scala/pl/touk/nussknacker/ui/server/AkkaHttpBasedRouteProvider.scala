@@ -56,7 +56,6 @@ import pl.touk.nussknacker.ui.process.deployment.{
   DeploymentService => LegacyDeploymentService,
   RepositoryBasedScenarioActivityManager,
   ScenarioResolver,
-  ScenarioStatusProvider,
   ScenarioTestExecutorServiceImpl
 }
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
@@ -76,6 +75,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
+import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -255,7 +255,7 @@ class AkkaHttpBasedRouteProvider(
         processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
       }
 
-      val scenarioStateProvider =
+      val scenarioStatusProvider =
         ScenarioStatusProvider(
           dmDispatcher,
           processRepository,
@@ -269,7 +269,7 @@ class AkkaHttpBasedRouteProvider(
         actionRepository,
         dbioRunner,
         processChangeListener,
-        scenarioStateProvider,
+        scenarioStatusProvider,
         featureTogglesConfig.deploymentCommentSettings,
         modelInfos,
         designerClock
@@ -313,7 +313,7 @@ class AkkaHttpBasedRouteProvider(
       val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
       val processService = new DBProcessService(
-        scenarioStateProvider,
+        scenarioStatusProvider,
         scenarioStatusPresenter,
         newProcessPreparer,
         processingTypeDataProvider.mapCombined(_.parametersService),
@@ -522,7 +522,7 @@ class AkkaHttpBasedRouteProvider(
         val routes = List(
           new ProcessesResources(
             processService = processService,
-            scenarioStatusProvider = scenarioStateProvider,
+            scenarioStatusProvider = scenarioStatusProvider,
             scenarioStatusPresenter = scenarioStatusPresenter,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
@@ -542,7 +542,6 @@ class AkkaHttpBasedRouteProvider(
             dmDispatcher,
             metricsRegistry,
             scenarioTestService,
-            processingTypeDataProvider.mapValues(_.designerModelData.modelData)
           ),
           new ValidationResources(processService, processResolver),
           new DefinitionResources(

@@ -41,6 +41,7 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
+import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
@@ -294,7 +295,7 @@ class NotificationServiceTest
       config,
       clock
     )
-    val scenarioStateProvider = ScenarioStatusProvider(
+    val scenarioStatusProvider = ScenarioStatusProvider(
       managerDispatcher,
       dbProcessRepository,
       actionRepository,
@@ -307,7 +308,7 @@ class NotificationServiceTest
       actionRepository,
       dbioRunner,
       mock[ProcessChangeListener],
-      scenarioStateProvider,
+      scenarioStatusProvider,
       None,
       TestFactory.modelInfoProvider,
       clock

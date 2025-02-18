@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.deployment
+package pl.touk.nussknacker.ui.process.scenariostatus
 
 import akka.actor.ActorSystem
 import cats.Traverse
@@ -9,7 +9,6 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.FailedToGet
@@ -17,9 +16,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.process.deployment.ScenarioStatusProvider.FragmentStateException
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.scenariostatus.ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import slick.dbio.{DBIO, DBIOAction}
@@ -43,12 +43,12 @@ trait ScenarioStatusProvider {
 
   def getAllowedActionsForScenarioStatus(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusWithAllowedActions]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusWithAllowedActions]
 
   def getAllowedActionsForScenarioStatusDBIO(processDetails: ScenarioWithDetailsEntity[_])(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): DB[StatusWithAllowedActions]
+  ): DB[ScenarioStatusWithAllowedActions]
 
 }
 
@@ -104,20 +104,20 @@ private class ScenarioStatusProviderImpl(
     val scenarios = processTraverse.toList
     dbioRunner.run(
       for {
-        actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
-        prefetchedStates  <- DBIO.from(getPrefetchedStatesForSupportedManagers(scenarios))
-        statusesDetails <- processTraverse
+        actionsInProgress            <- getInProgressActionTypesForScenarios(scenarios)
+        prefetchedDeploymentStatuses <- DBIO.from(getPrefetchedDeploymentStatusesForSupportedManagers(scenarios))
+        finalDeploymentStatuses <- processTraverse
           .map {
             case process if process.isFragment => DBIO.successful(Option.empty[StatusDetails])
             case process =>
-              val prefetchedState = for {
-                prefetchedStatesForProcessingType <- prefetchedStates.get(process.processingType)
-                // State is prefetched for all scenarios for the given processing type.
+              val prefetchedDeploymentStatusesFroScenario = for {
+                prefetchedStatusesForProcessingType <- prefetchedDeploymentStatuses.get(process.processingType)
+                // Deployment statuses are prefetched for all scenarios for the given processing type.
                 // If there is no information available for a specific scenario name,
                 // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
-                prefetchedState = prefetchedStatesForProcessingType.getOrElse(process.name, List.empty)
-              } yield prefetchedState
-              (prefetchedState match {
+                prefetchedStatusesForScenario = prefetchedStatusesForProcessingType.getOrElse(process.name, List.empty)
+              } yield prefetchedStatusesForScenario
+              (prefetchedDeploymentStatusesFroScenario match {
                 case Some(prefetchedStatusDetails) =>
                   getProcessStateUsingPrefetchedStatus(
                     process,
@@ -132,19 +132,19 @@ private class ScenarioStatusProviderImpl(
               }).map(Some(_))
           }
           .sequence[DB, Option[StatusDetails]]
-      } yield statusesDetails
+      } yield finalDeploymentStatuses
     )
   }
 
   override def getAllowedActionsForScenarioStatus(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusWithAllowedActions] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusWithAllowedActions] = {
     dbioRunner.run(getAllowedActionsForScenarioStatusDBIO(processDetails))
   }
 
   override def getAllowedActionsForScenarioStatusDBIO(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[StatusWithAllowedActions] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[ScenarioStatusWithAllowedActions] = {
     for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
       statusDetails <- getProcessStateFetchingStatusFromManager(
@@ -152,7 +152,7 @@ private class ScenarioStatusProviderImpl(
         inProgressActionNames
       )
       allowedActions = getAllowedActions(statusDetails, processDetails, None)
-    } yield StatusWithAllowedActions(statusDetails, allowedActions)
+    } yield ScenarioStatusWithAllowedActions(statusDetails, allowedActions)
   }
 
   private def getAllowedActions(
@@ -181,7 +181,7 @@ private class ScenarioStatusProviderImpl(
       processDetails,
       inProgressActionNames,
       manager =>
-        getStateFromDeploymentManager(
+        getDeploymentStatusesFromDeploymentManager(
           manager,
           processDetails.idWithName,
           processDetails.lastStateAction,
@@ -193,7 +193,7 @@ private class ScenarioStatusProviderImpl(
   // State is prefetched only when:
   //  - DM has capability StateQueryForAllScenariosSupported
   //  - the query is about more than one scenario handled by that DM
-  private def getPrefetchedStatesForSupportedManagers(
+  private def getPrefetchedDeploymentStatusesForSupportedManagers(
       scenarios: List[ScenarioWithDetailsEntity[_]],
   )(
       implicit user: LoggedUser,
@@ -215,18 +215,18 @@ private class ScenarioStatusProviderImpl(
               case supported: StateQueryForAllScenariosSupported => Some(supported)
               case NoStateQueryForAllScenariosSupport            => None
             }
-          } yield getAllProcessesStates(processingType, managerWithCapability))
+          } yield getAllDeploymentStatuses(processingType, managerWithCapability))
             .getOrElse(Future.successful(None))
         }
       }
       .map(_.flatten.toMap)
   }
 
-  private def getAllProcessesStates(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
+  private def getAllDeploymentStatuses(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
       implicit freshnessPolicy: DataFreshnessPolicy,
   ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
     manager
-      .getAllProcessesStates()
+      .getAllDeploymentStatuses()
       .map(states => Some((processingType, states)))
       .recover { case NonFatal(e) =>
         logger.warn(
@@ -257,7 +257,7 @@ private class ScenarioStatusProviderImpl(
   private def getProcessStateUsingPrefetchedStatus(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      prefetchedStatusDetails: WithDataFreshnessStatus[List[StatusDetails]],
+      prefetchedDeploymentStatuses: WithDataFreshnessStatus[List[StatusDetails]],
   )(implicit user: LoggedUser): DB[StatusDetails] = {
     getScenarioStatusDetails(
       processDetails,
@@ -265,9 +265,9 @@ private class ScenarioStatusProviderImpl(
       { _ =>
         // FIXME abr: handle finished, it has no sense for periodic but it shouldn't hurt us
         Future {
-          prefetchedStatusDetails.map { prefetchedStatusDetailsValue =>
+          prefetchedDeploymentStatuses.map { prefetchedDeploymentStatusesValue =>
             // FIXME abr: resolved states shouldn't be handled here
-            InconsistentStateDetector.resolve(prefetchedStatusDetailsValue, processDetails.lastStateAction)
+            InconsistentStateDetector.resolve(prefetchedDeploymentStatusesValue, processDetails.lastStateAction)
           }
         }
       }
@@ -277,7 +277,7 @@ private class ScenarioStatusProviderImpl(
   private def getScenarioStatusDetails(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      fetchState: DeploymentManager => Future[WithDataFreshnessStatus[StatusDetails]],
+      fetchDeploymentStatuses: DeploymentManager => Future[WithDataFreshnessStatus[StatusDetails]],
   )(implicit user: LoggedUser): DB[StatusDetails] = {
     dispatcher
       .deploymentManager(processDetails.processingType)
@@ -290,7 +290,7 @@ private class ScenarioStatusProviderImpl(
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
           DBIOAction.successful(
             StatusDetails(SimpleStateStatus.DuringDeploy, None)
-          ) // FIXME abr: deploymentId from inProgressActionNames
+          )
         } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
           DBIOAction.successful(StatusDetails(SimpleStateStatus.DuringCancel, None))
@@ -298,7 +298,7 @@ private class ScenarioStatusProviderImpl(
           processDetails.lastStateAction match {
             case Some(_) =>
               DBIOAction
-                .from(fetchState(manager))
+                .from(fetchDeploymentStatuses(manager))
                 .map { statusWithFreshness =>
                   logger.debug(
                     s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
@@ -339,7 +339,7 @@ private class ScenarioStatusProviderImpl(
     }
   }
 
-  private def getStateFromDeploymentManager(
+  private def getDeploymentStatusesFromDeploymentManager(
       deploymentManager: DeploymentManager,
       processIdWithName: ProcessIdWithName,
       lastStateAction: Option[ProcessAction]
@@ -385,8 +385,11 @@ private class ScenarioStatusProviderImpl(
 
 }
 
-final case class StatusWithAllowedActions(statusDetails: StatusDetails, allowedActions: Set[ScenarioActionName]) {
+final case class ScenarioStatusWithAllowedActions(
+    scenarioStatusDetails: StatusDetails,
+    allowedActions: Set[ScenarioActionName]
+) {
 
-  def status: StateStatus = statusDetails.status
+  def scenarioStatus: StateStatus = scenarioStatusDetails.status
 
 }

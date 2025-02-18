@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
 
-// FIXME abr separate core statuses and DM statuses - the same for presentation
 object SimpleStateStatus {
 
   def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {

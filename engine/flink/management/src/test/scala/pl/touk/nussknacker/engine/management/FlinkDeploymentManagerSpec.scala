@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.{fromString, fromValues}
 import org.apache.flink.api.common.JobStatus
+import org.scalatest.LoneElement
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -14,9 +15,7 @@ import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -39,7 +38,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO move some tests to FlinkHttpClientTest
-class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures with LoneElement {
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
@@ -376,155 +375,6 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       ()
     )
     history.filter(_.operation == "cancel") shouldBe Nil
-  }
-
-  // TODO: extract test for InconsistentStateDetector
-  test("return failed status if two jobs running") {
-    statuses = List(
-      JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
-      JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1))
-    )
-
-    val manager          = createManager(statuses)
-    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
-      StatusDetails(
-        ProblemStateStatus.MultipleJobsRunning,
-        Some(DeploymentId("1111")),
-        Some(ExternalDeploymentId("1111")),
-        Some(
-          ProcessVersion(
-            VersionId(1),
-            ProcessName("p1"),
-            ProcessId(123),
-            List.empty,
-            "user1",
-            None
-          )
-        ),
-        startTime = Some(30L),
-        errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
-      )
-    )
-  }
-
-  // TODO: extract test for InconsistentStateDetector
-  test("return failed status if two in non-terminal state") {
-    statuses = List(
-      JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
-      JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview())
-    )
-
-    val manager          = createManager(statuses)
-    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
-      StatusDetails(
-        ProblemStateStatus.MultipleJobsRunning,
-        Some(DeploymentId("1111")),
-        Some(ExternalDeploymentId("1111")),
-        Some(
-          ProcessVersion(
-            VersionId(1),
-            ProcessName("p1"),
-            ProcessId(123),
-            List.empty,
-            "user1",
-            None
-          )
-        ),
-        startTime = Some(30L),
-        errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
-      )
-    )
-  }
-
-  // TODO: extract test for InconsistentStateDetector
-  test("return running status if cancelled job has last-modification date later then running job") {
-    statuses = List(
-      JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
-      JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1)),
-      JobOverview("2222", "p1", 30L, 5L, JobStatus.CANCELLING.name(), tasksOverview(canceling = 1))
-    )
-
-    val manager          = createManager(statuses)
-    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
-      StatusDetails(
-        SimpleStateStatus.Running,
-        Some(DeploymentId("2343")),
-        Some(ExternalDeploymentId("2343")),
-        Some(
-          ProcessVersion(
-            VersionId(1),
-            ProcessName("p1"),
-            ProcessId(123),
-            List.empty,
-            "user1",
-            None
-          )
-        ),
-        startTime = Some(10L)
-      )
-    )
-  }
-
-  // TODO: extract test for InconsistentStateDetector
-  test("return last terminal state if not running") {
-    statuses = List(
-      JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1))
-    )
-
-    val manager          = createManager(statuses)
-    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
-      StatusDetails(
-        SimpleStateStatus.Finished,
-        Some(DeploymentId("2343")),
-        Some(ExternalDeploymentId("2343")),
-        Some(
-          ProcessVersion(
-            VersionId(1),
-            ProcessName("p1"),
-            ProcessId(123),
-            List.empty,
-            "user1",
-            None
-          )
-        ),
-        startTime = Some(10L)
-      )
-    )
-
-  }
-
-  // TODO: extract test for InconsistentStateDetector
-  test("return non-terminal state if not running") {
-    statuses = List(
-      JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview())
-    )
-
-    val manager          = createManager(statuses)
-    val returnedStatuses = manager.getScenarioDeploymentsStatuses(ProcessName("p1")).map(_.value).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
-      StatusDetails(
-        SimpleStateStatus.Restarting,
-        Some(DeploymentId("1111")),
-        Some(ExternalDeploymentId("1111")),
-        Some(
-          ProcessVersion(
-            VersionId(1),
-            ProcessName("p1"),
-            ProcessId(123),
-            List.empty,
-            "user1",
-            None
-          )
-        ),
-        startTime = Some(30L)
-      )
-    )
   }
 
   test("return process version the same as configured") {

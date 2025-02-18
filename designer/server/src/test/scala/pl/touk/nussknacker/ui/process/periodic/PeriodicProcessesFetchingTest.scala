@@ -114,7 +114,7 @@ class PeriodicProcessesFetchingTest
 
     val statuses = f.periodicProcessService.stateQueryForAllScenariosSupport
       .asInstanceOf[StateQueryForAllScenariosSupported]
-      .getAllProcessesStates()
+      .getAllDeploymentStatuses()
       .futureValue
       .value
 

@@ -572,11 +572,11 @@ class PeriodicProcessService(
       case supported: StateQueryForAllScenariosSupported =>
         new StateQueryForAllScenariosSupported {
 
-          override def getAllProcessesStates()(
+          override def getAllDeploymentStatuses()(
               implicit freshnessPolicy: DataFreshnessPolicy
           ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
             for {
-              allStatusDetailsInDelegate <- supported.getAllProcessesStates()
+              allStatusDetailsInDelegate <- supported.getAllDeploymentStatuses()
               allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
               result = allStatusDetailsInPeriodic.map { case (name, status) => (name, List(status)) }
             } yield allStatusDetailsInDelegate.map(_ => result)
