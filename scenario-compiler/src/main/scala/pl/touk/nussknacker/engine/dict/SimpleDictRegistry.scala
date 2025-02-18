@@ -39,6 +39,13 @@ class SimpleDictQueryService(protected val dictRegistry: EmbeddedDictRegistry, p
   )(implicit ec: ExecutionContext): Future[List[DictEntry]] =
     Future.failed(new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId"))
 
+  override protected def handleNotEmbeddedQueryEntriesByKey(
+      dictId: String,
+      definition: DictDefinition,
+      key: String
+  )(implicit ec: ExecutionContext): Future[Option[DictEntry]] =
+    Future.failed(new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId"))
+
 }
 
 object SimpleDictServicesFactory extends DictServicesFactory {

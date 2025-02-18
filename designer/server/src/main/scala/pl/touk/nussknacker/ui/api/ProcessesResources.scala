@@ -152,6 +152,9 @@ class ProcessesResources(
               }
             }
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+            // FIXME: The `skipValidateAndResolve` flag has a non-trivial side effect.
+            //        Besides skipping validation (that is the intended and obvious result) it causes the `dictKeyWithLabel` expressions to miss the label field.
+            //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
             (skipValidateAndResolve, skipNodeResults) =>
               complete {
                 processService.getLatestProcessWithDetails(
