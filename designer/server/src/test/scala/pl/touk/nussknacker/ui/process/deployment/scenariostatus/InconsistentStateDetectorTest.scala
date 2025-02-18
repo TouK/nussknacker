@@ -18,7 +18,7 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       StatusDetails(
-        ProblemStateStatus.MultipleJobsRunning,
+        ProblemStateStatus.multipleJobsRunning,
         firstDeploymentStatus.deploymentId,
         errors = List(
           s"Expected one job, instead: ${firstDeploymentStatus.deploymentIdUnsafe} - RUNNING, ${secondDeploymentStatus.deploymentIdUnsafe} - RUNNING"
@@ -34,7 +34,7 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       StatusDetails(
-        ProblemStateStatus.MultipleJobsRunning,
+        ProblemStateStatus.multipleJobsRunning,
         firstDeploymentStatus.deploymentId,
         errors = List(
           s"Expected one job, instead: ${firstDeploymentStatus.deploymentIdUnsafe} - RUNNING, ${secondDeploymentStatus.deploymentIdUnsafe} - RESTARTING"

@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
 import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 import java.net.URI
 
@@ -19,8 +20,11 @@ object SimpleStateStatus {
   }
 
   // Represents general problem.
-  final case class ProblemStateStatus(description: String, allowedActions: Set[ScenarioActionName] = defaultActions)
-      extends StateStatus {
+  final case class ProblemStateStatus(
+      description: String,
+      allowedActions: Set[ScenarioActionName] = defaultActions,
+      tooltip: Option[String] = None
+  ) extends StateStatus {
     override def name: StatusName = ProblemStateStatus.name
   }
 
@@ -66,8 +70,18 @@ object SimpleStateStatus {
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
       ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
-    val MultipleJobsRunning: ProblemStateStatus =
-      ProblemStateStatus("More than one deployment is running.", Set(ScenarioActionName.Cancel))
+    def multipleJobsRunning(nonFinalDeploymentIds: List[(DeploymentId, StateStatus)]): ProblemStateStatus =
+      ProblemStateStatus(
+        description = "More than one deployment is running.",
+        allowedActions = Set(ScenarioActionName.Cancel),
+        tooltip = Some(
+          nonFinalDeploymentIds
+            .map { case (deploymentId, deploymentStatus) =>
+              deploymentId + " - " + deploymentStatus
+            }
+            .mkString("Expected one job, instead: ", ", ", "")
+        )
+      )
 
   }
 
@@ -105,7 +119,7 @@ object SimpleStateStatus {
       Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions
+    case SimpleStateStatus.ProblemStateStatus(_, allowedActions, _) => allowedActions
   }
 
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(

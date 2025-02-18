@@ -146,7 +146,7 @@ class StreamingEmbeddedDeploymentManagerTest
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
-      case ProblemStateStatus("Scenario compilation errors", _) :: Nil =>
+      case ProblemStateStatus("Scenario compilation errors", _, _) :: Nil =>
     }
   }
 

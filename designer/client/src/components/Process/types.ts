@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { UnknownRecord, Instant } from "../../types/common";
+import { Instant } from "../../types/common";
 import { ScenarioGraph, ValidationResult } from "../../types";
 import { ProcessingMode } from "../../http/HttpService";
 
@@ -67,7 +67,6 @@ export type ProcessStateType = {
     icon: string;
     tooltip: string;
     description: string;
-    errors?: Array<string>;
 };
 
 export type StatusType = {

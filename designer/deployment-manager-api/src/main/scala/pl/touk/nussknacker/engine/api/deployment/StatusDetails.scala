@@ -5,13 +5,12 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 
 case class StatusDetails(
     status: StateStatus,
+    // FIXME abr: non optional
     deploymentId: Option[DeploymentId],
     // TODO: remove it after periodic mechanism will use UUID for DeploymentId
     externalDeploymentId: Option[ExternalDeploymentId] = None,
     version: Option[ProcessVersion] = None,
     startTime: Option[Long] = None,
-    // FIXME abr: verify usage
-    errors: List[String] = List.empty
 ) {
 
   def deploymentIdUnsafe: DeploymentId =

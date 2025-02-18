@@ -171,7 +171,6 @@ export const state: GraphState = {
             icon: "/assets/states/not-deployed.svg",
             tooltip: "The scenario is not deployed.",
             description: "The scenario is not deployed.",
-            errors: [],
         },
         validationResult: {
             errors: {

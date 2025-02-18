@@ -12,7 +12,6 @@ import java.net.URI
   * - status itself and its evaluation moment: status, startTime
   * - how to display in UI: icon, tooltip, description
   * - which actions are allowed: allowedActions
-  * - additional properties: errors
   *
   * Statuses definition, allowed actions and current scenario presentation is defined by [[ProcessStateDefinitionManager]].
   * @param description Short message displayed in top right panel of scenario diagram panel.
@@ -30,7 +29,6 @@ import java.net.URI
     icon: URI,
     tooltip: String,
     description: String,
-    errors: List[String]
 )
 
 @JsonCodec case class LegacyScenarioStatusNameDto(name: String)

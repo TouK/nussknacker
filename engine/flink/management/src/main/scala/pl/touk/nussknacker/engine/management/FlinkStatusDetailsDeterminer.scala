@@ -35,7 +35,6 @@ class FlinkStatusDetailsDeterminer(
               Some(ExternalDeploymentId(job.jid)),
               version = Some(jobConfig.version),
               startTime = Some(job.`start-time`),
-              errors = List.empty
             )
           } getOrElse {
             logger.debug(
@@ -48,7 +47,6 @@ class FlinkStatusDetailsDeterminer(
               Some(ExternalDeploymentId(job.jid)),
               version = None,
               startTime = Some(job.`start-time`),
-              errors = List.empty
             )
           }
           name -> details

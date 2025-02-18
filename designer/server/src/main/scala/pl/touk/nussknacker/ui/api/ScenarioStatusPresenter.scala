@@ -35,7 +35,6 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
       icon = presentation.icon,
       tooltip = presentation.tooltip,
       description = presentation.description,
-      errors = statusDetails.errors,
     )
   }
 

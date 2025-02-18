@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.k8s.manager
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateStatus, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus, StatusDetails}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper._
 import skuber.apps.v1.Deployment
 import skuber.{Container, Pod}
 
-object K8sDeploymentStatusMapper {
+//Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
+object K8sDeploymentStatusMapper extends LazyLogging {
 
   private val availableCondition = "Available"
 
@@ -23,10 +23,6 @@ object K8sDeploymentStatusMapper {
   private val crashLoopBackOffReason = "CrashLoopBackOff"
 
   private val newReplicaSetAvailable = "NewReplicaSetAvailable"
-}
-
-//Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
-class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager) extends LazyLogging {
 
   private[manager] def findStatusForDeploymentsAndPods(
       deployments: List[Deployment],
@@ -38,17 +34,20 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
       case duplicates =>
         Some(
           StatusDetails(
-            ProblemStateStatus.MultipleJobsRunning,
+            ProblemStateStatus(
+              description = "More than one deployment is running.",
+              allowedActions = Set(ScenarioActionName.Cancel),
+              tooltip = Some(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
+            ),
             None,
-            errors = List(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
           )
         )
     }
   }
 
   private[manager] def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
-    val (status, attrs, errors) = deployment.status match {
-      case None         => (SimpleStateStatus.DuringDeploy, None, Nil)
+    val status = deployment.status match {
+      case None         => SimpleStateStatus.DuringDeploy
       case Some(status) => mapStatusWithPods(status, pods)
     }
     val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
@@ -59,7 +58,6 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
       None,
       parseVersionAnnotation(deployment),
       startTime,
-      errors
     )
   }
 
@@ -67,24 +65,34 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
   private[manager] def mapStatusWithPods(
       status: Deployment.Status,
       pods: List[Pod]
-  ): (StateStatus, Option[Json], List[String]) = {
+  ): StateStatus = {
     def condition(name: String): Option[Deployment.Condition] = status.conditions.find(cd => cd.`type` == name)
     def anyContainerInState(state: Container.State) =
       pods.flatMap(_.status.toList).flatMap(_.containerStatuses).exists(_.state.exists(_ == state))
 
     (condition(availableCondition), condition(progressingCondition), condition(replicaFailureCondition)) match {
       case (Some(available), None | ProgressingNewReplicaSetAvailable(), _) if isTrue(available) =>
-        (SimpleStateStatus.Running, None, Nil)
+        SimpleStateStatus.Running
       case (_, Some(progressing), _)
           if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) =>
         logger.debug(
           s"Some containers are in waiting state with CrashLoopBackOff reason - returning Restarting status. Pods: $pods"
         )
-        (SimpleStateStatus.Restarting, None, Nil)
-      case (_, Some(progressing), _) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
+        SimpleStateStatus.Restarting
+      case (_, Some(progressing), _) if isTrue(progressing) =>
+        SimpleStateStatus.DuringDeploy
       case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) =>
-        (ProblemStateStatus.Failed, None, replicaFailure.message.toList)
-      case (a, b, _) => (ProblemStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
+        ProblemStateStatus(
+          "There are some problems with scenario.",
+          tooltip = replicaFailure.message.map("Error: " + _)
+        )
+      case (a, b, _) =>
+        ProblemStateStatus(
+          "There are some problems with scenario.",
+          tooltip = NonEmptyList
+            .fromList(a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
+            .map(_.toList.mkString("Errors: ", ", ", ""))
+        )
     }
   }
 

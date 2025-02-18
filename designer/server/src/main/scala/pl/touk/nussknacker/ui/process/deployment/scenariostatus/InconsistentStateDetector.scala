@@ -46,10 +46,11 @@ class InconsistentStateDetector extends LazyLogging {
       case (_, firstNotFinished :: _ :: _) =>
         Left(
           firstNotFinished.copy(
-            status = ProblemStateStatus.MultipleJobsRunning,
-            errors = List(s"Expected one job, instead: ${notFinalStatuses
-                .map(details => details.deploymentId.map(_.value).getOrElse("missing") + " - " + details.status)
-                .mkString(", ")}")
+            status = ProblemStateStatus.multipleJobsRunning(
+              notFinalStatuses.map(deploymentStatus =>
+                deploymentStatus.deploymentId.getOrElse(DeploymentId("missing")) -> deploymentStatus.status
+              )
+            )
           )
         )
       case (firstFinished :: _, Nil) => Right(Some(firstFinished))

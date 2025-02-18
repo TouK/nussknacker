@@ -26,15 +26,16 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   )
 
   private[nussknacker] def statusDescription(status: StateStatus): String = status match {
-    case _ @ProblemStateStatus(message, _) => message
-    case _                                 => SimpleStateStatus.definitions(status.name).description
+    case _ @ProblemStateStatus(message, _, _) => message
+    case _                                    => SimpleStateStatus.definitions(status.name).description
   }
 
   override def statusTooltip(input: ScenarioStatusWithScenarioContext): String = statusTooltip(input.scenarioStatus)
 
   private[nussknacker] def statusTooltip(status: StateStatus): String = status match {
-    case _ @ProblemStateStatus(message, _) => message
-    case _                                 => SimpleStateStatus.definitions(status.name).tooltip
+    case _ @ProblemStateStatus(message, _, Some(tooltip)) => tooltip
+    case _ @ProblemStateStatus(message, _, _)             => message
+    case _                                                => SimpleStateStatus.definitions(status.name).tooltip
   }
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
