@@ -59,14 +59,15 @@ import scala.annotation.tailrec
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
-private[spel] class Typer(
+private[spel] case class Typer(
     dictTyper: SpelDictTyper,
     strictMethodsChecking: Boolean,
     staticMethodInvocationsChecking: Boolean,
     classDefinitionSet: ClassDefinitionSet,
     evaluationContextPreparer: EvaluationContextPreparer,
     anyMethodExecutionForUnknownAllowed: Boolean,
-    dynamicPropertyAccessAllowed: Boolean
+    dynamicPropertyAccessAllowed: Boolean,
+    absentVariableReferenceAllowed: Boolean
 ) extends LazyLogging {
 
   import ast.SpelAst._
@@ -493,14 +494,18 @@ private[spel] class Typer(
         }
 
       case e: VariableReference =>
-        // only sane way of getting variable name :|
-        val name = e.toStringAST.substring(1)
-        validationContext
-          .get(name)
-          .orElse(current.stackHead.filter(_ => name == "this"))
-          .map(valid)
-          .getOrElse(invalid(UnresolvedReferenceError(name)))
-          .map(toNodeResult)
+        if (!absentVariableReferenceAllowed) {
+          // only sane way of getting variable name :|
+          val name = e.toStringAST.substring(1)
+          validationContext
+            .get(name)
+            .orElse(current.stackHead.filter(_ => name == "this"))
+            .map(valid)
+            .getOrElse(invalid(UnresolvedReferenceError(name)))
+            .map(toNodeResult)
+        } else {
+          validNodeResult(Unknown)
+        }
     })
   }
 
@@ -786,7 +791,8 @@ private[spel] class Typer(
       classDefinitionSet,
       evaluationContextPreparer,
       anyMethodExecutionForUnknownAllowed,
-      dynamicPropertyAccessAllowed
+      dynamicPropertyAccessAllowed,
+      absentVariableReferenceAllowed
     )
 
 }
@@ -808,7 +814,8 @@ object Typer {
       classDefinitionSet,
       evaluationContextPreparer,
       expressionConfig.methodExecutionForUnknownAllowed,
-      expressionConfig.dynamicPropertyAccessAllowed
+      expressionConfig.dynamicPropertyAccessAllowed,
+      expressionConfig.absentVariableReferenceAllowed
     )
   }
 

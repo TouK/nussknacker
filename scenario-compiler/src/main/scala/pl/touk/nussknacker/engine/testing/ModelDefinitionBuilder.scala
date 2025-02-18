@@ -236,7 +236,8 @@ object ModelDefinitionBuilder {
       methodExecutionForUnknownAllowed = defaultMethodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed = defaultDynamicPropertyAccessAllowed,
       spelExpressionExcludeList = SpelExpressionExcludeList.default,
-      customConversionsProviders = List.empty
+      customConversionsProviders = List.empty,
+      absentVariableReferenceAllowed = defaultAbsentVariableReferenceAllowed
     )
 
 }

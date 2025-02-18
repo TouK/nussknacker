@@ -38,6 +38,7 @@ import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
@@ -199,7 +200,13 @@ class NodeCompiler(
         fragmentParameterValidator.validateFixedExpressionValues(
           param,
           validationContext,
-          expressionCompiler
+          expressionCompiler.withExpressionParsers(expressionParsers =>
+            expressionParsers.map {
+              case (language, parser: SpelExpressionParser) =>
+                language -> parser.withValidator(v => v.withTyper(t => t.copy(absentVariableReferenceAllowed = true)))
+              case other => other
+            }
+          )
         )
       }
       .sequence

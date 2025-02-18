@@ -108,7 +108,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig.methodExecutionForUnknownAllowed,
       expressionConfig.dynamicPropertyAccessAllowed,
       expressionConfig.spelExpressionExcludeList,
-      expressionConfig.customConversionsProviders
+      expressionConfig.customConversionsProviders,
+      expressionConfig.absentVariableReferenceAllowed
     )
   }
 
