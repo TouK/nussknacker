@@ -10,6 +10,7 @@ case class StatusDetails(
     externalDeploymentId: Option[ExternalDeploymentId] = None,
     version: Option[ProcessVersion] = None,
     startTime: Option[Long] = None,
+    // FIXME abr: verify usage
     errors: List[String] = List.empty
 ) {
 

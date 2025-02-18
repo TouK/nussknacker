@@ -17,11 +17,12 @@ import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentManagerReliableStatusesWrapper.Ops
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.GetDeploymentsStatusesError
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
-import ScenarioStatusProvider.FragmentStateException
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.FutureUtils._
 import slick.dbio.{DBIO, DBIOAction}
 
 import scala.concurrent.duration._
@@ -31,6 +32,7 @@ import scala.util.control.NonFatal
 
 trait ScenarioStatusProvider {
 
+  // FIXME abr: For Id[_] we shouldn't prefetch statuses
   def getScenariosStatuses[F[_]: Traverse, ScenarioShape](processTraverse: F[ScenarioWithDetailsEntity[ScenarioShape]])(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
@@ -110,30 +112,41 @@ private class ScenarioStatusProviderImpl(
           .map {
             case process if process.isFragment => DBIO.successful(Option.empty[StatusDetails])
             case process =>
-              val prefetchedDeploymentStatusesFroScenario = for {
-                prefetchedStatusesForProcessingType <- prefetchedDeploymentStatuses.get(process.processingType)
-                // Deployment statuses are prefetched for all scenarios for the given processing type.
-                // If there is no information available for a specific scenario name,
-                // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
-                prefetchedStatusesForScenario = prefetchedStatusesForProcessingType.getOrElse(process.name, List.empty)
-              } yield prefetchedStatusesForScenario
-              (prefetchedDeploymentStatusesFroScenario match {
-                case Some(prefetchedStatusDetails) =>
-                  getProcessStateUsingPrefetchedStatus(
-                    process,
-                    actionsInProgress.getOrElse(process.processId, Set.empty),
-                    prefetchedStatusDetails,
-                  )
-                case None =>
-                  getProcessStateFetchingStatusFromManager(
-                    process,
-                    actionsInProgress.getOrElse(process.processId, Set.empty),
-                  )
-              }).map(Some(_))
+              getNonFragmentScenarioStatus(actionsInProgress, prefetchedDeploymentStatuses, process).map(Some(_))
           }
           .sequence[DB, Option[StatusDetails]]
       } yield finalDeploymentStatuses
     )
+  }
+
+  private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
+      actionsInProgress: Map[ProcessId, Set[ScenarioActionName]],
+      prefetchedDeploymentStatuses: Map[ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]],
+      process: ScenarioWithDetailsEntity[ScenarioShape]
+  )(
+      implicit user: LoggedUser,
+      freshnessPolicy: DataFreshnessPolicy
+  ): DB[StatusDetails] = {
+    val prefetchedDeploymentStatusesFroScenario = for {
+      prefetchedStatusesForProcessingType <- prefetchedDeploymentStatuses.get(process.processingType)
+      // Deployment statuses are prefetched for all scenarios for the given processing type.
+      // If there is no information available for a specific scenario name,
+      // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
+      prefetchedStatusesForScenario = prefetchedStatusesForProcessingType.getOrElse(process.name, List.empty)
+    } yield prefetchedStatusesForScenario
+    prefetchedDeploymentStatusesFroScenario match {
+      case Some(prefetchedStatusDetails) =>
+        getProcessStateUsingPrefetchedStatus(
+          process,
+          actionsInProgress.getOrElse(process.processId, Set.empty),
+          prefetchedStatusDetails,
+        )
+      case None =>
+        getProcessStateFetchingStatusFromManager(
+          process,
+          actionsInProgress.getOrElse(process.processId, Set.empty),
+        )
+    }
   }
 
   override def getAllowedActionsForScenarioStatus(
@@ -180,12 +193,7 @@ private class ScenarioStatusProviderImpl(
     getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      manager =>
-        getDeploymentStatusesFromDeploymentManager(
-          manager,
-          processDetails.idWithName,
-          processDetails.lastStateAction,
-        )
+      _.getScenarioDeploymentsStatusesWithTimeoutOpt(processDetails.name, scenarioStateTimeout)
     )
   }
 
@@ -262,22 +270,16 @@ private class ScenarioStatusProviderImpl(
     getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      { _ =>
-        // FIXME abr: handle finished, it has no sense for periodic but it shouldn't hurt us
-        Future {
-          prefetchedDeploymentStatuses.map { prefetchedDeploymentStatusesValue =>
-            // FIXME abr: resolved states shouldn't be handled here
-            InconsistentStateDetector.resolve(prefetchedDeploymentStatusesValue, processDetails.lastStateAction)
-          }
-        }
-      }
+      _ => Future.successful(Right(prefetchedDeploymentStatuses))
     )
   }
 
   private def getScenarioStatusDetails(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
-      fetchDeploymentStatuses: DeploymentManager => Future[WithDataFreshnessStatus[StatusDetails]],
+      fetchDeploymentStatuses: DeploymentManager => Future[
+        Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[StatusDetails]]]
+      ],
   )(implicit user: LoggedUser): DB[StatusDetails] = {
     dispatcher
       .deploymentManager(processDetails.processingType)
@@ -299,12 +301,18 @@ private class ScenarioStatusProviderImpl(
             case Some(_) =>
               DBIOAction
                 .from(fetchDeploymentStatuses(manager))
-                .map { statusWithFreshness =>
-                  logger.debug(
-                    s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
-                        .map(_.actionName)})"
-                  )
-                  statusWithFreshness.value
+                .map {
+                  case Left(error) =>
+                    logger.warn("Failure during getting deployment statuses from deployment manager", error)
+                    StatusDetails(FailedToGet, None)
+                  case Right(statusWithFreshness) =>
+                    logger.debug(
+                      s"Deployment statuses for: '${processDetails.name}' are: ${statusWithFreshness.value}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
+                          .map(_.actionName)})"
+                    )
+                    // FIXME abr: resolved states shouldn't be handled here
+                    // FIXME abr: state action not an option
+                    InconsistentStateDetector.resolve(statusWithFreshness.value, processDetails.lastStateAction)
                 }
             case _ => // We assume that the process never deployed should have no state at the engine
               // FIXME abr: it is a part of deployment => scenario status resolution
@@ -338,43 +346,6 @@ private class ScenarioStatusProviderImpl(
         StatusDetails(SimpleStateStatus.NotDeployed, None)
     }
   }
-
-  private def getDeploymentStatusesFromDeploymentManager(
-      deploymentManager: DeploymentManager,
-      processIdWithName: ProcessIdWithName,
-      lastStateAction: Option[ProcessAction]
-  )(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[StatusDetails]] = {
-
-    // FIXME abr: handle finished, it has no sense for periodic but it shouldn't hurt us
-    val state = deploymentManager
-      .getScenarioDeploymentsStatuses(processIdWithName.name)
-      .map(_.map { statusDetails =>
-        // FIXME abr: resolved states shouldn't be handled here
-        InconsistentStateDetector.resolve(statusDetails, lastStateAction)
-      })
-      .recover { case NonFatal(e) =>
-        logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
-        failedToGetProcessState
-      }
-
-    scenarioStateTimeout
-      .map { timeout =>
-        state.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
-          case CompletedNormally(value) =>
-            value
-          case CompletedByTimeout(value) =>
-            logger
-              .warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
-            value
-        }
-      }
-      .getOrElse(state)
-  }
-
-  private val failedToGetProcessState =
-    WithDataFreshnessStatus.fresh(StatusDetails(FailedToGet, None))
 
   private def existsOrFail[T](checkThisOpt: Option[T], failWith: => Exception): DB[T] = {
     checkThisOpt match {
