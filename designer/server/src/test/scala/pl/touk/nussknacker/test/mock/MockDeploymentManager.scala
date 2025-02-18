@@ -61,7 +61,7 @@ class MockDeploymentManager private (
   @volatile
   var cancelResult: Future[Unit] = Future.successful(())
 
-  val managerProcessStates = new ConcurrentHashMap[ProcessName, List[StatusDetails]]
+  val managerProcessStates = new ConcurrentHashMap[ProcessName, List[DeploymentStatusDetails]]
 
   @volatile
   var delayBeforeStateReturn: FiniteDuration = 0 seconds
@@ -77,7 +77,7 @@ class MockDeploymentManager private (
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       WithDataFreshnessStatus.fresh(
@@ -174,7 +174,8 @@ object MockDeploymentManager {
       status: StateStatus,
       deploymentId: DeploymentId,
       version: Option[ProcessVersion] = Some(ProcessVersion.empty)
-  ): StatusDetails = StatusDetails(status, Some(deploymentId), Some(ExternalDeploymentId("1")), version)
+  ): DeploymentStatusDetails =
+    DeploymentStatusDetails(status, Some(deploymentId), Some(ExternalDeploymentId("1")), version)
 
   // Pass correct deploymentId
   private[mock] def sampleDeploymentId: DeploymentId = DeploymentId(UUID.randomUUID().toString)
@@ -243,7 +244,7 @@ object MockDeploymentManagerSyntaxSugar {
       }
     }
 
-    def withProcessStates[T](processName: ProcessName, statuses: List[StatusDetails])(action: => T): T = {
+    def withProcessStates[T](processName: ProcessName, statuses: List[DeploymentStatusDetails])(action: => T): T = {
       try {
         deploymentManager.managerProcessStates.put(processName, statuses)
         action

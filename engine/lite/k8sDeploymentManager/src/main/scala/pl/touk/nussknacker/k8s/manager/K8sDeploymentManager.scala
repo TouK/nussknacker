@@ -317,7 +317,7 @@ class K8sDeploymentManager(
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     for {
       deployments <- scenarioStateK8sClient
         .listSelected[ListResource[Deployment]](requirementForName(scenarioName))

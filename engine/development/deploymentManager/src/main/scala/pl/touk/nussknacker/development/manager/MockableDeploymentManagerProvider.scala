@@ -86,14 +86,14 @@ object MockableDeploymentManagerProvider {
 
     override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
-    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    ): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
       val statusDetails = MockableDeploymentManager.scenarioStatuses
         .get()
         .getOrElse(scenarioName.value, BasicStatusDetails(SimpleStateStatus.NotDeployed, version = None))
       Future.successful(
         WithDataFreshnessStatus.fresh(
           List(
-            StatusDetails(
+            DeploymentStatusDetails(
               statusDetails.status,
               None,
               version = statusDetails.version.map(vId => ProcessVersion.empty.copy(versionId = vId))

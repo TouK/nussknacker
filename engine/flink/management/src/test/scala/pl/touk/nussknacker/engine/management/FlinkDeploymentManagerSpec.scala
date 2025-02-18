@@ -404,7 +404,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
 
     val manager = createManager(statuses)
     manager.getScenarioDeploymentsStatuses(processName).map(_.value).futureValue shouldBe List(
-      StatusDetails(
+      DeploymentStatusDetails(
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
         Some(ExternalDeploymentId("2343")),

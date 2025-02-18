@@ -68,7 +68,7 @@ class FlinkDeploymentManager(
   // FIXME abr move to reconciliation
   private def postprocess(
       idWithName: ProcessIdWithName,
-      statusDetailsList: List[StatusDetails]
+      statusDetailsList: List[DeploymentStatusDetails]
   ): Future[Option[ProcessAction]] = {
     val allDeploymentIdsAsCorrectActionIds =
       statusDetailsList.flatMap(details =>
@@ -178,7 +178,7 @@ class FlinkDeploymentManager(
     }
   }
 
-  private def oldJobsToStop(processVersion: ProcessVersion): Future[List[StatusDetails]] = {
+  private def oldJobsToStop(processVersion: ProcessVersion): Future[List[DeploymentStatusDetails]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getScenarioDeploymentsStatuses(processVersion.processName)
       .map(_.value.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
@@ -198,13 +198,16 @@ class FlinkDeploymentManager(
         Some(savepointPath)
     }
 
-  private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
+  private def requireSingleRunningJob[T](
+      processName: ProcessName,
+      statusDetailsPredicate: DeploymentStatusDetails => Boolean
+  )(
       action: ExternalDeploymentId => Future[T]
   ): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getScenarioDeploymentsStatuses(processName).flatMap { statuses =>
       val runningDeploymentIds = statuses.value.filter(statusDetailsPredicate).collect {
-        case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _) => deploymentId
+        case DeploymentStatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _) => deploymentId
       }
       runningDeploymentIds match {
         case Nil =>
@@ -243,7 +246,7 @@ class FlinkDeploymentManager(
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     getAllProcessesStatesFromFlink().map(_.getOrElse(scenarioName, List.empty))
   }
 
@@ -275,7 +278,8 @@ class FlinkDeploymentManager(
 
       override def getAllScenariosDeploymentsStatuses()(
           implicit freshnessPolicy: DataFreshnessPolicy
-      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = getAllProcessesStatesFromFlink()
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] =
+        getAllProcessesStatesFromFlink()
 
     }
 
@@ -289,7 +293,7 @@ class FlinkDeploymentManager(
 
   private def getAllProcessesStatesFromFlink()(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
     client
       .getJobsOverviews()
       .flatMap { result =>
@@ -351,7 +355,7 @@ class FlinkDeploymentManager(
   private def cancelEachMatchingJob(
       processName: ProcessName,
       deploymentId: Option[DeploymentId],
-      statuses: List[StatusDetails]
+      statuses: List[DeploymentStatusDetails]
   ) = {
     statuses.filterNot(details => SimpleStateStatus.isFinalOrTransitioningToFinalStatus(details.status)) match {
       case Nil =>

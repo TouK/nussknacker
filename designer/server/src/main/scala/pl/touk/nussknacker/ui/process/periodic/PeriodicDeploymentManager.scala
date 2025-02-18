@@ -195,7 +195,7 @@ class PeriodicDeploymentManager private[periodic] (
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     service.getMergedStatusDetails(scenarioName).map(_.map(List(_)))
   }
 

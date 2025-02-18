@@ -10,9 +10,9 @@ import scala.concurrent.Future
 
 class DeploymentManagerStub extends BaseDeploymentManager {
 
-  val jobStatus: TrieMap[ProcessName, List[StatusDetails]] = TrieMap.empty
+  val jobStatus: TrieMap[ProcessName, List[DeploymentStatusDetails]] = TrieMap.empty
 
-  def getJobStatus(processName: ProcessName): Option[List[StatusDetails]] = {
+  def getJobStatus(processName: ProcessName): Option[List[DeploymentStatusDetails]] = {
     jobStatus.get(processName)
   }
 
@@ -28,13 +28,12 @@ class DeploymentManagerStub extends BaseDeploymentManager {
     jobStatus.put(
       processName,
       List(
-        StatusDetails(
+        DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           externalDeploymentId = Some(ExternalDeploymentId("1")),
           status = status,
           version = None,
           startTime = None,
-          errors = Nil
         )
       )
     )
@@ -48,13 +47,12 @@ class DeploymentManagerStub extends BaseDeploymentManager {
     jobStatus.put(
       processName,
       List(
-        StatusDetails(
+        DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           externalDeploymentId = Some(ExternalDeploymentId("1")),
           status = status,
           version = None,
           startTime = None,
-          errors = Nil
         )
       )
     )
@@ -62,7 +60,7 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(getJobStatus(scenarioName).toList.flatten))
   }
 
@@ -75,7 +73,7 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
       override def getAllScenariosDeploymentsStatuses()(
           implicit freshnessPolicy: DataFreshnessPolicy
-      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] =
         Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toMap))
 
     }

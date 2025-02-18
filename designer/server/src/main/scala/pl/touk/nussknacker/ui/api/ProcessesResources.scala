@@ -217,7 +217,6 @@ class ProcessesResources(
               for {
                 scenarioDetails <- processService
                   .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
-                  .map(_.toEntity)
                 statusDetails <- scenarioStatusProvider.getScenarioStatus(processId)
                 dto = scenarioStatusPresenter.toDto(statusDetails, scenarioDetails, currentlyPresentedVersionId)
               } yield dto

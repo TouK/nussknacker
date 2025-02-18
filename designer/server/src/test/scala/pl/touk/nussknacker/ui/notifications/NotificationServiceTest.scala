@@ -282,7 +282,7 @@ class NotificationServiceTest
 
   private def createServices(deploymentManager: DeploymentManager) = {
     when(deploymentManager.getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy]))
-      .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(List.empty[StatusDetails])))
+      .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(List.empty[DeploymentStatusDetails])))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)

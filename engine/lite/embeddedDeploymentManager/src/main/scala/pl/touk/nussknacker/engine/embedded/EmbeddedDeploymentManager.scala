@@ -169,13 +169,13 @@ class EmbeddedDeploymentManager(
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(
       WithDataFreshnessStatus.fresh(
         deployments
           .get(scenarioName)
           .map { interpreterData =>
-            StatusDetails(
+            DeploymentStatusDetails(
               status = interpreterData.scenarioDeployment
                 .fold(
                   _ => ProblemStateStatus(s"Scenario compilation errors"),

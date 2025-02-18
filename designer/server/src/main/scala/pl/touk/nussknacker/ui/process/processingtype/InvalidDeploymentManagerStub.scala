@@ -13,14 +13,14 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   private val stubbedActionResponse =
     Future.failed(new ProcessIllegalAction("Can't perform action because of an error in deployment configuration"))
 
-  private val stubbedStatus = StatusDetails(
+  private val stubbedStatus = DeploymentStatusDetails(
     ProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
     deploymentId = None
   )
 
   override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  ): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(List(stubbedStatus)))
   }
 

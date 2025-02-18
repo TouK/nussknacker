@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 
 import akka.actor.ActorSystem
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, StatusDetails, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentStatusDetails, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -23,10 +23,10 @@ object DeploymentManagerReliableStatusesWrapper {
         implicit user: LoggedUser,
         freshnessPolicy: DataFreshnessPolicy,
         actorSystem: ActorSystem
-    ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[StatusDetails]]]] = {
+    ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] = {
       import actorSystem._
       val deploymentStatusesOptFuture
-          : Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[StatusDetails]]]] =
+          : Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] =
         dmDispatcher
           .deploymentManager(processingType)
           .map(

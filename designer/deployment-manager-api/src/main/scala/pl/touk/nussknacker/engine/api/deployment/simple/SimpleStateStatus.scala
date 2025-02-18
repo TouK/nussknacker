@@ -77,7 +77,7 @@ object SimpleStateStatus {
         tooltip = Some(
           nonFinalDeploymentIds
             .map { case (deploymentId, deploymentStatus) =>
-              deploymentId + " - " + deploymentStatus
+              s"$deploymentId-$deploymentStatus"
             }
             .mkString("Expected one job, instead: ", ", ", "")
         )

@@ -25,7 +25,7 @@ trait DeploymentManager extends AutoCloseable {
     */
   def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
+  ): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
@@ -49,7 +49,7 @@ trait DeploymentsStatusesQueryForAllScenariosSupported extends DeploymentsStatus
 
   def getAllScenariosDeploymentsStatuses()(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]]
 
 }
 

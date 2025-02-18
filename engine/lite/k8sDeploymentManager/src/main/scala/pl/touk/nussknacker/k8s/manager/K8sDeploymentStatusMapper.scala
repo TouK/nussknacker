@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
 import skuber.apps.v1.Deployment
 import skuber.{Container, Pod}
@@ -27,13 +27,13 @@ object K8sDeploymentStatusMapper extends LazyLogging {
   private[manager] def findStatusForDeploymentsAndPods(
       deployments: List[Deployment],
       pods: List[Pod]
-  ): Option[StatusDetails] = {
+  ): Option[DeploymentStatusDetails] = {
     deployments match {
       case Nil        => None
       case one :: Nil => Some(status(one, pods))
       case duplicates =>
         Some(
-          StatusDetails(
+          DeploymentStatusDetails(
             ProblemStateStatus(
               description = "More than one deployment is running.",
               allowedActions = Set(ScenarioActionName.Cancel),
@@ -45,13 +45,13 @@ object K8sDeploymentStatusMapper extends LazyLogging {
     }
   }
 
-  private[manager] def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
+  private[manager] def status(deployment: Deployment, pods: List[Pod]): DeploymentStatusDetails = {
     val status = deployment.status match {
       case None         => SimpleStateStatus.DuringDeploy
       case Some(status) => mapStatusWithPods(status, pods)
     }
     val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
-    StatusDetails(
+    DeploymentStatusDetails(
       status,
       // TODO: return internal deploymentId, probably computed based on some hash to make sure that it will change only when something in scenario change
       None,

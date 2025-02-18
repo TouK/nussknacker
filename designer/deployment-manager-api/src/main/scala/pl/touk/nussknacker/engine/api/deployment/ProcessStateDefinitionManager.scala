@@ -79,24 +79,19 @@ trait ProcessStateDefinitionManager {
 object ProcessStateDefinitionManager {
 
   /**
-   * ProcessStatus contains status of the scenario, it is used as argument of ProcessStateDefinitionManager methods
+   * ScenarioStatusWithScenarioContext contains status of the scenario, as context of its based on DB state.
+   * It is used as an argument of ProcessStateDefinitionManager methods
    *
-   * @param scenarioStatusDetails     current scenario state
+   * @param scenarioStatus    current scenario state
    * @param latestVersionId   latest saved versionId for the scenario
    * @param deployedVersionId currently deployed versionId of the scenario
    */
   final case class ScenarioStatusWithScenarioContext(
-      private val scenarioStatusDetails: StatusDetails,
+      scenarioStatus: StateStatus,
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
-  ) {
-    def scenarioStatus: StateStatus = scenarioStatusDetails.status
-
-    def withScenarioStatus(newStatus: StateStatus): ScenarioStatusWithScenarioContext =
-      copy(scenarioStatusDetails = scenarioStatusDetails.copy(status = newStatus))
-
-  }
+  )
 
   final case class ScenarioStatusPresentationDetails(
       visibleActions: List[ScenarioActionName],

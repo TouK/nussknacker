@@ -95,7 +95,7 @@ class CachingProcessStateDeploymentManagerSpec
     val delegate = mock[DeploymentManager]
     when(delegate.getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer {
       _: InvocationOnMock =>
-        val randomState = StatusDetails(
+        val randomState = DeploymentStatusDetails(
           SimpleStateStatus.Running,
           deploymentId = None,
           externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString))

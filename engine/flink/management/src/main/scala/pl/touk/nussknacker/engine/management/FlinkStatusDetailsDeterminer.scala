@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusDetails}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
@@ -21,7 +21,9 @@ class FlinkStatusDetailsDeterminer(
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
-  def statusDetailsFromJobOverviews(jobOverviews: List[JobOverview]): Future[Map[ProcessName, List[StatusDetails]]] =
+  def statusDetailsFromJobOverviews(
+      jobOverviews: List[JobOverview]
+  ): Future[Map[ProcessName, List[DeploymentStatusDetails]]] =
     Future
       .sequence {
         for {
@@ -29,7 +31,7 @@ class FlinkStatusDetailsDeterminer(
           name <- namingStrategy.decodeName(job.name).map(ProcessName(_))
         } yield withParsedJobConfig(job.jid, name).map { jobConfigOpt =>
           val details = jobConfigOpt.map { jobConfig =>
-            StatusDetails(
+            DeploymentStatusDetails(
               SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
               jobConfig.deploymentId,
               Some(ExternalDeploymentId(job.jid)),
@@ -40,7 +42,7 @@ class FlinkStatusDetailsDeterminer(
             logger.debug(
               s"No correct job config in deployed scenario: $name. Returning ${SimpleStateStatus.DuringDeploy} without version"
             )
-            StatusDetails(
+            DeploymentStatusDetails(
               SimpleStateStatus.DuringDeploy,
               // For scheduling mechanism this fallback is probably wrong // TODO: switch scheduling mechanism deployment ids to UUIDs
               Some(DeploymentId(job.jid)),

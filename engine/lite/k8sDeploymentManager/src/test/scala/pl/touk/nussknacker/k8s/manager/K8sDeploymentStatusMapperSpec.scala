@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import play.api.libs.json.{Format, Json}
@@ -30,7 +30,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     val state =
       K8sDeploymentStatusMapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("running.json") :: Nil, Nil)
     state shouldBe Some(
-      StatusDetails(
+      DeploymentStatusDetails(
         status = SimpleStateStatus.Running,
         deploymentId = None,
         externalDeploymentId = None,
@@ -46,7 +46,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       Nil
     )
     state shouldBe Some(
-      StatusDetails(
+      DeploymentStatusDetails(
         status = SimpleStateStatus.DuringDeploy,
         deploymentId = None,
         externalDeploymentId = None,
@@ -62,7 +62,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       Nil
     )
     state shouldBe Some(
-      StatusDetails(
+      DeploymentStatusDetails(
         status = ProblemStateStatus(
           "There are some problems with scenario.",
           tooltip = Some(
@@ -84,7 +84,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     )
 
     state shouldBe Some(
-      StatusDetails(
+      DeploymentStatusDetails(
         status = SimpleStateStatus.Restarting,
         deploymentId = None,
         externalDeploymentId = None,
@@ -100,7 +100,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     val state       = K8sDeploymentStatusMapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil)
 
     state shouldBe Some(
-      StatusDetails(
+      DeploymentStatusDetails(
         status = ProblemStateStatus(
           description = "More than one deployment is running.",
           allowedActions = Set(ScenarioActionName.Cancel),

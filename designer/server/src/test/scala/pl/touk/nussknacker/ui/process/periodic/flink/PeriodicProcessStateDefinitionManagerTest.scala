@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicDeploymentStatus
@@ -71,7 +71,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   test("not display custom tooltip for perform single execution when latest version is deployed") {
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
-        scenarioStatusDetails = StatusDetails(ScheduledStatus(nextRunAt = LocalDateTime.now()), None),
+        scenarioStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
         latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(5)),
         currentlyPresentedVersionId = Some(VersionId(5)),
@@ -84,7 +84,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   ) {
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
-        scenarioStatusDetails = StatusDetails(ScheduledStatus(nextRunAt = LocalDateTime.now()), None),
+        scenarioStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
         latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),
@@ -97,7 +97,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   test("display custom tooltip for perform single execution in CANCELED state") {
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
-        scenarioStatusDetails = StatusDetails(SimpleStateStatus.Canceled, None),
+        scenarioStatus = SimpleStateStatus.Canceled,
         latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),

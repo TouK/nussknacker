@@ -60,7 +60,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
     definitionsMap(CustomStateThatOverrides.name).description shouldBe "Custom description that overrides"
 
     def toInput(status: StateStatus) =
-      ScenarioStatusWithScenarioContext(StatusDetails(status, None), VersionId(1), None, None)
+      ScenarioStatusWithScenarioContext(status, VersionId(1), None, None)
 
     // Description assigned to a scenario, with custom calculations
     manager.statusDescription(toInput(DefaultState)) shouldBe "Calculated description for default, e.g. schedule date"

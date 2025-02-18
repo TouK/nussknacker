@@ -88,7 +88,7 @@ class PeriodicDeploymentManagerTest
     )
 
     def getAllowedActions(
-        statusDetails: StatusDetails,
+        statusDetails: DeploymentStatusDetails,
         latestVersionId: VersionId,
         deployedVersionId: Option[VersionId],
         currentlyPresentedVersionId: Option[VersionId],
@@ -96,7 +96,7 @@ class PeriodicDeploymentManagerTest
       periodicDeploymentManager.processStateDefinitionManager
         .statusPresentation(
           ScenarioStatusWithScenarioContext(
-            statusDetails,
+            statusDetails.status,
             latestVersionId,
             deployedVersionId,
             currentlyPresentedVersionId
@@ -105,7 +105,7 @@ class PeriodicDeploymentManagerTest
         .allowedActions
     }
 
-    def getMergedStatusDetails: StatusDetails =
+    def getMergedStatusDetails: DeploymentStatusDetails =
       periodicProcessService
         .getMergedStatusDetails(processName)
         .futureValue
@@ -113,7 +113,7 @@ class PeriodicDeploymentManagerTest
 
   }
 
-  implicit class MergedStatusDetailsOps(statusDetails: StatusDetails) {
+  implicit class MergedStatusDetailsOps(statusDetails: DeploymentStatusDetails) {
     def mergedStatus: StateStatus =
       statusDetails.status.asInstanceOf[PeriodicProcessStatusWithMergedStatus].mergedStatus
   }
@@ -187,7 +187,7 @@ class PeriodicDeploymentManagerTest
     statusDetails.mergedStatus shouldBe SimpleStateStatus.Finished
     val state = f.periodicDeploymentManager.processStateDefinitionManager.statusPresentation(
       ScenarioStatusWithScenarioContext(
-        statusDetails,
+        statusDetails.status,
         processVersion.versionId,
         None,
         Some(processVersion.versionId)

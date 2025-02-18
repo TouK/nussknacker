@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.Inside
 import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
   ScenarioStatusPresentationDetails,
@@ -9,32 +10,31 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
-class SimpleScenarioStatusDtoSpec extends AnyFunSpec with Matchers with Inside {
+class SimpleScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Inside {
 
-  def createInput(status: StateStatus): ScenarioStatusPresentationDetails =
+  def statusPresentation(status: StateStatus): ScenarioStatusPresentationDetails =
     SimpleProcessStateDefinitionManager.statusPresentation(
       ScenarioStatusWithScenarioContext(
-        StatusDetails(status, None, Some(ExternalDeploymentId("12"))),
+        status,
         VersionId(1),
         None,
         None,
       )
     )
 
-  it("scenario state should be during deploy") {
-    val state = createInput(SimpleStateStatus.DuringDeploy)
+  test("scenario state should be during deploy") {
+    val state = statusPresentation(SimpleStateStatus.DuringDeploy)
     state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
   }
 
-  it("scenario state should be running") {
-    val state = createInput(SimpleStateStatus.Running)
+  test("scenario state should be running") {
+    val state = statusPresentation(SimpleStateStatus.Running)
     state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
   }
 
-  it("scenario state should be finished") {
-    val state = createInput(SimpleStateStatus.Finished)
+  test("scenario state should be finished") {
+    val state = statusPresentation(SimpleStateStatus.Finished)
     state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 

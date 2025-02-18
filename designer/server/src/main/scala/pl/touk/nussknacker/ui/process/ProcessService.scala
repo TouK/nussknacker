@@ -286,10 +286,10 @@ class DBProcessService(
         scenarioStatusProvider.getScenariosStatuses(scenarioDetailsTraverse.map(_.toEntity)).map {
           statusesDetailsTraverse =>
             scenarioDetailsTraverse.alignWith(statusesDetailsTraverse) {
-              case Both(scenarioDetails, statusDetailsOpt) =>
+              case Both(scenarioDetails, scenarioStatusOpt) =>
                 scenarioDetails.copy(state =
-                  statusDetailsOpt
-                    .map(scenarioStatusPresenter.toDto(_, scenarioDetails.toEntity, currentlyPresentedVersionId = None))
+                  scenarioStatusOpt
+                    .map(scenarioStatusPresenter.toDto(_, scenarioDetails, currentlyPresentedVersionId = None))
                 )
               case other =>
                 throw new IllegalStateException(

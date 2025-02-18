@@ -19,15 +19,15 @@ class CachingProcessStateDeploymentManager(
     override val schedulingSupport: SchedulingSupport,
 ) extends DeploymentManager {
 
-  private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
+  private val cache: AsyncCache[ProcessName, List[DeploymentStatusDetails]] = Caffeine
     .newBuilder()
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
-    .buildAsync[ProcessName, List[StatusDetails]]
+    .buildAsync[ProcessName, List[DeploymentStatusDetails]]
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    def fetchAndUpdateCache(): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+    def fetchAndUpdateCache(): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
       val resultFuture = delegate.getScenarioDeploymentsStatuses(scenarioName)
       cache.put(scenarioName, resultFuture.map(_.value).toJava.toCompletableFuture)
       resultFuture

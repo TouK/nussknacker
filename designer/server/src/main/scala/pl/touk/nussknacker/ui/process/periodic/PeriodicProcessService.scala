@@ -304,7 +304,7 @@ class PeriodicProcessService(
       processName: ProcessName,
       versionId: VersionId,
       deployment: ScheduleDeploymentData,
-      statusDetails: Option[StatusDetails],
+      statusDetails: Option[DeploymentStatusDetails],
   ): Future[NeedsReschedule] = {
     implicit class RichFuture[Unit](a: Future[Unit]) {
       def needsReschedule(value: Boolean): Future[NeedsReschedule] = a.map(_ => value)
@@ -389,7 +389,7 @@ class PeriodicProcessService(
       processName: ProcessName,
       versionId: VersionId,
       deployment: ScheduleDeploymentData,
-      state: Option[StatusDetails],
+      state: Option[DeploymentStatusDetails],
   ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
@@ -406,7 +406,7 @@ class PeriodicProcessService(
 
   private def handleFailedDeployment(
       deployment: PeriodicProcessDeployment,
-      state: Option[StatusDetails]
+      state: Option[DeploymentStatusDetails]
   ): Future[Unit] = {
     def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
 
@@ -433,7 +433,7 @@ class PeriodicProcessService(
 
   private def markFailedAction(
       deployment: ScheduleDeploymentData,
-      state: Option[StatusDetails]
+      state: Option[DeploymentStatusDetails]
   ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} as failed.")
     for {
@@ -558,7 +558,7 @@ class PeriodicProcessService(
 
   def getMergedStatusDetails(
       name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[StatusDetails]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[DeploymentStatusDetails]] = {
     delegateDeploymentManager.getScenarioDeploymentsStatuses(name).flatMap { statusesWithFreshness =>
       logger.debug(s"Statuses for $name: $statusesWithFreshness")
       mergeStatusWithDeployments(name, statusesWithFreshness.value).map { statusDetails =>
@@ -574,7 +574,7 @@ class PeriodicProcessService(
 
           override def getAllScenariosDeploymentsStatuses()(
               implicit freshnessPolicy: DataFreshnessPolicy
-          ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+          ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
             for {
               allStatusDetailsInDelegate <- supported.getAllScenariosDeploymentsStatuses()
               allStatusDetailsInPeriodic <- mergeStatusWithDeployments(allStatusDetailsInDelegate.value)
@@ -590,8 +590,8 @@ class PeriodicProcessService(
 
   private def mergeStatusWithDeployments(
       name: ProcessName,
-      runtimeStatuses: List[StatusDetails]
-  ): Future[StatusDetails] = {
+      runtimeStatuses: List[DeploymentStatusDetails]
+  ): Future[DeploymentStatusDetails] = {
     def toDeploymentStatuses(schedulesState: SchedulesState) = schedulesState.schedules.toList
       .flatMap { case (scheduleId, scheduleData) =>
         scheduleData.latestDeployments.map { deployment =>
@@ -622,8 +622,8 @@ class PeriodicProcessService(
   }
 
   private def mergeStatusWithDeployments(
-      runtimeStatuses: Map[ProcessName, List[StatusDetails]]
-  ): Future[Map[ProcessName, StatusDetails]] = {
+      runtimeStatuses: Map[ProcessName, List[DeploymentStatusDetails]]
+  ): Future[Map[ProcessName, DeploymentStatusDetails]] = {
     def toDeploymentStatuses(processName: ProcessName, schedulesState: SchedulesState) =
       schedulesState.schedules.toList
         .flatMap { case (scheduleId, scheduleData) =>
@@ -698,10 +698,10 @@ class PeriodicProcessService(
       )
       .run
 
-  implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
+  implicit class RuntimeStatusesExt(runtimeStatuses: List[DeploymentStatusDetails]) {
 
     private val runtimeStatusesMap = runtimeStatuses.flatMap(status => status.deploymentId.map(_ -> status)).toMap
-    def getStatus(deploymentId: PeriodicProcessDeploymentId): Option[StatusDetails] =
+    def getStatus(deploymentId: PeriodicProcessDeploymentId): Option[DeploymentStatusDetails] =
       runtimeStatusesMap.get(DeploymentId(deploymentId.toString))
 
   }
@@ -768,7 +768,7 @@ object PeriodicProcessService {
 
     // Currently we don't present deployments - theirs statuses are available only in tooltip - because of that we have to pick
     // one "merged" status that will be presented to users
-    def mergedStatusDetails: StatusDetails = {
+    def mergedStatusDetails: DeploymentStatusDetails = {
       def toPeriodicProcessStatusWithMergedStatus(mergedStatus: StateStatus) = PeriodicProcessStatusWithMergedStatus(
         activeDeploymentsStatuses,
         inactiveDeploymentsStatuses,
@@ -776,7 +776,7 @@ object PeriodicProcessService {
       )
 
       def createStatusDetails(mergedStatus: StateStatus, periodicDeploymentIdOpt: Option[PeriodicProcessDeploymentId]) =
-        StatusDetails(
+        DeploymentStatusDetails(
           status = toPeriodicProcessStatusWithMergedStatus(mergedStatus),
           deploymentId = periodicDeploymentIdOpt.map(_.toString).map(DeploymentId(_)),
         )
@@ -890,7 +890,7 @@ object PeriodicProcessService {
       status: PeriodicProcessDeploymentStatus,
       processActive: Boolean,
       // Some additional information that are available in StatusDetails returned by engine runtime
-      runtimeStatusOpt: Option[StatusDetails]
+      runtimeStatusOpt: Option[DeploymentStatusDetails]
   ) {
 
     def scheduleName: ScheduleName = scheduleId.scheduleName

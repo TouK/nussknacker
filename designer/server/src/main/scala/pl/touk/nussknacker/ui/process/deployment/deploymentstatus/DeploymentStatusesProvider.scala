@@ -58,7 +58,7 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
   )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[StatusDetails]]]] = {
+  ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] = {
     prefetchedDeploymentStatuses
       .flatMap(_.get(processingType, scenarioName))
       .map { prefetchedStatusDetails =>
@@ -78,7 +78,7 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
       manager: DeploymentsStatusesQueryForAllScenariosSupported
   )(
       implicit freshnessPolicy: DataFreshnessPolicy,
-  ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
+  ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]])]] = {
     manager
       .getAllScenariosDeploymentsStatuses()
       .map(states => Some((processingType, states)))
@@ -95,14 +95,14 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
 
 class PrefetchedDeploymentStatuses(
     prefetchedStatusesByProcessingType: Map[ProcessingType, WithDataFreshnessStatus[
-      Map[ProcessName, List[StatusDetails]]
+      Map[ProcessName, List[DeploymentStatusDetails]]
     ]]
 ) {
 
   def get(
       processingType: ProcessingType,
       scenarioName: ProcessName
-  ): Option[WithDataFreshnessStatus[List[StatusDetails]]] =
+  ): Option[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] =
     for {
       prefetchedStatusesForProcessingType <- prefetchedStatusesByProcessingType.get(processingType)
       // Deployment statuses are prefetched for all scenarios for the given processing type.

@@ -38,8 +38,8 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
-  private val random                                      = new scala.util.Random()
+  private val memory: TrieMap[ProcessName, DeploymentStatusDetails] = TrieMap[ProcessName, DeploymentStatusDetails]()
+  private val random                                                = new scala.util.Random()
 
   private val miniClusterWithServices =
     FlinkMiniClusterFactory
@@ -57,10 +57,10 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
 
-  implicit private class StatusDetailsExpandable(statusDetails: StatusDetails) {
+  implicit private class StatusDetailsExpandable(statusDetails: DeploymentStatusDetails) {
 
-    def withStateStatus(stateStatus: StateStatus): StatusDetails = {
-      StatusDetails(
+    def withStateStatus(stateStatus: StateStatus): DeploymentStatusDetails = {
+      DeploymentStatusDetails(
         stateStatus,
         statusDetails.deploymentId,
         statusDetails.externalDeploymentId,
@@ -147,7 +147,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
 
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(memory.get(scenarioName).toList))
   }
 
@@ -182,8 +182,11 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       )
     }
 
-  private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): StatusDetails = {
-    val statusDetails = StatusDetails(
+  private def createAndSaveProcessState(
+      stateStatus: StateStatus,
+      processVersion: ProcessVersion
+  ): DeploymentStatusDetails = {
+    val statusDetails = DeploymentStatusDetails(
       stateStatus,
       None,
       Some(ExternalDeploymentId(UUID.randomUUID().toString)),

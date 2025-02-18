@@ -32,7 +32,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
     super.statusActions(
       extractPeriodicStatus(input.scenarioStatus)
-        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
+        .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
@@ -40,7 +40,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   override def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] = {
     super.actionTooltips(
       extractPeriodicStatus(input.scenarioStatus)
-        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
+        .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
@@ -48,7 +48,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   override def statusIcon(input: ScenarioStatusWithScenarioContext): URI = {
     super.statusIcon(
       extractPeriodicStatus(input.scenarioStatus)
-        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
+        .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
@@ -56,7 +56,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   override def statusDescription(input: ScenarioStatusWithScenarioContext): String = {
     super.statusDescription(
       extractPeriodicStatus(input.scenarioStatus)
-        .map(periodic => input.withScenarioStatus(periodic.mergedStatus))
+        .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)
     )
   }
