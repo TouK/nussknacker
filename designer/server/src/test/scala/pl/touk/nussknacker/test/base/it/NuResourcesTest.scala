@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -340,13 +341,13 @@ trait NuResourcesTest
       s"/processManagement/deploy/$processName",
       HttpEntity(
         ContentTypes.`application/json`,
-        RunDeploymentRequest(None, comment).asJson.noSpaces
+        DeployRequest(comment, None).asJson.noSpaces
       )
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   // TODO: See comment in ManagementResources.deployRequestEntity
-  protected def deployProcessCommentOnly(
+  protected def deployProcessCommentDeprecated(
       processName: ProcessName,
       comment: Option[String] = None
   ): RouteTestResult =
@@ -357,6 +358,20 @@ trait NuResourcesTest
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def cancelProcess(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/cancel/$processName",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        CancelRequest(comment).asJson.noSpaces
+      )
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def cancelProcessCommentDeprecated(
       processName: ProcessName,
       comment: Option[String] = None
   ): RouteTestResult =

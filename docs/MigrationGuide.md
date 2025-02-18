@@ -11,7 +11,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - max count of sticky notes inside one scenario/fragment
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
-
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`:
+    * forceLatestRead is missing -> keep defaultOffsetResetStrategy missing or set to "None"
+    * forceLatestRead: false -> defaultOffsetResetStrategy: "None"
+    * forceLatestRead: true -> defaultOffsetResetStrategy: "ToLatest"
 
 ### Other changes
 
