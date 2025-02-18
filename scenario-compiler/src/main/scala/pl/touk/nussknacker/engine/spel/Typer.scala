@@ -66,7 +66,8 @@ private[spel] class Typer(
     classDefinitionSet: ClassDefinitionSet,
     evaluationContextPreparer: EvaluationContextPreparer,
     anyMethodExecutionForUnknownAllowed: Boolean,
-    dynamicPropertyAccessAllowed: Boolean
+    dynamicPropertyAccessAllowed: Boolean,
+    absentVariableReferenceAllowed: Boolean
 ) extends LazyLogging {
 
   import ast.SpelAst._
@@ -499,7 +500,7 @@ private[spel] class Typer(
           .get(name)
           .orElse(current.stackHead.filter(_ => name == "this"))
           .map(valid)
-          .getOrElse(invalid(UnresolvedReferenceError(name)))
+          .getOrElse(if (absentVariableReferenceAllowed) valid(Unknown) else invalid(UnresolvedReferenceError(name)))
           .map(toNodeResult)
     })
   }
@@ -786,7 +787,20 @@ private[spel] class Typer(
       classDefinitionSet,
       evaluationContextPreparer,
       anyMethodExecutionForUnknownAllowed,
-      dynamicPropertyAccessAllowed
+      dynamicPropertyAccessAllowed,
+      absentVariableReferenceAllowed
+    )
+
+  def withAbsentVariableReferenceAllowed(value: Boolean): Typer =
+    new Typer(
+      dictTyper,
+      strictMethodsChecking,
+      staticMethodInvocationsChecking,
+      classDefinitionSet,
+      evaluationContextPreparer,
+      anyMethodExecutionForUnknownAllowed,
+      dynamicPropertyAccessAllowed,
+      value
     )
 
 }
@@ -797,7 +811,8 @@ object Typer {
       classLoader: ClassLoader,
       expressionConfig: ExpressionConfigDefinition,
       spelDictTyper: SpelDictTyper,
-      classDefinitionSet: ClassDefinitionSet
+      classDefinitionSet: ClassDefinitionSet,
+      absentVariableReferenceAllowed: Boolean
   ): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
 
@@ -808,7 +823,8 @@ object Typer {
       classDefinitionSet,
       evaluationContextPreparer,
       expressionConfig.methodExecutionForUnknownAllowed,
-      expressionConfig.dynamicPropertyAccessAllowed
+      expressionConfig.dynamicPropertyAccessAllowed,
+      absentVariableReferenceAllowed
     )
   }
 

@@ -325,6 +325,7 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         valueEditor: Option[ParameterValueInput],
+        // TODO: Research if this parameter may be removed after merged: https://github.com/TouK/nussknacker/pull/7574
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
 

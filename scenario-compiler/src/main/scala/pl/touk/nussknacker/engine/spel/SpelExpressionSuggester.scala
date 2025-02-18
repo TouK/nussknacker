@@ -36,8 +36,16 @@ class SpelExpressionSuggester(
     classLoader: ClassLoader
 ) {
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
+
   private val typer =
-    Typer.default(classLoader, expressionConfig, new LabelsDictTyper(uiDictServices.dictRegistry), clssDefinitions)
+    Typer.default(
+      classLoader,
+      expressionConfig,
+      new LabelsDictTyper(uiDictServices.dictRegistry),
+      clssDefinitions,
+      false
+    )
+
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 
