@@ -62,13 +62,11 @@ export function mapProcessWithNewEdge(scenarioGraph: ScenarioGraph, before: Edge
 }
 
 export function cleanupNodeInputEdges(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType) {
-    if (!NodeUtils.hasInputs(after)) {
-        return {
-            ...scenarioGraph,
-            edges: scenarioGraph.edges.filter(({ to }) => to !== before.id),
-        };
-    }
-    return scenarioGraph;
+    if (NodeUtils.hasInputs(after)) return scenarioGraph;
+    return {
+        ...scenarioGraph,
+        edges: scenarioGraph.edges.filter(({ to }) => to !== before.id),
+    };
 }
 
 export function replaceNodeOutputEdges(

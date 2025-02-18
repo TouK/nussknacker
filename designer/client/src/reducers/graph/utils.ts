@@ -166,14 +166,13 @@ export function removeBranchParameter(node: NodeType, branchId: NodeId) {
 export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdges: Pick<Edge, "from" | "to">[]): NodeType[] {
     return removedEdges.reduce((resultNodes, { from, to }) => {
         const node = resultNodes.find((n) => n.id === to);
-        if (node && NodeUtils.nodeIsJoin(node)) {
+        if (NodeUtils.nodeIsJoin(node)) {
             const newToNode = removeBranchParameter(node, from);
             return resultNodes.map((n) => {
                 return n.id === to ? newToNode : n;
             });
-        } else {
-            return resultNodes;
         }
+        return resultNodes;
     }, nodes);
 }
 
@@ -184,39 +183,37 @@ export function enrichNodeWithProcessDependentData(
 ): NodeType {
     const node = cloneDeep(originalNode);
 
-    switch (node.type) {
-        case "Join": {
-            const parameters = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.parameters;
-            const declaredBranchParameters = parameters?.filter((p) => p.branchParam) || [];
-            const incomingEdges = edges.filter((e) => e.to === node.id);
-            const branchParameters = incomingEdges.map((edge) => {
-                const branchId = edge.from;
-                const existingBranchParams = node.branchParameters.find((p) => p.branchId === branchId);
-                const parameters = declaredBranchParameters.map((branchParamDef) => {
-                    const existingParamValue = existingBranchParams?.parameters?.find((p) => p.name === branchParamDef.name);
-                    if (!existingParamValue) {
-                        const templateParamValue = node.branchParametersTemplate?.find((p) => p.name === branchParamDef.name);
-                        if (!templateParamValue) {
-                            // We need to have this fallback to some template for situation when it is existing node and it has't got
-                            // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-                            return {
-                                name: branchParamDef.name,
-                                expression: {
-                                    expression: `#${branchParamDef.name}`,
-                                    language: ExpressionLang.SpEL,
-                                },
-                            };
-                        }
-                        return cloneDeep(templateParamValue);
+    if (NodeUtils.nodeIsJoin(node)) {
+        const parameters = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.parameters;
+        const declaredBranchParameters = parameters?.filter((p) => p.branchParam) || [];
+        const incomingEdges = edges.filter((e) => e.to === node.id);
+        const branchParameters = incomingEdges.map((edge) => {
+            const branchId = edge.from;
+            const existingBranchParams = node.branchParameters.find((p) => p.branchId === branchId);
+            const parameters = declaredBranchParameters.map((branchParamDef) => {
+                const existingParamValue = existingBranchParams?.parameters?.find((p) => p.name === branchParamDef.name);
+                if (!existingParamValue) {
+                    const templateParamValue = node.branchParametersTemplate?.find((p) => p.name === branchParamDef.name);
+                    if (!templateParamValue) {
+                        // We need to have this fallback to some template for situation when it is existing node and it has't got
+                        // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+                        return {
+                            name: branchParamDef.name,
+                            expression: {
+                                expression: `#${branchParamDef.name}`,
+                                language: ExpressionLang.SpEL,
+                            },
+                        };
                     }
-                    return existingParamValue;
-                });
-
-                return { branchId, parameters };
+                    return cloneDeep(templateParamValue);
+                }
+                return existingParamValue;
             });
 
-            return { ...node, branchParameters };
-        }
+            return { branchId, parameters };
+        });
+
+        return { ...node, branchParameters };
     }
 
     return node;
