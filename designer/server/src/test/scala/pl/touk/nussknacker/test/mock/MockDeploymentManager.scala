@@ -5,6 +5,7 @@ import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
+import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
 import sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine._
@@ -16,13 +17,14 @@ import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager.{
   sampleCustomActionActivity,
   sampleDeploymentId,
-  sampleStatusDetails
+  sampleDeploymentStatusDetails
 }
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
@@ -38,7 +40,7 @@ import scala.util.Try
 class MockDeploymentManager private (
     modelData: ModelData,
     deploymentManagerDependencies: DeploymentManagerDependencies,
-    defaultProcessStateStatus: StateStatus,
+    defaultDeploymentStatus: StateStatus,
     scenarioActivityManager: ScenarioActivityManager,
     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     closeCreatedDeps: () => Unit,
@@ -75,16 +77,33 @@ class MockDeploymentManager private (
       case None          => super.processStateDefinitionManager
     }
 
-  override def getScenarioDeploymentsStatuses(
+  override protected def getScenarioDeploymentsStatusesWithJobOverview(
       scenarioName: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+  )(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[(DeploymentStatusDetails, JobOverview)]]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       WithDataFreshnessStatus.fresh(
-        managerProcessStates.getOrDefault(
-          scenarioName,
-          List(sampleStatusDetails(defaultProcessStateStatus, sampleDeploymentId))
-        )
+        managerProcessStates
+          .getOrDefault(
+            scenarioName,
+            List(sampleDeploymentStatusDetails(defaultDeploymentStatus, sampleDeploymentId))
+          )
+          .map { deploymentStatus =>
+            val tasksOverview = JobTasksOverview(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, None)
+            val deploymentIdUuid =
+              deploymentStatus.deploymentId.map(id => UUID.fromString(id.value)).getOrElse(UUID.randomUUID())
+            val jobOverview = JobOverview(
+              new JobID(deploymentIdUuid.getLeastSignificantBits, deploymentIdUuid.getLeastSignificantBits),
+              "not-important",
+              -1,
+              -1,
+              JobStatus.RUNNING.name(),
+              tasksOverview
+            )
+            (deploymentStatus, jobOverview)
+          }
       )
     }
   }
@@ -105,7 +124,7 @@ class MockDeploymentManager private (
   // We override this field, because currently, this mock returns fallback for not defined scenarios states.
   // To make deploymentsStatusesQueryForAllScenariosSupport consistent with this approach, we should remove this fallback.
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport$
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def close(): Unit = {
     super.close()
@@ -120,7 +139,7 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
   override def runScenarioJob(
       command: DMRunDeploymentCommand,
       savepointPathOpt: Option[String]
-  ): Future[Option[ExternalDeploymentId]] =
+  ): Future[Option[JobID]] =
     Future.failed(new IllegalAccessException("This implementation shouldn't be used"))
 
 }
@@ -170,12 +189,12 @@ object MockDeploymentManager {
     )
   }
 
-  private[mock] def sampleStatusDetails(
+  private[mock] def sampleDeploymentStatusDetails(
       status: StateStatus,
       deploymentId: DeploymentId,
       version: Option[ProcessVersion] = Some(ProcessVersion.empty)
   ): DeploymentStatusDetails =
-    DeploymentStatusDetails(status, Some(deploymentId), Some(ExternalDeploymentId("1")), version)
+    DeploymentStatusDetails(status, Some(deploymentId), version)
 
   // Pass correct deploymentId
   private[mock] def sampleDeploymentId: DeploymentId = DeploymentId(UUID.randomUUID().toString)
@@ -268,13 +287,13 @@ object MockDeploymentManagerSyntaxSugar {
         status: StateStatus,
         deploymentId: DeploymentId = sampleDeploymentId
     )(action: => T): T = {
-      withProcessStates(processName, List(sampleStatusDetails(status, deploymentId)))(action)
+      withProcessStates(processName, List(sampleDeploymentStatusDetails(status, deploymentId)))(action)
     }
 
     def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[ProcessVersion])(
         action: => T
     ): T = {
-      withProcessStates(processName, List(sampleStatusDetails(status, sampleDeploymentId, version)))(action)
+      withProcessStates(processName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId, version)))(action)
     }
 
     def withEmptyProcessState[T](processName: ProcessName)(action: => T): T = {

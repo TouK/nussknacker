@@ -41,7 +41,7 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
             manager <- dispatcher.deploymentManager(processingType)
             managerWithCapability <- manager.deploymentsStatusesQueryForAllScenariosSupport match {
               case supported: DeploymentsStatusesQueryForAllScenariosSupported => Some(supported)
-              case NoDeploymentsStatusesQueryForAllScenariosSupport$           => None
+              case NoDeploymentsStatusesQueryForAllScenariosSupport            => None
             }
           } yield getAllDeploymentStatuses(processingType, managerWithCapability))
             .getOrElse(Future.successful(None))

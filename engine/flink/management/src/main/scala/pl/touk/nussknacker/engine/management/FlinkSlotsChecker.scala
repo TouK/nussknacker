@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.management
 import cats.data.OptionT
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.CoreOptions
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview
@@ -19,7 +19,7 @@ class FlinkSlotsChecker(client: FlinkClient)(implicit ec: ExecutionContext) exte
 
   def checkRequiredSlotsExceedAvailableSlots(
       canonicalProcess: CanonicalProcess,
-      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+      currentlyDeployedJobsIds: List[JobID]
   ): Future[Unit] = {
     val collectedSlotsCheckInputs = for {
       slotsBalance    <- determineSlotsBalance(canonicalProcess, currentlyDeployedJobsIds)
@@ -47,7 +47,7 @@ class FlinkSlotsChecker(client: FlinkClient)(implicit ec: ExecutionContext) exte
 
   private def determineSlotsBalance(
       canonicalProcess: CanonicalProcess,
-      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+      currentlyDeployedJobsIds: List[JobID]
   ): OptionT[Future, SlotsBalance] = {
     canonicalProcess.metaData.typeSpecificData match {
       case stream: StreamMetaData =>
@@ -61,12 +61,11 @@ class FlinkSlotsChecker(client: FlinkClient)(implicit ec: ExecutionContext) exte
   }
 
   private def slotsThatWillBeReleasedAfterJobCancel(
-      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+      currentlyDeployedJobsIds: List[JobID]
   ): Future[Int] = {
     Future
       .sequence(
-        currentlyDeployedJobsIds
-          .map(deploymentId => client.getJobConfig(deploymentId.value).map(_.`job-parallelism`))
+        currentlyDeployedJobsIds.map(client.getJobConfig(_).map(_.`job-parallelism`))
       )
       .map(_.sum)
   }

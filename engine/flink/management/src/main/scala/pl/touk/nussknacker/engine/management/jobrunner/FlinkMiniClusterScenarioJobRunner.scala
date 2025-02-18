@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
-import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
@@ -26,10 +25,11 @@ class FlinkMiniClusterScenarioJobRunner(
     "run"
   )
 
+  // FIXME abr set jobid
   override def runScenarioJob(
       command: DMRunDeploymentCommand,
       savepointPathOpt: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  ): Future[Option[JobID]] = {
     Future {
       miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
         savepointPathOpt.foreach { savepointPath =>
@@ -46,7 +46,7 @@ class FlinkMiniClusterScenarioJobRunner(
             env
           )
           .getJobID
-        Some(ExternalDeploymentId(jobID.toHexString))
+        Some(jobID)
       }
     }
   }

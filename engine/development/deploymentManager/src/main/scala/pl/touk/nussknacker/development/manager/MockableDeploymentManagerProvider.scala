@@ -132,7 +132,7 @@ object MockableDeploymentManagerProvider {
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
     override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-      NoDeploymentsStatusesQueryForAllScenariosSupport$
+      NoDeploymentsStatusesQueryForAllScenariosSupport
 
     override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 

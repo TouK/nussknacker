@@ -182,7 +182,6 @@ class EmbeddedDeploymentManager(
                   deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
                 ),
               deploymentId = Some(interpreterData.deploymentId),
-              externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
               version = Some(interpreterData.processVersion)
             )
           }
@@ -211,7 +210,7 @@ class EmbeddedDeploymentManager(
     }
 
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport$
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 

@@ -53,7 +53,7 @@ trait DeploymentsStatusesQueryForAllScenariosSupported extends DeploymentsStatus
 
 }
 
-case object NoDeploymentsStatusesQueryForAllScenariosSupport$ extends DeploymentsStatusesQueryForAllScenariosSupport
+case object NoDeploymentsStatusesQueryForAllScenariosSupport extends DeploymentsStatusesQueryForAllScenariosSupport
 
 sealed trait DeploymentSynchronisationSupport
 

@@ -40,6 +40,7 @@ object K8sDeploymentStatusMapper extends LazyLogging {
               tooltip = Some(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
             ),
             None,
+            None,
           )
         )
     }
@@ -50,14 +51,11 @@ object K8sDeploymentStatusMapper extends LazyLogging {
       case None         => SimpleStateStatus.DuringDeploy
       case Some(status) => mapStatusWithPods(status, pods)
     }
-    val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
     DeploymentStatusDetails(
-      status,
+      status = status,
       // TODO: return internal deploymentId, probably computed based on some hash to make sure that it will change only when something in scenario change
-      None,
-      None,
-      parseVersionAnnotation(deployment),
-      startTime,
+      deploymentId = None,
+      version = parseVersionAnnotation(deployment),
     )
   }
 

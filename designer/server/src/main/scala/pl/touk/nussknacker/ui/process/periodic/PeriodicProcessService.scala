@@ -584,8 +584,8 @@ class PeriodicProcessService(
 
         }
 
-      case NoDeploymentsStatusesQueryForAllScenariosSupport$ =>
-        NoDeploymentsStatusesQueryForAllScenariosSupport$
+      case NoDeploymentsStatusesQueryForAllScenariosSupport =>
+        NoDeploymentsStatusesQueryForAllScenariosSupport
     }
 
   private def mergeStatusWithDeployments(
@@ -779,6 +779,7 @@ object PeriodicProcessService {
         DeploymentStatusDetails(
           status = toPeriodicProcessStatusWithMergedStatus(mergedStatus),
           deploymentId = periodicDeploymentIdOpt.map(_.toString).map(DeploymentId(_)),
+          version = None
         )
 
       pickMostImportantActiveDeployment(activeDeploymentsStatuses)

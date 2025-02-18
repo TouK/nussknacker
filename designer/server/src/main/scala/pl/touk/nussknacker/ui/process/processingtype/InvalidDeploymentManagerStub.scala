@@ -15,7 +15,8 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   private val stubbedStatus = DeploymentStatusDetails(
     ProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
-    deploymentId = None
+    deploymentId = None,
+    version = None
   )
 
   override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
@@ -35,7 +36,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport$
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 

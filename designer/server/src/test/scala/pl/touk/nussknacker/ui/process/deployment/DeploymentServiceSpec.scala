@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
@@ -547,10 +547,9 @@ class DeploymentServiceSpec
 
     val state =
       DeploymentStatusDetails(
-        SimpleStateStatus.Restarting,
-        None,
-        Some(ExternalDeploymentId("12")),
-        Some(ProcessVersion.empty)
+        status = SimpleStateStatus.Restarting,
+        deploymentId = None,
+        version = Some(ProcessVersion.empty)
       )
 
     deploymentManager.withProcessStates(processName, List(state)) {

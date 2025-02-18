@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.JobStatus
+import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusDetails}
@@ -17,13 +17,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkStatusDetailsDeterminer(
     namingStrategy: NamingStrategy,
-    getJobConfig: String => Future[flinkRestModel.ExecutionConfig]
+    getJobConfig: JobID => Future[flinkRestModel.ExecutionConfig]
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
   def statusDetailsFromJobOverviews(
       jobOverviews: List[JobOverview]
-  ): Future[Map[ProcessName, List[DeploymentStatusDetails]]] =
+  ): Future[Map[ProcessName, List[(DeploymentStatusDetails, JobOverview)]]] =
     Future
       .sequence {
         for {
@@ -32,11 +32,10 @@ class FlinkStatusDetailsDeterminer(
         } yield withParsedJobConfig(job.jid, name).map { jobConfigOpt =>
           val details = jobConfigOpt.map { jobConfig =>
             DeploymentStatusDetails(
-              SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
-              jobConfig.deploymentId,
-              Some(ExternalDeploymentId(job.jid)),
-              version = Some(jobConfig.version),
-              startTime = Some(job.`start-time`),
+              status =
+                SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
+              deploymentId = jobConfig.deploymentId,
+              version = Some(jobConfig.version)
             )
           } getOrElse {
             logger.debug(
@@ -45,18 +44,16 @@ class FlinkStatusDetailsDeterminer(
             DeploymentStatusDetails(
               SimpleStateStatus.DuringDeploy,
               // For scheduling mechanism this fallback is probably wrong // TODO: switch scheduling mechanism deployment ids to UUIDs
-              Some(DeploymentId(job.jid)),
-              Some(ExternalDeploymentId(job.jid)),
+              Some(DeploymentId(job.jid.toHexString)),
               version = None,
-              startTime = Some(job.`start-time`),
             )
           }
-          name -> details
+          name -> (details, job)
         }
       }
       .map(_.toGroupedMap)
 
-  private def withParsedJobConfig(jobId: String, name: ProcessName): Future[Option[ParsedJobConfig]] = {
+  private def withParsedJobConfig(jobId: JobID, name: ProcessName): Future[Option[ParsedJobConfig]] = {
     getJobConfig(jobId).map { executionConfig =>
       val userConfig = executionConfig.`user-config`
       for {

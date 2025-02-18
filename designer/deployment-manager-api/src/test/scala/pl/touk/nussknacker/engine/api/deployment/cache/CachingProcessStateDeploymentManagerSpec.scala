@@ -10,7 +10,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.UUID
@@ -30,7 +30,7 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoDeploymentsStatusesQueryForAllScenariosSupport$,
+      NoDeploymentsStatusesQueryForAllScenariosSupport,
       NoSchedulingSupport,
     )
 
@@ -50,7 +50,7 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoDeploymentsStatusesQueryForAllScenariosSupport$,
+      NoDeploymentsStatusesQueryForAllScenariosSupport,
       NoSchedulingSupport,
     )
 
@@ -69,7 +69,7 @@ class CachingProcessStateDeploymentManagerSpec
       delegate,
       10 seconds,
       NoDeploymentSynchronisationSupport,
-      NoDeploymentsStatusesQueryForAllScenariosSupport$,
+      NoDeploymentsStatusesQueryForAllScenariosSupport,
       NoSchedulingSupport,
     )
 
@@ -87,7 +87,7 @@ class CachingProcessStateDeploymentManagerSpec
     def getProcessStatesDeploymentIdNow(freshnessPolicy: DataFreshnessPolicy): WithDataFreshnessStatus[List[String]] =
       dm.getScenarioDeploymentsStatuses(ProcessName("foo"))(freshnessPolicy)
         .futureValue
-        .map(_.map(_.externalDeploymentId.value.value))
+        .map(_.map(_.deploymentId.value.value))
 
   }
 
@@ -97,8 +97,8 @@ class CachingProcessStateDeploymentManagerSpec
       _: InvocationOnMock =>
         val randomState = DeploymentStatusDetails(
           SimpleStateStatus.Running,
-          deploymentId = None,
-          externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString))
+          deploymentId = Some(DeploymentId(UUID.randomUUID().toString)),
+          version = None,
         )
         Future.successful(WithDataFreshnessStatus.fresh(List(randomState)))
     }

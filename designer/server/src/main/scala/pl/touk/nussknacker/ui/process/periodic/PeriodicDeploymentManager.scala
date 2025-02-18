@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 
+// FIXME abr: test on DeploymentService / ScenarioStatusProvider level
 object PeriodicDeploymentManager {
 
   def apply(

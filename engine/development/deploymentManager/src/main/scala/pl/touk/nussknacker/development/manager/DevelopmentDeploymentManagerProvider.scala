@@ -57,20 +57,6 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
 
-  implicit private class StatusDetailsExpandable(statusDetails: DeploymentStatusDetails) {
-
-    def withStateStatus(stateStatus: StateStatus): DeploymentStatusDetails = {
-      DeploymentStatusDetails(
-        stateStatus,
-        statusDetails.deploymentId,
-        statusDetails.externalDeploymentId,
-        statusDetails.version,
-        Some(System.currentTimeMillis())
-      )
-    }
-
-  }
-
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
     case DMValidateScenarioCommand(_, _, canonicalProcess, _) =>
       if (description(canonicalProcess).contains(descriptionForValidationFail)) {
@@ -118,7 +104,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
               case None        => changeState(processVersion.processName, NotDeployed)
             }
           } else {
-            result.complete(Success(duringDeployStateStatus.externalDeploymentId))
+            result.complete(Success(duringDeployStateStatus.deploymentId.map(_.value).map(ExternalDeploymentId(_))))
             asyncChangeState(processVersion.processName, Running)
           }
         }
@@ -164,7 +150,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
     memory.get(name).foreach { statusDetails =>
-      val newProcessState = statusDetails.withStateStatus(stateStatus)
+      val newProcessState = statusDetails.copy(status = stateStatus)
       memory.update(name, newProcessState)
       logger.debug(s"Changed scenario $name state from ${statusDetails.status.name} to ${stateStatus.name}.")
     }
@@ -187,11 +173,9 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       processVersion: ProcessVersion
   ): DeploymentStatusDetails = {
     val statusDetails = DeploymentStatusDetails(
-      stateStatus,
-      None,
-      Some(ExternalDeploymentId(UUID.randomUUID().toString)),
+      status = stateStatus,
+      deploymentId = None,
       version = Some(processVersion),
-      startTime = Some(System.currentTimeMillis()),
     )
 
     memory.update(processVersion.processName, statusDetails)
@@ -206,7 +190,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport$
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }

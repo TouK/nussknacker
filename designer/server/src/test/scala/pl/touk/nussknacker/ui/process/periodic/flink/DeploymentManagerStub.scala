@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentId
 
 import scala.collection.concurrent.TrieMap
@@ -30,10 +30,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
       List(
         DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
-          externalDeploymentId = Some(ExternalDeploymentId("1")),
           status = status,
           version = None,
-          startTime = None,
         )
       )
     )
@@ -49,10 +47,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
       List(
         DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
-          externalDeploymentId = Some(ExternalDeploymentId("1")),
           status = status,
           version = None,
-          startTime = None,
         )
       )
     )

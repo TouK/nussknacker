@@ -17,8 +17,6 @@ import skuber.{ListResource, Pod}
 //for now we have unit tests based on real responses - generated manually, using kubectl -v=9 describe deployment [...]
 class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
 
-  private val timestamp = 1640769008000L
-
   private val version = ProcessVersion(VersionId(4), ProcessName("AAAAA"), ProcessId(7), List.empty, "admin", Some(2))
 
   private def parseResource[T](source: String)(implicit format: Format[T]): T = {
@@ -33,9 +31,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       DeploymentStatusDetails(
         status = SimpleStateStatus.Running,
         deploymentId = None,
-        externalDeploymentId = None,
         version = Some(version),
-        startTime = Some(timestamp)
       )
     )
   }
@@ -49,9 +45,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       DeploymentStatusDetails(
         status = SimpleStateStatus.DuringDeploy,
         deploymentId = None,
-        externalDeploymentId = None,
         version = Some(version),
-        startTime = Some(timestamp)
       )
     )
   }
@@ -70,9 +64,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
           )
         ),
         deploymentId = None,
-        externalDeploymentId = None,
         version = Some(version),
-        startTime = Some(timestamp),
       )
     )
   }
@@ -87,9 +79,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       DeploymentStatusDetails(
         status = SimpleStateStatus.Restarting,
         deploymentId = None,
-        externalDeploymentId = None,
         version = Some(version),
-        startTime = Some(timestamp)
       )
     )
   }
@@ -107,9 +97,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
           tooltip = Some("Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName")
         ),
         deploymentId = None,
-        externalDeploymentId = None,
         version = None,
-        startTime = None,
       )
     )
   }

@@ -44,7 +44,9 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
       scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(
-      WithDataFreshnessStatus.fresh(scenarioStatusMap.get(scenarioName).map(DeploymentStatusDetails(_, None)).toList)
+      WithDataFreshnessStatus.fresh(
+        scenarioStatusMap.get(scenarioName).map(DeploymentStatusDetails(_, None, None)).toList
+      )
     )
   }
 
@@ -53,7 +55,7 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport$
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
