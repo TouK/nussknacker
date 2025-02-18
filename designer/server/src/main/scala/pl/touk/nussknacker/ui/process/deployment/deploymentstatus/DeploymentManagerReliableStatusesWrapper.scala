@@ -15,7 +15,7 @@ object DeploymentManagerReliableStatusesWrapper {
 
   implicit class Ops(dmDispatcher: DeploymentManagerDispatcher) {
 
-    def getScenarioDeploymentsStatusesWithTimeoutOpt(
+    def getScenarioDeploymentsStatusesWithErrorWrappingAndTimeoutOpt(
         processingType: ProcessingType,
         scenarioName: ProcessName,
         timeoutOpt: Option[FiniteDuration]

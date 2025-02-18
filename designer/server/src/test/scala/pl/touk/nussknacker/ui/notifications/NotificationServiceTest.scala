@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -295,12 +296,13 @@ class NotificationServiceTest
       config,
       clock
     )
-    val scenarioStatusProvider = ScenarioStatusProvider(
+    val deploymentsStatusesProvider = new DeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout = None)
+    val scenarioStatusProvider = new ScenarioStatusProvider(
+      deploymentsStatusesProvider,
       managerDispatcher,
       dbProcessRepository,
       actionRepository,
-      dbioRunner,
-      scenarioStateTimeout = None
+      dbioRunner
     )
     val actionService = new ActionService(
       managerDispatcher,

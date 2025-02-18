@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
-import akka.actor.ActorSystem
 import cats.Traverse
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
@@ -14,76 +13,32 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.FailedToGet
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.deployment.DeploymentId
-import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentManagerReliableStatusesWrapper.Ops
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.GetDeploymentsStatusesError
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider.FragmentStateException
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.{
+  DeploymentStatusesProvider,
+  GetDeploymentsStatusesError,
+  PrefetchedDeploymentStatuses
+}
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.{DBIO, DBIOAction}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
-import scala.util.control.NonFatal
 
-trait ScenarioStatusProvider {
-
-  def getScenariosStatuses[F[_]: Traverse, ScenarioShape](processTraverse: F[ScenarioWithDetailsEntity[ScenarioShape]])(
-      implicit user: LoggedUser,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[F[Option[StatusDetails]]]
-
-  def getScenarioStatus(
-      processIdWithName: ProcessIdWithName,
-      currentlyPresentedVersionId: Option[VersionId],
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusDetails]
-
-  def getAllowedActionsForScenarioStatus(
-      processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusWithAllowedActions]
-
-  def getAllowedActionsForScenarioStatusDBIO(processDetails: ScenarioWithDetailsEntity[_])(
-      implicit user: LoggedUser,
-      freshnessPolicy: DataFreshnessPolicy
-  ): DB[ScenarioStatusWithAllowedActions]
-
-}
-
-object ScenarioStatusProvider {
-
-  def apply(
-      dispatcher: DeploymentManagerDispatcher,
-      processRepository: FetchingProcessRepository[DB],
-      actionRepository: ScenarioActionRepository,
-      dbioRunner: DBIOActionRunner,
-      scenarioStateTimeout: Option[FiniteDuration]
-  )(implicit system: ActorSystem): ScenarioStatusProvider =
-    new ScenarioStatusProviderImpl(dispatcher, processRepository, actionRepository, dbioRunner, scenarioStateTimeout)
-
-  object FragmentStateException extends BadRequestError("Fragment doesn't have state.")
-
-}
-
-private class ScenarioStatusProviderImpl(
+class ScenarioStatusProvider(
+    deploymentStatusesProvider: DeploymentStatusesProvider,
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
     actionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
-    scenarioStateTimeout: Option[FiniteDuration]
-)(implicit system: ActorSystem)
-    extends ScenarioStatusProvider
-    with LazyLogging {
+)(implicit ec: ExecutionContext)
+    extends LazyLogging {
 
-  private implicit val ec: ExecutionContext = system.dispatcher
-
-  // TODO: check deployment id to be sure that returned status is for given deployment
-  override def getScenarioStatus(
-      processIdWithName: ProcessIdWithName,
-      currentlyPresentedVersionId: Option[VersionId],
+  def getScenarioStatus(
+      processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StatusDetails] = {
     dbioRunner.run(for {
       processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
@@ -96,7 +51,7 @@ private class ScenarioStatusProviderImpl(
     } yield statusDetails)
   }
 
-  override def getScenariosStatuses[F[_]: Traverse, ScenarioShape](
+  def getScenariosStatuses[F[_]: Traverse, ScenarioShape](
       processTraverse: F[ScenarioWithDetailsEntity[ScenarioShape]]
   )(
       implicit user: LoggedUser,
@@ -105,8 +60,10 @@ private class ScenarioStatusProviderImpl(
     val scenarios = processTraverse.toList
     dbioRunner.run(
       for {
-        actionsInProgress            <- getInProgressActionTypesForScenarios(scenarios)
-        prefetchedDeploymentStatuses <- DBIO.from(getPrefetchedDeploymentStatusesForSupportedManagers(scenarios))
+        actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
+        prefetchedDeploymentStatuses <- DBIO.from(
+          deploymentStatusesProvider.getPrefetchedDeploymentStatusesForSupportedManagers(scenarios)
+        )
         finalDeploymentStatuses <- processTraverse
           .map {
             case process if process.isFragment => DBIO.successful(Option.empty[StatusDetails])
@@ -120,41 +77,31 @@ private class ScenarioStatusProviderImpl(
 
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
       actionsInProgress: Map[ProcessId, Set[ScenarioActionName]],
-      prefetchedDeploymentStatuses: Map[ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]],
+      prefetchedDeploymentStatuses: PrefetchedDeploymentStatuses,
       process: ScenarioWithDetailsEntity[ScenarioShape]
   )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
   ): DB[StatusDetails] = {
-    val prefetchedDeploymentStatusesFroScenario = for {
-      prefetchedStatusesForProcessingType <- prefetchedDeploymentStatuses.get(process.processingType)
-      // Deployment statuses are prefetched for all scenarios for the given processing type.
-      // If there is no information available for a specific scenario name,
-      // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails].
-      prefetchedStatusesForScenario = prefetchedStatusesForProcessingType.getOrElse(process.name, List.empty)
-    } yield prefetchedStatusesForScenario
-    prefetchedDeploymentStatusesFroScenario match {
-      case Some(prefetchedStatusDetails) =>
-        getProcessStateUsingPrefetchedStatus(
-          process,
-          actionsInProgress.getOrElse(process.processId, Set.empty),
-          prefetchedStatusDetails,
-        )
-      case None =>
-        getProcessStateFetchingStatusFromManager(
-          process,
-          actionsInProgress.getOrElse(process.processId, Set.empty),
-        )
-    }
+    val inProgressActionNames = actionsInProgress.getOrElse(process.processId, Set.empty)
+    getScenarioStatusDetails(
+      process,
+      inProgressActionNames,
+      deploymentStatusesProvider.getDeploymentStatuses(
+        process.processingType,
+        process.name,
+        Some(prefetchedDeploymentStatuses)
+      )
+    )
   }
 
-  override def getAllowedActionsForScenarioStatus(
+  def getAllowedActionsForScenarioStatus(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ScenarioStatusWithAllowedActions] = {
     dbioRunner.run(getAllowedActionsForScenarioStatusDBIO(processDetails))
   }
 
-  override def getAllowedActionsForScenarioStatusDBIO(
+  def getAllowedActionsForScenarioStatusDBIO(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): DB[ScenarioStatusWithAllowedActions] = {
     for {
@@ -192,57 +139,12 @@ private class ScenarioStatusProviderImpl(
     getScenarioStatusDetails(
       processDetails,
       inProgressActionNames,
-      dispatcher.getScenarioDeploymentsStatusesWithTimeoutOpt(
+      deploymentStatusesProvider.getDeploymentStatuses(
         processDetails.processingType,
         processDetails.name,
-        scenarioStateTimeout
+        prefetchedDeploymentStatuses = None
       )
     )
-  }
-
-  // DeploymentManager's may support fetching state of all scenarios at once
-  // State is prefetched only when:
-  //  - DM has capability StateQueryForAllScenariosSupported
-  //  - the query is about more than one scenario handled by that DM - for one scenario prefetching would be non-optimal
-  //    and this is a common case for this method because it is invoked for Id Traverse - see usages
-  private def getPrefetchedDeploymentStatusesForSupportedManagers(
-      scenarios: List[ScenarioWithDetailsEntity[_]],
-  )(
-      implicit user: LoggedUser,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]] = {
-    // We assume that prefetching gives profits for at least two scenarios
-    val processingTypesWithMoreThanOneScenario = scenarios.groupBy(_.processingType).filter(_._2.size >= 2).keySet
-
-    Future
-      .sequence {
-        processingTypesWithMoreThanOneScenario.map { processingType =>
-          (for {
-            manager <- dispatcher.deploymentManager(processingType)
-            managerWithCapability <- manager.stateQueryForAllScenariosSupport match {
-              case supported: StateQueryForAllScenariosSupported => Some(supported)
-              case NoStateQueryForAllScenariosSupport            => None
-            }
-          } yield getAllDeploymentStatuses(processingType, managerWithCapability))
-            .getOrElse(Future.successful(None))
-        }
-      }
-      .map(_.flatten.toMap)
-  }
-
-  private def getAllDeploymentStatuses(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
-      implicit freshnessPolicy: DataFreshnessPolicy,
-  ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
-    manager
-      .getAllDeploymentStatuses()
-      .map(states => Some((processingType, states)))
-      .recover { case NonFatal(e) =>
-        logger.warn(
-          s"Failed to get statuses of all scenarios in deployment manager for $processingType: ${e.getMessage}",
-          e
-        )
-        None
-      }
   }
 
   // This is optimisation tweak. We want to reduce number of calls for in progress action types. So for >1 scenarios
@@ -262,18 +164,6 @@ private class ScenarioStatusProviderImpl(
     }
   }
 
-  private def getProcessStateUsingPrefetchedStatus(
-      processDetails: ScenarioWithDetailsEntity[_],
-      inProgressActionNames: Set[ScenarioActionName],
-      prefetchedDeploymentStatuses: WithDataFreshnessStatus[List[StatusDetails]],
-  ): DB[StatusDetails] = {
-    getScenarioStatusDetails(
-      processDetails,
-      inProgressActionNames,
-      Future.successful(Right(prefetchedDeploymentStatuses))
-    )
-  }
-
   private def getScenarioStatusDetails(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
@@ -281,7 +171,6 @@ private class ScenarioStatusProviderImpl(
         Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[StatusDetails]]]
       ],
   ): DB[StatusDetails] = {
-
     if (processDetails.isFragment) {
       throw FragmentStateException
     } else if (processDetails.isArchived) {
@@ -308,11 +197,9 @@ private class ScenarioStatusProviderImpl(
                   s"Deployment statuses for: '${processDetails.name}' are: ${statusWithFreshness.value}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
                       .map(_.actionName)})"
                 )
-                // FIXME abr: resolved states shouldn't be handled here
                 InconsistentStateDetector.resolveScenarioStatus(statusWithFreshness.value, lastStateActionValue)
             }
-        case _ => // We assume that the process never deployed should have no state at the engine
-          // FIXME abr: it is a part of deployment => scenario status resolution
+        case None => // We assume that the process never deployed should have no state at the engine
           logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
           DBIOAction.successful(StatusDetails(SimpleStateStatus.NotDeployed, None))
       }
@@ -330,11 +217,9 @@ private class ScenarioStatusProviderImpl(
         StatusDetails(SimpleStateStatus.Finished, Some(DeploymentId.fromActionId(deploymentActionId)))
       case Some(_) =>
         logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
-        // FIXME abr: it is a part of deployment => scenario status resolution
         StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None)
       case None =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
-        // FIXME abr: it is a part of deployment => scenario status resolution
         StatusDetails(SimpleStateStatus.NotDeployed, None)
     }
   }
@@ -356,3 +241,5 @@ final case class ScenarioStatusWithAllowedActions(
   def scenarioStatus: StateStatus = scenarioStatusDetails.status
 
 }
+
+object FragmentStateException extends BadRequestError("Fragment doesn't have state.")

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.scenariostatus
+package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.deployment.StatusDetails
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.deployment.DeploymentId
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.InconsistentStateDetector
 
 import java.util.UUID
 

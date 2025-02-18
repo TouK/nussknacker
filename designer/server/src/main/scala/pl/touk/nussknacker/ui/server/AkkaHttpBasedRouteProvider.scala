@@ -47,6 +47,7 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionInfoService,
@@ -255,14 +256,15 @@ class AkkaHttpBasedRouteProvider(
         processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
       }
 
-      val scenarioStatusProvider =
-        ScenarioStatusProvider(
-          dmDispatcher,
-          processRepository,
-          actionRepository,
-          dbioRunner,
-          featureTogglesConfig.scenarioStateTimeout
-        )
+      val deploymentsStatusesProvider =
+        new DeploymentStatusesProvider(dmDispatcher, featureTogglesConfig.scenarioStateTimeout)
+      val scenarioStatusProvider = new ScenarioStatusProvider(
+        deploymentsStatusesProvider,
+        dmDispatcher,
+        processRepository,
+        actionRepository,
+        dbioRunner,
+      )
       val actionService = new ActionService(
         dmDispatcher,
         processRepository,

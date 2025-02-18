@@ -33,9 +33,7 @@ class InconsistentStateDetector extends LazyLogging {
     status
   }
 
-  // TODO: This method is exposed to make transition between Option[StatusDetails] and List[StatusDetails] easier to perform.
-  //       After full migration to List[StatusDetails], this method should be removed
-  def extractAtMostOneStatus(deploymentStatuses: List[StatusDetails]): Option[StatusDetails] =
+  private[scenariostatus] def extractAtMostOneStatus(deploymentStatuses: List[StatusDetails]): Option[StatusDetails] =
     doExtractAtMostOneStatus(deploymentStatuses).fold(Some(_), identity)
 
   private def doExtractAtMostOneStatus(
