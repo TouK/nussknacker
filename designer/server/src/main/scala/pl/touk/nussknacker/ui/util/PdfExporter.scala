@@ -245,7 +245,7 @@ object PdfExporter extends LazyLogging {
     } else {
       <block margin-bottom="25pt" margin-top="5pt">
         <block font-size="13pt" font-weight="bold" text-align="left" id={node.id}>
-          {node.getClass.getSimpleName}{node.id}
+          {node.getClass.getSimpleName} {node.id}
         </block>
         <table width="100%" table-layout="fixed">
           <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>

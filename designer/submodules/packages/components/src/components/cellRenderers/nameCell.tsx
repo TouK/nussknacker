@@ -13,11 +13,12 @@ export function NameCell(props: CellRendererParams): JSX.Element {
 
     const filter = useMemo(() => getFilter("NAME"), [getFilter]);
     const isFragment = row.componentType === "fragment";
+    const label = row.label ? row.label : value;
     return (
         <CellLink component={ExternalLink} underline="hover" disabled={!isFragment} color="inherit" href={scenarioHref(value)}>
             <Stack direction="row" alignItems="center" fontSize={"1.25rem"}>
                 <ComponentAvatar src={row.icon} title={row.componentType} fragment={isFragment} />
-                <Highlight value={value} filterText={filter} />
+                <Highlight value={label} filterText={filter} />
                 {isFragment ? (
                     <OpenInNew
                         sx={{

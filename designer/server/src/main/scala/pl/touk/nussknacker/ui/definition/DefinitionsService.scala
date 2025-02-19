@@ -93,7 +93,7 @@ class DefinitionsService(
         scenarioPropertiesDocsUrl
       )
     }
-  } // This return stuff - currently not label
+  }
 
   private def prepareUIDefinitions(
       components: List[ComponentWithStaticDefinition],
