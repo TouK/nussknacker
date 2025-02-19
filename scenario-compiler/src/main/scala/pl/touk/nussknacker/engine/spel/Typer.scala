@@ -494,18 +494,14 @@ private[spel] case class Typer(
         }
 
       case e: VariableReference =>
-        if (!absentVariableReferenceAllowed) {
-          // only sane way of getting variable name :|
-          val name = e.toStringAST.substring(1)
-          validationContext
-            .get(name)
-            .orElse(current.stackHead.filter(_ => name == "this"))
-            .map(valid)
-            .getOrElse(invalid(UnresolvedReferenceError(name)))
-            .map(toNodeResult)
-        } else {
-          validNodeResult(Unknown)
-        }
+        // only sane way of getting variable name :|
+        val name = e.toStringAST.substring(1)
+        validationContext
+          .get(name)
+          .orElse(current.stackHead.filter(_ => name == "this"))
+          .map(valid)
+          .getOrElse(if (absentVariableReferenceAllowed) valid(Unknown) else invalid(UnresolvedReferenceError(name)))
+          .map(toNodeResult)
     })
   }
 
