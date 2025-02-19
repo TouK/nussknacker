@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 import java.util.UUID
 
+// TODO: more unit tests, tests on higher level than (resolveScenarioStatus) not extractAtMostOneStatus
 class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
   test("return failed status if two deployments running") {

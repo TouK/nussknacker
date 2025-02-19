@@ -74,7 +74,7 @@ object ScenarioActionName {
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
-  // FIXME abr remove
+  // TODO remove unused action
   val Pause: ScenarioActionName  = ScenarioActionName("PAUSE") // TODO: To implement in future..
   val Rename: ScenarioActionName = ScenarioActionName("RENAME")
   // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.

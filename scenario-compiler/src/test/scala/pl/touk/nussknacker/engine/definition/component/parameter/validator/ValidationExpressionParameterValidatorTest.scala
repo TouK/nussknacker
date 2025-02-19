@@ -4,9 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.spel.standard.SpelExpressionParser
-import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.TestSpelExpression.expressionConfig
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
