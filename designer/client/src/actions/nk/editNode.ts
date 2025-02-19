@@ -49,12 +49,7 @@ export function replaceNode(before: NodeType, after: NodeType): ThunkAction {
     return async (dispatch, getState) => {
         const state = getState();
         const graph = getGraph(state);
-        let scenario: Scenario;
-        if (before.id !== after.id) {
-            ({ scenario } = updateAfterNodeDelete(graph, after.id));
-        } else {
-            ({ scenario } = graph);
-        }
+        const { scenario } = before.id === after.id ? graph : updateAfterNodeDelete(graph, after.id);
         const { nextEdges: outputEdges, nextNode } = replaceNodeData(
             before,
             after,
