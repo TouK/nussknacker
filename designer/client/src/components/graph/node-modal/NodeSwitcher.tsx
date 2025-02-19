@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { Component, Edge, NodeType, ProcessDefinitionData } from "../../../types";
+import { Component, Edge, EdgeKind, NodeType, ProcessDefinitionData } from "../../../types";
 import NodeUtils from "../NodeUtils";
 import { editors, EditorType } from "./editors/expression/Editor";
 import { ExpressionLang } from "./editors/expression/types";
@@ -41,14 +41,82 @@ function mergeWithCustomizer<T>(object: T, source: T, path: string[] = []) {
         if (isObject(val) && isObject(src)) {
             return mergeWithCustomizer(val, src, [...path, key]);
         }
+
+        return val;
     });
+}
+
+function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionData: ProcessDefinitionData) {
+    switch (nextNode.type) {
+        case "Filter": {
+            let edgeKinds = [EdgeKind.filterTrue, EdgeKind.filterFalse];
+            return outputEdges.map((edge) => {
+                for (const kind of edgeKinds) {
+                    if (edge.edgeType?.type === kind) {
+                        edgeKinds = edgeKinds.filter((k) => edge.edgeType?.type !== k);
+                        return edge;
+                    }
+                }
+                return {
+                    ...edge,
+                    edgeType: {
+                        type: edgeKinds.shift(),
+                    },
+                };
+            });
+        }
+        case "Switch": {
+            return outputEdges.map((edge) => {
+                if ([EdgeKind.switchNext, EdgeKind.switchDefault].includes(edge.edgeType?.type)) {
+                    return edge;
+                }
+                return {
+                    ...edge,
+                    edgeType: {
+                        type: EdgeKind.switchNext,
+                        condition: {
+                            language: ExpressionLang.SpEL,
+                            expression: "true",
+                        },
+                    },
+                };
+            });
+        }
+        case "FragmentInput": {
+            let names = Object.keys(nextNode.ref?.outputVariableNames);
+            outputEdges
+                .filter(({ edgeType }) => {
+                    return edgeType?.type === EdgeKind.fragmentOutput && names.includes(edgeType?.name);
+                })
+                .forEach(({ edgeType }) => {
+                    names = names.filter((n) => n !== edgeType.name);
+                });
+
+            return outputEdges.map((edge) => {
+                if ([EdgeKind.fragmentOutput].includes(edge.edgeType?.type) && names.includes(edge.edgeType?.name)) {
+                    return edge;
+                }
+                return {
+                    ...edge,
+                    edgeType: {
+                        type: EdgeKind.fragmentOutput,
+                        name: names.shift(),
+                    },
+                };
+            });
+        }
+    }
+    if (NodeUtils.hasOutputs(nextNode, processDefinitionData)) {
+        return outputEdges.map(({ edgeType, ...edge }) => edge);
+    }
+    return [];
 }
 
 export function replaceNodeData(
     editedNode: NodeType,
     nextNodeData: NodeType,
     processDefinitionData: ProcessDefinitionData,
-    edges: Edge[] = [],
+    outputEdges: Edge[] = [],
     creatorType?: string,
     componentId?: string,
 ) {
@@ -64,8 +132,11 @@ export function replaceNodeData(
         },
         mergeWithCustomizer(object, source, []),
     );
-
-    const nextEdges = NodeUtils.hasOutputs(nextNode, processDefinitionData) ? edges : [];
+    const nextEdges = adjustEdges(
+        outputEdges.filter((e) => e.to),
+        nextNode,
+        processDefinitionData,
+    );
     return {
         nextNode,
         nextEdges,
