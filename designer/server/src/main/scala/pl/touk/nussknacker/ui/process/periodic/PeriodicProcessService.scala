@@ -616,8 +616,7 @@ class PeriodicProcessService(
         MaxDeploymentsStatus
       )
     } yield {
-      val status = PeriodicProcessStatus(toDeploymentStatuses(activeSchedules), toDeploymentStatuses(inactiveSchedules))
-      status.mergedStatusDetails
+      mergedDeploymentStatus(toDeploymentStatuses(activeSchedules), toDeploymentStatuses(inactiveSchedules))
     }
   }
 
@@ -649,11 +648,11 @@ class PeriodicProcessService(
       allProcessNames.map { processName =>
         val activeSchedulesForProcess   = activeSchedules.getOrElse(processName, SchedulesState(Map.empty))
         val inactiveSchedulesForProcess = inactiveSchedules.getOrElse(processName, SchedulesState(Map.empty))
-        val status = PeriodicProcessStatus(
+        val status = mergedDeploymentStatus(
           toDeploymentStatuses(processName, activeSchedulesForProcess),
           toDeploymentStatuses(processName, inactiveSchedulesForProcess)
         )
-        (processName, status.mergedStatusDetails)
+        (processName, status)
       }.toMap
     }
   }
@@ -761,71 +760,68 @@ object PeriodicProcessService {
   // for each historical and active deployments. mergedStatusDetails and methods below are for purpose of presentation
   // of single, merged status similar to this available for streaming job. This merged status should be a straightforward derivative
   // of these deployments statuses so it will be easy to figure out it by user.
-  private case class PeriodicProcessStatus(
+
+  // Currently we don't present deployments - theirs statuses are available only in tooltip - because of that we have to pick
+  // one "merged" status that will be presented to users
+  private def mergedDeploymentStatus(
       activeDeploymentsStatuses: List[PeriodicDeploymentStatus],
       inactiveDeploymentsStatuses: List[PeriodicDeploymentStatus]
-  ) extends LazyLogging {
+  ): DeploymentStatusDetails = {
+    def toPeriodicProcessStatusWithMergedStatus(mergedStatus: StateStatus) = PeriodicScenarioStatus(
+      activeDeploymentsStatuses,
+      inactiveDeploymentsStatuses,
+      mergedStatus
+    )
 
-    // Currently we don't present deployments - theirs statuses are available only in tooltip - because of that we have to pick
-    // one "merged" status that will be presented to users
-    def mergedStatusDetails: DeploymentStatusDetails = {
-      def toPeriodicProcessStatusWithMergedStatus(mergedStatus: StateStatus) = PeriodicProcessStatusWithMergedStatus(
-        activeDeploymentsStatuses,
-        inactiveDeploymentsStatuses,
-        mergedStatus
+    def createStatusDetails(mergedStatus: StateStatus, periodicDeploymentIdOpt: Option[PeriodicProcessDeploymentId]) =
+      DeploymentStatusDetails(
+        status = toPeriodicProcessStatusWithMergedStatus(mergedStatus),
+        deploymentId = periodicDeploymentIdOpt.map(_.toString).map(DeploymentId(_)),
+        version = None
       )
 
-      def createStatusDetails(mergedStatus: StateStatus, periodicDeploymentIdOpt: Option[PeriodicProcessDeploymentId]) =
-        DeploymentStatusDetails(
-          status = toPeriodicProcessStatusWithMergedStatus(mergedStatus),
-          deploymentId = periodicDeploymentIdOpt.map(_.toString).map(DeploymentId(_)),
-          version = None
-        )
-
-      pickMostImportantActiveDeployment(activeDeploymentsStatuses)
-        .map { deploymentStatus =>
-          if (deploymentStatus.isWaitingForReschedule) {
-            deploymentStatus.runtimeStatusOpt
-              .map(_.copy(status = toPeriodicProcessStatusWithMergedStatus(WaitingForScheduleStatus)))
-              .getOrElse(createStatusDetails(WaitingForScheduleStatus, Some(deploymentStatus.deploymentId)))
-          } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.Scheduled) {
-            createStatusDetails(ScheduledStatus(deploymentStatus.runAt), Some(deploymentStatus.deploymentId))
-          } else if (Set(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
-              .contains(deploymentStatus.status)) {
-            createStatusDetails(ProblemStateStatus.Failed, Some(deploymentStatus.deploymentId))
-          } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.RetryingDeploy) {
-            createStatusDetails(SimpleStateStatus.DuringDeploy, Some(deploymentStatus.deploymentId))
-          } else {
-            deploymentStatus.runtimeStatusOpt
-              .map(runtimeDetails =>
-                runtimeDetails.copy(status = toPeriodicProcessStatusWithMergedStatus(runtimeDetails.status))
-              )
-              .getOrElse {
-                createStatusDetails(WaitingForScheduleStatus, Some(deploymentStatus.deploymentId))
-              }
-          }
-        }
-        .getOrElse {
-          if (inactiveDeploymentsStatuses.isEmpty) {
-            createStatusDetails(SimpleStateStatus.NotDeployed, None)
-          } else {
-            val latestInactiveProcessId =
-              inactiveDeploymentsStatuses.maxBy(_.scheduleId.processId.value).scheduleId.processId
-            val latestDeploymentsForEachScheduleOfLatestProcessId = latestDeploymentForEachSchedule(
-              inactiveDeploymentsStatuses.filter(_.scheduleId.processId == latestInactiveProcessId)
+    pickMostImportantActiveDeployment(activeDeploymentsStatuses)
+      .map { deploymentStatus =>
+        if (deploymentStatus.isWaitingForReschedule) {
+          deploymentStatus.runtimeStatusOpt
+            .map(_.copy(status = toPeriodicProcessStatusWithMergedStatus(WaitingForScheduleStatus)))
+            .getOrElse(createStatusDetails(WaitingForScheduleStatus, Some(deploymentStatus.deploymentId)))
+        } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.Scheduled) {
+          createStatusDetails(ScheduledStatus(deploymentStatus.runAt), Some(deploymentStatus.deploymentId))
+        } else if (Set(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
+            .contains(deploymentStatus.status)) {
+          createStatusDetails(ProblemStateStatus.Failed, Some(deploymentStatus.deploymentId))
+        } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.RetryingDeploy) {
+          createStatusDetails(SimpleStateStatus.DuringDeploy, Some(deploymentStatus.deploymentId))
+        } else {
+          deploymentStatus.runtimeStatusOpt
+            .map(runtimeDetails =>
+              runtimeDetails.copy(status = toPeriodicProcessStatusWithMergedStatus(runtimeDetails.status))
             )
-
-            if (latestDeploymentsForEachScheduleOfLatestProcessId.forall(
-                _.status == PeriodicProcessDeploymentStatus.Finished
-              )) {
-              createStatusDetails(SimpleStateStatus.Finished, None)
-            } else {
-              createStatusDetails(SimpleStateStatus.Canceled, None)
+            .getOrElse {
+              createStatusDetails(WaitingForScheduleStatus, Some(deploymentStatus.deploymentId))
             }
+        }
+      }
+      .getOrElse {
+        if (inactiveDeploymentsStatuses.isEmpty) {
+          createStatusDetails(SimpleStateStatus.NotDeployed, None)
+        } else {
+          val latestInactiveProcessId =
+            inactiveDeploymentsStatuses.maxBy(_.scheduleId.processId.value).scheduleId.processId
+          val latestDeploymentsForEachScheduleOfLatestProcessId = latestDeploymentForEachSchedule(
+            inactiveDeploymentsStatuses.filter(_.scheduleId.processId == latestInactiveProcessId)
+          )
+
+          if (latestDeploymentsForEachScheduleOfLatestProcessId.forall(
+              _.status == PeriodicProcessDeploymentStatus.Finished
+            )) {
+            createStatusDetails(SimpleStateStatus.Finished, None)
+          } else {
+            createStatusDetails(SimpleStateStatus.Canceled, None)
           }
         }
-    }
-
+      }
   }
 
   /**
@@ -869,7 +865,7 @@ object PeriodicProcessService {
       .map(_.min(PeriodicDeploymentStatus.ordering.reverse))
   }
 
-  case class PeriodicProcessStatusWithMergedStatus(
+  case class PeriodicScenarioStatus(
       activeDeploymentsStatuses: List[PeriodicDeploymentStatus],
       inactiveDeploymentsStatuses: List[PeriodicDeploymentStatus],
       mergedStatus: StateStatus

@@ -54,7 +54,11 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     )
     try {
       deploymentStatus(processName) shouldBe List(
-        DeploymentStatusDetails(status = SimpleStateStatus.Running, deploymentId = None, version = Some(version))
+        DeploymentStatusDetails(
+          status = SimpleStateStatus.Running,
+          deploymentId = Some(deploymentId),
+          version = Some(version)
+        )
       )
       externalDeploymentIdOpt shouldBe defined
     } finally {

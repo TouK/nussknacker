@@ -30,7 +30,7 @@ import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatusWithMergedStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
@@ -299,7 +299,7 @@ class PeriodicProcessServiceIntegrationTest
     )
     afterDeployDeployment.runAt shouldBe localTime(expectedScheduleTime)
 
-    f.delegateDeploymentManagerStub.setStateStatus(
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
       processName,
       SimpleStateStatus.Finished,
       Some(afterDeployDeployment.id)
@@ -392,7 +392,7 @@ class PeriodicProcessServiceIntegrationTest
     // finish all
     stateAfterDeploy.values.foreach(schedulesState => {
       val deployment = schedulesState.firstScheduleData.latestDeployments.head
-      f.delegateDeploymentManagerStub.setStateStatus(
+      f.delegateDeploymentManagerStub.setDeploymentStatus(
         processName,
         SimpleStateStatus.Finished,
         Some(deployment.id)
@@ -565,12 +565,12 @@ class PeriodicProcessServiceIntegrationTest
 
     val deployment = toDeploy.find(_.scheduleName.value.contains(firstSchedule)).value
     service.deploy(deployment).futureValue
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Running, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Running, Some(deployment.id))
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue
     toDeployAfterDeploy should have length 0
 
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -677,7 +677,7 @@ class PeriodicProcessServiceIntegrationTest
             .futureValue
             .value
             .status
-            .asInstanceOf[PeriodicProcessStatusWithMergedStatus]
+            .asInstanceOf[PeriodicScenarioStatus]
             .activeDeploymentsStatuses
         )
         .value
@@ -802,7 +802,7 @@ class PeriodicProcessServiceIntegrationTest
     toDeploy should have length 1
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
 
     tryWithFailedListener { () =>
       service.deactivate(processName)
@@ -834,7 +834,7 @@ class PeriodicProcessServiceIntegrationTest
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
 
-    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, ProblemStateStatus.Failed, Some(deployment.id))
 
     // this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue

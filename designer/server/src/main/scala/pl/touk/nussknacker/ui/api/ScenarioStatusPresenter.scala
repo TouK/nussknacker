@@ -24,7 +24,6 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
       .statusPresentation(
         ScenarioStatusWithScenarioContext(
           scenarioStatus = scenarioStatus,
-          latestVersionId = processDetails.processVersionId,
           deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId),
           currentlyPresentedVersionId = currentlyPresentedVersionId
         )

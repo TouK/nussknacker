@@ -46,7 +46,6 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       .createMiniClusterWithServices(
         modelData.modelClassLoader,
         new Configuration,
-        new Configuration
       )
 
   private lazy val flinkTestRunner =

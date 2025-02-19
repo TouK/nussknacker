@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{
   MaxDeploymentsStatus,
   PeriodicDeploymentStatus,
-  PeriodicProcessStatusWithMergedStatus
+  PeriodicScenarioStatus
 }
 
 import java.net.URI
@@ -73,7 +73,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   }
 
   private def extractPeriodicStatus(stateStatus: StateStatus) = {
-    Option(stateStatus) collect { case periodic: PeriodicProcessStatusWithMergedStatus =>
+    Option(stateStatus) collect { case periodic: PeriodicScenarioStatus =>
       periodic
     }
   }

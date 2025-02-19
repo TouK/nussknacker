@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatusWithMergedStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.createPeriodicProcessDeployment
@@ -224,7 +224,7 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -259,7 +259,7 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.DuringDeploy, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.DuringDeploy, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -276,7 +276,7 @@ class PeriodicProcessServiceTest
       scheduleProperty = cronInPast,
       processActionId = Some(processActionId)
     )
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -363,7 +363,7 @@ class PeriodicProcessServiceTest
   test("handleFinished - should mark as failed for failed Flink job") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -520,7 +520,7 @@ class PeriodicProcessServiceTest
               .futureValue
               .value
               .status
-              .asInstanceOf[PeriodicProcessStatusWithMergedStatus]
+              .asInstanceOf[PeriodicScenarioStatus]
               .activeDeploymentsStatuses
           )
           .value

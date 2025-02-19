@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefiniti
 object EmbeddedProcessStateDefinitionManager
     extends OverridingProcessStateDefinitionManager(
       delegate = SimpleProcessStateDefinitionManager,
-      statusActionsPF = { case ScenarioStatusWithScenarioContext(SimpleStateStatus.Restarting, _, _, _) =>
+      statusActionsPF = { case ScenarioStatusWithScenarioContext(SimpleStateStatus.Restarting, _, _) =>
         Set(ScenarioActionName.Cancel)
       }
     )

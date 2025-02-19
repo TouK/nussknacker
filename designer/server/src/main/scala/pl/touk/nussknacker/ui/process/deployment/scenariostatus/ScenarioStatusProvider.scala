@@ -18,6 +18,8 @@ import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.{
   GetDeploymentsStatusesError,
   PrefetchedDeploymentStatuses
 }
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -123,7 +125,6 @@ class ScenarioStatusProvider(
       .statusActions(
         ScenarioStatusWithScenarioContext(
           scenarioStatus = scenarioStatus,
-          latestVersionId = processDetails.processVersionId,
           deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId),
           currentlyPresentedVersionId = currentlyPresentedVersionId
         )
@@ -195,7 +196,14 @@ class ScenarioStatusProvider(
                   s"Deployment statuses for: '${processDetails.name}' are: ${statusWithFreshness.value}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
                       .map(_.actionName)})"
                 )
-                InconsistentStateDetector.resolveScenarioStatus(statusWithFreshness.value, lastStateActionValue)
+                statusWithFreshness.value match {
+                  // periodic mechanism already returns a scenario status, so we don't need to resolve it
+                  // TODO: PeriodicDeploymentManager shouldn't be a DeploymentManager, we should treat it as a separate
+                  //       mechanism for both action commands and scenario status resolving
+                  case DeploymentStatusDetails(periodic: PeriodicScenarioStatus, _, _) :: Nil => periodic
+                  case _ =>
+                    InconsistentStateDetector.resolveScenarioStatus(statusWithFreshness.value, lastStateActionValue)
+                }
             }
         case None => // We assume that the process never deployed should have no state at the engine
           logStatusAndReturn(SimpleStateStatus.NotDeployed)

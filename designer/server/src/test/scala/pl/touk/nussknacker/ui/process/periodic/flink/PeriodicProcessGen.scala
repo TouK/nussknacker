@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWith
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.process.periodic.CronScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor.CronPropertyDefaultName
 import pl.touk.nussknacker.ui.process.periodic.model.{PeriodicProcess, PeriodicProcessId}
@@ -32,8 +33,8 @@ object PeriodicProcessGen {
     ScenarioBuilder
       .streaming("test")
       .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
-      .source("test", "test")
-      .emptySink("test", "test")
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
   }
 
 }

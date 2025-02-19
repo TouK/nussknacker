@@ -37,7 +37,7 @@ class DeploymentManagerStub extends BaseDeploymentManager {
     )
   }
 
-  def setStateStatus(
+  def setDeploymentStatus(
       processName: ProcessName,
       status: StateStatus,
       deploymentIdOpt: Option[PeriodicProcessDeploymentId]

@@ -106,7 +106,7 @@ object TestDeploymentServiceFactory {
 
   implicit val actorSystem: ActorSystem = ActorSystem("TestDeploymentServiceFactory")
   implicit val ec: ExecutionContext     = actorSystem.dispatcher
-  private val clock                     = Clock.systemUTC()
+  val clock: Clock                      = Clock.systemUTC()
 
   val processingType = "streaming"
 

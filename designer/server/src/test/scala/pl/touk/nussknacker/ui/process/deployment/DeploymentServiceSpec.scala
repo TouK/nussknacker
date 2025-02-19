@@ -958,7 +958,6 @@ class DeploymentServiceSpec
   private def getAllowedActions(status: StateStatus) = deploymentManager.processStateDefinitionManager.statusActions(
     ScenarioStatusWithScenarioContext(
       scenarioStatus = status,
-      latestVersionId = VersionId(1),
       deployedVersionId = None,
       currentlyPresentedVersionId = None
     )

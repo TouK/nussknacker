@@ -83,12 +83,10 @@ object ProcessStateDefinitionManager {
    * It is used as an argument of ProcessStateDefinitionManager methods
    *
    * @param scenarioStatus    current scenario state
-   * @param latestVersionId   latest saved versionId for the scenario
    * @param deployedVersionId currently deployed versionId of the scenario
    */
   final case class ScenarioStatusWithScenarioContext(
       scenarioStatus: StateStatus,
-      latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
   )

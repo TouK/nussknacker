@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
-import pl.touk.nussknacker.engine.api.process.VersionId
 
 class FlinkScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Inside {
 
@@ -17,7 +16,6 @@ class FlinkScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Insi
     FlinkProcessStateDefinitionManager.statusPresentation(
       ScenarioStatusWithScenarioContext(
         stateStatus,
-        VersionId(1),
         None,
         None,
       )

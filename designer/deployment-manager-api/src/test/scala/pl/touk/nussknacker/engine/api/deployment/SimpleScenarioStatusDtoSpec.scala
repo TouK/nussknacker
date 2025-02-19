@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.Inside
-import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
@@ -17,7 +16,6 @@ class SimpleScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Ins
     SimpleProcessStateDefinitionManager.statusPresentation(
       ScenarioStatusWithScenarioContext(
         status,
-        VersionId(1),
         None,
         None,
       )
