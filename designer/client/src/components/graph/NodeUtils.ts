@@ -187,7 +187,7 @@ class NodeUtils {
     };
 
     nodeOutputs = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => {
-        return this.edgesFromScenarioGraph(scenarioGraph).filter((e) => e.from == nodeId);
+        return this.getOutputEdges(nodeId, this.edgesFromScenarioGraph(scenarioGraph));
     };
 
     edgeId = (edge: Edge): string => {

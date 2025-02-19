@@ -120,7 +120,7 @@ function handleActionOnLongPress<T extends dia.CellView>(
 
 export function getNodeData(cell: dia.Cell, graph?: ScenarioGraph): NodeType {
     const nodeData = cell?.get(`nodeData`);
-    return NodeUtils.getNodeById(nodeData.id, graph) || nodeData;
+    return NodeUtils.getNodeById(nodeData?.id, graph) || nodeData;
 }
 
 export class Graph extends React.Component<Props> {
