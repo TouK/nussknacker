@@ -50,7 +50,7 @@ class MockDeploymentManager private (
       FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
       Some(
         FlinkMiniClusterFactory
-          .createMiniClusterWithServices(modelData.modelClassLoader, new Configuration, new Configuration)
+          .createMiniClusterWithServices(modelData.modelClassLoader, new Configuration)
       ),
       FlinkClientStub,
       FlinkScenarioJobRunnerStub

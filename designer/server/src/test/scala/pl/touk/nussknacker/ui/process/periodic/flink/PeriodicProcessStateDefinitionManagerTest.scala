@@ -72,7 +72,6 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
         scenarioStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
-        latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(5)),
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
@@ -85,7 +84,6 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
         scenarioStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
-        latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
@@ -98,7 +96,6 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     PeriodicStateStatus.customActionTooltips(
       ScenarioStatusWithScenarioContext(
         scenarioStatus = SimpleStateStatus.Canceled,
-        latestVersionId = VersionId(5),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),
       )

@@ -20,10 +20,10 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
   def createStreamExecutionEnvironment(
       miniCluster: MiniCluster,
       modelClassLoader: URLClassLoader,
-      configuration: Configuration,
       attached: Boolean
   ): StreamExecutionEnvironment = {
     val pipelineExecutorServiceLoader = createPipelineExecutorServiceLoader(miniCluster, modelClassLoader)
+    val configuration                 = new Configuration()
     configuration.set(DeploymentOptions.TARGET, pipelineExecutorName)
     configuration.set(PipelineOptions.CLASSPATHS, modelClassLoader.getURLs.map(_.toString).toList.asJava)
     configuration.set[java.lang.Boolean](DeploymentOptions.ATTACHED, attached)

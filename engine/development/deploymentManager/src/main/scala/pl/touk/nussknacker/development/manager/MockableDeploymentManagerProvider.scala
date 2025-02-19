@@ -66,7 +66,6 @@ object MockableDeploymentManagerProvider {
       FlinkMiniClusterFactory.createMiniClusterWithServices(
         modelData.modelClassLoader,
         new Configuration,
-        new Configuration
       )
     }
 

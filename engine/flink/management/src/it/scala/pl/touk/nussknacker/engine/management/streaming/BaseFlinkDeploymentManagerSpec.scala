@@ -67,7 +67,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
   }
 
   test("use deploymentId passed as a jobId") {
-    val processName = ProcessName("runningFlink")
+    val processName = ProcessName("jobWithDeploymentIdAsAUuid")
 
     val version          = VersionId(15)
     val process          = SampleProcess.prepareProcess(processName)
