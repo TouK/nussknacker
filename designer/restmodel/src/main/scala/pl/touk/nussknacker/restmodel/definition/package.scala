@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParamet
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
-import java.net.URI
-
 package object definition {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._

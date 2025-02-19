@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
-import HttpService from "../../../../http/HttpService";
+import HttpService, { NodesDeploymentData } from "../../../../http/HttpService";
 import {
     getProcessName,
     hasError,
@@ -45,8 +45,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
-        HttpService.deploy(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
+    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
+        HttpService.deploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId)));
 
     return (
         <ToolbarButton
@@ -57,7 +57,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
             onClick={() =>
                 open<ToggleProcessActionModalData>({
                     title: message,
-                    kind: WindowKind.deployProcess,
+                    kind: WindowKind.deployWithParameters,
                     width: ACTION_DIALOG_WIDTH,
                     meta: { action, displayWarnings: true },
                 })
