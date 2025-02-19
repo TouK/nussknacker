@@ -59,7 +59,7 @@ import scala.annotation.tailrec
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
-private[spel] case class Typer(
+private[spel] class Typer(
     dictTyper: SpelDictTyper,
     strictMethodsChecking: Boolean,
     staticMethodInvocationsChecking: Boolean,
@@ -789,6 +789,18 @@ private[spel] case class Typer(
       anyMethodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed,
       absentVariableReferenceAllowed
+    )
+
+  def withAbsentVariableReferenceAllowed(value: Boolean): Typer =
+    new Typer(
+      dictTyper,
+      strictMethodsChecking,
+      staticMethodInvocationsChecking,
+      classDefinitionSet,
+      evaluationContextPreparer,
+      anyMethodExecutionForUnknownAllowed,
+      dynamicPropertyAccessAllowed,
+      value
     )
 
 }
