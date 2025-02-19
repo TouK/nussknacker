@@ -2,11 +2,10 @@ package pl.touk.nussknacker.k8s.manager
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import play.api.libs.json.{Format, Json}
 import skuber.apps.v1.Deployment
@@ -17,7 +16,7 @@ import skuber.{ListResource, Pod}
 //for now we have unit tests based on real responses - generated manually, using kubectl -v=9 describe deployment [...]
 class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
 
-  private val version = ProcessVersion(VersionId(4), ProcessName("AAAAA"), ProcessId(7), List.empty, "admin", Some(2))
+  private val version = VersionId(4)
 
   private def parseResource[T](source: String)(implicit format: Format[T]): T = {
     val value = Json.parse(ResourceLoader.load(s"/k8sResponses/$source"))

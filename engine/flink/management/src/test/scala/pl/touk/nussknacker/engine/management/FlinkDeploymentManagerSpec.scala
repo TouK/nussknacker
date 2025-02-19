@@ -386,9 +386,6 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     val processName  = ProcessName("p1")
     val version      = 15L
     val deploymentId = "789"
-    val user         = "user1"
-    val processId    = ProcessId(6565L)
-    val labels       = List("tag1", "tag2")
 
     statuses =
       List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
@@ -397,11 +394,8 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       jid -> ExecutionConfig(
         1,
         Map(
-          "processId"    -> fromString(processId.value.toString),
           "versionId"    -> fromString(version.toString),
           "deploymentId" -> fromString(deploymentId),
-          "user"         -> fromString(user),
-          "labels"       -> fromValues(labels.map(fromString))
         )
       )
     )
@@ -411,7 +405,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       DeploymentStatusDetails(
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
-        Some(ProcessVersion(VersionId(version), processName, processId, labels, user, None)),
+        Some(VersionId(version)),
       )
     )
   }

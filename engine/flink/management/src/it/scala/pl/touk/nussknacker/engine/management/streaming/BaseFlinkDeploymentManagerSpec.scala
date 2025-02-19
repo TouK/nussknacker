@@ -41,10 +41,13 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
   test("deploy scenario in running flink") {
     val processName = ProcessName("runningFlink")
 
-    val version = ProcessVersion(VersionId(15), processName, processId, List.empty, "user1", Some(13))
+    val version = VersionId(15)
     val process = SampleProcess.prepareProcess(processName)
 
-    deployProcessAndWaitIfRunning(process, version)
+    deployProcessAndWaitIfRunning(
+      process,
+      ProcessVersion(version, processName, processId, List.empty, "user1", Some(13))
+    )
     try {
       processVersion(processName) shouldBe List(version)
     } finally {
@@ -309,6 +312,6 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       .map(_.message())
       .toList
 
-  private def processVersion(name: ProcessName): List[ProcessVersion] =
+  private def processVersion(name: ProcessName): List[VersionId] =
     deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value.flatMap(_.version)
 }

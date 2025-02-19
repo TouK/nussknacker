@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
@@ -192,7 +192,7 @@ object MockDeploymentManager {
   private[mock] def sampleDeploymentStatusDetails(
       status: StateStatus,
       deploymentId: DeploymentId,
-      version: Option[ProcessVersion] = Some(ProcessVersion.empty)
+      version: Option[VersionId] = Some(VersionId.initialVersionId)
   ): DeploymentStatusDetails =
     DeploymentStatusDetails(status, Some(deploymentId), version)
 
@@ -290,7 +290,7 @@ object MockDeploymentManagerSyntaxSugar {
       withProcessStates(processName, List(sampleDeploymentStatusDetails(status, deploymentId)))(action)
     }
 
-    def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[ProcessVersion])(
+    def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[VersionId])(
         action: => T
     ): T = {
       withProcessStates(processName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId, version)))(action)

@@ -549,7 +549,7 @@ class DeploymentServiceSpec
       DeploymentStatusDetails(
         status = SimpleStateStatus.Restarting,
         deploymentId = None,
-        version = Some(ProcessVersion.empty)
+        version = Some(VersionId.initialVersionId)
       )
 
     deploymentManager.withProcessStates(processName, List(state)) {
@@ -589,16 +589,7 @@ class DeploymentServiceSpec
   test("Should return error state when state is running and process is deployed with mismatch versions") {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
-    val version = Some(
-      ProcessVersion(
-        versionId = VersionId(2),
-        processId = ProcessId(1),
-        processName = ProcessName(""),
-        labels = List.empty,
-        user = "other",
-        modelVersion = None
-      )
-    )
+    val version                  = Some(VersionId(2))
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, version) {
       val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
@@ -612,16 +603,7 @@ class DeploymentServiceSpec
   test("Should always return process manager failure, even if some other verifications return invalid") {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
-    val version = Some(
-      ProcessVersion(
-        versionId = VersionId(2),
-        processId = ProcessId(1),
-        processName = ProcessName(""),
-        labels = List.empty,
-        user = "",
-        modelVersion = None
-      )
-    )
+    val version                  = Some(VersionId(2))
 
     // FIXME: doesnt check recover from failed verifications ???
     deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.Failed, version) {

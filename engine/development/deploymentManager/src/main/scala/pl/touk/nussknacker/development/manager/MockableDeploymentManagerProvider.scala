@@ -8,7 +8,6 @@ import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -96,7 +95,7 @@ object MockableDeploymentManagerProvider {
             DeploymentStatusDetails(
               statusDetails.status,
               None,
-              version = statusDetails.version.map(vId => ProcessVersion.empty.copy(versionId = vId))
+              version = statusDetails.version
             )
           )
         )

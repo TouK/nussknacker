@@ -96,8 +96,8 @@ class InconsistentStateDetector extends LazyLogging {
               s"handleLastActionDeploy: is not following deploy status nor finished, but it should be. $deploymentStatuses"
             )
             ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user)
-          case Some(ver) if ver.versionId != action.processVersionId =>
-            ProblemStateStatus.mismatchDeployedVersion(ver.versionId, action.processVersionId, action.user)
+          case Some(ver) if ver != action.processVersionId =>
+            ProblemStateStatus.mismatchDeployedVersion(ver, action.processVersionId, action.user)
           case Some(_) =>
             deploymentStatuses.status
           case None => // TODO: we should remove Option from ProcessVersion?

@@ -175,7 +175,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
     val statusDetails = DeploymentStatusDetails(
       status = stateStatus,
       deploymentId = None,
-      version = Some(processVersion),
+      version = Some(processVersion.versionId),
     )
 
     memory.update(processVersion.processName, statusDetails)

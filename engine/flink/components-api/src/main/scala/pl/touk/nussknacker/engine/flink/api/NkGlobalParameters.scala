@@ -18,8 +18,12 @@ import scala.jdk.CollectionConverters._
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
 //Also, those configuration properties will be exposed via Flink REST API/webconsole
 case class NkGlobalParameters(
+    // This field is not used anywhere. We should consider if we still need it for example for some diagnosis purpose,
+    // or we should remove it from here
     modelInfo: ModelInfo,
     deploymentId: String, // TODO: Pass here DeploymentId?
+    // Currently only versionId is used in DeploymentStatusDetails, other fields are redundant. We should consider
+    // if we still need them for example for some diagnosis purpose, or we should remove them from here
     processVersion: ProcessVersion,
     configParameters: Option[ConfigGlobalParameters],
     namespaceParameters: Option[NamespaceMetricsTags],

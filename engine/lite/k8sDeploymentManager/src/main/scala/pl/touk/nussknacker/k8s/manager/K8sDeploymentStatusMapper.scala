@@ -55,7 +55,7 @@ object K8sDeploymentStatusMapper extends LazyLogging {
       status = status,
       // TODO: return internal deploymentId, probably computed based on some hash to make sure that it will change only when something in scenario change
       deploymentId = None,
-      version = parseVersionAnnotation(deployment),
+      version = parseVersionAnnotation(deployment).map(_.versionId),
     )
   }
 
