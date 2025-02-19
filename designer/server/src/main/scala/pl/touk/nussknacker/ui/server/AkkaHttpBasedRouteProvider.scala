@@ -266,7 +266,6 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
       )
       val actionService = new ActionService(
-        dmDispatcher,
         processRepository,
         actionRepository,
         dbioRunner,

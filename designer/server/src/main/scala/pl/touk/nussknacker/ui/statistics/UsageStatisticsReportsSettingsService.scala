@@ -57,7 +57,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
                 isFragment = scenario.isFragment,
                 processingMode = scenario.processingMode,
                 deploymentManagerType = deploymentManagerTypeByProcessingType(scenario.processingType),
-                status = scenario.state.map(_.statusName),
+                status = scenario.state.map(_.status.name),
                 nodesCount = scenario.scenarioGraph.map(_.nodes.length).getOrElse(0),
                 scenarioCategory = scenario.processCategory,
                 scenarioVersion = scenario.processVersionId,

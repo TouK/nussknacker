@@ -131,7 +131,6 @@ trait NuResourcesTest
   protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
   protected val actionService: ActionService = new ActionService(
-    dmDispatcher,
     fetchingProcessRepository,
     actionRepository,
     dbioRunner,

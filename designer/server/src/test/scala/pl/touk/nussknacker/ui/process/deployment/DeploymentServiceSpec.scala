@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import db.util.DBIOActionInstances.DB
@@ -8,6 +7,7 @@ import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
@@ -16,13 +16,12 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -30,19 +29,14 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAsserti
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{FragmentStateException, ScenarioStatusProvider}
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.FragmentStateException
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
-import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
-import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 
 class DeploymentServiceSpec
@@ -58,101 +52,33 @@ class DeploymentServiceSpec
     with WithClock
     with EitherValuesDetailedMessage {
 
+  override protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(testDbRef)
+
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
-  private implicit val system: ActorSystem          = ActorSystem()
-  private implicit val user: LoggedUser             = TestFactory.adminUser("user")
-  private implicit val ds: ExecutionContextExecutor = system.dispatcher
+  private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
-  private var deploymentManager: MockDeploymentManager = _
-  override protected val dbioRunner: DBIOActionRunner  = newDBIOActionRunner(testDbRef)
-  private val fetchingProcessRepository                = newFetchingProcessRepository(testDbRef)
-  private val futureFetchingProcessRepository          = newFutureFetchingScenarioRepository(testDbRef)
-  private val writeProcessRepository                   = newWriteProcessRepository(testDbRef, clock)
-  private val actionRepository                         = newActionProcessRepository(testDbRef)
-  private val activityRepository                       = newScenarioActivityRepository(testDbRef, clock)
+  private val writeProcessRepository = newWriteProcessRepository(testDbRef, clock)
 
-  private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
-    new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
+  private val deploymentServiceFactory = new TestDeploymentServiceFactory(testDbRef)
 
-      override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
-        new ProcessingTypeDataState[DeploymentManager, Nothing] {
+  import TestDeploymentServiceFactory._
+  import deploymentServiceFactory._
 
-          override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
-            "streaming" -> ValueWithRestriction.anyUser(deploymentManager)
-          )
-
-          override def getCombined: () => Nothing = noCombinedDataFun
-          override def stateIdentity: Any         = deploymentManager
-        }
-
-    }
-
-  private val dmDispatcher =
-    new DeploymentManagerDispatcher(processingTypeDataProvider, futureFetchingProcessRepository)
-
-  private val listener = new TestProcessChangeListener
-
-  private val scenarioStatusProvider = createScenarioStatusProvider(scenarioStateTimeout = None)
-
-  private val actionService = createActionService(deploymentCommentSettings = None)
-
-  private val deploymentService = createDeploymentService()
-
-  private val initialVersionId = ProcessVersion.empty.versionId
-
-  deploymentManager = MockDeploymentManager.create(
+  private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
     defaultProcessStateStatus = SimpleStateStatus.Running,
-    deployedScenariosProvider = DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
-    actionService = new DefaultProcessingTypeActionService("streaming", actionService),
-    scenarioActivityManager = new RepositoryBasedScenarioActivityManager(activityRepository, dbioRunner),
+    scenarioActivityManager = deploymentServiceFactory.deploymentManagerDependencies.scenarioActivityManager,
   )
 
-  private def createDeploymentService(
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
-  ) = {
-    val actionService = createActionService(deploymentCommentSettings)
-    new DeploymentService(
-      dmDispatcher,
-      processValidatorByProcessingType,
-      TestFactory.scenarioResolverByProcessingType,
-      actionService,
-      additionalComponentConfigsByProcessingType,
-    )
-  }
-
-  private def createActionService(deploymentCommentSettings: Option[DeploymentCommentSettings]) = {
-    new ActionService(
-      dmDispatcher,
-      fetchingProcessRepository,
-      actionRepository,
-      dbioRunner,
-      listener,
-      scenarioStatusProvider,
-      deploymentCommentSettings,
-      modelInfoProvider,
-      clock
-    )
-  }
-
-  private def createScenarioStatusProvider(scenarioStateTimeout: Option[FiniteDuration]) = {
-    val deploymentsStatusesProvider =
-      new DeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
-    new ScenarioStatusProvider(
-      deploymentsStatusesProvider,
-      dmDispatcher,
-      fetchingProcessRepository,
-      actionRepository,
-      dbioRunner
-    )
-  }
+  val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService) =
+    deploymentServiceFactory.create(deploymentManager)
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
   private def createDeploymentServiceWithCommentSettings = {
     val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
-    val deploymentServiceWithCommentSettings =
-      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
-    deploymentServiceWithCommentSettings
+    deploymentServiceFactory
+      .create(deploymentManager, deploymentCommentSettings = Some(commentSettings))
+      .deploymentService
   }
 
   test("should return error when trying to deploy without comment when comment is required") {
@@ -177,7 +103,8 @@ class DeploymentServiceSpec
     result.getMessage.trim shouldBe "Comment is required."
 
     eventually {
-      val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
+      val inProgressActions =
+        actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
       inProgressActions should have size 0
     }
   }
@@ -863,8 +790,9 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
-    val timeout            = 1.second
-    val serviceWithTimeout = createScenarioStatusProvider(Some(timeout))
+    val timeout = 1.second
+    val serviceWithTimeout =
+      deploymentServiceFactory.create(deploymentManager, scenarioStateTimeout = Some(timeout)).scenarioStatusProvider
 
     val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
     deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
@@ -915,7 +843,13 @@ class DeploymentServiceSpec
     for {
       (processId, actionIdOpt) <- prepareArchivedProcess(processName, actionNameOpt)
       _                        <- writeProcessRepository.archive(processId = processId, isArchived = false)
-      _ <- actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.UnArchive, None, None)
+      _ <- actionRepository.addInstantAction(
+        processId.id,
+        VersionId.initialVersionId,
+        ScenarioActionName.UnArchive,
+        None,
+        None
+      )
     } yield (processId, actionIdOpt)
 
   private def prepareArchivedProcess(
@@ -932,7 +866,8 @@ class DeploymentServiceSpec
     writeProcessRepository
       .archive(processId = processId, isArchived = true)
       .flatMap(_ =>
-        actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.Archive, None, None)
+        actionRepository
+          .addInstantAction(processId.id, VersionId.initialVersionId, ScenarioActionName.Archive, None, None)
       )
   }
 
@@ -977,7 +912,7 @@ class DeploymentServiceSpec
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
     val comment = Comment.from(actionName.toString.capitalize)
-    actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
+    actionRepository.addInstantAction(processId, VersionId.initialVersionId, actionName, comment, None).map(_.id)
   }
 
   private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): DB[ProcessIdWithName] = {

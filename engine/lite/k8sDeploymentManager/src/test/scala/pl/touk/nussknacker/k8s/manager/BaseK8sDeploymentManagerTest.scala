@@ -154,7 +154,7 @@ class BaseK8sDeploymentManagerTest
       eventually {
         val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
         logger.debug(s"Current process state: $state")
-        state.flatMap(_.version) shouldBe List(version)
+        state.flatMap(_.version) shouldBe List(version.versionId)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
     }

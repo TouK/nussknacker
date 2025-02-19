@@ -103,7 +103,7 @@ class K8sDeploymentManagerKafkaTest
     def waitForRunning(version: ProcessVersion) = {
       eventually {
         val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
-        state.flatMap(_.version) shouldBe List(version)
+        state.flatMap(_.version) shouldBe List(version.versionId)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
     }

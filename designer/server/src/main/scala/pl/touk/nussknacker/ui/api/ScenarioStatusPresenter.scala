@@ -4,8 +4,8 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.S
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.restmodel.scenariodetails.{
-  LegacyScenarioStatusNameDto,
   ScenarioStatusDto,
+  ScenarioStatusNameWrapperDto,
   ScenarioWithDetails
 }
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
@@ -30,8 +30,7 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
         )
       )
     ScenarioStatusDto(
-      statusName = scenarioStatus.name,
-      status = LegacyScenarioStatusNameDto(scenarioStatus.name),
+      status = ScenarioStatusNameWrapperDto(scenarioStatus.name),
       visibleActions = presentation.visibleActions,
       allowedActions = presentation.allowedActions.toList.sortBy(_.value),
       actionTooltips = presentation.actionTooltips,

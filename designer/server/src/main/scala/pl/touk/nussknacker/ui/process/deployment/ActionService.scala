@@ -28,9 +28,8 @@ import scala.util.{Failure, Success}
 // Responsibility of this class is to wrap deployment actions with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
 // will be executed in given state. It sends notifications about finished actions.
-// Also thanks to it we are able to check if state on remote engine is the same as persisted state.
+// Also thanks to that, we are able to check if state on remote engine is the same as persisted state.
 class ActionService(
-    dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
     actionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
@@ -138,18 +137,12 @@ class ActionService(
         p => Some(modelInfos.forProcessingTypeUnsafe(p.processingType))
       )
 
-    def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](
-        command: COMMAND,
-        actionName: ScenarioActionName,
-        dmCommandCreator: CommandContext[LatestScenarioDetailsShape] => DMScenarioCommand[RESULT],
+    def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](command: COMMAND, actionName: ScenarioActionName)(
+        runAction: CommandContext[LatestScenarioDetailsShape] => Future[RESULT],
     ): Future[RESULT] = {
-      import command.commonData._
       processActionWithCustomFinalization[COMMAND, RESULT](command, actionName) { case (ctx, actionFinalizer) =>
-        val dmCommand = dmCommandCreator(ctx)
         actionFinalizer.handleResult {
-          dispatcher
-            .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-            .processCommand(dmCommand)
+          runAction(ctx)
         }
       }
     }

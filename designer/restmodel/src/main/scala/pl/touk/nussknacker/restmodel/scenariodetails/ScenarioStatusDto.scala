@@ -19,10 +19,8 @@ import java.net.URI
   *                May contain longer, detailed status description.
   */
 @JsonCodec case class ScenarioStatusDto(
-    // This field is not used by frontend but is useful for scripting
-    statusName: String,
-    // TODO it is a temporary solution - it should be removed after full migration to statusName
-    status: LegacyScenarioStatusNameDto,
+    // TODO: flatten it
+    status: ScenarioStatusNameWrapperDto,
     visibleActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
     actionTooltips: Map[ScenarioActionName, String],
@@ -31,7 +29,7 @@ import java.net.URI
     description: String,
 )
 
-@JsonCodec case class LegacyScenarioStatusNameDto(name: String)
+@JsonCodec case class ScenarioStatusNameWrapperDto(name: String)
 
 object ScenarioStatusDto {
   implicit val uriEncoder: Encoder[URI]                             = Encoder.encodeString.contramap(_.toString)

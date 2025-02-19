@@ -305,7 +305,6 @@ class NotificationServiceTest
       dbioRunner
     )
     val actionService = new ActionService(
-      managerDispatcher,
       dbProcessRepository,
       actionRepository,
       dbioRunner,

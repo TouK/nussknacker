@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioStatusNameWrapperDto}
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
@@ -172,8 +172,12 @@ class AppApiHttpService(
         GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
       )
       statusMap = processes.flatMap(process => process.state.map(process.name -> _)).toMap
+      // TODO: we should use domain objects instead of DTOs
       withProblem = statusMap.collect {
-        case (name, processStatus @ ScenarioStatusDto(ProblemStateStatus.name, _, _, _, _, _, _, _)) =>
+        case (
+              name,
+              processStatus @ ScenarioStatusDto(ScenarioStatusNameWrapperDto(ProblemStateStatus.name), _, _, _, _, _, _)
+            ) =>
           (name, processStatus)
       }
     } yield withProblem
