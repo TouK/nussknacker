@@ -61,7 +61,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     .inflate(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-                setLinksHovered(graph.current.graph, rect);
+                setLinksHovered(graph.current.graph, rect, null, item);
             } else {
                 setLinksHovered(graph.current.graph);
             }
