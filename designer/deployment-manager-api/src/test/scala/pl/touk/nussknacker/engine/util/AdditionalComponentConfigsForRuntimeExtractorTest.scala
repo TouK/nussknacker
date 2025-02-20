@@ -76,14 +76,16 @@ object AdditionalComponentConfigsForRuntimeExtractorTest {
     ),
     icon = Some("someIcon"),
     docsUrl = Some("someDocUrl"),
-    componentGroup = Some(ComponentGroupName("Service"))
+    componentGroup = Some(ComponentGroupName("Service")),
+    label = "componentA"
   )
 
   private val componentConfigWithoutDictionaryEditorInParameter = ComponentAdditionalConfig(
     parameterConfigs = Map(parameterWithoutDictEditor),
     icon = Some("someOtherIcon"),
     docsUrl = Some("someOtherDocUrl"),
-    componentGroup = Some(ComponentGroupName("Service"))
+    componentGroup = Some(ComponentGroupName("Service")),
+    label = "componentB"
   )
 
   private val componentConfigWithOnlyDictEditorParameters = ComponentAdditionalConfig(
@@ -93,7 +95,8 @@ object AdditionalComponentConfigsForRuntimeExtractorTest {
     ),
     icon = Some("someIcon"),
     docsUrl = Some("someDocUrl"),
-    componentGroup = Some(ComponentGroupName("Service"))
+    componentGroup = Some(ComponentGroupName("Service")),
+    label = "componentA"
   )
 
 }

@@ -248,7 +248,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
               valueCompileTimeValidation = None
             )
           ),
-          componentGroup = None
+          componentGroup = None,
+          label = "enricher"
         )
       ),
       componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
@@ -262,7 +263,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       additionalConfigsFromProvider = Map(
         DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
           parameterConfigs = Map.empty,
-          componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName)
+          componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName),
+          label = "enricher"
         )
       )
     )
