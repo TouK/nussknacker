@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.security.api._
@@ -82,6 +83,30 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       .join(processTableFilteredByUser.filter(query).map(_.id))
       .on { case ((_, latestVersion), processId) => latestVersion.processId === processId }
       .map(_._1)
+
+  protected def fetchLatestProcessVersionsCreatedByNonTechnicalUsersQuery(
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+      technicalUsers: TechnicalUsers,
+  )(implicit loggedUser: LoggedUser): Query[
+    (Rep[ProcessId], (Rep[VersionId], Rep[Timestamp], Rep[String])),
+    (ProcessId, (VersionId, Timestamp, String)),
+    Seq
+  ] =
+    processVersionsTableWithUnit
+      .filterNot(_.user.inSet(technicalUsers.userNames))
+      .groupBy(_.processId)
+      .map { case (n, group) => (n, group.map(_.createDate).max) }
+      .join {
+        processVersionsTableWithUnit.map(version => (version.processId, version.id, version.createDate, version.user))
+      }
+      .on { case ((processId, latestVersionDate), (versionProcessId, _, versionCreateDate, _)) =>
+        versionProcessId === processId && versionCreateDate === latestVersionDate
+      }
+      .join(processTableFilteredByUser.filter(query).map(_.id))
+      .on { case ((_, (versionProcessId, _, _, _)), processId) => versionProcessId === processId }
+      .map { case (((processId, _), (_, versionId, versionCreateDate, versionCreatedByUser)), _) =>
+        (processId, (versionId, versionCreateDate, versionCreatedByUser))
+      }
 
   protected def processVersionsTableQuery(
       implicit fetchShape: ScenarioShapeFetchStrategy[_]

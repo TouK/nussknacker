@@ -4,8 +4,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.config.DesignerConfig.ConfigurationMalformedException
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
+import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
 import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters._
@@ -49,6 +49,20 @@ final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion)
     }
   }
 
+  def technicalUsers: TechnicalUsers = {
+    val technicalUsersPath = "technicalUsers"
+    if (rawConfig.resolved.hasPath(technicalUsersPath)) {
+      TechnicalUsers(
+        Set(NussknackerInternalUser.instance.username) ++ rawConfig.resolved
+          .getStringList(technicalUsersPath)
+          .asScala
+          .toSet
+      )
+    } else {
+      TechnicalUsers(Set(NussknackerInternalUser.instance.username))
+    }
+  }
+
 }
 
 object DesignerConfig {
@@ -58,4 +72,6 @@ object DesignerConfig {
   }
 
   final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
+
+  final case class TechnicalUsers(userNames: Set[String])
 }

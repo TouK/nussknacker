@@ -523,7 +523,8 @@ class AkkaHttpBasedRouteProvider(
             scenarioStateProvider = scenarioStateProvider,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
-            processChangeListener = processChangeListener
+            processChangeListener = processChangeListener,
+            technicalUsers = designerConfig.technicalUsers
           ),
           new ProcessesExportResources(
             futureProcessRepository,

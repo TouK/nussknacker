@@ -54,7 +54,11 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   )
 
   private val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
-    new DBFetchingProcessRepository[Future](dbRef, actionRepository, scenarioLabelsRepository) with BasicRepository
+    new DBFetchingProcessRepository[Future](
+      dbRef,
+      actionRepository,
+      scenarioLabelsRepository,
+    ) with BasicRepository
 
   def createEmptyScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     val newProcessPreparer: NewProcessPreparer = new NewProcessPreparer(
@@ -78,6 +82,14 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       isFragment: Boolean
   ): ProcessId = {
     saveAndGetId(scenario, category, isFragment).futureValue
+  }
+
+  def updateScenario(
+      processId: ProcessId,
+      newScenario: CanonicalProcess,
+      user: LoggedUser,
+  ): ProcessUpdated = {
+    update(processId, newScenario, user).futureValue
   }
 
   def updateScenario(
@@ -206,6 +218,22 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       _  <- dbioRunner.runInSerializableTransactionWithRetry(writeScenarioRepository.saveNewProcess(action))
       id <- futureFetchingScenarioRepository.fetchProcessId(scenarioName).map(_.get)
     } yield id
+  }
+
+  private def update(
+      processId: ProcessId,
+      newScenario: CanonicalProcess,
+      user: LoggedUser,
+  ): Future[ProcessUpdated] = {
+    val action = UpdateProcessAction(
+      processId,
+      newScenario,
+      comment = None,
+      labels = List.empty,
+      increaseVersionWhenJsonNotChanged = true,
+      forwardedUserName = None
+    )
+    dbioRunner.runInTransaction(writeScenarioRepository.updateProcess(action)(user))
   }
 
   private def updateAndGetScenarioVersions(

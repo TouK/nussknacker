@@ -30,6 +30,8 @@ final case class ScenarioWithDetails(
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
+    modifiedByNonTechnicalUserAt: Option[Instant],
+    modifiedByNonTechnicalUser: Option[String],
     createdAt: Instant,
     createdBy: String,
     override val labels: List[String],

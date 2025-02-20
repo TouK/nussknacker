@@ -5,10 +5,11 @@ import cats.instances.future._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -21,6 +22,7 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 
 object MockFetchingProcessRepository {
@@ -61,6 +63,14 @@ class MockFetchingProcessRepository private (
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[PS]] =
     fetchLatestProcessesDetails[PS](q).map(_.map(_.json))
 
+  override def fetchLatestProcessVersionsCreatedByNonTechnicalUsers(
+      query: ScenarioQuery,
+      technicalUsers: TechnicalUsers
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]] = Future.successful(Map.empty)
+
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ScenarioWithDetailsEntity[PS]]] =
@@ -74,7 +84,8 @@ class MockFetchingProcessRepository private (
     )
 
   override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
-      id: ProcessId
+      id: ProcessId,
+      technicalUsers: Option[TechnicalUsers],
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.processId == id).lastOption)
 

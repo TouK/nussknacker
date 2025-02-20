@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
 import cats.data.OptionT
+import cats.implicits.toFunctorOps
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
@@ -9,14 +10,16 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
+import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -27,7 +30,11 @@ object DBFetchingProcessRepository {
       actionRepository: ScenarioActionReadOnlyRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(implicit ec: ExecutionContext) =
-    new DBFetchingProcessRepository[DB](dbRef, actionRepository, scenarioLabelsRepository) with DbioRepository
+    new DBFetchingProcessRepository[DB](
+      dbRef,
+      actionRepository,
+      scenarioLabelsRepository
+    ) with DbioRepository
 
   def createFutureRepository(
       dbRef: DbRef,
@@ -36,8 +43,11 @@ object DBFetchingProcessRepository {
   )(
       implicit ec: ExecutionContext
   ) =
-    new DBFetchingProcessRepository[Future](dbRef, actionReadOnlyRepository, scenarioLabelsRepository)
-      with BasicRepository
+    new DBFetchingProcessRepository[Future](
+      dbRef,
+      actionReadOnlyRepository,
+      scenarioLabelsRepository
+    ) with BasicRepository
 
 }
 
@@ -68,7 +78,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   }
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
-      query: ScenarioQuery
+      query: ScenarioQuery,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),
@@ -83,7 +93,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         { process =>
           expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
         },
-        query.isDeployed
+        query.isDeployed,
       )
     )
   }
@@ -108,9 +118,32 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     )
   }
 
+  override def fetchLatestProcessVersionsCreatedByNonTechnicalUsers(
+      query: ScenarioQuery,
+      technicalUsers: TechnicalUsers,
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): F[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestProcessVersionsCreatedByNonTechnicalUsersQuery(
+        process => expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process)),
+        technicalUsers,
+      ).result
+    ).map(_.toMap)
+  }
+
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-      isDeployed: Option[Boolean]
+      isDeployed: Option[Boolean],
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
@@ -142,6 +175,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         createFullDetails(
           process = process,
           processVersion = processVersion,
+          latestProcessVersionByNonTechnicalUser = None,
           lastActionData = lastActionPerProcess.get(process.id),
           lastStateActionData = lastStateActionPerProcess.get(process.id),
           lastDeployedActionData = lastDeployedActionPerProcess.get(process.id),
@@ -177,9 +211,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   }
 
   override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
-      id: ProcessId
+      id: ProcessId,
+      technicalUsersOpt: Option[TechnicalUsers],
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]] = {
-    run(fetchLatestProcessDetailsForProcessIdQuery(id))
+    run(fetchLatestProcessDetailsForProcessIdQuery(id, technicalUsersOpt))
   }
 
   override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](
@@ -195,7 +230,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       )
       processDetails <- fetchProcessDetailsForVersion(
         processVersion,
-        isLatestVersion = latestProcessVersion.id == processVersion.id
+        isLatestVersion = latestProcessVersion.id == processVersion.id,
+        technicalUsersOpt = None,
       )
     } yield processDetails
     run(action.value)
@@ -214,7 +250,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   )(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
       implicit val fetchStrategy: ScenarioShapeFetchStrategy[_] = ScenarioShapeFetchStrategy.NotFetch
-      fetchLatestProcessDetailsForProcessIdQuery(processId.id).flatMap {
+      fetchLatestProcessDetailsForProcessIdQuery(processId.id, None).flatMap {
         case None          => DBIO.failed(ProcessNotFoundError(processId.name))
         case Some(process) => DBIO.successful(process.processingType)
       }
@@ -222,19 +258,21 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   }
 
   private def fetchLatestProcessDetailsForProcessIdQuery[PS: ScenarioShapeFetchStrategy](
-      id: ProcessId
+      id: ProcessId,
+      technicalUsers: Option[TechnicalUsers],
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[ScenarioWithDetailsEntity[PS]]] = {
     (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
         fetchProcessLatestVersionsQuery(id).result.headOption
       )
-      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true)
+      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, technicalUsers)
     } yield processDetails).value
   }
 
   private def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](
       processVersion: ProcessVersionEntityData,
-      isLatestVersion: Boolean
+      isLatestVersion: Boolean,
+      technicalUsersOpt: Option[TechnicalUsers],
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, ScenarioWithDetailsEntity[PS]] = {
     val id = processVersion.processId
     for {
@@ -247,6 +285,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
+      latestProcessVersionByNonTechnicalUser = technicalUsersOpt
+        .flatMap { technicalUsers =>
+          processVersions
+            .filter(v => !technicalUsers.userNames.contains(v.user))
+            .maxByOption(_.id.value)
+        },
       lastActionData = actions.headOption,
       lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
       // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
@@ -269,6 +313,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   private def createFullDetails[PS: ScenarioShapeFetchStrategy](
       process: ProcessEntityData,
       processVersion: ProcessVersionEntityData,
+      latestProcessVersionByNonTechnicalUser: Option[ProcessVersionEntityData],
       lastActionData: Option[ProcessAction],
       lastStateActionData: Option[ProcessAction],
       lastDeployedActionData: Option[ProcessAction],
@@ -293,6 +338,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       modificationDate = processVersion.createDate.toInstant,
       modifiedAt = processVersion.createDate.toInstant,
       modifiedBy = processVersion.user,
+      modifiedByNonTechnicalUserAt = latestProcessVersionByNonTechnicalUser.map(_.createDate.toInstant),
+      modifiedByNonTechnicalUser = latestProcessVersionByNonTechnicalUser.map(_.user),
       createdAt = process.createdAt.toInstant,
       createdBy = process.createdBy,
       json = convertToTargetShape(processVersion),

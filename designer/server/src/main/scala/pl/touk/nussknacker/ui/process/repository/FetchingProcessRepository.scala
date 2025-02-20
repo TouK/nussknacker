@@ -3,16 +3,19 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.Monad
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.sql.Timestamp
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepository[F] {
 
   def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
-      id: ProcessId
+      id: ProcessId,
+      technicalUsers: Option[TechnicalUsers] = None,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]]
 
   def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
@@ -21,12 +24,17 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   ): F[Option[ScenarioWithDetailsEntity[PS]]]
 
   def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
-      query: ScenarioQuery
+      query: ScenarioQuery,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]]
 
   def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]]
+
+  def fetchLatestProcessVersionsCreatedByNonTechnicalUsers(
+      query: ScenarioQuery,
+      technicalUsers: TechnicalUsers,
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]]
 
   def getProcessVersion(
       processName: ProcessName,

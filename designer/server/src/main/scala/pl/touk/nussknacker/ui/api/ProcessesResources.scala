@@ -11,12 +11,14 @@ import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  ProcessDetailsEnrichmentsOptions,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -32,7 +34,8 @@ class ProcessesResources(
     scenarioStateProvider: ScenarioStateProvider,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
-    processChangeListener: ProcessChangeListener
+    processChangeListener: ProcessChangeListener,
+    technicalUsers: TechnicalUsers,
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
     with FailFastCirceSupport
@@ -77,26 +80,27 @@ class ProcessesResources(
           }
         }
       } ~ path("processes") {
-        get {
-          processesQuery { query =>
+        (get & processesQuery & fetchLatestNonTechnicalModificationParameter) {
+          (query, fetchLatestNonTechnicalModification) =>
             complete {
-              processService.getLatestProcessesWithDetails(
+              processService.getLatestProcessesWithDetailsAndEnrichments(
                 query,
-                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
+                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState,
+                ProcessDetailsEnrichmentsOptions.create(fetchLatestNonTechnicalModification, technicalUsers)
               )
             }
-          }
         }
       } ~ path("processesDetails") {
-        (get & processesQuery & skipValidateAndResolveParameter & skipNodeResultsParameter) {
-          (query, skipValidateAndResolve, skipNodeResults) =>
+        (get & processesQuery & fetchLatestNonTechnicalModificationParameter & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          (query, fetchLatestNonTechnicalModification, skipValidateAndResolve, skipNodeResults) =>
             complete {
-              processService.getLatestProcessesWithDetails(
+              processService.getLatestProcessesWithDetailsAndEnrichments(
                 query,
                 GetScenarioWithDetailsOptions(
                   FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
                   fetchState = false
-                )
+                ),
+                ProcessDetailsEnrichmentsOptions.create(fetchLatestNonTechnicalModification, technicalUsers)
               )
             }
         }
@@ -157,12 +161,13 @@ class ProcessesResources(
             //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
             (skipValidateAndResolve, skipNodeResults) =>
               complete {
-                processService.getLatestProcessWithDetails(
+                processService.getLatestProcessWithDetailsAndEnrichments(
                   processId,
                   GetScenarioWithDetailsOptions(
                     FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
                     fetchState = true
-                  )
+                  ),
+                  ProcessDetailsEnrichmentsOptions.create(fetchLatestNonTechnicalModification = true, technicalUsers)
                 )
               }
           }
@@ -278,6 +283,10 @@ class ProcessesResources(
     ).tmap { case (isFragment, isArchived, isDeployed, categories, processingTypes, names) =>
       (isFragment, isArchived, isDeployed, categories, processingTypes, names.map(_.map(ProcessName(_))))
     }.as(ScenarioQuery.apply _)
+  }
+
+  private def fetchLatestNonTechnicalModificationParameter = {
+    parameters(Symbol("fetchLatestNonTechnicalModification").as[Boolean].withDefault(false))
   }
 
   private def skipValidateAndResolveParameter = {
