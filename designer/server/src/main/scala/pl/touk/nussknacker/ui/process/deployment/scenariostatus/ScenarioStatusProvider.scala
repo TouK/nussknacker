@@ -14,12 +14,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.{
+  BulkQueriedDeploymentStatuses,
   DeploymentStatusesProvider,
-  GetDeploymentsStatusesError,
-  PrefetchedDeploymentStatuses
+  GetDeploymentsStatusesError
 }
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
-import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -62,7 +61,7 @@ class ScenarioStatusProvider(
       for {
         actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
         prefetchedDeploymentStatuses <- DBIO.from(
-          deploymentStatusesProvider.getPrefetchedDeploymentStatusesForSupportedManagers(scenarios)
+          deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(scenarios)
         )
         finalScenariosStatuses <- processTraverse
           .map {
@@ -77,7 +76,7 @@ class ScenarioStatusProvider(
 
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
       actionsInProgress: Map[ProcessId, Set[ScenarioActionName]],
-      prefetchedDeploymentStatuses: PrefetchedDeploymentStatuses,
+      prefetchedDeploymentStatuses: BulkQueriedDeploymentStatuses,
       process: ScenarioWithDetailsEntity[ScenarioShape]
   )(
       implicit user: LoggedUser,

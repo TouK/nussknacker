@@ -14,6 +14,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+// This class provides statuses for every deployment of scenario
+// Currently it doesn't return correct value in situation when deployment is requested but not yet visible on the engine side
+// To fix this we have to change the model of actions(activities) which holds separate action/activity for deploy and for cancel
+// and they are not related.
+// It also don't return status of deployments that are finished but not visible on the engine side because of retention
+// FIXME abr: Take into an account in progress and finished deployments that are not visible on the engine side
 class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenarioStateTimeout: Option[FiniteDuration])(
     implicit system: ActorSystem
 ) extends LazyLogging {
@@ -25,12 +31,12 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
   //  - DM has capability DeploymentsStatusesQueryForAllScenariosSupport
   //  - the query is about more than one scenario handled by that DM - for one scenario prefetching would be non-optimal
   //    and this is a common case for this method because it is invoked for Id Traverse - see usages
-  def getPrefetchedDeploymentStatusesForSupportedManagers(
+  def getBulkQueriedDeploymentStatusesForSupportedManagers(
       scenarios: List[ScenarioWithDetailsEntity[_]],
   )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[PrefetchedDeploymentStatuses] = {
+  ): Future[BulkQueriedDeploymentStatuses] = {
     // We assume that prefetching gives profits for at least two scenarios
     val processingTypesWithMoreThanOneScenario = scenarios.groupBy(_.processingType).filter(_._2.size >= 2).keySet
 
@@ -48,19 +54,19 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
         }
       }
       .map(_.flatten.toMap)
-      .map(new PrefetchedDeploymentStatuses(_))
+      .map(new BulkQueriedDeploymentStatuses(_))
   }
 
   def getDeploymentStatuses(
       processingType: ProcessingType,
       scenarioName: ProcessName,
-      prefetchedDeploymentStatuses: Option[PrefetchedDeploymentStatuses],
+      prefetchedDeploymentStatuses: Option[BulkQueriedDeploymentStatuses],
   )(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] = {
     prefetchedDeploymentStatuses
-      .flatMap(_.get(processingType, scenarioName))
+      .flatMap(_.getDeploymentStatuses(processingType, scenarioName))
       .map { prefetchedStatusDetails =>
         Future.successful(Right(prefetchedStatusDetails))
       }
@@ -93,18 +99,18 @@ class DeploymentStatusesProvider(dispatcher: DeploymentManagerDispatcher, scenar
 
 }
 
-class PrefetchedDeploymentStatuses(
-    prefetchedStatusesByProcessingType: Map[ProcessingType, WithDataFreshnessStatus[
+class BulkQueriedDeploymentStatuses(
+    bulkQueriedStatusesByProcessingType: Map[ProcessingType, WithDataFreshnessStatus[
       Map[ProcessName, List[DeploymentStatusDetails]]
     ]]
 ) {
 
-  def get(
+  def getDeploymentStatuses(
       processingType: ProcessingType,
       scenarioName: ProcessName
   ): Option[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] =
     for {
-      prefetchedStatusesForProcessingType <- prefetchedStatusesByProcessingType.get(processingType)
+      prefetchedStatusesForProcessingType <- bulkQueriedStatusesByProcessingType.get(processingType)
       // Deployment statuses are prefetched for all scenarios for the given processing type.
       // If there is no information available for a specific scenario name,
       // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails] instead of None
