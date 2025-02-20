@@ -89,7 +89,7 @@ package object component {
       links: List[ComponentLink],
       usageCount: Long,
       allowedProcessingModes: AllowedProcessingModes,
-      label: Option[String]
+      label: String
   ) {
     def componentId: ComponentId = ComponentId(componentType, name)
   }

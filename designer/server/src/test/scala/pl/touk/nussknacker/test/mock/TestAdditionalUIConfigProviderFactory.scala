@@ -56,7 +56,8 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
           valueCompileTimeValidation = None
         )
       ),
-      componentGroup = Some(componentGroupName)
+      componentGroup = Some(componentGroupName),
+      label = "enricher"
     )
   )
 

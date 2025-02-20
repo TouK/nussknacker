@@ -69,7 +69,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                     ),
                     usageCount = 2,
                     allowedProcessingModes = AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse),
-                    label = Some("collect")
+                    label = "collect"
                   )
                 )
               )

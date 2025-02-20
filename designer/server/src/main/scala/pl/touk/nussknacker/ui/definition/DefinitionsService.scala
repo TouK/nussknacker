@@ -138,7 +138,7 @@ class DefinitionsService(
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
       },
-      label = componentDefinition.component.label.getOrElse(componentDefinition.component.name)
+      label = componentDefinition.component.label
     )
   }
 
