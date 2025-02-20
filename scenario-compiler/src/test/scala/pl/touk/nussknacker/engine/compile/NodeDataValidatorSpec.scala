@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
-  ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
@@ -98,7 +97,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       additionalConfigsFromProvider = Map(
         DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
-            ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+            ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None)
           )
         )
       ),
@@ -841,7 +840,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   allowOtherValue = false
                 )
               ),
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -880,7 +878,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   allowOtherValue = false
                 )
               ),
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -916,7 +913,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -950,7 +946,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   allowOtherValue = false
                 )
               ),
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -984,7 +979,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   allowOtherValue = false
                 )
               ),
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1017,7 +1011,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   allowOtherValue = false
                 )
               ),
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1048,7 +1041,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             ),
             FragmentParameter(
               ParameterName("param1"),
@@ -1057,7 +1049,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1086,7 +1077,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1116,7 +1106,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1147,7 +1136,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1178,7 +1166,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -1207,12 +1194,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = Some(
-                ParameterValueCompileTimeValidation(
-                  s"#${ValidationExpressionParameterValidator.variableName}.length() < 7".spel,
-                  Some("some failed message")
-                )
-              )
             )
           ),
         ),
@@ -1240,9 +1221,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = Some(
-                ParameterValueCompileTimeValidation(Expression.spel(blankExpression), Some("some failed message"))
-              ),
             )
           ),
         ),
@@ -1282,9 +1260,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = Some(
-                ParameterValueCompileTimeValidation(Expression.spel(invalidReference), Some("some failed message"))
-              ),
             )
           ),
         ),
@@ -1325,12 +1300,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = Some(
-                ParameterValueCompileTimeValidation(
-                  invalidExpression.spel,
-                  Some("some failed message")
-                )
-              )
             )
           ),
         ),
@@ -1370,9 +1339,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = Some(
-                ParameterValueCompileTimeValidation(Expression.spel(stringExpression), Some("some failed message"))
-              ),
             )
           ),
         ),
@@ -1469,12 +1435,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               initialValue = None,
               hintText = None,
               valueEditor = None,
-              valueCompileTimeValidation = Some(
-                ParameterValueCompileTimeValidation(
-                  "invalidExpr".spel,
-                  None
-                )
-              )
             ),
             FragmentParameter(
               ParameterName("paramName"),

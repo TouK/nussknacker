@@ -2,16 +2,7 @@ import { isNil } from "lodash";
 import { Expression, ReturnedType } from "../../../../../types";
 import { resolveRefClazzName } from "./utils";
 
-export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation | ValueEditor;
-
-export interface ValueCompileTimeValidation {
-    validationExpression: Expression;
-    validationFailedMessage?: string;
-}
-
-export interface FragmentValidation {
-    valueCompileTimeValidation: ValueCompileTimeValidation | null;
-}
+export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueEditor;
 
 export enum FixedValuesType {
     "ValueInputWithFixedValuesProvided" = "ValueInputWithFixedValuesProvided",
@@ -48,20 +39,20 @@ export interface ValueEditor {
     dictId: string;
 }
 
-export interface DefaultParameterVariant extends GenericParameterVariant, FragmentValidation {
+export interface DefaultParameterVariant extends GenericParameterVariant {
     name: string;
     valueEditor: null;
 }
 
-export interface FixedListParameterVariant extends GenericParameterVariant, FragmentValidation {
+export interface FixedListParameterVariant extends GenericParameterVariant {
     valueEditor: ValueEditor;
     presetSelection?: string;
 }
-export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
+export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant {
     valueEditor: ValueEditor;
     presetSelection?: string;
 }
-export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
+export interface AnyValueParameterVariant extends GenericParameterVariant {
     fixedValuesType: FixedValuesType;
     valueEditor: null;
 }

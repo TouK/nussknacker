@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.util.ServiceLoader
@@ -266,18 +266,6 @@ case class ValidationExpressionParameterValidatorToCompile(
   ): Validated[PartSubGraphCompilationError, Unit] = throw new IllegalStateException(
     s"$this must be converted to ValidationExpressionParameterValidator before being used"
   )
-
-}
-
-object ValidationExpressionParameterValidatorToCompile {
-
-  def apply(
-      parameterValueCompileTimeValidation: ParameterValueCompileTimeValidation
-  ): ValidationExpressionParameterValidatorToCompile =
-    ValidationExpressionParameterValidatorToCompile(
-      parameterValueCompileTimeValidation.validationExpression,
-      parameterValueCompileTimeValidation.validationFailedMessage
-    )
 
 }
 

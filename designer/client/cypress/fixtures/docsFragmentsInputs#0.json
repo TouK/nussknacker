@@ -30,14 +30,7 @@
                         "expression": "42"
                     },
                     "hintText": "Please input your shoe size",
-                    "valueEditor": null,
-                    "valueCompileTimeValidation": {
-                        "validationExpression": {
-                            "language": "spel",
-                            "expression": "#value < 100"
-                        },
-                        "validationFailedMessage": "Your shoe size is too large"
-                    }
+                    "valueEditor": null
                 },
                 {
                     "name": "parameter2",
@@ -63,8 +56,7 @@
                         ],
                         "allowOtherValue": true,
                         "type": "ValueInputWithFixedValuesProvided"
-                    },
-                    "valueCompileTimeValidation": null
+                    }
                 }
             ],
             "additionalFields": {

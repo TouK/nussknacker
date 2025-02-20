@@ -244,8 +244,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
                 )
               ),
               hintText = None,
-              valueEditor = None,
-              valueCompileTimeValidation = None
+              valueEditor = None
             )
           ),
           componentGroup = None

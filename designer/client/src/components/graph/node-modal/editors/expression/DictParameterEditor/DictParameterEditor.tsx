@@ -22,7 +22,7 @@ interface Props {
     onValueChange: (value: string) => void;
     fieldErrors: FieldError[];
     param: ParamType;
-    showValidation: boolean;
+    showValidation?: boolean;
     readOnly: boolean;
 }
 

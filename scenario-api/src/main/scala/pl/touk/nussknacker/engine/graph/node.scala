@@ -7,11 +7,7 @@ import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.{
-  ParameterName,
-  ParameterValueCompileTimeValidation,
-  ParameterValueInput
-}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueInput}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -324,9 +320,7 @@ object node {
         required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        valueEditor: Option[ParameterValueInput],
-        // TODO: Research if this parameter may be removed after merged: https://github.com/TouK/nussknacker/pull/7574
-        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
+        valueEditor: Option[ParameterValueInput]
     )
 
     object FragmentParameter {
@@ -338,8 +332,7 @@ object node {
           required = false,
           initialValue = None,
           hintText = None,
-          valueEditor = None,
-          valueCompileTimeValidation = None
+          valueEditor = None
         )
       }
 

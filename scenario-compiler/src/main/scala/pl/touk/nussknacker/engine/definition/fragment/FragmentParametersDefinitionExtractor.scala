@@ -95,11 +95,7 @@ class FragmentParametersDefinitionExtractor(
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
 
-    val validationExpressionValidator = fragmentParameter.valueCompileTimeValidation.map(validation =>
-      ValidationExpressionParameterValidatorToCompile(validation)
-    )
-
-    val validators = validationExpressionValidator ++ ValidatorsExtractor
+    val validators = ValidatorsExtractor
       .extract(
         ValidatorExtractorParameters(
           ParameterData(typ, Nil),

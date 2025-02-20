@@ -6,7 +6,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
-  ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
@@ -16,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
   test(
-    "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor, valueCompileTimeValidation [backwards compatibility test]"
+    "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor [backwards compatibility test]"
   ) {
     val referenceFragmentParameter = FragmentParameter(
       ParameterName("paramString"),
@@ -24,8 +23,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       required = false,
       initialValue = None,
       hintText = None,
-      valueEditor = None,
-      valueCompileTimeValidation = None
+      valueEditor = None
     )
 
     decode[FragmentParameter]("""{
@@ -44,7 +42,6 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |  "initialValue" : null,
         |  "hintText" : null,
         |  "valueEditor" : null,
-        |  "valueCompileTimeValidation" : null
         |}""".stripMargin) shouldBe Right(referenceFragmentParameter)
   }
 
@@ -74,13 +71,6 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
           }
         ]
       },
-      "valueCompileTimeValidation" : {
-        "validationExpression" : {
-          "expression" : "#value.length() < 7",
-          "language" : "spel"
-        },
-        "validationFailedMessage" : "some failed message"
-      }
     }""") shouldBe Right(
       FragmentParameter(
         ParameterName("paramString"),
@@ -96,9 +86,6 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
             ),
             allowOtherValue = true
           )
-        ),
-        valueCompileTimeValidation = Some(
-          ParameterValueCompileTimeValidation(Expression.spel("#value.length() < 7"), Some("some failed message"))
         ),
       )
     )
@@ -117,8 +104,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         "type": "ValueInputWithDictEditor",
         "allowOtherValue" : false,
         "dictId" : "someDictId"
-      },
-      "valueCompileTimeValidation" : null
+      }
     }""") shouldBe Right(
       FragmentParameter(
         ParameterName("paramString"),
@@ -132,7 +118,6 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
             allowOtherValue = false
           )
         ),
-        valueCompileTimeValidation = None
       )
     )
   }

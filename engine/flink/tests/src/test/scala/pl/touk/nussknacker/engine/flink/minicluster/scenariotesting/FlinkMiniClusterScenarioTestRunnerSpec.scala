@@ -13,11 +13,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ParameterAdditionalUIConfig
 }
-import pl.touk.nussknacker.engine.api.parameter.{
-  ParameterName,
-  ParameterValueCompileTimeValidation,
-  ValueInputWithDictEditor
-}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, FragmentSpecificData, MetaData}
@@ -892,7 +888,6 @@ class FlinkMiniClusterScenarioTestRunnerSpec
                 initialValue = None,
                 hintText = None,
                 valueEditor = Some(ValueInputWithDictEditor("someDictId", allowOtherValue = false)),
-                valueCompileTimeValidation = None
               )
             )
           )
@@ -990,14 +985,7 @@ object FlinkMiniClusterScenarioTestRunnerSpec {
 
   private val processWithFragmentParameterValidation: CanonicalProcess = {
     val fragmentParamName = ParameterName("param")
-    val fragmentParam = FragmentParameter(fragmentParamName, FragmentClazzRef[String]).copy(
-      valueCompileTimeValidation = Some(
-        ParameterValueCompileTimeValidation(
-          validationExpression = Expression.spel("true"),
-          validationFailedMessage = Some("param validation failed")
-        )
-      )
-    )
+    val fragmentParam     = FragmentParameter(fragmentParamName, FragmentClazzRef[String])
 
     CanonicalProcess(
       MetaData(fragmentWithValidationName, FragmentSpecificData()),

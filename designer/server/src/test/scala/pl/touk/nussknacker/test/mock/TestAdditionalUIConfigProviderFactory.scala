@@ -52,8 +52,7 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
             )
           ),
           hintText = Some("hint-text-from-additional-ui-config-provider"),
-          valueEditor = None,
-          valueCompileTimeValidation = None
+          valueEditor = None
         )
       ),
       componentGroup = Some(componentGroupName)

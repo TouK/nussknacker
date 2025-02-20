@@ -27,8 +27,6 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
     const emptyOption = { label: "", value: "" };
     const optionsToDisplay: Option[] = [emptyOption, ...(options ?? []).map(({ label }) => ({ label, value: label }))];
 
-    const validationEnabled = Boolean(item.valueCompileTimeValidation);
-
     return (
         <FormControl>
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
@@ -48,10 +46,10 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                 <DictParameterEditor
                     key={item.valueEditor.dictId}
                     fieldErrors={fieldErrors}
-                    showValidation={validationEnabled}
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.expression }}
                     onValueChange={(value) => onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value })}
                     param={{ editor: { dictId: item.valueEditor.dictId } }}
+                    showValidation={true}
                     readOnly={!item.valueEditor.dictId}
                 />
             ) : (
@@ -60,8 +58,8 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                     onValueChange={(value) => onChange(`${path}.initialValue`, { label: value, expression: value })}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
+                    showValidation={true}
                     param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
-                    showValidation={validationEnabled}
                     fieldErrors={fieldErrors}
                 />
             )}

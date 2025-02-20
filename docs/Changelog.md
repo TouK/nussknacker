@@ -10,6 +10,7 @@
 
 ### 1.19.0 (Not released yet)
 
+* [#7577](https://github.com/TouK/nussknacker/pull/7577) Removed `valueCompileTimeValidation` field from `FragmentParameter`
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
   * new API available under `processes/{scenarioName}/stickyNotes`

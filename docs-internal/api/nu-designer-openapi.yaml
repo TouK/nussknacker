@@ -5948,10 +5948,6 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ParameterValueInput'
           - type: 'null'
-        valueCompileTimeValidation:
-          anyOf:
-          - $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
-          - type: 'null'
     FragmentRef:
       title: FragmentRef
       type: object
@@ -6795,18 +6791,6 @@ components:
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
-    ParameterValueCompileTimeValidation:
-      title: ParameterValueCompileTimeValidation
-      type: object
-      required:
-      - validationExpression
-      properties:
-        validationExpression:
-          $ref: '#/components/schemas/Expression'
-        validationFailedMessage:
-          type:
-          - string
-          - 'null'
     ParameterValueInput:
       title: ParameterValueInput
       oneOf:

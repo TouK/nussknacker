@@ -62,8 +62,7 @@ class TestingApiHttpServiceSpec
         ),
         allowOtherValue = false
       )
-    ),
-    valueCompileTimeValidation = None
+    )
   )
 
   private val fragmentRawStringParameter = FragmentParameter(
@@ -71,8 +70,7 @@ class TestingApiHttpServiceSpec
     FragmentClazzRef[java.lang.String],
     initialValue = None,
     hintText = None,
-    valueEditor = None,
-    valueCompileTimeValidation = None
+    valueEditor = None
   )
 
   private def exampleFragment(parameter: FragmentParameter) = ScenarioBuilder

@@ -41,8 +41,7 @@ object AdditionalComponentConfigsForRuntimeExtractorTest {
       required = true,
       initialValue = Some(FixedExpressionValue("'someInitialValueExpression'", "someInitialValueLabel")),
       hintText = None,
-      valueEditor = Some(ValueInputWithDictEditor("someDictA", allowOtherValue = true)),
-      valueCompileTimeValidation = None
+      valueEditor = Some(ValueInputWithDictEditor("someDictA", allowOtherValue = true))
     )
   )
 
@@ -52,8 +51,7 @@ object AdditionalComponentConfigsForRuntimeExtractorTest {
       required = false,
       initialValue = None,
       hintText = Some("someHint"),
-      valueEditor = Some(ValueInputWithDictEditor("someDictB", allowOtherValue = false)),
-      valueCompileTimeValidation = None
+      valueEditor = Some(ValueInputWithDictEditor("someDictB", allowOtherValue = false))
     )
   )
 
@@ -63,8 +61,7 @@ object AdditionalComponentConfigsForRuntimeExtractorTest {
       required = true,
       initialValue = None,
       hintText = None,
-      valueEditor = None,
-      valueCompileTimeValidation = None
+      valueEditor = None
     )
   )
 

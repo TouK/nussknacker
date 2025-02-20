@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
-  ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
@@ -677,8 +676,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   FragmentClazzRef("thisTypeDoesntExist"),
                   initialValue = None,
                   hintText = None,
-                  valueEditor = None,
-                  valueCompileTimeValidation = None
+                  valueEditor = None
                 )
               )
             )
@@ -729,7 +727,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("subParam2"),
@@ -742,7 +739,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("subParam3_valid"),
@@ -758,7 +754,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 )
               )
             )
@@ -813,7 +808,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   initialValue = Some(FixedExpressionValue("#input", "inputValue")),
                   hintText = None,
                   valueEditor = None,
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("param2"),
@@ -821,7 +815,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   initialValue = Some(FixedExpressionValue("{1, 2}.![#this > 1]", "mappedValue")),
                   hintText = None,
                   valueEditor = None,
-                  valueCompileTimeValidation = None
                 ),
               )
             )
@@ -861,7 +854,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("subParam2"),
@@ -874,7 +866,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("subParam3"),
@@ -887,7 +878,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("subParam4_valid"),
@@ -901,7 +891,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   ParameterName("subParam5_valid"),
@@ -914,7 +903,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                       allowOtherValue = false
                     )
                   ),
-                  valueCompileTimeValidation = None
                 )
               )
             )
@@ -979,8 +967,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   initialValue = None,
                   hintText = None,
                   valueEditor = None,
-                  valueCompileTimeValidation =
-                    Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
                 ),
                 FragmentParameter(
                   ParameterName("subParam2"),
@@ -988,12 +974,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   initialValue = None,
                   hintText = None,
                   valueEditor = None,
-                  valueCompileTimeValidation = Some(
-                    ParameterValueCompileTimeValidation(
-                      s"#${ValidationExpressionParameterValidator.variableName} < 7".spel, // invalid operation (comparing string with int)
-                      None
-                    )
-                  )
                 )
               )
             )
@@ -1092,7 +1072,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     allowOtherValue = false
                   )
                 ),
-                valueCompileTimeValidation = None
               ),
             )
           )
@@ -1301,7 +1280,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       Map(
         DesignerWideComponentId("streaming-service-eagerServiceWithDynamicComponent") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
-            ParameterName("param") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+            ParameterName("param") -> ParameterAdditionalUIConfig(required = true, None, None, None)
           )
         )
       )
@@ -1337,7 +1316,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       Map(
         DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
-            ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+            ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None)
           )
         )
       )
@@ -2117,7 +2096,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            valueCompileTimeValidation = Some(ParameterValueCompileTimeValidation(validationExpression, None))
           )
         )
       )
@@ -2157,9 +2135,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            valueCompileTimeValidation = Some(
-              ParameterValueCompileTimeValidation(validationExpression, Some("some failed message"))
-            )
           )
         )
       )
@@ -2711,9 +2686,6 @@ private object UIProcessValidatorSpec {
       initialValue = None,
       hintText = None,
       valueEditor = None,
-      valueCompileTimeValidation = Some(
-        ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"))
-      )
     )
 
   private def validatorWithComponentsAndConfig(

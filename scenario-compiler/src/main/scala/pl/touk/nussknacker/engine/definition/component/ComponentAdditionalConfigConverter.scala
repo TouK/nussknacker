@@ -31,10 +31,7 @@ object ComponentAdditionalConfigConverter {
       paramAdditionalConfig: ParameterAdditionalUIConfig,
       paramName: ParameterName
   ): ParameterConfig = {
-    val validators = (if (paramAdditionalConfig.required) List(MandatoryParameterValidator) else List.empty) ++
-      paramAdditionalConfig.valueCompileTimeValidation
-        .map(validation => List(ValidationExpressionParameterValidatorToCompile(validation)))
-        .getOrElse(List.empty)
+    val validators = (if (paramAdditionalConfig.required) List(MandatoryParameterValidator) else List.empty)
 
     ParameterConfig(
       defaultValue = paramAdditionalConfig.initialValue.map(
