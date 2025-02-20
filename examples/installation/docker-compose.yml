@@ -211,7 +211,7 @@ services:
     build:
       context: ./flink/
       args:
-        FLINK_VERSION: "1.20.0-scala_2.12-java11"
+        FLINK_VERSION: "1.20.1-scala_2.12-java11"
     restart: unless-stopped
     command: jobmanager
     environment:
@@ -227,7 +227,7 @@ services:
     build:
       context: ./flink/
       args:
-        FLINK_VERSION: "1.20.0-scala_2.12-java11"
+        FLINK_VERSION: "1.20.1-scala_2.12-java11"
     restart: unless-stopped
     command: taskmanager
     environment:
