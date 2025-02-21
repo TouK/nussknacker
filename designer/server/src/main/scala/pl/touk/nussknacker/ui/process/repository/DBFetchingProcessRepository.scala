@@ -287,9 +287,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       processVersion = processVersion,
       latestProcessVersionByNonTechnicalUser = technicalUsersOpt
         .flatMap { technicalUsers =>
-          processVersions
-            .filter(v => !technicalUsers.userNames.contains(v.user))
-            .maxByOption(_.id.value)
+          val filtered = processVersions.filter(v => !technicalUsers.userNames.contains(v.user))
+          if (filtered.nonEmpty) {
+            Some(filtered.maxBy(_.id.value))
+          } else {
+            None
+          }
         },
       lastActionData = actions.headOption,
       lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
