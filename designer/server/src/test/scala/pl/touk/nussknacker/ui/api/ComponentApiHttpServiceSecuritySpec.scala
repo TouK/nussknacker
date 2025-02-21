@@ -127,8 +127,7 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "modifiedAt": "${regexes.zuluDateRegex}",
                  |  "modifiedBy": "admin",
                  |  "createdAt": "${regexes.zuluDateRegex}",
-                 |  "createdBy": "admin",
-                 |  "lastAction": null
+                 |  "createdBy": "admin"
                  |}]""".stripMargin
             )
           )
@@ -187,8 +186,7 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "modifiedAt": "${regexes.zuluDateRegex}",
                  |  "modifiedBy": "admin",
                  |  "createdAt": "${regexes.zuluDateRegex}",
-                 |  "createdBy": "admin",
-                 |  "lastAction": null
+                 |  "createdBy": "admin"
                  |}]""".stripMargin
             )
           )

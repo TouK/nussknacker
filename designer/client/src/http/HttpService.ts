@@ -12,16 +12,7 @@ import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/E
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import {
-    ActionName,
-    PredefinedActionName,
-    ProcessActionType,
-    ProcessName,
-    ProcessStateType,
-    ProcessVersionId,
-    Scenario,
-    StatusDefinitionType,
-} from "../components/Process/types";
+import { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import {
     ActivitiesResponse,
     ActivityMetadataResponse,
@@ -33,16 +24,7 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import {
-    Expression,
-    LayoutData,
-    NodeId,
-    NodeType,
-    ProcessAdditionalFields,
-    ProcessDefinitionData,
-    ScenarioGraph,
-    VariableTypes,
-} from "../types";
+import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
@@ -135,7 +117,6 @@ export type ComponentUsageType = {
     modifiedBy: string;
     createdAt: Instant;
     createdBy: string;
-    lastAction: ProcessActionType;
 };
 
 export type NotificationActions = {

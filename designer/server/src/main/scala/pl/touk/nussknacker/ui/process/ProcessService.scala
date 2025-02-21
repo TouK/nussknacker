@@ -376,7 +376,6 @@ class DBProcessService(
                   process.processVersionId,
                   ScenarioActionName.UnArchive,
                   None,
-                  None
                 )
             )
           )
@@ -559,7 +558,6 @@ class DBProcessService(
             process.processVersionId,
             ScenarioActionName.Archive,
             None,
-            None
           )
         )
       )

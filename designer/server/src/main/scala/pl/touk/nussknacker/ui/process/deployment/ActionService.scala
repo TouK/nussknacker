@@ -4,13 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
@@ -33,7 +31,6 @@ class ActionService(
     processChangeListener: ProcessChangeListener,
     scenarioStateProvider: ScenarioStateProvider,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
-    modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     clock: Clock
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
@@ -89,7 +86,7 @@ class ActionService(
         LatestScenarioDetailsShape
       ] => Option[VersionId]
   ): ActionProcessor[LatestScenarioDetailsShape] =
-    new ActionProcessor(extractVersionOnWhichActionIsDoneFromLatestScenarioDetails, _ => None)
+    new ActionProcessor(extractVersionOnWhichActionIsDoneFromLatestScenarioDetails)
 
   private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType) = {
     for {
@@ -122,17 +119,8 @@ class ActionService(
   class ActionProcessor[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
       extractVersionOnWhichActionIsDoneFromLatestScenarioDetails: ScenarioWithDetailsEntity[
         LatestScenarioDetailsShape
-      ] => Option[VersionId],
-      extractModelInfoFromLatestScenarioDetails: ScenarioWithDetailsEntity[
-        LatestScenarioDetailsShape
-      ] => Option[ModelInfo]
+      ] => Option[VersionId]
   ) {
-
-    def withModelInfoSaving(implicit user: LoggedUser) =
-      new ActionProcessor[LatestScenarioDetailsShape](
-        extractVersionOnWhichActionIsDoneFromLatestScenarioDetails,
-        p => Some(modelInfos.forProcessingTypeUnsafe(p.processingType))
-      )
 
     def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](
         command: COMMAND,
@@ -162,8 +150,7 @@ class ActionService(
           actionName,
           extractVersionOnWhichActionIsDoneFromLatestScenarioDetails,
         )
-        modelInfo = extractModelInfoFromLatestScenarioDetails(ctx.latestScenarioDetails)
-        actionResult <- runAction(ctx, new ActionFinalizer(actionName, validatedComment, ctx, modelInfo))
+        actionResult <- runAction(ctx, new ActionFinalizer(actionName, validatedComment, ctx))
       } yield actionResult
     }
 
@@ -201,13 +188,11 @@ class ActionService(
           _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
           // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
           versionOnWhichActionIsDone = extractVersionOnWhichActionIsDoneFromLatestScenarioDetails(processDetails)
-          modelInfo                  = extractModelInfoFromLatestScenarioDetails(processDetails)
           // 1.6. create new action, action is started with "in progress" state, the whole command execution can take some time
           actionId <- actionRepository.addInProgressAction(
             processDetails.processId,
             actionName,
             versionOnWhichActionIsDone,
-            modelInfo
           )
         } yield CommandContext(processDetails, actionId, versionOnWhichActionIsDone)
       )
@@ -243,8 +228,7 @@ class ActionService(
     private class ActionFinalizer(
         actionName: ScenarioActionName,
         deploymentComment: Option[Comment],
-        ctx: CommandContext[LatestScenarioDetailsShape],
-        modelInfo: Option[ModelInfo]
+        ctx: CommandContext[LatestScenarioDetailsShape]
     )(implicit user: LoggedUser) {
 
       def handleResult[T](runAction: => Future[T]): Future[T] = {
@@ -267,7 +251,6 @@ class ActionService(
                   performedAt,
                   deploymentComment,
                   exception.getMessage,
-                  modelInfo
                 )
               )
               .transform(_ => Failure(exception))
@@ -293,7 +276,6 @@ class ActionService(
                     versionOnWhichActionIsDone,
                     performedAt,
                     deploymentComment,
-                    modelInfo
                   )
                 )
               }

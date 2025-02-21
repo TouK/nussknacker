@@ -46,15 +46,6 @@ paths:
                     modifiedBy: admin
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
-                    lastAction:
-                      id: 45c0f3f5-3ef7-4dc2-92d4-8bb826ec0ca9
-                      processId: 1
-                      processVersionId: 1
-                      user: admin
-                      createdAt: '2023-11-29T08:54:22.520866Z'
-                      performedAt: '2023-11-29T08:54:22.520866Z'
-                      actionName: DEPLOY
-                      state: FINISHED
                 Example1:
                   summary: List component usages with no last Action
                   value:
@@ -5616,10 +5607,6 @@ components:
           format: date-time
         createdBy:
           type: string
-        lastAction:
-          anyOf:
-          - $ref: '#/components/schemas/ProcessAction'
-          - type: 'null'
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -6852,65 +6839,6 @@ components:
                 type: string
               duration:
                 type: string
-    ProcessAction:
-      title: ProcessAction
-      type: object
-      required:
-      - id
-      - processId
-      - processVersionId
-      - user
-      - createdAt
-      - performedAt
-      - actionName
-      - state
-      properties:
-        id:
-          type: string
-          format: uuid
-        processId:
-          type: integer
-          format: int64
-        processVersionId:
-          type: integer
-          format: int64
-        user:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        performedAt:
-          type: string
-          format: date-time
-        actionName:
-          type: string
-        state:
-          $ref: '#/components/schemas/ProcessActionState'
-        failureMessage:
-          type:
-          - string
-          - 'null'
-        commentId:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        modelInfo:
-          anyOf:
-          - $ref: '#/components/schemas/Map_String'
-          - type: 'null'
-    ProcessActionState:
-      title: ProcessActionState
-      type: string
-      enum:
-      - IN_PROGRESS
-      - FINISHED
-      - FAILED
-      - EXECUTION_FINISHED
     ProcessActivity:
       title: ProcessActivity
       type: object

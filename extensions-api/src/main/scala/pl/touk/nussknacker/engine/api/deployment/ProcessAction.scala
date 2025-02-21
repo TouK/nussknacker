@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -15,21 +14,24 @@ import java.util.UUID
 // TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
 //  - this class is currently a compatibility layer for older fragments of code, new code should use ScenarioActivity
+//  - this class is used in REST API (JsonCodec) only by external project
 @JsonCodec case class ProcessAction(
     id: ProcessActionId,
+    // Used by external project (listener api)
     processId: ProcessId,
+    // Used by external project
     // We use process action only for finished/execution finished actions so processVersionId is always defined
     processVersionId: VersionId,
     user: String,
-    createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
+    // Used by external project
     performedAt: Instant,
+    // Used by external project
     actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
-    commentId: Option[Long],
+    // Used by external project
     comment: Option[String],
-    modelInfo: Option[ModelInfo]
 )
 
 final case class ProcessActionId(value: UUID) {
