@@ -17,6 +17,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * forceLatestRead: false -> defaultOffsetResetStrategy: "None"
     * forceLatestRead: true -> defaultOffsetResetStrategy: "ToLatest"
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The `process-json` button in `processToolbarConfig` was renamed to `process-export`
+* [#7581](https://github.com/TouK/nussknacker/pull/7581) 
+  * Additional information is (optionally) returned about last version created by non-technical user in the Nu Scenario API
+  * list of technical users (usernames) may be optionally defined in Nu config
+  ```hocon   
+    technicalUsers: ["admin", "external_technical_user", "John Doe admin account"]
+    ```
+  * by default the list consists of one element - internal Nu user `Nussknacker`
 
 ### REST API changes
 

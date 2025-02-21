@@ -52,12 +52,7 @@ final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion)
   def technicalUsers: TechnicalUsers = {
     val technicalUsersPath = "technicalUsers"
     if (rawConfig.resolved.hasPath(technicalUsersPath)) {
-      TechnicalUsers(
-        Set(NussknackerInternalUser.instance.username) ++ rawConfig.resolved
-          .getStringList(technicalUsersPath)
-          .asScala
-          .toSet
-      )
+      TechnicalUsers(rawConfig.resolved.getStringList(technicalUsersPath).asScala.toSet)
     } else {
       TechnicalUsers(Set(NussknackerInternalUser.instance.username))
     }
