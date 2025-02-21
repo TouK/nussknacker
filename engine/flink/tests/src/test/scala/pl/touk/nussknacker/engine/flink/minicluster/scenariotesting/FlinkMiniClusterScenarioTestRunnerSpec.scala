@@ -894,8 +894,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
                 valueEditor = Some(ValueInputWithDictEditor("someDictId", allowOtherValue = false)),
                 valueCompileTimeValidation = None
               )
-            ),
-            label = modifiedComponentName
+            )
           )
         )
       ).runTests(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))).futureValue
