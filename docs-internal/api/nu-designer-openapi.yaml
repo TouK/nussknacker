@@ -166,6 +166,7 @@ paths:
                     usageCount: 2
                     allowedProcessingModes:
                     - Request-Response
+                    label: collect
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: query parameter skipUsages, Invalid value for: query parameter
@@ -5552,6 +5553,7 @@ components:
       - componentGroupName
       - usageCount
       - allowedProcessingModes
+      - label
       properties:
         id:
           type: string
@@ -5578,6 +5580,8 @@ components:
           type: array
           items:
             type: string
+        label:
+          type: string
     ComponentType:
       title: ComponentType
       type: string

@@ -368,8 +368,7 @@ class DefaultComponentServiceSpec
       availableCategories,
       links,
       usageCount,
-      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
-      componentId.name
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
     )
   }
 
@@ -389,8 +388,7 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
-        cat
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
       )
     )
   }
@@ -410,8 +408,7 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
-        cat
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
       )
     )
   }
@@ -475,8 +472,7 @@ class DefaultComponentServiceSpec
       categories,
       links,
       usageCount,
-      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
-      componentId.name
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
     )
   }
 
@@ -499,7 +495,7 @@ class DefaultComponentServiceSpec
       links,
       0,
       AllowedProcessingModes.All,
-      componentId.name
+      componentId.name.replace("-", " ")
     )
   }
 
