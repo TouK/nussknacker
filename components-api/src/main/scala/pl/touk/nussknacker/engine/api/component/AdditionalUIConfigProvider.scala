@@ -31,8 +31,7 @@ case class ComponentAdditionalConfig(
     icon: Option[String] = None,
     docsUrl: Option[String] = None,
     componentGroup: Option[ComponentGroupName] = None,
-    disabled: Boolean = false,
-    label: String
+    disabled: Boolean = false
 )
 
 @JsonCodec
