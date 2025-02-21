@@ -19,18 +19,26 @@ import java.util.UUID
     id: ProcessActionId,
     processId: ProcessId,
     // We use process action only for finished/execution finished actions so processVersionId is always defined
-    processVersionId: VersionId,
-    user: String,
+    override val processVersionId: VersionId,
+    override val user: String,
     createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
     performedAt: Instant,
-    actionName: ScenarioActionName,
-    state: ProcessActionState,
+    override val actionName: ScenarioActionName,
+    override val state: ProcessActionState,
     failureMessage: Option[String],
     commentId: Option[Long],
     comment: Option[String],
     modelInfo: Option[ModelInfo]
-)
+) extends ScenarioStatusActionDetails
+
+// This is the narrowest set of information required by scenario status resolving mechanism.
+trait ScenarioStatusActionDetails {
+  def actionName: ScenarioActionName
+  def state: ProcessActionState
+  def processVersionId: VersionId
+  def user: String
+}
 
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString
@@ -84,7 +92,7 @@ object ScenarioActionName {
 
   val DefaultActions: List[ScenarioActionName] = Nil
 
-  val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
+  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy)
 
   def serialize(name: ScenarioActionName): String = name match {
     case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"

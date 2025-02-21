@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{actorSystem, clock, ec, processingType}
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -61,7 +61,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 
     val scenarioStatusProvider = {
       val deploymentsStatusesProvider =
-        new DeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
+        new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
       new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,

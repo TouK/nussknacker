@@ -67,7 +67,7 @@ class ActionService(
         _ <- validateExpectedProcessingType(expectedProcessingType, processId)
         lastStateAction <- actionRepository.getFinishedProcessActions(
           processId,
-          Some(ScenarioActionName.StateActions)
+          Some(ScenarioActionName.ScenarioStatusActions)
         )
       } yield lastStateAction.headOption
     }

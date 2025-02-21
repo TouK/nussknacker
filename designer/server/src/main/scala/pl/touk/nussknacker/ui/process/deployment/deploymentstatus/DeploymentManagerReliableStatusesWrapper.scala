@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentStatusDetails, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.repository.ScenarioIdData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FutureUtils.FutureOps
 
@@ -16,8 +17,7 @@ object DeploymentManagerReliableStatusesWrapper {
   implicit class Ops(dmDispatcher: DeploymentManagerDispatcher) {
 
     def getScenarioDeploymentsStatusesWithErrorWrappingAndTimeoutOpt(
-        processingType: ProcessingType,
-        scenarioName: ProcessName,
+        scenarioIdData: ScenarioIdData,
         timeoutOpt: Option[FiniteDuration]
     )(
         implicit user: LoggedUser,
@@ -28,18 +28,20 @@ object DeploymentManagerReliableStatusesWrapper {
       val deploymentStatusesOptFuture
           : Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] =
         dmDispatcher
-          .deploymentManager(processingType)
+          .deploymentManager(scenarioIdData.processingType)
           .map(
-            _.getScenarioDeploymentsStatuses(scenarioName)
+            _.getScenarioDeploymentsStatuses(scenarioIdData.name)
               .map(Right(_))
-              .recover { case NonFatal(e) => Left(GetDeploymentsStatusesFailure(scenarioName, e)) }
+              .recover { case NonFatal(e) => Left(GetDeploymentsStatusesFailure(scenarioIdData.name, e)) }
           )
-          .getOrElse(Future.successful(Left(ProcessingTypeIsNotConfigured(scenarioName, processingType))))
+          .getOrElse(
+            Future.successful(Left(ProcessingTypeIsNotConfigured(scenarioIdData.name, scenarioIdData.processingType)))
+          )
 
       timeoutOpt
         .map { timeout =>
           deploymentStatusesOptFuture
-            .withTimeout(timeout, timeoutResult = Left(GetDeploymentsStatusTimeout(scenarioName)))
+            .withTimeout(timeout, timeoutResult = Left(GetDeploymentsStatusTimeout(scenarioIdData.name)))
         }
         .getOrElse(deploymentStatusesOptFuture)
     }

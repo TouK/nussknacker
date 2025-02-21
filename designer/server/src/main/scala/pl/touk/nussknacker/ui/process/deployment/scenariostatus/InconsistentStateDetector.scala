@@ -3,13 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentStatusDetails,
-  ProcessAction,
-  ProcessActionState,
-  ScenarioActionName,
-  StateStatus
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector
@@ -18,21 +12,21 @@ class InconsistentStateDetector extends LazyLogging {
 
   def resolveScenarioStatus(
       deploymentStatuses: List[DeploymentStatusDetails],
-      lastStateAction: ProcessAction
+      lastStateAction: ScenarioStatusActionDetails
   ): StateStatus = {
     val status = (doExtractAtMostOneStatus(deploymentStatuses), lastStateAction) match {
       case (Left(deploymentStatus), _) => deploymentStatus.status
-      case (Right(None), action)
-          if action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.ExecutionFinished =>
+      case (Right(None), lastAction)
+          if lastAction.actionName == ScenarioActionName.Deploy && lastAction.state == ProcessActionState.ExecutionFinished =>
         // Some engines like Flink have jobs retention. Because of that we restore finished status
         SimpleStateStatus.Finished
       case (Right(Some(deploymentStatus)), _) if shouldAlwaysReturnStatus(deploymentStatus) => deploymentStatus.status
-      case (Right(deploymentStatusOpt), action) if action.actionName == ScenarioActionName.Deploy =>
-        handleLastActionDeploy(deploymentStatusOpt, action)
+      case (Right(deploymentStatusOpt), lastAction) if lastAction.actionName == ScenarioActionName.Deploy =>
+        handleLastActionDeploy(deploymentStatusOpt, lastAction)
       case (Right(Some(deploymentStatus)), _) if isFollowingDeployStatus(deploymentStatus) =>
-        handleFollowingDeployState(deploymentStatus, lastStateAction)
-      case (Right(deploymentStatusOpt), action) if action.actionName == ScenarioActionName.Cancel =>
-        handleCanceledState(deploymentStatusOpt)
+        handleFollowingDeployEngineSideStatus(deploymentStatus, lastStateAction)
+      case (Right(deploymentStatusOpt), lastAction) if lastAction.actionName == ScenarioActionName.Cancel =>
+        handleLastActionCancel(deploymentStatusOpt)
       case (Right(Some(deploymentStatus)), _) => deploymentStatus.status
       case (Right(None), _)                   => SimpleStateStatus.NotDeployed
     }
@@ -69,13 +63,15 @@ class InconsistentStateDetector extends LazyLogging {
   }
 
   // This method handles some corner cases for canceled process -> with last action = Canceled
-  private def handleCanceledState(deploymentStatusOpt: Option[DeploymentStatusDetails]): StateStatus =
-    deploymentStatusOpt.map(_.status).getOrElse(SimpleStateStatus.Canceled)
+  private def handleLastActionCancel(deploymentStatusOpt: Option[DeploymentStatusDetails]): StateStatus =
+    deploymentStatusOpt
+      .map(_.status)
+      .getOrElse(SimpleStateStatus.Canceled)
 
   // This method handles some corner cases for following deploy status mismatch last action version
-  private def handleFollowingDeployState(
+  private def handleFollowingDeployEngineSideStatus(
       deploymentStatus: DeploymentStatusDetails,
-      lastStateAction: ProcessAction
+      lastStateAction: ScenarioStatusActionDetails
   ): StateStatus = {
     if (lastStateAction.actionName != ScenarioActionName.Deploy)
       ProblemStateStatus.shouldNotBeRunning(true)
@@ -86,7 +82,7 @@ class InconsistentStateDetector extends LazyLogging {
   // This method handles some corner cases for deployed action mismatch version
   private def handleLastActionDeploy(
       deploymentStatusOpt: Option[DeploymentStatusDetails],
-      action: ProcessAction
+      action: ScenarioStatusActionDetails
   ): StateStatus =
     deploymentStatusOpt match {
       case Some(deploymentStatuses) =>

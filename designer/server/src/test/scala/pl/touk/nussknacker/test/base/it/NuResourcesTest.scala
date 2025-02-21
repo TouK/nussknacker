@@ -49,7 +49,7 @@ import pl.touk.nussknacker.ui.config.{DesignerConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -118,7 +118,7 @@ trait NuResourcesTest
   )
 
   protected val deploymentsStatusesProvider =
-    new DeploymentStatusesProvider(dmDispatcher, None)
+    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)
 
   protected val scenarioStatusProvider: ScenarioStatusProvider = new ScenarioStatusProvider(
     deploymentsStatusesProvider,

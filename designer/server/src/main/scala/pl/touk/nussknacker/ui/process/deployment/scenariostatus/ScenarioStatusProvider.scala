@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.{
   BulkQueriedDeploymentStatuses,
-  DeploymentStatusesProvider,
+  EngineSideDeploymentStatusesProvider,
   GetDeploymentsStatusesError
 }
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
@@ -28,7 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 class ScenarioStatusProvider(
-    deploymentStatusesProvider: DeploymentStatusesProvider,
+    deploymentStatusesProvider: EngineSideDeploymentStatusesProvider,
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
     actionRepository: ScenarioActionRepository,
@@ -60,8 +60,12 @@ class ScenarioStatusProvider(
     dbioRunner.run(
       for {
         actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
+        // We assume that prefetching gives profits for at least two scenarios
+        processingTypesWithMoreThanOneScenario = scenarios.groupBy(_.processingType).filter(_._2.size >= 2).keys
         prefetchedDeploymentStatuses <- DBIO.from(
-          deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(scenarios)
+          deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(
+            processingTypesWithMoreThanOneScenario
+          )
         )
         finalScenariosStatuses <- processTraverse
           .map {
@@ -87,8 +91,7 @@ class ScenarioStatusProvider(
       process,
       inProgressActionNames,
       deploymentStatusesProvider.getDeploymentStatuses(
-        process.processingType,
-        process.name,
+        process.idData,
         Some(prefetchedDeploymentStatuses)
       )
     )
@@ -138,8 +141,7 @@ class ScenarioStatusProvider(
       processDetails,
       inProgressActionNames,
       deploymentStatusesProvider.getDeploymentStatuses(
-        processDetails.processingType,
-        processDetails.name,
+        processDetails.idData,
         prefetchedDeploymentStatuses = None
       )
     )
