@@ -22,7 +22,7 @@ import java.time.Instant
 class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   private val history = List(
-    ScenarioVersion(VersionId.initialVersionId, Instant.now(), "Zenon Wojciech", Option.empty, List.empty)
+    ScenarioVersion(VersionId.initialVersionId, Instant.now(), "Zenon Wojciech")
   )
 
   it should "export process to " in {

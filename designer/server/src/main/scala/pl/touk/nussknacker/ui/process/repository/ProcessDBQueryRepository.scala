@@ -118,9 +118,7 @@ object ProcessDBQueryRepository {
     ScenarioVersion(
       processVersionId = versionData.id,
       createDate = versionData.createDate.toInstant,
-      modelVersion = versionData.modelVersion,
       user = versionData.user,
-      actions = actions
     )
 
   final case class ProcessNotFoundError(name: ProcessName) extends NotFoundError(s"No scenario $name found")

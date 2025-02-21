@@ -113,14 +113,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "PROCESS_VERSIONS_LOADED": {
-            const { history, lastDeployedAction, lastAction } = action;
+            const { history } = action;
             return {
                 ...state,
                 scenario: {
                     ...state.scenario,
                     history: history,
-                    lastDeployedAction: lastDeployedAction,
-                    lastAction: lastAction,
                 },
             };
         }
@@ -332,12 +330,7 @@ const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
 const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "unsavedNewName", "layout", "selectionState"];
-const omitKeys: NestedKeyOf<GraphState>[] = [
-    "scenario.validationResult",
-    "scenario.lastDeployedAction",
-    "scenario.lastAction",
-    "scenario.history",
-];
+const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];
 
 const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.validationResult"]));
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));

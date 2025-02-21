@@ -204,33 +204,6 @@ class ManagementResourcesSpec
             expectedDeployCommentInLegacyService,
             expectedStopCommentInLegacyService
           )
-          val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
-
-          Get(s"/processes/${ProcessTestData.sampleScenario.name}/deployments") ~> withAllPermissions(
-            processesRoute
-          ) ~> check {
-            val deploymentHistory = responseAs[List[ProcessAction]]
-            deploymentHistory.map(a =>
-              (a.processVersionId, a.user, a.actionName, a.commentId, a.comment, a.modelInfo)
-            ) shouldBe List(
-              (
-                VersionId(2),
-                TestFactory.user().username,
-                ScenarioActionName.Cancel,
-                Some(secondCommentId),
-                Some(expectedStopComment),
-                None
-              ),
-              (
-                VersionId(2),
-                TestFactory.user().username,
-                ScenarioActionName.Deploy,
-                Some(firstCommentId),
-                Some(expectedDeployComment),
-                Some(TestFactory.modelInfo)
-              )
-            )
-          }
         }
       }
     }

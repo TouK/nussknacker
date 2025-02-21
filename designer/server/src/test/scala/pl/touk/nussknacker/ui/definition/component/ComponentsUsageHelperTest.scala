@@ -76,14 +76,11 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         processId = processDetails1.processId,
         processVersionId = VersionId.initialVersionId,
         user = "user",
-        createdAt = Instant.now(),
         performedAt = Instant.now(),
         actionName = ScenarioActionName.Deploy,
         state = ProcessActionState.Finished,
         failureMessage = Option.empty,
-        commentId = Option.empty,
         comment = Option.empty,
-        modelInfo = Option.empty
       )
     )
   )

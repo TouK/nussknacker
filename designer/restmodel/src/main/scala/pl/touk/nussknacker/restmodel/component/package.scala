@@ -13,9 +13,8 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ProcessingMode
 }
-import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import sttp.tapir.{Codec, CodecFormat, Schema, SchemaType}
+import sttp.tapir.{Schema, SchemaType}
 
 import java.net.URI
 import java.time.Instant
@@ -105,7 +104,6 @@ package object component {
       modifiedBy: String,
       createdAt: Instant,
       createdBy: String,
-      lastAction: Option[ProcessAction]
   )
 
   implicit val uriSchema: Schema[URI] = Schema.string

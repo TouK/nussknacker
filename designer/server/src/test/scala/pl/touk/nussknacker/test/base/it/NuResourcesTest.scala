@@ -132,7 +132,6 @@ trait NuResourcesTest
     processChangeListener,
     scenarioStateProvider,
     deploymentCommentSettings,
-    modelInfoProvider,
     Clock.systemUTC()
   )
 
@@ -567,7 +566,7 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None, None)
+          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None)
         )
       )
     } yield id).futureValue
