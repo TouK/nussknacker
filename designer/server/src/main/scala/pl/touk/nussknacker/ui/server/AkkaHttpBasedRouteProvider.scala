@@ -210,7 +210,6 @@ class AkkaHttpBasedRouteProvider(
         processChangeListener,
         scenarioStatusProvider,
         featureTogglesConfig.deploymentCommentSettings,
-        modelInfos,
         designerClock
       )
       reconciler = new ScenarioDeploymentReconciler(

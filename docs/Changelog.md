@@ -77,7 +77,7 @@
     * For all - default `windowLength` is 1 hour
     * For `aggregate-session` - default `endSessionCondition` is now false
 * Improved scenario visualization loading time
-    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order, with additional changes in [#7554](https://github.com/TouK/nussknacker/pull/7554)
     * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
     * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
 * [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
@@ -88,10 +88,12 @@
 * [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
     * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
     * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
-* [#6860](https://github.com/TouK/nussknacker/pull/6860) Ability to configure deploy action parameters and apply those parameters in deploy http request. 
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562) Added optional configuration of action parameters and applied those parameters in deploy http request. 
   * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
-  * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`
+  * The http request for `/deploy` and `/cancel` require valid json instead of plain text message.
+  * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
+* [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
 
 ## 1.18
 

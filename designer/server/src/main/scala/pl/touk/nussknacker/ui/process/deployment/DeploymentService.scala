@@ -85,7 +85,6 @@ class DeploymentService(
 
     actionService
       .actionProcessorForLatestVersion[CanonicalProcess]
-      .withModelInfoSaving
       .processActionWithCustomFinalization[RunDeploymentCommand, Future[Option[ExternalDeploymentId]]](
         command = command,
         actionName = ScenarioActionName.Deploy

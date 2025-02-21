@@ -1,25 +1,15 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import pl.touk.nussknacker.engine.api.deployment.{
-  ProcessAction,
-  ProcessActionId,
-  ProcessActionState,
-  ScenarioActionName
-}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
-import java.time.Instant
-import java.util.UUID
-
 private[component] object ComponentTestProcessData {
 
-  import VersionId._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val DefaultSourceName = "source"
@@ -45,26 +35,6 @@ private[component] object ComponentTestProcessData {
   val DeployedFraudProcessName: ProcessName     = ProcessName("deployedFraudProcess")
   val CanceledFraudProcessName: ProcessName     = ProcessName("canceledFraudProcessName")
   val FraudProcessWithFragmentName: ProcessName = ProcessName("fraudProcessWithFragment")
-
-  private val deployedAction = prepareTestAction(ScenarioActionName.Deploy)
-  private val canceledAction = prepareTestAction(ScenarioActionName.Cancel)
-  private val archivedAction = prepareTestAction(ScenarioActionName.Archive)
-
-  private def prepareTestAction(actionName: ScenarioActionName) =
-    ProcessAction(
-      id = ProcessActionId(UUID.randomUUID()),
-      processId = ProcessId(123),
-      processVersionId = initialVersionId,
-      user = "user",
-      createdAt = Instant.now(),
-      performedAt = Instant.now(),
-      actionName = actionName,
-      state = ProcessActionState.Finished,
-      failureMessage = Option.empty,
-      commentId = Option.empty,
-      comment = Option.empty,
-      modelInfo = Option.empty
-    )
 
   val MarketingProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = createSimpleDisplayableProcess(SharedSourceConf, SharedSinkConf),
@@ -102,7 +72,7 @@ private[component] object ComponentTestProcessData {
       name = DeployedFraudProcessName,
       processingType = ProcessingTypeFraud,
       category = CategoryFraud
-    ).copy(lastAction = Some(deployedAction))
+    )
 
   val CanceledFraudProcessWith2Enrichers: ScenarioWithDetailsEntity[ScenarioGraph] =
     wrapGraphWithScenarioDetailsEntity(
@@ -118,7 +88,7 @@ private[component] object ComponentTestProcessData {
       name = CanceledFraudProcessName,
       processingType = ProcessingTypeFraud,
       category = CategoryFraud
-    ).copy(lastAction = Some(canceledAction))
+    )
 
   val ArchivedFraudProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = createSimpleDisplayableProcess(SecondSharedSourceConf, SharedSinkConf),
@@ -126,7 +96,7 @@ private[component] object ComponentTestProcessData {
     isArchived = true,
     processingType = ProcessingTypeFraud,
     category = CategoryFraud
-  ).copy(lastAction = Some(archivedAction))
+  )
 
   val FraudFragment: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = {

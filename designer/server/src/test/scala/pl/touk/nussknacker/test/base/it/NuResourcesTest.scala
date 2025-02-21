@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -42,7 +43,6 @@ import pl.touk.nussknacker.test.mock.{
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.api.ManagementResources.RunDeploymentRequest
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{DesignerConfig, FeatureTogglesConfig}
@@ -137,7 +137,6 @@ trait NuResourcesTest
     processChangeListener,
     scenarioStatusProvider,
     deploymentCommentSettings,
-    modelInfoProvider,
     Clock.systemUTC()
   )
 
@@ -384,13 +383,13 @@ trait NuResourcesTest
       s"/processManagement/deploy/$processName",
       HttpEntity(
         ContentTypes.`application/json`,
-        RunDeploymentRequest(None, comment).asJson.noSpaces
+        DeployRequest(comment, None).asJson.noSpaces
       )
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   // TODO: See comment in ManagementResources.deployRequestEntity
-  protected def deployProcessCommentOnly(
+  protected def deployProcessCommentDeprecated(
       processName: ProcessName,
       comment: Option[String] = None
   ): RouteTestResult =
@@ -401,6 +400,20 @@ trait NuResourcesTest
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def cancelProcess(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/cancel/$processName",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        CancelRequest(comment).asJson.noSpaces
+      )
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def cancelProcessCommentDeprecated(
       processName: ProcessName,
       comment: Option[String] = None
   ): RouteTestResult =
@@ -559,7 +572,7 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None, None)
+          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None)
         )
       )
     } yield id).futureValue

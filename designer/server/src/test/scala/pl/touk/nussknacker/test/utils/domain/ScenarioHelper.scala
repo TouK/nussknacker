@@ -3,7 +3,6 @@ package pl.touk.nussknacker.test.utils.domain
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -149,7 +148,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     dbioRunner.runInTransaction(
       DBIOAction.seq(
         writeScenarioRepository.archive(processId = idWithName, isArchived = true),
-        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None, None)
+        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None)
       )
     )
 
@@ -162,7 +161,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
         VersionId.initialVersionId,
         actionName,
         comment,
-        Some(ModelInfo.fromMap(Map("engine-version" -> "0.1")))
       )
     )
   }
@@ -171,7 +169,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     val actionName = ScenarioActionName.Cancel
     val comment    = Comment.from("Cancel comment")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment)
     )
   }
 

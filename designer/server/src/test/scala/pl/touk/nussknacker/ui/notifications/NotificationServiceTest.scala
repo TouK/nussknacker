@@ -312,7 +312,6 @@ class NotificationServiceTest
       mock[ProcessChangeListener],
       scenarioStatusProvider,
       None,
-      TestFactory.modelInfoProvider,
       clock
     )
     val deploymentService = new DeploymentService(

@@ -470,7 +470,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       attachmentId: Option[Long] = None,
       comment: Option[String] = None,
       lastModifiedByUserName: Option[String] = None,
-      modelInfo: Option[ModelInfo] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
     val now = Timestamp.from(clock.instant())
@@ -499,7 +498,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           }
         case _ => None
       },
-      modelInfo = modelInfo,
       additionalProperties = additionalProperties,
     )
   }

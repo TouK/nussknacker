@@ -12,16 +12,7 @@ import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/E
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import {
-    ActionName,
-    PredefinedActionName,
-    ProcessActionType,
-    ProcessName,
-    ProcessStateType,
-    ProcessVersionId,
-    Scenario,
-    StatusDefinitionType,
-} from "../components/Process/types";
+import { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import {
     ActivitiesResponse,
     ActivityMetadataResponse,
@@ -33,16 +24,7 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import {
-    Expression,
-    LayoutData,
-    NodeId,
-    NodeType,
-    ProcessAdditionalFields,
-    ProcessDefinitionData,
-    ScenarioGraph,
-    VariableTypes,
-} from "../types";
+import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
@@ -135,7 +117,6 @@ export type ComponentUsageType = {
     modifiedBy: string;
     createdAt: Instant;
     createdBy: string;
-    lastAction: ProcessActionType;
 };
 
 export type NotificationActions = {
@@ -186,7 +167,7 @@ type DictOption = {
     label: string;
 };
 
-type ResponseStatus = { status: "success" } | { status: "error"; error: AxiosError<string> };
+type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -704,7 +685,7 @@ class HttpService {
         return promise;
     }
 
-    getActionParameters(processName: string, scenarioGraph: ScenarioGraph) {
+    getActionParameters(processName: string) {
         const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
             this.#addError(
@@ -975,6 +956,18 @@ class HttpService {
                     ),
                 ),
             );
+    }
+
+    async fetchProcessDefinitionDataDictByKey(processingType: ProcessingType, dictId: string, key: string): Promise<ResponseStatus> {
+        try {
+            const { data } = await api.get<ProcessDefinitionDataDictOption>(
+                `/processDefinitionData/${processingType}/dicts/${dictId}/entryByKey?key=${key}`,
+            );
+            return { status: "success", data };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"), error);
+            return { status: "error", error };
+        }
     }
 
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
