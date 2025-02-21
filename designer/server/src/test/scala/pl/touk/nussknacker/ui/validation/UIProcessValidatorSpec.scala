@@ -1302,8 +1302,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         DesignerWideComponentId("streaming-service-eagerServiceWithDynamicComponent") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             ParameterName("param") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
-          ),
-          label = "eagerServiceWithDynamicComponent"
+          )
         )
       )
     )
@@ -1334,13 +1333,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val process = processWithOptionalParameterService("")
 
     val validator = validatorWithComponentsAndConfig(
-      List(ComponentDefinition("optionalParameterService", OptionalParameterService, label = None)),
+      List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
       Map(
         DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
-          ),
-          label = "optionalParameterService"
+          )
         )
       )
     )
@@ -1376,8 +1374,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             ParameterName("optionalParam") -> paramConfigWithValidationExpression(validationExpression)
-          ),
-          label = "optionalParameterService"
+          )
         )
       )
     )
@@ -1413,8 +1410,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         DesignerWideComponentId("streaming-service-eagerServiceWithDynamicComponent") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             ParameterName("param") -> paramConfigWithValidationExpression(validationExpression)
-          ),
-          label = "eagerServiceWithDynamicComponent"
+          )
         )
       )
     )
@@ -1463,8 +1459,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           parameterConfigs = Map(
             ParameterName("mapParam1") -> paramConfigWithValidationExpression(validationExpressionForRecord),
             ParameterName("mapParam2") -> paramConfigWithValidationExpression(validationExpressionForRecord)
-          ),
-          label = MapParameterService.serviceId
+          )
         )
       )
     )
@@ -1513,8 +1508,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           parameterConfigs = Map(
             ParameterName("listParam1") -> paramConfigWithValidationExpression(validationExpressionForList),
             ParameterName("listParam2") -> paramConfigWithValidationExpression(validationExpressionForList)
-          ),
-          label = ListParameterService.serviceId
+          )
         )
       )
     )
@@ -1567,8 +1561,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             ParameterName("listParam2") -> paramConfigWithValidationExpression(
               validationExpressionForListWithGlobalHelper
             )
-          ),
-          label = ListParameterService.serviceId
+          )
         )
       )
     )
@@ -1621,8 +1614,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             ParameterName("listParam2") -> paramConfigWithValidationExpression(
               validationExpressionForListWithMetadata
             )
-          ),
-          label = ListParameterService.serviceId
+          )
         )
       )
     )
@@ -1670,8 +1662,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             ParameterName("localDateTimeParam") -> paramConfigWithValidationExpression(
               validationExpressionForLocalDateTime
             ),
-          ),
-          label = LocalDateTimeParameterService.serviceId
+          )
         )
       )
     )
