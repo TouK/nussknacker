@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,11 +30,7 @@ object DBFetchingProcessRepository {
       actionRepository: ScenarioActionReadOnlyRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(implicit ec: ExecutionContext) =
-    new DBFetchingProcessRepository[DB](
-      dbRef,
-      actionRepository,
-      scenarioLabelsRepository
-    ) with DbioRepository
+    new DBFetchingProcessRepository[DB](dbRef, actionRepository, scenarioLabelsRepository) with DbioRepository
 
   def createFutureRepository(
       dbRef: DbRef,
@@ -43,11 +39,8 @@ object DBFetchingProcessRepository {
   )(
       implicit ec: ExecutionContext
   ) =
-    new DBFetchingProcessRepository[Future](
-      dbRef,
-      actionReadOnlyRepository,
-      scenarioLabelsRepository
-    ) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbRef, actionReadOnlyRepository, scenarioLabelsRepository)
+      with BasicRepository
 
 }
 
@@ -78,7 +71,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   }
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
-      query: ScenarioQuery,
+      query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),
@@ -93,7 +86,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         { process =>
           expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
         },
-        query.isDeployed,
+        query.isDeployed
       )
     )
   }
@@ -143,7 +136,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
 
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-      isDeployed: Option[Boolean],
+      isDeployed: Option[Boolean]
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
