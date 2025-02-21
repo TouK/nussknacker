@@ -61,9 +61,7 @@ object ScenarioWithDetailsConversions {
     def skipProcessActionOptionalFields(processAction: Option[ProcessAction]) = processAction.map(
       _.copy(
         failureMessage = None,
-        commentId = None,
         comment = None,
-        buildInfo = Map.empty
       )
     )
     def getProcessAction(processAction: Option[ProcessAction]) =

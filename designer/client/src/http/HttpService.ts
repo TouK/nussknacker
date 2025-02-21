@@ -12,16 +12,7 @@ import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/E
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import {
-    ActionName,
-    PredefinedActionName,
-    ProcessActionType,
-    ProcessName,
-    ProcessStateType,
-    ProcessVersionId,
-    Scenario,
-    StatusDefinitionType,
-} from "../components/Process/types";
+import { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import {
     ActivitiesResponse,
     ActivityMetadataResponse,
@@ -33,12 +24,13 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, LayoutData, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
 import { Dimensions, StickyNote } from "../common/StickyNote";
 import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
+import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -107,6 +99,8 @@ export type SourceWithParametersTest = {
     };
 };
 
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
+
 export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
@@ -123,7 +117,6 @@ export type ComponentUsageType = {
     modifiedBy: string;
     createdAt: Instant;
     createdBy: string;
-    lastAction: ProcessActionType;
 };
 
 export type NotificationActions = {
@@ -174,7 +167,7 @@ type DictOption = {
     label: string;
 };
 
-type ResponseStatus = { status: "success" } | { status: "error"; error: AxiosError<string> };
+type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -283,6 +276,14 @@ class HttpService {
         return api.get<Scenario>(url);
     }
 
+    fetchLatestProcessDetailsWithoutValidation(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
+        const id = encodeURIComponent(processName);
+        const url = versionId
+            ? `/processes/${id}/${versionId}?skipValidateAndResolve=true`
+            : `/processes/${id}?skipValidateAndResolve=true`;
+        return api.get<Scenario>(url);
+    }
+
     fetchProcessesStates() {
         return api
             .get<StatusesType>("/processes/status")
@@ -338,16 +339,12 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(
-        processName: string,
-        comment?: string,
-    ): Promise<{
-        isSuccess: boolean;
-    }> {
+    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = { nodesDeploymentData, comment };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
-                return { isSuccess: true };
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -359,15 +356,22 @@ class HttpService {
                         error,
                         true,
                     ).then(() => {
-                        return { isSuccess: false };
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error",
+                        };
                     });
                 } else {
-                    throw error;
+                    const msg = error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
                 }
             });
     }
 
-    runOffSchedule(processName: string, comment?: string) {
+    runOffSchedule(processName: string, comment?: string): Promise<ScenarioActionResult> {
         const data = {
             comment: comment,
         };
@@ -377,35 +381,50 @@ class HttpService {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
                 return {
-                    isSuccess: res.data.isSuccess,
-                    msg: msg,
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: msg.toString(),
                 };
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
                 const result = {
-                    isSuccess: false,
-                    msg: msg,
+                    scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                    msg: msg.toString(),
                 };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                return result;
+                return {
+                    scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                    msg: msg.toString(),
+                };
             });
     }
 
-    cancel(processName, comment?) {
-        return api.post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment).catch((error) => {
-            if (error?.response?.status != 400) {
-                return this.#addError(
-                    i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
-                    error,
-                    true,
-                ).then(() => {
-                    return { isSuccess: false };
-                });
-            } else {
-                throw error;
-            }
-        });
+    cancel(processName, comment?): Promise<ScenarioActionResult> {
+        return api
+            .post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment)
+            .then(() => {
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+            })
+            .catch((error) => {
+                if (error?.response?.status != 400) {
+                    return this.#addError(
+                        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
+                        error,
+                        true,
+                    ).then(() => {
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error occured",
+                        };
+                    });
+                } else {
+                    const msg = error.response.data.msg || error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
+                }
+            });
     }
 
     async addComment(processName: string, versionId: number, comment: string): Promise<ResponseStatus> {
@@ -659,6 +678,18 @@ class HttpService {
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    getActionParameters(processName: string) {
+        const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetActionParameters", "Failed to get action parameters definition"),
                 error,
                 true,
             ),
@@ -925,6 +956,18 @@ class HttpService {
                     ),
                 ),
             );
+    }
+
+    async fetchProcessDefinitionDataDictByKey(processingType: ProcessingType, dictId: string, key: string): Promise<ResponseStatus> {
+        try {
+            const { data } = await api.get<ProcessDefinitionDataDictOption>(
+                `/processDefinitionData/${processingType}/dicts/${dictId}/entryByKey?key=${key}`,
+            );
+            return { status: "success", data };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"), error);
+            return { status: "error", error };
+        }
     }
 
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {

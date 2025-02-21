@@ -3,8 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
-import HttpService from "../../../../http/HttpService";
-import { getProcessName, hasError, isDeployPossible, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import HttpService, { NodesDeploymentData } from "../../../../http/HttpService";
+import {
+    getProcessName,
+    hasError,
+    isDeployPossible,
+    isSaveDisabled,
+    isValidationResultPresent,
+} from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
@@ -19,11 +25,12 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const deployPossible = useSelector(isDeployPossible);
     const saveDisabled = useSelector(isSaveDisabled);
     const hasErrors = useSelector(hasError);
+    const validationResultPresent = useSelector(isValidationResultPresent);
     const processName = useSelector(getProcessName);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
 
-    const available = !disabled && deployPossible && capabilities.deploy;
+    const available = validationResultPresent && !disabled && deployPossible && capabilities.deploy;
     const { t } = useTranslation();
     const deployToolTip = !capabilities.deploy
         ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
@@ -38,8 +45,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
-        HttpService.deploy(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
+    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
+        HttpService.deploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId)));
 
     return (
         <ToolbarButton
@@ -50,7 +57,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
             onClick={() =>
                 open<ToggleProcessActionModalData>({
                     title: message,
-                    kind: WindowKind.deployProcess,
+                    kind: WindowKind.deployWithParameters,
                     width: ACTION_DIALOG_WIDTH,
                     meta: { action, displayWarnings: true },
                 })

@@ -21,7 +21,6 @@ PID_FILE="$WORKING_DIR/nussknacker-designer.pid"
 export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.conf}
 export TABLES_DEFINITION_FILE=${TABLES_DEFINITION_FILE:-$CONF_DIR/dev-tables-definition.sql}
 export STORAGE_DIR=${STORAGE_DIR:-$WORKING_DIR/storage}
-export MANAGERS_DIR=${MANAGERS_DIR:-$WORKING_DIR/managers}
 
 export FLINK_REST_URL=${FLINK_REST_URL:-http://localhost:8081}
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}

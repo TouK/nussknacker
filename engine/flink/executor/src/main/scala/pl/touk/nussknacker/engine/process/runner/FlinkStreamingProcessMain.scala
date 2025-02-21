@@ -1,38 +1,78 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import org.apache.flink.api.common.ExecutionConfig
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 
-trait BaseFlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnvironment] {
+import java.io.File
+import java.nio.charset.StandardCharsets
+import scala.util.Using
+import scala.util.control.NonFatal
 
-  override protected def getExecutionEnvironment: StreamExecutionEnvironment =
-    StreamExecutionEnvironment.getExecutionEnvironment
+object FlinkStreamingProcessMain extends LazyLogging {
 
-  override protected def getConfig(env: StreamExecutionEnvironment): ExecutionConfig = env.getConfig
-
-  override protected def runProcess(
-      env: StreamExecutionEnvironment,
-      modelData: ModelData,
-      process: CanonicalProcess,
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      prepareExecutionConfig: ExecutionConfigPreparer
-  ): Unit = {
-    val compilerFactory = new FlinkProcessCompilerDataFactory(modelData)
-    val registrar =
-      FlinkProcessRegistrar(compilerFactory, FlinkJobConfig.parse(modelData.modelConfig), prepareExecutionConfig)
-    registrar.register(env, process, processVersion, deploymentData)
-    val preparedName = modelData.namingStrategy.prepareName(process.name.value)
-    env.execute(preparedName)
+  def main(args: Array[String]): Unit = {
+    try {
+      require(args.nonEmpty, "Scenario json should be passed as a first argument")
+      val process        = readScenarioFromArg(args(0))
+      val processVersion = parseProcessVersion(args(1))
+      val deploymentData = parseDeploymentData(args(2))
+      logger.info(
+        s"Running deployment ${deploymentData.deploymentId} of scenario ${processVersion.processName} in version ${processVersion.versionId}. " +
+          s"Model version ${processVersion.modelVersion}. Deploying user [id=${deploymentData.user.id}, name=${deploymentData.user.name}]"
+      )
+      val modelConfig = readModelConfigFromArgs(args)
+      val modelData   = ModelData.duringFlinkExecution(ModelConfigs(modelConfig, deploymentData.additionalModelConfigs))
+      new FlinkScenarioJob(modelData).run(
+        process,
+        processVersion,
+        deploymentData,
+        StreamExecutionEnvironment.getExecutionEnvironment,
+      )
+    } catch {
+      // marker exception for graph optimalization
+      // should be necessary only in Flink <=1.9
+      case ex if ex.getClass.getSimpleName == "ProgramAbortException" =>
+        throw ex
+      case NonFatal(ex) =>
+        logger.error("Unhandled error", ex)
+        throw ex
+    }
   }
 
-}
+  private def readScenarioFromArg(arg: String): CanonicalProcess = {
+    val canonicalJson = if (arg.startsWith("@")) {
+      Using.resource(scala.io.Source.fromFile(arg.substring(1), StandardCharsets.UTF_8.name()))(_.mkString)
+    } else {
+      arg
+    }
+    ScenarioParser.parseUnsafe(canonicalJson)
+  }
 
-object FlinkStreamingProcessMain extends BaseFlinkStreamingProcessMain
+  private def parseProcessVersion(json: String): ProcessVersion =
+    CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid scenario version")
+
+  private def parseDeploymentData(json: String): DeploymentData =
+    CirceUtil.decodeJsonUnsafe[DeploymentData](json, "invalid DeploymentData")
+
+  private def readModelConfigFromArgs(args: Array[String]): Config = {
+    val optionalConfigArg = if (args.length > 3) Some(args(3)) else None
+    readConfigFromArg(optionalConfigArg)
+  }
+
+  private def readConfigFromArg(arg: Option[String]): Config =
+    arg match {
+      case Some(name) if name.startsWith("@") =>
+        ConfigFactory.parseFile(new File(name.substring(1)))
+      case Some(string) =>
+        ConfigFactory.parseString(string)
+      case None =>
+        ConfigFactory.empty()
+    }
+
+}

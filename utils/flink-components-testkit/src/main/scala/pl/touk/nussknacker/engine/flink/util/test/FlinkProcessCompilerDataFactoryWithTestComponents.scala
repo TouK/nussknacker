@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
-import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -34,7 +32,6 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.namingStrategy,
       componentUseCase,
       testExtensionsHolder,
       resultsCollectingListener,
@@ -45,7 +42,6 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator: ProcessConfigCreator,
       extractModelDefinition: ExtractDefinitionFun,
       modelConfig: Config,
-      namingStrategy: NamingStrategy,
       componentUseCase: ComponentUseCase,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
@@ -55,7 +51,6 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator,
       extractModelDefinition,
       modelConfig,
-      namingStrategy,
       componentUseCase,
       configsFromProviderWithDictionaryEditor
     ) {
@@ -63,7 +58,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       override protected def adjustDefinitions(
           originalModelDefinition: ModelDefinition,
           definitionContext: ComponentDefinitionContext,
-          classDefinitions: Set[ClassDefinition]
+          classDefinitions: ClassDefinitionSet,
       ): ModelDefinition = {
         val testComponents =
           ComponentDefinitionWithImplementation.forList(

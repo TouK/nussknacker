@@ -10,9 +10,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
@@ -30,7 +29,6 @@ class OpenApiScenarioIntegrationTest
     extends AnyFlatSpec
     with BeforeAndAfterAll
     with Matchers
-    with FlinkSpec
     with LazyLogging
     with VeryPatientScalaFutures
     with ValidatedValuesDetailedMessage {
@@ -58,6 +56,13 @@ class OpenApiScenarioIntegrationTest
     new StubService("/enrichers-with-optional-fields.yaml").withCustomerService { port =>
       test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
     }
+
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   val stubbedBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
     case request =>
@@ -150,7 +155,7 @@ class OpenApiScenarioIntegrationTest
     val stubComponent  = prepareStubbedComponent(sttpBackend, openAPIsConfig, url)
     // TODO: switch to liteBased after adding ability to override components there (currently there is only option to append not conflicting once) and rename class to *FunctionalTest
     TestScenarioRunner
-      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
       .withExtraComponents(List(stubComponent))
       .build()
   }

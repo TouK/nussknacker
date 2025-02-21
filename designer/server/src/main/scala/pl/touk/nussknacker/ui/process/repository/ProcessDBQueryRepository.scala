@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioV
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 import java.sql.Timestamp
@@ -65,6 +65,24 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
         }
       }
 
+  protected def fetchLatestProcessesQuery(
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+  )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
+    ((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity),
+    ((ProcessId, Option[Timestamp]), ProcessVersionEntityData),
+    Seq
+  ] =
+    processVersionsTableWithUnit
+      .groupBy(_.processId)
+      .map { case (n, group) => (n, group.map(_.createDate).max) }
+      .join(processVersionsTableQuery)
+      .on { case ((processId, latestVersionDate), processVersion) =>
+        processVersion.processId === processId && processVersion.createDate === latestVersionDate
+      }
+      .join(processTableFilteredByUser.filter(query).map(_.id))
+      .on { case ((_, latestVersion), processId) => latestVersion.processId === processId }
+      .map(_._1)
+
   protected def processVersionsTableQuery(
       implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
@@ -100,9 +118,7 @@ object ProcessDBQueryRepository {
     ScenarioVersion(
       processVersionId = versionData.id,
       createDate = versionData.createDate.toInstant,
-      modelVersion = versionData.modelVersion,
       user = versionData.user,
-      actions = actions
     )
 
   final case class ProcessNotFoundError(name: ProcessName) extends NotFoundError(s"No scenario $name found")

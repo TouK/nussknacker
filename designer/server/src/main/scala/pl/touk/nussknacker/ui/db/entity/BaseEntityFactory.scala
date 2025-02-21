@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatusName,
@@ -13,7 +14,7 @@ import slick.jdbc.JdbcProfile
 
 import java.util.UUID
 
-trait BaseEntityFactory {
+trait BaseEntityFactory extends LazyLogging {
   protected val profile: JdbcProfile
   import profile.api._
 

@@ -16,28 +16,9 @@ export type ActionName = string;
 
 export type ProcessVersionId = number;
 
-export type BuildInfoType = {
-    buildTime: string;
-    gitCommit: string;
-    name: string;
-    version: string;
-};
-
-export type ProcessActionType = {
-    performedAt: Instant;
-    user: string;
-    actionName: ActionName;
-    commentId?: number;
-    comment?: string;
-    buildInfo?: BuildInfoType;
-    processVersionId: ProcessVersionId;
-};
-
 export type ProcessVersionType = {
     createDate: string;
     user: string;
-    actions: Array<ProcessActionType>;
-    modelVersion: number;
     processVersionId: ProcessVersionId;
 };
 
@@ -54,8 +35,6 @@ export interface Scenario {
     modifiedAt: Instant;
     createdBy: string;
     labels: string[];
-    lastAction?: ProcessActionType;
-    lastDeployedAction?: ProcessActionType;
     state: ProcessStateType;
     history?: ProcessVersionType[];
     scenarioGraph: ScenarioGraph;

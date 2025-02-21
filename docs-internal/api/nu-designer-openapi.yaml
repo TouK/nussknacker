@@ -46,16 +46,6 @@ paths:
                     modifiedBy: admin
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
-                    lastAction:
-                      id: 45c0f3f5-3ef7-4dc2-92d4-8bb826ec0ca9
-                      processId: 1
-                      processVersionId: 1
-                      user: admin
-                      createdAt: '2023-11-29T08:54:22.520866Z'
-                      performedAt: '2023-11-29T08:54:22.520866Z'
-                      actionName: DEPLOY
-                      state: FINISHED
-                      buildInfo: {}
                 Example1:
                   summary: List component usages with no last Action
                   value:
@@ -207,6 +197,91 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/actionInfo/{scenarioName}/parameters:
+    get:
+      tags:
+      - Deployments
+      summary: Get action parameters
+      operationId: getApiActioninfoScenarionameParameters
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UiActionParametersDto'
+              examples:
+                Example:
+                  summary: Valid action parameters for given scenario
+                  value:
+                    actionNameToParameters:
+                      DEPLOY: []
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -828,6 +903,92 @@ paths:
                   summary: Deployment with id {deploymentId} already exists
                   value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
                     exists
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts/{dictId}/entryByKey:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntrybykey
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter key'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -1957,6 +2118,142 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/nodes/{scenarioName}/records:
+    post:
+      tags:
+      - Nodes
+      summary: Fetch records for specific node
+      operationId: postApiNodesScenarionameRecords
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Limit the number of records returned
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsRequestDto'
+            examples:
+              Example:
+                summary: Basic fetch request
+                value:
+                  processProperties:
+                    additionalFields:
+                      properties:
+                        parallelism: ''
+                        spillStateToDisk: 'true'
+                        useAsyncInterpretation: ''
+                        checkpointIntervalInSeconds: ''
+                      metaDataType: StreamMetaData
+                      showDescription: false
+                  nodeData:
+                    id: sourceId
+                    ref:
+                      typ: source
+                      parameters: []
+                    type: Source
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Simple scenario test data in json stringify form
+                  value: '{name: John}'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Source compilation error
+                  value: 'Cannot compile source ''sourceId''. Errors: Invalid source
+                    configuration'
+                Example1:
+                  summary: Unsupported source preview
+                  value: Source 'sourceId' doesn't support records preview
+                Example2:
+                  summary: Invalid node type
+                  value: 'Expected Filter but got: Source'
+                Example3:
+                  summary: Too many samples requested
+                  value: Too many samples requested, limit is 100
+                Example4:
+                  summary: Serialization error
+                  value: 'Error during serialization: Failed to serialize test data'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No test data generated
+                  value: No test data was generated
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5143,7 +5440,7 @@ components:
         version:
           type: string
         processingType:
-          $ref: '#/components/schemas/Map_Map_String_String'
+          $ref: '#/components/schemas/Map_ModelInfo'
         globalBuildInfo:
           anyOf:
           - $ref: '#/components/schemas/Map_String'
@@ -5310,10 +5607,6 @@ components:
           format: date-time
         createdBy:
           type: string
-        lastAction:
-          anyOf:
-          - $ref: '#/components/schemas/ProcessAction'
-          - type: 'null'
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -5592,6 +5885,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValueWithIcon'
+    FixedValuesWithRadioParameterEditor:
+      title: FixedValuesWithRadioParameterEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
     FragmentClazzRef:
       title: FragmentClazzRef
       type: object
@@ -5762,18 +6063,18 @@ components:
         type: array
         items:
           type: string
-    Map_Map_String_String:
-      title: Map_Map_String_String
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/Map_String'
     Map_Map_String_TypingResultInJson:
       title: Map_Map_String_TypingResultInJson
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_NodeDeploymentData:
-      title: Map_NodeId_NodeDeploymentData
+    Map_ModelInfo:
+      title: Map_ModelInfo
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_String'
+    Map_NodeId_String:
+      title: Map_NodeId_String
       type: object
       additionalProperties:
         type: string
@@ -5782,6 +6083,13 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Expression'
+    Map_ScenarioActionName_List_UiActionNodeParametersDto:
+      title: Map_ScenarioActionName_List_UiActionNodeParametersDto
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/UiActionNodeParametersDto'
     Map_String:
       title: Map_String
       type: object
@@ -5805,6 +6113,11 @@ components:
         - $ref: '#/components/schemas/TypedTaggedValue'
         - $ref: '#/components/schemas/TypedUnion'
         - $ref: '#/components/schemas/Unknown'
+    Map_UiActionParameterConfigDto:
+      title: Map_UiActionParameterConfigDto
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/UiActionParameterConfigDto'
     MarkdownAdditionalInfo:
       title: MarkdownAdditionalInfo
       type: object
@@ -6459,6 +6772,7 @@ components:
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
@@ -6525,64 +6839,6 @@ components:
                 type: string
               duration:
                 type: string
-    ProcessAction:
-      title: ProcessAction
-      type: object
-      required:
-      - id
-      - processId
-      - processVersionId
-      - user
-      - createdAt
-      - performedAt
-      - actionName
-      - state
-      - buildInfo
-      properties:
-        id:
-          type: string
-          format: uuid
-        processId:
-          type: integer
-          format: int64
-        processVersionId:
-          type: integer
-          format: int64
-        user:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        performedAt:
-          type: string
-          format: date-time
-        actionName:
-          type: string
-        state:
-          $ref: '#/components/schemas/ProcessActionState'
-        failureMessage:
-          type:
-          - string
-          - 'null'
-        commentId:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        buildInfo:
-          $ref: '#/components/schemas/Map_String'
-    ProcessActionState:
-      title: ProcessActionState
-      type: string
-      enum:
-      - IN_PROGRESS
-      - FINISHED
-      - FAILED
-      - EXECUTION_FINISHED
     ProcessActivity:
       title: ProcessActivity
       type: object
@@ -6635,6 +6891,15 @@ components:
     RawParameterEditor:
       title: RawParameterEditor
       type: object
+    RecordsRequestDto:
+      title: RecordsRequestDto
+      type: object
+      required:
+      - processProperties
+      - nodeData
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
     RegisterStatisticsRequestDto:
       title: RegisterStatisticsRequestDto
       type: object
@@ -6653,7 +6918,7 @@ components:
         scenarioName:
           type: string
         nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+          $ref: '#/components/schemas/Map_NodeId_String'
         comment:
           type:
           - string
@@ -6920,6 +7185,7 @@ components:
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
@@ -7014,7 +7280,7 @@ components:
       - CLICK_SCENARIO_COMPARE
       - CLICK_SCENARIO_MIGRATE
       - CLICK_SCENARIO_IMPORT
-      - CLICK_SCENARIO_JSON
+      - CLICK_SCENARIO_EXPORT
       - CLICK_SCENARIO_PDF
       - CLICK_SCENARIO_ARCHIVE
       - CLICK_TEST_GENERATED
@@ -7448,6 +7714,45 @@ components:
           - $ref: '#/components/schemas/Unknown'
         expression:
           $ref: '#/components/schemas/Expression'
+    UiActionNodeParametersDto:
+      title: UiActionNodeParametersDto
+      type: object
+      required:
+      - nodeId
+      - parameters
+      properties:
+        nodeId:
+          type: string
+        parameters:
+          $ref: '#/components/schemas/Map_UiActionParameterConfigDto'
+    UiActionParameterConfigDto:
+      title: UiActionParameterConfigDto
+      type: object
+      required:
+      - editor
+      properties:
+        defaultValue:
+          type:
+          - string
+          - 'null'
+        editor:
+          $ref: '#/components/schemas/ParameterEditor'
+        label:
+          type:
+          - string
+          - 'null'
+        hintText:
+          type:
+          - string
+          - 'null'
+    UiActionParametersDto:
+      title: UiActionParametersDto
+      type: object
+      required:
+      - actionNameToParameters
+      properties:
+        actionNameToParameters:
+          $ref: '#/components/schemas/Map_ScenarioActionName_List_UiActionNodeParametersDto'
     Unknown:
       title: Unknown
       type: object

@@ -23,7 +23,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubProcessStateProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubScenarioStateProvider, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -105,8 +105,6 @@ object TestFactory {
   val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
     ProcessingTypeDataProvider(Map.empty, scenarioParametersService)
 
-  val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
-
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
     Map(
@@ -129,7 +127,6 @@ object TestFactory {
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      _ => true,
       ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
 
@@ -140,12 +137,13 @@ object TestFactory {
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
       actorSystem.dispatcher,
+      IORuntime.global,
       actorSystem,
       SttpBackendStub.asynchronousFuture
     )
   }
 
-  def processStateProvider() = new StubProcessStateProvider(Map.empty)
+  def processStateProvider() = new StubScenarioStateProvider(Map.empty)
 
   def newDBIOActionRunner(dbRef: DbRef): DBIOActionRunner =
     DBIOActionRunner(dbRef)
@@ -192,11 +190,8 @@ object TestFactory {
   def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
-  def newActionProcessRepository(dbRef: DbRef) =
-    DbScenarioActionRepository.create(
-      dbRef,
-      mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo)
-    )
+  def newActionProcessRepository(dbRef: DbRef): ScenarioActionRepository =
+    DbScenarioActionRepository.create(dbRef)
 
   def newDummyActionRepository(): ScenarioActionRepository =
     newActionProcessRepository(dummyDbRef)

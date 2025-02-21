@@ -56,9 +56,11 @@
 * [#7446](https://github.com/TouK/nussknacker/pull/7446) Small changes regarding node errors in fragments used in scenarios:
   * Fragment error node tips in scenarios are now clickable and open problematic node edit window in a new tab.
   * Fragment nodes are now highlighted when they contain nodes with errors.
-* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManger is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
-  * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManager is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
+  * Nussknacker API additionally modified in [#7552](https://github.com/TouK/nussknacker/pull/7552)
+  * in order to use it, DM must implement interface `SchedulingSupported`, that handles deployments on a specific engine
   * implementation provided for Flink DM
+  * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
 * [#7443](https://github.com/TouK/nussknacker/pull/7443) Indexing on record is more similar to indexing on map. The change lets us access record values dynamically. For example now spel expression "{a: 5, b: 10}[#input.field]" compiles and has type "Integer" inferred from types of values of the record. This lets us access record value based on user input, for instance if user passes "{"field": "b"}" to scenario we will get value "10", whereas input {"field": "c"} would result in "null". Expression "{a: 5}["b"]" still does not compile because it is known at compile time that record does not have property "b".
 * [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) introduced `managersDirs` config to configure deployment managers directory paths (you can use `MANAGERS_DIR` env in case of docker-based deployments). The default is `./managers`.
@@ -74,6 +76,24 @@
   * Introduced some default values:
     * For all - default `windowLength` is 1 hour
     * For `aggregate-session` - default `endSessionCondition` is now false
+* Improved scenario visualization loading time
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order, with additional changes in [#7554](https://github.com/TouK/nussknacker/pull/7554)
+    * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
+    * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
+* [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier `ScenarioTestRunner` creation - see [Migration guide](MigrationGuide.md) for details
+* [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
+* [#7539](https://github.com/TouK/nussknacker/pull/7539) Remove old workaround for passing job arguments to Flink, now they are sent using `programArgsList`
+* [#7542](https://github.com/TouK/nussknacker/pull/7542) Use `restart-strategy.type` Flink config key instead of the deprecated `restart-strategy`
+* [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
+    * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
+    * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562) Added optional configuration of action parameters and applied those parameters in deploy http request. 
+  * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
+  * The http request for `/deploy` and `/cancel` require valid json instead of plain text message.
+  * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
+* [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
+* [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
 
 ## 1.18
 

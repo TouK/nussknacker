@@ -9,10 +9,10 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExe
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkScheduledExecutionPerformer.jarFileNameRuntimeParam
-import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
+import pl.touk.nussknacker.engine.management.jobrunner.{FlinkModelJarProvider, RemoteFlinkScenarioJobRunner}
+import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
+import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
@@ -22,18 +22,13 @@ object FlinkScheduledExecutionPerformer {
   val jarFileNameRuntimeParam = "jarFileName"
 
   def create(
+      flinkClient: FlinkClient,
       modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      config: Config,
+      rawSchedulingConfig: Config,
   ): ScheduledExecutionPerformer = {
-    import dependencies._
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    import ScenarioTestingConfig._
-    val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkScheduledExecutionPerformer(
-      flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
-      jarsDir = Paths.get(config.getString("scheduling.jarsDir")),
+      flinkClient = flinkClient,
+      jarsDir = Paths.get(rawSchedulingConfig.getString("jarsDir")),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
     )
@@ -42,6 +37,7 @@ object FlinkScheduledExecutionPerformer {
 }
 
 // Used by [[PeriodicProcessService]].
+// Warning: This won't work correctly with useMiniClusterForDeployment mode because it uses always the same model classpath
 class FlinkScheduledExecutionPerformer(
     flinkClient: FlinkClient,
     jarsDir: Path,
@@ -92,7 +88,7 @@ class FlinkScheduledExecutionPerformer(
           s"Deploying scenario ${deployment.processName}, version id: ${deployment.versionId} and jar: $jarFileName"
         )
         val jarFile = jarsDir.resolve(jarFileName).toFile
-        val args = FlinkDeploymentManager.prepareProgramArgs(
+        val args = RemoteFlinkScenarioJobRunner.prepareProgramArgs(
           inputConfigDuringExecutionJson,
           processVersion,
           deploymentData,
@@ -100,7 +96,7 @@ class FlinkScheduledExecutionPerformer(
         )
         flinkClient.runProgram(
           jarFile,
-          FlinkStreamingRestManager.MainClassName,
+          RemoteFlinkScenarioJobRunner.MainClassName,
           args,
           None,
           deploymentData.deploymentId.toNewDeploymentIdOpt.map(toJobId)

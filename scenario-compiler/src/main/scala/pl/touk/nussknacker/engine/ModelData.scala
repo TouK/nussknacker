@@ -4,12 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentAdditionalConfig,
-  ComponentId,
-  ComponentProvider,
-  DesignerWideComponentId
-}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -27,7 +23,6 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
-import java.net.URL
 import java.nio.file.Path
 
 object ModelData extends LazyLogging {
@@ -51,8 +46,6 @@ object ModelData extends LazyLogging {
       Some(processingTypeConfig.category),
       dependencies.determineDesignerWideId,
       dependencies.additionalConfigsFromProvider,
-      _ => true,
-      dependencies.shouldIncludeComponentProvider,
       dependencies.componentDefinitionExtractionMode
     )
   }
@@ -95,8 +88,6 @@ object ModelData extends LazyLogging {
       category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       additionalConfigsFromProvider = modelConfigs.additionalModelConfigs.additionalConfigsFromProvider,
-      shouldIncludeConfigCreator = _ => true,
-      shouldIncludeComponentProvider = _ => true,
       componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
     )
   }
@@ -116,7 +107,6 @@ final case class ModelDependencies(
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
     workingDirectoryOpt: Option[Path],
-    shouldIncludeComponentProvider: ComponentProvider => Boolean,
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
 )
 
@@ -126,10 +116,6 @@ case class ClassLoaderModelData private (
     override val category: Option[String],
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-    // This property is for easier testing when for some reason, some jars with ComponentProvider are
-    // on the test classpath and CPs collide with other once with the same name.
-    shouldIncludeConfigCreator: ProcessConfigCreator => Boolean,
-    shouldIncludeComponentProvider: ComponentProvider => Boolean,
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
 ) extends ModelData
     with LazyLogging {
@@ -138,11 +124,11 @@ case class ClassLoaderModelData private (
 
   // this is not lazy, to be able to detect if creator can be created...
   override val configCreator: ProcessConfigCreator =
-    new ProcessConfigCreatorLoader(shouldIncludeConfigCreator).justOne(modelClassLoader)
+    ProcessConfigCreatorLoader.justOne(modelClassLoader)
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
     Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader)) match {
-      case Empty()                => new DefaultModelConfigLoader(shouldIncludeComponentProvider)
+      case Empty()                => DefaultModelConfigLoader
       case One(modelConfigLoader) => modelConfigLoader
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
@@ -173,7 +159,6 @@ case class ClassLoaderModelData private (
     new ExtractDefinitionFunImpl(
       configCreator,
       category,
-      shouldIncludeComponentProvider,
       componentDefinitionExtractionMode
     )
 
@@ -184,7 +169,6 @@ object ClassLoaderModelData {
   class ExtractDefinitionFunImpl(
       configCreator: ProcessConfigCreator,
       category: Option[String],
-      shouldIncludeComponentProvider: ComponentProvider => Boolean,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) extends ExtractDefinitionFun
       with Serializable {
@@ -202,7 +186,6 @@ object ClassLoaderModelData {
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
-        shouldIncludeComponentProvider,
         componentDefinitionExtractionMode
       )
     }
@@ -218,7 +201,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   //       do we have. See AdditionalInfoProviders as well
   def migrations: ProcessMigrations
 
-  final def buildInfo: Map[String, String] = configCreator.buildInfo()
+  final def info: ModelInfo = configCreator.modelInfo()
 
   def configCreator: ProcessConfigCreator
 
@@ -269,9 +252,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     }
   }
 
-  final override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
-
-  def modelClassLoader: ModelClassLoader
+  override def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 

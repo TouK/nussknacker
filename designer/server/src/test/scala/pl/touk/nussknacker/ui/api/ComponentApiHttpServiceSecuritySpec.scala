@@ -127,8 +127,7 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "modifiedAt": "${regexes.zuluDateRegex}",
                  |  "modifiedBy": "admin",
                  |  "createdAt": "${regexes.zuluDateRegex}",
-                 |  "createdBy": "admin",
-                 |  "lastAction": null
+                 |  "createdBy": "admin"
                  |}]""".stripMargin
             )
           )
@@ -187,8 +186,7 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "modifiedAt": "${regexes.zuluDateRegex}",
                  |  "modifiedBy": "admin",
                  |  "createdAt": "${regexes.zuluDateRegex}",
-                 |  "createdBy": "admin",
-                 |  "lastAction": null
+                 |  "createdBy": "admin"
                  |}]""".stripMargin
             )
           )
@@ -263,6 +261,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-sink-monitor",
     "streaming1-sink-sendsms",
     "streaming1-source-boundedsource",
+    "streaming1-source-boundedsourcewithoffset",
     "streaming1-source-classinstancesource",
     "streaming1-source-communicationsource",
     "streaming1-source-csv-source",
@@ -329,6 +328,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-sink-monitor",
     "streaming2-sink-sendsms",
     "streaming2-source-boundedsource",
+    "streaming2-source-boundedsourcewithoffset",
     "streaming2-source-classinstancesource",
     "streaming2-source-communicationsource",
     "streaming2-source-csv-source",
@@ -394,6 +394,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-sink-monitor",
     "streaming1-sink-sendsms",
     "streaming1-source-boundedsource",
+    "streaming1-source-boundedsourcewithoffset",
     "streaming1-source-classinstancesource",
     "streaming1-source-communicationsource",
     "streaming1-source-csv-source",
@@ -452,6 +453,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-sink-monitor",
     "streaming2-sink-sendsms",
     "streaming2-source-boundedsource",
+    "streaming2-source-boundedsourcewithoffset",
     "streaming2-source-classinstancesource",
     "streaming2-source-communicationsource",
     "streaming2-source-csv-source",

@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, Source, VersionId}
 
 import java.time.Instant
 import java.util.UUID
@@ -12,21 +14,24 @@ import java.util.UUID
 // TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
 //  - this class is currently a compatibility layer for older fragments of code, new code should use ScenarioActivity
+//  - this class is used in REST API (JsonCodec) only by external project
 @JsonCodec case class ProcessAction(
     id: ProcessActionId,
+    // Used by external project (listener api)
     processId: ProcessId,
+    // Used by external project
     // We use process action only for finished/execution finished actions so processVersionId is always defined
     processVersionId: VersionId,
     user: String,
-    createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
+    // Used by external project
     performedAt: Instant,
+    // Used by external project
     actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
-    commentId: Option[Long],
+    // Used by external project
     comment: Option[String],
-    buildInfo: Map[String, String]
 )
 
 final case class ProcessActionId(value: UUID) {
@@ -64,6 +69,9 @@ object ScenarioActionName {
   implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
   implicit val decoder: Decoder[ScenarioActionName] = deriveUnwrappedDecoder
 
+  implicit val keyEncoder: KeyEncoder[ScenarioActionName] = KeyEncoder.encodeKeyString.contramap(_.value)
+  implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName(_))
+
   val Deploy: ScenarioActionName    = ScenarioActionName("DEPLOY")
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
@@ -89,4 +97,11 @@ object ScenarioActionName {
     case other              => ScenarioActionName(other)
   }
 
+}
+
+/**
+ * Used to define Source parameters for each action
+ */
+trait WithActionParametersSupport { self: Source =>
+  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }

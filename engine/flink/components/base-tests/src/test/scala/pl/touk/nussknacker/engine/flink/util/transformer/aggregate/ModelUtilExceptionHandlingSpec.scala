@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
@@ -9,23 +11,24 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.util.UUID
 
 class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
-  override protected def registerInEnvironment(
-      env: MiniClusterExecutionEnvironment,
+  override protected def runScenario(
+      env: StreamExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
+  ): JobExecutionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
@@ -136,23 +139,22 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
     val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
     val enrichedComponents = sourceComponentDefinition :: FlinkBaseComponentProvider.Components :::
       FlinkBaseUnboundedComponentProvider.Components
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, enrichedComponents), scenario)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = runScenario(env, LocalModelData(config, enrichedComponents), scenario)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
 
-    env.executeAndWaitForFinished("test")()
-
-    // A bit more complex check, since there are errors from both join sides...
-    RecordingExceptionConsumer
-      .exceptionsFor(runId)
-      .collect { case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _) =>
-        e.expression
-      }
-      .toSet shouldBe Set(
-      "'right' + '' + (1 / #input[0])",
-      "'left' + '' + (1 / #input[0])",
-      "'aggregate' + '' + (1 / #input[1])"
-    )
-
+      // A bit more complex check, since there are errors from both join sides...
+      RecordingExceptionConsumer
+        .exceptionsFor(runId)
+        .collect { case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _) =>
+          e.expression
+        }
+        .toSet shouldBe Set(
+        "'right' + '' + (1 / #input[0])",
+        "'left' + '' + (1 / #input[0])",
+        "'aggregate' + '' + (1 / #input[1])"
+      )
+    }
   }
 
 }

@@ -91,4 +91,7 @@ case class StatusDetails(
     startTime: Option[Long] = None,
     attributes: Option[Json] = None,
     errors: List[String] = List.empty
-)
+) {
+  def externalDeploymentIdUnsafe: ExternalDeploymentId =
+    externalDeploymentId.getOrElse(throw new IllegalStateException(s"externalDeploymentId is missing"))
+}

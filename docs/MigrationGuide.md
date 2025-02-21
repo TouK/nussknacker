@@ -4,25 +4,31 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
-
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
   * maxContentLength - max length of a sticky notes content (characters)
   * maxNotesCount - max count of sticky notes inside one scenario/fragment
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
+* [#7534](https://github.com/TouK/nussknacker/pull/7534) `shouldVerifyBeforeDeploy` configuration entry available for Flink deployment
+  was renamed to `scenarioStateVerification.enabled`
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy`:
+    * forceLatestRead is missing -> keep defaultOffsetResetStrategy missing or set to "None"
+    * forceLatestRead: false -> defaultOffsetResetStrategy: "None"
+    * forceLatestRead: true -> defaultOffsetResetStrategy: "ToLatest"
+* [#7568](https://github.com/TouK/nussknacker/pull/7568) The `process-json` button in `processToolbarConfig` was renamed to `process-export`
 
+### REST API changes
 
-### Other changes
+* [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessAction.buildInfo` field was renamed to `ProcessAction.modelInfo` and is optional now. 
+  `ProcessAction` type is used in `ScenarioWithDetails.lastDeployedAction`, `ScenarioWithDetails.lastStateAction` and `ScenarioWithDetails.lastAction`
+  which are returned by `/processes`, `/processesDetails` endpoints. It is also used by `/components/$id/usages` endpoint
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562)
+    * Deploy and cancel http request requires valid json in request body (see `DeployRequest` and `CancelRequest`) instead of plain text, e.g. `{"comment": "example text"}`.
+    * For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "ToLatest"}}}`.
 
-* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
-  * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
-  * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
-* [#7257](https://github.com/TouK/nussknacker/pull/7257) [#7259](https://github.com/TouK/nussknacker/pull/7259) `components-api` module 
-  doesn't depend on `async-http-client-backend-future`, `http-utils` module is delivered by `flink-executor` and `lite-runtime` modules.
-  If your component had compile-time dependency to `http-utils`, it should be replaced by provided scope
-  If your component relied on the fact that `components-api` depends on `async-http-client-backend-future`, 
-  `async-http-client-backend-future` should be added as a provided dependency
+### Code API changes
+
 * [#7165](https://github.com/TouK/nussknacker/pull/7165)
     * `pl.touk.nussknacker.engine.api.deployment.DeploymentManager`:
         * new command `DMPerformSingleExecutionCommand`, which must be handled in `DeploymentManager.processCommand` method
@@ -35,19 +41,62 @@ To see the biggest differences please consult the [changelog](Changelog.md).
             * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String]` - allows to define custom tooltips for actions, if not defined the default is still used
         * modified method:
             * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions
+* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
+  If there were any custom actions defined in some custom DeploymentManager implementation,
+  they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
+* [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) Changes around flink-based scenario testing. As an entry point to all migration steps, assume that `FlinkMiniClusterWithServices` is a new `FlinkMiniClusterHolder`
+  * From perspective of testkit (`TestScenarioRunner.flinkBased`) module usage
+    * `flink-tests` module doesn't depend on `flink-test-utils` module. To create `FlinkMiniClusterWithServices` follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-2ccffe37f56882fa91afb457ba45c98f399c40f7667b2de9ea3453b6e8a76989).
+      * `FlinkSpec` inheritance should be removed from test class
+      * Test class should extend `BeforeAndAfterAll`
+      * `FlinkMiniClusterWithServices` should be created using `val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()`
+      * `FlinkMiniClusterWithServices` should be closed in `afterAll` block
+  * From perspective of `flink-test-utils` module usage follow steps below. Example migration process is also available in [PR with the related change](https://github.com/TouK/nussknacker/pull/7511/files#diff-8ca39d67972d329a5eb6ce59d2338eba626dc0fd36ffdd8d0d679b8190d9f15c).
+    Caution: this module is deprecated; to avoid further migrations issues, tests should be rewritten to testkit stack
+    * Instead of using `FlinkSpec.flinkMiniCluster.createExecutionEnvironment` method, should be used
+      `FlinkSpec.flinkMiniCluster.withDetachedStreamExecutionEnvironment` which properly closes created environment
+    * `MiniClusterExecutionEnvironment` class was removed, plain `StreamExecutionEnvironment` is returned instead
+      * To access methods such as `withJobRunning`, import `ScalatestMiniClusterJobStatusCheckingOps._` 
+        and then invoke these methods on `flinkMiniCluster`
+      * Method `withJobRunning` was renamed to `withRunningJob` and it doesn't invoke `StreamExecutionEnvironment.execute`. It should be called before this method
+      * Method `executeAndWaitForFinished` was renamed to `waitForJobIsFinished` and it doesn't invoke `StreamExecutionEnvironment.execute`. 
+        It should be called before this method; also, this method cancel job if check ended up with error now
+      * Method `assertJobNotFailing` was renamed to `checkJobIsNotFailing`
+      * Some methods are not available in `ScalatestMiniClusterJobStatusCheckingOps`:
+        * `executeAndWaitForStart`, `waitForStart`, `stopJob` - should be used `withRunningJob`/`waitForJobIsFinished` 
+          or `FlinkMiniClusterWithServices.miniCluster` methods directly instead
+        * Other methods were considered too much low-level and were removed
+    * Instead of using `ResultsCollectingListenerHolder.registerListener` or `ResultsCollectingListenerHolder.registerTestEngineListener`
+      should be used `withListener`/`withTestEngineListener` methods which properly cleanup allocated resources. 
+* [#7540](https://github.com/TouK/nussknacker/pull/7540) `FlinkStreamingDeploymentManagerProvider` was renamed to `FlinkDeploymentManagerProvider`,
+  `FlinkStreamingRestManager` and `FlinkRestManager` abstraction layers were removed - only `FlinkDeploymentManager` exists
+* [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessConfigCreator.buildInfo` and `NkGlobalParameters.buildInfo` were renamed to `modelInfo`
+  Also, they return a `ModelInfo` value class now. To create it from `Map`, use `ModelInfo.fromMap`. To access underlying map, use `ModelInfo.parameters`.
+  
+
+### Other changes
+
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+    * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15
+    * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+* [#7257](https://github.com/TouK/nussknacker/pull/7257) [#7259](https://github.com/TouK/nussknacker/pull/7259) `components-api` module
+  doesn't depend on `async-http-client-backend-future`, `http-utils` module is delivered by `flink-executor` and `lite-runtime` modules.
+  If your component had compile-time dependency to `http-utils`, it should be replaced by provided scope
+  If your component relied on the fact that `components-api` depends on `async-http-client-backend-future`,
+  `async-http-client-backend-future` should be added as a provided dependency
 * [#7347](https://github.com/TouK/nussknacker/pull/7347) All calls to `org.apache.flink.api.common.functions.RichFunction.open(Configuration)`,
   which is deprecated, were replaced with calls to `org.apache.flink.api.common.functions.RichFunction.open(OpenContext)`
-* [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism. 
-  If there were any custom actions defined in some custom DeploymentManager implementation, 
-  they should be modified to use the predefined set of actions or otherwise replaced by custom links and handled outside Nussknacker.
 * [#7364](https://github.com/TouK/nussknacker/pull/7364)
+    * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
+    * additionally modified in [#7552](https://github.com/TouK/nussknacker/pull/7552)
     * the PeriodicDeploymentManager is no longer a separate DM type
     * in `scenarioTypes` config section, the `deploymentConfig` of a periodic scenario type (only Flink was supported so far) may have looked like that:
   ```hocon   
     deploymentConfig: {
       type: "flinkPeriodic"
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
       deploymentManager {
         db: { <config of the custom db data source> },
         processingType: streaming,
@@ -55,11 +104,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       }
     }
     ```
-  * changes:
-    * the `type: "flinkPeriodic"` is no longer supported, instead `type: "flinkStreaming"` with additional setting `supportsPeriodicExecution: true` should be used
-    * the db config is now optional - the periodic DM may still use its custom datasource defined here in `legacyDb` section
-    * when custom `db` section not defined here, then main Nussknacker db will be used
-  * config after changes may look like that:
+    * changes:
+        * the `type: "flinkPeriodic"` is no longer supported, instead `type: "flinkStreaming"` with additional setting `supportsPeriodicExecution: true` should be used
+        * the db config is now optional - the periodic DM may still use its custom datasource defined here in `legacyDb` section
+        * when custom `db` section not defined here, then main Nussknacker db will be used
+    * config after changes may look like that:
   ```hocon   
     deploymentConfig: {
       type: "flinkStreaming"
@@ -70,20 +119,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         legacyDb: { <OPTIONAL config of the custom db data source> },
       }
       restUrl: "http://jobmanager:8081"
-      shouldVerifyBeforeDeploy: true
     }
     ```
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
-* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: by default mini cluster is created once and reused each time
-  To revert previous behaviour (creating minicluster each time), change `deploymentConfig.scenarioTesting.reuseMiniClusterForScenarioTesting` or/and 
-  `deploymentConfig.scenarioTesting.reuseMiniClusterForScenarioStateVerification` to `false` 
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) [#7534](https://github.com/TouK/nussknacker/pull/7534) Flink scenario testing mechanism and scenario state verification mechanism changes
+    * By default, shared mini cluster is created once and reused each time. To revert previous behaviour (creating minicluster each time),
+      switch `deploymentConfig.scenarioTesting.reuseSharedMiniCluster` or/and `deploymentConfig.scenarioStateVerification.reuseSharedMiniCluster` to `false`
+    * Scenario testing and scenario state verification is now limited by a timeout to ensure proper resources cleaning. In some cases it might be needed to change the timeout
+      value. To do that, set `deploymentConfig.scenarioTesting.timeout` or/and `deploymentConfig.scenarioStateVerification.timeout` to desired values. Notice that this properties should be configured along with `akka.http.server.request-timeout`
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.
-
-### Code API changes
-* [#7368](https://github.com/TouK/nussknacker/pull/7368) [#7502](https://github.com/TouK/nussknacker/pull/7502) Renamed `PeriodicSourceFactory` to `EventGeneratorSourceFactory`
-* [#7364](https://github.com/TouK/nussknacker/pull/7364) The DeploymentManager must implement `def schedulingSupport: SchedulingSupport`. If support not added, then `NoSchedulingSupport` should be used.
 
 ## In version 1.18.0
 
@@ -110,6 +156,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     ```
 
 * [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
+  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
+  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
 
 ### Code API changes
 
@@ -154,12 +203,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 * [#7246](https://github.com/TouK/nussknacker/pull/7246) Changes in DictApiEndpoints:
     *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
-
-### Configuration changes
-
-* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
-  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
-  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
 
 ### Other changes
 

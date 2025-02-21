@@ -4,7 +4,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.process.ScenarioActivityAuditLog
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FunctorUtils.Ops
@@ -21,10 +21,9 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
       processVersion: VersionId,
       actionName: ScenarioActionName,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessAction] =
     underlying
-      .addInstantAction(processId, processVersion, actionName, comment, buildInfoProcessingType)
+      .addInstantAction(processId, processVersion, actionName, comment)
       .onSuccessRunAsync(processAction =>
         ScenarioActivityAuditLog.onScenarioImmediateAction(
           processAction.id,
@@ -39,10 +38,9 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionId] =
     underlying
-      .addInProgressAction(processId, actionName, processVersion, buildInfoProcessingType)
+      .addInProgressAction(processId, actionName, processVersion)
       .onSuccessRunAsync(processActionId =>
         ScenarioActivityAuditLog.onScenarioActionStarted(processActionId, processId, actionName, processVersion, user)
       )
@@ -54,7 +52,6 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
       processVersion: VersionId,
       performedAt: Instant,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] =
     underlying
       .markActionAsFinished(
@@ -64,7 +61,6 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
         processVersion,
         performedAt,
         comment,
-        buildInfoProcessingType
       )
       .onSuccessRunAsync(_ =>
         ScenarioActivityAuditLog
@@ -86,7 +82,6 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
       performedAt: Instant,
       comment: Option[Comment],
       failureMessage: String,
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] =
     underlying
       .markActionAsFailed(
@@ -97,7 +92,6 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
         performedAt,
         comment,
         failureMessage,
-        buildInfoProcessingType
       )
       .onSuccessRunAsync(_ =>
         ScenarioActivityAuditLog

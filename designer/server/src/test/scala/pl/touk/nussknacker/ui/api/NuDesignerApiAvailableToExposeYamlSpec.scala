@@ -105,7 +105,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_SCENARIO_COMPARE",
           "CLICK_SCENARIO_MIGRATE",
           "CLICK_SCENARIO_IMPORT",
-          "CLICK_SCENARIO_JSON",
+          "CLICK_SCENARIO_EXPORT",
           "CLICK_SCENARIO_PDF",
           "CLICK_SCENARIO_ARCHIVE",
           "CLICK_TEST_GENERATED",

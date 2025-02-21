@@ -29,6 +29,7 @@ export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLa
 export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
+export const isValidationResultPresent = createSelector(getScenario, (p) => ProcessUtils.isValidationResultPresent(p));
 export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
 export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils.hasNoWarnings(p));
 export const hasPropertiesErrors = createSelector(getScenario, (p) => !ProcessUtils.hasNoPropertiesErrors(p));
@@ -54,10 +55,6 @@ export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
     (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 );
-export const isDeployedVersion = createSelector(
-    [getProcessVersionId, createSelector(getScenario, (scenario) => scenario?.lastDeployedAction?.processVersionId)],
-    (visibleVersion, deployedVersion) => visibleVersion === deployedVersion,
-);
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));
 export const isRunOffSchedulePossible = createSelector(
@@ -77,8 +74,9 @@ export const getTestParameters = createSelector(getGraph, (g) => g.testFormParam
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
-export const getStickyNotes = createSelector([getGraph, getStickyNotesSettings], (g, settings) =>
-    settings.enabled ? g.stickyNotes || ([] as StickyNote[]) : ([] as StickyNote[]),
+export const getStickyNotes = createSelector(
+    [getGraph, getStickyNotesSettings],
+    (g, settings) => (settings?.enabled ? g.stickyNotes || ([] as StickyNote[]) : []) as StickyNote[],
 );
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],

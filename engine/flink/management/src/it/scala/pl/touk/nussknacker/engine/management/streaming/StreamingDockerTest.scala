@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.streaming
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -19,7 +19,8 @@ import pl.touk.nussknacker.engine.management.DockerTest
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 
 trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matchers with OptionValues {
-  self: Suite with LazyLogging =>
+  // Warning: we need StrictLogging capability instead of LazyLogging because with LazyLogging we had a deadlock during kafkaClient allocation
+  self: Suite with StrictLogging =>
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
@@ -40,13 +41,15 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   protected lazy val (deploymentManagerClassLoader, releaseDeploymentManagerClassLoaderResources) =
     DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
 
-  protected lazy val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(
-    ConfigWithUnresolvedVersion(config),
-    deploymentManagerClassLoader
-  )
+  protected lazy val deploymentManager: DeploymentManager =
+    FlinkDeploymentManagerProviderHelper.createDeploymentManager(
+      ConfigWithUnresolvedVersion(config),
+      deploymentManagerClassLoader
+    )
 
   override def afterAll(): Unit = {
     releaseKafkaClient.unsafeToFuture()
+    deploymentManager.close()
     releaseDeploymentManagerClassLoaderResources.unsafeToFuture()
     super.afterAll()
   }

@@ -132,7 +132,7 @@ object StatisticsApiEndpoints {
       case object ClickScenarioCompare                 extends StatisticName { override val shortName = "f_csco"  }
       case object ClickScenarioMigrate                 extends StatisticName { override val shortName = "f_csm"   }
       case object ClickScenarioImport                  extends StatisticName { override val shortName = "f_csi"   }
-      case object ClickScenarioJson                    extends StatisticName { override val shortName = "f_csj"   }
+      case object ClickScenarioExport                  extends StatisticName { override val shortName = "f_csj"   }
       case object ClickScenarioPdf                     extends StatisticName { override val shortName = "f_cspd"  }
       case object ClickScenarioArchive                 extends StatisticName { override val shortName = "f_csa"   }
       case object ClickTestGenerated                   extends StatisticName { override val shortName = "f_ctg"   }

@@ -101,7 +101,7 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
               comment.createDate.?,                                    // finishedAt
               None: Option[String],                                    // state
               None: Option[String],                                    // errorMessage
-              None: Option[String],                                    // buildInfo - always absent in old actions
+              None: Option[String],                                    // modelInfo - always absent in old actions
               "{}" // additionalProperties always empty in old actions
             )
           }

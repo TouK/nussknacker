@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.streaming.embedded
 
 import akka.actor.ActorSystem
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
@@ -46,6 +47,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
       as.dispatcher,
+      IORuntime.global,
       as,
       SttpBackendStub.asynchronousFuture
     )

@@ -6,9 +6,8 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
   ScenarioActivityEntityData,
@@ -16,7 +15,6 @@ import pl.touk.nussknacker.ui.db.entity.{
   ScenarioActivityType
 }
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
@@ -39,14 +37,12 @@ trait ScenarioActionRepository extends ScenarioActionReadOnlyRepository with Loc
       processVersion: VersionId,
       actionName: ScenarioActionName,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessAction]
 
   def addInProgressAction(
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionId]
 
   def markActionAsFinished(
@@ -56,7 +52,6 @@ trait ScenarioActionRepository extends ScenarioActionReadOnlyRepository with Loc
       processVersion: VersionId,
       performedAt: Instant,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit]
 
   def markActionAsFailed(
@@ -67,7 +62,6 @@ trait ScenarioActionRepository extends ScenarioActionReadOnlyRepository with Loc
       performedAt: Instant,
       comment: Option[Comment],
       failureMessage: String,
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit]
 
   def markFinishedActionAsExecutionFinished(
@@ -113,11 +107,9 @@ trait ScenarioActionReadOnlyRepository extends LockableTable {
 
 }
 
-class DbScenarioActionRepository private (
-    override protected val dbRef: DbRef,
-    buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
-)(override implicit val executionContext: ExecutionContext)
-    extends DbScenarioActionReadOnlyRepository(dbRef)
+class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
+    override implicit val executionContext: ExecutionContext
+) extends DbScenarioActionReadOnlyRepository(dbRef)
     with DbioRepository
     with NuTables
     with DbLockableTable
@@ -134,7 +126,6 @@ class DbScenarioActionRepository private (
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionId] = {
     val now = Instant.now()
     run(
@@ -148,7 +139,6 @@ class DbScenarioActionRepository private (
         performedAt = None,
         failure = None,
         comment = None,
-        buildInfoProcessingType = buildInfoProcessingType
       ).map(_.activityId.value).map(ProcessActionId.apply)
     )
   }
@@ -162,7 +152,6 @@ class DbScenarioActionRepository private (
       processVersion: VersionId,
       performedAt: Instant,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
       updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment)
@@ -181,7 +170,6 @@ class DbScenarioActionRepository private (
             Some(performedAt),
             None,
             comment,
-            buildInfoProcessingType
           )
         }
     } yield ())
@@ -196,7 +184,6 @@ class DbScenarioActionRepository private (
       performedAt: Instant,
       comment: Option[Comment],
       failureMessage: String,
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
     val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
@@ -216,7 +203,6 @@ class DbScenarioActionRepository private (
             Some(performedAt),
             failureMessageOpt,
             comment,
-            buildInfoProcessingType
           )
         }
     } yield ())
@@ -245,7 +231,6 @@ class DbScenarioActionRepository private (
       processVersion: VersionId,
       actionName: ScenarioActionName,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessAction] = {
     val now = Instant.now()
     run(
@@ -259,7 +244,6 @@ class DbScenarioActionRepository private (
         Some(now),
         None,
         comment,
-        buildInfoProcessingType
       ).map(
         toFinishedProcessAction(_)
           .getOrElse(throw new IllegalArgumentException(s"Could not insert ProcessAction as ScenarioActivity"))
@@ -277,10 +261,8 @@ class DbScenarioActionRepository private (
       performedAt: Option[Instant],
       failure: Option[String],
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ScenarioActivityEntityData] = {
-    val actionId         = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
-    val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forProcessingType).map(BuildInfo.writeAsJson)
+    val actionId = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
 
     val activityType = actionName match {
       case ScenarioActionName.Deploy =>
@@ -318,7 +300,6 @@ class DbScenarioActionRepository private (
       finishedAt = performedAt.map(Timestamp.from),
       state = Some(state),
       errorMessage = failure,
-      buildInfo = buildInfoJsonOpt,
       additionalProperties = AdditionalProperties(Map.empty)
     )
     (scenarioActivityTable += entity).map { insertCount =>
@@ -356,11 +337,11 @@ class DbScenarioActionRepository private (
 
 object DbScenarioActionRepository {
 
-  def create(dbRef: DbRef, buildInfos: ProcessingTypeDataProvider[Map[String, String], _])(
+  def create(dbRef: DbRef)(
       implicit executionContext: ExecutionContext,
   ): ScenarioActionRepository = {
     new ScenarioActionRepositoryAuditLogDecorator(
-      new DbScenarioActionRepository(dbRef, buildInfos)
+      new DbScenarioActionRepository(dbRef)
     )
   }
 
@@ -508,15 +489,12 @@ class DbScenarioActionReadOnlyRepository(
       id = ProcessActionId(activityEntity.activityId.value),
       processId = ProcessId(activityEntity.scenarioId.value),
       processVersionId = processVersionId,
-      createdAt = activityEntity.createdAt.toInstant,
       performedAt = performedAt,
       user = activityEntity.userName.value,
       actionName = actionName,
       state = state,
       failureMessage = activityEntity.errorMessage,
-      commentId = activityEntity.comment.map(_ => activityEntity.id),
       comment = activityEntity.comment.map(_.value),
-      buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )).left.map { error =>
       logger.error(s"Could not interpret ScenarioActivity entity as ProcessAction: [$error]")
       error

@@ -39,10 +39,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(
-    dbRef,
-    mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
-  )
+  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(dbRef)
 
   private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
   private val stickyNotesRepository: StickyNotesRepository       = DbStickyNotesRepository.create(dbRef, clock)
@@ -99,7 +96,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   def createDeployedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -110,7 +107,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- Future(createSavedScenario(scenario, category, isFragment))
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -121,7 +118,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
       _  <- prepareCancel(id)
     } yield id).futureValue
   }
@@ -133,7 +130,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -151,11 +148,11 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     dbioRunner.runInTransaction(
       DBIOAction.seq(
         writeScenarioRepository.archive(processId = idWithName, isArchived = true),
-        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None, None)
+        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None)
       )
     )
 
-  private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
+  private def prepareDeploy(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Deploy
     val comment    = Comment.from("Deploy comment")
     dbioRunner.run(
@@ -164,7 +161,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
         VersionId.initialVersionId,
         actionName,
         comment,
-        Some(processingType)
       )
     )
   }
@@ -173,7 +169,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     val actionName = ScenarioActionName.Cancel
     val comment    = Comment.from("Cancel comment")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment)
     )
   }
 

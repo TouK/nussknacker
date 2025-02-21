@@ -3,9 +3,10 @@ package pl.touk.nussknacker.ui.notifications
 import akka.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
-import org.scalatest.OptionValues
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -59,7 +60,8 @@ class NotificationServiceTest
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage
     with OptionValues
-    with DBIOActionValues {
+    with DBIOActionValues
+    with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
@@ -84,22 +86,23 @@ class NotificationServiceTest
     dbioActionRunner = dbioRunner
   )
 
-  private val actionRepository =
-    DbScenarioActionRepository.create(
-      testDbRef,
-      ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
-    )
+  private val actionRepository = DbScenarioActionRepository.create(testDbRef)
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    system.terminate().futureValue
+  }
 
   test("Should return only events for user in given time") {
     val processName       = ProcessName("fooProcess")
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                        = mock[DeploymentManager]
-    val (deploymentService, notificationService) = createServices(deploymentManager)
+    val deploymentManager                                       = mock[DeploymentManager]
+    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
@@ -132,8 +135,11 @@ class NotificationServiceTest
     deployProcess(Success(None), userForSuccess)
     notificationsFor(userForSuccess).map(_.toRefresh) shouldBe List(expectedRefreshAfterSuccess)
 
-    an[Exception] shouldBe thrownBy {
-      deployProcess(Failure(new RuntimeException("Failure")), userForFail)
+    val givenException = new RuntimeException("Failure")
+    intercept[TestFailedException] {
+      deployProcess(Failure(givenException), userForFail)
+    } should matchPattern {
+      case ex: TestFailedException if ex.getCause == givenException =>
     }
 
     notificationsFor(userForFail).map(_.toRefresh) shouldBe List(expectedRefreshAfterFail)
@@ -151,8 +157,8 @@ class NotificationServiceTest
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                        = mock[DeploymentManager]
-    val (deploymentService, notificationService) = createServices(deploymentManager)
+    val deploymentManager                                       = mock[DeploymentManager]
+    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
@@ -223,8 +229,8 @@ class NotificationServiceTest
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                        = mock[DeploymentManager]
-    val (deploymentService, notificationService) = createServices(deploymentManager)
+    val deploymentManager                                       = mock[DeploymentManager]
+    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
 
     var passedDeploymentId = Option.empty[DeploymentId]
     def deployProcess(
@@ -260,8 +266,8 @@ class NotificationServiceTest
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
-    deploymentService
-      .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
+    actionService
+      .markActionExecutionFinished(Streaming.stringify, passedDeploymentId.value.toActionIdOpt.value)
       .futureValue
     val notificationAfterExecutionFinished =
       notificationService
@@ -304,18 +310,29 @@ class NotificationServiceTest
       config,
       clock
     )
-    val deploymentService = new DeploymentService(
+    val scenarioStateProvider = ScenarioStateProvider(
       managerDispatcher,
       dbProcessRepository,
       actionRepository,
       dbioRunner,
+      scenarioStateTimeout = None
+    )
+    val actionService = new ActionService(
+      managerDispatcher,
+      dbProcessRepository,
+      actionRepository,
+      dbioRunner,
+      mock[ProcessChangeListener],
+      scenarioStateProvider,
+      None,
+      clock
+    )
+    val deploymentService = new DeploymentService(
+      managerDispatcher,
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
       mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
-      mock[ProcessChangeListener],
-      None,
-      None,
+      actionService,
       TestFactory.additionalComponentConfigsByProcessingType,
-      clock
     ) {
       override protected def validateBeforeDeploy(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
@@ -344,7 +361,7 @@ class NotificationServiceTest
         )
       }
     }
-    (deploymentService, notificationService)
+    (deploymentService, actionService, notificationService)
   }
 
   private def saveSampleProcess(processName: ProcessName) = {
@@ -357,7 +374,7 @@ class NotificationServiceTest
         processName = processName,
         category = "Default",
         canonicalProcess = sampleScenario,
-        processingType = "Streaming",
+        processingType = Streaming.stringify,
         isFragment = false,
         forwardedUserName = None
       )

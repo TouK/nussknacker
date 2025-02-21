@@ -5,7 +5,9 @@ sidebar_position: 5
 # Machine Learning (Enterprise only)
 
 Nussknacker can infer ML models using the Machine Learning enrichers. We support both in-process inference and inference
-using a dedicated ML runtime.
+using a dedicated ML runtime for Python-based models.
+
+## In-process inference
 
 Nussknacker ML enrichers can infer **in-process** models exported in the following formats:
 - [ONNX](https://onnx.ai/)
@@ -24,6 +26,8 @@ We also plan to support MLflow as a registry for exported models in these format
 The diagram below shows the interactions for ML enricher inferring an exported model:
 
 ![alt_text](img/mlExportedModels.png "Inferring ML exported models")
+
+## Python-based models inference
 
 Because of some restrictions with exporting models, we also support inference of **any Python ML model** using our
 *Nussknacker ML runtime* component. ML models are discovered and fetched from the [MLflow](https://mlflow.org/)

@@ -59,8 +59,6 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def errorMessage: Rep[Option[String]] = column[Option[String]]("error_message")
 
-    def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
-
     def additionalProperties: Rep[AdditionalProperties] = column[AdditionalProperties]("additional_properties")
 
     override def * =
@@ -82,7 +80,6 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
         performedAt,
         state,
         errorMessage,
-        buildInfo,
         additionalProperties,
       ) <> (
         ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
@@ -195,6 +192,5 @@ final case class ScenarioActivityEntityData(
     finishedAt: Option[Timestamp],
     state: Option[ProcessActionState],
     errorMessage: Option[String],
-    buildInfo: Option[String],
     additionalProperties: AdditionalProperties,
 )

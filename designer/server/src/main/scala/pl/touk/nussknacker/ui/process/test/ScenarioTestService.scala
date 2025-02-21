@@ -2,21 +2,25 @@ package pl.touk.nussknacker.ui.process.test
 
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.SourceTestDataGenerationError
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError.TooManySamplesRequestedError
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -35,15 +39,12 @@ class ScenarioTestService(
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(
-      implicit user: LoggedUser
   ): TestingCapabilities = {
-    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     testInfoProvider.getTestingCapabilities(processVersion, canonical)
   }
 
-  def testParametersDefinition(
+  def validateAndGetTestParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
@@ -56,12 +57,16 @@ class ScenarioTestService(
   def testUISourceParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean
-  )(implicit user: LoggedUser): List[UISourceParameters] =
-    testParametersDefinition(scenarioGraph, processVersion, isFragment)
+  ): List[UISourceParameters] = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+    testInfoProvider
+      .getTestParameters(processVersion, canonical)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
-      .map { assignUserFriendlyEditor }
+      .map {
+        assignUserFriendlyEditor
+      }
       .toList
+  }
 
   def generateData(
       scenarioGraph: ScenarioGraph,
@@ -74,13 +79,36 @@ class ScenarioTestService(
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
 
     for {
-      _ <- Either.cond(
-        testSampleSize <= testDataSettings.maxSamplesCount,
-        (),
-        s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}"
+      _ <- validateSampleSize(testSampleSize).left.map(error =>
+        s"Too many samples requested, limit is ${error.maxSamples}"
       )
-      generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize)
+      generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize).left.map(_.message)
       rawTestData   <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
+    } yield rawTestData
+  }
+
+  def getDataFromSource(
+      metaData: MetaData,
+      sourceNodeData: SourceNodeData,
+      size: Int
+  ): Either[SourceTestError, RawScenarioTestData] = {
+    for {
+      _ <- validateSampleSize(size)
+      result <- testInfoProvider
+        .generateTestDataForSource(metaData, sourceNodeData, size)
+        .left
+        .map {
+          case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
+            SourceTestError.SourceCompilationError(nodeId, errors.map(_.toString))
+          case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
+            SourceTestError.UnsupportedSourcePreviewError(nodeId)
+          case SourceTestDataGenerationError.NoDataGenerated =>
+            SourceTestError.NoDataGeneratedError
+        }
+      rawTestData <- preliminaryScenarioTestDataSerDe
+        .serialize(result)
+        .left
+        .map(msg => SourceTestError.SerializationError(s"Failed to serialize test data: $msg"))
     } yield rawTestData
   }
 
@@ -101,7 +129,8 @@ class ScenarioTestService(
       )
       scenarioTestData <- testInfoProvider
         .prepareTestData(preliminaryScenarioTestData, canonical)
-        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
+        // TODO: handle error from prepareTestData in better way
+        .fold(error => Future.failed(new IllegalArgumentException(error.message)), Future.successful)
       testResults <- testExecutorService.testProcess(
         processVersion,
         canonical,
@@ -128,6 +157,14 @@ class ScenarioTestService(
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+  }
+
+  private def validateSampleSize(size: Int): Either[TooManySamplesRequestedError, Unit] = {
+    Either.cond(
+      size <= testDataSettings.maxSamplesCount,
+      (),
+      SourceTestError.TooManySamplesRequestedError(testDataSettings.maxSamplesCount)
+    )
   }
 
   private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
@@ -176,6 +213,19 @@ class ScenarioTestService(
       )
     }
     processCounter.computeCounts(canonical, isFragment, counts.get)
+  }
+
+}
+
+object ScenarioTestService {
+  sealed trait SourceTestError
+
+  object SourceTestError {
+    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
+    final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
+    case object NoDataGeneratedError                                              extends SourceTestError
+    final case class SerializationError(message: String)                          extends SourceTestError
+    final case class TooManySamplesRequestedError(maxSamples: Int)                extends SourceTestError
   }
 
 }

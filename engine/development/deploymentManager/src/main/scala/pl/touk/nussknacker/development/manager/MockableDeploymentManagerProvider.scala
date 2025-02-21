@@ -2,30 +2,29 @@ package pl.touk.nussknacker.development.manager
 
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import io.circe.Json
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.scenariotesting.{
-  FlinkProcessTestRunner,
-  ScenarioTestingMiniClusterWrapperFactory
-}
-import pl.touk.nussknacker.engine.management.{FlinkStreamingPropertiesConfig, ScenarioTestingConfig}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Try
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -37,8 +36,10 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] =
+  ): ValidatedNel[String, DeploymentManager] = {
+    import deploymentManagerDependencies._
     valid(new MockableDeploymentManager(Some(modelData)))
+  }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
@@ -56,21 +57,29 @@ object MockableDeploymentManagerProvider {
 
   type ScenarioName = String
 
-  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])
-      extends DeploymentManager
+  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])(
+      implicit executionContext: ExecutionContext,
+      ioRuntime: IORuntime
+  ) extends DeploymentManager
       with ManagerSpecificScenarioActivitiesStoredByManager
       with StubbingCommands {
 
-    private lazy val scenarioTestingMiniClusterWrapperOpt = modelDataOpt.flatMap { modelData =>
-      ScenarioTestingMiniClusterWrapperFactory.createIfConfigured(
-        modelData.asInvokableModelData.modelClassLoader,
-        ScenarioTestingConfig()
+    private lazy val miniClusterWithServicesOpt = modelDataOpt.map { modelData =>
+      FlinkMiniClusterFactory.createMiniClusterWithServices(
+        modelData.modelClassLoader,
+        new Configuration,
+        new Configuration
       )
     }
 
     private lazy val testRunnerOpt =
       modelDataOpt.map { modelData =>
-        new FlinkProcessTestRunner(modelData.asInvokableModelData, scenarioTestingMiniClusterWrapperOpt)
+        new FlinkMiniClusterScenarioTestRunner(
+          modelData,
+          miniClusterWithServicesOpt,
+          parallelism = 1,
+          waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
+        )
       }
 
     override def resolve(
@@ -114,7 +123,7 @@ object MockableDeploymentManagerProvider {
             .get()
             .get(processVersion.processName.value)
             .map(Future.successful)
-            .orElse(testRunnerOpt.map(_.runTestsAsync(scenario, testData)))
+            .orElse(testRunnerOpt.map(_.runTests(scenario, testData)))
             .getOrElse(
               throw new IllegalArgumentException(
                 s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
@@ -138,7 +147,7 @@ object MockableDeploymentManagerProvider {
       Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 
     override def close(): Unit = {
-      scenarioTestingMiniClusterWrapperOpt.foreach(_.close())
+      miniClusterWithServicesOpt.foreach(_.close())
     }
 
   }

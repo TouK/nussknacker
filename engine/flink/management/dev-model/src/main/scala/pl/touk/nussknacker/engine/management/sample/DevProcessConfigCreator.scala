@@ -11,6 +11,7 @@ import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentConfig, ComponentGroupName, ParameterConfig}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
@@ -91,12 +92,13 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           )(TypeInformation.of(classOf[SampleProduct]))
         )
       ),
-      "kafka-transaction"   -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource)),
-      "boundedSource"       -> all(BoundedSource),
-      "oneSource"           -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
-      "communicationSource" -> categories(DynamicParametersSource),
-      "csv-source"          -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
-      "csv-source-lite"     -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
+      "kafka-transaction"       -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource)),
+      "boundedSource"           -> all(BoundedSource),
+      "boundedSourceWithOffset" -> all(BoundedSourceWithOffset),
+      "oneSource"               -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
+      "communicationSource"     -> categories(DynamicParametersSource),
+      "csv-source"              -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
+      "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
       "sql-source"                       -> categories(SqlSource),
       "classInstanceSource"              -> all(new ReturningClassInstanceSource)
@@ -248,11 +250,13 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   }
 
   // we generate static generation-time during ConfigCreator creation to test reload mechanisms
-  override val buildInfo: Map[String, String] = {
-    Map(
-      "process-version" -> "0.1",
-      "engine-version"  -> "0.1",
-      "generation-time" -> LocalDateTime.now().toString
+  override val modelInfo: ModelInfo = {
+    ModelInfo.fromMap(
+      Map(
+        "process-version" -> "0.1",
+        "engine-version"  -> "0.1",
+        "generation-time" -> LocalDateTime.now().toString
+      )
     )
   }
 

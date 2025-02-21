@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -65,6 +66,7 @@ import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
 import java.net.URI
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
@@ -114,18 +116,32 @@ trait NuResourcesTest
     futureFetchingScenarioRepository
   )
 
+  protected val scenarioStateProvider: ScenarioStateProvider = ScenarioStateProvider(
+    dmDispatcher,
+    fetchingProcessRepository,
+    actionRepository,
+    dbioRunner,
+    scenarioStateTimeout = None
+  )
+
+  protected val actionService: ActionService = new ActionService(
+    dmDispatcher,
+    fetchingProcessRepository,
+    actionRepository,
+    dbioRunner,
+    processChangeListener,
+    scenarioStateProvider,
+    deploymentCommentSettings,
+    Clock.systemUTC()
+  )
+
   protected val deploymentService: DeploymentService =
     new DeploymentService(
       dmDispatcher,
-      fetchingProcessRepository,
-      actionRepository,
-      dbioRunner,
       processValidatorByProcessingType,
       scenarioResolverByProcessingType,
-      processChangeListener,
-      None,
-      deploymentCommentSettings,
-      mapProcessingTypeDataProvider()
+      actionService,
+      mapProcessingTypeDataProvider(),
     )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
@@ -179,7 +195,7 @@ trait NuResourcesTest
     )
   }
 
-  protected val processService: DBProcessService = createDBProcessService(deploymentService)
+  protected val processService: DBProcessService = createDBProcessService(scenarioStateProvider)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -191,7 +207,7 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    processStateService = deploymentService,
+    scenarioStateProvider = scenarioStateProvider,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener
@@ -210,7 +226,7 @@ trait NuResourcesTest
     RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(processStateProvider: ProcessStateProvider): DBProcessService =
+  protected def createDBProcessService(processStateProvider: ScenarioStateProvider): DBProcessService =
     new DBProcessService(
       processStateProvider,
       newProcessPreparerByProcessingType,
@@ -266,7 +282,8 @@ trait NuResourcesTest
   protected def saveCanonicalProcess(process: CanonicalProcess)(
       testCode: => Assertion
   ): Assertion =
-    createProcessRequest(process.name) { _ =>
+    createProcessRequest(process.name) { code =>
+      code shouldBe StatusCodes.Created
       val json = parser.decode[Json](responseAs[String]).rightValue
       val resp = CreateProcessResponse(json)
 
@@ -358,11 +375,39 @@ trait NuResourcesTest
   ): RouteTestResult =
     Post(
       s"/processManagement/deploy/$processName",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        DeployRequest(comment, None).asJson.noSpaces
+      )
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def deployProcessCommentDeprecated(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/deploy/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def cancelProcess(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/cancel/$processName",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        CancelRequest(comment).asJson.noSpaces
+      )
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def cancelProcessCommentDeprecated(
       processName: ProcessName,
       comment: Option[String] = None
   ): RouteTestResult =
@@ -521,7 +566,7 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None, None)
+          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None)
         )
       )
     } yield id).futureValue

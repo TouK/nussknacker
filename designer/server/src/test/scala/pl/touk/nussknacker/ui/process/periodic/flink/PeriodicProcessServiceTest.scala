@@ -245,7 +245,7 @@ class PeriodicProcessServiceTest
       FinishedEvent(
         finished.toDetails,
         canonicalProcess,
-        f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+        f.delegateDeploymentManagerStub.getJobStatus(processName).flatMap(_.headOption)
       ),
       ScheduledEvent(scheduled.toDetails, firstSchedule = false)
     )
@@ -295,7 +295,7 @@ class PeriodicProcessServiceTest
     f.events.loneElement shouldBe FinishedEvent(
       event.toDetails,
       canonicalProcess,
-      f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+      f.delegateDeploymentManagerStub.getJobStatus(processName).flatMap(_.headOption)
     )
   }
 
@@ -378,7 +378,7 @@ class PeriodicProcessServiceTest
     f.events.toList shouldBe List(
       FailedOnRunEvent(
         expectedDetails.toDetails,
-        f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+        f.delegateDeploymentManagerStub.getJobStatus(processName).flatMap(_.headOption)
       )
     )
   }
@@ -436,10 +436,14 @@ class PeriodicProcessServiceTest
     tryToSchedule(cronInFuture) shouldBe (())
     tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
 
-    intercept[TestFailedException](tryToSchedule(cronInPast)).getCause shouldBe a[PeriodicProcessException]
+    intercept[TestFailedException](tryToSchedule(cronInPast)) should matchPattern {
+      case ex: TestFailedException if ex.getCause.isInstanceOf[PeriodicProcessException] =>
+    }
     intercept[TestFailedException](
       tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))
-    ).getCause shouldBe a[PeriodicProcessException]
+    ) should matchPattern {
+      case ex: TestFailedException if ex.getCause.isInstanceOf[PeriodicProcessException] =>
+    }
   }
 
   test("pickMostImportantActiveDeployment - should return correct deployment for multiple schedules") {

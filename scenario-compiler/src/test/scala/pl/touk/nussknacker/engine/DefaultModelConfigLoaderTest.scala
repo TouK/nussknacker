@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.impl.ConfigImpl
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution}
@@ -14,7 +13,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   private val inputConfig = ConfigFactory.parseMap(Collections.singletonMap("property1", "value1"))
 
   test("should handle absence of model.conf") {
-    val loader = new DefaultModelConfigLoader(_ => true) {
+    val loader = new DefaultModelConfigLoader {
       override def modelConfigResource: String = "notExist.conf"
     }
 

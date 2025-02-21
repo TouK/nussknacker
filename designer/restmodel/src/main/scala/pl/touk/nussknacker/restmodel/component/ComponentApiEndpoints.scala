@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.restmodel.component
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -8,27 +7,21 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ProcessingMode
 }
-import pl.touk.nussknacker.engine.api.deployment.{
-  ProcessAction,
-  ProcessActionId,
-  ProcessActionState,
-  ScenarioActionName
-}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{NotFound, Ok}
+import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir.Codec.PlainCodec
-import sttp.tapir.EndpointIO.Example
 
 import java.net.URI
 import java.time.Instant
-import java.util.UUID
 
 class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
@@ -107,23 +100,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                     modifiedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
                     modifiedBy = "admin",
                     createdAt = Instant.parse("2023-11-14T11:09:28.078800Z"),
-                    createdBy = "admin",
-                    lastAction = Some(
-                      ProcessAction(
-                        id = ProcessActionId(UUID.fromString("45c0f3f5-3ef7-4dc2-92d4-8bb826ec0ca9")),
-                        processId = ProcessId(1),
-                        processVersionId = VersionId(1),
-                        user = "admin",
-                        createdAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
-                        performedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
-                        actionName = ScenarioActionName.Deploy,
-                        state = ProcessActionState.Finished,
-                        failureMessage = None,
-                        commentId = None,
-                        comment = None,
-                        buildInfo = Map.empty
-                      )
-                    )
+                    createdBy = "admin"
                   )
                 )
               )
@@ -144,7 +121,6 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                     modifiedBy = "admin",
                     createdAt = Instant.parse("2023-11-14T11:09:28.078800Z"),
                     createdBy = "admin",
-                    lastAction = None
                   )
                 )
               )

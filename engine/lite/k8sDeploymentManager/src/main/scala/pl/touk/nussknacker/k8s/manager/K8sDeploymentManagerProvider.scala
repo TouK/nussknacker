@@ -30,7 +30,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     Validated.valid(
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
         new K8sDeploymentManager(
-          modelData.asInvokableModelData,
+          modelData,
           K8sDeploymentManagerConfig.parse(config),
           config,
           dependencies

@@ -4,6 +4,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NamespaceMetricsTags, NkGlobalParameters}
 
@@ -11,7 +12,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
 
   test("global parameters set and read from context are equal") {
     val globalParamsWithAllOptionalValues = NkGlobalParameters(
-      buildInfo = "aBuildInfo",
+      modelInfo = ModelInfo.fromMap(Map("version" -> "1.0")),
       deploymentId = "1",
       processVersion = ProcessVersion(
         VersionId.initialVersionId,
@@ -27,7 +28,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
     )
 
     val globalParamsWithNoOptionalValues = NkGlobalParameters(
-      buildInfo = "aBuildInfo",
+      modelInfo = ModelInfo.fromMap(Map("version" -> "1.0")),
       deploymentId = "1",
       processVersion = ProcessVersion(
         VersionId.initialVersionId,
@@ -45,7 +46,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
     List(globalParamsWithAllOptionalValues, globalParamsWithNoOptionalValues).foreach { params =>
       val decodedParams = NkGlobalParameters.fromMap(params.toMap).get
 
-      decodedParams.buildInfo shouldBe params.buildInfo
+      decodedParams.modelInfo shouldBe params.modelInfo
       decodedParams.deploymentId shouldBe params.deploymentId
       decodedParams.processVersion shouldBe params.processVersion
       decodedParams.configParameters shouldBe params.configParameters

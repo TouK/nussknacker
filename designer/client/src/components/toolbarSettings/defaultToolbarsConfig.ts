@@ -12,7 +12,7 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
         { type: BuiltinButtonTypes.processCompare },
         { type: BuiltinButtonTypes.processMigrate },
         { type: BuiltinButtonTypes.processImport },
-        { type: BuiltinButtonTypes.processJSON },
+        { type: BuiltinButtonTypes.processExport },
         { type: BuiltinButtonTypes.processPDF },
         { type: BuiltinButtonTypes.processArchiveToggle },
     ]);

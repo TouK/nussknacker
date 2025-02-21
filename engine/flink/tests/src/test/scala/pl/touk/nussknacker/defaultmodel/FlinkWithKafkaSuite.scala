@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.transformer.{FlinkBaseComponentProvider, FlinkKafkaComponentProvider}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
@@ -161,9 +162,11 @@ abstract class FlinkWithKafkaSuite
   )
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
-    env.withJobRunning(process.name.value)(action)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
+      val executionResult = env.execute()
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
+    }
   }
 
   protected def sendAvro(

@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
@@ -142,18 +142,16 @@ sealed trait SchedulingSupport
 trait SchedulingSupported extends SchedulingSupport {
 
   def createScheduledExecutionPerformer(
-      modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config,
+      rawSchedulingConfig: Config,
   ): ScheduledExecutionPerformer
 
-  def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory]
+  def customSchedulePropertyExtractorFactory: Option[SchedulePropertyExtractorFactory] = None
 
-  def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory]
+  def customProcessConfigEnricherFactory: Option[ProcessConfigEnricherFactory] = None
 
-  def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory]
+  def customScheduledProcessListenerFactory: Option[ScheduledProcessListenerFactory] = None
 
-  def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider]
+  def customAdditionalDeploymentDataProvider: Option[AdditionalDeploymentDataProvider] = None
 
 }
 

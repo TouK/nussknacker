@@ -177,15 +177,12 @@ object TestProcessUtil {
     id = ProcessActionId(UUID.randomUUID()),
     processId = ProcessId(generateId()),
     processVersionId = VersionId(generateId()),
-    createdAt = Instant.now(),
     performedAt = Instant.now(),
     user = "user",
     actionName = action,
     state = ProcessActionState.Finished,
     failureMessage = None,
-    commentId = None,
     comment = None,
-    buildInfo = Map.empty
   )
 
   private def generateId() = Math.abs(randomGenerator.nextLong())

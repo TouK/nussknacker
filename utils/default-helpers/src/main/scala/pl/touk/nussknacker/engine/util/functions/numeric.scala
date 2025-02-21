@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.util.functions.NumericUtils.{
   ToNumberTypingFunction
 }
 
+import scala.collection.compat.immutable.LazyList
 import scala.util.{Success, Try}
 
 object numeric extends NumericUtils
@@ -63,7 +64,7 @@ trait NumericUtils extends MathUtils with HideToString {
     case s: CharSequence =>
       val ss = s.toString
       // we pick the narrowest type as possible to reduce the amount of memory and computations overheads
-      val tries: List[Try[java.lang.Number]] = List(
+      val tries: LazyList[Try[java.lang.Number]] = LazyList(
         Try(java.lang.Integer.parseInt(ss)),
         Try(java.lang.Long.parseLong(ss)),
         Try(java.lang.Double.parseDouble(ss)),

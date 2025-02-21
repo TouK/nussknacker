@@ -17,11 +17,11 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  SkipAdditionalFields,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(
     protected val processService: ProcessService,
-    processStateService: ProcessStateProvider,
+    scenarioStateProvider: ScenarioStateProvider,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener
@@ -123,13 +123,6 @@ class ProcessesResources(
             }
           }
         }
-      } ~ path("processes" / ProcessNameSegment / "deployments") { processName =>
-        processId(processName) { processId =>
-          complete {
-            // FIXME: We should provide Deployment definition and return there all deployments, not actions..
-            processService.getProcessActions(processId.id)
-          }
-        }
       } ~ path("processes" / ProcessNameSegment) { processName =>
         processId(processName) { processId =>
           (delete & canWrite(processId)) {
@@ -152,6 +145,9 @@ class ProcessesResources(
               }
             }
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+            // FIXME: The `skipValidateAndResolve` flag has a non-trivial side effect.
+            //        Besides skipping validation (that is the intended and obvious result) it causes the `dictKeyWithLabel` expressions to miss the label field.
+            //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
             (skipValidateAndResolve, skipNodeResults) =>
               complete {
                 processService.getLatestProcessWithDetails(
@@ -212,7 +208,9 @@ class ProcessesResources(
           currentlyPresentedVersionIdParameter { currentlyPresentedVersionId =>
             complete {
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-              processStateService.getProcessState(processId, currentlyPresentedVersionId).map(ToResponseMarshallable(_))
+              scenarioStateProvider
+                .getProcessState(processId, currentlyPresentedVersionId)
+                .map(ToResponseMarshallable(_))
             }
           }
         }
