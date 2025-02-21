@@ -82,7 +82,7 @@ class ProcessesResources(
             complete {
               processService.getLatestProcessesWithDetails(
                 query,
-                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
+                GetScenarioWithDetailsOptions.detailsOnly.withFetchState
               )
             }
           }
@@ -121,13 +121,6 @@ class ProcessesResources(
                   .flatMap(processService.importProcess(processId, _))
               }
             }
-          }
-        }
-      } ~ path("processes" / ProcessNameSegment / "deployments") { processName =>
-        processId(processName) { processId =>
-          complete {
-            // FIXME: We should provide Deployment definition and return there all deployments, not actions..
-            processService.getProcessActions(processId.id)
           }
         }
       } ~ path("processes" / ProcessNameSegment) { processName =>

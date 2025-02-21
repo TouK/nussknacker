@@ -64,7 +64,6 @@ object DefaultComponentService {
       modifiedBy = process.modifiedBy,
       createdAt = process.createdAt,
       createdBy = process.createdBy,
-      lastAction = process.lastAction
     )
 
 }

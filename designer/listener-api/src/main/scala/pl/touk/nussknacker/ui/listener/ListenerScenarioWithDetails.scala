@@ -41,8 +41,6 @@ trait ListenerScenarioWithDetails {
 
   def lastStateAction: Option[ProcessAction]
 
-  def lastAction: Option[ProcessAction]
-
   def scenarioGraph: ScenarioGraph
 
   def history: Option[List[ScenarioVersion]]

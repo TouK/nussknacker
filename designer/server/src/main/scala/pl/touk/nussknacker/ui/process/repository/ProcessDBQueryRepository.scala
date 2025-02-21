@@ -114,13 +114,11 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
 
 object ProcessDBQueryRepository {
 
-  def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[ProcessAction]): ScenarioVersion =
+  def toProcessVersion(versionData: ProcessVersionEntityData): ScenarioVersion =
     ScenarioVersion(
       processVersionId = versionData.id,
       createDate = versionData.createDate.toInstant,
-      modelVersion = versionData.modelVersion,
       user = versionData.user,
-      actions = actions
     )
 
   final case class ProcessNotFoundError(name: ProcessName) extends NotFoundError(s"No scenario $name found")

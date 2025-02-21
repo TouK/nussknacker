@@ -7,8 +7,6 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 
-import java.time.Instant
-
 object ScenarioStatistics {
 
   private val flinkDeploymentManagerType = DeploymentManagerType("flinkStreaming")
@@ -113,21 +111,23 @@ object ScenarioStatistics {
       val fragmentsUsedMedian  = calculateMedian(fragmentsUsedCount)
       val fragmentsUsedAverage = calculateAverage(fragmentsUsedCount)
       //          Uptime stats
-      val lastActions = scenariosInputData.flatMap(_.lastDeployedAction)
-      val sortedUptimes = lastActions.map { action =>
-        Instant.now.getEpochSecond - action.performedAt.getEpochSecond
-      }.sorted
-      val uptimeStatsMap = {
-        if (sortedUptimes.isEmpty) {
-          emptyUptimeStats
-        } else {
-          Map(
-            UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
-            UptimeInSecondsMax     -> getMax(sortedUptimes),
-            UptimeInSecondsMin     -> getMin(sortedUptimes)
-          ).map { case (k, v) => (k.toString, v.toString) }
-        }
-      }
+      // FIXME abr
+      val uptimeStatsMap = Map.empty
+//      val lastActions = scenariosInputData.flatMap(_.lastDeployedAction)
+//      val sortedUptimes = lastActions.map { action =>
+//        Instant.now.getEpochSecond - action.performedAt.getEpochSecond
+//      }.sorted
+//      val uptimeStatsMap = {
+//        if (sortedUptimes.isEmpty) {
+//          emptyUptimeStats
+//        } else {
+//          Map(
+//            UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
+//            UptimeInSecondsMax     -> getMax(sortedUptimes),
+//            UptimeInSecondsMin     -> getMin(sortedUptimes)
+//          ).map { case (k, v) => (k.toString, v.toString) }
+//        }
+//      }
 
       Map(
         NodesMedian          -> nodesMedian,

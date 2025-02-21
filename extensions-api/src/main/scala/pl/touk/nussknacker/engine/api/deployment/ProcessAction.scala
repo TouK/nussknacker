@@ -1,35 +1,26 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, Source, VersionId}
 
-import java.time.Instant
 import java.util.UUID
 
 // TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
 //  - this class is currently a compatibility layer for older fragments of code, new code should use ScenarioActivity
-@JsonCodec case class ProcessAction(
+case class ProcessAction(
     id: ProcessActionId,
     processId: ProcessId,
     // We use process action only for finished/execution finished actions so processVersionId is always defined
     processVersionId: VersionId,
     user: String,
-    createdAt: Instant,
-    // We use process action only for finished/execution finished actions so performedAt is always defined
-    performedAt: Instant,
     actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
-    commentId: Option[Long],
-    comment: Option[String],
-    modelInfo: Option[ModelInfo]
 )
 
 final case class ProcessActionId(value: UUID) {

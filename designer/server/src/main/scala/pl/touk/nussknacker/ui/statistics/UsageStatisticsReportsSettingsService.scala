@@ -63,7 +63,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
                 scenarioVersion = scenario.processVersionId,
                 createdBy = scenario.createdBy,
                 fragmentsUsedCount = getFragmentsUsedInScenario(scenario.scenarioGraph),
-                lastDeployedAction = scenario.lastDeployedAction,
+                // FIXME abr
+//                lastDeployedAction = scenario.lastDeployedAction,
                 scenarioId = scenario.processId
               )
             )
@@ -183,7 +184,8 @@ private[statistics] case class ScenarioStatisticsInputData(
     scenarioVersion: VersionId,
     createdBy: String,
     fragmentsUsedCount: Int,
-    lastDeployedAction: Option[ProcessAction],
+    // FIXME abr
+//    lastDeployedAction: Option[ProcessAction],
     scenarioId: Option[ProcessId]
 )
 

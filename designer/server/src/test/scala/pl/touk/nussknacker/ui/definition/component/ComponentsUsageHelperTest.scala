@@ -69,24 +69,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processDetails1 =
     wrapGraphWithScenarioDetailsEntity(process1.name, CanonicalProcessConverter.toScenarioGraph(process1))
 
-  private val processDetails1ButDeployed = processDetails1.copy(lastAction =
-    Option(
-      ProcessAction(
-        id = ProcessActionId(UUID.randomUUID()),
-        processId = processDetails1.processId,
-        processVersionId = VersionId.initialVersionId,
-        user = "user",
-        createdAt = Instant.now(),
-        performedAt = Instant.now(),
-        actionName = ScenarioActionName.Deploy,
-        state = ProcessActionState.Finished,
-        failureMessage = Option.empty,
-        commentId = Option.empty,
-        comment = Option.empty,
-        modelInfo = Option.empty
-      )
-    )
-  )
+  private val processDetails1ButDeployed = processDetails1
 
   private val process2 = ScenarioBuilder
     .streaming("fooProcess2")

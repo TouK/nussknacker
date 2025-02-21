@@ -258,11 +258,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         ),
       isLatestVersion = isLatestVersion,
       labels = labels,
-      history = Some(
-        processVersions.map(v =>
-          ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p.processVersionId == v.id))
-        )
-      ),
+      history = Some(processVersions.map(ProcessDBQueryRepository.toProcessVersion)),
     )
   }
 
@@ -286,7 +282,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       description = process.description,
       processingType = process.processingType,
       processCategory = process.processCategory,
-      lastAction = lastActionData,
       lastStateAction = lastStateActionData,
       lastDeployedAction = lastDeployedActionData,
       scenarioLabels = labels.map(_.value),

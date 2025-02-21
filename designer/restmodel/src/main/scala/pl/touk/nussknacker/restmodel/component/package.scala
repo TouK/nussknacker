@@ -104,8 +104,7 @@ package object component {
       modifiedAt: Instant,
       modifiedBy: String,
       createdAt: Instant,
-      createdBy: String,
-      lastAction: Option[ProcessAction]
+      createdBy: String
   )
 
   implicit val uriSchema: Schema[URI] = Schema.string

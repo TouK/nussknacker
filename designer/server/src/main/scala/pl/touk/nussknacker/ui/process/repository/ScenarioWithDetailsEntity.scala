@@ -37,9 +37,6 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     lastStateAction: Option[
       ProcessAction
     ], // State action is an action that can have an influence on the presented state of the scenario. We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
-    lastAction: Option[
-      ProcessAction
-    ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
     // TODO: Rename into scenarioGraph when we store DisplayableProcess instead of CanonicalProcess in the db
     json: ScenarioShape,
     history: Option[List[ScenarioVersion]],

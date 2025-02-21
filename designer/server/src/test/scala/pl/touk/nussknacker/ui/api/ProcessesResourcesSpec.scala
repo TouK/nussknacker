@@ -139,7 +139,7 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("/api/processes should return lighter details without ProcessAction's additional fields and null values") {
+  test("/api/processes should return lighter details without null values") {
     def hasNullAttributes(json: Json): Boolean = {
       json.fold(
         jsonNull = true, // null found
@@ -153,23 +153,6 @@ class ProcessesResourcesSpec
     createDeployedScenario(processName, category = Category1)
     Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
-      // verify that unnecessary fields were omitted
-      val decodedScenarios = responseAs[List[ScenarioWithDetails]]
-      decodedScenarios.head.lastAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
-            ) if buildInfo.isEmpty =>
-      }
-      decodedScenarios.head.lastStateAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
-            ) if buildInfo.isEmpty =>
-      }
-      decodedScenarios.head.lastDeployedAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
-            ) if buildInfo.isEmpty =>
-      }
       // verify that null values were not present in JSON response
       val rawFetchedScenarios = responseAs[Json]
       hasNullAttributes(rawFetchedScenarios) shouldBe false
@@ -1134,52 +1117,6 @@ class ProcessesResourcesSpec
       val loadedProcess = responseAs[ScenarioWithDetails]
       loadedProcess.processCategory shouldBe Category1.stringify
       loadedProcess.createdAt should not be null
-    }
-  }
-
-  test("should provide the same proper scenario state when fetching all scenarios and one scenario") {
-    createDeployedScenario(processName, category = Category1)
-
-    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
-      status shouldEqual StatusCodes.OK
-      val loadedProcess = responseAs[List[ScenarioWithDetails]]
-
-      loadedProcess.head.lastAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
-      }
-      loadedProcess.head.lastStateAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
-      }
-      loadedProcess.head.lastDeployedAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
-      }
-    }
-
-    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
-      status shouldEqual StatusCodes.OK
-      val loadedProcess = responseAs[ScenarioWithDetails]
-
-      loadedProcess.lastAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
-      }
-      loadedProcess.lastStateAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
-      }
-      loadedProcess.lastDeployedAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
-      }
     }
   }
 

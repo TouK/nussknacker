@@ -29,7 +29,7 @@ class ScenarioStatisticsTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None,
+//      lastDeployedAction = None,
       scenarioId = None
     )
     val statistics = ScenarioStatistics.determineStatisticsForScenario(scenarioData)
@@ -58,7 +58,7 @@ class ScenarioStatisticsTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None,
+//      lastDeployedAction = None,
       scenarioId = None
     )
 
@@ -86,7 +86,7 @@ class ScenarioStatisticsTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None,
+//      lastDeployedAction = None,
       scenarioId = None
     )
 
@@ -115,7 +115,7 @@ class ScenarioStatisticsTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None,
+//      lastDeployedAction = None,
       scenarioId = None
     )
 
@@ -145,7 +145,7 @@ class ScenarioStatisticsTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None,
+//      lastDeployedAction = None,
       scenarioId = None
     )
 

@@ -4,7 +4,6 @@ import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum._
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessId
@@ -60,7 +59,7 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def errorMessage: Rep[Option[String]] = column[Option[String]]("error_message")
 
-    def modelInfo: Rep[Option[ModelInfo]] = column[Option[ModelInfo]]("model_info")
+//    def modelInfo: Rep[Option[ModelInfo]] = column[Option[ModelInfo]]("model_info")
 
     def additionalProperties: Rep[AdditionalProperties] = column[AdditionalProperties]("additional_properties")
 
@@ -83,7 +82,6 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
         performedAt,
         state,
         errorMessage,
-        modelInfo,
         additionalProperties,
       ) <> (
         ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
@@ -196,6 +194,5 @@ final case class ScenarioActivityEntityData(
     finishedAt: Option[Timestamp],
     state: Option[ProcessActionState],
     errorMessage: Option[String],
-    modelInfo: Option[ModelInfo],
     additionalProperties: AdditionalProperties,
 )

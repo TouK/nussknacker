@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
-import pl.touk.nussknacker.ui.process.ProcessService.SkipAdditionalFields
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
@@ -46,33 +44,11 @@ object ScenarioWithDetailsConversions {
       createdAt = details.createdAt,
       createdBy = details.createdBy,
       labels = details.scenarioLabels,
-      lastDeployedAction = details.lastDeployedAction,
-      lastStateAction = details.lastStateAction,
-      lastAction = details.lastAction,
       scenarioGraph = None,
       validationResult = None,
       history = details.history,
       modelVersion = details.modelVersion,
       state = None
-    )
-  }
-
-  def skipAdditionalFields(details: ScenarioWithDetails, skipOptions: SkipAdditionalFields): ScenarioWithDetails = {
-    def skipProcessActionOptionalFields(processAction: Option[ProcessAction]) = processAction.map(
-      _.copy(
-        failureMessage = None,
-        commentId = None,
-        comment = None,
-        modelInfo = None
-      )
-    )
-    def getProcessAction(processAction: Option[ProcessAction]) =
-      if (skipOptions.skipProcessActionOptionalFields) skipProcessActionOptionalFields(processAction) else processAction
-
-    details.copy(
-      lastDeployedAction = getProcessAction(details.lastDeployedAction),
-      lastStateAction = getProcessAction(details.lastStateAction),
-      lastAction = getProcessAction(details.lastAction)
     )
   }
 
@@ -102,9 +78,9 @@ object ScenarioWithDetailsConversions {
         createdAt = scenarioWithDetails.createdAt,
         createdBy = scenarioWithDetails.createdBy,
         scenarioLabels = scenarioWithDetails.labels,
-        lastDeployedAction = scenarioWithDetails.lastDeployedAction,
-        lastStateAction = scenarioWithDetails.lastStateAction,
-        lastAction = scenarioWithDetails.lastAction,
+        // FIXME abr: is it ok?
+        lastDeployedAction = None,
+        lastStateAction = None,
         json = prepareJson,
         history = scenarioWithDetails.history,
         modelVersion = scenarioWithDetails.modelVersion

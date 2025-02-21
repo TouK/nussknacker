@@ -314,7 +314,7 @@ class UsageStatisticsReportsSettingsServiceTest
     scenarioVersion = VersionId(2),
     createdBy = "user",
     fragmentsUsedCount = 1,
-    lastDeployedAction = None,
+//    lastDeployedAction = None,
     scenarioId = None
   )
 
@@ -328,7 +328,7 @@ class UsageStatisticsReportsSettingsServiceTest
     scenarioVersion = VersionId(3),
     createdBy = "user",
     fragmentsUsedCount = 0,
-    lastDeployedAction = None,
+//    lastDeployedAction = None,
     scenarioId = None
   )
 
@@ -342,7 +342,7 @@ class UsageStatisticsReportsSettingsServiceTest
     scenarioVersion = VersionId(1),
     createdBy = "user",
     fragmentsUsedCount = 0,
-    lastDeployedAction = None,
+//    lastDeployedAction = None,
     scenarioId = None
   )
 
@@ -356,7 +356,7 @@ class UsageStatisticsReportsSettingsServiceTest
     scenarioVersion = VersionId(2),
     createdBy = "user",
     fragmentsUsedCount = 2,
-    lastDeployedAction = None,
+//    lastDeployedAction = None,
     scenarioId = None
   )
 

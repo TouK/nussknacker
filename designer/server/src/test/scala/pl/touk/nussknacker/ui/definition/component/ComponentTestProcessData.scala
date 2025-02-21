@@ -56,14 +56,9 @@ private[component] object ComponentTestProcessData {
       processId = ProcessId(123),
       processVersionId = initialVersionId,
       user = "user",
-      createdAt = Instant.now(),
-      performedAt = Instant.now(),
       actionName = actionName,
       state = ProcessActionState.Finished,
       failureMessage = Option.empty,
-      commentId = Option.empty,
-      comment = Option.empty,
-      modelInfo = Option.empty
     )
 
   val MarketingProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
@@ -102,7 +97,7 @@ private[component] object ComponentTestProcessData {
       name = DeployedFraudProcessName,
       processingType = ProcessingTypeFraud,
       category = CategoryFraud
-    ).copy(lastAction = Some(deployedAction))
+    )
 
   val CanceledFraudProcessWith2Enrichers: ScenarioWithDetailsEntity[ScenarioGraph] =
     wrapGraphWithScenarioDetailsEntity(
@@ -118,7 +113,7 @@ private[component] object ComponentTestProcessData {
       name = CanceledFraudProcessName,
       processingType = ProcessingTypeFraud,
       category = CategoryFraud
-    ).copy(lastAction = Some(canceledAction))
+    )
 
   val ArchivedFraudProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = createSimpleDisplayableProcess(SecondSharedSourceConf, SharedSinkConf),
@@ -126,7 +121,7 @@ private[component] object ComponentTestProcessData {
     isArchived = true,
     processingType = ProcessingTypeFraud,
     category = CategoryFraud
-  ).copy(lastAction = Some(archivedAction))
+  )
 
   val FraudFragment: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = {

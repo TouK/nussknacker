@@ -76,16 +76,11 @@ object ProcessService {
 
     val withScenarioGraph: GetScenarioWithDetailsOptions =
       new GetScenarioWithDetailsOptions(FetchScenarioGraph(), fetchState = false)
-
-    val withoutAdditionalFields: GetScenarioWithDetailsOptions =
-      detailsOnly.copy(additionalFieldsOptions = SkipAdditionalFields(skipProcessActionOptionalFields = true))
-
   }
 
   final case class GetScenarioWithDetailsOptions(
       fetchGraphOptions: ScenarioGraphOptions,
       fetchState: Boolean,
-      additionalFieldsOptions: AdditionalFieldsOptions = DoNotSkipAdditionalFields
   ) {
 
     def withValidation: GetScenarioWithDetailsOptions = {
@@ -113,12 +108,6 @@ object ProcessService {
 
     case class ValidateAndResolve(includeValidationNodeResults: Boolean = true) extends ValidationMode
   }
-
-  sealed trait AdditionalFieldsOptions
-
-  case object DoNotSkipAdditionalFields extends AdditionalFieldsOptions
-
-  case class SkipAdditionalFields(skipProcessActionOptionalFields: Boolean) extends AdditionalFieldsOptions
 
 }
 
@@ -272,12 +261,6 @@ class DBProcessService(
       case FetchScenarioGraph(validate) =>
         fetchScenario[CanonicalProcess]
           .map(_.map(validateAndReverseResolve(_, validate)))
-    }).map(_.map { details =>
-      options.additionalFieldsOptions match {
-        case DoNotSkipAdditionalFields => details
-        case skipFieldsOption: SkipAdditionalFields =>
-          ScenarioWithDetailsConversions.skipAdditionalFields(details, skipFieldsOption)
-      }
     }).flatMap { details =>
       if (options.fetchState)
         processStateProvider.enrichDetailsWithProcessState(details)

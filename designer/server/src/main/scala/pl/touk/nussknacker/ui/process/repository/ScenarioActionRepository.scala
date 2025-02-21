@@ -274,6 +274,7 @@ class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
       performedAt: Option[Instant],
       failure: Option[String],
       comment: Option[Comment],
+      // FIXME abr
       modelInfo: Option[ModelInfo]
   )(implicit user: LoggedUser): DB[ScenarioActivityEntityData] = {
     val actionId = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
@@ -314,7 +315,6 @@ class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
       finishedAt = performedAt.map(Timestamp.from),
       state = Some(state),
       errorMessage = failure,
-      modelInfo = modelInfo,
       additionalProperties = AdditionalProperties(Map.empty)
     )
     (scenarioActivityTable += entity).map { insertCount =>
@@ -497,22 +497,16 @@ class DbScenarioActionReadOnlyRepository(
         .map(_.value)
         .map(VersionId.apply)
         .toRight(s"Process version not available for finished action: $activityEntity")
-      performedAt = activityEntity.finishedAt.getOrElse(activityEntity.createdAt).toInstant
       state <- activityEntity.state
         .toRight(s"State not available for finished action: $activityEntity")
     } yield ProcessAction(
       id = ProcessActionId(activityEntity.activityId.value),
       processId = ProcessId(activityEntity.scenarioId.value),
       processVersionId = processVersionId,
-      createdAt = activityEntity.createdAt.toInstant,
-      performedAt = performedAt,
       user = activityEntity.userName.value,
       actionName = actionName,
       state = state,
       failureMessage = activityEntity.errorMessage,
-      commentId = activityEntity.comment.map(_ => activityEntity.id),
-      comment = activityEntity.comment.map(_.value),
-      modelInfo = activityEntity.modelInfo
     )).left.map { error =>
       logger.error(s"Could not interpret ScenarioActivity entity as ProcessAction: [$error]")
       error

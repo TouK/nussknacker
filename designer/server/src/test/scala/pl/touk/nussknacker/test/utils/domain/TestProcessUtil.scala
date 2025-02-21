@@ -121,7 +121,6 @@ object TestProcessUtil {
       createdAt = Instant.now(),
       createdBy = "user1",
       scenarioLabels = scenarioLabels,
-      lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
         case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)
       },
@@ -177,15 +176,10 @@ object TestProcessUtil {
     id = ProcessActionId(UUID.randomUUID()),
     processId = ProcessId(generateId()),
     processVersionId = VersionId(generateId()),
-    createdAt = Instant.now(),
-    performedAt = Instant.now(),
     user = "user",
     actionName = action,
     state = ProcessActionState.Finished,
     failureMessage = None,
-    commentId = None,
-    comment = None,
-    modelInfo = None
   )
 
   private def generateId() = Math.abs(randomGenerator.nextLong())
