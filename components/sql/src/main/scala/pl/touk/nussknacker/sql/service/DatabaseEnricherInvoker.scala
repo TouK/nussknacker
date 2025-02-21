@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -34,7 +35,8 @@ class DatabaseEnricherInvoker(
   override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      componentUseCase: ComponentUseCase
+      componentUseCase: ComponentUseCase,
+      nodeDeploymentData: NodeDeploymentData,
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
       queryDatabase(queryArgumentsExtractor(argsCount, params, context))

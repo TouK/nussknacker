@@ -200,7 +200,8 @@ class FlinkTestScenarioRunner(
             testExtensionsHolder,
             testScenarioCollectorHandler.resultsCollectingListener,
             modelData,
-            componentUseCase
+            componentUseCase,
+            nodesData
           )
 
         // We directly use Compiler even if registrar already do this to return compilation errors
@@ -209,7 +210,7 @@ class FlinkTestScenarioRunner(
           scenario.metaData,
           processVersion,
           testScenarioCollectorHandler.resultCollector,
-          getClass.getClassLoader
+          getClass.getClassLoader,
         )
 
         compileProcessData.compileProcess(scenario).map { _ =>

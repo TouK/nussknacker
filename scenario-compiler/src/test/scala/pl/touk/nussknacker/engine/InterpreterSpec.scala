@@ -6,11 +6,10 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.Tables.Table
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -1244,7 +1243,8 @@ object InterpreterSpec {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseCase: ComponentUseCase,
+          nodeDeploymentData: NodeDeploymentData,
       ): Future[Any] = {
         Future.successful(param)
       }
@@ -1271,7 +1271,8 @@ object InterpreterSpec {
             override def invoke(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                componentUseCase: ComponentUseCase
+                componentUseCase: ComponentUseCase,
+                nodeDeploymentData: NodeDeploymentData,
             ): Future[AnyRef] = {
               Future.successful(lazyOne.evaluate(context))
             }
@@ -1324,7 +1325,8 @@ object InterpreterSpec {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseCase: ComponentUseCase,
+            nodeDeploymentData: NodeDeploymentData,
         ): Future[AnyRef] = {
           Future.successful(lazyDynamicParamValue.evaluate(context))
         }

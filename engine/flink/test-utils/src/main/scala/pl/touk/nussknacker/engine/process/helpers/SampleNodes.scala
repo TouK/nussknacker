@@ -17,6 +17,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, StreamRecord}
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context._
@@ -199,7 +200,8 @@ object SampleNodes {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseCase: ComponentUseCase,
+            nodeDeploymentData: NodeDeploymentData,
         ): Future[Any] = {
           if (!opened) {
             throw new IllegalArgumentException
@@ -225,7 +227,8 @@ object SampleNodes {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseCase: ComponentUseCase,
+          nodeDeploymentData: NodeDeploymentData,
       ): Future[Any] = {
         collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
           Future.successful(())
@@ -437,7 +440,8 @@ object SampleNodes {
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseCase: ComponentUseCase,
+              nodeDeploymentData: NodeDeploymentData,
           ): Future[Any] = {
             val result = (1 to count)
               .map(_ => definition.asScala.map(_ -> toFill.evaluate(context)).toMap)

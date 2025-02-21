@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -21,7 +22,8 @@ private[nodecompilation] class MethodBasedServiceInvoker(
   override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      componentUseCase: ComponentUseCase
+      componentUseCase: ComponentUseCase,
+      nodeDeploymentData: NodeDeploymentData,
   ): Future[AnyRef] = {
     componentDefinition.implementationInvoker
       .invokeMethod(

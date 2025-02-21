@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.testcomponents
 
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
   NodeDependencyValue,
@@ -58,7 +59,8 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseCase: ComponentUseCase,
+        nodeDeploymentData: NodeDeploymentData,
     ): Future[Any] = {
       val templateResult =
         params.extractOrEvaluateLazyParamUnsafe[TemplateEvaluationResult](spelTemplateParameterName, context)

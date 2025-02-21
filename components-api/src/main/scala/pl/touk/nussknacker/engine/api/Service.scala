@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -37,7 +38,8 @@ trait ServiceInvoker {
   def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      componentUseCase: ComponentUseCase
+      componentUseCase: ComponentUseCase,
+      nodeDeploymentData: NodeDeploymentData,
   ): Future[Any]
 
 }

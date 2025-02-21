@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
@@ -26,9 +27,10 @@ class ActionInfoService(actionInfoProvider: ActionInfoProvider, processResolver:
     val parameters = actionInfoProvider
       .getActionParameters(processVersion, canonical)
       .map { case (scenarioActionName, nodeParamsMap) =>
-        scenarioActionName -> nodeParamsMap.map { case (nodeId, params) =>
+        scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
           UiActionNodeParameters(
-            nodeId,
+            NodeId(nodeComponentInfo.nodeId),
+            nodeComponentInfo.componentId.getOrElse(throw new IllegalStateException("ComponentId is not present")),
             params.map { case (name, value) =>
               name.value -> UiActionParameterConfig(
                 value.defaultValue,
@@ -49,7 +51,11 @@ object ActionInfoService {
 
   case class UiActionParameters(actionNameToParameters: Map[ScenarioActionName, List[UiActionNodeParameters]])
 
-  case class UiActionNodeParameters(nodeId: NodeId, parameters: Map[String, UiActionParameterConfig])
+  case class UiActionNodeParameters(
+      nodeId: NodeId,
+      componentId: ComponentId,
+      parameters: Map[String, UiActionParameterConfig]
+  )
 
   case class UiActionParameterConfig(
       defaultValue: Option[String],

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensio
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-class ActionInfoResourcesSpec
+class ActionInfoHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithSimplifiedDesignerConfig
@@ -39,6 +39,7 @@ class ActionInfoResourcesSpec
              |    "DEPLOY":[
              |      {
              |        "nodeId":"sourceWithParametersId",
+             |        "componentId": "boundedSourceWithOffset",
              |        "parameters":{
              |          "offset":{
              |            "defaultValue":null,

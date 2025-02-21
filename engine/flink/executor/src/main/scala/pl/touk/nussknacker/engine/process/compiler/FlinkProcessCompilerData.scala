@@ -5,9 +5,9 @@ import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ComponentUseCase}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreatorDeps

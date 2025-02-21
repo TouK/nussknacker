@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -156,7 +157,8 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseCase: ComponentUseCase,
+              nodeDeploymentData: NodeDeploymentData,
           ): Future[Response] = {
             Future.successful(Response(opened.toString))
           }
@@ -180,7 +182,8 @@ object CollectingEagerService extends EagerService {
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseCase: ComponentUseCase,
+        nodeDeploymentData: NodeDeploymentData,
     ): Future[Any] = {
       collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
         Future.successful(())

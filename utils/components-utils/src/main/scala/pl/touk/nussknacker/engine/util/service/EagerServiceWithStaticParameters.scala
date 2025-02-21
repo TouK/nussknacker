@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,7 +129,8 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseCase: ComponentUseCase,
+        nodeDeploymentData: NodeDeploymentData,
     ): Future[Any] = {
       implicit val contextId: ContextId   = ContextId(context.id)
       implicit val metaImplicit: MetaData = metaData

@@ -43,6 +43,7 @@ services:
       FLINK_REST_URL: "http://flink-jobmanager:8081"
       JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=300M -XX:MaxDirectMemorySize=100M"
       USAGE_REPORTS_SOURCE: "example-installation-docker-compose"
+      JAVA_DEBUG_PORT: '5005'
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,8 +63,11 @@ services:
       retries: 10
     volumes:
       - ./designer/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
+      - /Users/bigos/IdeaProjects/nussknacker/nussknacker-enterprise-components/base/target/scala-2.12/nussknacker-enterprise-components-base_2.12-0.9.1-nu1.19.jar:/opt/nussknacker/components/common/nussknacker-enterprise-components-base_2.12-0.9.1-nu1.19.jar
     volumes_from:
       - flink-jobmanager
+    ports:
+      - 5005:5005
     deploy:
       resources:
         limits:
@@ -216,6 +220,9 @@ services:
     command: jobmanager
     environment:
       JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+      JVM_ARGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports:
+      - 5003:5005
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
@@ -232,6 +239,9 @@ services:
     command: taskmanager
     environment:
       JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+      JVM_ARGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports:
+      - 5004:5005
     depends_on:
       flink-jobmanager:
         condition: service_healthy

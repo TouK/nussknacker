@@ -4,7 +4,10 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 
-final case class NodesDeploymentData(dataByNodeId: Map[NodeId, NodeDeploymentData])
+// todo make private
+final case class NodesDeploymentData(dataByNodeId: Map[NodeId, NodeDeploymentData]) {
+  def get(nodeId: NodeId): Option[NodeDeploymentData] = dataByNodeId.get(nodeId)
+}
 
 object NodesDeploymentData {
 

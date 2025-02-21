@@ -2,7 +2,12 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentType, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentType,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
@@ -35,7 +40,8 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       extractModelDefinition,
       modelConfig,
       componentUseCase,
-      configsFromProviderWithDictionaryEditor
+      configsFromProviderWithDictionaryEditor,
+      NodesDeploymentData.empty
     ) {
 
   override protected def adjustDefinitions(

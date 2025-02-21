@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.common.components
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
@@ -141,7 +142,8 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseCase: ComponentUseCase,
+        nodeDeploymentData: NodeDeploymentData,
     ): Future[Output] = Future {
       filterRows(tabularData, context)
     }

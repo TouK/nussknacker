@@ -10,6 +10,7 @@ import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
@@ -1804,7 +1805,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseCase: ComponentUseCase,
+              nodeDeploymentData: NodeDeploymentData,
           ): Future[Any] = Future.successful(null)
 
         }
@@ -1841,7 +1843,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseCase: ComponentUseCase,
+          nodeDeploymentData: NodeDeploymentData,
       ): Future[Any] = Future.successful(null)
 
     }
@@ -1889,7 +1892,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseCase: ComponentUseCase,
+              nodeDeploymentData: NodeDeploymentData,
           ): Future[Any] =
             Future.successful(
               s"name: ${fields.evaluate(context).get("name")}, age: $age"

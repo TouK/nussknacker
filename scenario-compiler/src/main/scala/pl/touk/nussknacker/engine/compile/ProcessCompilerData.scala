@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -33,7 +33,8 @@ object ProcessCompilerData {
       resultsCollector: ResultCollector,
       componentUseCase: ComponentUseCase,
       customProcessValidator: CustomProcessValidator,
-      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default,
+      nodesData: NodesDeploymentData = NodesDeploymentData.empty,
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components.components
       .filter(_.componentType == ComponentType.Service)
@@ -70,7 +71,7 @@ object ProcessCompilerData {
       customProcessValidator
     )
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
-    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseCase)
+    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseCase, nodesData)
 
     new ProcessCompilerData(
       processCompiler,

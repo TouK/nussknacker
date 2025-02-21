@@ -4,7 +4,11 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -26,7 +30,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
       modelData: ModelData,
-      componentUseCase: ComponentUseCase
+      componentUseCase: ComponentUseCase,
+      nodesData: NodesDeploymentData,
   ): FlinkProcessCompilerDataFactory =
     FlinkProcessCompilerDataFactoryWithTestComponents(
       modelData.configCreator,
@@ -35,7 +40,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       componentUseCase,
       testExtensionsHolder,
       resultsCollectingListener,
-      modelData.additionalConfigsFromProvider
+      modelData.additionalConfigsFromProvider,
+      nodesData
     )
 
   def apply(
@@ -45,14 +51,16 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       componentUseCase: ComponentUseCase,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
-      configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      nodesData: NodesDeploymentData,
   ): FlinkProcessCompilerDataFactory = {
     new FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
       componentUseCase,
-      configsFromProviderWithDictionaryEditor
+      configsFromProviderWithDictionaryEditor,
+      nodesData
     ) {
 
       override protected def adjustDefinitions(
