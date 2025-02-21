@@ -79,7 +79,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `DeploymentManager` has only `getScenarioDeploymentsStatuses` method (previous `getProcessStates` returning `List[StatusDetails]`). 
     * Method `DeploymentManager.resolve` should be removed - this work is done by Designer itself
     * `DeploymentManagerInconsistentStateHandlerMixIn` mixin should be also removed
-    * `stateQueryForAllScenariosSupport` was renamed to `stateQueryForAllScenariosSupport`
+    * `stateQueryForAllScenariosSupport` was renamed to `deploymentsStatusesQueryForAllScenariosSupport`
   * Other changes:
     * `StatusDetails` was renamed to `DeploymentStatusDetails`
     * Fields: `externalDeploymentId`, `externalDeploymentId`, `attributes`, `attributes` were removed from `StatusDetails`
