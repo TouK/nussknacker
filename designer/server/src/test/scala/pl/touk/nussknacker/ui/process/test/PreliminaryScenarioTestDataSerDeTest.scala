@@ -12,12 +12,13 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
   private val maxSamplesCount   = 5
   private val testDataMaxLength = 200
+  private val GB: Int           = 1024 * 1024 * 1024
 
   private val serDe = new PreliminaryScenarioTestDataSerDe(
     TestDataSettings(
       maxSamplesCount = maxSamplesCount,
       testDataMaxLength = testDataMaxLength,
-      resultsMaxBytes = Int.MaxValue
+      resultsMaxBytes = 5 * GB
     )
   )
 
