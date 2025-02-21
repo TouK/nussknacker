@@ -48,6 +48,11 @@ import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationS
 import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
+  FinishedDeploymentsStatusesSynchronizationConfig,
+  FinishedDeploymentsStatusesSynchronizationScheduler,
+  ScenarioDeploymentReconciler
+}
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionInfoService,
@@ -80,7 +85,7 @@ import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityServ
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{
@@ -157,37 +162,111 @@ class AkkaHttpBasedRouteProvider(
         ),
         dbioRunner
       )
-      _ <- Resource.fromAutoCloseable(
-        IO {
-          val scheduler = new DeploymentsStatusesSynchronizationScheduler(
-            system,
-            deploymentsStatusesSynchronizer,
-            DeploymentsStatusesSynchronizationConfig.parse(resolvedDesignerConfig)
-          )
-          scheduler.start()
-          scheduler
-        }
+      _ <- DeploymentsStatusesSynchronizationScheduler.resource(
+        system,
+        deploymentsStatusesSynchronizer,
+        DeploymentsStatusesSynchronizationConfig.parse(resolvedDesignerConfig)
       )
       statisticsPublicKey <- Resource.fromAutoCloseable(
         IO {
           Source.fromURL(getClass.getResource("/encryption.key"))
         }
       )
-    } yield {
-      val migrations = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
-      val modelInfos = processingTypeDataProvider.mapValues(_.designerModelData.modelData.info)
-
-      implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
-      val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
-      val actionRepository                              = DbScenarioActionRepository.create(dbRef)
-      val stickyNotesRepository                         = DbStickyNotesRepository.create(dbRef, designerClock)
-      val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
+      migrations                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
+      modelInfos                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.info)
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
+      actionRepository           = DbScenarioActionRepository.create(dbRef)
+      stickyNotesRepository      = DbStickyNotesRepository.create(dbRef, designerClock)
+      scenarioLabelsRepository   = new ScenarioLabelsRepository(dbRef)
+      processRepository          = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository =
+      futureProcessRepository =
         DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-      val writeProcessRepository =
+      writeProcessRepository =
         ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
+      processChangeListener = ProcessChangeListenerLoader.loadListeners(
+        getClass.getClassLoader,
+        resolvedDesignerConfig,
+        NussknackerServices(new PullProcessRepository(futureProcessRepository))
+      )
+      dmDispatcher =
+        new DeploymentManagerDispatcher(
+          processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
+          futureProcessRepository
+        )
+      deploymentsStatusesProvider =
+        new EngineSideDeploymentStatusesProvider(dmDispatcher, featureTogglesConfig.scenarioStateTimeout)
+      scenarioStatusProvider = new ScenarioStatusProvider(
+        deploymentsStatusesProvider,
+        dmDispatcher,
+        processRepository,
+        actionRepository,
+        dbioRunner,
+      )
+      actionService = new ActionService(
+        processRepository,
+        actionRepository,
+        dbioRunner,
+        processChangeListener,
+        scenarioStatusProvider,
+        featureTogglesConfig.deploymentCommentSettings,
+        modelInfos,
+        designerClock
+      )
+      reconciler = new ScenarioDeploymentReconciler(
+        processingTypeDataProvider.all(NussknackerInternalUser.instance).keys,
+        deploymentsStatusesProvider,
+        actionRepository,
+        dbioRunner
+      )
+      _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
+        system,
+        reconciler,
+        FinishedDeploymentsStatusesSynchronizationConfig.parse(resolvedDesignerConfig)
+      )
+    } yield {
+      implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
+      actionService.invalidateInProgressActions()
+
+      actionServiceSupplier.set(actionService)
+
+      val additionalComponentConfigs = processingTypeDataProvider.mapValues { processingTypeData =>
+        processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
+      }
+
+      // we need to reload processing type data after deployment service creation to make sure that it will be done using
+      // correct classloader and that won't cause further delays during handling requests
+      processingTypeDataProvider.reloadAll().unsafeRunSync()
+
+      val authenticationResources =
+        AuthenticationResources(resolvedDesignerConfig, getClass.getClassLoader, sttpBackend)
+      val authManager = new AuthManager(authenticationResources)
+
+      Initialization.init(
+        migrations,
+        dbRef,
+        designerClock,
+        processRepository,
+        scenarioActivityRepository,
+        scenarioLabelsRepository,
+        environment
+      )
+
+      val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
+        new NewProcessPreparer(
+          processingTypeData.deploymentData.metaDataInitializer,
+          processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
+        )
+      }
+
+      val stateDefinitionService = new ProcessStateDefinitionService(
+        processingTypeDataProvider
+          .mapValues(_.category)
+          .mapCombined(_.statusNameToStateDefinitionsMapping)
+      )
+
+      val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
       val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
@@ -240,78 +319,6 @@ class AkkaHttpBasedRouteProvider(
       val scenarioResolver = scenarioTestServiceDeps.mapValues(_._3)
 
       val notificationsConfig = resolvedDesignerConfig.as[NotificationConfig]("notifications")
-      val processChangeListener = ProcessChangeListenerLoader.loadListeners(
-        getClass.getClassLoader,
-        resolvedDesignerConfig,
-        NussknackerServices(new PullProcessRepository(futureProcessRepository))
-      )
-
-      val dmDispatcher =
-        new DeploymentManagerDispatcher(
-          processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
-          futureProcessRepository
-        )
-
-      val additionalComponentConfigs = processingTypeDataProvider.mapValues { processingTypeData =>
-        processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
-      }
-
-      val deploymentsStatusesProvider =
-        new EngineSideDeploymentStatusesProvider(dmDispatcher, featureTogglesConfig.scenarioStateTimeout)
-      val scenarioStatusProvider = new ScenarioStatusProvider(
-        deploymentsStatusesProvider,
-        dmDispatcher,
-        processRepository,
-        actionRepository,
-        dbioRunner,
-      )
-      val actionService = new ActionService(
-        processRepository,
-        actionRepository,
-        dbioRunner,
-        processChangeListener,
-        scenarioStatusProvider,
-        featureTogglesConfig.deploymentCommentSettings,
-        modelInfos,
-        designerClock
-      )
-      actionService.invalidateInProgressActions()
-
-      actionServiceSupplier.set(actionService)
-
-      // we need to reload processing type data after deployment service creation to make sure that it will be done using
-      // correct classloader and that won't cause further delays during handling requests
-      processingTypeDataProvider.reloadAll().unsafeRunSync()
-
-      val authenticationResources =
-        AuthenticationResources(resolvedDesignerConfig, getClass.getClassLoader, sttpBackend)
-      val authManager = new AuthManager(authenticationResources)
-
-      Initialization.init(
-        migrations,
-        dbRef,
-        designerClock,
-        processRepository,
-        scenarioActivityRepository,
-        scenarioLabelsRepository,
-        environment
-      )
-
-      val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
-        new NewProcessPreparer(
-          processingTypeData.deploymentData.metaDataInitializer,
-          processingTypeData.deploymentData.scenarioPropertiesConfig,
-          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
-        )
-      }
-
-      val stateDefinitionService = new ProcessStateDefinitionService(
-        processingTypeDataProvider
-          .mapValues(_.category)
-          .mapCombined(_.statusNameToStateDefinitionsMapping)
-      )
-
-      val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
       val processService = new DBProcessService(
         scenarioStatusProvider,

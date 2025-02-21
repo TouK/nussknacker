@@ -125,15 +125,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       )
       // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
       // so that the presence of such an action means that the process is currently deployed
-      lastDeployedActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository
-          .getLastActionPerProcess(
-            ProcessActionState.FinishedStates,
-            Some(Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel))
-          )
-      ).map(_.filter { case (_, action) =>
+      lastDeployedActionPerProcess = lastStateActionPerProcess.filter { case (_, action) =>
         action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
-      })
+      }
 
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
       labels          <- scenarioLabelsRepository.getLabels

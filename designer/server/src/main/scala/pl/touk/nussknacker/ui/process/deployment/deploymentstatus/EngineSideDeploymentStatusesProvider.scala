@@ -21,8 +21,8 @@ import scala.util.control.NonFatal
 // 2. when scenario job was finished and was removed by retention mechanism
 // 3. when scenario job have been canceled and was removed by retention mechanism
 // Currently, for local store is used ActionRepository. It is quite problematic for determining the statuses. For example,
-// case 3. is barely possible because cancel action is not correlated with deploy action so for two deploys done by one
-// we won't know which one should be canceled
+// case 3. is barely not possible to done accurately because cancel action is not correlated with deploy action
+// so for two deploys done by one we won't know which one should be canceled
 // TODO: Extract a new service that would should merged perspective for of deployment statuses. To do that,
 //       we need to change (or refactor) the local storage
 class EngineSideDeploymentStatusesProvider(
@@ -105,20 +105,26 @@ class EngineSideDeploymentStatusesProvider(
 }
 
 class BulkQueriedDeploymentStatuses(
-    bulkQueriedStatusesByProcessingType: Map[ProcessingType, WithDataFreshnessStatus[
+    statusesByProcessingType: Map[ProcessingType, WithDataFreshnessStatus[
       Map[ProcessName, List[DeploymentStatusDetails]]
     ]]
 ) {
+
+  def getAllDeploymentStatuses: Iterable[DeploymentStatusDetails] = for {
+    processingTypeStatusesWithFreshness <- statusesByProcessingType.values
+    (_, deploymentStatuses)             <- processingTypeStatusesWithFreshness.value
+    deploymentStatus                    <- deploymentStatuses
+  } yield deploymentStatus
 
   def getDeploymentStatuses(
       scenarioIdData: ScenarioIdData
   ): Option[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] =
     for {
-      prefetchedStatusesForProcessingType <- bulkQueriedStatusesByProcessingType.get(scenarioIdData.processingType)
+      statusesByScenarioName <- statusesByProcessingType.get(scenarioIdData.processingType)
       // Deployment statuses are prefetched for all scenarios for the given processing type.
       // If there is no information available for a specific scenario name,
       // then it means that DM is not aware of this scenario, and we should default to List.empty[StatusDetails] instead of None
-      prefetchedStatusesForScenario = prefetchedStatusesForProcessingType.getOrElse(scenarioIdData.name, List.empty)
-    } yield prefetchedStatusesForScenario
+      scenarioDeploymentStatuses = statusesByScenarioName.getOrElse(scenarioIdData.name, List.empty)
+    } yield scenarioDeploymentStatuses
 
 }

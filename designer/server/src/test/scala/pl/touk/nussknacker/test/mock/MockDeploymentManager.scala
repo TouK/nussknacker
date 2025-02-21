@@ -34,6 +34,7 @@ import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
@@ -121,10 +122,18 @@ class MockDeploymentManager private (
 
   override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
 
-  // We override this field, because currently, this mock returns fallback for not defined scenarios states.
-  // To make deploymentsStatusesQueryForAllScenariosSupport consistent with this approach, we should remove this fallback.
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport
+    new DeploymentsStatusesQueryForAllScenariosSupported {
+
+      override def getAllScenariosDeploymentsStatuses()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
+        Future {
+          WithDataFreshnessStatus.fresh(managerProcessStates.asScala.toMap)
+        }
+      }
+
+    }
 
   override def close(): Unit = {
     super.close()

@@ -66,7 +66,8 @@ class PeriodicDeploymentManagerTest
   )
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
-    val repository = new InMemPeriodicProcessesRepository(processingType = TestDeploymentServiceFactory.processingType)
+    val repository =
+      new InMemPeriodicProcessesRepository(processingType = TestDeploymentServiceFactory.processingType.stringify)
     val delegateDeploymentManagerStub          = new DeploymentManagerStub
     val scheduledExecutionPerformerStub        = new ScheduledExecutionPerformerStub
     val preparedDeploymentData: DeploymentData = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
@@ -96,7 +97,7 @@ class PeriodicDeploymentManagerTest
         processName = processName,
         category = "Category1",
         canonicalProcess = scenario,
-        processingType = TestDeploymentServiceFactory.processingType,
+        processingType = TestDeploymentServiceFactory.processingType.stringify,
         isFragment = false,
         forwardedUserName = None
       )

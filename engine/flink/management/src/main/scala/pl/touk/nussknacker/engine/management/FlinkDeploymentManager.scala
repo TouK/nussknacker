@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
@@ -59,46 +59,6 @@ class FlinkDeploymentManager(
   )
 
   private val statusDeterminer = new FlinkStatusDetailsDeterminer(modelData.namingStrategy, client.getJobConfig)
-
-  // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
-  // - job is finished without troubles
-  // - job has failed
-  // So we synchronize the information that the job was finished by marking deployments actions as execution finished
-  // and treat another case as ProblemStateStatus.shouldBeRunning (see InconsistentStateDetector)
-  // TODO: We should synchronize the status of deployment more explicitly as we already do in periodic case
-  //       See PeriodicProcessService.synchronizeDeploymentsStates and remove the InconsistentStateDetector
-  // FIXME abr move to reconciliation
-  private def postprocess(
-      idWithName: ProcessIdWithName,
-      statusDetailsList: List[DeploymentStatusDetails]
-  ): Future[Option[ProcessAction]] = {
-    val allDeploymentIdsAsCorrectActionIds =
-      statusDetailsList.flatMap(details =>
-        details.deploymentId.flatMap(_.toActionIdOpt).map(id => (id, details.status))
-      )
-    markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(
-      idWithName,
-      allDeploymentIdsAsCorrectActionIds
-    )
-  }
-
-  private def markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(
-      idWithName: ProcessIdWithName,
-      deploymentActionStatuses: List[(ProcessActionId, StateStatus)]
-  ): Future[Option[ProcessAction]] = {
-    val finishedDeploymentActionsIds = deploymentActionStatuses.collect { case (id, SimpleStateStatus.Finished) =>
-      id
-    }
-    Future.sequence(finishedDeploymentActionsIds.map(actionService.markActionExecutionFinished)).flatMap {
-      markingResult =>
-        Option(markingResult)
-          .filter(_.contains(true))
-          .map { _ =>
-            actionService.getLastStateAction(idWithName.id)
-          }
-          .getOrElse(Future.successful(None))
-    }
-  }
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {

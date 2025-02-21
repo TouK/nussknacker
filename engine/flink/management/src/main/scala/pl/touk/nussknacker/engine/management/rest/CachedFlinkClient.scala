@@ -104,6 +104,6 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
 
 object CachedFlinkClient {
 
-  val DeploymentIdUserConfigKey = "jobId"
+  val DeploymentIdUserConfigKey = "deploymentId"
 
 }

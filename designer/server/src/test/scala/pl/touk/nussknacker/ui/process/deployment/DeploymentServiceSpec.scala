@@ -70,7 +70,7 @@ class DeploymentServiceSpec
     scenarioActivityManager = deploymentServiceFactory.deploymentManagerDependencies.scenarioActivityManager,
   )
 
-  val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService) =
+  val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
     deploymentServiceFactory.create(deploymentManager)
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
@@ -233,8 +233,7 @@ class DeploymentServiceSpec
     }
   }
 
-  // FIXME abr
-  ignore("Should mark finished process as finished") {
+  test("Should mark finished process as finished") {
     val processName: ProcessName    = generateProcessName
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 
@@ -249,20 +248,7 @@ class DeploymentServiceSpec
       .lastStateAction should not be None
 
     deploymentManager.withProcessFinished(processName, DeploymentId.fromActionId(deployActionId)) {
-      // we simulate what happens when retrieveStatus is called multiple times to check only one comment is added
-      (1 to 5).foreach { _ =>
-        checkIsFollowingDeploy(
-          scenarioStatusProvider.getScenarioStatus(processId).futureValue,
-          expected = false
-        )
-      }
-      val finishedStatus = scenarioStatusProvider.getScenarioStatus(processId).futureValue
-      finishedStatus shouldBe SimpleStateStatus.Finished
-      getAllowedActions(finishedStatus) shouldBe Set(
-        ScenarioActionName.Deploy,
-        ScenarioActionName.Archive,
-        ScenarioActionName.Rename
-      )
+      reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses().futureValue
     }
 
     val processDetails =
@@ -687,36 +673,38 @@ class DeploymentServiceSpec
   }
 
   test("Should getScenariosStatuses bulk with the same result as for single scenario") {
-    prepareProcessesInProgress
+    val (_, _, runningScenarioId) = prepareScenariosInVariousStates
 
     val processesDetails = fetchingProcessRepository
       .fetchLatestProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
-    val statesBasedOnCachedInProgressActionTypes = scenarioStatusProvider
-      .getScenariosStatuses(processesDetails)
-      .futureValue
-      .map(_.map(_.name))
-
-    statesBasedOnCachedInProgressActionTypes shouldBe List(
-      Some("DURING_DEPLOY"),
-      Some("DURING_CANCEL"),
-      Some("RUNNING"),
-      None
-    )
-
-    val statesBasedOnNotCachedInProgressActionTypes =
-      processesDetails
-        .map(pd =>
-          Option(pd)
-            .filterNot(_.isFragment)
-            .map(scenarioStatusProvider.getAllowedActionsForScenarioStatus(_).map(_.scenarioStatus.name))
-            .sequence
-        )
-        .sequence
+    deploymentManager.withProcessRunning(runningScenarioId.name) {
+      val statesBasedOnCachedInProgressActionTypes = scenarioStatusProvider
+        .getScenariosStatuses(processesDetails)
         .futureValue
+        .map(_.map(_.name))
 
-    statesBasedOnCachedInProgressActionTypes shouldEqual statesBasedOnNotCachedInProgressActionTypes
+      statesBasedOnCachedInProgressActionTypes shouldBe List(
+        Some("DURING_DEPLOY"),
+        Some("DURING_CANCEL"),
+        Some("RUNNING"),
+        None
+      )
+
+      val statesBasedOnNotCachedInProgressActionTypes =
+        processesDetails
+          .map(pd =>
+            Option(pd)
+              .filterNot(_.isFragment)
+              .map(scenarioStatusProvider.getAllowedActionsForScenarioStatus(_).map(_.scenarioStatus.name))
+              .sequence
+          )
+          .sequence
+          .futureValue
+
+      statesBasedOnCachedInProgressActionTypes shouldEqual statesBasedOnNotCachedInProgressActionTypes
+    }
   }
 
   test(
@@ -871,11 +859,11 @@ class DeploymentServiceSpec
       )
   }
 
-  private def prepareProcessesInProgress = {
+  private def prepareScenariosInVariousStates = {
     val duringDeployProcessName :: duringCancelProcessName :: otherProcess :: fragmentName :: Nil =
       (1 to 4).map(_ => generateProcessName).toList
 
-    val processIdsInProgress = for {
+    (for {
       (duringDeployProcessId, _) <- preparedUnArchivedProcess(duringDeployProcessName, None)
       (duringCancelProcessId, _) <- prepareDeployedProcess(duringCancelProcessName)
       _ <- actionRepository
@@ -892,12 +880,9 @@ class DeploymentServiceSpec
           Some(VersionId.initialVersionId),
           None
         )
-      _ <- prepareDeployedProcess(otherProcess)
-      _ <- prepareFragment(fragmentName)
-    } yield (duringDeployProcessId, duringCancelProcessId)
-
-    val (duringDeployProcessId, duringCancelProcessId) = processIdsInProgress.dbioActionValues
-    (duringDeployProcessId, duringCancelProcessId)
+      runningScenario <- prepareDeployedProcess(otherProcess)
+      _               <- prepareFragment(fragmentName)
+    } yield (duringDeployProcessId, duringCancelProcessId, runningScenario._1)).dbioActionValues
   }
 
   private def prepareProcessWithAction(

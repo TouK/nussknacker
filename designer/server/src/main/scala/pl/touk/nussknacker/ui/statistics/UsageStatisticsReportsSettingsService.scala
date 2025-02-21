@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
