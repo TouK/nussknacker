@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import akka.http.javadsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.javadsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec

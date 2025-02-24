@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.factory
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
-import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
+import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteProvider}
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
@@ -80,7 +80,7 @@ class NussknackerAppFactory(
         alreadyLoadedConfig.rawConfig.resolved
       )
       server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(
+        new PekkoHttpBasedRouteProvider(
           db,
           metricsRegistry,
           IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime),

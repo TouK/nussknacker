@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.Route
 import cats.effect.{IO, Resource}
 import pl.touk.nussknacker.ui.config.DesignerConfig
 

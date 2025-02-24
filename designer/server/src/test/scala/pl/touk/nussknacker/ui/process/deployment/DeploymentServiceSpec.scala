@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import db.util.DBIOActionInstances.DB

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.StatusCodes.NotFound
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
-import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
-import akka.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.marshalling.ToResponseMarshallable
+import org.apache.pekko.http.scaladsl.model.StatusCodes.NotFound
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
+import org.apache.pekko.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps

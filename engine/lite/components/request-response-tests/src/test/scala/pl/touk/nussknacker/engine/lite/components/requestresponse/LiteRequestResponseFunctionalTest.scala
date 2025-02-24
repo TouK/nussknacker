@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse
 
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json

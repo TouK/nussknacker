@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenge}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server
-import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenge}
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server
+import org.apache.pekko.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import io.circe.parser._
 import org.scalatest.funsuite.AnyFunSuite

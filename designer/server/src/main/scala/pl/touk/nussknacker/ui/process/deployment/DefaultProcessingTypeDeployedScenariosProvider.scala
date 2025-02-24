@@ -74,7 +74,7 @@ class DefaultProcessingTypeDeployedScenariosProvider(
 
 object DefaultProcessingTypeDeployedScenariosProvider {
 
-  // This factory method prepare objects that are also prepared by AkkaHttpBasedRouteProvider
+  // This factory method prepare objects that are also prepared by PekkoHttpBasedRouteProvider
   // but without dependency to ModelData - it necessary to avoid a cyclic dependency:
   // DeploymentService -> EmbeddedDeploymentManager -> ... -> DeploymentService.getDeployedScenarios
   def apply(dbRef: DbRef, processingType: ProcessingType)(

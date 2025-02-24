@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import cats.data.Validated
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{FeatureTogglesConfig, UsageStatisticsReportsConfig}

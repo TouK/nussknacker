@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}

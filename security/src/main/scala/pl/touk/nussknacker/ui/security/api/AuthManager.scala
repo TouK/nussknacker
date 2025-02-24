@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.{
   AuthorizationFailedRejection,
   Directive0,
   Directive1,
@@ -9,7 +9,13 @@ import akka.http.scaladsl.server.{
   RejectionHandler,
   Route
 }
-import akka.http.scaladsl.server.Directives.{complete, handleRejections, optionalHeaderValueByName, provide, reject}
+import org.apache.pekko.http.scaladsl.server.Directives.{
+  complete,
+  handleRejections,
+  optionalHeaderValueByName,
+  provide,
+  reject
+}
 import pl.touk.nussknacker.security.AuthCredentials.{
   ImpersonatedAuthCredentials,
   NoCredentialsProvided,
@@ -24,7 +30,7 @@ import sttp.tapir._
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuthManager(protected val authenticationResources: AuthenticationResources)(implicit ec: ExecutionContext)
-    extends AkkaBasedAuthManager {
+    extends PekkoBasedAuthManager {
 
   protected lazy val isAdminImpersonationPossible: Boolean =
     authenticationResources.configuration.isAdminImpersonationPossible
@@ -128,9 +134,9 @@ object AuthManager {
 
 }
 
-// Akka based auth logic is separated from the rest of AuthManager since it will be easier to remove it once we fully
-// migrate to Tapir. Also it helps with readability within AuthManager as Akka and Tapir logic look different.
-private[api] trait AkkaBasedAuthManager {
+// Pekko based auth logic is separated from the rest of AuthManager since it will be easier to remove it once we fully
+// migrate to Tapir. Also it helps with readability within AuthManager as Pekko and Tapir logic look different.
+private[api] trait PekkoBasedAuthManager {
   self: AuthManager =>
 
   def authenticate(): Directive1[AuthenticatedUser] = authenticationResources.getAnonymousRole match {

@@ -232,11 +232,11 @@ lazy val commonSettings =
         "io.circe"          %% "circe-core"       % circeV,
         "io.circe"          %% "circe-parser"     % circeV,
 
-        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
-        "com.typesafe.akka"      %% "akka-http"          % akkaHttpV,
-        "com.typesafe.akka"      %% "akka-http-testkit"  % akkaHttpV,
-        "com.typesafe.akka"      %% "akka-stream"        % akkaV,
-        "com.typesafe.akka"      %% "akka-testkit"       % akkaV,
+        // Force pekko-http and pekko-stream versions to avoid bumping by pekko-http-circe.
+        "org.apache.pekko"       %% "pekko-http"         % pekkoHttpV,
+        "org.apache.pekko"       %% "pekko-http-testkit" % pekkoHttpV,
+        "org.apache.pekko"       %% "pekko-stream"       % pekkoV,
+        "org.apache.pekko"       %% "pekko-testkit"      % pekkoV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
 
         // security features
@@ -319,10 +319,10 @@ val testContainersJavaV     = "1.20.1"
 val nettyV                  = "4.1.115.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
-val akkaV                     = "2.6.20"
-val akkaHttpV                 = "10.2.10"
-val akkaManagementV           = "1.1.4"
-val akkaHttpCirceV            = "1.39.2"
+val pekkoV                    = "1.0.3"
+val pekkoHttpV                = "1.0.1"
+val pekkoManagementV          = "1.0.0"
+val pekkoHttpCirceV           = "2.8.0"
 val slickV                    = "3.4.1"  // 3.5 drops Scala 2.12
 val slickPgV                  = "0.21.1" // 0.22.2 uses Slick 3.5
 val hikariCpV                 = "6.2.1"
@@ -564,10 +564,10 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
     name := "nussknacker-request-response-runtime",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka" %% "akka-http"         % akkaHttpV,
-        "com.typesafe.akka" %% "akka-stream"       % akkaV,
-        "com.typesafe.akka" %% "akka-testkit"      % akkaV     % Test,
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % Test
+        "org.apache.pekko" %% "pekko-http"         % pekkoHttpV,
+        "org.apache.pekko" %% "pekko-stream"       % pekkoV,
+        "org.apache.pekko" %% "pekko-testkit"      % pekkoV     % Test,
+        "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpV % Test
       )
     }
   )
@@ -1336,7 +1336,7 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
         "io.dropwizard.metrics5"         % "metrics-jmx"      % dropWizardV,
         "com.softwaremill.sttp.client3" %% "core"             % sttpV,
         "ch.qos.logback"                 % "logback-classic"  % logbackV,
-        "com.typesafe.akka"             %% "akka-http"        % akkaHttpV
+        "org.apache.pekko"              %% "pekko-http"       % pekkoHttpV
       )
     },
   )
@@ -1429,13 +1429,11 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
     ),
     javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     libraryDependencies ++= Seq(
-      "commons-io"                     % "commons-io"           % flinkCommonsIOV,
-      "com.lightbend.akka.management" %% "akka-management"      % akkaManagementV,
-      // spray-json module is used by akka-management - must be explicit, same version as rest of akka-http because otherwise ManifestInfo.checkSameVersion reports error
-      "com.typesafe.akka"             %% "akka-http-spray-json" % akkaHttpV,
-      "com.typesafe.akka"             %% "akka-slf4j"           % akkaV,
-      "com.typesafe.akka"             %% "akka-testkit"         % akkaV     % Test,
-      "com.typesafe.akka"             %% "akka-http-testkit"    % akkaHttpV % Test,
+      "commons-io"        % "commons-io"         % flinkCommonsIOV,
+      "org.apache.pekko" %% "pekko-management"   % pekkoManagementV,
+      "org.apache.pekko" %% "pekko-slf4j"        % pekkoV,
+      "org.apache.pekko" %% "pekko-testkit"      % pekkoV     % Test,
+      "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpV % Test,
     ),
   )
   .dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
@@ -1495,11 +1493,10 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     name                            := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        // From version 4.0.0 onwards, skuber uses pekko instead of akka, so we need to migrate to pekko first
-        "io.github.hagay3"              %% "skuber"                           % "3.2" exclude ("commons-logging", "commons-logging"),
+        "io.github.hagay3"              %% "skuber"                           % "4.0.4" exclude ("commons-logging", "commons-logging"),
         "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
         "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
-        "com.typesafe.akka"             %% "akka-slf4j"                       % akkaV     % Test,
+        "org.apache.pekko"              %% "pekko-slf4j"                      % pekkoV    % Test,
         "org.wiremock"                   % "wiremock"                         % wireMockV % Test,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV     % Test,
       )
@@ -1607,11 +1604,11 @@ lazy val security = (project in file("security"))
   .settings(
     name := "nussknacker-security",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"           %% "akka-http"                      % akkaHttpV,
-      "com.typesafe.akka"           %% "akka-stream"                    % akkaV,
-      "com.typesafe.akka"           %% "akka-http-testkit"              % akkaHttpV            % Test,
-      "com.typesafe.akka"           %% "akka-testkit"                   % akkaV                % Test,
-      "de.heikoseeberger"           %% "akka-http-circe"                % akkaHttpCirceV,
+      "org.apache.pekko"            %% "pekko-http"                     % pekkoHttpV,
+      "org.apache.pekko"            %% "pekko-stream"                   % pekkoV,
+      "org.apache.pekko"            %% "pekko-http-testkit"             % pekkoHttpV           % Test,
+      "org.apache.pekko"            %% "pekko-testkit"                  % pekkoV               % Test,
+      "com.github.pjfanning"        %% "pekko-http-circe"               % pekkoHttpCirceV,
       "com.typesafe"                 % "config"                         % configV,
       "at.favre.lib"                 % "bcrypt"                         % bcryptV,
       // Packages below are only for plugin providers purpose
@@ -1908,11 +1905,12 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     name := "nussknacker-deployment-manager-api",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-actor"   % akkaV,
-        "org.typelevel"                 %% "cats-effect"  % catsEffectV,
-        "com.softwaremill.sttp.client3" %% "core"         % sttpV,
-        "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
-        "org.scalatestplus"             %% "mockito-5-10" % scalaTestPlusV % Test
+        "org.apache.pekko"              %% "pekko-actor"        % pekkoV,
+        "org.scala-lang.modules"        %% "scala-java8-compat" % scalaCompatV,
+        "org.typelevel"                 %% "cats-effect"        % catsEffectV,
+        "com.softwaremill.sttp.client3" %% "core"               % sttpV,
+        "com.github.ben-manes.caffeine"  % "caffeine"           % caffeineCacheV,
+        "org.scalatestplus"             %% "mockito-5-10"       % scalaTestPlusV % Test
       )
     }
   )
@@ -1991,12 +1989,12 @@ lazy val designer = (project in file("designer/server"))
     assembly / assemblyMergeStrategy := designerMergeStrategy,
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-http"                      % akkaHttpV,
-        "com.typesafe.akka"             %% "akka-slf4j"                     % akkaV,
-        "com.typesafe.akka"             %% "akka-stream"                    % akkaV,
-        "com.typesafe.akka"             %% "akka-http-testkit"              % akkaHttpV % Test,
-        "com.typesafe.akka"             %% "akka-testkit"                   % akkaV     % Test,
-        "de.heikoseeberger"             %% "akka-http-circe"                % akkaHttpCirceV,
+        "org.apache.pekko"              %% "pekko-http"                     % pekkoHttpV,
+        "org.apache.pekko"              %% "pekko-slf4j"                    % pekkoV,
+        "org.apache.pekko"              %% "pekko-stream"                   % pekkoV,
+        "org.apache.pekko"              %% "pekko-http-testkit"             % pekkoHttpV % Test,
+        "org.apache.pekko"              %% "pekko-testkit"                  % pekkoV     % Test,
+        "com.github.pjfanning"          %% "pekko-http-circe"               % pekkoHttpCirceV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % sttpV,
         "com.cronutils"                  % "cron-utils"                     % cronParserV,
         "ch.qos.logback"                 % "logback-core"                   % logbackV,
@@ -2006,42 +2004,42 @@ lazy val designer = (project in file("designer/server"))
         "org.typelevel"                 %% "case-insensitive"               % "1.4.0",
 
         // It's needed by flinkDeploymentManager which has disabled includingScala
-        "org.scala-lang"                 % "scala-compiler"                  % scalaVersion.value,
-        "org.scala-lang"                 % "scala-reflect"                   % scalaVersion.value,
-        "com.typesafe.slick"            %% "slick"                           % slickV,
-        "com.typesafe.slick"            %% "slick-hikaricp"                  % slickV,
-        "com.zaxxer"                     % "HikariCP"                        % hikariCpV,
-        "org.hsqldb"                     % "hsqldb"                          % hsqldbV,
-        "org.postgresql"                 % "postgresql"                      % postgresV,
-        "org.flywaydb"                   % "flyway-core"                     % flywayV,
-        "org.apache.xmlgraphics"         % "fop"                             % "2.9" exclude ("commons-logging", "commons-logging"),
-        "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
-        "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
-        "com.softwaremill.retry"        %% "retry"                           % retryV,
-        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
-        "com.github.tminglei"           %% "slick-pg"                        % slickPgV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-akka-http-server"          % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-core"                      % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-derevo"                    % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-enumeratum"                % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-swagger-ui-bundle"         % tapirV,
-        "io.circe"                      %% "circe-generic-extras"            % circeGenericExtrasV,
-        "org.reflections"                % "reflections"                     % "0.10.2"             % Test,
-        "com.github.pathikrit"          %% "better-files"                    % betterFilesV,
-        "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
-        "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
-        "org.scalatestplus"             %% "mockito-5-10"                    % scalaTestPlusV       % Test,
-        "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
-        "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
-        "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
-        "org.scalacheck"                %% "scalacheck"                      % scalaCheckV          % Test,
-        "com.github.erosb"               % "everit-json-schema"              % everitSchemaV exclude ("commons-logging", "commons-logging"),
-        "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
-        "org.wiremock"                   % "wiremock"                        % wireMockV            % Test,
-        "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
-        "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
-        "org.questdb"                    % "questdb"                         % "7.4.2",
+        "org.scala-lang"                 % "scala-compiler"                   % scalaVersion.value,
+        "org.scala-lang"                 % "scala-reflect"                    % scalaVersion.value,
+        "com.typesafe.slick"            %% "slick"                            % slickV,
+        "com.typesafe.slick"            %% "slick-hikaricp"                   % slickV,
+        "com.zaxxer"                     % "HikariCP"                         % hikariCpV,
+        "org.hsqldb"                     % "hsqldb"                           % hsqldbV,
+        "org.postgresql"                 % "postgresql"                       % postgresV,
+        "org.flywaydb"                   % "flyway-core"                      % flywayV,
+        "org.apache.xmlgraphics"         % "fop"                              % "2.9" exclude ("commons-logging", "commons-logging"),
+        "com.beachape"                  %% "enumeratum-circe"                 % enumeratumV,
+        "tf.tofu"                       %% "derevo-circe"                     % "0.13.0",
+        "com.softwaremill.retry"        %% "retry"                            % retryV,
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"               % openapiCirceYamlV,
+        "com.github.tminglei"           %% "slick-pg"                         % slickPgV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-pekko-http-server"          % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-core"                       % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-derevo"                     % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-enumeratum"                 % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                 % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-swagger-ui-bundle"          % tapirV,
+        "io.circe"                      %% "circe-generic-extras"             % circeGenericExtrasV,
+        "org.reflections"                % "reflections"                      % "0.10.2"             % Test,
+        "com.github.pathikrit"          %% "better-files"                     % betterFilesV,
+        "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % Test,
+        "com.dimafeng"                  %% "testcontainers-scala-postgresql"  % testContainersScalaV % Test,
+        "org.scalatestplus"             %% "mockito-5-10"                     % scalaTestPlusV       % Test,
+        "io.dropwizard.metrics5"         % "metrics-core"                     % dropWizardV,
+        "io.dropwizard.metrics5"         % "metrics-jmx"                      % dropWizardV,
+        "fr.davit"                      %% "pekko-http-metrics-dropwizard-v5" % "1.0.1",
+        "org.scalacheck"                %% "scalacheck"                       % scalaCheckV          % Test,
+        "com.github.erosb"               % "everit-json-schema"               % everitSchemaV exclude ("commons-logging", "commons-logging"),
+        "org.apache.flink"               % "flink-metrics-dropwizard"         % flinkV               % Test,
+        "org.wiremock"                   % "wiremock"                         % wireMockV            % Test,
+        "io.circe"                      %% "circe-yaml"                       % circeYamlV           % Test,
+        "com.github.scopt"              %% "scopt"                            % "4.1.0"              % Test,
+        "org.questdb"                    % "questdb"                          % "7.4.2",
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(

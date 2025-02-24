@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory

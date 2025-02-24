@@ -9,11 +9,11 @@ import java.nio.file.Path
 
 trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { self: TestSuite with LazyLogging =>
 
-  protected val akkaManagementEnvs: Array[String] = Array(
+  protected val pekkoManagementEnvs: Array[String] = Array(
     // random management port to avoid clashing of ports
-    "CONFIG_FORCE_akka_management_http_port=0",
+    "CONFIG_FORCE_pekko_management_http_port=0",
     // It looks like github-actions doesn't look binding to 0.0.0.0, was problems like: Bind failed for TCP channel on endpoint [/10.1.0.183:0]
-    "CONFIG_FORCE_akka_management_http_hostname=127.0.0.1"
+    "CONFIG_FORCE_pekko_management_http_hostname=127.0.0.1"
   )
 
   protected def withProcessExecutedInBackground(

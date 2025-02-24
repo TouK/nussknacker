@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef

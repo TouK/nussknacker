@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.notifications
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.exceptions.TestFailedException

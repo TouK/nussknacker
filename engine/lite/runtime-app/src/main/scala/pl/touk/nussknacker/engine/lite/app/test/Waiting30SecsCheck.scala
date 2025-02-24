@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.app.test
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 
 import java.time.{Duration, Instant}
@@ -10,7 +10,7 @@ import scala.concurrent.Future
 /*
 This class is for purpose of testing k8s deployment status. If you wan to turn it on, you must add:
 ```
-akka.management.health-checks.readiness-checks {
+pekko.management.health-checks.readiness-checks {
   wait-30secs = "pl.touk.nussknacker.engine.lite.app.test.Waiting30SecsCheck"
 }
 ```

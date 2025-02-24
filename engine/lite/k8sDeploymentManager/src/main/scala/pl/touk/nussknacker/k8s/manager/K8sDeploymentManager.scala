@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.http.scaladsl.settings.ConnectionPoolSettings
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging

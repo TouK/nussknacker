@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.ui.security.api
 
 import java.nio.charset.StandardCharsets
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.BasicDirectives.{extractExecutionContext, provide}
-import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials}
-import akka.http.scaladsl.server.directives.FutureDirectives.onSuccess
-import akka.http.scaladsl.server.directives.RouteDirectives.reject
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.directives.BasicDirectives.{extractExecutionContext, provide}
+import org.apache.pekko.http.scaladsl.server.directives.{AuthenticationDirective, Credentials}
+import org.apache.pekko.http.scaladsl.server.directives.FutureDirectives.onSuccess
+import org.apache.pekko.http.scaladsl.server.directives.RouteDirectives.reject
+import org.apache.pekko.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, Route}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.{ExecutionContext, Future}

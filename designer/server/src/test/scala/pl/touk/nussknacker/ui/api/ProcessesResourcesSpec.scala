@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
+import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.OptionT
 import cats.instances.all._
 import com.typesafe.config.{Config, ConfigValueFactory}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
@@ -41,7 +41,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   sampleFragmentWithPreset
 }
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions$.toRequestEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
   Available,
@@ -96,7 +96,7 @@ class ProcessesResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  // TODO: when the spec is rewritten with RestAssured instead of Akka-http test kit, remember to remove
+  // TODO: when the spec is rewritten with RestAssured instead of pekko-http test kit, remember to remove
   //       the RouteInterceptor and its usages
   private lazy val applicationRoute = RouteInterceptor.get()
 

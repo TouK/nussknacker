@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName

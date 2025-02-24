@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -33,7 +33,7 @@ class ProcessesExportImportResourcesSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import akka.http.scaladsl.server.RouteConcatenation._
+  import org.apache.pekko.http.scaladsl.server.RouteConcatenation._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

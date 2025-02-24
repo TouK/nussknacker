@@ -92,7 +92,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                       Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
                       Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                     ),
-                    // used standard AkkaManagement see HealthCheckServerRunner for details
+                    // used standard PekkoManagement see HealthCheckServerRunner for details
                     startupProbe = Some(
                       Probe(
                         new HTTPGetAction(Left(8080), path = "/alive"),
@@ -235,7 +235,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                       Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
                       Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                     ),
-                    // used standard AkkaManagement see HealthCheckServerRunner for details
+                    // used standard PekkoManagement see HealthCheckServerRunner for details
                     startupProbe = Some(
                       Probe(
                         new HTTPGetAction(Left(8080), path = "/alive"),
@@ -363,7 +363,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                       Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
                       Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                     ),
-                    // used standard AkkaManagement see HealthCheckServerRunner for details
+                    // used standard PekkoManagement see HealthCheckServerRunner for details
                     startupProbe = Some(
                       Probe(
                         new HTTPGetAction(Left(8080), path = "/alive"),

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite
 
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.Route
 import cats.effect.IO
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 

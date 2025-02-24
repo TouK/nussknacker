@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpEntity, HttpRequest}
 import cats.Id
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
