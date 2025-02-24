@@ -103,7 +103,7 @@ object TestFactory {
   }
 
   val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
-    TestProcessingTypeDataProviderFactory.withIdentityFromValues(Map.empty, scenarioParametersService)
+    TestProcessingTypeDataProviderFactory.create(Map.empty, scenarioParametersService)
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
@@ -241,7 +241,7 @@ object TestFactory {
 
   def mapProcessingTypeDataProvider[T](data: (String, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
-    TestProcessingTypeDataProviderFactory.withEmptyCombinedData(
+    TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }

@@ -13,12 +13,10 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
@@ -145,7 +143,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val service = new ProcessStateDefinitionService(
-      TestProcessingTypeDataProviderFactory.withIdentityFromValues(
+      TestProcessingTypeDataProviderFactory.create(
         Map(
           "Streaming" -> ValueWithRestriction
             .userWithAccessRightsToAnyOfCategories("Category1", Set("Category1")),
