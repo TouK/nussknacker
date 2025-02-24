@@ -800,7 +800,7 @@ private[spel] class Typer(
       evaluationContextPreparer,
       anyMethodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed,
-      value
+      absentVariableReferenceAllowed = value
     )
 
 }
