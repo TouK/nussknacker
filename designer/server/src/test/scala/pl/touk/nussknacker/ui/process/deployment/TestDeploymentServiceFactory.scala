@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProc
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{actorSystem, clock, ec, processingType}
@@ -56,7 +57,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None
   ): TestDeploymentServiceServices = {
-    val processingTypeDataProvider = ProcessingTypeDataProvider.withEmptyCombinedData(
+    val processingTypeDataProvider = TestProcessingTypeDataProviderFactory.withEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
     )
 

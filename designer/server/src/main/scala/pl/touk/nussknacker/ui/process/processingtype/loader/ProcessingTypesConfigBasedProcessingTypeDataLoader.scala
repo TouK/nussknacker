@@ -13,6 +13,8 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.Scheduli
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
+import scala.util.Success
+
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(
     processingTypeConfigsLoader: ProcessingTypeConfigsLoader
 ) extends ProcessingTypeDataLoader
@@ -103,9 +105,10 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
     // to assert the loaded configuration is correct (fail-fast approach).
     val combinedData = CombinedProcessingTypeData.create(processingTypesData)
 
-    ProcessingTypeDataState(
+    new ProcessingTypeDataState(
       processingTypesData.mapValuesNow(toValueWithRestriction),
-      () => combinedData,
+      // We want to fail fast - because of that we don't return Try in CombinedProcessingTypeData.create
+      Success(combinedData),
       // We pass here new Object to enforce update of observers
       new Object
     )

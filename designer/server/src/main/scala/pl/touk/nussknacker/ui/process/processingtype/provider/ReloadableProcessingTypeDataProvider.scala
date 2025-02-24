@@ -6,6 +6,8 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.process.processingtype.{CombinedProcessingTypeData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
+import scala.util.Success
+
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
  *
@@ -27,8 +29,7 @@ class ReloadableProcessingTypeDataProvider(
   // cycle - see NusskanckerDefaultAppRouter.create
   private var stateValue: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = emptyState
 
-  override private[processingtype] def state
-      : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+  override protected[provider] def state: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     synchronized {
       stateValue
     }
@@ -77,10 +78,10 @@ class ReloadableProcessingTypeDataProvider(
     )
   }
 
-  private def emptyState = ProcessingTypeDataState(
-    allValues = Map.empty,
-    getCombinedValue = () => CombinedProcessingTypeData.create(Map.empty),
-    stateIdentityValue = new Object
+  private def emptyState = new ProcessingTypeDataState(
+    all = Map.empty,
+    combinedDataTry = Success(CombinedProcessingTypeData.create(Map.empty)),
+    stateIdentity = new Object
   )
 
 }
