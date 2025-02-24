@@ -417,4 +417,10 @@ class ExpressionCompiler(
     }
   }
 
+  def withExpressionParsers(
+      modify: Map[Language, ExpressionParser] => Map[Language, ExpressionParser]
+  ): ExpressionCompiler = {
+    new ExpressionCompiler(modify(expressionParsers), dictRegistry, expressionEvaluator)
+  }
+
 }
