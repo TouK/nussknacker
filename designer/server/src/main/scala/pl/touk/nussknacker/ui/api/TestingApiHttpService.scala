@@ -157,9 +157,9 @@ object TestingApiHttpService {
       )
     }
 
-    implicit val testDataGenerationErrortCoded: Codec[String, TestDataGenerationError, CodecFormat.TextPlain] = {
+    implicit val testDataGenerationErrorCoded: Codec[String, TestDataGenerationError, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TestDataGenerationError](e =>
-        s"Error during generation of test data: \n${e.msg}"
+        s"Error during generation of test data:\n${e.msg}"
       )
     }
 
