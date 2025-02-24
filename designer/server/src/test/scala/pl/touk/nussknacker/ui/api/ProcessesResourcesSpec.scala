@@ -66,7 +66,7 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
-import pl.touk.nussknacker.ui.security.api.{AdminUser, AuthManager, CommonUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
 import scala.concurrent.Future
@@ -1196,19 +1196,13 @@ class ProcessesResourcesSpec
       loadedProcess.head.modifiedBy should be("Test Technical User")
       loadedProcess.head.additionalDetails.get("modifiedByNonTechnicalUser") should be(Some("admin"))
       loadedProcess.head.lastAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
+        case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
       loadedProcess.head.lastStateAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
+        case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
       loadedProcess.head.lastDeployedAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
+        case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
     }
 
@@ -1221,19 +1215,13 @@ class ProcessesResourcesSpec
       loadedProcess.modifiedBy should be("Test Technical User")
       loadedProcess.additionalDetails.get("modifiedByNonTechnicalUser") should be(Some("admin"))
       loadedProcess.lastAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
+        case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
       loadedProcess.lastStateAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
+        case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
       loadedProcess.lastDeployedAction should matchPattern {
-        case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
-            ) =>
+        case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
     }
   }
