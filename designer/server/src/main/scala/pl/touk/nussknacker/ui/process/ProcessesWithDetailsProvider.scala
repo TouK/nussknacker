@@ -52,6 +52,8 @@ class ServiceBasedProcessesWithDetailsProvider(
 
 }
 
+// Some external service needs additional information about the latest scenario version, that was created by non-technical user.
+// This class is a decorator, that enriches the scenario details with this additional information, when a specific query param is present.
 class EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
     underlying: ProcessesWithDetailsProvider,
     fetchingProcessRepository: FetchingProcessRepository[Future],
