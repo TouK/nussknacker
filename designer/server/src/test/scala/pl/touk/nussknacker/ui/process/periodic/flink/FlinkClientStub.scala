@@ -1,8 +1,14 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
+import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{
+  ClusterOverview,
+  ExecutionConfig,
+  JobDetails,
+  JobOverview
+}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, flinkRestModel}
 
 import java.io.File
@@ -16,22 +22,22 @@ object FlinkClientStub extends FlinkClient {
 
   override def getJobsOverviews()(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[flinkRestModel.JobOverview]]] =
+  ): Future[WithDataFreshnessStatus[List[JobOverview]]] =
     Future.successful(WithDataFreshnessStatus.fresh(List.empty))
 
-  override def getJobDetails(jobId: String): Future[Option[flinkRestModel.JobDetails]] = Future.successful(None)
+  override def getJobDetails(jobId: JobID): Future[Option[JobDetails]] = Future.successful(None)
 
-  override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] =
-    Future.successful(flinkRestModel.ExecutionConfig(1, Map.empty))
+  override def getJobConfig(jobId: JobID): Future[ExecutionConfig] =
+    Future.successful(ExecutionConfig(1, Map.empty))
 
-  override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
+  override def cancel(jobId: JobID): Future[Unit] = Future.successful(())
 
   override def makeSavepoint(
-      deploymentId: ExternalDeploymentId,
+      jobId: JobID,
       savepointDir: Option[String]
   ): Future[SavepointResult] = Future.successful(SavepointResult(savepointPath))
 
-  override def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] =
+  override def stop(jobId: JobID, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(stopSavepointPath))
 
   override def runProgram(
@@ -39,14 +45,14 @@ object FlinkClientStub extends FlinkClient {
       mainClass: String,
       args: List[String],
       savepointPath: Option[String],
-      jobId: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = Future.successful(None)
+      jobId: Option[JobID]
+  ): Future[Option[JobID]] = Future.successful(None)
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = Future.successful(())
 
-  override def getClusterOverview: Future[flinkRestModel.ClusterOverview] =
+  override def getClusterOverview: Future[ClusterOverview] =
     Future.successful(
-      flinkRestModel.ClusterOverview(`slots-total` = maxParallelism, `slots-available` = maxParallelism)
+      ClusterOverview(`slots-total` = maxParallelism, `slots-available` = maxParallelism)
     )
 
   override def getJobManagerConfig: Future[Configuration] = Future.successful(new Configuration)

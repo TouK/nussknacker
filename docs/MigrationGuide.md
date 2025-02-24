@@ -74,7 +74,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `FlinkStreamingRestManager` and `FlinkRestManager` abstraction layers were removed - only `FlinkDeploymentManager` exists
 * [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessConfigCreator.buildInfo` and `NkGlobalParameters.buildInfo` were renamed to `modelInfo`
   Also, they return a `ModelInfo` value class now. To create it from `Map`, use `ModelInfo.fromMap`. To access underlying map, use `ModelInfo.parameters`.
-  
+* [#7566](https://github.com/TouK/nussknacker/pull/7566) Scenario status and deployment statuses are decoupled now
+  * Changes in `DeploymentManager` interface
+    * `DeploymentManager` has only `getScenarioDeploymentsStatuses` method (previous `getProcessStates` returning `List[StatusDetails]`). 
+    * Method `DeploymentManager.resolve` should be removed - this work is done by Designer itself
+    * `DeploymentManagerInconsistentStateHandlerMixIn` mixin should be also removed
+    * `stateQueryForAllScenariosSupport` was renamed to `deploymentsStatusesQueryForAllScenariosSupport`
+  * Other changes:
+    * `StatusDetails` was renamed to `DeploymentStatusDetails`
+    * Fields: `externalDeploymentId`, `externalDeploymentId`, `attributes`, `attributes` were removed from `StatusDetails`
 
 ### Other changes
 

@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.{DbTesting, WithHsqlDbTesting, WithPostgresDbTesting, WithTestDb}
 import pl.touk.nussknacker.test.base.it.WithClock
@@ -33,7 +34,7 @@ abstract class InitializationOnDbItSpec
 
   private val processName = ProcessName("proc1")
 
-  private val migrations = mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2))
+  private val migrations = mapProcessingTypeDataProvider[ProcessMigrations]("streaming" -> new TestMigrations(1, 2))
 
   private lazy val scenarioActivityRepository = TestFactory.newScenarioActivityRepository(testDbRef, clock)
 

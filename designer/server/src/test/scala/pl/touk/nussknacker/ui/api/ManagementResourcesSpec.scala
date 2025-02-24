@@ -313,7 +313,7 @@ class ManagementResourcesSpec
         status shouldBe StatusCodes.Conflict
       }
       getProcess(invalidScenario.name) ~> check {
-        decodeDetails.state.value.status shouldEqual SimpleStateStatus.NotDeployed
+        decodeDetails.state.value.status.name shouldEqual SimpleStateStatus.NotDeployed.name
       }
     }
   }

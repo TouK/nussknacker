@@ -48,7 +48,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
       stateVerificationConfig: ScenarioStateVerificationConfig,
   ): Option[FlinkMiniClusterWithServices] = {
     if (useMiniClusterForDeployment || scenarioTestingConfig.reuseSharedMiniCluster || stateVerificationConfig.reuseSharedMiniCluster) {
-      Some(createMiniClusterWithServices(modelClassLoader, config.config, config.streamExecutionEnvConfig))
+      Some(createMiniClusterWithServices(modelClassLoader, config.config))
     } else {
       None
     }
@@ -56,19 +56,16 @@ object FlinkMiniClusterFactory extends LazyLogging {
 
   def createUnitTestsMiniClusterWithServices(
       miniClusterConfigOverrides: Configuration = new Configuration,
-      streamExecutionConfigOverrides: Configuration = new Configuration
   ): FlinkMiniClusterWithServices = {
     createMiniClusterWithServices(
       ModelClassLoader.flinkWorkAroundEmptyClassloader,
       miniClusterConfigOverrides,
-      streamExecutionConfigOverrides
     )
   }
 
   def createMiniClusterWithServices(
       modelClassLoader: URLClassLoader,
       miniClusterConfigOverrides: Configuration,
-      streamExecutionConfigOverrides: Configuration
   ): FlinkMiniClusterWithServices = {
     val miniClusterConfig = DefaultMiniClusterConfig
     miniClusterConfig.addAll(miniClusterConfigOverrides)
@@ -85,7 +82,6 @@ object FlinkMiniClusterFactory extends LazyLogging {
       FlinkMiniClusterStreamExecutionEnvironmentFactory.createStreamExecutionEnvironment(
         miniCluster,
         modelClassLoader,
-        streamExecutionConfigOverrides,
         attached
       )
     }

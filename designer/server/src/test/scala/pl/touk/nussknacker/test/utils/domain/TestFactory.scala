@@ -23,7 +23,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubScenarioStateProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
@@ -103,7 +103,7 @@ object TestFactory {
   }
 
   val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
-    ProcessingTypeDataProvider(Map.empty, scenarioParametersService)
+    TestProcessingTypeDataProviderFactory.create(Map.empty, scenarioParametersService)
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
@@ -142,8 +142,6 @@ object TestFactory {
       SttpBackendStub.asynchronousFuture
     )
   }
-
-  def processStateProvider() = new StubScenarioStateProvider(Map.empty)
 
   def newDBIOActionRunner(dbRef: DbRef): DBIOActionRunner =
     DBIOActionRunner(dbRef)
@@ -243,7 +241,7 @@ object TestFactory {
 
   def mapProcessingTypeDataProvider[T](data: (String, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
-    ProcessingTypeDataProvider.withEmptyCombinedData(
+    TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }

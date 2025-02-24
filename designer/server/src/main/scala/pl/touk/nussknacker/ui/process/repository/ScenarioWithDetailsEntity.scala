@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessAction
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{
   ProcessId,
@@ -47,6 +48,8 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
 ) extends ListenerScenarioWithDetails {
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)
 
+  lazy val idData: ScenarioIdData = ScenarioIdData(processId, name, processingType)
+
   def mapScenario[NewShape](action: ScenarioShape => NewShape): ScenarioWithDetailsEntity[NewShape] =
     copy(json = action(json))
 
@@ -68,3 +71,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
   }
 
 }
+
+// It is a set of id-like data that allow to identify scenario both in local storage and on engine side
+// On engine side it is needed to have processingType (to navigate to correct DeploymentManager) and scenario name
+final case class ScenarioIdData(id: ProcessId, name: ProcessName, processingType: ProcessingType)

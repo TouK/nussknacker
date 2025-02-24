@@ -1,25 +1,27 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
 import io.circe.syntax.EncoderOps
+import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
 import pl.touk.nussknacker.engine.management.jobrunner.RemoteFlinkScenarioJobRunner.{MainClassName, prepareProgramArgs}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class RemoteFlinkScenarioJobRunner(modelData: BaseModelData, client: FlinkClient) extends FlinkScenarioJobRunner {
+class RemoteFlinkScenarioJobRunner(modelData: BaseModelData, client: FlinkClient)(implicit ec: ExecutionContext)
+    extends FlinkScenarioJobRunner {
 
   private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
 
   override def runScenarioJob(
       command: DMRunDeploymentCommand,
       savepointPathOpt: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  ): Future[Option[JobID]] = {
     import command._
     val args = prepareProgramArgs(
       modelData.inputConfigDuringExecution.serialized,

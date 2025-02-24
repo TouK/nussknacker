@@ -26,8 +26,7 @@ import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, modelData: BaseModelData)
     extends DeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   import SimpleStateStatus._
   import dependencies._
@@ -39,15 +38,14 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
-  private val random                                      = new scala.util.Random()
+  private val memory: TrieMap[ProcessName, DeploymentStatusDetails] = TrieMap[ProcessName, DeploymentStatusDetails]()
+  private val random                                                = new scala.util.Random()
 
   private val miniClusterWithServices =
     FlinkMiniClusterFactory
       .createMiniClusterWithServices(
         modelData.modelClassLoader,
         new Configuration,
-        new Configuration
       )
 
   private lazy val flinkTestRunner =
@@ -57,20 +55,6 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
-
-  implicit private class ProcessStateExpandable(processState: StatusDetails) {
-
-    def withStateStatus(stateStatus: StateStatus): StatusDetails = {
-      StatusDetails(
-        stateStatus,
-        processState.deploymentId,
-        processState.externalDeploymentId,
-        processState.version,
-        Some(System.currentTimeMillis())
-      )
-    }
-
-  }
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
     case DMValidateScenarioCommand(_, _, canonicalProcess, _) =>
@@ -119,7 +103,7 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
               case None        => changeState(processVersion.processName, NotDeployed)
             }
           } else {
-            result.complete(Success(duringDeployStateStatus.externalDeploymentId))
+            result.complete(Success(duringDeployStateStatus.deploymentId.map(_.value).map(ExternalDeploymentId(_))))
             asyncChangeState(processVersion.processName, Running)
           }
         }
@@ -146,10 +130,10 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
     Future.unit
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(scenarioName).toList))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -164,15 +148,16 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
   }
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach { processState =>
-      val newProcessState = processState.withStateStatus(stateStatus)
+    memory.get(name).foreach { statusDetails =>
+      val newProcessState = statusDetails.copy(status = stateStatus)
       memory.update(name, newProcessState)
-      logger.debug(s"Changed scenario $name state from ${processState.status.name} to ${stateStatus.name}.")
+      logger.debug(s"Changed scenario $name state from ${statusDetails.status.name} to ${stateStatus.name}.")
     }
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach { processState =>
-      logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
+    memory.get(name).foreach { statusDetails =>
+      logger
+        .debug(s"Starting async changing state for $name from ${statusDetails.status.name} to ${stateStatus.name}..")
       actorSystem.scheduler.scheduleOnce(
         sleepingTimeSeconds,
         new Runnable {
@@ -182,17 +167,18 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
       )
     }
 
-  private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): StatusDetails = {
-    val processState = StatusDetails(
-      stateStatus,
-      None,
-      Some(ExternalDeploymentId(UUID.randomUUID().toString)),
-      version = Some(processVersion),
-      startTime = Some(System.currentTimeMillis()),
+  private def createAndSaveProcessState(
+      stateStatus: StateStatus,
+      processVersion: ProcessVersion
+  ): DeploymentStatusDetails = {
+    val statusDetails = DeploymentStatusDetails(
+      status = stateStatus,
+      deploymentId = None,
+      version = Some(processVersion.versionId),
     )
 
-    memory.update(processVersion.processName, processState)
-    processState
+    memory.update(processVersion.processName, statusDetails)
+    statusDetails
   }
 
   private def sleepingTimeSeconds = FiniteDuration(
@@ -202,7 +188,8 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }

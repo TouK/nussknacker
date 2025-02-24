@@ -9,16 +9,15 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.ScheduledDeploymentDetails
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.AdditionalDeploymentDataProvider
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.EnrichedProcessConfig
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.createPeriodicProcessDeployment
@@ -225,7 +224,7 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -260,7 +259,7 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.DuringDeploy, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.DuringDeploy, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -277,7 +276,7 @@ class PeriodicProcessServiceTest
       scheduleProperty = cronInPast,
       processActionId = Some(processActionId)
     )
-    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -364,7 +363,7 @@ class PeriodicProcessServiceTest
   test("handleFinished - should mark as failed for failed Flink job") {
     val f            = new Fixture
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -514,13 +513,16 @@ class PeriodicProcessServiceTest
         val activeSchedules = f.periodicProcessService.getLatestDeploymentsForActiveSchedules(processName).futureValue
         activeSchedules should have size (schedules.size)
 
-        val deployment = f.periodicProcessService
-          .getStatusDetails(processName)
-          .futureValue
-          .value
-          .status
-          .asInstanceOf[PeriodicProcessStatus]
-          .pickMostImportantActiveDeployment
+        val deployment = PeriodicProcessService
+          .pickMostImportantActiveDeployment(
+            f.periodicProcessService
+              .getMergedStatusDetails(processName)
+              .futureValue
+              .value
+              .status
+              .asInstanceOf[PeriodicScenarioStatus]
+              .activeDeploymentsStatuses
+          )
           .value
 
         deployment.status shouldBe expectedStatus

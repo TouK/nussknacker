@@ -65,7 +65,6 @@ class LegacyFallbackToSingleUseMiniClusterHandler(modelClassLoader: URLClassLoad
     FlinkMiniClusterFactory.createMiniClusterWithServices(
       modelClassLoader,
       legacyMiniClusterConfigOverrides,
-      new Configuration()
     )
   }
 

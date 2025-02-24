@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import com.typesafe.scalalogging.StrictLogging
+import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -11,13 +12,14 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 
 class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
@@ -28,11 +30,7 @@ class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSp
   override protected def useMiniClusterForDeployment: Boolean = true
 }
 
-trait BaseFlinkDeploymentManagerSpec
-    extends AnyFunSuiteLike
-    with Matchers
-    with StreamingDockerTest
-    with StrictLogging {
+trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with StreamingDockerTest with StrictLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
@@ -45,12 +43,53 @@ trait BaseFlinkDeploymentManagerSpec
   test("deploy scenario in running flink") {
     val processName = ProcessName("runningFlink")
 
-    val version = ProcessVersion(VersionId(15), processName, processId, List.empty, "user1", Some(13))
-    val process = SampleProcess.prepareProcess(processName)
+    val version      = VersionId(15)
+    val process      = SampleProcess.prepareProcess(processName)
+    val deploymentId = DeploymentId("not-a-uuid")
 
-    deployProcessAndWaitIfRunning(process, version)
+    val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
+      process = process,
+      processVersion = ProcessVersion(version, processName, processId, List.empty, "user1", Some(13)),
+      deploymentId = deploymentId
+    )
     try {
-      processVersion(processName) shouldBe List(version)
+      deploymentStatus(processName) shouldBe List(
+        DeploymentStatusDetails(
+          status = SimpleStateStatus.Running,
+          deploymentId = Some(deploymentId),
+          version = Some(version)
+        )
+      )
+      externalDeploymentIdOpt shouldBe defined
+    } finally {
+      cancelProcess(processName)
+    }
+  }
+
+  test("use deploymentId passed as a jobId") {
+    val processName = ProcessName("jobWithDeploymentIdAsAUuid")
+
+    val version          = VersionId(15)
+    val process          = SampleProcess.prepareProcess(processName)
+    val deploymentIdUuid = UUID.randomUUID()
+    val deploymentId     = DeploymentId(deploymentIdUuid.toString)
+
+    val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
+      process = process,
+      processVersion = ProcessVersion(version, processName, processId, List.empty, "user1", Some(13)),
+      deploymentId = deploymentId
+    )
+    try {
+      deploymentStatus(processName) shouldBe List(
+        DeploymentStatusDetails(
+          status = SimpleStateStatus.Running,
+          deploymentId = Some(deploymentId),
+          version = Some(version)
+        )
+      )
+      externalDeploymentIdOpt.value shouldBe ExternalDeploymentId(
+        new JobID(deploymentIdUuid.getLeastSignificantBits, deploymentIdUuid.getMostSignificantBits).toHexString
+      )
     } finally {
       cancelProcess(processName)
     }
@@ -177,7 +216,7 @@ trait BaseFlinkDeploymentManagerSpec
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
         empty(processName),
-        StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.toString)
+        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.toString)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
@@ -203,14 +242,14 @@ trait BaseFlinkDeploymentManagerSpec
           .processCommand(DMStopScenarioCommand(processName, savepointDir = None, user = userToAct))
           .map(_.path)
       eventually {
-        val status = deploymentManager.getProcessStates(processName).futureValue
+        val status = deploymentManager.getScenarioDeploymentsStatuses(processName).futureValue
         status.value.map(_.status) shouldBe List(SimpleStateStatus.Canceled)
       }
 
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
         empty(processName),
-        StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.futureValue)
+        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.futureValue)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
@@ -313,6 +352,6 @@ trait BaseFlinkDeploymentManagerSpec
       .map(_.message())
       .toList
 
-  private def processVersion(name: ProcessName): List[ProcessVersion] =
-    deploymentManager.getProcessStates(name).futureValue.value.flatMap(_.version)
+  private def deploymentStatus(name: ProcessName): List[DeploymentStatusDetails] =
+    deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value
 }

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.{
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
   CommentModificationMetadata,
   DeleteAttachmentError,
-  ModifyActivityError,
   ModifyCommentError
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -348,10 +348,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private lazy val attachmentInsertQuery =
     attachmentsTable returning attachmentsTable.map(_.id) into ((item, id) => item.copy(id = id))
-
-  private def validateActivityExistsForScenario(entity: ScenarioActivityEntityData) = {
-    fromEntity(entity).left.map(_ => ModifyActivityError.CouldNotModifyActivity).map(_._2)
-  }
 
   private def modifyActivityByActivityId[ERROR](
       activityId: ScenarioActivityId,

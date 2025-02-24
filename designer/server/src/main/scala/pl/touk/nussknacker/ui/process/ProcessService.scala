@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.process
 
 import cats._
+import cats.data.Ior.Both
 import cats.data.Validated
-import cats.implicits.toTraverseOps
+import cats.implicits.{toAlignOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -20,9 +21,10 @@ import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand,
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
+import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -178,7 +180,8 @@ trait ProcessService {
  * Each action includes verification based on actual process state and checking process is fragment / archived.
  */
 class DBProcessService(
-    processStateProvider: ScenarioStateProvider,
+    scenarioStatusProvider: ScenarioStatusProvider,
+    scenarioStatusPresenter: ScenarioStatusPresenter,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
     scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
@@ -254,7 +257,7 @@ class DBProcessService(
     def apply[PS: ScenarioShapeFetchStrategy]: Future[F[ScenarioWithDetailsEntity[PS]]]
   }
 
-  private def doGetProcessWithDetails[F[_]: Traverse](
+  private def doGetProcessWithDetails[F[_]: Traverse: Align](
       fetchScenario: FetchScenarioFun[F],
       options: GetScenarioWithDetailsOptions
   )(
@@ -278,11 +281,24 @@ class DBProcessService(
         case skipFieldsOption: SkipAdditionalFields =>
           ScenarioWithDetailsConversions.skipAdditionalFields(details, skipFieldsOption)
       }
-    }).flatMap { details =>
+    }).flatMap { scenarioDetailsTraverse =>
       if (options.fetchState)
-        processStateProvider.enrichDetailsWithProcessState(details)
+        scenarioStatusProvider.getScenariosStatuses(scenarioDetailsTraverse.map(_.toEntity)).map {
+          statusesDetailsTraverse =>
+            scenarioDetailsTraverse.alignWith(statusesDetailsTraverse) {
+              case Both(scenarioDetails, scenarioStatusOpt) =>
+                scenarioDetails.copy(state =
+                  scenarioStatusOpt
+                    .map(scenarioStatusPresenter.toDto(_, scenarioDetails, currentlyPresentedVersionId = None))
+                )
+              case other =>
+                throw new IllegalStateException(
+                  s"Traverse with different sizes during scenario status enrichment: $other"
+                )
+            }
+        }
       else
-        Future.successful(details)
+        Future.successful(scenarioDetailsTraverse)
     }
   }
 
@@ -537,15 +553,15 @@ class DBProcessService(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    processStateProvider
-      .getProcessState(process.toEntity)
-      .flatMap(state => {
-        if (state.allowedActions.contains(actionToCheck)) {
+    scenarioStatusProvider
+      .getAllowedActionsForScenarioStatus(process.toEntity)
+      .flatMap { statusWithAllowedActions =>
+        if (statusWithAllowedActions.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(actionToCheck, process.name, state)
+          throw ProcessIllegalAction(actionToCheck, process.name, statusWithAllowedActions)
         }
-      })
+      }
   }
 
   private def doArchive(process: ScenarioWithDetails)(implicit user: LoggedUser): Future[Unit] =

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ParameterConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   WithStaticParameters
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}

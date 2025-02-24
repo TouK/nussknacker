@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.{ModelData, newdeployment}
@@ -27,8 +27,7 @@ class EmbeddedDeploymentManager(
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)
     extends LiteDeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
 
@@ -123,7 +122,11 @@ class EmbeddedDeploymentManager(
       case Success(_) =>
         logger.debug(s"Deployed scenario $processVersion")
     }
-    processVersion.processName -> ScenarioDeploymentData(deploymentData.deploymentId, processVersion, interpreterTry)
+    processVersion.processName -> ScenarioDeploymentData(
+      deploymentData.deploymentId,
+      processVersion.versionId,
+      interpreterTry
+    )
   }
 
   private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess) = {
@@ -168,23 +171,22 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(
       WithDataFreshnessStatus.fresh(
         deployments
-          .get(name)
+          .get(scenarioName)
           .map { interpreterData =>
-            StatusDetails(
+            DeploymentStatusDetails(
               status = interpreterData.scenarioDeployment
                 .fold(
                   _ => ProblemStateStatus(s"Scenario compilation errors"),
                   deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
                 ),
               deploymentId = Some(interpreterData.deploymentId),
-              externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
-              version = Some(interpreterData.processVersion)
+              version = Some(interpreterData.scenarioVersionId)
             )
           }
           .toList
@@ -211,7 +213,8 @@ class EmbeddedDeploymentManager(
 
     }
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
@@ -227,7 +230,7 @@ class EmbeddedDeploymentManager(
 
   private sealed case class ScenarioDeploymentData(
       deploymentId: DeploymentId,
-      processVersion: ProcessVersion,
+      scenarioVersionId: VersionId,
       scenarioDeployment: Try[Deployment]
   )
 
