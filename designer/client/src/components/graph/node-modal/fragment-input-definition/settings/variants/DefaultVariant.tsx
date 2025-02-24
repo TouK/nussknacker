@@ -6,6 +6,7 @@ import { DefaultParameterVariant, onChangeType } from "../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../types";
 import { TextAreaNode } from "../../../../../FormElements";
 import InitialValue from "./fields/InitialValue";
+import { ValidationsFields } from "./fields/validation";
 import { getValidationErrorsForField } from "../../../editors/Validators";
 import { nodeInput } from "../../../NodeDetailsContent/NodeTableStyled";
 
@@ -48,6 +49,14 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     className={nodeInput}
                 />
             </FormControl>
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
         </SettingsWrapper>
     );
 };

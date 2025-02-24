@@ -5,6 +5,7 @@ import { TextAreaNode } from "../../../../../../FormElements";
 import { AnyValueParameterVariant, onChangeType } from "../../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
+import { ValidationsFields } from "../fields/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
@@ -41,6 +42,14 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
                     className={nodeInput}
                 />
             </FormControl>
+            <ValidationsFields
+                path={path}
+                item={item}
+                onChange={onChange}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
         </>
     );
 };

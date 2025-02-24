@@ -6,6 +6,7 @@ import { AnyValueWithSuggestionsParameterVariant, onChangeType } from "../../../
 import { useTranslation } from "react-i18next";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { ValidationsFields } from "../fields/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
@@ -64,6 +65,14 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                     className={nodeInput}
                 />
             </FormControl>
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
         </>
     );
 };
