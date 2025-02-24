@@ -45,9 +45,7 @@ class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Fut
   )(implicit user: LoggedUser): Future[Option[CanonicalProcess]] = {
     processRepository
       .fetchProcessId(fragmentName)
-      .flatMap(
-        _.map(processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](_)).sequence.map(_.flatten)
-      )
+      .flatMap(_.map(processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess]).sequence.map(_.flatten))
       .map(_.map(_.json))
   }
 

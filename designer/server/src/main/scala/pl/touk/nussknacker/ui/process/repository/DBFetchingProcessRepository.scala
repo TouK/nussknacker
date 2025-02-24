@@ -323,7 +323,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       createdBy = process.createdBy,
       json = convertToTargetShape(processVersion),
       history = history.map(_.toList),
-      modelVersion = processVersion.modelVersion,
+      modelVersion = processVersion.modelVersion
     )
   }
 

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
-import cats.data.NonEmptyMap
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ProcessingMode

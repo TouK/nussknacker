@@ -39,7 +39,6 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 import slick.dbio.DBIOAction
 
-import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 

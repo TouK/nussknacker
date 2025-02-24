@@ -2,17 +2,19 @@ package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessingType, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.{
   TechnicalUsers,
   fetchLatestNonTechnicalModificationHeaderName
 }
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 trait ProcessesWithDetailsProvider {
 
@@ -53,9 +55,18 @@ class ServiceBasedProcessesWithDetailsProvider(
 class EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
     underlying: ProcessesWithDetailsProvider,
     fetchingProcessRepository: FetchingProcessRepository[Future],
-    technicalUsers: TechnicalUsers,
+    designerConfig: DesignerConfig,
 )(implicit executionContext: ExecutionContext)
     extends ProcessesWithDetailsProvider {
+
+  val technicalUsers: TechnicalUsers = {
+    val technicalUsersPath = "technicalUsers"
+    if (designerConfig.rawConfig.resolved.hasPath(technicalUsersPath)) {
+      TechnicalUsers(designerConfig.rawConfig.resolved.getStringList(technicalUsersPath).asScala.toSet)
+    } else {
+      TechnicalUsers(Set(NussknackerInternalUser.instance.username))
+    }
+  }
 
   override def getLatestProcessWithDetails(
       rawQueryParams: Map[String, String],
