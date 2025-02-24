@@ -243,6 +243,17 @@ class SpelExpressionParser(
       prepareEvaluationContext
     )
 
+  def withValidator(modify: SpelExpressionValidator => SpelExpressionValidator): SpelExpressionParser = {
+    new SpelExpressionParser(
+      parser,
+      modify(validator),
+      dictRegistry,
+      enableSpelForceCompile,
+      flavour,
+      prepareEvaluationContext
+    )
+  }
+
 }
 
 object SpelExpressionParser extends LazyLogging {
@@ -286,7 +297,7 @@ object SpelExpressionParser extends LazyLogging {
       dictRegistry: DictRegistry,
       enableSpelForceCompile: Boolean,
       flavour: Flavour,
-      classDefinitionSet: ClassDefinitionSet
+      classDefinitionSet: ClassDefinitionSet,
   ): SpelExpressionParser = {
 
     val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
@@ -295,7 +306,7 @@ object SpelExpressionParser extends LazyLogging {
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
     val validator = new SpelExpressionValidator(
-      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet)
+      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet, false)
     )
     new SpelExpressionParser(
       parser,
