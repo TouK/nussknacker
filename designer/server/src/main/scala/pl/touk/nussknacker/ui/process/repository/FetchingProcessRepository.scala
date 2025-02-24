@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.Monad
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -30,9 +29,9 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]]
 
-  def fetchLatestProcessVersionsCreatedByNonTechnicalUsers(
+  def fetchLatestVersionForProcessesExcludingUsers(
       query: ScenarioQuery,
-      technicalUsers: TechnicalUsers,
+      excludedUserNames: Set[String],
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]]
 
   def getProcessVersion(

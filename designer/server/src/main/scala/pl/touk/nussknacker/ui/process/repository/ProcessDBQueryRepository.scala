@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioV
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
@@ -84,16 +83,16 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       .on { case ((_, latestVersion), processId) => latestVersion.processId === processId }
       .map(_._1)
 
-  protected def fetchLatestProcessVersionsCreatedByNonTechnicalUsersQuery(
+  protected def fetchLatestVersionForProcessesExcludingUsers(
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-      technicalUsers: TechnicalUsers,
+      excludedUserNames: Set[String],
   )(implicit loggedUser: LoggedUser): Query[
     (Rep[ProcessId], (Rep[VersionId], Rep[Timestamp], Rep[String])),
     (ProcessId, (VersionId, Timestamp, String)),
     Seq
   ] =
     processVersionsTableWithUnit
-      .filterNot(_.user.inSet(technicalUsers.userNames))
+      .filterNot(_.user.inSet(excludedUserNames))
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
       .join {

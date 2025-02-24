@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
@@ -63,9 +62,9 @@ class MockFetchingProcessRepository private (
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[PS]] =
     fetchLatestProcessesDetails[PS](q).map(_.map(_.json))
 
-  override def fetchLatestProcessVersionsCreatedByNonTechnicalUsers(
+  override def fetchLatestVersionForProcessesExcludingUsers(
       query: ScenarioQuery,
-      technicalUsers: TechnicalUsers
+      excludedUserNames: Set[String],
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext

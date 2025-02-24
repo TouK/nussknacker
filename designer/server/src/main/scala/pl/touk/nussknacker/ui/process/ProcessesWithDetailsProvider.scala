@@ -112,7 +112,7 @@ class EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
 
     val latestVersionsCreatedByNonTechnicalUsersF = {
       if (fetchLatestNonTechnicalModification) {
-        fetchingProcessRepository.fetchLatestProcessVersionsCreatedByNonTechnicalUsers(query, technicalUsers)
+        fetchingProcessRepository.fetchLatestVersionForProcessesExcludingUsers(query, technicalUsers.userNames)
       } else {
         Future.successful(Map.empty[ProcessId, (VersionId, Timestamp, ProcessingType)])
       }
