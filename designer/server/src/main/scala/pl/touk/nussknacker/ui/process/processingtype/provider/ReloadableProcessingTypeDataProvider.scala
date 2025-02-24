@@ -3,10 +3,9 @@ package pl.touk.nussknacker.ui.process.processingtype.provider
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.process.processingtype.{CombinedProcessingTypeData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
-import scala.util.Success
+import scala.util.Failure
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -20,16 +19,16 @@ import scala.util.Success
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class ReloadableProcessingTypeDataProvider(
-    loadMethod: IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]]
-) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
+class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
+    loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
+) extends ProcessingTypeDataProvider[Data, CombinedData]
     with LazyLogging {
 
   // We initiate state with dumb value instead of calling loadMethod() to avoid problems with dependency injection
   // cycle - see NusskanckerDefaultAppRouter.create
-  private var stateValue: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = emptyState
+  private var stateValue: ProcessingTypeDataState[Data, CombinedData] = emptyState
 
-  override protected[provider] def state: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+  override protected[provider] def state: ProcessingTypeDataState[Data, CombinedData] = {
     synchronized {
       stateValue
     }
@@ -68,7 +67,7 @@ class ReloadableProcessingTypeDataProvider(
     } yield ()
   }
 
-  private def close(state: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]) = IO {
+  private def close(state: ProcessingTypeDataState[Data, CombinedData]) = IO {
     state.all.values.foreach(
       _.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance)
         .getOrElse(
@@ -80,7 +79,7 @@ class ReloadableProcessingTypeDataProvider(
 
   private def emptyState = new ProcessingTypeDataState(
     all = Map.empty,
-    combinedDataTry = Success(CombinedProcessingTypeData.create(Map.empty)),
+    combinedDataTry = Failure(new IllegalAccessException("ProcessingTypeData is not initialized")),
     stateIdentity = new Object
   )
 

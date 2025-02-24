@@ -77,7 +77,11 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ModelClassLoaderProvider,
+  ProcessingTypeData
+}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
@@ -764,7 +768,7 @@ class AkkaHttpBasedRouteProvider(
       modelClassLoaderProvider: ModelClassLoaderProvider
   )(
       implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
-  ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
+  ): Resource[IO, ReloadableProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
     Resource
       .make(
         acquire = IO {

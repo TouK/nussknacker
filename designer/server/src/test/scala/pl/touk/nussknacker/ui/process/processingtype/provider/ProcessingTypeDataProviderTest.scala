@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.ui.process.processingtype
+package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
+import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.util.Success

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.processingtype
+package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
@@ -12,9 +12,10 @@ import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 
-class ProcessingTypeDataProviderSpec extends AnyFunSuite with WithTestDeploymentManagerClassLoader with Matchers {
+class ProcessingTypeDataProviderAccessRestrictionTest extends AnyFunSuite with WithTestDeploymentManagerClassLoader with Matchers {
 
   test("allow to access to processing type data only users that has read access to associated category") {
     val provider = TestProcessingTypeDataProviderFactory.fromState(mockProcessingTypeData("foo", "bar"))

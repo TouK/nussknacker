@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 class AppApiHttpService(
     config: Config,
     authManager: AuthManager,
-    processingTypeDataReloader: ReloadableProcessingTypeDataProvider,
+    processingTypeDataReloader: ReloadableProcessingTypeDataProvider[_, _],
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
