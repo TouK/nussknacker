@@ -5,6 +5,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
+import scala.util.Success
+
 class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
 
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
@@ -75,7 +77,7 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
   }
 
   private def createState(value: String, combined: Int, identity: Int) = {
-    ProcessingTypeDataState(Map("foo" -> ValueWithRestriction.anyUser(value)), () => combined, identity)
+    new ProcessingTypeDataState(Map("foo" -> ValueWithRestriction.anyUser(value)), Success(combined), identity)
   }
 
 }

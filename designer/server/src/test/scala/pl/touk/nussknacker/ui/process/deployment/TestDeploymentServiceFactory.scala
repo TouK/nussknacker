@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{actorSystem, clock, ec, processingType}
@@ -23,7 +23,6 @@ import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDepl
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ScenarioActionRepository}
 import sttp.client3.testing.SttpBackendStub
@@ -56,7 +55,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None
   ): TestDeploymentServiceServices = {
-    val processingTypeDataProvider = ProcessingTypeDataProvider.withEmptyCombinedData(
+    val processingTypeDataProvider = TestProcessingTypeDataProviderFactory.withEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
     )
 

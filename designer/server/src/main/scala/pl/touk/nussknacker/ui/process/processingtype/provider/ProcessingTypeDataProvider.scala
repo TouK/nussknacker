@@ -8,6 +8,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.util.concurrent.atomic.AtomicReference
+import scala.util.Try
 
 /**
   * ProcessingType is a context of application. One ProcessingType can't see data from another ProcessingType.
@@ -86,9 +87,9 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
   //       Thanks to that we will be sure that no sensitive data leak
-  final def combined: CombinedData = state.getCombined()
+  final def combined: CombinedData = state.combinedDataTry.get
 
-  private[processingtype] def state: ProcessingTypeDataState[Data, CombinedData]
+  protected[provider] def state: ProcessingTypeDataState[Data, CombinedData]
 
   final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
     new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this, _.mapValues(fun))
@@ -98,14 +99,14 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
 }
 
-private[processingtype] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
+private[provider] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     observed: ProcessingTypeDataProvider[T, C],
     transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
 ) extends ProcessingTypeDataProvider[TT, CC] {
 
   private val stateValue = new AtomicReference(transformState(observed.state))
 
-  override private[processingtype] def state: ProcessingTypeDataState[TT, CC] = {
+  override protected[provider] def state: ProcessingTypeDataState[TT, CC] = {
     stateValue.updateAndGet { currentValue =>
       val currentObservedState = observed.state
       if (currentObservedState.stateIdentity != currentValue.stateIdentity) {
@@ -118,80 +119,21 @@ private[processingtype] class TransformingProcessingTypeDataProvider[T, C, TT, C
 
 }
 
-object ProcessingTypeDataProvider {
-
-  val noCombinedDataFun: () => Nothing = () =>
-    throw new IllegalStateException(
-      "Processing type data provider does not have combined data!"
-    )
-
-  def apply[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
-    new ProcessingTypeDataProvider[T, C] {
-      override private[processingtype] def state: ProcessingTypeDataState[T, C] = stateValue
-    }
-
-  def apply[T, C](
-      allValues: Map[ProcessingType, ValueWithRestriction[T]],
-      combinedValue: C
-  ): ProcessingTypeDataProvider[T, C] =
-    new ProcessingTypeDataProvider[T, C] {
-
-      override private[processingtype] val state: ProcessingTypeDataState[T, C] = ProcessingTypeDataState(
-        allValues,
-        () => combinedValue,
-        allValues
-      )
-
-    }
-
-  def withEmptyCombinedData[T](
-      allValues: Map[ProcessingType, ValueWithRestriction[T]]
-  ): ProcessingTypeDataProvider[T, Nothing] =
-    new ProcessingTypeDataProvider[T, Nothing] {
-
-      override private[processingtype] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
-        allValues,
-        noCombinedDataFun,
-        allValues
-      )
-
-    }
-
-}
-
 // It keeps a state (Data and CombinedData) that is cached and restricted by ProcessingTypeDataProvider
-trait ProcessingTypeDataState[+Data, +CombinedData] {
-  def all: Map[ProcessingType, ValueWithRestriction[Data]]
+final class ProcessingTypeDataState[+Data, +CombinedData](
+    private[provider] val all: Map[ProcessingType, ValueWithRestriction[Data]],
+    private[processingtype] val combinedDataTry: Try[CombinedData],
+    // We keep stateIdentity as a separate value to avoid frequent computation of this.all.equals(that.all)
+    // Also, it is easier to provide one (source) state identity than provide it for all observers
+    private[provider] val stateIdentity: Any
+) {
 
-  // It returns function because we want to sometimes throw Exception instead of return value and we want to
-  // transform values without touch combined part
-  def getCombined: () => CombinedData
+  def mapValues[TT](fun: Data => TT): ProcessingTypeDataState[TT, CombinedData] =
+    new ProcessingTypeDataState[TT, CombinedData](all.mapValuesNow(_.map(fun)), combinedDataTry, stateIdentity)
 
-  // We keep stateIdentity as a separate value to avoid frequent computation of this.all.equals(that.all)
-  // Also, it is easier to provide one (source) state identity than provide it for all observers
-  def stateIdentity: Any
-
-  final def mapValues[TT](fun: Data => TT): ProcessingTypeDataState[TT, CombinedData] =
-    ProcessingTypeDataState[TT, CombinedData](all.mapValuesNow(_.map(fun)), getCombined, stateIdentity)
-
-  final def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataState[Data, CC] = {
-    val newCombined = fun(getCombined())
-    ProcessingTypeDataState[Data, CC](all, () => newCombined, stateIdentity)
+  def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataState[Data, CC] = {
+    val newCombined = combinedDataTry.map(fun)
+    new ProcessingTypeDataState[Data, CC](all, newCombined, stateIdentity)
   }
-
-}
-
-object ProcessingTypeDataState {
-
-  def apply[Data, CombinedData](
-      allValues: Map[ProcessingType, ValueWithRestriction[Data]],
-      getCombinedValue: () => CombinedData,
-      stateIdentityValue: Any
-  ): ProcessingTypeDataState[Data, CombinedData] =
-    new ProcessingTypeDataState[Data, CombinedData] {
-      override def all: Map[ProcessingType, ValueWithRestriction[Data]] = allValues
-      override def getCombined: () => CombinedData                      = getCombinedValue
-      override def stateIdentity: Any                                   = stateIdentityValue
-    }
 
 }

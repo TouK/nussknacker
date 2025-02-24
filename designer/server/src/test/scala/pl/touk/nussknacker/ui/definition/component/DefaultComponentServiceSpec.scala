@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
@@ -25,8 +24,8 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData,
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
-import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
@@ -50,7 +49,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api._
 
 import java.net.URI
 import scala.annotation.tailrec
@@ -867,15 +866,17 @@ class DefaultComponentServiceSpec
         )
     }
 
-    ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
-      ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
-    ).mapValues { processingTypeData =>
-      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
-        processingTypeData.designerModelData
+    TestProcessingTypeDataProviderFactory
+      .withIdentityFromValues(
+        processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
+        ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
       )
-      ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
-    }
+      .mapValues { processingTypeData =>
+        val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
+          processingTypeData.designerModelData
+        )
+        ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
+      }
   }
 
   private def createDbProcessService(

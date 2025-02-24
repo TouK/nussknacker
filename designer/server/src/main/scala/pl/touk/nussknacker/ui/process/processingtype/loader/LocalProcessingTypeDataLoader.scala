@@ -15,6 +15,8 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData
 }
 
+import scala.util.Success
+
 class LocalProcessingTypeDataLoader(
     modelData: Map[ProcessingType, (String, ModelData)],
     deploymentManagerProvider: DeploymentManagerProvider
@@ -43,7 +45,7 @@ class LocalProcessingTypeDataLoader(
     }
 
     val combinedData = CombinedProcessingTypeData.create(processingTypes)
-    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), () => combinedData, new Object)
+    new ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), Success(combinedData), new Object)
   }
 
 }

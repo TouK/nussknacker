@@ -13,17 +13,15 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
 import java.time.{Clock, Instant, ZoneOffset}
-
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
 
@@ -52,7 +50,7 @@ class DeploymentServiceTest
       TestFactory.newScenarioGraphVersionService(testDbRef),
       TestFactory.newDeploymentRepository(testDbRef, clock),
       new DeploymentManagerDispatcher(
-        ProcessingTypeDataProvider.withEmptyCombinedData(
+        TestProcessingTypeDataProviderFactory.withEmptyCombinedData(
           Map(Streaming.stringify -> ValueWithRestriction.anyUser(new MockableDeploymentManager(modelDataOpt = None)))
         ),
         TestFactory.newFutureFetchingScenarioRepository(testDbRef)

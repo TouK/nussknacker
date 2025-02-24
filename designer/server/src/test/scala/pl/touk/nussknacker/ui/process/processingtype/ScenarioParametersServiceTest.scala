@@ -317,7 +317,7 @@ class ScenarioParametersServiceTest
                 dbRef = None,
               )
               .unsafeRunSync()
-          val parametersService = processingTypeData.getCombined().parametersService
+          val parametersService = processingTypeData.combinedDataTry.get.parametersService
 
           parametersService.scenarioParametersCombinationsWithWritePermission(
             TestFactory.adminUser()
