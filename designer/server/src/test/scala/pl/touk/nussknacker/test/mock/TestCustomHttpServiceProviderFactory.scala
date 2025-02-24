@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.test.mock
 
-import akka.http.scaladsl.server.{Directives, Route}
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.ui.customhttpservice.{CustomHttpServiceProvider, CustomHttpServiceProviderFactory}
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.security.api.LoggedUser

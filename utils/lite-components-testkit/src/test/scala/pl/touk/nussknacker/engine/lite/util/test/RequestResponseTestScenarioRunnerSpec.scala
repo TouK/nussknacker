@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import io.circe.syntax.EncoderOps
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}

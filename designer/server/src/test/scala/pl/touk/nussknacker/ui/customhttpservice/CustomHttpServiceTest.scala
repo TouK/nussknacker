@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.WithTestHttpClient
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
-import sttp.client3.{UriContext, quickRequest}
+import sttp.client3.{quickRequest, UriContext}
 import sttp.model.StatusCode
 
 class CustomHttpServiceTest

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 
 object SwaggerUiRoute extends Directives with LazyLogging {
 

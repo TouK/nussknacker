@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.test.mock
 
-import akka.actor.ActorSystem
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
