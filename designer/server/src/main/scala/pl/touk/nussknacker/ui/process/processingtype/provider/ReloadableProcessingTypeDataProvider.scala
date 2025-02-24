@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
-import scala.util.Failure
+import scala.util.control.NonFatal
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -21,50 +21,48 @@ import scala.util.Failure
  */
 class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
-) extends ProcessingTypeDataProvider[Data, CombinedData]
+) extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
     with LazyLogging {
 
-  // We initiate state with dumb value instead of calling loadMethod() to avoid problems with dependency injection
-  // cycle - see NusskanckerDefaultAppRouter.create
-  private var stateValue: ProcessingTypeDataState[Data, CombinedData] = emptyState
-
-  override protected[provider] def state: ProcessingTypeDataState[Data, CombinedData] = {
-    synchronized {
-      stateValue
+  def reloadAll(): IO[Unit] = {
+    stateMutex.lock.surround {
+      for {
+        beforeReload <- stateRef.get
+        _ <- IO(
+          logger.info(
+            s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}]"
+          )
+        )
+        _ <- close(beforeReload)
+        _ <- IO(
+          logger.info("Reloading processing type data...")
+        )
+        newState <- loadMethod
+        _ <- setStateValueAndNotifyObservers(newState)
+          .map { _ =>
+            logger.info(
+              s"New state with processing types [${newState.all.keys.toList.sorted.mkString(", ")}] reload finished"
+            )
+          }
+          .recoverWith { case NonFatal(ex) =>
+            logger.error("Error occurred during reloading state. Rolling back previous state value", ex)
+            setStateValueAndNotifyObservers(beforeReload).map { _ =>
+              throw ex
+            }
+          }
+      } yield ()
     }
   }
 
-  def reloadAll(): IO[Unit] = synchronized {
-    for {
-      beforeReload <- IO.pure(stateValue)
-      _ <- IO(
-        logger.info(
-          s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted
-              .mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
-        )
-      )
-      _ <- close(beforeReload)
-      _ <- IO(
-        logger.info("Reloading processing type data...")
-      )
-      newState <- loadMethod
-      _ <- IO(
-        logger.info(
-          s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
-        )
-      )
-    } yield {
-      stateValue = newState
+  def close(): IO[Unit] = {
+    stateMutex.lock.surround {
+      for {
+        beforeSetToEmpty <- stateRef.get
+        // It is better to return empty state than closed state
+        _ <- stateRef.set(ProcessingTypeDataState.uninitialized)
+        _ <- close(beforeSetToEmpty)
+      } yield ()
     }
-  }
-
-  def close(): IO[Unit] = synchronized {
-    for {
-      _ <- IO {
-        stateValue = emptyState
-      }
-      _ <- close(stateValue)
-    } yield ()
   }
 
   private def close(state: ProcessingTypeDataState[Data, CombinedData]) = IO {
@@ -76,11 +74,5 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
         .close()
     )
   }
-
-  private def emptyState = new ProcessingTypeDataState(
-    all = Map.empty,
-    combinedDataTry = Failure(new IllegalAccessException("ProcessingTypeData is not initialized")),
-    stateIdentity = new Object
-  )
 
 }

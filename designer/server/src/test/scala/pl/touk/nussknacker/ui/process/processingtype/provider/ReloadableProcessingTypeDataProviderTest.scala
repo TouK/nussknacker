@@ -25,7 +25,6 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
       new ProcessingTypeDataState(
         Map(givenProcessingType -> ValueWithRestriction.anyUser(valueHolder)),
         Success(combinedValue),
-        valueHolder
       )
     })
     val reloadableValueProvider = reloadableProvider.mapValues(_.value)
@@ -60,23 +59,27 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
     val givenInitialValue        = "fooValue"
     val givenInitialCombinedData = "fooCombined"
 
-    var valueHolder   = new AutoClosableWithValue(givenInitialValue)
-    var combinedValue = givenInitialCombinedData
+    val valueHolder   = new AutoClosableWithValue(givenInitialValue)
+    val combinedValue = givenInitialCombinedData
     val reloadableProvider = new ReloadableProcessingTypeDataProvider(IO {
       new ProcessingTypeDataState(
         Map(givenProcessingType -> ValueWithRestriction.anyUser(valueHolder)),
         Success(combinedValue),
-        valueHolder
       )
     })
-    val reloadableValueProvider = reloadableProvider.mapValues { _ =>
-      throw new Exception("some error happen")
+    reloadableProvider.mapValues { parentValue =>
+      if (parentValue.value == givenInitialValue) {
+        throw new Exception("some error happen")
+      }
     }
 
     // first load
-    // FIXME
-    reloadableProvider.reloadAll().unsafeRunSync()
-    reloadableValueProvider.all
+    an[Exception] shouldBe thrownBy {
+      reloadableProvider.reloadAll().unsafeRunSync()
+    }
+
+    val allDataAfterFailedLoad = reloadableProvider.all
+    allDataAfterFailedLoad shouldBe empty
   }
 
   class AutoClosableWithValue(val value: String) extends AutoCloseable {

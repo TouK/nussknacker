@@ -244,7 +244,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   }
 
   private def mapProcessingTypeDataProvider[T](value: T) = {
-    TestProcessingTypeDataProviderFactory.withEmptyCombinedData(
+    TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       processingTypeWithCategories.map { case (processingType, _) =>
         (processingType, ValueWithRestriction.anyUser(value))
       }.toMap

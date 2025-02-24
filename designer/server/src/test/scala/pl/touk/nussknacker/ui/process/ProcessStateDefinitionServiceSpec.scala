@@ -143,7 +143,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val service = new ProcessStateDefinitionService(
-      TestProcessingTypeDataProviderFactory.withIdentityFromValues(
+      TestProcessingTypeDataProviderFactory.create(
         Map(
           "Streaming" -> ValueWithRestriction
             .userWithAccessRightsToAnyOfCategories("Category1", Set("Category1")),

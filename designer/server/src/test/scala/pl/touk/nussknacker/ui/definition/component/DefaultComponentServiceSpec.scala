@@ -867,7 +867,7 @@ class DefaultComponentServiceSpec
     }
 
     TestProcessingTypeDataProviderFactory
-      .withIdentityFromValues(
+      .create(
         processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
         ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
       )

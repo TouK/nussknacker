@@ -106,9 +106,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
     new ProcessingTypeDataState(
       processingTypesData.mapValuesNow(toValueWithRestriction),
       // We want to fail fast - because of that we don't return Try in CombinedProcessingTypeData.create
-      Success(combinedData),
-      // We pass here new Object to enforce update of observers
-      new Object
+      Success(combinedData)
     )
   }
 

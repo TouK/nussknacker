@@ -55,7 +55,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None
   ): TestDeploymentServiceServices = {
-    val processingTypeDataProvider = TestProcessingTypeDataProviderFactory.withEmptyCombinedData(
+    val processingTypeDataProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
     )
 

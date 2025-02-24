@@ -45,7 +45,7 @@ class LocalProcessingTypeDataLoader(
     }
 
     val combinedData = CombinedProcessingTypeData.create(processingTypes)
-    new ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), Success(combinedData), new Object)
+    new ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), Success(combinedData))
   }
 
 }
