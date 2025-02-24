@@ -6,7 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -209,7 +209,7 @@ trait NuResourcesTest
   protected val processesWithDetailsProvider = new EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
     underlying = new ServiceBasedProcessesWithDetailsProvider(processService),
     fetchingProcessRepository = futureFetchingScenarioRepository,
-    technicalUsers = TechnicalUsers(Set(NussknackerInternalUser.instance.username))
+    designerConfig = DesignerConfig.from(ConfigFactory.empty),
   )
 
   protected val processesRoute = new ProcessesResources(
