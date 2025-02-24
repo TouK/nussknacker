@@ -30,8 +30,6 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
-    modifiedByNonTechnicalUserAt: Option[Instant],
-    modifiedByNonTechnicalUser: Option[String],
     createdAt: Instant,
     createdBy: String,
     scenarioLabels: List[String],

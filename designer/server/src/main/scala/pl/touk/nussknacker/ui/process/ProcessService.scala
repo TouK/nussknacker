@@ -20,8 +20,6 @@ import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand,
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
-import pl.touk.nussknacker.ui.process.ProcessService.ProcessDetailsEnrichmentsOptions.LatestNonTechnicalModificationFetchingMode
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider
@@ -85,39 +83,6 @@ object ProcessService {
 
   }
 
-  final case class ProcessDetailsEnrichmentsOptions(
-      latestNonTechnicalModificationFetchingMode: LatestNonTechnicalModificationFetchingMode,
-  )
-
-  object ProcessDetailsEnrichmentsOptions {
-
-    sealed trait LatestNonTechnicalModificationFetchingMode
-
-    object LatestNonTechnicalModificationFetchingMode {
-      case object DoNotFetch                                 extends LatestNonTechnicalModificationFetchingMode
-      final case class Fetch(technicalUsers: TechnicalUsers) extends LatestNonTechnicalModificationFetchingMode
-    }
-
-    val withoutEnrichments: ProcessDetailsEnrichmentsOptions =
-      new ProcessDetailsEnrichmentsOptions(
-        latestNonTechnicalModificationFetchingMode = LatestNonTechnicalModificationFetchingMode.DoNotFetch,
-      )
-
-    def create(
-        fetchLatestNonTechnicalModification: Boolean,
-        technicalUsers: TechnicalUsers
-    ): ProcessDetailsEnrichmentsOptions = {
-      if (fetchLatestNonTechnicalModification) {
-        ProcessDetailsEnrichmentsOptions(
-          LatestNonTechnicalModificationFetchingMode.Fetch(technicalUsers)
-        )
-      } else {
-        ProcessDetailsEnrichmentsOptions.withoutEnrichments
-      }
-    }
-
-  }
-
   final case class GetScenarioWithDetailsOptions(
       fetchGraphOptions: ScenarioGraphOptions,
       fetchState: Boolean,
@@ -167,25 +132,9 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[ScenarioWithDetails]
 
-  def getLatestProcessWithDetailsAndEnrichments(
-      processId: ProcessIdWithName,
-      options: GetScenarioWithDetailsOptions,
-      enrichmentsOptions: ProcessDetailsEnrichmentsOptions
-  )(
-      implicit user: LoggedUser
-  ): Future[ScenarioWithDetails]
-
   def getProcessWithDetails(processId: ProcessIdWithName, versionId: VersionId, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[ScenarioWithDetails]
-
-  def getLatestProcessesWithDetailsAndEnrichments(
-      query: ScenarioQuery,
-      options: GetScenarioWithDetailsOptions,
-      enrichmentsOptions: ProcessDetailsEnrichmentsOptions,
-  )(
-      implicit user: LoggedUser
-  ): Future[List[ScenarioWithDetails]]
 
   def getLatestProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
@@ -269,29 +218,6 @@ class DBProcessService(
     )
   }
 
-  override def getLatestProcessWithDetailsAndEnrichments(
-      processIdWithName: ProcessIdWithName,
-      options: GetScenarioWithDetailsOptions,
-      enrichmentsOptions: ProcessDetailsEnrichmentsOptions,
-  )(
-      implicit user: LoggedUser
-  ): Future[ScenarioWithDetails] = {
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    val technicalUsersOpt = enrichmentsOptions.latestNonTechnicalModificationFetchingMode match {
-      case LatestNonTechnicalModificationFetchingMode.DoNotFetch            => None
-      case LatestNonTechnicalModificationFetchingMode.Fetch(technicalUsers) => Some(technicalUsers)
-    }
-    doGetProcessWithDetails(
-      new FetchScenarioFun[Id] {
-        override def apply[PS: ScenarioShapeFetchStrategy]: Future[Id[ScenarioWithDetailsEntity[PS]]] =
-          fetchingProcessRepository
-            .fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id, technicalUsersOpt)
-            .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.name)))
-      },
-      options
-    )
-  }
-
   override def getProcessWithDetails(
       processIdWithName: ProcessIdWithName,
       versionId: VersionId,
@@ -309,38 +235,6 @@ class DBProcessService(
       },
       options
     )
-  }
-
-  override def getLatestProcessesWithDetailsAndEnrichments(
-      query: ScenarioQuery,
-      options: GetScenarioWithDetailsOptions,
-      enrichmentsOptions: ProcessDetailsEnrichmentsOptions,
-  )(
-      implicit user: LoggedUser
-  ): Future[List[ScenarioWithDetails]] = {
-    val scenariosWithDetailsF: Future[List[ScenarioWithDetails]] = getLatestProcessesWithDetails(query, options)
-
-    val latestVersionsCreatedByNonTechnicalUsersF =
-      enrichmentsOptions.latestNonTechnicalModificationFetchingMode match {
-        case LatestNonTechnicalModificationFetchingMode.Fetch(technicalUsers) =>
-          fetchingProcessRepository.fetchLatestProcessVersionsCreatedByNonTechnicalUsers(query, technicalUsers)
-        case LatestNonTechnicalModificationFetchingMode.DoNotFetch =>
-          Future.successful(Map.empty[ProcessId, (VersionId, Timestamp, ProcessingType)])
-      }
-
-    for {
-      scenariosWithDetails                     <- scenariosWithDetailsF
-      latestVersionsCreatedByNonTechnicalUsers <- latestVersionsCreatedByNonTechnicalUsersF
-    } yield {
-      scenariosWithDetails.map { scenarioWithDetails =>
-        val latestVersionCreatedByNonTechnicalUser =
-          scenarioWithDetails.processId.flatMap(latestVersionsCreatedByNonTechnicalUsers.get)
-        scenarioWithDetails.copy(
-          modifiedByNonTechnicalUserAt = latestVersionCreatedByNonTechnicalUser.map(_._2.toInstant),
-          modifiedByNonTechnicalUser = latestVersionCreatedByNonTechnicalUser.map(_._3),
-        )
-      }
-    }
   }
 
   override def getLatestProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(

@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
+import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
 import java.nio.file.{Files, Path, Paths}
@@ -68,5 +69,4 @@ object DesignerConfig {
 
   final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
 
-  final case class TechnicalUsers(userNames: Set[String])
 }

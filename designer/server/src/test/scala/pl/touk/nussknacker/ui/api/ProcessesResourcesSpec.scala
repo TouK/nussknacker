@@ -38,8 +38,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   existingSinkFactory,
   existingSourceFactory,
   sampleFragmentOneOut,
-  sampleFragmentWithPreset,
-  scenarioGraphWithInvalidScenarioProperties
+  sampleFragmentWithPreset
 }
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
@@ -1195,7 +1194,7 @@ class ProcessesResourcesSpec
       val loadedProcess = responseAs[List[ScenarioWithDetails]]
 
       loadedProcess.head.modifiedBy should be("Test Technical User")
-      loadedProcess.head.modifiedByNonTechnicalUser should be(Some("admin"))
+      loadedProcess.head.additionalDetails.get("modifiedByNonTechnicalUser") should be(Some("admin"))
       loadedProcess.head.lastAction should matchPattern {
         case Some(
               ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
@@ -1220,7 +1219,7 @@ class ProcessesResourcesSpec
       val loadedProcess = responseAs[ScenarioWithDetails]
 
       loadedProcess.modifiedBy should be("Test Technical User")
-      loadedProcess.modifiedByNonTechnicalUser should be(Some("admin"))
+      loadedProcess.additionalDetails.get("modifiedByNonTechnicalUser") should be(Some("admin"))
       loadedProcess.lastAction should matchPattern {
         case Some(
               ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)

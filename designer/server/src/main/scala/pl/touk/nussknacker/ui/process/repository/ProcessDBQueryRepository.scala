@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 

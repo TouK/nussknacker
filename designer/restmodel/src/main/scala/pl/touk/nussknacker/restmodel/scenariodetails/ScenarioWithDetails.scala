@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
+import cats.data.NonEmptyMap
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -30,8 +31,6 @@ final case class ScenarioWithDetails(
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
-    modifiedByNonTechnicalUserAt: Option[Instant],
-    modifiedByNonTechnicalUser: Option[String],
     createdAt: Instant,
     createdBy: String,
     override val labels: List[String],
@@ -42,7 +41,8 @@ final case class ScenarioWithDetails(
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
     override val modelVersion: Option[Int],
-    state: Option[ProcessState]
+    state: Option[ProcessState],
+    additionalDetails: Map[String, String],
 ) extends BaseScenarioWithDetailsForMigrations {
 
   def parameters: ScenarioParameters = ScenarioParameters(processingMode, processCategory, engineSetupName)

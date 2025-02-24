@@ -47,7 +47,7 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
+import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -62,7 +62,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
@@ -207,13 +207,19 @@ trait NuResourcesTest
   protected val configProcessToolbarService =
     new ConfigScenarioToolbarService(CategoriesScenarioToolbarsConfigParser.parse(testConfig))
 
+  protected val processesWithDetailsProvider = new EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
+    underlying = new ServiceBasedProcessesWithDetailsProvider(processService),
+    fetchingProcessRepository = futureFetchingScenarioRepository,
+    technicalUsers = TechnicalUsers(Set(NussknackerInternalUser.instance.username))
+  )
+
   protected val processesRoute = new ProcessesResources(
     processService = processService,
+    processesWithDetailsProvider = processesWithDetailsProvider,
     scenarioStateProvider = scenarioStateProvider,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
-    processChangeListener = processChangeListener,
-    technicalUsers = TechnicalUsers(Set.empty),
+    processChangeListener = processChangeListener
   )
 
   protected val processActivityRoute =

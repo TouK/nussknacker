@@ -118,8 +118,6 @@ object TestProcessUtil {
       modificationDate = Instant.now(),
       modifiedAt = Instant.now(),
       modifiedBy = "user1",
-      modifiedByNonTechnicalUserAt = None,
-      modifiedByNonTechnicalUser = None,
       createdAt = Instant.now(),
       createdBy = "user1",
       scenarioLabels = scenarioLabels,

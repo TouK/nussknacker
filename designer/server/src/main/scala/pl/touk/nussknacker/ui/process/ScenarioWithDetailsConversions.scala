@@ -43,8 +43,6 @@ object ScenarioWithDetailsConversions {
       modificationDate = details.modificationDate,
       modifiedAt = details.modifiedAt,
       modifiedBy = details.modifiedBy,
-      modifiedByNonTechnicalUserAt = details.modifiedByNonTechnicalUserAt,
-      modifiedByNonTechnicalUser = details.modifiedByNonTechnicalUser,
       createdAt = details.createdAt,
       createdBy = details.createdBy,
       labels = details.scenarioLabels,
@@ -55,7 +53,8 @@ object ScenarioWithDetailsConversions {
       validationResult = None,
       history = details.history,
       modelVersion = details.modelVersion,
-      state = None
+      state = None,
+      additionalDetails = Map.empty,
     )
   }
 
@@ -101,8 +100,6 @@ object ScenarioWithDetailsConversions {
         modificationDate = scenarioWithDetails.modificationDate,
         modifiedAt = scenarioWithDetails.modifiedAt,
         modifiedBy = scenarioWithDetails.modifiedBy,
-        modifiedByNonTechnicalUserAt = scenarioWithDetails.modifiedByNonTechnicalUserAt,
-        modifiedByNonTechnicalUser = scenarioWithDetails.modifiedByNonTechnicalUser,
         createdAt = scenarioWithDetails.createdAt,
         createdBy = scenarioWithDetails.createdBy,
         scenarioLabels = scenarioWithDetails.labels,

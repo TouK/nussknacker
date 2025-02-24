@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerConfig.TechnicalUsers
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider.TechnicalUsers
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
@@ -84,8 +84,7 @@ class MockFetchingProcessRepository private (
     )
 
   override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
-      id: ProcessId,
-      technicalUsers: Option[TechnicalUsers],
+      id: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.processId == id).lastOption)
 
