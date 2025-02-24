@@ -128,7 +128,6 @@ class DeploymentServiceSpec
       listener,
       scenarioStateProvider,
       deploymentCommentSettings,
-      modelInfoProvider,
       clock
     )
   }
@@ -499,9 +498,6 @@ class DeploymentServiceSpec
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
-    processDetails.history.value.head.actions.map(_.actionName) should be(
-      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
-    )
   }
 
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
@@ -524,9 +520,6 @@ class DeploymentServiceSpec
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
-    processDetails.history.value.head.actions.map(_.actionName) should be(
-      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
-    )
   }
 
   test("Should return state with warning when state is running and process is canceled") {
@@ -806,7 +799,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
     val _ = actionRepository
-      .addInProgressAction(processId.id, ScenarioActionName.Deploy, Some(VersionId(1)), None)
+      .addInProgressAction(processId.id, ScenarioActionName.Deploy, Some(VersionId(1)))
       .dbioActionValues
 
     val state = scenarioStateProvider.getProcessState(processId, Some(initialVersionId)).futureValue
@@ -983,7 +976,7 @@ class DeploymentServiceSpec
     for {
       (processId, actionIdOpt) <- prepareArchivedProcess(processName, actionNameOpt)
       _                        <- writeProcessRepository.archive(processId = processId, isArchived = false)
-      _ <- actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.UnArchive, None, None)
+      _ <- actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.UnArchive, None)
     } yield (processId, actionIdOpt)
 
   private def prepareArchivedProcess(
@@ -999,9 +992,7 @@ class DeploymentServiceSpec
   private def archiveProcess(processId: ProcessIdWithName): DB[_] = {
     writeProcessRepository
       .archive(processId = processId, isArchived = true)
-      .flatMap(_ =>
-        actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.Archive, None, None)
-      )
+      .flatMap(_ => actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.Archive, None))
   }
 
   private def prepareProcessesInProgress = {
@@ -1016,14 +1007,12 @@ class DeploymentServiceSpec
           duringDeployProcessId.id,
           ScenarioActionName.Deploy,
           Some(VersionId.initialVersionId),
-          None
         )
       _ <- actionRepository
         .addInProgressAction(
           duringCancelProcessId.id,
           ScenarioActionName.Cancel,
           Some(VersionId.initialVersionId),
-          None
         )
       _ <- prepareDeployedProcess(otherProcess)
       _ <- prepareFragment(fragmentName)
@@ -1045,7 +1034,7 @@ class DeploymentServiceSpec
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
     val comment = Comment.from(actionName.toString.capitalize)
-    actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
+    actionRepository.addInstantAction(processId, initialVersionId, actionName, comment).map(_.id)
   }
 
   private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): DB[ProcessIdWithName] = {

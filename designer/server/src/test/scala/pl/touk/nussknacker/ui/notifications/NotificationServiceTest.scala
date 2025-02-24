@@ -4,15 +4,14 @@ import akka.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -326,7 +325,6 @@ class NotificationServiceTest
       mock[ProcessChangeListener],
       scenarioStateProvider,
       None,
-      TestFactory.modelInfoProvider,
       clock
     )
     val deploymentService = new DeploymentService(

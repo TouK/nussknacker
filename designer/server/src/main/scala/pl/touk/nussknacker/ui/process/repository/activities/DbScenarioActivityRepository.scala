@@ -4,7 +4,6 @@ import cats.implicits.catsSyntaxEitherId
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
@@ -475,7 +474,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       attachmentId: Option[Long] = None,
       comment: Option[String] = None,
       lastModifiedByUserName: Option[String] = None,
-      modelInfo: Option[ModelInfo] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
     val now = Timestamp.from(clock.instant())
@@ -504,7 +502,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           }
         case _ => None
       },
-      modelInfo = modelInfo,
       additionalProperties = additionalProperties,
     )
   }

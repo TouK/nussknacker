@@ -157,18 +157,18 @@ class ProcessesResourcesSpec
       val decodedScenarios = responseAs[List[ScenarioWithDetails]]
       decodedScenarios.head.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
-            ) if buildInfo.isEmpty =>
+              ProcessAction(_, _, _, _, _, _, _, None, None)
+            ) =>
       }
       decodedScenarios.head.lastStateAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
-            ) if buildInfo.isEmpty =>
+              ProcessAction(_, _, _, _, _, _, _, None, None)
+            ) =>
       }
       decodedScenarios.head.lastDeployedAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
-            ) if buildInfo.isEmpty =>
+              ProcessAction(_, _, _, _, _, _, _, None, None)
+            ) =>
       }
       // verify that null values were not present in JSON response
       val rawFetchedScenarios = responseAs[Json]
@@ -1146,17 +1146,17 @@ class ProcessesResourcesSpec
 
       loadedProcess.head.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.head.lastStateAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.head.lastDeployedAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
     }
@@ -1167,17 +1167,17 @@ class ProcessesResourcesSpec
 
       loadedProcess.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.lastStateAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.lastDeployedAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
     }

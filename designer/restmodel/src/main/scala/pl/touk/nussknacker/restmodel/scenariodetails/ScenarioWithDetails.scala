@@ -34,6 +34,7 @@ final case class ScenarioWithDetails(
     createdAt: Instant,
     createdBy: String,
     override val labels: List[String],
+    // actions are used only by external project
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
