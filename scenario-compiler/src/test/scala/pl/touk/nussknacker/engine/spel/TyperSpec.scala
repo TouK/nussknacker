@@ -183,7 +183,8 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     classDefinitionSet = ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
     evaluationContextPreparer = null,
     anyMethodExecutionForUnknownAllowed = false,
-    dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed
+    dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed,
+    absentVariableReferenceAllowed = false
   )
 
   private def typeExpression(

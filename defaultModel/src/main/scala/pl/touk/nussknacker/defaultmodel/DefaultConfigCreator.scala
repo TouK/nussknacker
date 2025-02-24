@@ -9,7 +9,7 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
 
   override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     ExpressionConfig(
-      Map(
+      globalProcessVariables = Map(
         "GEO"         -> anyCategory(geo),
         "NUMERIC"     -> anyCategory(numeric),
         "CONV"        -> anyCategory(conversion),
@@ -20,7 +20,7 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
         "RANDOM"      -> anyCategory(random),
         "BASE64"      -> anyCategory(base64)
       ),
-      List()
+      globalImports = List()
     )
   }
 

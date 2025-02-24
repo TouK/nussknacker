@@ -325,7 +325,7 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         valueEditor: Option[ParameterValueInput],
-        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
+        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation]
     )
 
     object FragmentParameter {
