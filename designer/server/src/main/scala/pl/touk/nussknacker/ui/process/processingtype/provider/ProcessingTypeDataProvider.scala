@@ -30,7 +30,7 @@ import scala.util.Try
   * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if he/she
   * has access to category.
   */
-trait ProcessingTypeDataProvider[+Data, +CombinedData] {
+trait ProcessingTypeDataProvider[Data, CombinedData] {
 
   // TODO: replace with proper forType handling
   final def forProcessingTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data =
