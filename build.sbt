@@ -234,12 +234,16 @@ lazy val commonSettings =
         "io.circe"          %% "circe-core"       % circeV,
         "io.circe"          %% "circe-parser"     % circeV,
 
-        // Force pekko-http and pekko-stream versions to avoid bumping by pekko-http-circe.
-        "org.apache.pekko"       %% "pekko-http"         % pekkoHttpV,
-        "org.apache.pekko"       %% "pekko-http-testkit" % pekkoHttpV,
-        "org.apache.pekko"       %% "pekko-stream"       % pekkoV,
-        "org.apache.pekko"       %% "pekko-testkit"      % pekkoV,
-        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
+        // Pekko versions must match exactly, and sbt doesn't support BOM dependencies
+        // https://pekko.apache.org/docs/pekko/current/common/binary-compatibility-rules.html#mixed-versioning-is-not-allowed
+        "org.apache.pekko"       %% "pekko-actor"           % pekkoV,
+        "org.apache.pekko"       %% "pekko-http"            % pekkoHttpV,
+        "org.apache.pekko"       %% "pekko-http-testkit"    % pekkoHttpV,
+        "org.apache.pekko"       %% "pekko-slf4j"           % pekkoV,
+        "org.apache.pekko"       %% "pekko-http-spray-json" % pekkoHttpV,
+        "org.apache.pekko"       %% "pekko-stream"          % pekkoV,
+        "org.apache.pekko"       %% "pekko-testkit"         % pekkoV,
+        "org.scala-lang.modules" %% "scala-java8-compat"    % scalaCompatV,
 
         // security features
         "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
@@ -321,7 +325,7 @@ val testContainersJavaV     = "1.20.1"
 val nettyV                  = "4.1.115.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
-val pekkoV                    = "1.0.3"
+val pekkoV                    = "1.0.3"  // 1.1 uses Slf4j 2.x
 val pekkoHttpV                = "1.0.1"
 val pekkoManagementV          = "1.0.0"
 val pekkoHttpCirceV           = "2.8.0"
