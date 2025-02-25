@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.ScenarioTestDataGenerationError
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.OtherError
@@ -71,14 +72,18 @@ object ManagementResources {
     def apply(generateTestDataError: GenerateTestDataError): GenerateTestDataDesignerError = {
       GenerateTestDataDesignerError(generateTestDataError match {
         case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
-          cause.message
+          cause match {
+            case ScenarioTestDataGenerationError.NoDataGenerated => TestingApiErrorMessages.noDataGenerated
+            case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
+              TestingApiErrorMessages.noSourcesWithTestDataGeneration
+          }
         case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
           cause match {
             case SerializationError.TooManyCharactersGenerated(length, limit) =>
-              s"Too many characters generated: $length. Limit is: $limit"
+              TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
           }
         case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
-          s"Too many samples requested, limit is $maxSamples"
+          TestingApiErrorMessages.tooManySamplesRequested(maxSamples)
       })
     }
 

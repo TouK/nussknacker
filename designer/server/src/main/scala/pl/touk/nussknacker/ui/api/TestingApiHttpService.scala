@@ -169,27 +169,28 @@ object TestingApiHttpService {
     }
 
     implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ => "No data was generated.")
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
+        TestingApiErrorMessages.noDataGenerated
+      )
     }
 
     implicit val noSourcesWithTestDataGenerationCodec
         : Codec[String, NoSourcesWithTestDataGeneration.type, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoSourcesWithTestDataGeneration.type](_ =>
-        "No sources with test data generation available"
+        TestingApiErrorMessages.noSourcesWithTestDataGeneration
       )
     }
 
     implicit val tooManyCharactersGeneratedCodec: Codec[String, TooManyCharactersGenerated, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManyCharactersGenerated] {
         case TooManyCharactersGenerated(length, limit) =>
-          s"$length characters were generated, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
+          TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
       }
     }
 
     implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested] {
-        case TooManySamplesRequested(maxSamples) =>
-          s"Too many samples requested, limit is $maxSamples. Please configure 'testDataSettings.maxSampleCount' to increase the limit"
+        case TooManySamplesRequested(maxSamples) => TestingApiErrorMessages.tooManySamplesRequested(maxSamples)
       }
     }
 

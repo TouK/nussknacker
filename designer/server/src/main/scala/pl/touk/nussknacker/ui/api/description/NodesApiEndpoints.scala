@@ -50,6 +50,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
@@ -1576,11 +1577,10 @@ object NodesApiEndpoints {
               s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
-            case TooManySamplesRequested(maxSamples) =>
-              s"Too many samples requested, limit is $maxSamples. Please configure 'testDataSettings.maxSampleCount' to increase the limit"
-            case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
+            case TooManySamplesRequested(maxSamples) => TestingApiErrorMessages.tooManySamplesRequested(maxSamples)
+            case MalformedTypingResult(msg)          => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
-              s"$length characters were generated, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
+              TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1599,7 +1599,7 @@ object NodesApiEndpoints {
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
             case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
-            case NoDataGenerated                  => "No test data was generated"
+            case NoDataGenerated                  => TestingApiErrorMessages.noDataGenerated
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
 
