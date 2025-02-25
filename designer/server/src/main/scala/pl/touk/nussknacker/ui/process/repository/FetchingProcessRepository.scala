@@ -4,9 +4,10 @@ import cats.Monad
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.sql.Timestamp
+import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
@@ -29,10 +30,10 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]]
 
-  def fetchLatestVersionForProcessesExcludingUsers(
+  def fetchLatestVersionForProcesses(
       query: ScenarioQuery,
       excludedUserNames: Set[String],
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, (VersionId, Timestamp, String)]]
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, ScenarioVersionMetadata]]
 
   def getProcessVersion(
       processName: ProcessName,
@@ -50,4 +51,8 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
       processId: ProcessIdWithName
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[ProcessingType]
 
+}
+
+object FetchingProcessRepository {
+  final case class ScenarioVersionMetadata(versionId: VersionId, createdAt: Instant, createdByUser: String)
 }

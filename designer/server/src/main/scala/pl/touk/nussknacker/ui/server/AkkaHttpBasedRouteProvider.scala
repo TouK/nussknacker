@@ -12,8 +12,8 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.action.ModelDataActionInfoProvider
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
@@ -30,6 +30,12 @@ import pl.touk.nussknacker.ui.config.{
   DesignerConfig,
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
+}
+import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
+import pl.touk.nussknacker.ui.customhttpservice.{
+  CustomHttpServiceProvider,
+  CustomHttpServiceProviderFactory,
+  ScenarioServiceImpl
 }
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
@@ -57,7 +63,6 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RepositoryBasedScenarioActivityManager,
   ScenarioResolver,
   ScenarioStateProvider,
-  ScenarioStateProviderImpl,
   ScenarioTestExecutorServiceImpl
 }
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
@@ -80,7 +85,7 @@ import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityServ
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{
@@ -322,12 +327,6 @@ class AkkaHttpBasedRouteProvider(
         writeProcessRepository,
       )
 
-      val processesWithDetailsProvider = new EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
-        underlying = new ServiceBasedProcessesWithDetailsProvider(processService),
-        fetchingProcessRepository = futureProcessRepository,
-        designerConfig = designerConfig,
-      )
-
       val configProcessToolbarService = new ConfigScenarioToolbarService(
         CategoriesScenarioToolbarsConfigParser.parse(resolvedDesignerConfig)
       )
@@ -515,6 +514,8 @@ class AkkaHttpBasedRouteProvider(
 
       initMetrics(metricsRegistry, resolvedDesignerConfig, futureProcessRepository)
 
+      val customHttpServiceProvider = createCustomHttpServiceProvider(resolvedDesignerConfig, processService)
+
       val apiResourcesWithAuthentication: List[RouteWithUser] = {
         val legacyDeploymentService = new LegacyDeploymentService(
           dmDispatcher,
@@ -526,7 +527,6 @@ class AkkaHttpBasedRouteProvider(
         val routes = List(
           new ProcessesResources(
             processService = processService,
-            processesWithDetailsProvider = processesWithDetailsProvider,
             scenarioStateProvider = scenarioStateProvider,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
@@ -591,7 +591,14 @@ class AkkaHttpBasedRouteProvider(
             new ProcessReportResources(reporter, counter, futureProcessRepository, processService)
           ),
         ).flatten
-        routes ++ optionalRoutes
+
+        val customHttpServiceRouteWithUser = new RouteWithUser {
+          override protected def securedRoute(implicit user: LoggedUser): Route = pathPrefix("custom") {
+            customHttpServiceProvider.provideRouteWithUser(user)
+          }
+        }
+
+        routes ++ optionalRoutes ++ List(customHttpServiceRouteWithUser)
       }
 
       val usageStatisticsReportsConfig =
@@ -635,9 +642,17 @@ class AkkaHttpBasedRouteProvider(
         usageStatisticsReportsConfig,
         fingerprintService
       )
+
+      val customHttpServiceRouteWithoutUser = new RouteWithoutUser {
+        override protected def publicRoute(): Route = pathPrefix("custom") {
+          customHttpServiceProvider.provideRouteWithoutUser()
+        }
+      }
+
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
         authenticationResources.routeWithPathPrefix,
+        customHttpServiceRouteWithoutUser.publicRouteWithErrorHandling(),
       )
 
       val nuDesignerApi =
@@ -851,6 +866,25 @@ class AkkaHttpBasedRouteProvider(
     }
 
     additionalUIConfigProviderFactory.create(config, sttpBackend)
+  }
+
+  private def createCustomHttpServiceProvider(config: Config, processService: ProcessService) = {
+    Multiplicity(
+      ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
+    ) match {
+      case Empty() =>
+        CustomHttpServiceProvider.noop
+      case One(providerFactory) =>
+        providerFactory.create(
+          config,
+          executionContextWithIORuntime,
+          NussknackerServicesForCustomHttpService(new ScenarioServiceImpl(processService)),
+        )
+      case Many(moreThanOne) =>
+        throw new IllegalArgumentException(
+          s"More than one CustomHttpServiceProviderFactory instance found: $moreThanOne"
+        )
+    }
   }
 
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {

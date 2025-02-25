@@ -1890,6 +1890,18 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   )
   .dependsOn(extensionsApi)
 
+lazy val customHttpServiceApi = (project in file("designer/custom-http-service-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-custom-http-service-api",
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+      )
+    }
+  )
+  .dependsOn(extensionsApi, security)
+
 lazy val configLoaderApi = (project in file("designer/config-loader-api"))
   .settings(commonSettings)
   .settings(
@@ -2060,6 +2072,7 @@ lazy val designer = (project in file("designer/server"))
     componentsApi,
     restmodel,
     listenerApi,
+    customHttpServiceApi,
     configLoaderApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
@@ -2191,6 +2204,7 @@ lazy val modules = List[ProjectReference](
   httpUtils,
   restmodel,
   listenerApi,
+  customHttpServiceApi,
   configLoaderApi,
   deploymentManagerApi,
   designer,

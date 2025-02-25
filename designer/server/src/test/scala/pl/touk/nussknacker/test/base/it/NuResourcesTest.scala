@@ -206,15 +206,8 @@ trait NuResourcesTest
   protected val configProcessToolbarService =
     new ConfigScenarioToolbarService(CategoriesScenarioToolbarsConfigParser.parse(testConfig))
 
-  protected val processesWithDetailsProvider = new EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
-    underlying = new ServiceBasedProcessesWithDetailsProvider(processService),
-    fetchingProcessRepository = futureFetchingScenarioRepository,
-    designerConfig = DesignerConfig.from(ConfigFactory.empty),
-  )
-
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    processesWithDetailsProvider = processesWithDetailsProvider,
     scenarioStateProvider = scenarioStateProvider,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,

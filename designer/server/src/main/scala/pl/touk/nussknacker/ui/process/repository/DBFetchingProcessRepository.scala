@@ -14,11 +14,11 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -110,13 +110,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     )
   }
 
-  override def fetchLatestVersionForProcessesExcludingUsers(
+  override def fetchLatestVersionForProcesses(
       query: ScenarioQuery,
       excludedUserNames: Set[String],
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): F[Map[ProcessId, (VersionId, Timestamp, String)]] = {
+  ): F[Map[ProcessId, ScenarioVersionMetadata]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),
       query.isArchived.map(arg => process => process.isArchived === arg),
@@ -130,7 +130,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         process => expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process)),
         excludedUserNames,
       ).result
-    ).map(_.toMap)
+    ).map(_.toMap.map { case (processId, (versionId, timestamp, username)) =>
+      processId -> ScenarioVersionMetadata(versionId, timestamp.toInstant, username)
+    })
   }
 
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](

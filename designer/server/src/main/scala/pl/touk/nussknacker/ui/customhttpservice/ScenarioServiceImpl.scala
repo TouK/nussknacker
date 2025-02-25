@@ -1,0 +1,78 @@
+package pl.touk.nussknacker.ui.customhttpservice
+
+import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
+
+class ScenarioServiceImpl(
+    processService: ProcessService
+)(implicit executionContext: ExecutionContext)
+    extends ScenarioService {
+
+  override def getLatestProcessesWithDetails(
+      query: ScenarioService.ScenarioQuery
+  )(implicit user: LoggedUser): Future[List[ScenarioService.ScenarioWithDetails]] =
+    processService
+      .getLatestProcessesWithDetails(
+        toDomain(query),
+        GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
+      )
+      .map(_.map(toApi))
+
+  override def getLatestVersionForProcesses(
+      query: ScenarioService.ScenarioQuery,
+      excludedUserNames: Set[String]
+  )(implicit user: LoggedUser): Future[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
+    processService
+      .getLatestVersionForProcesses(toDomain(query), excludedUserNames)
+      .map(_.map { case (processId, metadata) => (processId, toApi(metadata)) })
+
+  private def toDomain(query: ScenarioService.ScenarioQuery): ScenarioQuery =
+    ScenarioQuery(
+      isFragment = query.isFragment,
+      isArchived = query.isArchived,
+      isDeployed = query.isDeployed,
+      categories = query.categories,
+      processingTypes = query.processingTypes,
+      names = query.names,
+    )
+
+  private def toApi(metadata: ScenarioVersionMetadata): ScenarioService.ScenarioVersionMetadata =
+    ScenarioService.ScenarioVersionMetadata(
+      versionId = metadata.versionId,
+      createdAt = metadata.createdAt,
+      createdByUser = metadata.createdByUser,
+    )
+
+  private implicit def toApi(metadata: ScenarioWithDetails): ScenarioService.ScenarioWithDetails =
+    ScenarioService.ScenarioWithDetails(
+      name = metadata.name,
+      processVersionId = metadata.processVersionId,
+      isLatestVersion = metadata.isLatestVersion,
+      description = metadata.description,
+      isArchived = metadata.isArchived,
+      isFragment = metadata.isFragment,
+      processingType = metadata.processingType,
+      processCategory = metadata.processCategory,
+      processingMode = metadata.processingMode,
+      engineSetupName = metadata.engineSetupName,
+      modifiedAt = metadata.modifiedAt,
+      modifiedBy = metadata.modifiedBy,
+      createdAt = metadata.createdAt,
+      createdBy = metadata.createdBy,
+      labels = metadata.labels,
+      lastDeployedAction = metadata.lastDeployedAction,
+      lastStateAction = metadata.lastStateAction,
+      lastAction = metadata.lastAction,
+      modelVersion = metadata.modelVersion,
+      state = metadata.state,
+    )
+
+}

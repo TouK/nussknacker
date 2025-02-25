@@ -12,6 +12,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
   FetchComponentsUsages,
@@ -62,13 +63,13 @@ class MockFetchingProcessRepository private (
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[PS]] =
     fetchLatestProcessesDetails[PS](q).map(_.map(_.json))
 
-  override def fetchLatestVersionForProcessesExcludingUsers(
+  override def fetchLatestVersionForProcesses(
       query: ScenarioQuery,
       excludedUserNames: Set[String],
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[Map[ProcessId, (VersionId, Timestamp, String)]] = Future.successful(Map.empty)
+  ): Future[Map[ProcessId, ScenarioVersionMetadata]] = Future.successful(Map.empty)
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
