@@ -199,6 +199,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
+          // TODO ljd: add missing errors
           noScenarioExample
         )
       )
