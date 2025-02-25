@@ -17,11 +17,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{
-  malformedTypingResultExample,
-  noScenarioExample,
-  testDataGenerationErrorExample
-}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{malformedTypingResultExample, noScenarioExample}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.model.StatusCode.Ok
@@ -203,7 +199,6 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          testDataGenerationErrorExample,
           noScenarioExample
         )
       )

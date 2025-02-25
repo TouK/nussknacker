@@ -157,7 +157,6 @@ object TestingApiHttpService {
 
   object TestingError {
 
-    final case class TestDataGenerationError(msg: String)  extends TestingError
     final case class NoScenario(scenarioName: ProcessName) extends TestingError
     final case object NoPermission                         extends TestingError with CustomAuthorizationError
     final case class MalformedTypingResult(msg: String)    extends TestingError
@@ -173,12 +172,6 @@ object TestingApiHttpService {
     implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
         s"The request content was malformed:\n${e.msg}"
-      )
-    }
-
-    implicit val testDataGenerationErrorCoded: Codec[String, TestDataGenerationError, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TestDataGenerationError](e =>
-        s"Error during generation of test data:\n${e.msg}"
       )
     }
 
@@ -217,18 +210,6 @@ object TestingApiHttpService {
             Example.of(
               summary = Some("No scenario {scenarioName} found"),
               value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
-      )
-
-    val testDataGenerationErrorExample: EndpointOutput.OneOfVariant[TestDataGenerationError] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[TestDataGenerationError]
-          .example(
-            Example.of(
-              summary = Some("There was a problem with parsing test data"),
-              value = TestDataGenerationError("Parsing of data failed")
             )
           )
       )
