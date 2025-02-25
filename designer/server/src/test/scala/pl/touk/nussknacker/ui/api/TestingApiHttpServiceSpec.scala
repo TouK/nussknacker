@@ -144,8 +144,7 @@ class TestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generate/100")
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
-        .equalsPlainBody("""Error during generation of test data:
-            |Too many samples requested, limit is 20""".stripMargin)
+        .equalsPlainBody("Too many samples requested, limit is 20")
     }
   }
 

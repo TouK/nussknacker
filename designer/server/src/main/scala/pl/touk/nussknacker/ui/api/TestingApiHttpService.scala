@@ -159,7 +159,6 @@ object TestingApiHttpService {
 
     final case class NoScenario(scenarioName: ProcessName) extends TestingError
     final case object NoPermission                         extends TestingError with CustomAuthorizationError
-    final case class MalformedTypingResult(msg: String)    extends TestingError
     final case object NoDataGenerated                      extends TestingError
     final case object NoSourcesWithTestDataGeneration      extends TestingError
     final case class TooManyCharactersGenerated(length: Int, limit: Int) extends TestingError
@@ -167,12 +166,6 @@ object TestingApiHttpService {
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
-    }
-
-    implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
-        s"The request content was malformed:\n${e.msg}"
-      )
     }
 
     implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
@@ -214,16 +207,50 @@ object TestingApiHttpService {
           )
       )
 
-    val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
+    val noDataGeneratedExample: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
       oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[MalformedTypingResult]
+        NotFound,
+        plainBody[NoDataGenerated.type]
           .example(
             Example.of(
-              summary = Some("Malformed TypingResult sent in request"),
-              value = MalformedTypingResult(
-                "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
-              )
+              summary = Some("No data was generated"),
+              value = NoDataGenerated
+            )
+          )
+      )
+
+    val noSourcesWithTestDataGenerationExample: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoSourcesWithTestDataGeneration.type]
+          .example(
+            Example.of(
+              summary = Some("No sources with test data generation available"),
+              value = NoSourcesWithTestDataGeneration
+            )
+          )
+      )
+
+    val tooManyCharactersGeneratedExample: EndpointOutput.OneOfVariant[TooManyCharactersGenerated] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[TooManyCharactersGenerated]
+          .example(
+            Example.of(
+              summary = Some("Too many characters were generated"),
+              value = TooManyCharactersGenerated(length = 5000, limit = 2000)
+            )
+          )
+      )
+
+    val tooManySamplesRequestedExample: EndpointOutput.OneOfVariant[TooManySamplesRequested] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[TooManySamplesRequested]
+          .example(
+            Example.of(
+              summary = Some("Too many samples requested"),
+              value = TooManySamplesRequested(maxSamples = 1000)
             )
           )
       )
