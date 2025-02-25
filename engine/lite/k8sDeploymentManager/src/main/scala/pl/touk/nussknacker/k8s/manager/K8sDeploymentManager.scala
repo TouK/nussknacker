@@ -49,8 +49,7 @@ class K8sDeploymentManager(
     rawConfig: Config,
     dependencies: DeploymentManagerDependencies
 ) extends LiteDeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   import dependencies._
 
@@ -316,17 +315,16 @@ class K8sDeploymentManager(
     }
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     for {
       deployments <- scenarioStateK8sClient
-        .listSelected[ListResource[Deployment]](requirementForName(name))
+        .listSelected[ListResource[Deployment]](requirementForName(scenarioName))
         .map(_.items)
-      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(scenarioName)).map(_.items)
     } yield {
-      WithDataFreshnessStatus.fresh(deployments.map(mapper.status(_, pods)))
+      WithDataFreshnessStatus.fresh(deployments.map(K8sDeploymentStatusMapper.status(_, pods)))
     }
   }
 
@@ -387,7 +385,8 @@ class K8sDeploymentManager(
   //      for each scenario in this case and where store the deploymentId
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }

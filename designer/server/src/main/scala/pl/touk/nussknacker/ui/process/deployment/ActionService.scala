@@ -8,6 +8,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider,
+  ScenarioStatusWithAllowedActions
+}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
@@ -22,14 +26,13 @@ import scala.util.{Failure, Success}
 // Responsibility of this class is to wrap deployment actions with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
 // will be executed in given state. It sends notifications about finished actions.
-// Also thanks to it we are able to check if state on remote engine is the same as persisted state.
+// Also thanks to that, we are able to check if state on remote engine is the same as persisted state.
 class ActionService(
-    dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
     actionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     processChangeListener: ProcessChangeListener,
-    scenarioStateProvider: ScenarioStateProvider,
+    scenarioStatusProvider: ScenarioStatusProvider,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     clock: Clock
 )(implicit ec: ExecutionContext)
@@ -61,7 +64,7 @@ class ActionService(
         _ <- validateExpectedProcessingType(expectedProcessingType, processId)
         lastStateAction <- actionRepository.getFinishedProcessActions(
           processId,
-          Some(ScenarioActionName.StateActions)
+          Some(ScenarioActionName.ScenarioStatusActions)
         )
       } yield lastStateAction.headOption
     }
@@ -122,18 +125,12 @@ class ActionService(
       ] => Option[VersionId]
   ) {
 
-    def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](
-        command: COMMAND,
-        actionName: ScenarioActionName,
-        dmCommandCreator: CommandContext[LatestScenarioDetailsShape] => DMScenarioCommand[RESULT],
+    def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](command: COMMAND, actionName: ScenarioActionName)(
+        runAction: CommandContext[LatestScenarioDetailsShape] => Future[RESULT],
     ): Future[RESULT] = {
-      import command.commonData._
       processActionWithCustomFinalization[COMMAND, RESULT](command, actionName) { case (ctx, actionFinalizer) =>
-        val dmCommand = dmCommandCreator(ctx)
         actionFinalizer.handleResult {
-          dispatcher
-            .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-            .processCommand(dmCommand)
+          runAction(ctx)
         }
       }
     }
@@ -181,11 +178,8 @@ class ActionService(
           // 1.3. check if action is performed on proper scenario (not fragment, not archived)
           _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
           // 1.4. check if action is allowed for current state
-          processState <- scenarioStateProvider.getProcessStateDBIO(
-            processDetails,
-            None
-          )
-          _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
+          stateWithAllowedActions <- scenarioStatusProvider.getAllowedActionsForScenarioStatusDBIO(processDetails)
+          _ = checkIfCanPerformActionInState(actionName, processDetails, stateWithAllowedActions)
           // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
           versionOnWhichActionIsDone = extractVersionOnWhichActionIsDoneFromLatestScenarioDetails(processDetails)
           // 1.6. create new action, action is started with "in progress" state, the whole command execution can take some time
@@ -216,12 +210,13 @@ class ActionService(
     private def checkIfCanPerformActionInState(
         actionName: ScenarioActionName,
         processDetails: ScenarioWithDetailsEntity[LatestScenarioDetailsShape],
-        ps: ProcessState
+        statusWithAllowedActions: ScenarioStatusWithAllowedActions
     ): Unit = {
-      val allowedActions = ps.allowedActions.toSet
-      if (!allowedActions.contains(actionName)) {
-        logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
-        throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActions)
+      if (!statusWithAllowedActions.allowedActions.contains(actionName)) {
+        logger.debug(
+          s"Action: $actionName on process: ${processDetails.name} not allowed in ${statusWithAllowedActions.scenarioStatus} state"
+        )
+        throw ProcessIllegalAction(actionName, processDetails.name, statusWithAllowedActions)
       }
     }
 

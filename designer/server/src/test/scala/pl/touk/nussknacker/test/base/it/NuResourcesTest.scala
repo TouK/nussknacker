@@ -45,11 +45,12 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.config.{DesignerConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
@@ -116,21 +117,25 @@ trait NuResourcesTest
     futureFetchingScenarioRepository
   )
 
-  protected val scenarioStateProvider: ScenarioStateProvider = ScenarioStateProvider(
+  protected val deploymentsStatusesProvider =
+    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)
+
+  protected val scenarioStatusProvider: ScenarioStatusProvider = new ScenarioStatusProvider(
+    deploymentsStatusesProvider,
     dmDispatcher,
     fetchingProcessRepository,
     actionRepository,
     dbioRunner,
-    scenarioStateTimeout = None
   )
 
+  protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
+
   protected val actionService: ActionService = new ActionService(
-    dmDispatcher,
     fetchingProcessRepository,
     actionRepository,
     dbioRunner,
     processChangeListener,
-    scenarioStateProvider,
+    scenarioStatusProvider,
     deploymentCommentSettings,
     Clock.systemUTC()
   )
@@ -195,7 +200,7 @@ trait NuResourcesTest
     )
   }
 
-  protected val processService: DBProcessService = createDBProcessService(scenarioStateProvider)
+  protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -207,7 +212,8 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    scenarioStateProvider = scenarioStateProvider,
+    scenarioStatusProvider = scenarioStatusProvider,
+    scenarioStatusPresenter = scenarioStatusPresenter,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener
@@ -226,9 +232,10 @@ trait NuResourcesTest
     RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(processStateProvider: ScenarioStateProvider): DBProcessService =
+  protected def createDBProcessService(processStateProvider: ScenarioStatusProvider): DBProcessService =
     new DBProcessService(
       processStateProvider,
+      scenarioStatusPresenter,
       newProcessPreparerByProcessingType,
       typeToConfig.mapCombined(_.parametersService),
       processResolverByProcessingType,
@@ -264,7 +271,6 @@ trait NuResourcesTest
       dispatcher = dmDispatcher,
       metricRegistry = new MetricRegistry,
       scenarioTestServices = scenarioTestServiceByProcessingType,
-      typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData)
     )
 
   override def beforeEach(): Unit = {

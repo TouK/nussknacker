@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
 import akka.actor.{ActorSystem, Cancellable}
+import cats.effect.IO
+import cats.effect.kernel.Resource
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
@@ -11,19 +13,17 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 // TODO: Properly handle HA setup: synchronizeAll() should be invoked only on one instance of designer in a time
-class DeploymentsStatusesSynchronizationScheduler(
-    actorSystem: ActorSystem,
-    synchronizer: DeploymentsStatusesSynchronizer,
-    config: DeploymentsStatusesSynchronizationConfig
-) extends AutoCloseable
-    with LazyLogging {
+object DeploymentsStatusesSynchronizationScheduler extends LazyLogging {
 
-  @volatile private var scheduledJob: Option[Cancellable] = None
+  def resource(
+      actorSystem: ActorSystem,
+      synchronizer: DeploymentsStatusesSynchronizer,
+      config: DeploymentsStatusesSynchronizationConfig
+  ): Resource[IO, Cancellable] = {
 
-  import actorSystem.dispatcher
+    import actorSystem.dispatcher
 
-  def start(): Unit = {
-    scheduledJob = Some(
+    Resource.make(IO {
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
         Try(Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)).failed.foreach { ex =>
           logger.error(
@@ -32,11 +32,11 @@ class DeploymentsStatusesSynchronizationScheduler(
           )
         }
       }
-    )
-  }
-
-  override def close(): Unit = {
-    scheduledJob.map(_.cancel())
+    }) { scheduledJob =>
+      IO {
+        scheduledJob.cancel()
+      }
+    }
   }
 
 }

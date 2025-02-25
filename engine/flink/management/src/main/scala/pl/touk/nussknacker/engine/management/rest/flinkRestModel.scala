@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.management.rest
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common
+import org.apache.flink.api.common.JobID
 
 object flinkRestModel {
 
@@ -11,15 +13,13 @@ object flinkRestModel {
       programArgsList: List[String],
       parallelism: Int = common.ExecutionConfig.PARALLELISM_DEFAULT,
       allowNonRestoredState: Boolean = true,
-      jobId: Option[String]
+      jobId: Option[JobID]
   )
 
   @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(
       `target-directory`: Option[String],
       `cancel-job`: Boolean
   )
-
-  @JsonCodec(encodeOnly = true) case class StopRequest(targetDirectory: Option[String], drain: Boolean)
 
   @JsonCodec(decodeOnly = true) case class SavepointTriggerResponse(`request-id`: String)
 
@@ -53,7 +53,7 @@ object flinkRestModel {
 
   // NOTE: Flink <1.10 compatibility - JobStatus changed package, so we use String here
   @JsonCodec(decodeOnly = true) case class JobOverview(
-      jid: String,
+      jid: JobID,
       name: String,
       `last-modification`: Long,
       `start-time`: Long,
@@ -110,7 +110,7 @@ object flinkRestModel {
     def total: Int
   }
 
-  @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
+  @JsonCodec(decodeOnly = true) case class JobConfig(jid: JobID, `execution-config`: ExecutionConfig)
 
   @JsonCodec(decodeOnly = true) case class ExecutionConfig(
       `job-parallelism`: Int,
@@ -127,6 +127,9 @@ object flinkRestModel {
 
   @JsonCodec(decodeOnly = true) case class KeyValueEntry(key: String, value: String)
 
-  @JsonCodec case class RunResponse(jobid: String)
+  @JsonCodec case class RunResponse(jobid: JobID)
+
+  implicit val jobIdEncoder: Encoder[JobID] = Encoder[String].contramap[JobID](_.toHexString)
+  implicit val jobIdDecoder: Decoder[JobID] = Decoder[String].map(JobID.fromHexString)
 
 }

@@ -23,7 +23,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubScenarioStateProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
@@ -142,8 +142,6 @@ object TestFactory {
       SttpBackendStub.asynchronousFuture
     )
   }
-
-  def processStateProvider() = new StubScenarioStateProvider(Map.empty)
 
   def newDBIOActionRunner(dbRef: DbRef): DBIOActionRunner =
     DBIOActionRunner(dbRef)

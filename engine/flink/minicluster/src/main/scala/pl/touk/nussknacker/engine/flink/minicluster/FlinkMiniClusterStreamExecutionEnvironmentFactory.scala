@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
-import org.apache.flink.api.common.JobSubmissionResult
+import org.apache.flink.api.common.{JobID, JobSubmissionResult}
 import org.apache.flink.api.dag.Pipeline
-import org.apache.flink.configuration.{Configuration, DeploymentOptions, PipelineOptions}
+import org.apache.flink.configuration.{Configuration, DeploymentOptions, PipelineOptions, PipelineOptionsInternal}
 import org.apache.flink.core.execution.{PipelineExecutor, PipelineExecutorFactory, PipelineExecutorServiceLoader}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterJobClient}
@@ -20,10 +20,10 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
   def createStreamExecutionEnvironment(
       miniCluster: MiniCluster,
       modelClassLoader: URLClassLoader,
-      configuration: Configuration,
       attached: Boolean
   ): StreamExecutionEnvironment = {
     val pipelineExecutorServiceLoader = createPipelineExecutorServiceLoader(miniCluster, modelClassLoader)
+    val configuration                 = new Configuration()
     configuration.set(DeploymentOptions.TARGET, pipelineExecutorName)
     configuration.set(PipelineOptions.CLASSPATHS, modelClassLoader.getURLs.map(_.toString).toList.asJava)
     configuration.set[java.lang.Boolean](DeploymentOptions.ATTACHED, attached)
@@ -50,7 +50,10 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
             (pipeline: Pipeline, _: Configuration, userCodeClassloader: ClassLoader) => {
               pipeline match {
                 case streamGraph: StreamGraph =>
-                  val jobGraph = streamGraph.getJobGraph(userCodeClassloader, null)
+                  val jobId = Option(configuration.get(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID))
+                    .map(JobID.fromHexString)
+                    .orNull
+                  val jobGraph = streamGraph.getJobGraph(userCodeClassloader, jobId)
                   jobGraph.setClasspaths(modelClassLoader.getURLs.toList.asJava)
                   if (jobGraph.getSavepointRestoreSettings == SavepointRestoreSettings.none)
                     jobGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings)

@@ -94,13 +94,15 @@ class FlinkScheduledExecutionPerformer(
           deploymentData,
           canonicalProcess,
         )
-        flinkClient.runProgram(
-          jarFile,
-          RemoteFlinkScenarioJobRunner.MainClassName,
-          args,
-          None,
-          deploymentData.deploymentId.toNewDeploymentIdOpt.map(toJobId)
-        )
+        flinkClient
+          .runProgram(
+            jarFile,
+            RemoteFlinkScenarioJobRunner.MainClassName,
+            args,
+            None,
+            deploymentData.deploymentId.toNewDeploymentIdOpt.map(toJobId)
+          )
+          .map(_.map(jobId => ExternalDeploymentId(jobId.toHexString)))
       case None =>
         logger.error(
           s"Cannot deploy scenario ${deployment.processName}, version id: ${deployment.versionId}: jar file name not present"
@@ -131,7 +133,7 @@ class FlinkScheduledExecutionPerformer(
   }
 
   private def toJobId(did: newdeployment.DeploymentId) = {
-    new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits).toHexString
+    new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits)
   }
 
 }

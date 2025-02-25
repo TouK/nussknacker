@@ -5,7 +5,7 @@ import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
+import org.scalatest.{BeforeAndAfterAll, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -13,10 +13,12 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.DockerTest
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+
+import java.util.UUID
 
 trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matchers with OptionValues {
   // Warning: we need StrictLogging capability instead of LazyLogging because with LazyLogging we had a deadlock during kafkaClient allocation
@@ -57,27 +59,30 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   protected def deployProcessAndWaitIfRunning(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
+      deploymentId: DeploymentId = DeploymentId(UUID.randomUUID().toString),
       stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
-  ): Assertion = {
-    deployProcess(process, processVersion, stateRestoringStrategy)
+  ): Option[ExternalDeploymentId] = {
+    val externalDeploymentId = deployProcess(process, processVersion, deploymentId, stateRestoringStrategy)
     eventually {
-      val jobStatuses = deploymentManager.getProcessStates(process.name).futureValue.value
+      val jobStatuses = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.name}, $jobStatuses")
 
       jobStatuses.map(_.status) should contain(SimpleStateStatus.Running)
     }
+    externalDeploymentId
   }
 
   protected def deployProcess(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
-      stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+      deploymentId: DeploymentId,
+      stateRestoringStrategy: StateRestoringStrategy
   ): Option[ExternalDeploymentId] = {
     deploymentManager
       .processCommand(
         DMRunDeploymentCommand(
           processVersion,
-          DeploymentData.empty,
+          DeploymentData.empty.copy(deploymentId = deploymentId),
           process,
           DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(stateRestoringStrategy)
         )
@@ -89,7 +94,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
     deploymentManager.processCommand(DMCancelScenarioCommand(processName, user = userToAct)).futureValue
     eventually {
       val statuses = deploymentManager
-        .getProcessStates(processName)
+        .getScenarioDeploymentsStatuses(processName)
         .futureValue
         .value
       val runningOrDuringCancelJobs = statuses

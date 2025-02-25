@@ -129,7 +129,9 @@ class RequestResponseEmbeddedDeploymentManagerTest
     fixture.deployScenario(scenario)
 
     eventually {
-      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
+        SimpleStateStatus.Running
+      )
     }
 
     request.body("""{ productId: 15 }""").send(backend).body shouldBe Right("""{"transformed":15}""")
@@ -149,7 +151,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
     manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
 
-    manager.getProcessStates(name).futureValue.value shouldBe List.empty
+    manager.getScenarioDeploymentsStatuses(name).futureValue.value shouldBe List.empty
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
   }
 

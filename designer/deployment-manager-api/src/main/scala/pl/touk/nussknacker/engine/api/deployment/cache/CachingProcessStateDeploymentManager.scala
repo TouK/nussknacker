@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
@@ -15,38 +15,21 @@ class CachingProcessStateDeploymentManager(
     delegate: DeploymentManager,
     cacheTTL: FiniteDuration,
     override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport,
-    override val stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport,
+    override val deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport,
     override val schedulingSupport: SchedulingSupport,
 ) extends DeploymentManager {
 
-  private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
+  private val cache: AsyncCache[ProcessName, List[DeploymentStatusDetails]] = Caffeine
     .newBuilder()
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
-    .buildAsync[ProcessName, List[StatusDetails]]
+    .buildAsync[ProcessName, List[DeploymentStatusDetails]]
 
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] =
-    delegate.resolve(
-      idWithName,
-      statusDetails,
-      lastStateAction,
-      latestVersionId,
-      deployedVersionId,
-      currentlyPresentedVersionId
-    )
-
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    def fetchAndUpdateCache(): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-      val resultFuture = delegate.getProcessStates(name)
-      cache.put(name, resultFuture.map(_.value).toJava.toCompletableFuture)
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+    def fetchAndUpdateCache(): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+      val resultFuture = delegate.getScenarioDeploymentsStatuses(scenarioName)
+      cache.put(scenarioName, resultFuture.map(_.value).toJava.toCompletableFuture)
       resultFuture
     }
 
@@ -54,7 +37,7 @@ class CachingProcessStateDeploymentManager(
       case DataFreshnessPolicy.Fresh =>
         fetchAndUpdateCache()
       case DataFreshnessPolicy.CanBeCached =>
-        Option(cache.getIfPresent(name))
+        Option(cache.getIfPresent(scenarioName))
           .map(_.toScala.map(WithDataFreshnessStatus.cached))
           .getOrElse(
             fetchAndUpdateCache()
@@ -84,12 +67,12 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
           delegate,
           cacheTTL,
           delegate.deploymentSynchronisationSupport,
-          delegate.stateQueryForAllScenariosSupport,
+          delegate.deploymentsStatusesQueryForAllScenariosSupport,
           delegate.schedulingSupport,
         )
       }
       .getOrElse {
-        logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
+        logger.debug(s"Skipping state caching for DeploymentManager: $delegate")
         delegate
       }
   }

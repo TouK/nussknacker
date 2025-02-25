@@ -24,7 +24,6 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
     flinkMiniCluster = FlinkMiniClusterFactory.createMiniClusterWithServices(
       ModelClassLoader.flinkWorkAroundEmptyClassloader,
       prepareFlinkConfiguration(),
-      new Configuration()
     )
   }
 
