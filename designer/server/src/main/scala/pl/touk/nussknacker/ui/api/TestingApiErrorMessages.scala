@@ -7,7 +7,7 @@ object TestingApiErrorMessages {
 
   val noSourcesWithTestDataGeneration = "No sources with test data generation available"
 
-  val noDataGenerated = "No data was generated."
+  val noDataGenerated = "No data was generated"
 
   val noInputRecords = "No input records found"
 

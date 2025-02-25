@@ -2255,7 +2255,7 @@ paths:
                   value: No scenario 'example scenario' found
                 Example1:
                   summary: No test data generated
-                  value: No data was generated.
+                  value: No data was generated
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
