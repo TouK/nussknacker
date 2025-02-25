@@ -9,6 +9,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -47,6 +48,7 @@ import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
@@ -67,6 +69,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NotFoundNodesError
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOutputs._
+import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedNullSchemaHelper.typedNullTypeSchema
@@ -696,6 +699,7 @@ object NodesApiEndpoints {
     implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
     implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
     import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
+    implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]                         = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]                   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue]                 = Schema.derived
