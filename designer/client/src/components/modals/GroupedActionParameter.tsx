@@ -7,19 +7,19 @@ import { NodeValidationError } from "../../types";
 import { default as EditableEditor } from "../graph/node-modal/editors/EditableEditor";
 
 interface Props {
-    nodeId: string;
+    nodeIds: string[];
     parameterName: string;
     parameterConfig: ActionParameterConfig;
     parameterValue: string;
-    onChange: (nodeId: string, parameterName: ActionParameterName, newValue: string) => void;
+    onChange: (nodeIds: string[], parameterName: ActionParameterName, newValue: string) => void;
     errors: NodeValidationError[];
 }
 
-export function ActionParameter(props: Props): JSX.Element {
-    const { nodeId, parameterName, parameterConfig, errors, parameterValue, onChange } = props;
+export function GroupedActionParameter(props: Props): JSX.Element {
+    const { nodeIds, parameterName, parameterConfig, errors, parameterValue, onChange } = props;
 
     const expressionObj = { expression: parameterValue, value: parameterValue, language: ExpressionLang.String };
-    const onValueChange = useCallback((newValue: string) => onChange(nodeId, parameterName, newValue), [onChange, nodeId, parameterName]);
+    const onValueChange = useCallback((newValue: string) => onChange(nodeIds, parameterName, newValue), [onChange, nodeIds, parameterName]);
 
     return (
         <EditableEditor

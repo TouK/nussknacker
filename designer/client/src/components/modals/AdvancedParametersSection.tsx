@@ -6,19 +6,19 @@ import { Typography } from "@mui/material";
 import AccordionDetails from "@mui/material/AccordionDetails";
 
 interface Props {
-    nodeId: string;
+    componentId: string;
 }
 
-export function AdvancedParametersSection({ children, nodeId }: PropsWithChildren<Props>): JSX.Element {
+export function AdvancedParametersSection({ children, componentId }: PropsWithChildren<Props>): JSX.Element {
     return (
         <Accordion disableGutters elevation={0} sx={{ border: 0, "&::before": { display: "none" } }}>
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon sx={{ color: "inherit" }} />}
-                aria-controls={`${nodeId}-content`}
-                id={`${nodeId}-header`}
+                aria-controls={`${componentId}-content`}
+                id={`${componentId}-header`}
                 sx={{ flexDirection: "row-reverse", border: 0 }}
             >
-                <Typography>{nodeId}</Typography>
+                <Typography>{componentId}</Typography>
             </AccordionSummary>
             <AccordionDetails>{children}</AccordionDetails>
         </Accordion>
