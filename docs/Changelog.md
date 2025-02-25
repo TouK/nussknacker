@@ -94,6 +94,7 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7590](https://github.com/TouK/nussknacker/pull/7590) Replaced old Akka and Akka HTTP libraries with Apache Pekko (1.0.3) and Apache Pekko HTTP (1.0.1)
 
 ## 1.18
 
