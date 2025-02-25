@@ -238,4 +238,6 @@ object ScenarioTestService {
     final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError
   }
 
+  sealed trait TestError
+
 }

@@ -180,15 +180,17 @@ object TestingApiHttpService {
     }
 
     implicit val tooManyCharactersGeneratedCodec: Codec[String, TooManyCharactersGenerated, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManyCharactersGenerated](e =>
-        s"Too many characters were generated: ${e.length}. Limit is ${e.limit}"
-      )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManyCharactersGenerated] {
+        case TooManyCharactersGenerated(length, limit) =>
+          s"$length characters were generated, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
+      }
     }
 
     implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested](e =>
-        s"Too many samples requested, limit is ${e.maxSamples}"
-      )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested] {
+        case TooManySamplesRequested(maxSamples) =>
+          s"Too many samples requested, limit is $maxSamples. Please configure 'testDataSettings.maxSampleCount' to increase the limit"
+      }
     }
 
   }

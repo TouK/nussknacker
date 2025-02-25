@@ -1576,10 +1576,11 @@ object NodesApiEndpoints {
               s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
-            case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
-            case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
+            case TooManySamplesRequested(maxSamples) =>
+              s"Too many samples requested, limit is $maxSamples. Please configure 'testDataSettings.maxSampleCount' to increase the limit"
+            case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
-              s"Too many characters generated: $length. Limit is: $limit"
+              s"$length characters were generated, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
