@@ -24,10 +24,10 @@ object TestingApiErrorMessages {
     s"Could not parse record: '$rawTestRecord'"
 
   def missingSourceForRecord(sourceId: String, recordIndex: Int) =
-    s"For record at ${recordIndex + 1} line - scenario does not have source id: '$sourceId'"
+    s"Record ${recordIndex + 1} - scenario does not have source id: '$sourceId'"
 
   def multipleSourcesRequiredForRecord(recordIndex: Int) =
-    s"For record ${recordIndex + 1} line - scenario has multiple sources but got record without source id"
+    s"Record ${recordIndex + 1} - scenario has multiple sources but got record without source id"
 
   // TODO ljd: human readable unit?
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =

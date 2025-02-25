@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
 }
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
-import pl.touk.nussknacker.ui.OtherError
+import pl.touk.nussknacker.ui.{BadRequestError, OtherError}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -68,7 +68,7 @@ object ManagementResources {
 
   }
 
-  final case class GenerateTestDataDesignerError(message: String) extends OtherError(message)
+  final case class GenerateTestDataDesignerError(message: String) extends BadRequestError(message)
 
   private object GenerateTestDataDesignerError {
 
@@ -92,7 +92,7 @@ object ManagementResources {
 
   }
 
-  final case class PerformTestDesignerError(message: String) extends OtherError(message)
+  final case class PerformTestDesignerError(message: String) extends BadRequestError(message)
 
   private object PerformTestDesignerError {
 

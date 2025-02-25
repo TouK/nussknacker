@@ -442,6 +442,9 @@ class ManagementResourcesSpec
     tooLargeTestDataContentList.foreach { tooLargeData =>
       testScenario(process, tooLargeData) ~> check {
         status shouldEqual StatusCodes.BadRequest
+        responseAs[
+          String
+        ] shouldBe "Loaded 50 input samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
       }
     }
   }
