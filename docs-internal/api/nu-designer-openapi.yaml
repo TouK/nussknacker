@@ -3441,11 +3441,13 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
-                Example:
+                Example0:
+                  summary: Too many characters were generated
+                  value: 5000 characters were generated, limit is 2000. Please configure
+                    'testDataSettings.testDataMaxLength' to increase the limit
+                Example1:
                   summary: Too many samples requested
                   value: Too many samples requested, limit is 1000. Please configure
                     'testDataSettings.maxSamplesCount' to increase the limit
@@ -3477,12 +3479,15 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
-                - type: string
+                type: string
               examples:
-                Example:
+                Example0:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: No data was generated
+                Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
         '501':

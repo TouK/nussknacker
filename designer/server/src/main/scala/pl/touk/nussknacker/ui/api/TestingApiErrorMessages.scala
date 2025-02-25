@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPreparationError
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.TooManyCharactersGenerated
-
 object TestingApiErrorMessages {
 
   val noSourcesWithTestDataGeneration = "No sources with test data generation available"

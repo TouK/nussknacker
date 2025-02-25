@@ -8,7 +8,9 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError._
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTestingError._
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodesError, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.description.TestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -20,7 +22,7 @@ import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 import sttp.model.StatusCode.{BadRequest, NotFound}
 import sttp.tapir.EndpointIO.Example
-import sttp.tapir.{Codec, CodecFormat, EndpointOutput, oneOfVariantFromMatchType, plainBody}
+import sttp.tapir.{Codec, CodecFormat, EndpointOutput, oneOfVariant, oneOfVariantFromMatchType, plainBody}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -157,106 +159,61 @@ object TestingApiHttpService {
 
   object TestingError {
 
-    final case class NoScenario(scenarioName: ProcessName) extends TestingError
-    final case object NoPermission                         extends TestingError with CustomAuthorizationError
-    final case object NoDataGenerated                      extends TestingError
-    final case object NoSourcesWithTestDataGeneration      extends TestingError
-    final case class TooManyCharactersGenerated(length: Int, limit: Int) extends TestingError
-    final case class TooManySamplesRequested(maxSamples: Int)            extends TestingError
+    final case object NoPermission extends TestingError with CustomAuthorizationError
 
-    implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
-    }
+    sealed trait BadRequestTestingError extends TestingError
 
-    implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ =>
-        TestingApiErrorMessages.noDataGenerated
-      )
-    }
+    object BadRequestTestingError {
+      final case class TooManyCharactersGenerated(length: Int, limit: Int) extends BadRequestTestingError
+      final case class TooManySamplesRequested(maxSamples: Int)            extends BadRequestTestingError
 
-    implicit val noSourcesWithTestDataGenerationCodec
-        : Codec[String, NoSourcesWithTestDataGeneration.type, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoSourcesWithTestDataGeneration.type](_ =>
-        TestingApiErrorMessages.noSourcesWithTestDataGeneration
-      )
-    }
-
-    implicit val tooManyCharactersGeneratedCodec: Codec[String, TooManyCharactersGenerated, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManyCharactersGenerated] {
-        case TooManyCharactersGenerated(length, limit) =>
-          TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+      implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
+          case TooManyCharactersGenerated(length, limit) =>
+            TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+          case TooManySamplesRequested(maxSamples) =>
+            TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+        }
       }
+
     }
 
-    implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested] {
-        case TooManySamplesRequested(maxSamples) =>
-          TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+    sealed trait NotFoundTestingError extends TestingError
+
+    object NotFoundTestingError {
+      final case class NoScenario(scenarioName: ProcessName) extends NotFoundTestingError
+      final case object NoDataGenerated                      extends NotFoundTestingError
+      final case object NoSourcesWithTestDataGeneration      extends NotFoundTestingError
+
+      implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
+          case NoScenario(scenarioName)        => s"No scenario ${scenarioName.value} found"
+          case NoDataGenerated                 => TestingApiErrorMessages.noDataGenerated
+          case NoSourcesWithTestDataGeneration => TestingApiErrorMessages.noSourcesWithTestDataGeneration
+        }
       }
+
+      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+          s"No scenario ${e.scenarioName} found"
+        )
+      }
+
     }
 
   }
 
   object Examples {
 
-    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
-      oneOfVariantFromMatchType(
+    val noScenarioExample: Example[NoScenario] = Example.of(
+      summary = Some("No scenario {scenarioName} found"),
+      value = NoScenario(ProcessName("'example scenario'"))
+    )
+
+    val noScenarioErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
+      oneOfVariant(
         NotFound,
-        plainBody[NoScenario]
-          .example(
-            Example.of(
-              summary = Some("No scenario {scenarioName} found"),
-              value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
-      )
-
-    val noDataGeneratedExample: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoDataGenerated.type]
-          .example(
-            Example.of(
-              summary = Some("No data was generated"),
-              value = NoDataGenerated
-            )
-          )
-      )
-
-    val noSourcesWithTestDataGenerationExample: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoSourcesWithTestDataGeneration.type]
-          .example(
-            Example.of(
-              summary = Some("No sources with test data generation available"),
-              value = NoSourcesWithTestDataGeneration
-            )
-          )
-      )
-
-    val tooManyCharactersGeneratedExample: EndpointOutput.OneOfVariant[TooManyCharactersGenerated] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[TooManyCharactersGenerated]
-          .example(
-            Example.of(
-              summary = Some("Too many characters were generated"),
-              value = TooManyCharactersGenerated(length = 5000, limit = 2000)
-            )
-          )
-      )
-
-    val tooManySamplesRequestedExample: EndpointOutput.OneOfVariant[TooManySamplesRequested] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[TooManySamplesRequested]
-          .example(
-            Example.of(
-              summary = Some("Too many samples requested"),
-              value = TooManySamplesRequested(maxSamples = 1000)
-            )
-          )
+        plainBody[NoScenario].example(noScenarioExample)
       )
 
   }

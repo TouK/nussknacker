@@ -17,16 +17,19 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{
-  noDataGeneratedExample,
-  noScenarioExample,
-  noSourcesWithTestDataGenerationExample,
-  tooManyCharactersGeneratedExample,
-  tooManySamplesRequestedExample
-}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError.{
+  TooManyCharactersGenerated,
+  TooManySamplesRequested
+}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTestingError.{
+  NoDataGenerated,
+  NoSourcesWithTestDataGeneration
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import sttp.model.StatusCode.Ok
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
@@ -97,7 +100,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample,
+          noScenarioErrorOutput,
         )
       )
       .withSecurity(auth)
@@ -133,7 +136,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample
+          noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
@@ -172,7 +175,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample
+          noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
@@ -204,11 +207,39 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample,
-          noDataGeneratedExample,
-          noSourcesWithTestDataGenerationExample,
-          tooManyCharactersGeneratedExample,
-          tooManySamplesRequestedExample,
+          oneOfVariantFromMatchType[NotFoundTestingError](
+            NotFound,
+            plainBody[NotFoundTestingError]
+              .examples(
+                List(
+                  noScenarioExample,
+                  Example.of(
+                    summary = Some("No data was generated"),
+                    value = NoDataGenerated
+                  ),
+                  Example.of(
+                    summary = Some("No sources with test data generation available"),
+                    value = NoSourcesWithTestDataGeneration
+                  )
+                )
+              )
+          ),
+          oneOfVariantFromMatchType[BadRequestTestingError](
+            BadRequest,
+            plainBody[BadRequestTestingError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Too many characters were generated"),
+                    value = TooManyCharactersGenerated(length = 5000, limit = 2000)
+                  ),
+                  Example.of(
+                    summary = Some("Too many samples requested"),
+                    value = TooManySamplesRequested(maxSamples = 1000)
+                  )
+                )
+              )
+          )
         )
       )
       .withSecurity(auth)
