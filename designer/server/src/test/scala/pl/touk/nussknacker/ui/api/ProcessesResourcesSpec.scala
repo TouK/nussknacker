@@ -1194,7 +1194,7 @@ class ProcessesResourcesSpec
       val loadedProcess = responseAs[List[ScenarioWithDetails]]
 
       loadedProcess.head.modifiedBy should be("Test Technical User")
-      loadedProcess.head.additionalDetails.get("modifiedByNonTechnicalUser") should be(Some("admin"))
+      loadedProcess.head.additionalDetails.flatMap(_.get("modifiedByNonTechnicalUser")) should be(Some("admin"))
       loadedProcess.head.lastAction should matchPattern {
         case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
@@ -1213,7 +1213,7 @@ class ProcessesResourcesSpec
       val loadedProcess = responseAs[ScenarioWithDetails]
 
       loadedProcess.modifiedBy should be("Test Technical User")
-      loadedProcess.additionalDetails.get("modifiedByNonTechnicalUser") should be(Some("admin"))
+      loadedProcess.additionalDetails.flatMap(_.get("modifiedByNonTechnicalUser")) should be(Some("admin"))
       loadedProcess.lastAction should matchPattern {
         case Some(ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)) =>
       }
