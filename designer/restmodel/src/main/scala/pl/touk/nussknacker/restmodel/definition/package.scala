@@ -70,8 +70,7 @@ package object definition {
       icon: String,
       docsUrl: Option[String],
       // This field is defined only for fragments
-      outputParameters: Option[List[String]],
-      label: String
+      outputParameters: Option[List[String]]
   )
 
   @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])

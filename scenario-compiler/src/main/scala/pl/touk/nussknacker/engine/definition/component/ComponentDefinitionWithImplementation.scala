@@ -32,7 +32,15 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   protected def uiDefinition: ComponentUiDefinition
 
-  final def label: String = uiDefinition.label.getOrElse(name)
+  final def label: String = {
+    uiDefinition.label.getOrElse {
+      if (componentType != ComponentType.Fragment) {
+        name
+      } else {
+        id.name
+      }
+    }
+  }
 
   final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 

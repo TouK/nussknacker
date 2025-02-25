@@ -19,7 +19,7 @@ describe("Node window", () => {
             .should("exist")
             .scrollIntoView();
         cy.layoutScenario();
-        cy.get("[data-testid='component:event-generator']")
+        cy.get("[data-testid='component:event generator']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
@@ -29,7 +29,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("event-generator").dblclick();
+        cy.getNode("event generator").dblclick();
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");

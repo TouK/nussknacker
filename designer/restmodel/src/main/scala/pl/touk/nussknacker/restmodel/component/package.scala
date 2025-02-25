@@ -53,46 +53,6 @@ package object component {
 
   object ComponentListElement {
     def sortMethod(component: ComponentListElement): (String, String) = (component.name, component.id.value)
-
-    def apply(
-        id: DesignerWideComponentId,
-        name: String,
-        icon: String,
-        componentType: ComponentType,
-        componentGroupName: ComponentGroupName,
-        categories: List[String],
-        links: List[ComponentLink],
-        usageCount: Long,
-        allowedProcessingModes: AllowedProcessingModes
-    ): ComponentListElement = {
-      if (componentType == ComponentType.Fragment)
-        ComponentListElement(
-          id,
-          name,
-          icon,
-          componentType,
-          componentGroupName,
-          categories,
-          links,
-          usageCount,
-          allowedProcessingModes,
-          id.value
-        )
-      else
-        ComponentListElement(
-          id,
-          name,
-          icon,
-          componentType,
-          componentGroupName,
-          categories,
-          links,
-          usageCount,
-          allowedProcessingModes,
-          name
-        )
-    }
-
   }
 
   implicit val allowedProcessingModesEncoder: Encoder[AllowedProcessingModes] = Encoder.instance {
