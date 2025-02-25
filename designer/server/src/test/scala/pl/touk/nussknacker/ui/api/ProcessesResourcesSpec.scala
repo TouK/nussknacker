@@ -66,7 +66,7 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
-import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
 import scala.concurrent.Future
@@ -1165,6 +1165,61 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
       val loadedProcess = responseAs[ScenarioWithDetails]
 
+      loadedProcess.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+  }
+
+  test(
+    "should provide the same proper scenario state when fetching all scenarios and one scenario with fetching last non-technical modification"
+  ) {
+    val id = createDeployedScenario(processName, category = Category1)
+    updateScenario(id, ProcessTestData.sampleScenario, AdminUser(testTechnicalUser, testTechnicalUser))
+
+    Get(s"/api/processes?fetchLatestNonTechnicalModification=true") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[List[ScenarioWithDetails]]
+
+      loadedProcess.head.modifiedBy should be("Test Technical User")
+      loadedProcess.head.additionalDetails.flatMap(_.get("modifiedByNonTechnicalUser")) should be(Some("admin"))
+      loadedProcess.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+
+    Get(
+      s"/api/processes/$processName?fetchLatestNonTechnicalModification=true"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[ScenarioWithDetails]
+
+      loadedProcess.modifiedBy should be("Test Technical User")
+      loadedProcess.additionalDetails.flatMap(_.get("modifiedByNonTechnicalUser")) should be(Some("admin"))
       loadedProcess.lastAction should matchPattern {
         case Some(
               ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)

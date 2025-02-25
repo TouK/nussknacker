@@ -40,7 +40,8 @@ final case class ScenarioWithDetails(
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
     override val modelVersion: Option[Int],
-    state: Option[ProcessState]
+    state: Option[ProcessState],
+    additionalDetails: Option[Map[String, String]],
 ) extends BaseScenarioWithDetailsForMigrations {
 
   def parameters: ScenarioParameters = ScenarioParameters(processingMode, processCategory, engineSetupName)

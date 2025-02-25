@@ -322,6 +322,12 @@ class AkkaHttpBasedRouteProvider(
         writeProcessRepository,
       )
 
+      val processesWithDetailsProvider = new EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
+        underlying = new ServiceBasedProcessesWithDetailsProvider(processService),
+        fetchingProcessRepository = futureProcessRepository,
+        designerConfig = designerConfig,
+      )
+
       val configProcessToolbarService = new ConfigScenarioToolbarService(
         CategoriesScenarioToolbarsConfigParser.parse(resolvedDesignerConfig)
       )
@@ -520,6 +526,7 @@ class AkkaHttpBasedRouteProvider(
         val routes = List(
           new ProcessesResources(
             processService = processService,
+            processesWithDetailsProvider = processesWithDetailsProvider,
             scenarioStateProvider = scenarioStateProvider,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,

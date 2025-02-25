@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.sql.Timestamp
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
@@ -27,6 +28,11 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]]
+
+  def fetchLatestVersionForProcessesExcludingUsers(
+      query: ScenarioQuery,
+      excludedUserNames: Set[String],
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, (VersionId, Timestamp, String)]]
 
   def getProcessVersion(
       processName: ProcessName,

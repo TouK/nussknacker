@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
 import cats.data.OptionT
+import cats.implicits.toFunctorOps
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -106,6 +108,29 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         },
       )
     )
+  }
+
+  override def fetchLatestVersionForProcessesExcludingUsers(
+      query: ScenarioQuery,
+      excludedUserNames: Set[String],
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): F[Map[ProcessId, (VersionId, Timestamp, String)]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestVersionForProcessesExcludingUsers(
+        process => expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process)),
+        excludedUserNames,
+      ).result
+    ).map(_.toMap)
   }
 
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](

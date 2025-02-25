@@ -6,6 +6,7 @@ import pl.touk.nussknacker.test.base.db.WithTestDb
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.domain.ScenarioHelper
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -52,6 +53,10 @@ trait WithAccessControlCheckingConfigScenarioHelper {
 
   def createDeployedScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
     rawScenarioHelper.createDeployedScenario(scenarioName, category.stringify, isFragment = false)
+  }
+
+  def updateScenario(processId: ProcessId, canonicalProcess: CanonicalProcess, user: LoggedUser): Unit = {
+    rawScenarioHelper.updateScenario(processId, canonicalProcess, user)
   }
 
 }

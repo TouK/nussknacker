@@ -53,7 +53,8 @@ object ScenarioWithDetailsConversions {
       validationResult = None,
       history = details.history,
       modelVersion = details.modelVersion,
-      state = None
+      state = None,
+      additionalDetails = None,
     )
   }
 

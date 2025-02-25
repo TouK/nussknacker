@@ -29,10 +29,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(
     protected val processService: ProcessService,
+    processesWithDetailsProvider: ProcessesWithDetailsProvider,
     scenarioStateProvider: ScenarioStateProvider,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
-    processChangeListener: ProcessChangeListener
+    processChangeListener: ProcessChangeListener,
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
     with FailFastCirceSupport
@@ -77,26 +78,26 @@ class ProcessesResources(
           }
         }
       } ~ path("processes") {
-        get {
-          processesQuery { query =>
-            complete {
-              processService.getLatestProcessesWithDetails(
-                query,
-                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
-              )
-            }
+        (get & parameterMap & processesQuery) { (queryParams, query) =>
+          complete {
+            processesWithDetailsProvider.getLatestProcessesWithDetails(
+              queryParams,
+              query,
+              GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState,
+            )
           }
         }
       } ~ path("processesDetails") {
-        (get & processesQuery & skipValidateAndResolveParameter & skipNodeResultsParameter) {
-          (query, skipValidateAndResolve, skipNodeResults) =>
+        (get & parameterMap & processesQuery & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          (queryParams, query, skipValidateAndResolve, skipNodeResults) =>
             complete {
-              processService.getLatestProcessesWithDetails(
+              processesWithDetailsProvider.getLatestProcessesWithDetails(
+                queryParams,
                 query,
                 GetScenarioWithDetailsOptions(
                   FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
                   fetchState = false
-                )
+                ),
               )
             }
         }
@@ -151,13 +152,14 @@ class ProcessesResources(
                 }
               }
             }
-          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          } ~ (get & parameterMap & skipValidateAndResolveParameter & skipNodeResultsParameter) {
             // FIXME: The `skipValidateAndResolve` flag has a non-trivial side effect.
             //        Besides skipping validation (that is the intended and obvious result) it causes the `dictKeyWithLabel` expressions to miss the label field.
             //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
-            (skipValidateAndResolve, skipNodeResults) =>
+            (queryParams, skipValidateAndResolve, skipNodeResults) =>
               complete {
-                processService.getLatestProcessWithDetails(
+                processesWithDetailsProvider.getLatestProcessWithDetails(
+                  queryParams,
                   processId,
                   GetScenarioWithDetailsOptions(
                     FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
