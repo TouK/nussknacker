@@ -32,7 +32,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   def fetchLatestVersionForProcessesExcludingUsers(
       query: ScenarioQuery,
       excludedUserNames: Set[String],
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]]
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, (VersionId, Timestamp, String)]]
 
   def getProcessVersion(
       processName: ProcessName,

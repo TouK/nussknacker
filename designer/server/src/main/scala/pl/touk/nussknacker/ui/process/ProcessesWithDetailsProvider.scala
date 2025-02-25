@@ -114,7 +114,7 @@ class EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
       if (fetchLatestNonTechnicalModification) {
         fetchingProcessRepository.fetchLatestVersionForProcessesExcludingUsers(query, technicalUsers.userNames)
       } else {
-        Future.successful(Map.empty[ProcessId, (VersionId, Timestamp, ProcessingType)])
+        Future.successful(Map.empty[ProcessId, (VersionId, Timestamp, String)])
       }
     }
 

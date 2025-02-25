@@ -68,7 +68,7 @@ class MockFetchingProcessRepository private (
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]] = Future.successful(Map.empty)
+  ): Future[Map[ProcessId, (VersionId, Timestamp, String)]] = Future.successful(Map.empty)
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery

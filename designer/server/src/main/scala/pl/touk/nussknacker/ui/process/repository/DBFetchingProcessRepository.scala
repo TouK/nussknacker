@@ -116,7 +116,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): F[Map[ProcessId, (VersionId, Timestamp, ProcessingType)]] = {
+  ): F[Map[ProcessId, (VersionId, Timestamp, String)]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),
       query.isArchived.map(arg => process => process.isArchived === arg),
