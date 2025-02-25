@@ -143,9 +143,11 @@ class EnrichedWithLastNonTechnicalEditionProcessesWithDetailsProvider(
       modifiedByNonTechnicalUserAt: Instant
   ): ScenarioWithDetails = {
     scenarioWithDetails.copy(
-      additionalDetails = scenarioWithDetails.additionalDetails ++ Map(
-        "modifiedByNonTechnicalUser"   -> modifiedByNonTechnicalUser,
-        "modifiedByNonTechnicalUserAt" -> modifiedByNonTechnicalUserAt.toString,
+      additionalDetails = Some(
+        scenarioWithDetails.additionalDetails.getOrElse(Map.empty) ++ Map(
+          "modifiedByNonTechnicalUser"   -> modifiedByNonTechnicalUser,
+          "modifiedByNonTechnicalUserAt" -> modifiedByNonTechnicalUserAt.toString,
+        )
       )
     )
   }

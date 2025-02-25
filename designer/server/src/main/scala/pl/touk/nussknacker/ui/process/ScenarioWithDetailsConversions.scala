@@ -54,7 +54,7 @@ object ScenarioWithDetailsConversions {
       history = details.history,
       modelVersion = details.modelVersion,
       state = None,
-      additionalDetails = Map.empty,
+      additionalDetails = None,
     )
   }
 
