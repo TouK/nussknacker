@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.ScenarioTestDataGenerationError
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
@@ -12,7 +13,9 @@ import pl.touk.nussknacker.ui.api.description.TestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 import sttp.model.StatusCode.{BadRequest, NotFound}
@@ -117,7 +120,26 @@ class TestingApiHttpService(
               ) match {
                 case Left(error) =>
                   logger.error(s"Error during generation of test data: $error")
-                  Future(Left(TestDataGenerationError(error)))
+                  Future(
+                    Left(
+                      error match {
+                        case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
+                          cause match {
+                            case ScenarioTestDataGenerationError.NoDataGenerated =>
+                              NoDataGenerated
+                            case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
+                              NoSourcesWithTestDataGeneration
+                          }
+                        case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
+                          cause match {
+                            case SerializationError.TooManyCharactersGenerated(length, limit) =>
+                              TooManyCharactersGenerated(length, limit)
+                          }
+                        case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
+                          TooManySamplesRequested(maxSamples)
+                      }
+                    )
+                  )
                 case Right(rawScenarioTestData) =>
                   Future(Right(rawScenarioTestData.content))
               }
@@ -135,20 +157,17 @@ object TestingApiHttpService {
 
   object TestingError {
 
-    final case class TestDataGenerationError(msg: String)             extends TestingError
-    final case class NoScenario(scenarioName: ProcessName)            extends TestingError
-    final case class NoProcessingType(processingType: ProcessingType) extends TestingError
-    final case object NoPermission                                    extends TestingError with CustomAuthorizationError
-    final case class MalformedTypingResult(msg: String)               extends TestingError
+    final case class TestDataGenerationError(msg: String)  extends TestingError
+    final case class NoScenario(scenarioName: ProcessName) extends TestingError
+    final case object NoPermission                         extends TestingError with CustomAuthorizationError
+    final case class MalformedTypingResult(msg: String)    extends TestingError
+    final case object NoDataGenerated                      extends TestingError
+    final case object NoSourcesWithTestDataGeneration      extends TestingError
+    final case class TooManyCharactersGenerated(length: Int, limit: Int) extends TestingError
+    final case class TooManySamplesRequested(maxSamples: Int)            extends TestingError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
-    }
-
-    implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
-        s"ProcessingType type: ${e.processingType} not found"
-      )
     }
 
     implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -160,6 +179,29 @@ object TestingApiHttpService {
     implicit val testDataGenerationErrorCoded: Codec[String, TestDataGenerationError, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TestDataGenerationError](e =>
         s"Error during generation of test data:\n${e.msg}"
+      )
+    }
+
+    implicit val noDataGeneratedCodec: Codec[String, NoDataGenerated.type, CodecFormat.TextPlain] = {
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDataGenerated.type](_ => "No data was generated.")
+    }
+
+    implicit val noSourcesWithTestDataGenerationCodec
+        : Codec[String, NoSourcesWithTestDataGeneration.type, CodecFormat.TextPlain] = {
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoSourcesWithTestDataGeneration.type](_ =>
+        "No sources with test data generation available"
+      )
+    }
+
+    implicit val tooManyCharactersGeneratedCodec: Codec[String, TooManyCharactersGenerated, CodecFormat.TextPlain] = {
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManyCharactersGenerated](e =>
+        s"Too many characters were generated: ${e.length}. Limit is ${e.limit}"
+      )
+    }
+
+    implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested](e =>
+        s"Too many samples requested, limit is ${e.maxSamples}"
       )
     }
 

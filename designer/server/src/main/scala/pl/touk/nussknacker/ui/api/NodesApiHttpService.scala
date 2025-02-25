@@ -19,8 +19,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
-  Serialization,
   SourceCompilation,
+  TooManyCharactersGenerated,
   TooManySamplesRequested,
   UnsupportedSourcePreview
 }
@@ -48,8 +48,8 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError._
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -186,8 +186,11 @@ class NodesApiHttpService(
                   Future(Left(UnsupportedSourcePreview(nodeId)))
                 case Left(NoDataGeneratedError) =>
                   Future(Left(NoDataGenerated))
-                case Left(SerializationError(message)) =>
-                  Future(Left(Serialization(message)))
+                case Left(ScenarioTestDataSerializationError(cause)) =>
+                  Future(Left(cause match {
+                    case SerializationError.TooManyCharactersGenerated(length, limit) =>
+                      TooManyCharactersGenerated(length, limit)
+                  }))
                 case Left(TooManySamplesRequestedError(maxSamples)) =>
                   Future(Left(TooManySamplesRequested(maxSamples)))
                 case Right(rawScenarioTestData) =>

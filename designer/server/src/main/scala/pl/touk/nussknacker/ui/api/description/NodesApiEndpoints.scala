@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.description
 
-import cats.implicits.toTraverseOps
 import cats.data.NonEmptyList
+import cats.implicits.toTraverseOps
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
@@ -9,8 +9,6 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -28,17 +26,14 @@ import pl.touk.nussknacker.engine.api.parameter.{
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => EvaluatedParameter}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => EvaluatedParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
-import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, FragmentInput}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -51,19 +46,14 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
-  BadRequestNodesError,
-  NotFoundNodesError
-}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
-  Serialization,
   SourceCompilation,
+  TooManyCharactersGenerated,
   TooManySamplesRequested,
   UnsupportedSourcePreview
 }
@@ -72,8 +62,11 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoProcessingType,
   NoScenario
 }
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  BadRequestNodesError,
+  NotFoundNodesError
+}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOutputs._
-import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedNullSchemaHelper.typedNullTypeSchema
@@ -82,7 +75,7 @@ import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectTyping
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedTaggedSchemaHelper.typedTaggedTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedUnionSchemaHelper.typedUnionTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.UnknownSchemaHelper.unknownTypeSchema
-import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
 import sttp.tapir.SchemaType.{SProduct, SProductField, SString, SchemaWithValue}
@@ -426,8 +419,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     value = TooManySamplesRequested(100)
                   ),
                   Example.of(
-                    summary = Some("Serialization error"),
-                    value = Serialization("Failed to serialize test data")
+                    summary = Some("Too many characters generated"),
+                    value = TooManyCharactersGenerated(length = 1000, limit = 500)
                   )
                 )
               )
@@ -698,11 +691,10 @@ object NodesApiEndpoints {
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
 
-    implicit lazy val parameterSchema: Schema[EvaluatedParameter] = Schema.derived
-    implicit lazy val edgeTypeSchema: Schema[EdgeType]            = Schema.derived
-    implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
-    implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
-    import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
+    implicit lazy val parameterSchema: Schema[EvaluatedParameter]                              = Schema.derived
+    implicit lazy val edgeTypeSchema: Schema[EdgeType]                                         = Schema.derived
+    implicit lazy val edgeSchema: Schema[Edge]                                                 = Schema.derived
+    implicit lazy val cellErrorSchema: Schema[CellError]                                       = Schema.derived
     implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]                         = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]                   = Schema.derived
@@ -1572,7 +1564,7 @@ object NodesApiEndpoints {
         case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
         case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
         case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
-        case class Serialization(msg: String)                                extends BadRequestNodesError
+        case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
 
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
@@ -1582,7 +1574,8 @@ object NodesApiEndpoints {
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
             case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
             case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
-            case Serialization(msg)                        => s"Error during serialization: ${msg}"
+            case TooManyCharactersGenerated(length, limit) =>
+              s"Too many characters generated: $length. Limit is: $limit"
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {

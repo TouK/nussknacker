@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
 
 class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
@@ -51,7 +52,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
     val error = serDe.serialize(testData).leftValue
 
-    error shouldBe s"Too much data generated, limit is: $testDataMaxLength"
+    error shouldBe SerializationError.TooManyCharactersGenerated(length = 10, limit = testDataMaxLength)
   }
 
   test("should deserialize scenario test data") {
@@ -66,7 +67,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
     val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
 
-    error shouldBe s"Too many samples: 10, limit is: $maxSamplesCount"
+    error shouldBe DeserializationError.TooManySamples(size = 10, limit = maxSamplesCount)
   }
 
   test("should fail trying to parse invalid record") {
@@ -74,7 +75,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
     val error = serDe.deserialize(RawScenarioTestData(invalidRecord)).leftValue
 
-    error shouldBe s"Could not parse record: '$invalidRecord'"
+    error shouldBe DeserializationError.RecordParsingError(invalidRecord)
   }
 
 }

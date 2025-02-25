@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.ui.OtherError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -24,14 +25,14 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
-
-  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   import io.circe.syntax._
 
@@ -57,6 +58,26 @@ object ManagementResources {
           }.asJson,
           "exceptions" -> exceptions.sortBy(_.context.id).asJson
         )
+    }
+
+  }
+
+  final case class GenerateTestDataDesignerError(message: String) extends OtherError(message)
+
+  private object GenerateTestDataDesignerError {
+
+    def apply(generateTestDataError: GenerateTestDataError): GenerateTestDataDesignerError = {
+      GenerateTestDataDesignerError(generateTestDataError match {
+        case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
+          cause.message
+        case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
+          cause match {
+            case SerializationError.TooManyCharactersGenerated(length, limit) =>
+              s"Too many characters generated: $length. Limit is: $limit"
+          }
+        case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
+          s"Too many samples requested, limit is $maxSamples"
+      })
     }
 
   }
@@ -261,7 +282,7 @@ class ManagementResources(
                           details.isFragment,
                           testSampleSize
                         ) match {
-                          case Left(error) => Future.failed(ProcessUnmarshallingError(error))
+                          case Left(error) => Future.failed(GenerateTestDataDesignerError(error))
                           case Right(rawScenarioTestData) =>
                             scenarioTestService
                               .performTest(
