@@ -172,12 +172,12 @@ class ModelDataTestInfoProvider(modelData: ModelData)
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
         case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
-          Left(TestDataPreparationError.MissingSourceError(sourceId, recordIdx))
+          Left(TestDataPreparationError.MissingSource(sourceId, recordIdx))
         case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
           val sourceId = allScenarioSourceIds.head
           Right(ScenarioTestJsonRecord(sourceId, record))
         case (_: PreliminaryScenarioTestRecord.Simplified, recordIdx) =>
-          Left(TestDataPreparationError.MultipleSourcesError(recordIdx))
+          Left(TestDataPreparationError.MultipleSourcesRequired(recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))

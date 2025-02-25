@@ -80,11 +80,11 @@ object TestInfoProvider {
 
   object TestDataPreparationError {
 
-    final case class MissingSourceError(sourceId: String, recordIndex: Int) extends TestDataPreparationError {
+    final case class MissingSource(sourceId: String, recordIndex: Int) extends TestDataPreparationError {
       override def message: String = s"Record ${recordIndex + 1} - scenario does not have source id: '$sourceId'"
     }
 
-    final case class MultipleSourcesError(recordIndex: Int) extends TestDataPreparationError {
+    final case class MultipleSourcesRequired(recordIndex: Int) extends TestDataPreparationError {
       override def message: String =
         s"Record ${recordIndex + 1} - scenario has multiple sources but got record without source id"
     }

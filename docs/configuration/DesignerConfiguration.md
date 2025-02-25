@@ -737,7 +737,7 @@ You can configure `secondaryEnvironment` to allow for
 
 | Parameter name                     | Importance | Type | Default value | Description                                                                                                    |
 |------------------------------------|------------|------|---------------|----------------------------------------------------------------------------------------------------------------|
-| testDataSettings.maxSampleCount    | Medium     | int  | 20            | Limits the number of samples for tests from a file                                                             |
+| testDataSettings.maxSamplesCount   | Medium     | int  | 20            | Limits the number of samples for tests to generate and load from a file                                        |
 | testDataSettings.testDataMaxLength | Low        | int  | 200000        | Limits the size (in characters) of the test input for tests from a file                                        |
 | testDataSettings.resultsMaxBytes   | Low        | int  | 50000000      | Limits the size (in bytes) of returned test data (i.e. variables for each node, invocation results and errors) |
 

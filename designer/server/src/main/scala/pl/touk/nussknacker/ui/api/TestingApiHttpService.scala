@@ -190,7 +190,8 @@ object TestingApiHttpService {
 
     implicit val tooManySamplesRequestedCodec: Codec[String, TooManySamplesRequested, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TooManySamplesRequested] {
-        case TooManySamplesRequested(maxSamples) => TestingApiErrorMessages.tooManySamplesRequested(maxSamples)
+        case TooManySamplesRequested(maxSamples) =>
+          TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
       }
     }
 

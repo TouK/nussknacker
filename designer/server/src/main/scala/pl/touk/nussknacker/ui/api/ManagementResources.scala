@@ -86,7 +86,7 @@ object ManagementResources {
               TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
           }
         case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
-          TestingApiErrorMessages.tooManySamplesRequested(maxSamples)
+          TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
       })
     }
 
@@ -100,16 +100,22 @@ object ManagementResources {
       PerformTestDesignerError(performTestError match {
         case PerformTestError.DeserializationError(cause) =>
           cause match {
-            case DeserializationError.TooManySamples(size, limit)       => "???"
-            case DeserializationError.RecordParsingError(rawTestRecord) => ???
-            case DeserializationError.NoRecords                         => ???
+            case DeserializationError.TooManySamples(size, limit) =>
+              TestingApiErrorMessages.tooManyInputSamples(size, limit)
+            case DeserializationError.RecordParsingError(rawTestRecord) =>
+              TestingApiErrorMessages.recordParsingError(rawTestRecord)
+            case DeserializationError.NoRecords =>
+              TestingApiErrorMessages.noInputRecords
           }
         case PerformTestError.TestDataPreparationError(cause) =>
           cause match {
-            case TestDataPreparationError.MissingSourceError(sourceId, recordIndex) => ???
-            case TestDataPreparationError.MultipleSourcesError(recordIndex)         => ???
+            case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
+              TestingApiErrorMessages.missingSourceForRecord(sourceId, recordIndex)
+            case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
+              TestingApiErrorMessages.multipleSourcesRequiredForRecord(recordIndex)
           }
-        case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) => ???
+        case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+          TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
       })
     }
 

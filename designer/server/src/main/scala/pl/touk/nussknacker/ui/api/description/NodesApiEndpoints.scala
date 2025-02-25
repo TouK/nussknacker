@@ -1577,8 +1577,9 @@ object NodesApiEndpoints {
               s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
-            case TooManySamplesRequested(maxSamples) => TestingApiErrorMessages.tooManySamplesRequested(maxSamples)
-            case MalformedTypingResult(msg)          => s"The request content was malformed:\n${msg}"
+            case TooManySamplesRequested(maxSamples) =>
+              TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+            case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
               TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
           }
