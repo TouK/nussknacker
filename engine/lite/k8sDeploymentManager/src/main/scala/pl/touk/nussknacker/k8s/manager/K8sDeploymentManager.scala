@@ -100,7 +100,7 @@ class K8sDeploymentManager(
     inputConfig.copy(config = withOverrides).serialized
   }
 
-  private val defaultLogbackConfig =
+  private lazy val defaultLogbackConfig =
     Using.resource(Source.fromResource("runtime/default-logback.xml", getClass.getClassLoader))(_.mkString)
 
   private def logbackConfig: String = config.logbackConfigPath
