@@ -38,8 +38,7 @@ object TestingApiErrorMessages {
   def multipleSourcesRequiredForRecord(recordIndex: Int) =
     s"Record ${recordIndex + 1} - scenario has multiple sources but got record without source id"
 
-  // TODO ljd: human readable unit?
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
-    s"Test results size exceeded, approximate size: $approxSizeInBytes, but limit is: $maxBytes. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
+    s"Test results size exceeded, approximate size in bytes: $approxSizeInBytes, but limit is: $maxBytes. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
 
 }
