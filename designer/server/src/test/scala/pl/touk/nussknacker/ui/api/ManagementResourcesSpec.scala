@@ -490,9 +490,10 @@ class ManagementResourcesSpec
       .mkString("\n")
     testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
+      // Approximate size can differ slightly depending on test execution environment.
       responseAs[
         String
-      ] shouldBe "Test results size exceeded, approximate size in bytes: 827800, but limit is: 500000. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
+      ] should fullyMatch regex "Test results size exceeded, approximate size in bytes: \\d+, but limit is: 500000. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
     }
   }
 
