@@ -8,6 +8,7 @@ import cats.data.OptionT
 import cats.instances.all._
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.LoneElement._
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
@@ -105,7 +106,7 @@ class ProcessesResourcesSpec
   private val fragmentName             = ProcessName("fragment")
   private val archivedFragmentName     = ProcessName("archived-fragment")
 
-  private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds)
+  private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
   override def designerConfig: Config = super.designerConfig
     .withValue(

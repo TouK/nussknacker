@@ -6,6 +6,7 @@ import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import com.typesafe.config.ConfigFactory
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.OptionValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -34,7 +35,7 @@ class GenericOidcTokenAuthenticationSpec
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
   private val audience    = "http://nussknacker"
 
-  implicit val timeout: RouteTestTimeout = RouteTestTimeout(5 seconds)
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
   private val roleClaim = "http://namespace/roles"
 

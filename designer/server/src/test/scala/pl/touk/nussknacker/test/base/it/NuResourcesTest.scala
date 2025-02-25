@@ -2,7 +2,7 @@ package pl.touk.nussknacker.test.base.it
 
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
@@ -13,6 +13,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
@@ -67,6 +68,7 @@ import slick.dbio.DBIOAction
 
 import java.net.URI
 import java.time.Clock
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
@@ -432,6 +434,8 @@ trait NuResourcesTest
     )
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
+    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
+
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
     val multiPart = MultipartUtils.prepareMultiParts(
       "testData"      -> testDataContent,
