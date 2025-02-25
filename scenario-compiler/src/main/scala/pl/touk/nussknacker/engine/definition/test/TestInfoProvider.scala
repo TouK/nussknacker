@@ -58,8 +58,7 @@ object TestInfoProvider {
   sealed trait ScenarioTestDataGenerationError extends TestDataError
 
   object ScenarioTestDataGenerationError {
-    final case object NoDataGenerated extends ScenarioTestDataGenerationError
-
+    final case object NoDataGenerated                 extends ScenarioTestDataGenerationError
     final case object NoSourcesWithTestDataGeneration extends ScenarioTestDataGenerationError
   }
 
