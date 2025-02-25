@@ -107,6 +107,8 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.concat
   // due to swagger-parser dependencies having different schema definitions (json-schema-validator and json-schema-core)
   case PathList("draftv4", "schema")                                  => MergeStrategy.first
+  // for org.bouncycastle.(bcpkix|bcprov|bcutil)-jdk18on from liteK8sDeploymentManager
+  case PathList(ps @ _*) if ps.last == "MANIFEST.MF"                  => MergeStrategy.discard
   case x                                                              => MergeStrategy.defaultMergeStrategy(x)
 }
 
