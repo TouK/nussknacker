@@ -52,7 +52,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
     val error = serDe.serialize(testData).leftValue
 
-    error shouldBe SerializationError.TooManyCharactersGenerated(length = 10, limit = testDataMaxLength)
+    error shouldBe SerializationError.TooManyCharactersGenerated(length = 479, limit = testDataMaxLength)
   }
 
   test("should deserialize scenario test data") {
