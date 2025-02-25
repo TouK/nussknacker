@@ -521,6 +521,19 @@ jobs:
           script: |
             core.setFailed('Snapshots updated, chceck comments!')
 
+  debug-should-run:
+    name: Debug Should Run Condition
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check GitHub Ref and Condition
+        run: |
+          echo "GitHub Ref: $GITHUB_REF"
+          if [[ "$GITHUB_REF" == "refs/heads/staging" || "$GITHUB_REF" == "refs/heads/demo" || "$GITHUB_REF" == refs/heads/preview* ]]; then
+            echo "Condition Passed: should_run = true"
+          else
+            echo "Condition Failed: should_run = false"
+          fi
+
   publish-after-tests:
     name: Publish With Tests
     needs: ['build', 'build-fe', 'setup', 'tests', 'integrationTests', 'slowTests', 'frontendTests', 'cypressTests']
@@ -538,7 +551,7 @@ jobs:
 
   publish-before-tests:
     name: Publish Without Tests
-    needs: ['build', 'build-fe', 'setup']
+    needs: ['build', 'build-fe', 'setup', 'debug-should-run']
     uses: ./.github/workflows/publish.yml
     with:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
