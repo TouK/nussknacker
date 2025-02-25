@@ -24,11 +24,7 @@ import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElem
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.test.mock.{
-  MockFetchingProcessRepository,
-  MockManagerProvider,
-  WithTestDeploymentManagerClassLoader
-}
+import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
@@ -64,8 +60,7 @@ class DefaultComponentServiceSpec
     with PatientScalaFutures
     with EitherValuesDetailedMessage
     with ValidatedValuesDetailedMessage
-    with OptionValues
-    with WithTestDeploymentManagerClassLoader {
+    with OptionValues {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
@@ -874,7 +869,6 @@ class DefaultComponentServiceSpec
           new MockManagerProvider,
           SchedulingForProcessingType.NotAvailable,
           TestFactory.deploymentManagerDependencies,
-          deploymentManagersClassLoader,
           EngineSetupName("Mock"),
           deploymentConfig = ConfigFactory.empty(),
           category = category,

@@ -36,7 +36,6 @@ class LocalProcessingTypeDataLoader(
         deploymentManagerProvider = deploymentManagerProvider,
         schedulingForProcessingType = SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies = deploymentManagerDependencies,
-        deploymentManagersClassLoader = deploymentManagersClassLoader,
         engineSetupName = deploymentManagerProvider.defaultEngineSetupName,
         deploymentConfig = ConfigFactory.empty(),
         category = category,

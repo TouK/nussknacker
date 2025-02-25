@@ -24,8 +24,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
@@ -174,7 +174,6 @@ trait NuResourcesTest
         deploymentManagerProvider,
         SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies,
-        deploymentManagersClassLoader,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
         processingTypeConfig.category,

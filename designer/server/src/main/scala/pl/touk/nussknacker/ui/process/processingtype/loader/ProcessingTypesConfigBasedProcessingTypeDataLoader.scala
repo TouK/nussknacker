@@ -91,7 +91,6 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
           deploymentManagerProvider,
           schedulingForProcessingType,
           getDeploymentManagerDependencies(processingType),
-          deploymentManagersClassLoader,
           engineSetupNames(processingType),
           processingTypeConfig.deploymentConfig,
           processingTypeConfig.category,
@@ -116,10 +115,11 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       typeConfig: ProcessingTypeConfig
   ): DeploymentManagerProvider = {
-    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
+    val loadedProvider = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
       typeConfig.deploymentManagerType,
       deploymentManagersClassLoader
     )
+    new DeploymentManagerProviderCorrectClassloaderHandler(loadedProvider, deploymentManagersClassLoader)
   }
 
 }

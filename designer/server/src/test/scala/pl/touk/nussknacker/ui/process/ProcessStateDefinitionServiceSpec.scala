@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFac
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, WithTestDeploymentManagerClassLoader}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.Scheduli
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
-class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers with WithTestDeploymentManagerClassLoader {
+class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =
@@ -199,7 +199,6 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers with W
       ),
       SchedulingForProcessingType.NotAvailable,
       TestFactory.deploymentManagerDependencies,
-      deploymentManagersClassLoader,
       deploymentConfig = ConfigFactory.empty(),
       engineSetupName = EngineSetupName("mock"),
       category = category,

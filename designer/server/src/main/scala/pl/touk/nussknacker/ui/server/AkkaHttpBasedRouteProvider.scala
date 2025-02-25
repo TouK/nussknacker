@@ -153,7 +153,6 @@ class AkkaHttpBasedRouteProvider(
         sttpBackend,
         featureTogglesConfig,
         globalNotificationRepository,
-        deploymentManagersClassLoader,
         modelClassLoaderProvider
       )
 
@@ -763,7 +762,6 @@ class AkkaHttpBasedRouteProvider(
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig,
       globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
-      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider
   )(
       implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
