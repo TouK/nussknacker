@@ -87,13 +87,13 @@ class K8sDeploymentManagerOnMocksTest
     stubWithFixedDelay(durationLongerThanClientTimeout)
     a[TcpIdleTimeoutException] shouldBe thrownBy {
       manager
-        .getProcessStates(ProcessName("foo"))
+        .getScenarioDeploymentsStatuses(ProcessName("foo"))
         .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
     val result = manager
-      .getProcessStates(ProcessName("foo"))
+      .getScenarioDeploymentsStatuses(ProcessName("foo"))
       .map(_.value)
       .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     result shouldEqual List.empty

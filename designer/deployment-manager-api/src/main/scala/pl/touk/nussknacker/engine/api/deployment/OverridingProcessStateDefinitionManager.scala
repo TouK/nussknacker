@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 import java.net.URI
@@ -21,32 +21,42 @@ import java.net.URI
   */
 class OverridingProcessStateDefinitionManager(
     delegate: ProcessStateDefinitionManager,
-    statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = PartialFunction.empty,
+    statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] =
+      PartialFunction.empty,
     statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
     statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty,
     customVisibleActions: Option[List[ScenarioActionName]] = None,
-    customActionTooltips: Option[ProcessStatus => Map[ScenarioActionName, String]] = None,
+    customActionTooltips: Option[ScenarioStatusWithScenarioContext => Map[ScenarioActionName, String]] = None,
 ) extends ProcessStateDefinitionManager {
 
-  override def visibleActions: List[ScenarioActionName] =
-    customVisibleActions.getOrElse(delegate.visibleActions)
+  override def visibleActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] =
+    customVisibleActions.getOrElse(delegate.visibleActions(input))
 
-  override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] =
-    statusActionsPF.applyOrElse(processStatus, delegate.statusActions)
+  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    statusActionsPF.applyOrElse(input, delegate.statusActions)
 
-  override def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] =
-    customActionTooltips.map(_(processStatus)).getOrElse(delegate.actionTooltips(processStatus))
+  override def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] =
+    customActionTooltips.map(_(input)).getOrElse(delegate.actionTooltips(input))
 
-  override def statusIcon(stateStatus: StateStatus): URI =
-    statusIconsPF.orElse(stateDefinitionsPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)
+  override def statusIcon(input: ScenarioStatusWithScenarioContext): URI =
+    statusIconsPF
+      .orElse(stateDefinitionsPF(_.icon))
+      .lift(input.scenarioStatus)
+      .getOrElse(delegate.statusIcon(input))
 
-  override def statusTooltip(stateStatus: StateStatus): String =
-    statusTooltipsPF.orElse(stateDefinitionsPF(_.tooltip)).applyOrElse(stateStatus, delegate.statusTooltip)
+  override def statusTooltip(input: ScenarioStatusWithScenarioContext): String =
+    statusTooltipsPF
+      .orElse(stateDefinitionsPF(_.tooltip))
+      .lift(input.scenarioStatus)
+      .getOrElse(delegate.statusTooltip(input))
 
-  override def statusDescription(stateStatus: StateStatus): String =
-    statusDescriptionsPF.orElse(stateDefinitionsPF(_.description)).applyOrElse(stateStatus, delegate.statusDescription)
+  override def statusDescription(input: ScenarioStatusWithScenarioContext): String =
+    statusDescriptionsPF
+      .orElse(stateDefinitionsPF(_.description))
+      .lift(input.scenarioStatus)
+      .getOrElse(delegate.statusDescription(input))
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     delegate.stateDefinitions ++ customStateDefinitions

@@ -102,8 +102,8 @@ class K8sDeploymentManagerKafkaTest
 
     def waitForRunning(version: ProcessVersion) = {
       eventually {
-        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
-        state.flatMap(_.version) shouldBe List(version)
+        val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
+        state.flatMap(_.version) shouldBe List(version.versionId)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
     }
@@ -391,7 +391,7 @@ class K8sDeploymentManagerKafkaTest
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {
     manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
     eventually {
-      manager.getProcessStates(version.processName).map(_.value).futureValue shouldBe List.empty
+      manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue shouldBe List.empty
     }
     assertNoGarbageLeft()
   }

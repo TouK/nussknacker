@@ -18,13 +18,12 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -61,14 +60,12 @@ object MockableDeploymentManagerProvider {
       implicit executionContext: ExecutionContext,
       ioRuntime: IORuntime
   ) extends DeploymentManager
-      with ManagerSpecificScenarioActivitiesStoredByManager
-      with StubbingCommands {
+      with ManagerSpecificScenarioActivitiesStoredByManager {
 
     private lazy val miniClusterWithServicesOpt = modelDataOpt.map { modelData =>
       FlinkMiniClusterFactory.createMiniClusterWithServices(
         modelData.modelClassLoader,
         new Configuration,
-        new Configuration
       )
     }
 
@@ -82,36 +79,31 @@ object MockableDeploymentManagerProvider {
         )
       }
 
-    override def resolve(
-        idWithName: ProcessIdWithName,
-        statusDetails: List[StatusDetails],
-        lastStateAction: Option[ProcessAction],
-        latestVersionId: VersionId,
-        deployedVersionId: Option[VersionId],
-        currentlyPresentedVersionId: Option[VersionId],
-    ): Future[ProcessState] = {
+    override def processStateDefinitionManager: ProcessStateDefinitionManager =
+      SimpleProcessStateDefinitionManager
+
+    override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
+        implicit freshnessPolicy: DataFreshnessPolicy
+    ): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+      val statusDetails = MockableDeploymentManager.scenarioStatuses
+        .get()
+        .getOrElse(scenarioName.value, BasicStatusDetails(SimpleStateStatus.NotDeployed, version = None))
       Future.successful(
-        processStateDefinitionManager.processState(
-          statusDetails.head,
-          latestVersionId,
-          deployedVersionId,
-          currentlyPresentedVersionId
+        WithDataFreshnessStatus.fresh(
+          List(
+            DeploymentStatusDetails(
+              statusDetails.status,
+              None,
+              version = statusDetails.version
+            )
+          )
         )
       )
     }
 
-    override def processStateDefinitionManager: ProcessStateDefinitionManager =
-      SimpleProcessStateDefinitionManager
-
-    override def getProcessStates(name: ProcessName)(
-        implicit freshnessPolicy: DataFreshnessPolicy
-    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-      val status = MockableDeploymentManager.scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
-      Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
-    }
-
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
       command match {
+        case _: DMValidateScenarioCommand => Future.successful(())
         case DMRunDeploymentCommand(_, deploymentData, _, _) =>
           Future {
             deploymentData.deploymentId.toNewDeploymentIdOpt
@@ -129,14 +121,16 @@ object MockableDeploymentManagerProvider {
                 s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
               )
             )
-        case other =>
-          super.processCommand(other)
+        case _: DMCancelScenarioCommand | _: DMStopScenarioCommand | _: DMStopDeploymentCommand |
+            _: DMCancelDeploymentCommand | _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand =>
+          notImplemented
       }
     }
 
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-    override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+    override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+      NoDeploymentsStatusesQueryForAllScenariosSupport
 
     override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
@@ -156,12 +150,12 @@ object MockableDeploymentManagerProvider {
   //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager {
 
-    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, BasicStatusDetails]](Map.empty)
     private val testResults       = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
     private val deploymentResults = new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
     private val managerSpecificScenarioActivities = new AtomicReference[List[ScenarioActivity]](List.empty)
 
-    def configureScenarioStatuses(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
+    def configureScenarioStatuses(scenarioStates: Map[ScenarioName, BasicStatusDetails]): Unit = {
       MockableDeploymentManager.scenarioStatuses.set(scenarioStates)
     }
 
@@ -187,3 +181,5 @@ object MockableDeploymentManagerProvider {
   }
 
 }
+
+case class BasicStatusDetails(status: StateStatus, version: Option[VersionId])

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.restmodel.scenariodetails
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -41,7 +41,7 @@ final case class ScenarioWithDetails(
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
     override val modelVersion: Option[Int],
-    state: Option[ProcessState],
+    state: Option[ScenarioStatusDto],
     additionalDetails: Option[Map[String, String]],
 ) extends BaseScenarioWithDetailsForMigrations {
 

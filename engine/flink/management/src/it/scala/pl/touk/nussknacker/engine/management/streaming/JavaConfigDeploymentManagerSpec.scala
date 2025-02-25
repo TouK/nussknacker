@@ -46,7 +46,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
     )
 
     eventually {
-      val jobStatus = deploymentManager.getProcessStates(process.name).futureValue.value
+      val jobStatus = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
       jobStatus.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 

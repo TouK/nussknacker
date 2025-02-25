@@ -21,18 +21,26 @@ import java.util.UUID
     processId: ProcessId,
     // Used by external project
     // We use process action only for finished/execution finished actions so processVersionId is always defined
-    processVersionId: VersionId,
-    user: String,
+    override val processVersionId: VersionId,
+    override val user: String,
     // We use process action only for finished/execution finished actions so performedAt is always defined
     // Used by external project
     performedAt: Instant,
     // Used by external project
-    actionName: ScenarioActionName,
-    state: ProcessActionState,
+    override val actionName: ScenarioActionName,
+    override val state: ProcessActionState,
     failureMessage: Option[String],
     // Used by external project
     comment: Option[String],
-)
+) extends ScenarioStatusActionDetails
+
+// This is the narrowest set of information required by scenario status resolving mechanism.
+trait ScenarioStatusActionDetails {
+  def actionName: ScenarioActionName
+  def state: ProcessActionState
+  def processVersionId: VersionId
+  def user: String
+}
 
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString
@@ -76,8 +84,9 @@ object ScenarioActionName {
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
-  val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
-  val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
+  // TODO remove unused action
+  val Pause: ScenarioActionName  = ScenarioActionName("PAUSE") // TODO: To implement in future..
+  val Rename: ScenarioActionName = ScenarioActionName("RENAME")
   // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
   //       In the future it can be changed to better name, according to convention, but that would require database migration
   //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
@@ -85,7 +94,7 @@ object ScenarioActionName {
 
   val DefaultActions: List[ScenarioActionName] = Nil
 
-  val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
+  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy)
 
   def serialize(name: ScenarioActionName): String = name match {
     case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"

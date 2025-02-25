@@ -123,7 +123,7 @@ object TestProcessUtil {
       scenarioLabels = scenarioLabels,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)
+        case action if ScenarioActionName.ScenarioStatusActions.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect { case Deploy =>
         createProcessAction(Deploy)

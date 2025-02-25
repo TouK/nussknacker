@@ -2,11 +2,11 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{PeriodicDeploymentStatus, PeriodicProcessStatus}
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessStateDefinitionManager.statusTooltip
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.ScheduledStatus
@@ -39,8 +39,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       processActive = true,
       None
     )
-    val status = PeriodicProcessStatus(List(deploymentStatus), List.empty)
-    statusTooltip(status) shouldEqual "Scheduled at: 2023-01-01 10:00 status: Scheduled"
+    statusTooltip(List(deploymentStatus), List.empty) shouldEqual "Scheduled at: 2023-01-01 10:00 status: Scheduled"
   }
 
   test("display sorted periodic deployment status for named schedules") {
@@ -64,17 +63,15 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       processActive = true,
       None
     )
-    val status = PeriodicProcessStatus(List(firstDeploymentStatus, secDeploymentStatus), List.empty)
-    statusTooltip(status) shouldEqual
+    statusTooltip(List(firstDeploymentStatus, secDeploymentStatus), List.empty) shouldEqual
       s"""Schedule ${secScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Scheduled,
          |Schedule ${firstScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Deployed""".stripMargin
   }
 
   test("not display custom tooltip for perform single execution when latest version is deployed") {
     PeriodicStateStatus.customActionTooltips(
-      ProcessStatus(
-        stateStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
-        latestVersionId = VersionId(5),
+      ScenarioStatusWithScenarioContext(
+        scenarioStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
         deployedVersionId = Some(VersionId(5)),
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
@@ -85,9 +82,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     "display custom tooltip for perform single execution when deployed version is different than currently displayed"
   ) {
     PeriodicStateStatus.customActionTooltips(
-      ProcessStatus(
-        stateStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
-        latestVersionId = VersionId(5),
+      ScenarioStatusWithScenarioContext(
+        scenarioStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
@@ -98,9 +94,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
 
   test("display custom tooltip for perform single execution in CANCELED state") {
     PeriodicStateStatus.customActionTooltips(
-      ProcessStatus(
-        stateStatus = SimpleStateStatus.Canceled,
-        latestVersionId = VersionId(5),
+      ScenarioStatusWithScenarioContext(
+        scenarioStatus = SimpleStateStatus.Canceled,
         deployedVersionId = Some(VersionId(4)),
         currentlyPresentedVersionId = Some(VersionId(5)),
       )

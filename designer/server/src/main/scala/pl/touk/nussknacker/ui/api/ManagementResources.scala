@@ -70,7 +70,6 @@ class ManagementResources(
     dispatcher: DeploymentManagerDispatcher,
     metricRegistry: MetricRegistry,
     scenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
-    typeToConfig: ProcessingTypeDataProvider[ModelData, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
     with LazyLogging

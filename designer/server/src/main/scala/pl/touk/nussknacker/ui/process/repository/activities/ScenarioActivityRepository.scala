@@ -113,13 +113,6 @@ object ScenarioActivityRepository {
     case object CouldNotDeleteAttachment extends DeleteAttachmentError
   }
 
-  sealed trait ModifyActivityError
-
-  object ModifyActivityError {
-    case object ActivityDoesNotExist   extends ModifyActivityError
-    case object CouldNotModifyActivity extends ModifyActivityError
-  }
-
   final case class CommentModificationMetadata(commentForScenarioDeployed: Boolean)
 
 }

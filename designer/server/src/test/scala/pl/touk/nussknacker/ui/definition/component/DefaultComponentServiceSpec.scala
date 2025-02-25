@@ -6,6 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManager
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
@@ -40,6 +42,7 @@ import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
@@ -880,7 +883,8 @@ class DefaultComponentServiceSpec
       scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
   ): DBProcessService =
     new DBProcessService(
-      processStateProvider = TestFactory.processStateProvider(),
+      scenarioStatusProvider = mock[ScenarioStatusProvider],
+      scenarioStatusPresenter = mock[ScenarioStatusPresenter],
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
       scenarioParametersServiceProvider = scenarioParametersServiceProvider,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,

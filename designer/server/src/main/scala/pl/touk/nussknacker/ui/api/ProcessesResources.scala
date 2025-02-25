@@ -10,6 +10,7 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.ScenarioStateProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -30,7 +31,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessesResources(
     protected val processService: ProcessService,
     processesWithDetailsProvider: ProcessesWithDetailsProvider,
-    scenarioStateProvider: ScenarioStateProvider,
+    scenarioStatusProvider: ScenarioStatusProvider,
+    scenarioStatusPresenter: ScenarioStatusPresenter,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener,
@@ -210,9 +212,12 @@ class ProcessesResources(
           currentlyPresentedVersionIdParameter { currentlyPresentedVersionId =>
             complete {
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-              scenarioStateProvider
-                .getProcessState(processId, currentlyPresentedVersionId)
-                .map(ToResponseMarshallable(_))
+              for {
+                scenarioDetails <- processService
+                  .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
+                statusDetails <- scenarioStatusProvider.getScenarioStatus(processId)
+                dto = scenarioStatusPresenter.toDto(statusDetails, scenarioDetails, currentlyPresentedVersionId)
+              } yield dto
             }
           }
         }
