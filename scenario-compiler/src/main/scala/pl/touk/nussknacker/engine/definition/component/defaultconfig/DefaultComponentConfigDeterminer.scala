@@ -78,7 +78,7 @@ object DefaultComponentConfigDeterminer {
       icon = icon.getOrElse(DefaultsComponentIcon.FragmentIcon),
       docsUrl = docsUrl,
       designerWideId = designerWideId,
-      label = Option(designerWideId.value)
+      label = None
     )
   }
 
