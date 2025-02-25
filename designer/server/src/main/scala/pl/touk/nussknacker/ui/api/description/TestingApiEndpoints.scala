@@ -17,12 +17,12 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{
-  noDataGeneratedExample,
-  noScenarioExample,
-  noSourcesWithTestDataGenerationExample,
-  tooManyCharactersGeneratedExample,
-  tooManySamplesRequestedExample
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.ErrorOutputs.{
+  noDataGeneratedErrorOutput,
+  noScenarioErrorOutput,
+  noSourcesWithTestDataGenerationErrorOutput,
+  tooManyCharactersGeneratedErrorOutput,
+  tooManySamplesRequestedErrorOutput
 }
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.definition.DefinitionsService
@@ -97,7 +97,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample,
+          noScenarioErrorOutput,
         )
       )
       .withSecurity(auth)
@@ -133,7 +133,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample
+          noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
@@ -172,7 +172,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample
+          noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
@@ -204,11 +204,11 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample,
-          noDataGeneratedExample,
-          noSourcesWithTestDataGenerationExample,
-          tooManyCharactersGeneratedExample,
-          tooManySamplesRequestedExample,
+          noScenarioErrorOutput,
+          noDataGeneratedErrorOutput,
+          noSourcesWithTestDataGenerationErrorOutput,
+          tooManyCharactersGeneratedErrorOutput,
+          tooManySamplesRequestedErrorOutput,
         )
       )
       .withSecurity(auth)

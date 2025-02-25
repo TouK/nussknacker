@@ -19,8 +19,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataE
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 import sttp.model.StatusCode.{BadRequest, NotFound}
-import sttp.tapir.EndpointIO.Example
-import sttp.tapir.{Codec, CodecFormat, EndpointOutput, oneOfVariantFromMatchType, plainBody}
+import sttp.tapir.{Codec, CodecFormat, EndpointOutput, oneOfVariant, oneOfVariantFromMatchType, plainBody}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -197,66 +196,36 @@ object TestingApiHttpService {
 
   }
 
-  object Examples {
+  object ErrorOutputs {
 
-    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
+    val noScenarioErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoScenario]
-          .example(
-            Example.of(
-              summary = Some("No scenario {scenarioName} found"),
-              value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
       )
 
-    val noDataGeneratedExample: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
-      oneOfVariantFromMatchType(
+    val noDataGeneratedErrorOutput: EndpointOutput.OneOfVariant[NoDataGenerated.type] =
+      oneOfVariant(
         NotFound,
         plainBody[NoDataGenerated.type]
-          .example(
-            Example.of(
-              summary = Some("No data was generated"),
-              value = NoDataGenerated
-            )
-          )
       )
 
-    val noSourcesWithTestDataGenerationExample: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
-      oneOfVariantFromMatchType(
+    val noSourcesWithTestDataGenerationErrorOutput: EndpointOutput.OneOfVariant[NoSourcesWithTestDataGeneration.type] =
+      oneOfVariant(
         NotFound,
         plainBody[NoSourcesWithTestDataGeneration.type]
-          .example(
-            Example.of(
-              summary = Some("No sources with test data generation available"),
-              value = NoSourcesWithTestDataGeneration
-            )
-          )
       )
 
-    val tooManyCharactersGeneratedExample: EndpointOutput.OneOfVariant[TooManyCharactersGenerated] =
+    val tooManyCharactersGeneratedErrorOutput: EndpointOutput.OneOfVariant[TooManyCharactersGenerated] =
       oneOfVariantFromMatchType(
         BadRequest,
         plainBody[TooManyCharactersGenerated]
-          .example(
-            Example.of(
-              summary = Some("Too many characters were generated"),
-              value = TooManyCharactersGenerated(length = 5000, limit = 2000)
-            )
-          )
       )
 
-    val tooManySamplesRequestedExample: EndpointOutput.OneOfVariant[TooManySamplesRequested] =
+    val tooManySamplesRequestedErrorOutput: EndpointOutput.OneOfVariant[TooManySamplesRequested] =
       oneOfVariantFromMatchType(
         BadRequest,
         plainBody[TooManySamplesRequested]
-          .example(
-            Example.of(
-              summary = Some("Too many samples requested"),
-              value = TooManySamplesRequested(maxSamples = 1000)
-            )
-          )
       )
 
   }

@@ -3259,10 +3259,6 @@ paths:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3364,10 +3360,6 @@ paths:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3441,14 +3433,7 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
-              examples:
-                Example:
-                  summary: Too many samples requested
-                  value: Too many samples requested, limit is 1000. Please configure
-                    'testDataSettings.maxSamplesCount' to increase the limit
+                type: string
         '401':
           description: ''
           content:
@@ -3477,14 +3462,7 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
-                - type: string
-              examples:
-                Example:
-                  summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                type: string
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3603,10 +3581,6 @@ paths:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
