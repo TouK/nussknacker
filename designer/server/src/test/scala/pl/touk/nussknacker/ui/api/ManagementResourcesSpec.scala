@@ -434,18 +434,25 @@ class ManagementResourcesSpec
         .streaming(processName.value)
         .parallelism(1)
         .source("startProcess", "csv-source")
-        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'".spel)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
     }
     saveCanonicalProcessAndAssertSuccess(process)
-    val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
+    val tooLargeData = List
+      .fill(20)(
+        (1 to 50_000).mkString("\"", "-", "\"")
+      )
+      .mkString("\n")
 
-    tooLargeTestDataContentList.foreach { tooLargeData =>
-      testScenario(process, tooLargeData) ~> check {
-        status shouldEqual StatusCodes.BadRequest
-        responseAs[
-          String
-        ] shouldBe "Loaded 50 input samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
-      }
+    testScenario(process, tooLargeData) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Loaded 50 input samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
     }
   }
 

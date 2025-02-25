@@ -20,8 +20,14 @@ object TestingApiErrorMessages {
   def tooManyInputSamples(count: Int, maxSamples: Int) =
     s"Loaded $count input samples, limit is: $maxSamples. Please configure 'testDataSettings.maxSamplesCount'"
 
-  def recordParsingError(rawTestRecord: String) =
-    s"Could not parse record: '$rawTestRecord'"
+  def recordParsingError(rawTestRecord: String): String = {
+    val trimmedRawTestRecord = rawTestRecord.take(300)
+    if (trimmedRawTestRecord.length < rawTestRecord.length) {
+      s"Could not parse record (shows fragment): '$trimmedRawTestRecord'"
+    } else {
+      s"Could not parse record: '$rawTestRecord'"
+    }
+  }
 
   def missingSourceForRecord(sourceId: String, recordIndex: Int) =
     s"Record ${recordIndex + 1} - scenario does not have source id: '$sourceId'"

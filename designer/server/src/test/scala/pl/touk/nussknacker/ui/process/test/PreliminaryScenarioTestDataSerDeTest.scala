@@ -18,7 +18,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
     TestDataSettings(
       maxSamplesCount = maxSamplesCount,
       testDataMaxLength = testDataMaxLength,
-      resultsMaxBytes = Int.MaxValue
+      resultsMaxBytes = Long.MaxValue
     )
   )
 
