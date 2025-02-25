@@ -54,6 +54,43 @@ class ActionInfoHttpServiceBusinessSpec
              |}""".stripMargin)
     }
 
+    "return action parameters for processors" in {
+      val scenario = ScenarioBuilder
+        .streaming("scenarioWithSourceWithDeployParameters")
+        .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
+        .processor("logging1", "log", "message" -> "".spel, "logger" -> "'test'".spel, "level" -> "INFO".spel)
+        .processor("logging2", "log", "message" -> "".spel, "logger" -> "'test'".spel, "level" -> "INFO".spel)
+        .emptySink("exampleSinkId", "emptySink")
+
+      given()
+        .applicationState {
+          createSavedScenario(scenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""|{
+                           |  "actionNameToParameters":{
+                           |    "DEPLOY":[
+                           |      {
+                           |        "nodeId":"sourceWithParametersId",
+                           |        "componentId": "boundedSourceWithOffset",
+                           |        "parameters":{
+                           |          "offset":{
+                           |            "defaultValue":null,
+                           |            "editor":{"type":"RawParameterEditor"},
+                           |            "label":"Offset",
+                           |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
+                           |          }
+                           |        }
+                           |      }
+                           |    ]
+                           |  }
+                           |}""".stripMargin)
+    }
+
     "return empty map when no action parameters" in {
       val scenario = ScenarioBuilder
         .streaming("scenarioWithoutParameters")
