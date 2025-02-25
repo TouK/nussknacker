@@ -13,6 +13,8 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, SchedulingConfig}
@@ -58,6 +60,7 @@ object ProcessingTypeData {
       deploymentManagerProvider: DeploymentManagerProvider,
       schedulingForProcessingType: SchedulingForProcessingType,
       deploymentManagerDependencies: DeploymentManagerDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       engineSetupName: EngineSetupName,
       deploymentConfig: Config,
       category: String,
@@ -70,6 +73,7 @@ object ProcessingTypeData {
           deploymentManagerProvider,
           schedulingForProcessingType,
           deploymentManagerDependencies,
+          deploymentManagersClassLoader,
           engineSetupName,
           modelData,
           deploymentConfig,
@@ -97,20 +101,24 @@ object ProcessingTypeData {
       deploymentManagerProvider: DeploymentManagerProvider,
       schedulingForProcessingType: SchedulingForProcessingType,
       deploymentManagerDependencies: DeploymentManagerDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
       deploymentConfig: Config,
-      metaDataInitializer: MetaDataInitializer,
+      metaDataInitializer: MetaDataInitializer
   ) = {
     val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(deploymentConfig)
 
     val validDeploymentManager = for {
-      deploymentManager <- deploymentManagerProvider.createDeploymentManager(
-        modelData,
-        deploymentManagerDependencies,
-        deploymentConfig,
-        scenarioStateCacheTTL
-      )
+      deploymentManager <-
+        ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) {
+          deploymentManagerProvider.createDeploymentManager(
+            modelData,
+            deploymentManagerDependencies,
+            deploymentConfig,
+            scenarioStateCacheTTL
+          )
+        }
       decoratedDeploymentManager = schedulingForProcessingType match {
         case SchedulingForProcessingType.Available(dbRef) =>
           deploymentManager.schedulingSupport match {

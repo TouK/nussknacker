@@ -54,17 +54,12 @@ object LocalNussknackerWithSingleModel {
       // This map is ignored but must exist
       appConfig.withValue("scenarioTypes", ConfigValueFactory.fromMap(Map.empty[String, ConfigValue].asJava))
     )
-    for {
-      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(List.empty)
-      designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(designerConfig.rawConfig.resolved)
-      appFactory = new NussknackerAppFactory(
-        designerConfig,
-        designerConfigLoader,
-        _ => local,
-        deploymentManagersClassLoader
-      )
-      app <- appFactory.createApp()
-    } yield app
+    val designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(designerConfig.rawConfig.resolved)
+    val appFactory = new NussknackerAppFactory(
+      designerConfigLoader,
+      _ => local,
+    )
+    appFactory.createApp()
   }
 
   // TODO: easier way of handling users file

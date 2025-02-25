@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
@@ -25,7 +24,11 @@ import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElem
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
+import pl.touk.nussknacker.test.mock.{
+  MockFetchingProcessRepository,
+  MockManagerProvider,
+  WithTestDeploymentManagerClassLoader
+}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
@@ -61,7 +64,8 @@ class DefaultComponentServiceSpec
     with PatientScalaFutures
     with EitherValuesDetailedMessage
     with ValidatedValuesDetailedMessage
-    with OptionValues {
+    with OptionValues
+    with WithTestDeploymentManagerClassLoader {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
@@ -870,6 +874,7 @@ class DefaultComponentServiceSpec
           new MockManagerProvider,
           SchedulingForProcessingType.NotAvailable,
           TestFactory.deploymentManagerDependencies,
+          deploymentManagersClassLoader,
           EngineSetupName("Mock"),
           deploymentConfig = ConfigFactory.empty(),
           category = category,

@@ -174,6 +174,7 @@ trait NuResourcesTest
         deploymentManagerProvider,
         SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies,
+        deploymentManagersClassLoader,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
         processingTypeConfig.category,
@@ -186,13 +187,11 @@ trait NuResourcesTest
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val designerConfig = DesignerConfig.from(testConfig)
     ProcessingTypeDataProvider(
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-        () => IO.pure(designerConfig.processingTypeConfigs),
-        deploymentManagersClassLoader
-      )
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,
+          deploymentManagersClassLoader,
           modelClassLoaderProvider,
           Some(testDbRef),
         )

@@ -17,6 +17,7 @@ trait ProcessingTypeDataLoader {
   def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       // should be always available, used by scheduling mechanism,
       // but in tests sometimes we do not want to bootstrap the full environment with db

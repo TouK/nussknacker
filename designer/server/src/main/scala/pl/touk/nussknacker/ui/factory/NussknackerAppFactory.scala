@@ -33,30 +33,25 @@ import java.time.Clock
 
 object NussknackerAppFactory {
 
-  def create(designerConfigLoader: DesignerConfigLoader): Resource[IO, NussknackerAppFactory] = {
-    for {
-      designerConfig               <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      managersDirs                 <- Resource.eval(IO.delay(designerConfig.managersDirs()))
-      deploymentManagerClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
-    } yield new NussknackerAppFactory(
-      designerConfig,
+  def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
+    new NussknackerAppFactory(
       designerConfigLoader,
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_, deploymentManagerClassLoader),
-      deploymentManagerClassLoader
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_),
     )
   }
 
 }
 
 class NussknackerAppFactory(
-    alreadyLoadedConfig: DesignerConfig,
     designerConfigLoader: DesignerConfigLoader,
     createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader,
-    deploymentManagersClassLoader: DeploymentManagersClassLoader
 ) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
+      alreadyLoadedConfig           <- Resource.eval(designerConfigLoader.loadDesignerConfig())
+      managersDirs                  <- Resource.eval(IO.delay(alreadyLoadedConfig.managersDirs()))
+      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
       system                        <- createActorSystem(alreadyLoadedConfig.rawConfig)
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
@@ -87,6 +82,7 @@ class NussknackerAppFactory(
           processingTypeDataLoader,
           feStatisticsRepository,
           clock,
+          deploymentManagersClassLoader,
           modelClassLoaderProvider
         )(
           system,

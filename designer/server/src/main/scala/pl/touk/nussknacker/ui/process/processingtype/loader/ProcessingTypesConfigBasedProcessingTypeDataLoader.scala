@@ -14,14 +14,14 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLo
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(
-    processingTypeConfigsLoader: ProcessingTypeConfigsLoader,
-    deploymentManagersClassLoader: DeploymentManagersClassLoader
+    processingTypeConfigsLoader: ProcessingTypeConfigsLoader
 ) extends ProcessingTypeDataLoader
     with LazyLogging {
 
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
@@ -32,6 +32,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
           _,
           getModelDependencies,
           getDeploymentManagerDependencies,
+          deploymentManagersClassLoader,
           modelClassLoaderProvider,
           dbRef
         )
@@ -42,6 +43,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
       processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
@@ -49,7 +51,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
     // See DeploymentManagerProvider.engineSetupIdentity
     val providerWithNameInputData = processingTypesConfig.configByProcessingType.mapValuesNow { processingTypeConfig =>
-      val provider = createDeploymentManagerProvider(processingTypeConfig)
+      val provider = createDeploymentManagerProvider(deploymentManagersClassLoader, processingTypeConfig)
       val nameInputData = EngineNameInputData(
         provider.defaultEngineSetupName,
         provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
@@ -89,6 +91,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
           deploymentManagerProvider,
           schedulingForProcessingType,
           getDeploymentManagerDependencies(processingType),
+          deploymentManagersClassLoader,
           engineSetupNames(processingType),
           processingTypeConfig.deploymentConfig,
           processingTypeConfig.category,
@@ -109,7 +112,10 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
     )
   }
 
-  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
+  private def createDeploymentManagerProvider(
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
+      typeConfig: ProcessingTypeConfig
+  ): DeploymentManagerProvider = {
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
       typeConfig.deploymentManagerType,
       deploymentManagersClassLoader
