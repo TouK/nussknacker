@@ -17,8 +17,11 @@ object TestingApiErrorMessages {
   def tooManyCharactersGenerated(length: Int, limit: Int) =
     s"$length characters were generated, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
 
-  def tooManyInputSamples(count: Int, maxSamples: Int) =
-    s"Loaded $count input samples, limit is: $maxSamples. Please configure 'testDataSettings.maxSamplesCount'"
+  def tooManyCharactersReceived(length: Int, limit: Int) =
+    s"Received $length characters, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
+
+  def tooManySamplesReceived(count: Int, maxSamples: Int) =
+    s"Received $count samples, limit is: $maxSamples. Please configure 'testDataSettings.maxSamplesCount'"
 
   def recordParsingError(rawTestRecord: String): String = {
     val trimmedRawTestRecord = rawTestRecord.take(300)

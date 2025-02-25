@@ -9,10 +9,13 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
 
+import scala.util.parsing.input.NoPosition.longString
+import scala.util.parsing.json.JSON
+
 class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   private val maxSamplesCount   = 5
-  private val testDataMaxLength = 200
+  private val testDataMaxLength = 1000
 
   private val serDe = new PreliminaryScenarioTestDataSerDe(
     TestDataSettings(
@@ -46,19 +49,31 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   test("should fail trying to serialize too much bytes") {
     val testData = PreliminaryScenarioTestData(
       NonEmptyList.fromListUnsafe(
-        List.fill(10)(PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a JSON string")))
+        List.fill(10)(
+          PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a long JSON string...".repeat(10)))
+        )
       )
     )
 
     val error = serDe.serialize(testData).leftValue
 
-    error shouldBe SerializationError.TooManyCharactersGenerated(length = 479, limit = testDataMaxLength)
+    error shouldBe SerializationError.TooManyCharactersGenerated(length = 2449, limit = testDataMaxLength)
   }
 
   test("should deserialize scenario test data") {
     val result = serDe.deserialize(RawScenarioTestData(rawStringScenarioTestData)).rightValue
 
     result shouldBe scenarioTestData
+  }
+
+  test("should fail trying to parse too many characters") {
+    val longString = "a long JSON string...".repeat(10)
+    val tooBigRawScenarioTestData =
+      RawScenarioTestData(List.fill(10)(s"""{"sourceId":"source1","record":"$longString"}""").mkString("\n"))
+
+    val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
+
+    error shouldBe DeserializationError.TooManyCharacters(length = 2449, limit = testDataMaxLength)
   }
 
   test("should fail trying to parse too many records") {

@@ -442,17 +442,26 @@ class ManagementResourcesSpec
         )
     }
     saveCanonicalProcessAndAssertSuccess(process)
-    val tooLargeData = List
-      .fill(20)(
-        (1 to 50_000).mkString("\"", "-", "\"")
-      )
-      .mkString("\n")
 
-    testScenario(process, tooLargeData) ~> check {
+    val tooManySamples = List
+      .fill(50)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, tooManySamples) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Loaded 50 input samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
+      ] shouldBe "Received 50 samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
+    }
+
+    val longString = "a long json string".repeat(50)
+    val tooManyCharacters = List
+      .fill(20)("\"" + longString + "\"")
+      .mkString("\n")
+    testScenario(process, tooManyCharacters) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Received 18059 characters, limit is 10000. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
     }
   }
 

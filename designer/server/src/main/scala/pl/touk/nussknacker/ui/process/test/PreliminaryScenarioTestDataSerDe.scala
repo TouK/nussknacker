@@ -27,8 +27,16 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
     import cats.syntax.either._
     import cats.syntax.traverse._
 
-    val rawRecords = rawTestData.content.linesIterator.toList
     for {
+      _ <- Either.cond(
+        rawTestData.content.length <= testDataSettings.testDataMaxLength,
+        (),
+        DeserializationError.TooManyCharacters(
+          length = rawTestData.content.length,
+          limit = testDataSettings.testDataMaxLength
+        )
+      )
+      rawRecords = rawTestData.content.linesIterator.toList
       _ <- Either.cond(
         rawRecords.size <= testDataSettings.maxSamplesCount,
         (),
@@ -57,9 +65,10 @@ object PreliminaryScenarioTestDataSerDe {
   sealed trait DeserializationError
 
   object DeserializationError {
-    final case class TooManySamples(size: Int, limit: Int)     extends DeserializationError
-    final case class RecordParsingError(rawTestRecord: String) extends DeserializationError
-    final case object NoRecords                                extends DeserializationError
+    final case class TooManyCharacters(length: Int, limit: Int) extends DeserializationError
+    final case class TooManySamples(size: Int, limit: Int)      extends DeserializationError
+    final case class RecordParsingError(rawTestRecord: String)  extends DeserializationError
+    final case object NoRecords                                 extends DeserializationError
   }
 
 }

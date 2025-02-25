@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError.TooManySamples
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{GenerateTestDataError, PerformTestError}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
@@ -100,8 +101,10 @@ object ManagementResources {
       PerformTestDesignerError(performTestError match {
         case PerformTestError.DeserializationError(cause) =>
           cause match {
+            case DeserializationError.TooManyCharacters(length, limit) =>
+              TestingApiErrorMessages.tooManyCharactersReceived(length, limit)
             case DeserializationError.TooManySamples(size, limit) =>
-              TestingApiErrorMessages.tooManyInputSamples(size, limit)
+              TestingApiErrorMessages.tooManySamplesReceived(size, limit)
             case DeserializationError.RecordParsingError(rawTestRecord) =>
               TestingApiErrorMessages.recordParsingError(rawTestRecord)
             case DeserializationError.NoRecords =>
