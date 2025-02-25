@@ -6,9 +6,9 @@ import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
+import pl.touk.nussknacker.engine.ComponentUseCase
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
@@ -416,7 +416,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       simpleModelData,
       Nil,
       ProductionServiceInvocationCollector,
-      ComponentUseContext.EngineRuntime(NodesDeploymentData.empty)
+      ComponentUseCase.EngineRuntime
     )
 
     maybeinterpreter shouldBe Symbol("valid")

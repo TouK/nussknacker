@@ -4,7 +4,7 @@ import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{State, StateT, ValidatedNel}
 import com.typesafe.config.ConfigFactory
-import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.ComponentUseCase
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -102,7 +102,8 @@ object sample {
         modelData,
         Nil,
         ProductionServiceInvocationCollector,
-        ComponentUseContext.EngineRuntime(NodesDeploymentData.empty)
+        ComponentUseCase.EngineRuntime,
+        nodesDeploymentData = NodesDeploymentData.empty
       )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(jobData))

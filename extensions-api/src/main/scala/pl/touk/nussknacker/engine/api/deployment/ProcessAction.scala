@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessId, Source, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
@@ -111,7 +111,6 @@ object ScenarioActionName {
 /**
  * Used to define Flink deployment parameters for each action
  */
-// TODO: lbg trait WithActionParametersSupport[T <: Source | EagerService] { self: T =>
 trait WithActionParametersSupport {
   def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }

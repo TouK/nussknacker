@@ -4,8 +4,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
-import pl.touk.nussknacker.engine.api.process.ComponentUseContext.EngineRuntime
+import pl.touk.nussknacker.engine.ComponentUseCase.EngineRuntime
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
@@ -30,7 +30,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
       Map.empty,
       ConfigFactory.empty,
-      EngineRuntime(NodesDeploymentData.empty)
+      EngineRuntime
     )
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
