@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.test
 
+import cats.data.EitherT
 import cats.syntax.either._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
@@ -20,7 +21,11 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{GenerateTestDataError, SourceTestError}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
+  GenerateTestDataError,
+  PerformTestError,
+  SourceTestError
+}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -117,28 +122,32 @@ class ScenarioTestService(
       processVersion: ProcessVersion,
       isFragment: Boolean,
       rawTestData: RawScenarioTestData,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
-    for {
-      preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
-        .deserialize(rawTestData)
-        // TODO ljd
-        .fold(error => Future.failed(new IllegalArgumentException(error.toString)), Future.successful)
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    (for {
+      preliminaryScenarioTestData <- EitherT.fromEither[Future](
+        preliminaryScenarioTestDataSerDe
+          .deserialize(rawTestData)
+          .leftMap[PerformTestError](PerformTestError.DeserializationError)
+      )
       canonical = toCanonicalProcess(
         scenarioGraph,
         processVersion,
         isFragment
       )
-      scenarioTestData <- testInfoProvider
-        .prepareTestData(preliminaryScenarioTestData, canonical)
-        // TODO: handle error from prepareTestData in better way
-        .fold(error => Future.failed(new IllegalArgumentException(error.message)), Future.successful)
-      testResults <- testExecutorService.testProcess(
-        processVersion,
-        canonical,
-        scenarioTestData,
+      scenarioTestData <- EitherT.fromEither[Future](
+        testInfoProvider
+          .prepareTestData(preliminaryScenarioTestData, canonical)
+          .leftMap[PerformTestError](PerformTestError.TestDataPreparationError)
       )
-      _ <- assertTestResultsAreNotTooBig(testResults)
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+      testResults <- EitherT.liftF(
+        testExecutorService.testProcess(
+          processVersion,
+          canonical,
+          scenarioTestData,
+        )
+      )
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(
@@ -146,16 +155,18 @@ class ScenarioTestService(
       processVersion: ProcessVersion,
       isFragment: Boolean,
       parameterTestData: TestSourceParameters,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    for {
-      testResults <- testExecutorService.testProcess(
-        processVersion,
-        canonical,
-        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+    (for {
+      testResults <- EitherT.liftF(
+        testExecutorService.testProcess(
+          processVersion,
+          canonical,
+          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+        )
       )
-      _ <- assertTestResultsAreNotTooBig(testResults)
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   private def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
@@ -190,16 +201,13 @@ class ScenarioTestService(
     )
   }
 
-  private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
+  private def validateTestResultsAreNotTooBig(testResults: TestResults[_]): Either[PerformTestError, Unit] = {
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
-    if (testDataResultApproxByteSize > testDataSettings.resultsMaxBytes) {
-      logger.info(
-        s"Test results limit exceeded. Approximate size: $testDataResultApproxByteSize, but limit is: ${testDataSettings.resultsMaxBytes}"
-      )
-      Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
-    } else {
-      Future.successful(())
-    }
+    Either.cond(
+      testDataResultApproxByteSize <= testDataSettings.resultsMaxBytes,
+      (),
+      PerformTestError.TestResultsSizeExceeded(testDataResultApproxByteSize, testDataSettings.resultsMaxBytes)
+    )
   }
 
   private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(
@@ -232,12 +240,19 @@ object ScenarioTestService {
   object SourceTestError {
     final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
     final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
-    case object NoDataGeneratedError                                              extends SourceTestError
+    final case object NoDataGeneratedError                                        extends SourceTestError
     final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
         extends SourceTestError
     final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError
   }
 
-  sealed trait TestError
+  sealed trait PerformTestError
+
+  object PerformTestError {
+    final case class DeserializationError(cause: PreliminaryScenarioTestDataSerDe.DeserializationError)
+        extends PerformTestError
+    final case class TestDataPreparationError(cause: TestInfoProvider.TestDataPreparationError) extends PerformTestError
+    final case class TestResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long)           extends PerformTestError
+  }
 
 }
