@@ -577,7 +577,7 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase.toContext(nodesDeploymentData.get(nodeId).getOrElse(Map.empty)),
+            componentUseCase.toContext(nodesDeploymentData.get(nodeId)),
             nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>

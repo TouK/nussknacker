@@ -14,17 +14,19 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseContext.EngineRuntime
   * </ul>
   */
 sealed trait ComponentUseContext {
+
   def deploymentData(): Option[NodeDeploymentData] = this match {
-    case EngineRuntime(nodeData) => Some(nodeData)
-    case _ => None
+    case EngineRuntime(nodeData) => nodeData
+    case _                       => None
   }
+
 }
 
 object ComponentUseContext {
-  case class EngineRuntime(nodeData: NodeDeploymentData) extends ComponentUseContext
-  case object TestRuntime        extends ComponentUseContext
-  case object Validation         extends ComponentUseContext
-  case object ServiceQuery       extends ComponentUseContext
-  case object TestDataGeneration extends ComponentUseContext
+  case class EngineRuntime(nodeData: Option[NodeDeploymentData]) extends ComponentUseContext
+  case object TestRuntime                                        extends ComponentUseContext
+  case object Validation                                         extends ComponentUseContext
+  case object ServiceQuery                                       extends ComponentUseContext
+  case object TestDataGeneration                                 extends ComponentUseContext
 
 }

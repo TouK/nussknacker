@@ -249,7 +249,7 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
-    val nodeDeploymentData = nodesDeploymentData.get(NodeId(node.id)).getOrElse(Map.empty)
+    val nodeDeploymentData                                = nodesDeploymentData.get(NodeId(node.id))
     implicit val componentUseContext: ComponentUseContext = componentUseCase.toContext(nodeDeploymentData)
     val resultFuture                                      = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc

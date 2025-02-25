@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 
 sealed trait ComponentUseCase {
 
-  def toContext(nodeDeploymentData: NodeDeploymentData): ComponentUseContext = this match {
+  def toContext(nodeDeploymentData: Option[NodeDeploymentData]): ComponentUseContext = this match {
     case EngineRuntime      => ComponentUseContext.EngineRuntime(nodeDeploymentData)
     case TestRuntime        => ComponentUseContext.TestRuntime
     case Validation         => ComponentUseContext.Validation

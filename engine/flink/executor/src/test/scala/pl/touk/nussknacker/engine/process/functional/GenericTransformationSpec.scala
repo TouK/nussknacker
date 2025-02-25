@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -80,7 +79,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
     processInvoker.invokeWithSampleData(process, Nil)
 
     ProcessTestHelpers.genericParameterSinkResultsHolder.results shouldBe List(
-      s"type2-3+type1-2+componentUseCase:${ComponentUseContext.EngineRuntime()}"
+      s"type2-3+type1-2+componentUseCase:${ComponentUseContext.EngineRuntime(None)}"
     )
   }
 
@@ -108,7 +107,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
     processInvoker.invokeWithSampleData(process, Nil)
 
     ProcessTestHelpers.genericParameterSinkResultsHolder.results shouldBe List(
-      s"test|transformed:test|4+type1-2+componentUseCase:${ComponentUseContext.EngineRuntime(NodesDeploymentData.empty)}"
+      s"test|transformed:test|4+type1-2+componentUseCase:${ComponentUseContext.EngineRuntime(None)}"
     )
   }
 

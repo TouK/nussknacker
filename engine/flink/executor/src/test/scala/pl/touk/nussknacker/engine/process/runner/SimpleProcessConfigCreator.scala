@@ -17,10 +17,10 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     Map(
       "logService"      -> WithCategories(LogService, "c1"),
       "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
-      "throwingTransientService"         -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
-      "returningDependentTypeService"    -> WithCategories(ReturningDependentTypeService, "c1"),
-      "collectingEager"                  -> WithCategories(CollectingEagerService, "c1"),
-      "returningComponentUseCaseService" -> WithCategories(ReturningComponentUseCaseService, "c1")
+      "throwingTransientService"            -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
+      "returningDependentTypeService"       -> WithCategories(ReturningDependentTypeService, "c1"),
+      "collectingEager"                     -> WithCategories(CollectingEagerService, "c1"),
+      "returningComponentUseContextService" -> WithCategories(ReturningComponentUseContextService, "c1")
     )
 
   override def sinkFactories(

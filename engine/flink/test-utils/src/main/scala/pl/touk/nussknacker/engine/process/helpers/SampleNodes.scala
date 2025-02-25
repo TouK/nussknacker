@@ -1091,11 +1091,11 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  object ReturningComponentUseCaseService extends Service with Serializable {
+  object ReturningComponentUseContextService extends Service with Serializable {
 
     @MethodToInvoke
-    def invoke(implicit componentUseCase: ComponentUseContext): Future[ComponentUseContext] = {
-      Future.successful(componentUseCase)
+    def invoke(implicit componentUseContext: ComponentUseContext): Future[ComponentUseContext] = {
+      Future.successful(componentUseContext)
     }
 
   }

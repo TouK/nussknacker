@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table.source;
+package pl.touk.nussknacker.engine.flink.table.source
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -8,7 +8,6 @@ import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, Ph
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseContext.EngineRuntime
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
   ContextInitializer,
