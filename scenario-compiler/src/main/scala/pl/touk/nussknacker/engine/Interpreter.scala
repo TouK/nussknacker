@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
@@ -249,9 +249,9 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
-    implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
     val nodeDeploymentData = nodesDeploymentData.get(NodeId(node.id)).getOrElse(Map.empty)
-    val resultFuture       = ref.invoke(ctx, serviceExecutionContext, nodeDeploymentData)
+    implicit val componentUseContext: ComponentUseContext = componentUseCase.toContext(nodeDeploymentData)
+    val resultFuture                                      = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
     resultFuture.onComplete { result =>
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, jobData.metaData, result))

@@ -4,7 +4,6 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
@@ -16,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter}
+import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidator, Interpreter}
 
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
@@ -33,8 +32,8 @@ object ProcessCompilerData {
       resultsCollector: ResultCollector,
       componentUseCase: ComponentUseCase,
       customProcessValidator: CustomProcessValidator,
+      nodesData: NodesDeploymentData,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default,
-      nodesData: NodesDeploymentData = NodesDeploymentData.empty,
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components.components
       .filter(_.componentType == ComponentType.Service)
@@ -60,7 +59,8 @@ object ProcessCompilerData {
       listeners,
       resultsCollector,
       componentUseCase,
-      nonServicesLazyParamStrategy
+      nodesData,
+      nonServicesLazyParamStrategy,
     )
     val subCompiler = new PartSubGraphCompiler(nodeCompiler)
     val processCompiler = new ProcessCompiler(

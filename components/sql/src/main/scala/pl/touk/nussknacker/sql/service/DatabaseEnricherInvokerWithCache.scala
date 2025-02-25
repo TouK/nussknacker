@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.sql.service
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
-import pl.touk.nussknacker.engine.api.{Context, Params}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.query.{QueryArguments, QueryResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
@@ -54,8 +52,7 @@ class DatabaseEnricherInvokerWithCache(
   override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      componentUseCase: ComponentUseCase,
-      nodeDeploymentData: NodeDeploymentData,
+      componentUseContext: ComponentUseContext,
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
       val queryArguments = queryArgumentsExtractor(argsCount, params, context)

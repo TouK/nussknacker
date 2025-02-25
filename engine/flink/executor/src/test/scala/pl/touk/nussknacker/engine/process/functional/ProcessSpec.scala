@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
@@ -292,7 +292,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    ProcessTestHelpers.sinkForStringsResultsHolder.results.loneElement shouldBe ComponentUseCase.EngineRuntime.toString
+    ProcessTestHelpers.sinkForStringsResultsHolder.results.loneElement shouldBe ComponentUseContext.EngineRuntime.toString
   }
 
   test("should handle errors on branches after split independently") {

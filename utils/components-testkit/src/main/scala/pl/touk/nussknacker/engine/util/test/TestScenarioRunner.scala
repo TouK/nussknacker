@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.ComponentUseCase
+import pl.touk.nussknacker.engine.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
@@ -39,7 +39,8 @@ object TestScenarioRunner {
   val noopSource     = "noopSource"
   val testResultSink = "sink"
 
-  def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
+  def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase =
+    if (testRuntimeMode) TestRuntime else EngineRuntime
 }
 
 /**

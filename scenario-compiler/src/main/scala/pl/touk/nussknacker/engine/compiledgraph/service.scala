@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compiledgraph
 
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   CollectableAction,
   ServiceInvocationCollector,
@@ -25,10 +25,9 @@ object service {
     def invoke(
         ctx: Context,
         serviceExecutionContext: ServiceExecutionContext,
-        nodeDeploymentData: NodeDeploymentData,
     )(
         implicit nodeId: NodeId,
-        componentUseCase: ComponentUseCase,
+        componentUseContext: ComponentUseContext,
     ): Future[Any] = {
 
       val contextId = ContextId(ctx.id)
@@ -36,8 +35,7 @@ object service {
       invoker.invoke(ctx)(
         serviceExecutionContext.executionContext,
         collector,
-        componentUseCase,
-        nodeDeploymentData,
+        componentUseContext,
       )
     }
 

@@ -3,9 +3,8 @@ package pl.touk.nussknacker.engine.management.sample
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import javax.annotation.Nullable
@@ -32,8 +31,7 @@ object LoggingService extends EagerService {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase,
-          nodeDeploymentData: NodeDeploymentData,
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         val msg = message.evaluate(context).renderedTemplate
         level match {

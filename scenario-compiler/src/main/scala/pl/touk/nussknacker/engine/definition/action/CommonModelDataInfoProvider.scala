@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, SourceNodeData, asFragme
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 
 class CommonModelDataInfoProvider(modelData: ModelData) {
 
@@ -31,6 +31,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     Seq.empty,
     ProductionServiceInvocationCollector,
     ComponentUseCase.TestDataGeneration,
+    NodesDeploymentData.empty,
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 

@@ -232,7 +232,7 @@ object validationHelpers {
     }
 
     override def nodeDependencies: List[NodeDependency] =
-      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
+      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
 
   }
 
@@ -429,7 +429,7 @@ object validationHelpers {
     }
 
     override def nodeDependencies: List[NodeDependency] =
-      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
+      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
   }
 
   trait GenericParameters[T] extends SingleInputDynamicComponent[T] {
@@ -499,7 +499,7 @@ object validationHelpers {
     }
 
     override def nodeDependencies: List[NodeDependency] =
-      List(TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
+      List(TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
 
   }
 

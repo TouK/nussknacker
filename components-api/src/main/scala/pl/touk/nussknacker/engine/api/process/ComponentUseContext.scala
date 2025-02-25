@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext.EngineRuntime
+
 /**
   * Specifies the mode a node is used/invoked. It can be one of the following values:
   * <ul>
@@ -10,13 +13,18 @@ package pl.touk.nussknacker.engine.api.process
   * <li>TestDataGeneration - used when compiling, but only for purpose of generating test data. Components should not be invoked in this mode.</li>
   * </ul>
   */
-sealed trait ComponentUseCase
+sealed trait ComponentUseContext {
+  def deploymentData(): Option[NodeDeploymentData] = this match {
+    case EngineRuntime(nodeData) => Some(nodeData)
+    case _ => None
+  }
+}
 
-object ComponentUseCase {
-  case object EngineRuntime      extends ComponentUseCase
-  case object TestRuntime        extends ComponentUseCase
-  case object Validation         extends ComponentUseCase
-  case object ServiceQuery       extends ComponentUseCase
-  case object TestDataGeneration extends ComponentUseCase
+object ComponentUseContext {
+  case class EngineRuntime(nodeData: NodeDeploymentData) extends ComponentUseContext
+  case object TestRuntime        extends ComponentUseContext
+  case object Validation         extends ComponentUseContext
+  case object ServiceQuery       extends ComponentUseContext
+  case object TestDataGeneration extends ComponentUseContext
 
 }

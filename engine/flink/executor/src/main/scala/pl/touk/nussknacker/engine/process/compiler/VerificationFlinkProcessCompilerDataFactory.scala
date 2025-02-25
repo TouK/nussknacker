@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,7 +18,8 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
       componentUseCase = ComponentUseCase.Validation,
-      modelData.additionalConfigsFromProvider
+      modelData.additionalConfigsFromProvider,
+      NodesDeploymentData.empty
     ) {
 
       override protected def adjustListeners(

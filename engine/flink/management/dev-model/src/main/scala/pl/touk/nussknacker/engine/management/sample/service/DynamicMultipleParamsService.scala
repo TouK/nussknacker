@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.{Context, EagerService, NodeId, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   Parameter
 }
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
@@ -76,8 +75,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase,
-          nodeDeploymentData: NodeDeploymentData,
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = ???
     }
   }

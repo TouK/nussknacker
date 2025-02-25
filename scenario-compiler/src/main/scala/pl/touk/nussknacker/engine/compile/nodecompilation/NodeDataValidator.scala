@@ -4,11 +4,10 @@ import cats.Applicative
 import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 
 sealed trait ValidationResponse
 
@@ -54,6 +54,7 @@ class NodeDataValidator(modelData: ModelData) {
     Seq.empty,
     PreventInvocationCollector,
     ComponentUseCase.Validation,
+    NodesDeploymentData.empty,
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 

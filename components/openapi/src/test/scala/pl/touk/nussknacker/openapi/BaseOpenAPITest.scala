@@ -3,8 +3,9 @@ package pl.touk.nussknacker.openapi
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.commons.io.IOUtils
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
@@ -19,9 +20,9 @@ trait BaseOpenAPITest {
 
   protected val baseConfig: OpenAPIServicesConfig = OpenAPIServicesConfig(new URL("http://foo"))
 
-  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
-  implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val context: Context                   = Context("testContextId", Map.empty)
+  implicit val componentUseCase: ComponentUseContext = ComponentUseContext.EngineRuntime(NodesDeploymentData.empty)
+  implicit val metaData: MetaData                    = MetaData("testProc", StreamMetaData())
+  implicit val context: Context                      = Context("testContextId", Map.empty)
   private val jobData        = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
   private val runtimeContext = TestEngineRuntimeContext(jobData)
 

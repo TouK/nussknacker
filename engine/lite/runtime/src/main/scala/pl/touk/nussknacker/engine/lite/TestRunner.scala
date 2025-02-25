@@ -4,9 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.{Id, Monad, ~>}
 import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}

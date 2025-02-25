@@ -111,7 +111,7 @@ object ScenarioActionName {
 /**
  * Used to define Flink deployment parameters for each action
  */
-//trait WithActionParametersSupport[T <: Source | EagerService] { self: T =>
+// TODO: lbg trait WithActionParametersSupport[T <: Source | EagerService] { self: T =>
 trait WithActionParametersSupport {
   def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }

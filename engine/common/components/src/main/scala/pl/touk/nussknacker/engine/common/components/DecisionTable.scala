@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
@@ -142,8 +142,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase,
-        nodeDeploymentData: NodeDeploymentData,
+        componentUseContext: ComponentUseContext,
     ): Future[Output] = Future {
       filterRows(tabularData, context)
     }

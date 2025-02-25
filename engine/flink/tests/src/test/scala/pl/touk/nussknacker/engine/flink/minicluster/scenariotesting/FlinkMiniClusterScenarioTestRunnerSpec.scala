@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor
 }
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -835,7 +835,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .futureValue
 
       results.invocationResults("out").map(_.value) shouldBe List(
-        variable(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime))
+        variable(List(ComponentUseContext.TestRuntime, ComponentUseContext.TestRuntime))
       )
     }
 

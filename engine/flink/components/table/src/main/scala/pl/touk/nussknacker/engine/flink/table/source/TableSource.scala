@@ -8,6 +8,7 @@ import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, Ph
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext.EngineRuntime
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
   ContextInitializer,
@@ -50,7 +51,8 @@ class TableSource(
 
     val selectQuery = tableEnv.from(tableDefinition.tableId.toString)
 
-    val finalQuery = flinkNodeContext.nodeDeploymentData
+    val finalQuery = flinkNodeContext.componentUseContext
+      .deploymentData()
       .flatMap(_.get(SQL_EXPRESSION_PARAMETER_NAME))
       .collect { case sqlExpression =>
         tableEnv.executeSql(

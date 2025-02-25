@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -27,7 +27,7 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
       collector: ServiceInvocationCollector,
       contextId: ContextId,
       metaData: MetaData,
-      componentUseCase: ComponentUseCase
+      componentUseContext: ComponentUseContext
   ): Future[AnyRef] = {
     val toCollect = eagerParameters.values.mkString(",")
     val res       = ().asInstanceOf[AnyRef]

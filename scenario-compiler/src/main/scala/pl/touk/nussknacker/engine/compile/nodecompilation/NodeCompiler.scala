@@ -4,14 +4,14 @@ import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.implicits._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicComponent, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
@@ -40,7 +40,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{api, compiledgraph}
+import pl.touk.nussknacker.engine.{ComponentUseCase, api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -70,7 +70,8 @@ class NodeCompiler(
     listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
     componentUseCase: ComponentUseCase,
-    nonServicesLazyParamStrategy: LazyParameterCreationStrategy
+    nodesDeploymentData: NodesDeploymentData,
+    nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
 ) {
 
   def withLabelsDictTyper: NodeCompiler = {
@@ -82,7 +83,8 @@ class NodeCompiler(
       listeners,
       resultCollector,
       componentUseCase,
-      nonServicesLazyParamStrategy
+      nodesDeploymentData,
+      nonServicesLazyParamStrategy,
     )
   }
 
@@ -575,7 +577,7 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase,
+            componentUseCase.toContext(nodesDeploymentData.get(nodeId).getOrElse(Map.empty)),
             nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>

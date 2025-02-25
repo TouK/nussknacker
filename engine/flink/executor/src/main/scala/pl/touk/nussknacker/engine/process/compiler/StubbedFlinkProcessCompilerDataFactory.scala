@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ComponentUseCase
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{
   NodesDeploymentData
 }
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
@@ -34,14 +35,15 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     componentUseCase: ComponentUseCase,
-    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    nodesDeploymentData: NodesDeploymentData,
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
       componentUseCase,
       configsFromProviderWithDictionaryEditor,
-      NodesDeploymentData.empty
+      nodesDeploymentData,
     ) {
 
   override protected def adjustDefinitions(

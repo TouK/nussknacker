@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   ComponentType,
   NodeComponentInfo,
+  NodesDeploymentData,
   UnboundedStreamComponent
 }
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -101,7 +102,7 @@ object sample {
         modelData,
         Nil,
         ProductionServiceInvocationCollector,
-        ComponentUseCase.EngineRuntime
+        ComponentUseContext.EngineRuntime(NodesDeploymentData.empty)
       )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(jobData))
