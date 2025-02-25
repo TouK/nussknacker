@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec

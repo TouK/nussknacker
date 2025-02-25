@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.embedded.requestresponse
 
-import akka.event.Logging
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.directives.DebuggingDirectives
-import akka.http.scaladsl.server.{Directive0, Directives, Route}
-import akka.stream.Materializer
+import org.apache.pekko.event.Logging
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.directives.DebuggingDirectives
+import org.apache.pekko.http.scaladsl.server.{Directive0, Directives, Route}
+import org.apache.pekko.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext

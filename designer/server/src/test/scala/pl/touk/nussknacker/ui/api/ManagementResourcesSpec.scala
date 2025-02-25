@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher

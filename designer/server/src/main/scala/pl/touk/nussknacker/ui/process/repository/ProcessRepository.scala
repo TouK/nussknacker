@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import akka.http.scaladsl.model.HttpHeader
+import org.apache.pekko.http.scaladsl.model.HttpHeader
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._

@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.Uri.{Path, Query}
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
-import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.Uri.{Path, Query}
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
+import org.apache.pekko.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
 import cats.data.EitherT
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode

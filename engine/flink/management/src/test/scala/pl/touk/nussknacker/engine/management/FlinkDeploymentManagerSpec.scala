@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Props}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.DurationInt

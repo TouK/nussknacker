@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic
 
-import akka.actor.{Actor, Props, Timers}
+import org.apache.pekko.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.process.periodic.DeploymentActor._
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeployment

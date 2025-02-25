@@ -17,6 +17,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * forceLatestRead: false -> defaultOffsetResetStrategy: "None"
     * forceLatestRead: true -> defaultOffsetResetStrategy: "ToLatest"
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The `process-json` button in `processToolbarConfig` was renamed to `process-export`
+* [#7590](https://github.com/TouK/nussknacker/pull/7590) All `akka.*` configuration options and `AKKA_*` and Akka environment
+  variables were replaced with their `pekko.*` and `PEKKO_*` counterparts - it's enough to do a quick search and replace
 
 ### REST API changes
 
@@ -74,7 +76,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `FlinkStreamingRestManager` and `FlinkRestManager` abstraction layers were removed - only `FlinkDeploymentManager` exists
 * [#7563](https://github.com/TouK/nussknacker/pull/7563) `ProcessConfigCreator.buildInfo` and `NkGlobalParameters.buildInfo` were renamed to `modelInfo`
   Also, they return a `ModelInfo` value class now. To create it from `Map`, use `ModelInfo.fromMap`. To access underlying map, use `ModelInfo.parameters`.
-  
+* [#7590](https://github.com/TouK/nussknacker/pull/7590) Akka and Akka HTTP were replaced with Apache Pekko 1.0.3 / Apache Pekko HTTP 1.0.1.
+  These versions are API-compatible with previously used Akka versions, so after updating dependencies it should be enough
+  to replace all `akka.*` imports with `org.apache.pekko.*` and change the `akka` prefix in configuration entries to `pekko`.
+  More details can be found in:
+  * [Migration guide for Apache Pekko](https://pekko.apache.org/docs/pekko/1.0/project/migration-guides.html)
+  * [Migration guide for Apache Pekko HTTP](https://pekko.apache.org/docs/pekko-http/1.0/migration-guide/index.html)
 
 ### Other changes
 

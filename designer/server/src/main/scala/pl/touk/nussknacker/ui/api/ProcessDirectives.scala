@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directive1
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.util.NuPathMatchers
 import scala.concurrent.ExecutionContext
 
 trait ProcessDirectives extends NuPathMatchers {
-  import akka.http.scaladsl.server.Directives._
+  import org.apache.pekko.http.scaladsl.server.Directives._
 
   protected val processService: ProcessService
   implicit val ec: ExecutionContext

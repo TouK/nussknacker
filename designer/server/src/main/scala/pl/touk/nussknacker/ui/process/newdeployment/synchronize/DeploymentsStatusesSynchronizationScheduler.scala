@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
-import akka.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._

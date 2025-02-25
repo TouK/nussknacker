@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.util
 
 import org.typelevel.ci._
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.server.Directive0
-import akka.http.scaladsl.server.Directives.respondWithHeaders
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.server.Directive0
+import org.apache.pekko.http.scaladsl.server.Directives.respondWithHeaders
 
 object SecurityHeadersSupport {
 

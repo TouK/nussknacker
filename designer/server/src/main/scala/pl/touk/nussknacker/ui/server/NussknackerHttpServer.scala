@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.{Http, HttpsConnectionContext}
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
-import fr.davit.akka.http.metrics.core.HttpMetrics._
-import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
-import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
+import fr.davit.pekko.http.metrics.core.HttpMetrics._
+import fr.davit.pekko.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
+import fr.davit.pekko.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.config.DesignerConfig
@@ -27,13 +27,13 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSy
   def start(designerConfig: DesignerConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {
       route <- routeProvider.createRoute(designerConfig)
-      _     <- createAkkaHttpBinding(designerConfig.rawConfig, route, metricRegistry)
+      _     <- createPekkoHttpBinding(designerConfig.rawConfig, route, metricRegistry)
     } yield {
       RouteInterceptor.set(route)
     }
   }
 
-  private def createAkkaHttpBinding(
+  private def createPekkoHttpBinding(
       config: ConfigWithUnresolvedVersion,
       route: Route,
       metricsRegistry: MetricRegistry

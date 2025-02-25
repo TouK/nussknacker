@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
-import akka.actor.ActorSystem
-import akka.testkit.{TestKit, TestKitBase, TestProbe}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.testkit.{TestKit, TestKitBase, TestProbe}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterAll

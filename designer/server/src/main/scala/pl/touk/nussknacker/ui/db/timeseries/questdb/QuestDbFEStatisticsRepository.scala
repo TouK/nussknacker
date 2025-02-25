@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.db.timeseries.questdb
 
-import akka.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import better.files.File
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config

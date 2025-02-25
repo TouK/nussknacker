@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given

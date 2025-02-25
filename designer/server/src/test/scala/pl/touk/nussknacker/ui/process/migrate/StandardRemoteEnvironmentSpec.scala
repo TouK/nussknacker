@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model._
-import akka.stream.Materializer
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.stream.Materializer
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.parser
 import io.circe.syntax.EncoderOps
 import org.scalatest.BeforeAndAfterAll

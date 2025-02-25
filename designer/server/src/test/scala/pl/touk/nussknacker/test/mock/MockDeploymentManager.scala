@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.mock
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.unsafe.IORuntime

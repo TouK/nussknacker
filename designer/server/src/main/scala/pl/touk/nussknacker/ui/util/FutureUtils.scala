@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.util
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -17,7 +17,7 @@ object FutureUtils {
       import actorSystem._
       Future.firstCompletedOf(
         Seq(
-          akka.pattern.after(duration)(Future.successful(CompletedByTimeout(timeoutResult))),
+          org.apache.pekko.pattern.after(duration)(Future.successful(CompletedByTimeout(timeoutResult))),
           future.map(CompletedNormally(_))
         )
       )

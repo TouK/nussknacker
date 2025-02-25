@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.stream.Materializer
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -107,7 +107,7 @@ import scala.io.Source
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class AkkaHttpBasedRouteProvider(
+class PekkoHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
     sttpBackend: SttpBackend[Future, Any],
@@ -457,7 +457,7 @@ class AkkaHttpBasedRouteProvider(
           dbioRunner,
         ),
         featureTogglesConfig.deploymentCommentSettings,
-        new AkkaHttpBasedTapirStreamEndpointProvider(),
+        new PekkoHttpBasedTapirStreamEndpointProvider(),
         dbioRunner,
       )
       val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
@@ -650,12 +650,12 @@ class AkkaHttpBasedRouteProvider(
           statisticsApiHttpService
         )
 
-      val akkaHttpServerInterpreter = new NuAkkaHttpServerInterpreterForTapirPurposes()
+      val pekkoHttpServerInterpreter = new NuPekkoHttpServerInterpreterForTapirPurposes()
 
       createAppRoute(
         resolvedConfig = resolvedDesignerConfig,
         authManager = authManager,
-        tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
+        tapirRelatedRoutes = pekkoHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
         developmentMode = featureTogglesConfig.development

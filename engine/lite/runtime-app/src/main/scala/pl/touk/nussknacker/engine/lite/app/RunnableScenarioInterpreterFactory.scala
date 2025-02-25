@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.app
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging

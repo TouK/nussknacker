@@ -141,7 +141,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         Volume.Mount(name = "logging-conf", mountPath = LoggingConfigMountPath),
         Volume.Mount(name = "runtime-conf", mountPath = RuntimeConfigMountPath),
       ),
-      // used standard AkkaManagement see HealthCheckServerRunner for details
+      // used standard PekkoManagement see HealthCheckServerRunner for details
       startupProbe = Some(
         Probe(
           new HTTPGetAction(Left(8080), path = "/alive"),

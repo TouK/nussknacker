@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server._
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.marshalling.ToResponseMarshallable
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server._
+import org.apache.pekko.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -42,7 +42,7 @@ class ProcessesResources(
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import akka.http.scaladsl.unmarshalling.Unmarshaller._
+  import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller._
 
   def securedRoute(implicit user: LoggedUser): Route = {
     encodeResponse {

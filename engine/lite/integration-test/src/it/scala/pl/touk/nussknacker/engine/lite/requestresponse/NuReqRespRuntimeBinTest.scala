@@ -28,7 +28,7 @@ class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin
     val shellScriptEnvs = Array(
       "CONFIG_FORCE_http_interface=localhost",
       s"CONFIG_FORCE_http_port=$port",
-    ) ++ akkaManagementEnvs
+    ) ++ pekkoManagementEnvs
 
     withProcessExecutedInBackground(
       shellScriptArgs,

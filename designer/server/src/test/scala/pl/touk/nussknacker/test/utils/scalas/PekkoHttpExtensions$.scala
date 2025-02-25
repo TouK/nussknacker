@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.test.utils.scalas
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 
-trait AkkaHttpExtensions {
+trait PekkoHttpExtensions$ {
 
   implicit class toRequestEntity[T: Encoder](request: T) {
 
@@ -16,4 +16,4 @@ trait AkkaHttpExtensions {
 
 }
 
-object AkkaHttpExtensions extends AkkaHttpExtensions
+object PekkoHttpExtensions$ extends PekkoHttpExtensions$

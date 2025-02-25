@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.api
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec

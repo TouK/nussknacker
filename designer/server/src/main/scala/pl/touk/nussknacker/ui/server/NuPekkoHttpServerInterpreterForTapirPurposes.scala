@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import sttp.model.StatusCode
 import sttp.monad.FutureMonad
 import sttp.tapir.EndpointIO.Header
-import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
+import sttp.tapir.server.pekkohttp.{PekkoHttpServerInterpreter, PekkoHttpServerOptions}
 import sttp.tapir.server.interceptor._
 import sttp.tapir.server.interceptor.decodefailure.{DecodeFailureHandler, DefaultDecodeFailureHandler}
 import sttp.tapir.server.interceptor.exception.{ExceptionContext, ExceptionHandler}
@@ -13,15 +13,15 @@ import sttp.tapir.{DecodeResult, statusCode, stringBody}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NuAkkaHttpServerInterpreterForTapirPurposes(
+class NuPekkoHttpServerInterpreterForTapirPurposes(
     implicit val executionContext: ExecutionContext
-) extends AkkaHttpServerInterpreter
+) extends PekkoHttpServerInterpreter
     with LazyLogging {
 
   private implicit val futureMonadError: FutureMonad = new FutureMonad
 
-  override val akkaHttpServerOptions: AkkaHttpServerOptions =
-    AkkaHttpServerOptions.customiseInterceptors
+  override val pekkoHttpServerOptions: PekkoHttpServerOptions =
+    PekkoHttpServerOptions.customiseInterceptors
       .decodeFailureHandler(customDecodeFailureHandler)
       .exceptionHandler(customExceptionHandler)
       .options

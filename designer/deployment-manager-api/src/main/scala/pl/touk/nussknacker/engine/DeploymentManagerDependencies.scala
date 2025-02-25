@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessingTypeActionService,

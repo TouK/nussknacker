@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
 import pl.touk.nussknacker.ui.security.api.AuthManager.ImpersonationConsideringInputEndpoint
-import pl.touk.nussknacker.ui.server.{AkkaHttpBasedTapirStreamEndpointProvider, TapirStreamEndpointProvider}
+import pl.touk.nussknacker.ui.server.{PekkoHttpBasedTapirStreamEndpointProvider, TapirStreamEndpointProvider}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
@@ -177,7 +177,7 @@ object NuDesignerApiAvailableToExpose {
   private def withStreamProvider[T](handle: TapirStreamEndpointProvider => T): T = {
     val actorSystem: ActorSystem                    = ActorSystem()
     val mat: Materializer                           = Materializer(actorSystem)
-    val streamProvider: TapirStreamEndpointProvider = new AkkaHttpBasedTapirStreamEndpointProvider()(mat)
+    val streamProvider: TapirStreamEndpointProvider = new PekkoHttpBasedTapirStreamEndpointProvider()(mat)
     val result                                      = handle(streamProvider)
     Await.result(actorSystem.terminate(), scala.concurrent.duration.Duration.Inf)
     result

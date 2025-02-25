@@ -27,7 +27,7 @@ fs.readFile(path.resolve(__dirname, "dist", "main.html"), "utf8", function (err,
 });
 
 app.use((req, res, next) => {
-    //We do it because some of static files (eg. status's icons, component's icons) are stored in jar and are served by akka
+    //We do it because some of static files (eg. status's icons, component's icons) are stored in jar and are served by pekko
     if (req.path.startsWith("/static")) {
         proxy(req, res, next);
     } else {

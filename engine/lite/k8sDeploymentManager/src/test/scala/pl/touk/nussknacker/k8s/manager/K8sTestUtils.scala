@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.Done
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directive1, Directives, Route}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.server.{Directive1, Directives, Route}
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.definition.DefinitionsService.ComponentUiConfigMode
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.lite.app
 
-import akka.actor.{Actor, ActorSystem, Props}
-import akka.http.scaladsl.server.Route
-import akka.management.scaladsl.AkkaManagement
-import akka.pattern._
-import akka.util.Timeout
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.management.scaladsl.PekkoManagement
+import org.apache.pekko.pattern._
+import org.apache.pekko.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.TaskStatus.{Running, TaskStatus}
@@ -20,7 +20,7 @@ class HealthCheckRoutesProvider(system: ActorSystem, scenarioInterpreter: Runnab
     RunnableScenarioInterpreterStatusCheckerActor.actorName
   )
 
-  private val management = AkkaManagement(system)
+  private val management = PekkoManagement(system)
 
   def routes: Route = management.routes
 }

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite.app
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import cats.data.{NonEmptyList, Validated}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.typesafe.config.{Config, ConfigFactory}

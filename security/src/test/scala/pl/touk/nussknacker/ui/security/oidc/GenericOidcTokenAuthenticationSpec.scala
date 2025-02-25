@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.security.oidc
 
-import akka.http.javadsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.javadsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import com.typesafe.config.ConfigFactory
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.OptionValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -34,7 +35,7 @@ class GenericOidcTokenAuthenticationSpec
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
   private val audience    = "http://nussknacker"
 
-  implicit val timeout: RouteTestTimeout = RouteTestTimeout(5 seconds)
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
   private val roleClaim = "http://namespace/roles"
 

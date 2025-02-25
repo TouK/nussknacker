@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.util
 
-import akka.http.scaladsl.model.Multipart.FormData
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Multipart.FormData
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import sttp.client3._
 import sttp.model.{MediaType, Part}
 

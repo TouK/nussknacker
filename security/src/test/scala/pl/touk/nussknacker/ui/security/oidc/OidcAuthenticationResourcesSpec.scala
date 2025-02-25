@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.oidc
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers

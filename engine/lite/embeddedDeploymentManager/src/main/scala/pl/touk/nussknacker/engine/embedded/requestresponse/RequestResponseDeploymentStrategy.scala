@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.embedded.requestresponse
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.Http.ServerBinding
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.stream.Materializer
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
@@ -57,7 +57,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
 ) extends DeploymentStrategy
     with LazyLogging {
 
-  private val akkaHttpSetupTimeout = 10 seconds
+  private val pekkoHttpSetupTimeout = 10 seconds
 
   private val slugToScenarioRoute = TrieMap[String, Route]()
 
@@ -77,12 +77,12 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
           port = httpConfig.port
         )
         .bind(route.route),
-      akkaHttpSetupTimeout
+      pekkoHttpSetupTimeout
     )
   }
 
   override def close(): Unit = {
-    Await.result(server.terminate(akkaHttpSetupTimeout), akkaHttpSetupTimeout)
+    Await.result(server.terminate(pekkoHttpSetupTimeout), pekkoHttpSetupTimeout)
   }
 
   override def onScenarioAdded(jobData: JobData, parsedResolvedScenario: CanonicalProcess)(
