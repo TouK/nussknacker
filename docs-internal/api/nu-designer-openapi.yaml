@@ -2214,13 +2214,12 @@ paths:
                   value: 'Expected Filter but got: Source'
                 Example3:
                   summary: Too many samples requested
-                  value: Too many samples requested, but limit is 100. Please configure
+                  value: Too many samples requested, limit is 100. Please configure
                     'testDataSettings.maxSamplesCount' to increase the limit
                 Example4:
                   summary: Too many characters generated
-                  value: 1000 characters were generated, but limit is 500. Please
-                    configure 'testDataSettings.testDataMaxLength' to increase the
-                    limit
+                  value: 1000 characters were generated, limit is 500. Please configure
+                    'testDataSettings.testDataMaxLength' to increase the limit
         '401':
           description: ''
           content:
@@ -3448,7 +3447,7 @@ paths:
               examples:
                 Example:
                   summary: Too many samples requested
-                  value: Too many samples requested, but limit is 1000. Please configure
+                  value: Too many samples requested, limit is 1000. Please configure
                     'testDataSettings.maxSamplesCount' to increase the limit
         '401':
           description: ''
