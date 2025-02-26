@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.sttp
+package pl.touk.nussknacker.http.backend
 
 import io.circe.{Decoder, Error}
 import sttp.client3.circe.deserializeJson

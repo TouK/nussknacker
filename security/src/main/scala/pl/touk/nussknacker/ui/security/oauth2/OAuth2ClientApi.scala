@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Decoder, Error}
-import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.http.backend.SttpJson
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{
   OAuth2AccessTokenRejection,
   OAuth2CompoundException,
