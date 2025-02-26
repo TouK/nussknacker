@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
-import pl.touk.nussknacker.engine.sttp.HttpClientError
+import pl.touk.nussknacker.http.backend.HttpClientError
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{HttpError, Response, SttpBackend}
