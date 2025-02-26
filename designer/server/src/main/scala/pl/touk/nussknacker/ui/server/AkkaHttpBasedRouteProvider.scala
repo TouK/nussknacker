@@ -184,16 +184,22 @@ class AkkaHttpBasedRouteProvider(
         DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
       writeProcessRepository =
         ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
-      processChangeListener = ProcessChangeListenerLoader.loadListeners(
-        getClass.getClassLoader,
-        resolvedDesignerConfig,
-        NussknackerServices(new PullProcessRepository(futureProcessRepository))
-      )
       dmDispatcher =
         new DeploymentManagerDispatcher(
           processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
           futureProcessRepository
         )
+      fetchScenarioActivityService = new FetchScenarioActivityService(
+        dmDispatcher,
+        scenarioActivityRepository,
+        futureProcessRepository,
+        dbioRunner,
+      )
+      processChangeListener = ProcessChangeListenerLoader.loadListeners(
+        getClass.getClassLoader,
+        resolvedDesignerConfig,
+        NussknackerServices(new PullProcessRepository(futureProcessRepository, fetchScenarioActivityService))
+      )
       deploymentsStatusesProvider =
         new EngineSideDeploymentStatusesProvider(dmDispatcher, featureTogglesConfig.scenarioStateTimeout)
       scenarioStatusProvider = new ScenarioStatusProvider(
@@ -349,12 +355,6 @@ class AkkaHttpBasedRouteProvider(
           },
         processService,
         fragmentRepository
-      )
-      val fetchScenarioActivityService = new FetchScenarioActivityService(
-        dmDispatcher,
-        scenarioActivityRepository,
-        futureProcessRepository,
-        dbioRunner,
       )
       val notificationService = new NotificationServiceImpl(
         fetchScenarioActivityService,
