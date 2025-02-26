@@ -59,6 +59,14 @@ export const NodeDetailsContent = ({
                         ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
                         : configuredAdditionalComponents.filter((c) => c.type === creatorType)?.map((c) => c.componentId) || []
                 }
+                onCreate={
+                    creatorType === "aggregate"
+                        ? null
+                        : () => {
+                              const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
+                              window.open(`https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`);
+                          }
+                }
             />
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
             <TestResultsWrapper nodeId={node.id} showTestResults={showTestResults}>
