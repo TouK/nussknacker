@@ -8,7 +8,6 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
-  ComponentType,
   DesignerWideComponentId,
   ProcessingMode
 }

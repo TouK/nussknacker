@@ -61,7 +61,7 @@ class ComponentGroupsPreparerSpec
   test("return components sorted by label case insensitive") {
     val groups = prepareGroupForServices(List("foo", "alaMaKota", "BarFilter"))
     groups.map(_.components.map(n => n.label)) shouldBe List(
-      List("choice", "filter", "record variable", "split", "variable"),
+      List("choice", "filter", "record-variable", "split", "variable"),
       List("alaMaKota", "BarFilter", "foo")
     )
   }
