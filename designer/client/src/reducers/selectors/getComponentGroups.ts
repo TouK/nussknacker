@@ -1,46 +1,54 @@
-import { groupBy } from "lodash";
 import { createSelector } from "reselect";
+import { StickyNotesSettings } from "../../actions/nk";
 import { stickyNoteComponentGroup } from "../../components/toolbars/creator/StickyNoteComponent";
+import { ComponentGroup } from "../../types";
 import { RootState } from "../index";
 import { getCreator } from "./getCreator";
 import { isPristine } from "./graph";
-import { getAdditionalComponents } from "./isCloudInstance";
 import { getProcessDefinitionData, getStickyNotesSettings } from "./settings";
+
+function addUniqueElement<T extends { name: string }>(array: T[], newElement: T): T[] {
+    let found;
+    const updatedArray = array.map((item) => {
+        return item.name === newElement.name ? (found = newElement) : item;
+    });
+    if (!found) updatedArray.push(newElement);
+    return updatedArray;
+}
+
+export const appendAdditionalCreators = (groups: ComponentGroup[], additionalCreators: string[]) => {
+    if (!additionalCreators.length) return groups;
+    const newElement = {
+        name: "debug ㊙️",
+        components: additionalCreators.map(getCreator),
+    };
+    return addUniqueElement(groups, newElement);
+};
+
+function appendStickyNotes(groups: ComponentGroup[], stickyNotesSettings: StickyNotesSettings, pristine: boolean) {
+    if (!stickyNotesSettings.enabled) return groups;
+    return groups.concat(stickyNoteComponentGroup(pristine));
+}
 
 export const getComponentGroups = createSelector(
     getProcessDefinitionData,
     getStickyNotesSettings,
     isPristine,
-    getAdditionalComponents,
-    ({ componentGroups }, stickyNotesSettings, pristine, additionalCreators) => {
-        let groups = componentGroups;
-
-        if (stickyNotesSettings.enabled) {
-            groups = groups.concat(stickyNoteComponentGroup(pristine));
-        }
-
-        if (additionalCreators.length) {
-            groups = groups.concat({
-                name: "debug ㊙️",
-                components: additionalCreators.map(getCreator),
-            });
-        }
-
-        return groups;
+    ({ componentGroups }, stickyNotesSettings, pristine) => {
+        return appendStickyNotes(componentGroups, stickyNotesSettings, pristine);
     },
 );
 
+const cloudConfiguredComponents = (state: RootState) => state.cloudData?.configuredComponents;
+
 export const getConfiguredAdditionalComponents = createSelector(
     getProcessDefinitionData,
-    (state: RootState) => state.cloudData.configuredComponents,
+    cloudConfiguredComponents,
     ({ componentGroups }, configured) => {
-        return groupBy(
-            componentGroups
-                .flatMap((g) => g.components)
-                .flatMap(({ componentId }) =>
-                    configured.map(({ name, type }) => (componentId.includes(name) ? { componentId, type } : null)).filter(Boolean),
-                ),
-            ({ type }) => type,
-        );
+        return componentGroups
+            .flatMap((g) => g.components)
+            .flatMap(({ componentId }) =>
+                configured.map(({ name, type }) => (componentId.includes(name) ? { componentId, type } : null)).filter(Boolean),
+            );
     },
 );

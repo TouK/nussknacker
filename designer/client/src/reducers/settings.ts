@@ -5,6 +5,7 @@ import { DEV_TOOLBARS } from "../components/toolbarSettings/DEV_TOOLBARS";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { ProcessDefinitionData } from "../types";
 import { WithId } from "../types/common";
+import { appendAdditionalCreators } from "./selectors/getComponentGroups";
 import { ToolbarsSide } from "./toolbars";
 
 export enum AuthStrategy {
@@ -78,6 +79,15 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
             return {
                 ...state,
                 processDefinitionData,
+            };
+        }
+        case "ADDITIONAL_COMPONENTS_FETCHED": {
+            return {
+                ...state,
+                processDefinitionData: {
+                    ...state.processDefinitionData,
+                    componentGroups: appendAdditionalCreators(state.processDefinitionData.componentGroups, action.data),
+                },
             };
         }
         case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {

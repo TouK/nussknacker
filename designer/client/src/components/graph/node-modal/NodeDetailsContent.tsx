@@ -1,6 +1,7 @@
 import { partition } from "lodash";
 import React, { SetStateAction, useMemo } from "react";
 import { useSelector } from "react-redux";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import HttpService from "../../../http/HttpService";
 import { RootState } from "../../../reducers";
@@ -39,7 +40,12 @@ export const NodeDetailsContent = ({
     const [userSettings] = useUserSettings();
 
     const configuredAdditionalComponents = useSelector(getConfiguredAdditionalComponents);
-    const creatorType = getCreatorType(node);
+    const creatorType = useMemo(() => {
+        return (
+            getCreatorType(node) ||
+            configuredAdditionalComponents.find((c) => c.componentId === ProcessUtils.determineComponentId(node))?.type
+        );
+    }, [configuredAdditionalComponents, node]);
 
     return (
         <NodeTable>
@@ -47,10 +53,11 @@ export const NodeDetailsContent = ({
                 node={node}
                 edges={edges}
                 onChange={onChange}
+                creatorType={creatorType}
                 componentsNamesToSelect={
                     creatorType === "aggregate"
                         ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
-                        : configuredAdditionalComponents[creatorType]?.map((c) => c.componentId) || []
+                        : configuredAdditionalComponents.filter((c) => c.type === creatorType)?.map((c) => c.componentId) || []
                 }
             />
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
