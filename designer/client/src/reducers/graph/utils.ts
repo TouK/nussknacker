@@ -1,4 +1,4 @@
-import { cloneDeep, Dictionary, map, reject, zipObject } from "lodash";
+import { cloneDeep, Dictionary, reject, zipObject } from "lodash";
 import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { StickyNote } from "../../common/StickyNote";
@@ -10,7 +10,8 @@ import { createStickyNoteId } from "../../types/stickyNote";
 import { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
-    return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));
+    if (oldId === newId) return layout;
+    return layout.filter((n) => newId !== n.id).map((n) => (oldId === n.id ? { ...n, id: newId } : n));
 }
 
 export function updateAfterNodeDelete({ layout, scenario, ...state }: GraphState, idToDelete: NodeId) {
@@ -29,7 +30,7 @@ function generateUniqueNodeId(initialId: NodeId, usedIds: NodeId[], nodeCounter:
     return usedIds.includes(newId) ? generateUniqueNodeId(initialId, usedIds, nodeCounter + 1, isCopy) : newId;
 }
 
-function createUniqueNodeId(initialId: NodeId, usedIds: NodeId[], isCopy: boolean): NodeId {
+export function createUniqueNodeId(initialId: NodeId, usedIds: NodeId[], isCopy = false): NodeId {
     return initialId && !usedIds.includes(initialId) ? initialId : generateUniqueNodeId(initialId, usedIds, 1, isCopy);
 }
 
