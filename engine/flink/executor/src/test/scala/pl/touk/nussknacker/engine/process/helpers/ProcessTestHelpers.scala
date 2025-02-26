@@ -70,7 +70,7 @@ object ProcessTestHelpers extends Serializable {
     ComponentDefinition("eagerLifecycleService", EagerLifecycleService),
     ComponentDefinition("enricherWithOpenService", new EnricherWithOpenService),
     ComponentDefinition("serviceAcceptingOptionalValue", ServiceAcceptingScalaOption),
-    ComponentDefinition("returningComponentUseCaseService", ReturningComponentUseContextService),
+    ComponentDefinition("returningComponentUseContextService", ReturningComponentUseContextService),
     ComponentDefinition(
       "throwingNonTransientErrors",
       new ThrowingService(NonTransientException("test input", "test msg"))

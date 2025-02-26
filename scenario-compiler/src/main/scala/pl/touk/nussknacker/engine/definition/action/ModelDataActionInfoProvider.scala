@@ -17,8 +17,9 @@ class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvid
   ): Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     modelData.withThisAsContextClassLoader {
-      val nodeToActionToParameters = commonModelDataInfoProvider
+      val abc = commonModelDataInfoProvider
         .collectAndCompileAllSourcesAndServices(scenario)(jobData)
+      val nodeToActionToParameters = abc
         .mapValuesNow {
           case s: WithActionParametersSupport => s.actionParametersDefinition
           case _                              => Map.empty[ScenarioActionName, Map[ParameterName, ParameterConfig]]

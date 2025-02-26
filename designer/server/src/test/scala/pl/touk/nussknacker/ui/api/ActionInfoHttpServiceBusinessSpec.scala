@@ -58,8 +58,20 @@ class ActionInfoHttpServiceBusinessSpec
       val scenario = ScenarioBuilder
         .streaming("scenarioWithSourceWithDeployParameters")
         .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
-        .processor("logging1", "log", "message" -> "".spel, "logger" -> "'test'".spel, "level" -> "INFO".spel)
-        .processor("logging2", "log", "message" -> "".spel, "logger" -> "'test'".spel, "level" -> "INFO".spel)
+        .processor(
+          "logging1",
+          "log",
+          "message" -> "test1".spelTemplate,
+          "logger"  -> "'test'".spel,
+          "level"   -> "T(org.slf4j.event.Level).DEBUG".spel
+        )
+        .processor(
+          "logging2",
+          "log",
+          "message" -> "test2".spelTemplate,
+          "logger"  -> "'test'".spel,
+          "level"   -> "T(org.slf4j.event.Level).DEBUG".spel
+        )
         .emptySink("exampleSinkId", "emptySink")
 
       given()
@@ -85,6 +97,34 @@ class ActionInfoHttpServiceBusinessSpec
                            |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
                            |          }
                            |        }
+                           |      },
+                           |      {
+                           |          "nodeId": "logging1",
+                           |          "componentId": "log",
+                           |          "parameters": {
+                           |              "loggingComponentsDisabled": {
+                           |                  "defaultValue": "false",
+                           |                  "editor": {
+                           |                      "type": "BoolParameterEditor"
+                           |                  },
+                           |                  "label": "Disable custom logging",
+                           |                  "hintText": null
+                           |              }
+                           |          }
+                           |      },
+                           |      {
+                           |          "nodeId": "logging2",
+                           |          "componentId": "log",
+                           |          "parameters": {
+                           |              "loggingComponentsDisabled": {
+                           |                  "defaultValue": "false",
+                           |                  "editor": {
+                           |                      "type": "BoolParameterEditor"
+                           |                  },
+                           |                  "label": "Disable custom logging",
+                           |                  "hintText": null
+                           |              }
+                           |          }
                            |      }
                            |    ]
                            |  }
