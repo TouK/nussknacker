@@ -6,7 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -61,7 +61,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 

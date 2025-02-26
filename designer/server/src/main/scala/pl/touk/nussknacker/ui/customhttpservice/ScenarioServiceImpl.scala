@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
+import pl.touk.nussknacker.ui.process.repository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

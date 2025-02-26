@@ -3,14 +3,13 @@ package pl.touk.nussknacker.test.base.it
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory._
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithDesignerConfig
 import pl.touk.nussknacker.ui.config.SimpleConfigLoadingDesignerConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import scala.jdk.CollectionConverters._
 
 trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with WithClock with BeforeAndAfterAll {
   this: Suite with WithDesignerConfig =>
@@ -37,13 +36,10 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
     super.afterAll()
   }
 
-  protected val testTechnicalUser = "Test Technical User"
-
   private def adjustNuTestConfig(): Config = {
     designerConfig
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
-      .withValue("technicalUsers", fromIterable(List(testTechnicalUser).asJava))
   }
 
 }

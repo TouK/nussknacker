@@ -68,3 +68,5 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
   }
 
 }
+
+final case class ScenarioVersionMetadata(versionId: VersionId, createdAt: Instant, createdByUser: String)

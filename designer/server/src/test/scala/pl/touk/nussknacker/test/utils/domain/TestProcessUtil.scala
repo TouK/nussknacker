@@ -43,7 +43,6 @@ object TestProcessUtil {
       processingType: String = ProcessingTypeStreaming,
       lastAction: Option[ScenarioActionName] = None,
       json: Option[ScenarioGraph] = None,
-      history: Option[List[ScenarioVersion]] = None,
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
     wrapWithScenarioDetailsEntity(
       ProcessName(name),
@@ -52,8 +51,7 @@ object TestProcessUtil {
       isFragment = false,
       isArchived,
       processingType,
-      lastAction = lastAction,
-      history = history,
+      lastAction = lastAction
     )
 
   def createFragmentEntity(

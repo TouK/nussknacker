@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
   ProcessNotFoundError,
   ProcessVersionNotFoundError

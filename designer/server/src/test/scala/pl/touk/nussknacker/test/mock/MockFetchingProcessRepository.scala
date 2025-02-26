@@ -12,7 +12,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
   FetchComponentsUsages,
@@ -22,7 +21,6 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 
 object MockFetchingProcessRepository {
