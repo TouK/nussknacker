@@ -39,37 +39,27 @@ object FlinkBaseUnboundedComponentProvider {
 
     // When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
     val statelessComponents = List(
-      ComponentDefinition("event-generator", EventGeneratorSourceFactory, label = Some("event generator"))
-        .withRelativeDocs(
-          "DataSourcesAndSinks#event-generator"
-        ),
+      ComponentDefinition("event-generator", EventGeneratorSourceFactory).withRelativeDocs(
+        "DataSourcesAndSinks#event-generator"
+      ),
     )
 
     val statefulComponents = List(
-      ComponentDefinition("union-memo", UnionWithMemoTransformer, label = Some("union memo"))
-        .withRelativeDocs("DataSourcesAndSinks#unionmemo"),
-      ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2, label = Some("aggregate sliding"))
-        .withRelativeDocs(
-          "AggregatesInTimeWindows#sliding-window"
-        ),
-      ComponentDefinition(
-        "aggregate-tumbling",
-        new TumblingAggregateTransformer(aggregateWindowsConfig),
-        label = Some("aggregate tumbling")
-      )
+      ComponentDefinition("union-memo", UnionWithMemoTransformer).withRelativeDocs("DataSourcesAndSinks#unionmemo"),
+      ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs(
+        "AggregatesInTimeWindows#sliding-window"
+      ),
+      ComponentDefinition("aggregate-tumbling", new TumblingAggregateTransformer(aggregateWindowsConfig))
         .withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
-      ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer, label = Some("aggregate session"))
-        .withRelativeDocs(
-          "AggregatesInTimeWindows#session-window"
-        ),
-      ComponentDefinition("single-side-join", SingleSideJoinTransformer, label = Some("single side join"))
-        .withRelativeDocs(
-          "AggregatesInTimeWindows#single-side-join"
-        ),
-      ComponentDefinition("full-outer-join", FullOuterJoinTransformer, label = Some("full outer join"))
-        .withRelativeDocs(
-          "AggregatesInTimeWindows#full-outer-join"
-        ),
+      ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs(
+        "AggregatesInTimeWindows#session-window"
+      ),
+      ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs(
+        "AggregatesInTimeWindows#single-side-join"
+      ),
+      ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs(
+        "AggregatesInTimeWindows#full-outer-join"
+      ),
     )
 
     statefulComponents ++ statelessComponents

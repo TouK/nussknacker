@@ -500,7 +500,7 @@ class DefaultComponentServiceSpec
       links,
       0,
       AllowedProcessingModes.All,
-      componentId.name.replace("-", " ")
+      componentId.name
     )
   }
 

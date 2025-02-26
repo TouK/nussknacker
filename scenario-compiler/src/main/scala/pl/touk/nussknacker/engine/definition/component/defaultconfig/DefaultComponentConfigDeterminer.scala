@@ -56,7 +56,7 @@ object DefaultComponentConfigDeterminer {
       docsUrl = None,
       componentGroup = Some(componentGroup),
       componentId = Some(DesignerWideComponentId.forBuiltInComponent(id)),
-      label = Some(id.name.replace("-", " "))
+      label = None
     )
   }
 

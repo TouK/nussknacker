@@ -214,7 +214,7 @@ describe("Process", () => {
             .scrollIntoView();
         const x = 900;
         const y = 630;
-        cy.get("[data-testid='component:dead end']").should("be.visible").drag("#nk-graph-main", {
+        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
             target: {
                 x,
                 y,
@@ -256,7 +256,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.get(`[model-id="dead end(true)"]`).click().type("{backspace}");
+        cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}");
         cy.wait("@validation");
 
         cy.getNode("filter")
@@ -269,7 +269,7 @@ describe("Process", () => {
             .scrollIntoView();
         const x = 700;
         const y = 600;
-        cy.get("[data-testid='component:dead end']").should("be.visible").drag("#nk-graph-main", {
+        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
             target: {
                 x,
                 y,
