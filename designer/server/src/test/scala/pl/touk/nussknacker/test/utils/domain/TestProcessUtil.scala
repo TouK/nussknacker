@@ -42,7 +42,7 @@ object TestProcessUtil {
       isArchived: Boolean = false,
       processingType: String = ProcessingTypeStreaming,
       lastAction: Option[ScenarioActionName] = None,
-      json: Option[ScenarioGraph] = None,
+      json: Option[ScenarioGraph] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
     wrapWithScenarioDetailsEntity(
       ProcessName(name),
