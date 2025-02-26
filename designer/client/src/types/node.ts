@@ -20,8 +20,7 @@ export type NodeType<F extends Field = Field> = {
     additionalFields?: {
         description?: string;
         layoutData?: LayoutData;
-        virtualNode?: string;
-        componentId?: string;
+        creatorType?: string;
     };
     parameters?: Parameter[];
     branchParameters?: BranchParams[];
