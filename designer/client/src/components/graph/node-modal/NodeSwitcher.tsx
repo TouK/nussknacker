@@ -1,11 +1,14 @@
 import { FormControl } from "@mui/material";
-import { cloneDeep, defaultsDeep, isArray, isObject, mergeWith } from "lodash";
+import { cloneDeep, defaultsDeep, isArray, isPlainObject, mergeWith } from "lodash";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
-import { getCreatorType } from "../../../reducers/selectors/getCreator";
+import { createUniqueNodeId } from "../../../reducers/graph/utils";
+import { fakeComponentType, fakeNodeCreatorType } from "../../../reducers/selectors/getCreator";
+import { getNodes } from "../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { Component, Edge, EdgeKind, NodeType, ProcessDefinitionData } from "../../../types";
+import { Component, ComponentGroup, Edge, EdgeKind, NodeType, ProcessDefinitionData } from "../../../types";
 import NodeUtils from "../NodeUtils";
 import { editors, EditorType } from "./editors/expression/Editor";
 import { ExpressionLang } from "./editors/expression/types";
@@ -15,34 +18,41 @@ import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 type NodeSwitcherProps = NodeGroupContentProps & {
     componentsNamesToSelect: string[];
+    creatorType: string;
 };
 
 function mergeWithCustomizer<T>(object: T, source: T, path: string[] = []) {
     return mergeWith(object, source, (val, src, key) => {
-        const fullPath = [...path, key].join(".");
-
-        switch (fullPath) {
-            case "id":
+        const fullPath = [...path, key];
+        switch (fullPath.join(".")) {
+            case "additionalFields.layoutData":
                 return src;
-            case "service.id":
+            case "additionalFields.creatorType":
                 return val;
+            case "type":
+            case "service.id":
+            case "nodeType":
+                return val;
+            case "fields":
             case "parameters":
             case "service.parameters":
-                if (!isArray(val)) break;
-                return val.map((parameter) =>
-                    mergeWithCustomizer(
-                        parameter,
-                        src.find((p) => p.name === parameter.name),
-                        [...path, `[]`],
-                    ),
-                );
+                if (isArray(val)) {
+                    return val.map((parameter) =>
+                        mergeWithCustomizer(
+                            parameter,
+                            src.find((p) => p.name === parameter.name),
+                            [...path, `[]`],
+                        ),
+                    );
+                }
+                return undefined;
         }
 
-        if (isObject(val) && isObject(src)) {
-            return mergeWithCustomizer(val, src, [...path, key]);
+        if (isPlainObject(val) || isPlainObject(src)) {
+            return mergeWithCustomizer(val, src, fullPath);
         }
 
-        return val;
+        return src;
     });
 }
 
@@ -112,26 +122,48 @@ function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionD
     return [];
 }
 
+function compareNames(base: string, name: string): boolean {
+    return new RegExp(`^${base}( [0-9]+)?( \\(copy [0-9]+\\))*$`).test(name);
+}
+
+function isCustomName(editedNode: NodeType, componentGroups: ComponentGroup[]) {
+    const nodeCreatorType = fakeNodeCreatorType(editedNode);
+    const componentId = nodeCreatorType ? `${fakeComponentType}-${nodeCreatorType}` : ProcessUtils.determineComponentId(editedNode);
+    const components = componentGroups.flatMap((g) => g.components);
+    const component = components.find((c) => componentId === c.componentId);
+    return !compareNames(component.label, editedNode.$id || editedNode.id);
+}
+
 export function replaceNodeData(
     editedNode: NodeType,
     nextNodeData: NodeType,
     processDefinitionData: ProcessDefinitionData,
     outputEdges: Edge[] = [],
-    creatorType?: string,
+    creatorType: string = null,
     componentId?: string,
 ) {
-    const { type, ...source } = editedNode;
-
     const object = cloneDeep(nextNodeData);
+
+    const componentGroups = processDefinitionData.componentGroups;
+
+    const isNameChanged = isCustomName(editedNode, componentGroups);
     const nextNode = defaultsDeep(
         {
-            additionalFields: {
-                virtualNode: creatorType,
-                componentId,
-            },
+            id: isNameChanged || componentId ? editedNode.id : object.id,
+            $id: isNameChanged ? editedNode.id : componentId ? object.id : null,
         },
-        mergeWithCustomizer(object, source, []),
+        mergeWithCustomizer(
+            {
+                ...object,
+                additionalFields: {
+                    ...object.additionalFields,
+                    creatorType: object.additionalFields?.creatorType || creatorType,
+                },
+            },
+            editedNode,
+        ),
     );
+
     const nextEdges = adjustEdges(
         outputEdges.filter((e) => e.to),
         nextNode,
@@ -143,7 +175,7 @@ export function replaceNodeData(
     };
 }
 
-export function NodeSwitcher({ node: editedNode, onChange, edges, componentsNamesToSelect = [] }: NodeSwitcherProps) {
+export function NodeSwitcher({ node: editedNode, onChange, edges, componentsNamesToSelect, creatorType }: NodeSwitcherProps) {
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
     const componentsToSelect = useMemo(() => {
@@ -152,8 +184,6 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
             .filter((c) => componentsNamesToSelect.includes(c.componentId));
     }, [componentsNamesToSelect, processDefinitionData.componentGroups]);
 
-    const creatorType = useMemo(() => getCreatorType(editedNode), [editedNode]);
-
     const dispatch = useDispatch();
     useEffect(() => {
         if (processDefinitionData) {
@@ -161,15 +191,41 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
         }
     }, [dispatch, processDefinitionData]);
 
-    const switchNode = useCallback(
-        (node: NodeType, componentId?: string) => {
-            const { nextNode, nextEdges } = replaceNodeData(editedNode, node, processDefinitionData, edges, creatorType, componentId);
+    const Editor = editors[EditorType.FIXED_VALUES_PARAMETER_EDITOR];
+
+    const nodes = useSelector(getNodes);
+
+    const onCreate = useCallback(() => {
+        const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
+        window.open(`https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`);
+    }, [creatorType]);
+
+    const onSelected = useCallback(
+        (id: string) => {
+            const component = componentsToSelect.find((c) => c.componentId === id);
+            const { nextNode, nextEdges } = replaceNodeData(
+                editedNode,
+                {
+                    ...component.node,
+                    id: createUniqueNodeId(
+                        component.label,
+                        nodes.map((n) => n.id).filter((i) => i !== editedNode.id),
+                    ),
+                },
+                processDefinitionData,
+                edges,
+                creatorType,
+                component.componentId,
+            );
             return onChange(nextNode, nextEdges);
         },
-        [creatorType, edges, editedNode, onChange, processDefinitionData],
+        [componentsToSelect, creatorType, edges, editedNode, nodes, onChange, processDefinitionData],
     );
 
-    const Editor = editors[EditorType.FIXED_VALUES_PARAMETER_EDITOR];
+    const selectedId = useMemo(
+        () => componentsToSelect.find((c) => c.componentId === ProcessUtils.determineComponentId(editedNode))?.componentId,
+        [componentsToSelect, editedNode],
+    );
 
     if (!creatorType) {
         return null;
@@ -188,16 +244,12 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
                 className={nodeValue}
                 fieldErrors={[]}
                 onValueChange={(id) => {
-                    if (id === "$NEW") {
-                        const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
-                        window.open(`https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`);
-                    }
-                    const component = componentsToSelect.find((c) => c.componentId === id);
-                    switchNode(component.node, component.componentId);
+                    if (typeof id !== "string") throw "expression not expected here.";
+                    return id === "$NEW" ? onCreate() : onSelected(id);
                 }}
                 expressionObj={{
                     language: ExpressionLang.String,
-                    expression: componentsToSelect.find((c) => c.componentId === editedNode.additionalFields.componentId)?.componentId,
+                    expression: selectedId,
                 }}
             />
         </FormControl>
