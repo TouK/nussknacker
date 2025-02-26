@@ -63,7 +63,7 @@ class SwaggerEnricher(
       collector: ServiceInvocationCollector,
       contextId: ContextId,
       metaData: MetaData,
-      componentUseCase: ComponentUseContext
+      componentUseContext: ComponentUseContext
   ): Future[AnyRef] =
     measuring {
       swaggerHttpService.invoke(

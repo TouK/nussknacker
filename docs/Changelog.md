@@ -94,6 +94,10 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7586](https://github.com/TouK/nussknacker/pull/7586) Extended the configuration for action parameters, allowing
+  DEPLOY parameters to be configured for services.
+  * Instead of having separate entries for each node, action parameters are now grouped into a single entry per component
+  in the UI. The configured parameters are then applied to all nodes for that component.  
 
 ## 1.18
 

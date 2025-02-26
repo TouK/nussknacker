@@ -83,6 +83,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Other changes:
     * `StatusDetails` was renamed to `DeploymentStatusDetails`
     * Fields: `externalDeploymentId`, `externalDeploymentId`, `attributes`, `attributes` were removed from `StatusDetails`
+* [#7586](https://github.com/TouK/nussknacker/pull/7586) Renamed ComponentUseCase to ComponentUseContext.
+    * Moved NodeDeploymentData from FlinkCustomNodeContext to ComponentUseContext.EngineRuntime.
+    * Introduced ComponentUseCase in ScenarioCompiler, which retains its previous functionality but is now intended for
+      internal use only.  
 
 ### Other changes
 
