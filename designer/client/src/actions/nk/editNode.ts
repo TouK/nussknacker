@@ -1,5 +1,6 @@
 import { getEdgesForNode } from "../../components/graph/node-modal/node/NodeDetails";
-import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcher";
+
+import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
