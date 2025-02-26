@@ -15,18 +15,22 @@ When you use default [source and sink](../scenarios_authoring/RRDataSourcesAndSi
 In case of `service` you can trigger your scenario with example curl command:
 
 ```bash
-curl -X POST -d "payload_based_on_input_schema" 'http://<scenario_name>'
+curl -X POST -d "payload_based_on_input_schema" 'http://<scenario_slug>'
 ```
 
 For `ingress` configuration it looks quite similar:
 
 ```bash
-curl -X POST -d "payload_based_on_input_schema" 'http://<ingress_domain><scenario_name>'
+curl -X POST -d "payload_based_on_input_schema" 'http://<ingress_domain>/<scenario_slug>'
 ```
+
+## Swagger UI
+
+For each saved scenario Swagger UI will be available at `http://<ingress_domain>/<scenario_slug>/swagger-ui` (ingress case).
 
 ## OpenAPI interface definition
 
-For each deployed `Request-Response` scenario an OpenAPI interface definition will be available at `http://<scenario_name>/definition`
+For each deployed `Request-Response` scenario an OpenAPI interface definition will be available at `http://<ingress_domain>/<scenario_slug>/definition` (ingress case).
 
 You can see example definition below:
 
