@@ -3,9 +3,11 @@ package pl.touk.nussknacker.test.mock
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.effect.{Async, Resource}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.customhttpservice.{CustomHttpServiceProvider, CustomHttpServiceProviderFactory}
+import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import scala.language.higherKinds
 
 class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFactory {
 
