@@ -1,0 +1,40 @@
+import { createSelector } from "reselect";
+import { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
+import { Scenario } from "../components/Process/types";
+import HttpService from "../http/HttpService";
+import { RootState } from "./index";
+
+export type ScenariosType = Scenario[];
+
+export const reducer: Reducer<ScenariosType> = (state = [], action: Action) => {
+    switch (action.type) {
+        case "SCENARIOS_FETCHED":
+            return action.data;
+        default:
+            return state;
+    }
+};
+
+export type ScenariosActions =
+    | {
+          type: "GET_SCENARIOS";
+      }
+    | {
+          type: "SCENARIOS_FETCHED";
+          data: Scenario[];
+      };
+
+export function fetchScenarios(): ThunkAction {
+    return async (dispatch) => {
+        dispatch({ type: "GET_SCENARIOS" });
+
+        const { data } = await HttpService.fetchProcesses();
+
+        dispatch({ type: "SCENARIOS_FETCHED", data });
+
+        return data;
+    };
+}
+
+const getScenarios = (state: RootState) => state.scenarios;
+export const getScenariosNames = createSelector(getScenarios, (scenarios) => scenarios.map((scenario) => scenario.name));
