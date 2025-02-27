@@ -141,7 +141,7 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetails]]
 
-  def getLatestVersionForProcesses(query: ScenarioQuery, excludedUserNames: Set[String])(
+  def getLatestVersionForProcesses(query: ScenarioQuery, scenarioVersionQuery: ScenarioVersionQuery)(
       implicit user: LoggedUser
   ): Future[Map[ProcessId, ScenarioVersionMetadata]]
 
@@ -257,10 +257,10 @@ class DBProcessService(
     )
   }
 
-  override def getLatestVersionForProcesses(query: ScenarioQuery, excludedUserNames: Set[String])(
+  override def getLatestVersionForProcesses(query: ScenarioQuery, scenarioVersionQuery: ScenarioVersionQuery)(
       implicit user: LoggedUser
   ): Future[Map[ProcessId, ScenarioVersionMetadata]] = {
-    fetchingProcessRepository.fetchLatestVersionForProcesses(query, excludedUserNames)
+    fetchingProcessRepository.fetchLatestVersionForProcesses(query, scenarioVersionQuery)
   }
 
   private abstract class FetchScenarioFun[F[_]] {

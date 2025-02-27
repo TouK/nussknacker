@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.Monad
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
@@ -30,7 +30,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
 
   def fetchLatestVersionForProcesses(
       query: ScenarioQuery,
-      excludedUserNames: Set[String],
+      scenarioVersionQuery: ScenarioVersionQuery,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, ScenarioVersionMetadata]]
 
   def getProcessVersion(

@@ -4,9 +4,9 @@ import cats.effect.{Async, Sync}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.repository.ScenarioVersionMetadata
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,10 +29,10 @@ class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
 
   override def getLatestVersionForProcesses(
       query: ScenarioService.ScenarioQuery,
-      excludedUserNames: Set[String]
+      scenarioVersionQuery: ScenarioService.ScenarioVersionQuery,
   )(implicit user: LoggedUser): M[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
     processService
-      .getLatestVersionForProcesses(toDomain(query), excludedUserNames)
+      .getLatestVersionForProcesses(toDomain(query), toDomain(scenarioVersionQuery))
       .map(_.map { case (processId, metadata) => (processId, toApi(metadata)) })
 
   private implicit def deferToM[T](f: => Future[T]): M[T] = Async[M].fromFuture(Sync[M].delay(f))
@@ -45,6 +45,11 @@ class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
       categories = query.categories,
       processingTypes = query.processingTypes,
       names = query.names,
+    )
+
+  private def toDomain(query: ScenarioService.ScenarioVersionQuery): ScenarioVersionQuery =
+    ScenarioVersionQuery(
+      excludedUserNames = query.excludedUserNames
     )
 
   private def toApi(metadata: ScenarioVersionMetadata): ScenarioService.ScenarioVersionMetadata =

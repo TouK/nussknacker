@@ -17,7 +17,7 @@ trait ScenarioService[M[_]] {
       implicit user: LoggedUser
   ): M[List[ScenarioWithDetails]]
 
-  def getLatestVersionForProcesses(query: ScenarioQuery, excludedUserNames: Set[String])(
+  def getLatestVersionForProcesses(query: ScenarioQuery, scenarioVersionQuery: ScenarioVersionQuery)(
       implicit user: LoggedUser
   ): M[Map[ProcessId, ScenarioVersionMetadata]]
 
@@ -68,6 +68,10 @@ object ScenarioService {
       categories: Option[Seq[String]] = None,
       processingTypes: Option[Seq[String]] = None,
       names: Option[Seq[ProcessName]] = None,
+  )
+
+  final case class ScenarioVersionQuery(
+      excludedUserNames: Option[Seq[String]] = None,
   )
 
   final case class ScenarioVersionMetadata(
