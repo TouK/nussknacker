@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, SchedulingConfig}
+import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 import scala.util.control.NonFatal
@@ -100,17 +100,18 @@ object ProcessingTypeData {
       engineSetupName: EngineSetupName,
       modelData: ModelData,
       deploymentConfig: Config,
-      metaDataInitializer: MetaDataInitializer,
+      metaDataInitializer: MetaDataInitializer
   ) = {
     val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(deploymentConfig)
 
     val validDeploymentManager = for {
-      deploymentManager <- deploymentManagerProvider.createDeploymentManager(
-        modelData,
-        deploymentManagerDependencies,
-        deploymentConfig,
-        scenarioStateCacheTTL
-      )
+      deploymentManager <-
+        deploymentManagerProvider.createDeploymentManager(
+          modelData,
+          deploymentManagerDependencies,
+          deploymentConfig,
+          scenarioStateCacheTTL
+        )
       decoratedDeploymentManager = schedulingForProcessingType match {
         case SchedulingForProcessingType.Available(dbRef) =>
           deploymentManager.schedulingSupport match {

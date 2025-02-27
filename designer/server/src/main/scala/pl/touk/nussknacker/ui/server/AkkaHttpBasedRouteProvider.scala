@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
@@ -120,6 +120,7 @@ class AkkaHttpBasedRouteProvider(
     processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
     designerClock: Clock,
+    deploymentManagersClassLoader: DeploymentManagersClassLoader,
     modelClassLoaderProvider: ModelClassLoaderProvider
 )(
     implicit system: ActorSystem,
@@ -782,6 +783,7 @@ class AkkaHttpBasedRouteProvider(
               sttpBackend,
               _
             ),
+            deploymentManagersClassLoader,
             modelClassLoaderProvider,
             Some(dbRef),
           )

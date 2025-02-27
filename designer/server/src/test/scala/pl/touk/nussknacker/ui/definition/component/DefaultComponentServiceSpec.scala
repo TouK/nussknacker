@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._

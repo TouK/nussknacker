@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
@@ -23,6 +24,7 @@ class LocalProcessingTypeDataLoader(
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = IO {
