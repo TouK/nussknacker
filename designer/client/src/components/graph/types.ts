@@ -16,6 +16,7 @@ import {
 import { StickyNote } from "../../common/StickyNote";
 import { ProcessCounts } from "../../reducers/graph";
 import { Capabilities } from "../../reducers/selectors/other";
+import { NodeType } from "../../types";
 import { Scenario } from "../Process/types";
 
 type ScenarioGraphProps = {
@@ -46,6 +47,7 @@ type ScenarioGraphProps = {
     isFragment?: false | null;
 
     connectDropTarget;
+    createFragment?: (callback: (node: NodeType) => void) => void;
 };
 
 type FragmentGraphProps = {

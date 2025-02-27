@@ -2,6 +2,7 @@ import { AnyAction, Reducer as ReduxReducer } from "redux";
 import { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
 import { RootState } from "../reducers";
 import { CloudDataActions } from "../reducers/cloudData";
+import { ScenariosActions } from "../reducers/scenarios";
 
 import { ActionTypes } from "./actionTypes";
 import { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
@@ -28,7 +29,8 @@ type TypedAction =
     | CountsActions
     | ScenarioActions
     | PropertiesActions
-    | CloudDataActions;
+    | CloudDataActions
+    | ScenariosActions;
 
 interface UntypedAction extends AnyAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;

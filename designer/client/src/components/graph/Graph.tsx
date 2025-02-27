@@ -398,7 +398,14 @@ export class Graph extends React.Component<Props> {
             return this.addStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, position);
         }
 
-        if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) return;
+        if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) {
+            if (node.ref.id === ".template") {
+                const { nodeAdded, createFragment } = this.props;
+                createFragment?.((n) => nodeAdded(n, position));
+                return;
+            }
+            return;
+        }
 
         const cellBelow = this.getCellBelowCell();
         if (isModelElement(cellBelow)) {
@@ -417,6 +424,7 @@ export class Graph extends React.Component<Props> {
         } else {
             this.props.nodeAdded(node, position);
         }
+        return;
     }
 
     fitToNode = (nodeId: NodeId): void => {
