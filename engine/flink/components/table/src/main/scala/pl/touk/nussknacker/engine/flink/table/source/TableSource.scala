@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.table.source;
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.definition.Parameter

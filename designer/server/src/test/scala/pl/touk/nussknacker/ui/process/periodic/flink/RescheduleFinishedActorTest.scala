@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestKitBase, TestProbe}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterAll
 import pl.touk.nussknacker.ui.process.periodic.RescheduleFinishedActor
 
 import scala.concurrent.Future

@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import com.cronutils.model.{Cron, CronType}
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
-import com.cronutils.model.{Cron, CronType}
 import com.cronutils.parser.CronParser
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
-import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{Clock, LocalDateTime, ZonedDateTime, ZoneId}
 import scala.util.Try
 
 object ScheduleProperty {

@@ -7,19 +7,19 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
-import pl.touk.nussknacker.engine.sttp.HttpClientError
+import pl.touk.nussknacker.http.backend.HttpClientError
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{HttpError, Response, SttpBackend}
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Method, StatusCode}
 import sttp.monad.FutureMonad
 
 import java.io.File
 import java.net.URI
 import java.util.UUID
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.util.Failure
 
 class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {

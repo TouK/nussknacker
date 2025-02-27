@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.app.NuRuntimeApp.AppStartingError.{CannotParseScenario, MissingArgument}
 import pl.touk.nussknacker.engine.lite.app.RunnableScenarioInterpreterFactory.prepareScenarioInterpreter
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, ResourceLoader, SLF4JBridgeHandlerRegistrar, UriUtils}
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, ResourceLoader, SLF4JBridgeHandlerRegistrar, UriUtils}
 
 import java.nio.file.Path
 import scala.concurrent.duration._

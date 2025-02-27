@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import cats.effect.unsafe.IORuntime
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5._
+import org.scalatest.{Assertion, OptionValues, Outcome}
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, OptionValues, Outcome}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -41,8 +41,9 @@ class KafkaTransactionalScenarioInterpreterTest
     with PatientScalaFutures
     with OptionValues {
 
-  import KafkaTransactionalScenarioInterpreter._
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
+  import KafkaTransactionalScenarioInterpreter._
 
   private val metricRegistry = new MetricRegistry
   private val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))

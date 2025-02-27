@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, ProcessName}
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -52,7 +52,8 @@ trait ProcessEntityFactory extends BaseEntityFactory {
         impersonatedByIdentity,
         impersonatedByUsername
       ) <> (
-        ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
+        ProcessEntityData.apply _ tupled,
+        ProcessEntityData.unapply
       )
 
   }

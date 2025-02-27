@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.conversion
 
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.javaapi.process
 
 import scala.jdk.CollectionConverters._

@@ -12,13 +12,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.LegacyPeriodicProcessesRepository.createPeriodicProcess
-import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model._
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import slick.dbio.{DBIOAction, Effect, NoStream}
-import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.PostgresProfile.api._
 
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}

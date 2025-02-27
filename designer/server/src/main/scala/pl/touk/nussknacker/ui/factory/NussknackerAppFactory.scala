@@ -2,28 +2,28 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.{
   ExecutionContextWithIORuntimeAdapter,
   JavaClassVersionChecker,
   SLF4JBridgeHandlerRegistrar
 }
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypeDataLoader,
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
@@ -33,30 +33,25 @@ import java.time.Clock
 
 object NussknackerAppFactory {
 
-  def create(designerConfigLoader: DesignerConfigLoader): Resource[IO, NussknackerAppFactory] = {
-    for {
-      designerConfig               <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      managersDirs                 <- Resource.eval(IO.delay(designerConfig.managersDirs()))
-      deploymentManagerClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
-    } yield new NussknackerAppFactory(
-      designerConfig,
+  def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
+    new NussknackerAppFactory(
       designerConfigLoader,
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_, deploymentManagerClassLoader),
-      deploymentManagerClassLoader
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_),
     )
   }
 
 }
 
 class NussknackerAppFactory(
-    alreadyLoadedConfig: DesignerConfig,
     designerConfigLoader: DesignerConfigLoader,
     createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader,
-    deploymentManagersClassLoader: DeploymentManagersClassLoader
 ) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
+      alreadyLoadedConfig           <- Resource.eval(designerConfigLoader.loadDesignerConfig())
+      managersDirs                  <- Resource.eval(IO.delay(alreadyLoadedConfig.managersDirs()))
+      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
       system                        <- createActorSystem(alreadyLoadedConfig.rawConfig)
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
@@ -87,6 +82,7 @@ class NussknackerAppFactory(
           processingTypeDataLoader,
           feStatisticsRepository,
           clock,
+          deploymentManagersClassLoader,
           modelClassLoaderProvider
         )(
           system,

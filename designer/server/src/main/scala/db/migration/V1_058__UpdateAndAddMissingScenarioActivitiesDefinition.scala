@@ -7,8 +7,8 @@ import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, Scenario
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.ast.Library.JdbcFunction
 import slick.jdbc.JdbcProfile
-import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.lifted.{TableQuery => LTableQuery}
+import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp

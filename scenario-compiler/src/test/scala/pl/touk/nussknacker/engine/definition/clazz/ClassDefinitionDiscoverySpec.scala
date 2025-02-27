@@ -7,18 +7,18 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics._
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
   AddPropertyNextToGetter,
   DoNothing,
   ReplaceGetterWithProperty
 }
-import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{DefaultExtractor, createDiscovery}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{createDiscovery, DefaultExtractor}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage

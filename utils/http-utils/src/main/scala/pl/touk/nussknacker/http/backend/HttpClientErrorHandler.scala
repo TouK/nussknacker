@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.sttp
+package pl.touk.nussknacker.http.backend
 
 import com.typesafe.scalalogging.LazyLogging
 import sttp.client3.{HttpError, Response}

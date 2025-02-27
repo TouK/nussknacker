@@ -4,13 +4,13 @@ import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.IntermediateCompatibilityResult
 import org.apache.flink.api.common.typeutils.{
   CompositeTypeSerializerUtil,
   TypeSerializer,
   TypeSerializerSchemaCompatibility,
   TypeSerializerSnapshot
 }
+import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.IntermediateCompatibilityResult
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
 import scala.reflect.ClassTag

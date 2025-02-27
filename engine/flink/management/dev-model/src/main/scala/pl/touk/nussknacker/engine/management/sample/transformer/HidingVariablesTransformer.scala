@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Params}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object HidingVariablesTransformer
     extends CustomStreamTransformer

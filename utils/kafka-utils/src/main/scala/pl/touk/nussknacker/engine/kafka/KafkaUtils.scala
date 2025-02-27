@@ -5,19 +5,19 @@ import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
-import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
+import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.time
-import java.util.concurrent.TimeUnit
 import java.util.{Collections, Properties}
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
-import scala.util.Using.Releasable
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Using}
+import scala.util.Using.Releasable
 
 object KafkaUtils extends KafkaUtils
 

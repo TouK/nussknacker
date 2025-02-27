@@ -15,12 +15,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
+import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 import skuber.EnvVar.{FieldRef, SecretKeyRef}
 import skuber.Resource.Quantity
 import skuber.apps.v1.Deployment
-import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
-import scala.jdk.CollectionConverters._
 import scala.jdk.CollectionConverters._
 
 class DeploymentPreparerTest extends AnyFunSuite {

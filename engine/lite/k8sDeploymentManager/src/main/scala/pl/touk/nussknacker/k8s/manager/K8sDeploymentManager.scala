@@ -1,31 +1,24 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.http.scaladsl.settings.ConnectionPoolSettings
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment._
+import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
-import skuber.LabelSelector.Requirement
-import skuber.LabelSelector.dsl._
-import skuber.api.Configuration
-import skuber.api.client.{KubernetesClient, LoggingConfig}
-import skuber.apps.v1.Deployment
-import skuber.json.format._
-import skuber.networking.v1.Ingress
 import skuber.{
   ConfigMap,
   LabelSelector,
@@ -37,6 +30,13 @@ import skuber.{
   Secret,
   Service
 }
+import skuber.LabelSelector.Requirement
+import skuber.LabelSelector.dsl._
+import skuber.api.Configuration
+import skuber.api.client.{KubernetesClient, LoggingConfig}
+import skuber.apps.v1.Deployment
+import skuber.json.format._
+import skuber.networking.v1.Ingress
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -100,7 +100,8 @@ class K8sDeploymentManager(
     inputConfig.copy(config = withOverrides).serialized
   }
 
-  private lazy val defaultLogbackConfig = Using.resource(Source.fromResource("runtime/default-logback.xml"))(_.mkString)
+  private lazy val defaultLogbackConfig =
+    Using.resource(Source.fromResource("runtime/default-logback.xml", getClass.getClassLoader))(_.mkString)
 
   private def logbackConfig: String = config.logbackConfigPath
     .map(path => Using.resource(Source.fromFile(path))(_.mkString))

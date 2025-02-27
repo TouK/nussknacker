@@ -15,8 +15,8 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
 import java.net.URI
-import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
 class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
 

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.NonEmptyList
-import io.circe.Json._
 import io.circe._
+import io.circe.Json._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
-import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
+import pl.touk.nussknacker.engine.api.typed.TypingType.{decoder, TypingType}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 

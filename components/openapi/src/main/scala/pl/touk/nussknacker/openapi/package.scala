@@ -1,7 +1,7 @@
 package pl.touk.nussknacker
 
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 
 import java.net.URL

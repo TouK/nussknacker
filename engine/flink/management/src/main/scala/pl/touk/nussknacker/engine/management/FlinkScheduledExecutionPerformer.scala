@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
+import pl.touk.nussknacker.engine.{newdeployment, BaseModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExecutionPerformer
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.management.FlinkScheduledExecutionPerformer.ja
 import pl.touk.nussknacker.engine.management.jobrunner.{FlinkModelJarProvider, RemoteFlinkScenarioJobRunner}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future

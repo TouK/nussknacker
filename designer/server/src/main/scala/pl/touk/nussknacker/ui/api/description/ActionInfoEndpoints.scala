@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.api.description
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -17,8 +17,8 @@ import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Dtos.{
 }
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Examples.noScenarioExample
 import sttp.model.StatusCode.{NotFound, Ok}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
 
 class ActionInfoEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {

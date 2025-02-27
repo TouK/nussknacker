@@ -1,5 +1,5 @@
+import sbt.{taskKey, Test}
 import sbt.Keys.runMain
-import sbt.{Test, taskKey}
 
 object GenerateDesignerOpenApiPlugin extends sbt.AutoPlugin {
   override def trigger = noTrigger

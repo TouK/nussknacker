@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import org.apache.flink.api.common.typeinfo.TypeInfo
+import pl.touk.nussknacker.engine.api.typed.{typing, NumberTypeUtils}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.median.MedianHelper
 import pl.touk.nussknacker.engine.util.Implicits._

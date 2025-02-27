@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse
 
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
-import io.circe.Json.{Null, arr, fromInt, fromString, obj}
+import io.circe.Json.{arr, fromInt, fromString, obj, Null}
 import io.circe.syntax.EncoderOps
 import org.everit.json.schema.{NumberSchema, Schema, StringSchema}
 import org.scalatest.Inside.inside
@@ -28,8 +28,8 @@ import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunn
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
-import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 
 //More tests e2e with json are available at LiteKafkaUniversalJsonFunctionalTest
 class LiteRequestResponseFunctionalTest

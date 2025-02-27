@@ -1,7 +1,7 @@
 package db.migration
 
-import io.circe.Json._
 import io.circe._
+import io.circe.Json._
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 
 trait V1_016__TypeSpecificMetaDataChange extends ProcessJsonMigration {

@@ -18,9 +18,9 @@ import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, Engine
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.{
-  Input,
   elementHolder,
-  stateDescriptorName
+  stateDescriptorName,
+  Input
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent

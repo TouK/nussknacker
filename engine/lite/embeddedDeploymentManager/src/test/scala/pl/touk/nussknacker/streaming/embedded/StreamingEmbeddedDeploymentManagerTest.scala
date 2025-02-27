@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
-import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 class StreamingEmbeddedDeploymentManagerTest
     extends BaseStreamingEmbeddedDeploymentManagerTest
@@ -27,6 +26,7 @@ class StreamingEmbeddedDeploymentManagerTest
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
   import KafkaUniversalComponentTransformer._
 
   test("Deploys scenario and cancels") {

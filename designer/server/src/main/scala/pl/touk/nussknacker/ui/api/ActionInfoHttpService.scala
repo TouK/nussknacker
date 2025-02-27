@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
-import pl.touk.nussknacker.ui.api.ActionInfoHttpService.{ActionInfoError, toUiParameters}
+import pl.touk.nussknacker.ui.api.ActionInfoHttpService.{toUiParameters, ActionInfoError}
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{NoPermission, NoScenario}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints

@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor,
   TabularTypedDataEditor
 }
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression, TabularTypedData}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 protected object EditorPossibleValuesBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
 

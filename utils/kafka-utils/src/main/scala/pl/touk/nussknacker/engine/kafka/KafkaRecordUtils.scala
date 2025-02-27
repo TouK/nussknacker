@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.nio.charset.{Charset, StandardCharsets}
-
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.header.internals.RecordHeaders
 
+import java.nio.charset.{Charset, StandardCharsets}
 import scala.jdk.CollectionConverters._
 
 object KafkaRecordUtils {

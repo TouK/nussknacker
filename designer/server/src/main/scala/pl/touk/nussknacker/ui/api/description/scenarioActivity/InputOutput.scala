@@ -4,8 +4,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.NoScenario
 import sttp.model.StatusCode.NotFound
+import sttp.tapir.{oneOf, oneOfVariantFromMatchType, plainBody, EndpointOutput}
 import sttp.tapir.EndpointIO.Example
-import sttp.tapir.{EndpointOutput, oneOf, oneOfVariantFromMatchType, plainBody}
 
 object InputOutput {
 

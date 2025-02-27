@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => _, _}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -20,14 +20,14 @@ import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, Deployment
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus._
-import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model._
+import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.utils.DeterministicUUIDFromLong
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
+import java.time.{Clock, Instant, LocalDateTime}
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 

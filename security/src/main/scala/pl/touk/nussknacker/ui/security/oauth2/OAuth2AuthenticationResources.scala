@@ -1,23 +1,23 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.StatusCodes.NotFound
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
-import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
+import akka.http.scaladsl.model.StatusCodes.NotFound
+import akka.http.scaladsl.model.headers.{`Set-Cookie`, HttpCookie}
 import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources.defaultRealm
 import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources.defaultRealm
 import sttp.client3.SttpBackend
 import sttp.model.HeaderNames
 import sttp.model.headers.{AuthenticationScheme, WWWAuthenticateChallenge}
-import sttp.tapir.EndpointInput.AuthType
 import sttp.tapir._
+import sttp.tapir.EndpointInput.AuthType
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}

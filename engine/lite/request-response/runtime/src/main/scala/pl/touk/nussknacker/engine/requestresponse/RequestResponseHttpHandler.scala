@@ -10,11 +10,11 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.util.Try
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders

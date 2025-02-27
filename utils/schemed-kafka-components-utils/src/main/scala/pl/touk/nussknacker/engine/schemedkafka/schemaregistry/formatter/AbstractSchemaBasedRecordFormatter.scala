@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter
 
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaConfig, RecordFormatter}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
   ContentTypesSchemas,
@@ -23,8 +23,9 @@ import scala.reflect.ClassTag
 
 abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] extends RecordFormatter {
 
-  import SchemaBasedSerializableConsumerRecord._
   import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  import SchemaBasedSerializableConsumerRecord._
 
   protected def kafkaConfig: KafkaConfig
 

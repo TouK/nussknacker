@@ -1,37 +1,37 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
-import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.ast._
-import org.springframework.expression.spel.{SpelNode, standard}
 import org.springframework.expression.{EvaluationContext, Expression}
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
+import org.springframework.expression.spel.{standard, SpelNode}
+import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   ConstructionOfUnknown,
+  NonReferenceError,
   NoPropertyError,
   NoPropertyTypeError,
-  NonReferenceError,
   UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
   IllegalProjectionError,
   IllegalSelectionError,
@@ -54,8 +54,8 @@ import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-import scala.jdk.CollectionConverters._
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 

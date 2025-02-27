@@ -14,8 +14,9 @@ import java.time.temporal.ChronoUnit
 class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-  import SampleSchemas._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import SampleSchemas._
 
   private val givenMatchingJsonObj =
     """{

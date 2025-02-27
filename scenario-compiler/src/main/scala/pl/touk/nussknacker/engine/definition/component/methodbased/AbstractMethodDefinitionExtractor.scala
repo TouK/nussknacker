@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
+import pl.touk.nussknacker.engine.api.{BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterExtractor
 

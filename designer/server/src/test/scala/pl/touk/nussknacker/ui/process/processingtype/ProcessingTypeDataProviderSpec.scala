@@ -59,6 +59,7 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with WithTestDeployment
       .loadProcessingTypeData(
         _ => modelDependencies,
         _ => TestFactory.deploymentManagerDependencies,
+        deploymentManagersClassLoader,
         ModelClassLoaderProvider(
           allProcessingTypes.map(_ -> ModelClassLoaderDependencies(List.empty, None)).toMap,
           deploymentManagersClassLoader

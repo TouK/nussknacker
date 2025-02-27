@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import pl.touk.nussknacker.engine.kafka.{KafkaUtils, SchemaRegistryClientKafkaConfig}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   EmptySchemaRegistry,
   SchemaRegistryClient,
   SchemaRegistryClientFactory
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 
 object UniversalSchemaRegistryClientFactory extends UniversalSchemaRegistryClientFactory
 

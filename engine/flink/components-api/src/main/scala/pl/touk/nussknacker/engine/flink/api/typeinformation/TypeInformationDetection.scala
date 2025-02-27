@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichStringList
 
 import java.net.URLClassLoader
 import java.util.ServiceLoader
 import scala.jdk.CollectionConverters._
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 /**
  * This is trait that allows for providing more details TypeInformation when ValidationContext is known,

@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExpressionInvocationResult,
   ExternalInvocationResult,
   ResultContext
 }
-import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
 
 import scala.jdk.CollectionConverters._
 

@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import cats.data.Validated
 import cats.data.Validated.Valid
 import com.clearspring.analytics.stream.cardinality.{HyperLogLogPlus, ICardinality}
-import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
+import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.flink.types.Value
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}

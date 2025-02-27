@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 
 class EmptyProcessConfigCreator extends ProcessConfigCreator {
 

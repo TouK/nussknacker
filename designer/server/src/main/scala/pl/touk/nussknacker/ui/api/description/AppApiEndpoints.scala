@@ -2,18 +2,18 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.Uppercase
 import enumeratum._
-import io.circe.syntax.EncoderOps
+import enumeratum.EnumEntry.Uppercase
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody

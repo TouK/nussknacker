@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.Valid
 import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError

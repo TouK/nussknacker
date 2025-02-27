@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatusName,
   ProcessActionId,
   ProcessActionState,
   ScenarioActionName
 }
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import slick.jdbc.JdbcProfile

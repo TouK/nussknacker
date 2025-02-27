@@ -11,6 +11,12 @@ import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
+import pl.touk.nussknacker.engine.lite.{
+  InterpreterTestRunner,
+  RunnableScenarioInterpreter,
+  ScenarioInterpreterFactory,
+  TestRunner
+}
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.TestRunner._
@@ -18,16 +24,10 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeCont
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.lite.{
-  InterpreterTestRunner,
-  RunnableScenarioInterpreter,
-  ScenarioInterpreterFactory,
-  TestRunner
-}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.Using
 
 /*
@@ -105,10 +105,11 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
 
   override def status(): TaskStatus = taskRunner.status()
 
-  import KafkaTransactionalScenarioInterpreter._
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+
+  import KafkaTransactionalScenarioInterpreter._
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 

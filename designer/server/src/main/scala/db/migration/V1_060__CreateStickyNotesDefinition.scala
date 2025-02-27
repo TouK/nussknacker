@@ -3,9 +3,10 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_060__CreateStickyNotesDefinition.StickyNotesDefinitions
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
+import shapeless.syntax.std.tuple._
 import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
-import shapeless.syntax.std.tuple._
+
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,7 +65,8 @@ object V1_060__CreateStickyNotesDefinition {
 
       override def * =
         (id :: tupleWithoutAutoIncId.productElements).tupled <> (
-          StickyNoteEventEntityData.apply _ tupled, StickyNoteEventEntityData.unapply
+          StickyNoteEventEntityData.apply _ tupled,
+          StickyNoteEventEntityData.unapply
         )
 
     }

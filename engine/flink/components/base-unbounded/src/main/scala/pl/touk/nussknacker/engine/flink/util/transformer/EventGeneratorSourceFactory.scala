@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.flink.api.process.{
   CustomizableTimestampWatermarkHandlerSource,
   FlinkCustomNodeContext,
@@ -23,9 +23,9 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
 
+import java.{util => jul}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-import java.{util => jul}
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
 import scala.jdk.CollectionConverters._

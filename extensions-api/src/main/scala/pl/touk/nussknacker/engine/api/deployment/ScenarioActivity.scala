@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.VersionId

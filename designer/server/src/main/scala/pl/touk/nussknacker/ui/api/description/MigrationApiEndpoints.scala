@@ -34,8 +34,8 @@ import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError.{
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 import sttp.model.StatusCode._
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 

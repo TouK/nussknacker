@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.engine.api.Comment
 
 object DeploymentComment {
 

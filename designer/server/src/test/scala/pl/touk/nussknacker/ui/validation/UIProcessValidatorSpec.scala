@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -26,16 +27,16 @@ import pl.touk.nussknacker.engine.api.process.{
   ComponentUseCase,
   EmptyProcessConfigCreator,
   ExpressionConfig,
+  ProcessingType,
   ProcessName,
   ProcessObjectDependencies,
-  ProcessingType,
   WithCategories
 }
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -45,9 +46,10 @@ import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -55,15 +57,9 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
-import pl.touk.nussknacker.engine.CustomProcessValidator
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.util.functions.collection
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
-  RenderNotAllowed,
-  SaveAllowed,
-  SaveNotAllowed
-}
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -72,7 +68,11 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult,
   ValidationWarnings
 }
-import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
+  RenderNotAllowed,
+  SaveAllowed,
+  SaveNotAllowed
+}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{
@@ -80,8 +80,8 @@ import pl.touk.nussknacker.test.mock.{
   StubModelDataWithModelDefinition,
   TestAdditionalUIConfigProvider
 }
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -95,8 +95,9 @@ import scala.jdk.CollectionConverters._
 
 class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with OptionValues {
 
-  import UIProcessValidatorSpec._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import UIProcessValidatorSpec._
 
   private val validationExpression =
     Expression.spel(s"#${ValidationExpressionParameterValidator.variableName}.length() < 7")
