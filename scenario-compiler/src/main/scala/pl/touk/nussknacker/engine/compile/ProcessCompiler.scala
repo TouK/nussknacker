@@ -357,7 +357,7 @@ object ProcessValidator {
       classLoader,
       Seq.empty,
       PreventInvocationCollector,
-      ComponentUseCase.Validation,
+      ComponentUseContextProvider.LiveRuntime,
       NodesDeploymentData.empty,
       nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default,
     )

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{api, ComponentUseCase, CustomProcessValidatorLoader, InterpretationResult}
+import pl.touk.nussknacker.engine.{api, ComponentUseContextProvider, CustomProcessValidatorLoader, InterpretationResult}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -77,7 +77,7 @@ class InterpreterSetup[T: ClassTag] {
       List.empty,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
+      ComponentUseContextProvider.LiveRuntime,
       CustomProcessValidatorLoader.emptyCustomProcessValidator,
       NodesDeploymentData.empty,
     )

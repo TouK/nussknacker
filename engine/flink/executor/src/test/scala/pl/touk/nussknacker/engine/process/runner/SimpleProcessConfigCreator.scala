@@ -34,11 +34,11 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   override def customStreamTransformers(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "stateCustom"                       -> WithCategories.anyCategory(StateCustomNode),
-    "transformWithTime"                 -> WithCategories.anyCategory(TransformerWithTime),
-    "joinBranchExpression"              -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
-    "transformerAddingComponentUseCase" -> WithCategories.anyCategory(TransformerAddingComponentUseCase),
-    "sleep"                             -> WithCategories.anyCategory(SimpleSleepTransformer),
+    "stateCustom"                          -> WithCategories.anyCategory(StateCustomNode),
+    "transformWithTime"                    -> WithCategories.anyCategory(TransformerWithTime),
+    "joinBranchExpression"                 -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
+    "transformerAddingComponentUseContext" -> WithCategories.anyCategory(TransformerAddingComponentUseContext),
+    "sleep"                                -> WithCategories.anyCategory(SimpleSleepTransformer),
   )
 
   override def sourceFactories(

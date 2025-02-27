@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import cats.Id
 import cats.data.{NonEmptyList, Validated}
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
 import pl.touk.nussknacker.engine.api._
@@ -46,10 +46,10 @@ object SynchronousLiteInterpreter {
       jobData: JobData,
       scenario: CanonicalProcess,
       data: ScenarioInputBatch[Any],
-      componentUseCase: ComponentUseCase,
+      componentUseContextProvider: ComponentUseContextProvider,
       runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): SynchronousResult = {
-    TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
+    TestScenarioCollectorHandler.withHandler(componentUseContextProvider) { testScenarioCollectorHandler =>
       ScenarioInterpreterFactory
         .createInterpreter[Id, Any, AnyRef](
           scenario,
@@ -57,7 +57,7 @@ object SynchronousLiteInterpreter {
           modelData,
           Nil,
           testScenarioCollectorHandler.resultCollector,
-          componentUseCase
+          componentUseContextProvider
         )
         .map { interpreter =>
           interpreter.open(runtimeContextPreparer.prepare(jobData))

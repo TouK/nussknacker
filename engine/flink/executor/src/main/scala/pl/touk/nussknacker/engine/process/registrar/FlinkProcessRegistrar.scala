@@ -136,14 +136,14 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData          = compilerData.jobData
-      val componentUseCase = compilerData.componentUseCase
+      val jobData                     = compilerData.jobData
+      val componentUseContextProvider = compilerData.componentUseContextProvider
 
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseCase),
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseContextProvider),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
@@ -152,7 +152,7 @@ class FlinkProcessRegistrar(
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
-        compilerData.componentUseCase.toContext(
+        compilerData.componentUseContextProvider.toContext(
           deploymentData.nodesData.get(NodeId(nodeComponentId.nodeId))
         ),
         // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
@@ -180,7 +180,7 @@ class FlinkProcessRegistrar(
 
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id, compilerData.componentUseCase), contextTypeInformation)
+        .process(new SourceMetricsFunction(part.id, compilerData.componentUseContextProvider), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 

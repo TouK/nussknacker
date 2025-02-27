@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
-import pl.touk.nussknacker.engine.{api, compiledgraph, ComponentUseCase}
+import pl.touk.nussknacker.engine.{api, compiledgraph, ComponentUseContextProvider}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
@@ -69,7 +69,7 @@ class NodeCompiler(
     classLoader: ClassLoader,
     listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
-    componentUseCase: ComponentUseCase,
+    componentUseContextProvider: ComponentUseContextProvider,
     nodesDeploymentData: NodesDeploymentData,
     nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
 ) {
@@ -82,7 +82,7 @@ class NodeCompiler(
       classLoader,
       listeners,
       resultCollector,
-      componentUseCase,
+      componentUseContextProvider,
       nodesDeploymentData,
       nonServicesLazyParamStrategy,
     )
@@ -577,7 +577,7 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase.toContext(nodesDeploymentData.get(nodeId)),
+            componentUseContextProvider.toContext(nodesDeploymentData.get(nodeId)),
             nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>

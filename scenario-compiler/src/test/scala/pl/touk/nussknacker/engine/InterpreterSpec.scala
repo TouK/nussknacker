@@ -204,7 +204,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
+      ComponentUseContextProvider.LiveRuntime,
       CustomProcessValidatorLoader.emptyCustomProcessValidator,
       NodesDeploymentData.empty,
     )

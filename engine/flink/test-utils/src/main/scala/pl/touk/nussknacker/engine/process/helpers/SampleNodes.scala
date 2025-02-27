@@ -520,7 +520,7 @@ object SampleNodes {
 
   }
 
-  object TransformerAddingComponentUseCase extends CustomStreamTransformer with Serializable {
+  object TransformerAddingComponentUseContext extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute = {
@@ -912,7 +912,7 @@ object SampleNodes {
       with SingleInputDynamicComponent[Sink]
       with Serializable {
 
-    private val componentUseCaseDependency = TypedNodeDependency[ComponentUseContext]
+    private val componentUseContextProviderDependency = TypedNodeDependency[ComponentUseContext]
 
     override type State = Nothing
 
@@ -987,7 +987,7 @@ object SampleNodes {
           .map(
             (v: ValueWithContext[String]) =>
               v.copy(value =
-                s"${v.value}+$typeValue-$versionValue+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"
+                s"${v.value}+$typeValue-$versionValue+componentUseContextProvider:${componentUseContextProviderDependency.extract(dependencies)}"
               ),
             flinkNodeContext.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
           )
@@ -1001,7 +1001,7 @@ object SampleNodes {
 
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(componentUseCaseDependency)
+    override def nodeDependencies: List[NodeDependency] = List(componentUseContextProviderDependency)
   }
 
   object ProcessHelper {

@@ -10,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
-import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidatorLoader}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -119,7 +119,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       Seq.empty,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
+      ComponentUseContextProvider.LiveRuntime,
       CustomProcessValidatorLoader.emptyCustomProcessValidator,
       NodesDeploymentData.empty,
     )

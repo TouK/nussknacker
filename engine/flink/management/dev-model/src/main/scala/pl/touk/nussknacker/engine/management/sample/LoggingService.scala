@@ -28,7 +28,7 @@ object LoggingService extends EagerService {
       ]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
-
+      private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
       private lazy val logger = LoggerFactory.getLogger(
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
@@ -38,7 +38,7 @@ object LoggingService extends EagerService {
           collector: ServiceInvocationCollector,
           componentUseContext: ComponentUseContext,
       ): Future[Any] = {
-        if (isNotDisabled(componentUseContext)) {
+        if (isLoggingAllowed(componentUseContext)) {
           val msg = message.evaluate(context).renderedTemplate
           level match {
             case Level.TRACE => logger.trace(msg)
@@ -51,19 +51,19 @@ object LoggingService extends EagerService {
         Future.successful(())
       }
 
-      private def isNotDisabled(componentUseContext: ComponentUseContext) =
+      private def isLoggingAllowed(componentUseContext: ComponentUseContext) =
         componentUseContext
           .deploymentData()
-          .flatMap(_.get("loggingComponentsDisabled"))
-          .forall(isDisabled => !isDisabled.toBoolean)
+          .flatMap(_.get(debuggingWithLoggingComponentsAllowedPropertyName))
+          .exists(_.toBoolean)
 
       override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = Map(
         ScenarioActionName.Deploy -> Map(
-          ParameterName("loggingComponentsDisabled") -> ParameterConfig(
+          ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> ParameterConfig(
             defaultValue = "false".some,
             editor = BoolParameterEditor.some,
             validators = None,
-            label = "Disable custom logging".some,
+            label = "Enable debugging with logging components".some,
             hintText = None
           )
         )

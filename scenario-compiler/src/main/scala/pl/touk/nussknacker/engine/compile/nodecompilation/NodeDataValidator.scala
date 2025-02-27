@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalidNel, valid}
 import cats.implicits.catsSyntaxTuple2Semigroupal
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -53,7 +53,7 @@ class NodeDataValidator(modelData: ModelData) {
     modelData.modelClassLoader,
     Seq.empty,
     PreventInvocationCollector,
-    ComponentUseCase.Validation,
+    ComponentUseContextProvider.LiveRuntime,
     NodesDeploymentData.empty,
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ComponentUseCase
+import pl.touk.nussknacker.engine.ComponentUseContextProvider
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{
@@ -34,14 +34,14 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    componentUseCase: ComponentUseCase,
+    componentUseContextProvider: ComponentUseContextProvider,
     configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     nodesDeploymentData: NodesDeploymentData,
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
-      componentUseCase,
+      componentUseContextProvider,
       configsFromProviderWithDictionaryEditor,
       nodesDeploymentData,
     ) {
