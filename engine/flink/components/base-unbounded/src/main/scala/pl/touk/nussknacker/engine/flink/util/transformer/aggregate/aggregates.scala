@@ -104,28 +104,36 @@ object aggregates {
 
   object ListAggregator extends Aggregator {
 
-    override type Aggregate = List[AnyRef]
+    override type Aggregate = java.util.ArrayList[AnyRef]
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = List.empty
+    override def zero: Aggregate = new java.util.ArrayList()
 
-    override def isNeutralForAccumulator(element: ListAggregator.Element, currentAggregate: List[AnyRef]): Boolean =
+    override def isNeutralForAccumulator(element: ListAggregator.Element, currentAggregate: Aggregate): Boolean =
       false
 
     // append instead of prepend (assess performance considerations...)
-    override def addElement(el: Element, agg: Aggregate): Aggregate = el :: agg
+    override def addElement(el: Element, agg: Aggregate): Aggregate = {
+      agg.add(el)
+      agg
+    }
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = {
+      val result = new java.util.ArrayList[AnyRef]()
+      result.addAll(agg1)
+      result.addAll(agg2)
+      result
+    }
 
-    override def result(finalAggregate: Aggregate): AnyRef = new java.util.ArrayList[Any](finalAggregate.asJava)
+    override def result(finalAggregate: Aggregate): AnyRef = new java.util.ArrayList[Any](finalAggregate)
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass[java.util.List[_]](List(input))
     )
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
-      Typed.genericTypeClass[List[_]](List(input))
+      Typed.genericTypeClass[java.util.ArrayList[_]](List(input))
     )
 
   }
