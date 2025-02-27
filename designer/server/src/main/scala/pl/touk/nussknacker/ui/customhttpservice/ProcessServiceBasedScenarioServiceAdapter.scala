@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 
 class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
     processService: ProcessService
