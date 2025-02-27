@@ -92,7 +92,7 @@ import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityServ
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.statistics.{
   FingerprintService,
