@@ -101,7 +101,6 @@
   * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
   * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
 
-
 ## 1.18
 
 #### Highlights
