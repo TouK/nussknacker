@@ -137,7 +137,8 @@ class DefinitionsService(
       docsUrl = componentDefinition.component.docsUrl,
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
-      }
+      },
+      label = componentDefinition.component.label
     )
   }
 

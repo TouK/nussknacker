@@ -86,7 +86,7 @@ class ComponentGroupsPreparerSpec
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     baseComponents
       .filter(n => n.componentId.`type` == ComponentType.BuiltIn)
-      .map(_.label) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario.map(_.name)
+      .map(_.componentId) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario
     baseComponents.filter(n => n.componentId.`type` == ComponentType.CustomComponent) should have size 5
   }
 

@@ -41,6 +41,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       },
       "branchParameters": undefined,
       "id": "variable 1 (copy 1)",
+      "label": "variable",
       "type": "Variable",
       "value": {
         "expression": "'value'",
@@ -58,6 +59,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       },
       "branchParameters": undefined,
       "id": "variable 2 (copy 1)",
+      "label": "variable",
       "type": "Variable",
       "value": {
         "expression": "'value'",
@@ -100,6 +102,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
         },
       ],
       "id": "union (copy 1)",
+      "label": "union",
       "nodeType": "union",
       "outputVar": "outputVar",
       "parameters": [],

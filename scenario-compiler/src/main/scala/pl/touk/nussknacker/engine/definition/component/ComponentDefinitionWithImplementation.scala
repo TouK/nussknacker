@@ -24,8 +24,6 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   def componentTypeSpecificData: ComponentTypeSpecificData
 
   // This field is used as a part of identifier so it is important that it should be stable.
-  // Currently it is used also for a label presented at the toolbox palette but we should probably extract another
-  // field (e.g. label) that will be in a more human friendly format`- see Parameter.name vs Parameter.label
   def name: String
 
   final def componentType: ComponentType = componentTypeSpecificData.componentType
@@ -33,6 +31,16 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   final def id: ComponentId = ComponentId(componentType, name)
 
   protected def uiDefinition: ComponentUiDefinition
+
+  final def label: String = {
+    uiDefinition.label.getOrElse {
+      if (componentType != ComponentType.Fragment) {
+        name
+      } else {
+        id.name
+      }
+    }
+  }
 
   final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
@@ -69,7 +77,8 @@ final case class ComponentUiDefinition(
     componentGroup: ComponentGroupName,
     icon: String,
     docsUrl: Option[String],
-    designerWideId: DesignerWideComponentId
+    designerWideId: DesignerWideComponentId,
+    label: Option[String]
 )
 
 object ComponentDefinitionWithImplementation {

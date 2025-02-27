@@ -43,6 +43,7 @@ export interface ComponentDefinition {
     docsUrl?: string;
     // For fragments only
     outputParameters?: string[] | null;
+    label: string;
 }
 
 export interface ProcessDefinitionData {
