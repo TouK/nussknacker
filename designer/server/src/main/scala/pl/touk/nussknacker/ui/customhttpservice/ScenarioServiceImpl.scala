@@ -11,9 +11,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
-class ScenarioServiceImpl(
-    processService: ProcessService
-)(implicit executionContext: ExecutionContext)
+class ScenarioServiceImpl(processService: ProcessService)(implicit executionContext: ExecutionContext)
     extends ScenarioService {
 
   override def getLatestProcessesWithDetails(
