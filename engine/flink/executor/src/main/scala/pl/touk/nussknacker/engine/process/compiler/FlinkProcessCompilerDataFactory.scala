@@ -1,17 +1,21 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelData}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -20,6 +24,7 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, NodeCountingListener}
+import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidatorLoader, ModelData}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -34,18 +39,20 @@ class FlinkProcessCompilerDataFactory(
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     componentUseCase: ComponentUseCase,
-    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    nodesData: NodesDeploymentData,
 ) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def this(modelData: ModelData) = this(
+  def this(modelData: ModelData, deploymentData: DeploymentData) = this(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
     componentUseCase = ComponentUseCase.EngineRuntime,
-    modelData.additionalConfigsFromProvider
+    modelData.additionalConfigsFromProvider,
+    nodesData = deploymentData.nodesData
   )
 
   def prepareCompilerData(
@@ -87,7 +94,8 @@ class FlinkProcessCompilerDataFactory(
         resultCollector,
         componentUseCase,
         customProcessValidator,
-        nonServicesLazyParamStrategy = LazyParameterCreationStrategy.postponed
+        nodesData,
+        nonServicesLazyParamStrategy = LazyParameterCreationStrategy.postponed,
       )
 
     new FlinkProcessCompilerData(

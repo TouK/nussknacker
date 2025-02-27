@@ -6,8 +6,9 @@ import cats.syntax.all._
 import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
@@ -29,7 +30,8 @@ private class InterpreterInternal[F[_]: Monad](
     expressionEvaluator: ExpressionEvaluator,
     interpreterShape: InterpreterShape[F],
     componentUseCase: ComponentUseCase,
-    serviceExecutionContext: ServiceExecutionContext
+    serviceExecutionContext: ServiceExecutionContext,
+    nodesDeploymentData: NodesDeploymentData,
 )(implicit jobData: JobData) {
 
   type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
@@ -247,8 +249,9 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
-    implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
-    val resultFuture                                        = ref.invoke(ctx, serviceExecutionContext)
+    val nodeDeploymentData                                = nodesDeploymentData.get(NodeId(node.id))
+    implicit val componentUseContext: ComponentUseContext = componentUseCase.toContext(nodeDeploymentData)
+    val resultFuture                                      = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
     resultFuture.onComplete { result =>
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, jobData.metaData, result))
@@ -267,7 +270,8 @@ private class InterpreterInternal[F[_]: Monad](
 class Interpreter(
     listeners: Seq[ProcessListener],
     expressionEvaluator: ExpressionEvaluator,
-    componentUseCase: ComponentUseCase
+    componentUseCase: ComponentUseCase,
+    nodesDeploymentData: NodesDeploymentData,
 ) {
 
   def interpret[F[_]](
@@ -280,7 +284,14 @@ class Interpreter(
       shape: InterpreterShape[F],
   ): F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     implicit val jobDataImplicit: JobData = jobData
-    new InterpreterInternal[F](listeners, expressionEvaluator, shape, componentUseCase, serviceExecutionContext)
+    new InterpreterInternal[F](
+      listeners,
+      expressionEvaluator,
+      shape,
+      componentUseCase,
+      serviceExecutionContext,
+      nodesDeploymentData,
+    )
       .interpret(node, ctx)
   }
 
@@ -291,9 +302,10 @@ object Interpreter {
   def apply(
       listeners: Seq[ProcessListener],
       expressionEvaluator: ExpressionEvaluator,
-      componentUseCase: ComponentUseCase
+      componentUseCase: ComponentUseCase,
+      nodesDeploymentData: NodesDeploymentData,
   ): Interpreter = {
-    new Interpreter(listeners, expressionEvaluator, componentUseCase)
+    new Interpreter(listeners, expressionEvaluator, componentUseCase, nodesDeploymentData)
   }
 
   object InterpreterShape {

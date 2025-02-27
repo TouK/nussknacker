@@ -104,7 +104,11 @@ object ActionInfoEndpoints {
 
     }
 
-    @JsonCodec case class UiActionNodeParametersDto(nodeId: NodeId, parameters: Map[String, UiActionParameterConfigDto])
+    @JsonCodec case class UiActionNodeParametersDto(
+        nodeId: NodeId,
+        componentId: String,
+        parameters: Map[String, UiActionParameterConfigDto]
+    )
 
     @JsonCodec final case class UiActionParameterConfigDto(
         defaultValue: Option[String],

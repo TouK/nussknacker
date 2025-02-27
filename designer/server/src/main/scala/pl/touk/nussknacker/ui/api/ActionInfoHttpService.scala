@@ -83,6 +83,7 @@ object ActionInfoHttpService {
       scenarioActionName -> nodeParamsMap.map { nodeParams =>
         UiActionNodeParametersDto(
           nodeParams.nodeId,
+          nodeParams.componentId.name,
           nodeParams.parameters.map { case (name, config) =>
             name -> UiActionParameterConfigDto(
               config.defaultValue,

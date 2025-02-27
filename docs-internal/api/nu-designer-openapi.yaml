@@ -7719,9 +7719,12 @@ components:
       type: object
       required:
       - nodeId
+      - componentId
       - parameters
       properties:
         nodeId:
+          type: string
+        componentId:
           type: string
         parameters:
           $ref: '#/components/schemas/Map_UiActionParameterConfigDto'

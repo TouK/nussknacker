@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.functions.RuntimeContext
+import pl.touk.nussknacker.engine.ComponentUseCase
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineRuntimeContext
 import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.createMetricsProvider

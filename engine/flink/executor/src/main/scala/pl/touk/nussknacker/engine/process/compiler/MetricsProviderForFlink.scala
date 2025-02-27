@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.functions.RuntimeContext
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.ComponentUseCase
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
 object MetricsProviderForFlink {

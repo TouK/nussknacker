@@ -9,6 +9,6 @@ class ComponentMethodDefinitionExtractor[F, T: ClassTag] extends AbstractMethodD
 
   override protected def expectedReturnType: Option[Class[_]] = Some(implicitly[ClassTag[T]].runtimeClass)
   override protected def additionalDependencies: Set[Class[_]] =
-    Set[Class[_]](classOf[MetaData], classOf[NodeId], classOf[ComponentUseCase])
+    Set[Class[_]](classOf[MetaData], classOf[NodeId], classOf[ComponentUseContext])
 
 }

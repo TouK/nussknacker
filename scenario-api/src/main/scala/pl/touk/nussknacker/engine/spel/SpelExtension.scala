@@ -6,6 +6,8 @@ trait SpelExtension {
 
   implicit class SpelExpresion(expression: String) {
     def spel: Expression = Expression.spel(expression)
+
+    def spelTemplate: Expression = Expression.spelTemplate(expression)
   }
 
 }

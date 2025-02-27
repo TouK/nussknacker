@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyProce
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -19,11 +19,11 @@ import scala.concurrent.ExecutionContext
 
 trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
-  implicit val ec: ExecutionContext                  = ExecutionContext.Implicits.global
-  implicit val context: Context                      = Context("", Map.empty)
-  implicit val metaData: MetaData                    = MetaData("", StreamMetaData())
-  implicit val collector: ServiceInvocationCollector = EmptyInvocationCollector.Instance
-  implicit val componentUseCase: ComponentUseCase    = ComponentUseCase.TestRuntime
+  implicit val ec: ExecutionContext                     = ExecutionContext.Implicits.global
+  implicit val context: Context                         = Context("", Map.empty)
+  implicit val metaData: MetaData                       = MetaData("", StreamMetaData())
+  implicit val collector: ServiceInvocationCollector    = EmptyInvocationCollector.Instance
+  implicit val componentUseContext: ComponentUseContext = ComponentUseContext.TestRuntime
 
   val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 

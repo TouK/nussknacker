@@ -1,10 +1,15 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import cats.implicits.catsSyntaxOptionId
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.definition.BoolParameterEditor
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import javax.annotation.Nullable
@@ -22,7 +27,7 @@ object LoggingService extends EagerService {
         TemplateEvaluationResult
       ]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
-    new ServiceInvoker {
+    new ServiceInvoker with WithActionParametersSupport {
 
       private lazy val logger = LoggerFactory.getLogger(
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
@@ -31,18 +36,38 @@ object LoggingService extends EagerService {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
-        val msg = message.evaluate(context).renderedTemplate
-        level match {
-          case Level.TRACE => logger.trace(msg)
-          case Level.DEBUG => logger.debug(msg)
-          case Level.INFO  => logger.info(msg)
-          case Level.WARN  => logger.warn(msg)
-          case Level.ERROR => logger.error(msg)
+        if (isNotDisabled(componentUseContext)) {
+          val msg = message.evaluate(context).renderedTemplate
+          level match {
+            case Level.TRACE => logger.trace(msg)
+            case Level.DEBUG => logger.debug(msg)
+            case Level.INFO  => logger.info(msg)
+            case Level.WARN  => logger.warn(msg)
+            case Level.ERROR => logger.error(msg)
+          }
         }
         Future.successful(())
       }
+
+      private def isNotDisabled(componentUseContext: ComponentUseContext) =
+        componentUseContext
+          .deploymentData()
+          .flatMap(_.get("loggingComponentsDisabled"))
+          .forall(isDisabled => !isDisabled.toBoolean)
+
+      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = Map(
+        ScenarioActionName.Deploy -> Map(
+          ParameterName("loggingComponentsDisabled") -> ParameterConfig(
+            defaultValue = "false".some,
+            editor = BoolParameterEditor.some,
+            validators = None,
+            label = "Disable custom logging".some,
+            hintText = None
+          )
+        )
+      )
 
     }
 
