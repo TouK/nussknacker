@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsDef
 
 import java.util
 import scala.collection.concurrent.TrieMap
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends MethodResolver {
   private val executorsCache = new TrieMap[(String, Class[_]), Option[MethodExecutor]]()

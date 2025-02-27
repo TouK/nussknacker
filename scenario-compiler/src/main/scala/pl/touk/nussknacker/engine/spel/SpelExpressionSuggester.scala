@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.spel
 
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import org.springframework.expression.common.TemplateParserContext
+import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
-import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -20,12 +21,10 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassesExtensions, ClassExtensions}
 
 import scala.collection.compat.immutable.LazyList
-import cats.implicits._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 

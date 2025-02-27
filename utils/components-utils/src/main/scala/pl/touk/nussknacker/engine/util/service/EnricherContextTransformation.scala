@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.util.service
 
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.Valid
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.ServiceInvoker
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.NodeId
 
 /*
   Helper for defining enrichers where return type depends on parameter values

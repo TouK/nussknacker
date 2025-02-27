@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.util.exception
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario, RateMeter}
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
 

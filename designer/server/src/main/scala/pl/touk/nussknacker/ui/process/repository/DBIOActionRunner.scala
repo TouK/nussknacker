@@ -6,8 +6,8 @@ import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner.TransactionsRu
 import slick.jdbc.{JdbcProfile, TransactionIsolation}
 
 import java.sql.SQLException
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 

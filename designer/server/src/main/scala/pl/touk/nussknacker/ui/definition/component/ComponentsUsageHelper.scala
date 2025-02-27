@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
-import pl.touk.nussknacker.restmodel.component.NodeUsageData._
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.NodeUsageData._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ComponentsUsageHelper {

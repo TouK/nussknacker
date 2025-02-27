@@ -4,9 +4,9 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
+import pl.touk.nussknacker.test.{NuScalaTestAssertions, NuTapirSchemaTestHelpers}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.utils.generators.NodeDataGen
-import pl.touk.nussknacker.test.{NuScalaTestAssertions, NuTapirSchemaTestHelpers}
 import pl.touk.nussknacker.ui.api.description.{NodesApiEndpoints, TypingDtoSchemas}
 
 import scala.util.control.Breaks.{break, breakable}

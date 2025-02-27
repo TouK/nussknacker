@@ -11,10 +11,11 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
+  import org.scalatest.prop.TableDrivenPropertyChecks._
+
   import ToolbarButtonConfigType._
   import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
-  import org.scalatest.prop.TableDrivenPropertyChecks._
 
   private lazy val parsedConfig = CategoriesScenarioToolbarsConfigParser.parse(
     ConfigFactory.parseString(

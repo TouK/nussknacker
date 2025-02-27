@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, Singl
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
-import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValueMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValueMapper, StringKeyOnlyMapper}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.reflect.runtime.universe.TypeTag

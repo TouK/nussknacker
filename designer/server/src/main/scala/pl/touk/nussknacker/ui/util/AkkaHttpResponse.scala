@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.util
 
+import akka.http.scaladsl.model.{headers, HttpResponse, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
-import akka.http.scaladsl.model.{HttpResponse, ResponseEntity, StatusCodes, headers}
 
 object AkkaHttpResponse {
 

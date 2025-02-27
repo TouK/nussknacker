@@ -19,7 +19,7 @@ import java.lang.{
   Short => JShort
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 import scala.util.{Success, Try}
 
 abstract class Conversion[T >: Null <: AnyRef: ClassTag] {

@@ -8,11 +8,11 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
@@ -21,22 +21,22 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
+import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
-import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
+import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
-  FetchAllWithUsages,
   FetchAllWithoutUsages,
-  FetchNonFragmentsWithUsages,
-  FetchNonFragmentsWithoutUsages
+  FetchAllWithUsages,
+  FetchNonFragmentsWithoutUsages,
+  FetchNonFragmentsWithUsages
 }
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
@@ -44,13 +44,13 @@ import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 
 import java.net.URI
 import scala.annotation.tailrec
@@ -549,20 +549,24 @@ class DefaultComponentServiceSpec
       .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
   private val modelDataMap: Map[ProcessingType, (ModelData, String)] = Map(
-    ProcessingTypeStreaming -> (LocalModelData(
-      streamingConfig,
-      providerComponents,
-      ComponentMarketingTestConfigCreator,
-      determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeStreaming, _)
+    ProcessingTypeStreaming -> (
+      LocalModelData(
+        streamingConfig,
+        providerComponents,
+        ComponentMarketingTestConfigCreator,
+        determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeStreaming, _)
+      ),
+      CategoryMarketing
     ),
-    CategoryMarketing),
-    ProcessingTypeFraud -> (LocalModelData(
-      fraudConfig,
-      providerComponents,
-      ComponentFraudTestConfigCreator,
-      determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeFraud, _)
-    ),
-    CategoryFraud)
+    ProcessingTypeFraud -> (
+      LocalModelData(
+        fraudConfig,
+        providerComponents,
+        ComponentFraudTestConfigCreator,
+        determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeFraud, _)
+      ),
+      CategoryFraud
+    )
   )
 
   private val fragmentFromCategories = modelDataMap.toList
@@ -680,18 +684,24 @@ class DefaultComponentServiceSpec
   it should "throws exception when components are wrong configured" in {
     import pl.touk.nussknacker.ui.definition.component.WrongConfigurationAttribute._
     val badModelDataMap = Map(
-      ProcessingTypeStreaming -> (LocalModelData(
-        streamingConfig,
-        providerComponents,
-        ComponentMarketingTestConfigCreator,
-        determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeStreaming, _)
-      ), CategoryMarketing),
-      ProcessingTypeFraud -> (LocalModelData(
-        wrongConfig,
-        providerComponents,
-        WronglyConfiguredConfigCreator,
-        determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeFraud, _)
-      ), CategoryFraud)
+      ProcessingTypeStreaming -> (
+        LocalModelData(
+          streamingConfig,
+          providerComponents,
+          ComponentMarketingTestConfigCreator,
+          determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeStreaming, _)
+        ),
+        CategoryMarketing
+      ),
+      ProcessingTypeFraud -> (
+        LocalModelData(
+          wrongConfig,
+          providerComponents,
+          WronglyConfiguredConfigCreator,
+          determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeFraud, _)
+        ),
+        CategoryFraud
+      )
     )
 
     val componentService = prepareService(badModelDataMap, List.empty, List.empty)

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.lite.components.utils
 
 import io.circe.Json
 import io.circe.Json._
-import org.everit.json.schema.regexp.JavaUtilRegexpFactory
 import org.everit.json.schema.{
   ArraySchema,
   CombinedSchema,
@@ -12,6 +11,7 @@ import org.everit.json.schema.{
   Schema,
   StringSchema
 }
+import org.everit.json.schema.regexp.JavaUtilRegexpFactory
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.SpecialSpELElement
 

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.{
   GenericFunctionTypingError,
   GenericType,
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.generics.{
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.{
   LargeNumberOperatorTypingFunction,

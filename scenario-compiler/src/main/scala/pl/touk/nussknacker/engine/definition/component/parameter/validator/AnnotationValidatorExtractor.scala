@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
-import java.lang.annotation.Annotation
-
 import pl.touk.nussknacker.engine.api.definition.ParameterValidator
 
+import java.lang.annotation.Annotation
 import scala.reflect.ClassTag
 
 class AnnotationValidatorExtractor[T <: Annotation: ClassTag](parameterValidatorProvider: T => ParameterValidator)

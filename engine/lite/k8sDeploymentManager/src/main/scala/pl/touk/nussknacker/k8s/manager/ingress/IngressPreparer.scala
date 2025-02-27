@@ -4,9 +4,9 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import monocle.macros.GenLens
 import monocle.std.option.some
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
+import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, RequestResponseSlugUtils}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.labelsForScenario
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer.rewriteAnnotation
-import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, RequestResponseSlugUtils}
 import play.api.libs.json.Json
 import skuber.networking.v1.Ingress
 

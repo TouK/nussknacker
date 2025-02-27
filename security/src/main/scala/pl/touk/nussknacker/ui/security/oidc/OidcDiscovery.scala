@@ -2,13 +2,13 @@ package pl.touk.nussknacker.ui.security.oidc
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import sttp.client3.{basicRequest, SttpBackend, UriContext}
 import sttp.client3.circe.asJson
-import sttp.client3.{SttpBackend, UriContext, basicRequest}
 import sttp.model.MediaType
 
 import java.net.URI
-import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, SECONDS}
 import scala.util.Try
 
 object OidcDiscovery extends LazyLogging {

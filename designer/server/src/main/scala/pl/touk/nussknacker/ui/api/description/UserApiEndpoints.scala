@@ -5,13 +5,13 @@ import derevo.derive
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import sttp.model.StatusCode.Ok
+import sttp.tapir.{statusCode, EndpointInput}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir.{EndpointInput, statusCode}
 
 class UserApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 

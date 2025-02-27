@@ -7,8 +7,8 @@ import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, Scenario
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.ast.Library.JdbcFunction
 import slick.jdbc.JdbcProfile
-import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
+import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
@@ -194,7 +194,8 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
         commentId,
         buildInfo
       ) <> (
-        ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
+        ProcessActionEntityData.apply _ tupled,
+        ProcessActionEntityData.unapply
       )
 
     }
@@ -250,7 +251,8 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
           impersonatedByUsername,
           createDate
         ) <> (
-          CommentEntityData.apply _ tupled, CommentEntityData.unapply
+          CommentEntityData.apply _ tupled,
+          CommentEntityData.unapply
         )
 
     }

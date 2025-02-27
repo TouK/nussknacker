@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.{Invalid, Valid, invalidNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalidNel, Invalid, Valid}
 import io.circe.Json
-import io.circe.Json.{Null, fromFields, fromInt, fromLong, fromString, obj}
+import io.circe.Json.{fromFields, fromInt, fromLong, fromString, obj, Null}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{ObjectSchema, Schema => EveritSchema, StringSchema}
+import org.scalatest.{Assertion, Inside}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -43,12 +43,13 @@ class LiteKafkaUniversalJsonFunctionalTest
     with ValidatedValuesDetailedMessage
     with FunctionalTestMixin {
 
-  import LiteKafkaComponentProvider._
-  import SpecialSpELElement._
   import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
+
+  import LiteKafkaComponentProvider._
+  import SpecialSpELElement._
 
   private val lax          = List(ValidationMode.lax)
   private val strict       = List(ValidationMode.strict)

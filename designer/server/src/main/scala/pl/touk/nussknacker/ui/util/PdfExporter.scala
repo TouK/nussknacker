@@ -1,5 +1,19 @@
 package pl.touk.nussknacker.ui.util
 
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.io.IOUtils
+import org.apache.fop.apps.FopConfParser
+import org.apache.fop.apps.io.ResourceResolverFactory
+import org.apache.xmlgraphics.util.MimeConstants
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+
 import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -8,20 +22,6 @@ import java.time.format.DateTimeFormatter
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.sax.SAXResult
 import javax.xml.transform.stream.StreamSource
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.IOUtils
-import org.apache.fop.apps.FopConfParser
-import org.apache.fop.apps.io.ResourceResolverFactory
-import org.apache.xmlgraphics.util.MimeConstants
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-
 import scala.xml.{Elem, NodeSeq, XML}
 
 object PdfExporter extends LazyLogging {

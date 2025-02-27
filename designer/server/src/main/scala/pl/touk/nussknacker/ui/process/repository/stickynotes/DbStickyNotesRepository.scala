@@ -11,8 +11,8 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
   StickyNoteId
 }
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent
-import pl.touk.nussknacker.ui.db.entity.StickyNoteEventEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.db.entity.StickyNoteEventEntityData
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction

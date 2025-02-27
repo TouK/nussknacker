@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions._
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 

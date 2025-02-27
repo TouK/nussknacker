@@ -4,9 +4,9 @@ import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 

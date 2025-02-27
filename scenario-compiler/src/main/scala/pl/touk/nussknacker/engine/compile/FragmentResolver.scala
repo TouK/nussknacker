@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
 import cats.data._
+import cats.data.Validated.{invalidNel, valid, Invalid, Valid}
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.definition.fragment.{FragmentGraphDefinition, FragmentGraphDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.node._
 

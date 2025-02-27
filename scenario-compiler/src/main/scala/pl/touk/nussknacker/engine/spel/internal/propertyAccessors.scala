@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{AccessException, EvaluationContext, PropertyAccessor, TypedValue}
+import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException

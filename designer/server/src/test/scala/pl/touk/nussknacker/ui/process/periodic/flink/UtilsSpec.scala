@@ -9,8 +9,8 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import pl.touk.nussknacker.ui.process.periodic.Utils
 import pl.touk.nussknacker.ui.process.periodic.Utils.createActorWithRetry
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 class UtilsSpec
     extends TestKit(ActorSystem("UtilsSpec"))

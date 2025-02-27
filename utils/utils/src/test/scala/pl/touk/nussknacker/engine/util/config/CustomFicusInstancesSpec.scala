@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.util.config
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import CustomFicusInstances._
 
 import java.io.File
 import java.net.URL
 import java.util.UUID
+
+import CustomFicusInstances._
 
 class CustomFicusInstancesSpec extends AnyFlatSpec with Matchers {
 

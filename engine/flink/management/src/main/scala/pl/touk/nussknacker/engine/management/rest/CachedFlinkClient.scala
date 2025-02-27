@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.management.rest
 import com.github.benmanes.caffeine.cache.{AsyncCache, Cache, Caffeine}
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCached, Fresh}
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCached, Fresh}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, JobDetails, JobOverview}
 
 import java.io.File

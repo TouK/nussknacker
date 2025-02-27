@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure
 
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.{
-  FullSchemaNameDecomposed,
-  toSchemaNamingConvention
+  toSchemaNamingConvention,
+  FullSchemaNameDecomposed
 }
 
 // TODO: It probable should be configurable: e.g would be nice to have possibility to define static topic -> schemaName map in config

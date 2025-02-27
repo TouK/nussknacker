@@ -109,7 +109,10 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
       active,
       createdAt,
       processActionId
-    ) <> (PeriodicProcessEntityWithoutDeploymentDetails.apply _ tupled, PeriodicProcessEntityWithoutDeploymentDetails.unapply)
+    ) <> (
+      PeriodicProcessEntityWithoutDeploymentDetails.apply _ tupled,
+      PeriodicProcessEntityWithoutDeploymentDetails.unapply
+    )
 
   }
 

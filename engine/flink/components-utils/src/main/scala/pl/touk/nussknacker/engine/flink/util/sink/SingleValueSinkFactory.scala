@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.sink
 
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.flink.api.process.{
   BasicFlinkSink,
   FlinkCustomNodeContext,

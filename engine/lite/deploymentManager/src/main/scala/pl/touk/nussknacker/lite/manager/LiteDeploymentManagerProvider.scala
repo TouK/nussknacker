@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 
 trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 

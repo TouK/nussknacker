@@ -31,17 +31,17 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.ExtractTimestampForDelay
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayCalculator
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaConsumerHandlingExceptions
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
+import java.{lang, time, util}
 import java.time.temporal.ChronoUnit
 import java.util.Properties
 import java.util.function.Consumer
-import java.{lang, time, util}
 import scala.jdk.CollectionConverters._
 
 object DelayedFlinkKafkaConsumer {

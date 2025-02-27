@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 
 object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtractor[CustomStreamTransformer] {
 

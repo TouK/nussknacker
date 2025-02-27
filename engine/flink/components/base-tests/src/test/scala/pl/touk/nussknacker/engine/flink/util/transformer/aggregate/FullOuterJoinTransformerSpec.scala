@@ -36,8 +36,9 @@ import scala.jdk.CollectionConverters._
 
 class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
-  import FullOuterJoinTransformerSpec._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import FullOuterJoinTransformerSpec._
 
   private val JoinNodeId = "joined-node-id"
 

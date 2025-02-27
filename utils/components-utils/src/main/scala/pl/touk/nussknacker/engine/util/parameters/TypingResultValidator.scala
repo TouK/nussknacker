@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.parameters
 
-import pl.touk.nussknacker.engine.util.output.OutputValidatorError
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import cats.data.{Validated, ValidatedNel}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 
 trait TypingResultValidator {
   def validate(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit]

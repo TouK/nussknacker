@@ -4,9 +4,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util.Optional
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /**
   * Wrapper for ConsumerRecord fields used for test data serialization, eg. json serialization.

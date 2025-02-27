@@ -8,20 +8,20 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.test.config.{
-  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
-  WithAccessControlCheckingDesignerConfig
-}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 
 class ComponentApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike

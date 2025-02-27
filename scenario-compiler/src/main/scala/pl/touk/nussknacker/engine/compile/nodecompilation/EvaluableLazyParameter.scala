@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.LazyParameter.{CustomLazyParameter, Evaluate}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 

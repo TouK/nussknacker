@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
   ComponentType,
   DesignerWideComponentId
 }
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.{

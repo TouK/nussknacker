@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.util.sinkvalue
 
 import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
+import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData._
-import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 
 import scala.util.Try
 

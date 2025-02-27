@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, FrontendStrategySettings}
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
 import sttp.model.{HeaderNames, MediaType, Uri}
@@ -67,11 +67,12 @@ final case class OAuth2Configuration(
 
 object OAuth2Configuration {
 
-  import AuthenticationConfiguration._
-  import JwtConfiguration.jwtConfigurationVR
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+
+  import AuthenticationConfiguration._
+  import JwtConfiguration.jwtConfigurationVR
 
   private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
 

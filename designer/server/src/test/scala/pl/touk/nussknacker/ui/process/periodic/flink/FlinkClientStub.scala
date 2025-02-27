@@ -3,13 +3,13 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.management.rest.{flinkRestModel, FlinkClient}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{
   ClusterOverview,
   ExecutionConfig,
   JobDetails,
   JobOverview
 }
-import pl.touk.nussknacker.engine.management.rest.{FlinkClient, flinkRestModel}
 
 import java.io.File
 import scala.concurrent.Future

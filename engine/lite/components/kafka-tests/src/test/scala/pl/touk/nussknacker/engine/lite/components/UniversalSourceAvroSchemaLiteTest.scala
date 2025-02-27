@@ -17,10 +17,11 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
-  import LiteKafkaComponentProvider._
-  import LiteKafkaTestScenarioRunner._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import LiteKafkaComponentProvider._
+  import LiteKafkaTestScenarioRunner._
 
   private val inputTopic  = TopicName.ForSource("input")
   private val outputTopic = TopicName.ForSink("output")

@@ -22,18 +22,18 @@ import org.apache.flink.annotation.{Public, PublicEvolving}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.operators.Keys.ExpressionKeys
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils._
 import org.apache.flink.api.common.typeutils.CompositeType.{
   FlatFieldDescriptor,
   InvalidFieldReferenceException,
   TypeComparatorBuilder
 }
-import org.apache.flink.api.common.typeutils._
 import org.apache.flink.api.java.typeutils.TupleTypeInfoBase
 
 import java.util
 import java.util.regex.{Matcher, Pattern}
-import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters._
 
 /**
  * TypeInformation for Case Classes. Creation and access is different from our Java Tuples so we

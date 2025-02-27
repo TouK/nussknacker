@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.process.periodic.CronScheduleProperty
 
-import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{Clock, LocalDateTime, ZonedDateTime, ZoneId}
 
 class CronSchedulePropertyTest extends AnyFunSuite with Matchers {
 

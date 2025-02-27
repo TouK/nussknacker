@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
+import org.scalatest.{BeforeAndAfterAll, Inside}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{BeforeAndAfterAll, Inside}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -16,9 +16,9 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{
+  buildMultipleAggregationsScenario,
   AggregationParameters,
-  TestRecord,
-  buildMultipleAggregationsScenario
+  TestRecord
 }
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression

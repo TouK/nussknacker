@@ -5,9 +5,9 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.engine.util.config.URIExtensions
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, FrontendStrategySettings}
+import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
 import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
-import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
 import sttp.client3.SttpBackend
 import sttp.model.MediaType
 

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.StringUtils._
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.DesignerConfig.ConfigurationMalformedException
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 
@@ -14,8 +14,9 @@ import scala.jdk.CollectionConverters._
 //       Thanks to that it will be easier to split processing type config from rest of configs and use this interface programmatically
 final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion) {
 
-  import DesignerConfig._
   import net.ceedubs.ficus.Ficus._
+
+  import DesignerConfig._
 
   def processingTypeConfigs: ProcessingTypeConfigs =
     ProcessingTypeConfigs(processingTypeConfigsRaw.asMap.mapValuesNow(ProcessingTypeConfig.read))

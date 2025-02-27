@@ -10,14 +10,14 @@ import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Response, SttpBackend, SttpClientException}
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Method, StatusCode}
 
 import java.net.{ConnectException, URI}
 import java.util.{Collections, UUID}
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaFutures {
@@ -95,8 +95,8 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
       ) // be default used config with all default values
   ): FlinkSlotsChecker = {
     import scala.jdk.CollectionConverters._
-    val slotsChecker = createSlotsCheckerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
-      case req =>
+    val slotsChecker = createSlotsCheckerWithBackend(
+      SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
         val toReturn = (req.uri.path, req.method) match {
           case (List("jobs", "overview"), Method.GET) =>
             JobsResponse(statuses)
@@ -121,7 +121,8 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
           case _ => throw new IllegalStateException()
         }
         Response(Right(toReturn), statusCode)
-    })
+      }
+    )
     slotsChecker
   }
 

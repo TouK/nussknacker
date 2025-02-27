@@ -49,6 +49,7 @@ object OpenAPIServicesConfig {
 
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
+
   import HttpClientConfig._
 
   implicit val securitySchemeNameVR: ValueReader[SecuritySchemeName] =

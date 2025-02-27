@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import cats.effect.unsafe.implicits.global
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec

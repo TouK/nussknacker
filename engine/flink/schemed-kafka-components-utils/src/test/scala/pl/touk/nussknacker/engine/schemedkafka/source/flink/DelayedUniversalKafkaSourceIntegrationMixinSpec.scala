@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory
   delayParameter,
   timestampFieldParamName
 }
-import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
@@ -22,12 +22,12 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   MockSchemaRegistryClientFactory,
   UniversalSchemaBasedSerdeProvider
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData

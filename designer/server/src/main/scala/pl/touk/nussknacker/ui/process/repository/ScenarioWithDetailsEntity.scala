@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
+import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{
   ProcessId,
   ProcessIdWithName,
-  ProcessName,
   ProcessingType,
+  ProcessName,
   ScenarioVersion,
   VersionId
 }
-import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails
 
 import java.time.Instant

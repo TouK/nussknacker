@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.utils.ignite
 
-import org.apache.ignite.configuration.{ClientConnectorConfiguration, IgniteConfiguration}
 import org.apache.ignite.{Ignite, IgniteJdbcThinDriver, Ignition}
+import org.apache.ignite.configuration.{ClientConnectorConfiguration, IgniteConfiguration}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.test.AvailablePortFinder

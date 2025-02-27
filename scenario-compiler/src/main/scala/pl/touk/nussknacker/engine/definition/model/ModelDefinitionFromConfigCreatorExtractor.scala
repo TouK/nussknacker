@@ -12,12 +12,12 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessObjectDependencies,
   WithCategories
 }
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
   Components
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
   GlobalVariableDefinitionWithImplementation

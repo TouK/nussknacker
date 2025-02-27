@@ -1,7 +1,7 @@
 import org.scalafmt.sbt.ScalafmtPlugin
+import sbt.{taskKey, Compile, Global, Setting}
 import sbt.Keys._
-import sbt.nio.Keys.{ReloadOnSourceChanges, onChangedBuildSource}
-import sbt.{Compile, Global, Setting, taskKey}
+import sbt.nio.Keys.{onChangedBuildSource, ReloadOnSourceChanges}
 import utils.Step
 
 object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {

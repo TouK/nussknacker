@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.http.backend
 
 import io.circe.{Decoder, Error}
+import sttp.client3.{asString, HttpError, Response, ResponseAs, ResponseException}
 import sttp.client3.circe.deserializeJson
-import sttp.client3.{HttpError, Response, ResponseAs, ResponseException, asString}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
 

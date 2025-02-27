@@ -7,8 +7,8 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.json.swagger._
+import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
 

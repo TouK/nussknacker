@@ -8,9 +8,9 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.output.NullOutputStream
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.common.{IsolationLevel, Uuid}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
-import org.apache.kafka.common.{IsolationLevel, Uuid}
 import org.apache.kafka.server.common.MetadataVersion
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 

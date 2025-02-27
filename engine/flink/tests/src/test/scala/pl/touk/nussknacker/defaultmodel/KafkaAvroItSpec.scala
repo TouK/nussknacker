@@ -16,6 +16,7 @@ import java.time.temporal.ChronoUnit
 class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
   import SampleSchemas._
 
   private val givenMatchingAvroObjConvertedToV2 = avroEncoder.encodeRecordOrError(

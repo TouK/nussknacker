@@ -11,9 +11,9 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
   StickyNoteAddRequest,
   StickyNoteCorrelationId,
   StickyNoteId,
-  StickyNoteUpdateRequest,
   StickyNotesError,
-  StickyNotesSettings
+  StickyNotesSettings,
+  StickyNoteUpdateRequest
 }
 import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{
   NoPermission,
@@ -21,9 +21,9 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.
   StickyNoteContentTooLong,
   StickyNoteCountLimitReached
 }
-import pl.touk.nussknacker.ui.process.repository.stickynotes.StickyNotesRepository
-import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.stickynotes.StickyNotesRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}

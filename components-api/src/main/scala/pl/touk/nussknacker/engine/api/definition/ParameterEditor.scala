@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 

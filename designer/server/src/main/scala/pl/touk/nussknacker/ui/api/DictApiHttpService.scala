@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.api
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.util.ClassUtils
-import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictNotDeclared
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictQueryService}
+import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictNotDeclared
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.ui.api.description.DictApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError

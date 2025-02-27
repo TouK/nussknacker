@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.restmodel.component
 
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentType,
   DesignerWideComponentId,
   ProcessingMode
 }
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -14,9 +14,9 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{NotFound, Ok}
+import sttp.tapir._
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.Example
-import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.circe.jsonBody
 

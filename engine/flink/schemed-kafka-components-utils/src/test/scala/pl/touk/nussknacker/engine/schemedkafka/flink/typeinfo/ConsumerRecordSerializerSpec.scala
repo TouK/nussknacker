@@ -19,7 +19,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.util.Optional
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 import scala.util.Random
 
 class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {

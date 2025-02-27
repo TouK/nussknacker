@@ -6,9 +6,8 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
 import org.testcontainers.containers.{GenericContainer => JavaGenericContainer, Network}
 import org.testcontainers.utility.DockerImageName
-
-import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
+import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
 

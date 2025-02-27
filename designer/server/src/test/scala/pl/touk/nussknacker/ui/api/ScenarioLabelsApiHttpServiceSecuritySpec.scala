@@ -12,12 +12,12 @@ import pl.touk.nussknacker.test.base.it.{
   WithAccessControlCheckingConfigScenarioHelper,
   WithSimplifiedConfigScenarioHelper
 }
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
   WithAccessControlCheckingDesignerConfig,
   WithMockableDeploymentManager
 }
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 import java.util.UUID

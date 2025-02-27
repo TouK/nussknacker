@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.Id
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Writer, WriterT}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
 import org.apache.commons.lang3.ClassUtils
@@ -27,8 +27,8 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 
 import scala.util.Try
 

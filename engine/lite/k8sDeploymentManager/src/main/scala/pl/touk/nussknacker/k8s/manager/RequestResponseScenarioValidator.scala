@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError

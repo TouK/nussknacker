@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics._
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicLong

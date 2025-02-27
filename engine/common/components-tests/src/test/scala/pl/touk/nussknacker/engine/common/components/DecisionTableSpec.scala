@@ -18,10 +18,10 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
-import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner
+import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 

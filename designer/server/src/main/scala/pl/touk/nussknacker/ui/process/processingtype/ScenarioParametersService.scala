@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.{BadRequestError, NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ScenarioParametersService private (
     parametersForProcessingType: Map[ProcessingType, ScenarioParameters],
