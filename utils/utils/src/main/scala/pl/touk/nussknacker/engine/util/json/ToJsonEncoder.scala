@@ -9,6 +9,7 @@ import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, 
 import java.time.format.DateTimeFormatter
 import java.util.ServiceLoader
 import java.util.UUID
+import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
 object ToJsonEncoder {
@@ -66,7 +67,7 @@ case class ToJsonEncoder(
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
           case a: scala.collection.Map[_, _] => encodeMap(a.toMap)
-          case a: java.util.Map[_, _]        => encodeMap(a.asScala.toMap)
+          case a: java.util.Map[_, _]        => encode(ListMap(a.asScala.toList: _*))
           case a: Iterable[_]                => fromValues(a.map(encode))
           case a: Enum[_]                    => safeString(a.toString)
           case a: java.util.Collection[_]    => fromValues(a.asScala.map(encode))

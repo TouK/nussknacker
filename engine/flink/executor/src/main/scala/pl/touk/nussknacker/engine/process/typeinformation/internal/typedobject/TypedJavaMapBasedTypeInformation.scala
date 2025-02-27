@@ -25,7 +25,7 @@ case class TypedJavaMapSerializer(
   override def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[jutil.Map[String, AnyRef]] =
     TypedJavaMapSerializer(serializers)
 
-  override def createInstance(): jutil.Map[String, AnyRef] = new jutil.HashMap()
+  override def createInstance(): jutil.Map[String, AnyRef] = new jutil.LinkedHashMap(serializers.length)
 
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]
