@@ -3,19 +3,26 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.ScenarioTestDataGenerationError
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError._
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError._
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTestingError._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodesError, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.description.TestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 import sttp.model.StatusCode.{BadRequest, NotFound}
+import sttp.tapir.{oneOfVariant, oneOfVariantFromMatchType, plainBody, Codec, CodecFormat, EndpointOutput}
 import sttp.tapir.{oneOfVariantFromMatchType, plainBody, Codec, CodecFormat, EndpointOutput}
 import sttp.tapir.EndpointIO.Example
 
@@ -117,7 +124,26 @@ class TestingApiHttpService(
               ) match {
                 case Left(error) =>
                   logger.error(s"Error during generation of test data: $error")
-                  Future(Left(TestDataGenerationError(error)))
+                  Future(
+                    Left(
+                      error match {
+                        case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
+                          cause match {
+                            case ScenarioTestDataGenerationError.NoDataGenerated =>
+                              NoDataGenerated
+                            case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
+                              NoSourcesWithTestDataGeneration
+                          }
+                        case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
+                          cause match {
+                            case SerializationError.TooManyCharactersGenerated(length, limit) =>
+                              TooManyCharactersGenerated(length, limit)
+                          }
+                        case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
+                          TooManySamplesRequested(maxSamples)
+                      }
+                    )
+                  )
                 case Right(rawScenarioTestData) =>
                   Future(Right(rawScenarioTestData.content))
               }
@@ -135,74 +161,61 @@ object TestingApiHttpService {
 
   object TestingError {
 
-    final case class TestDataGenerationError(msg: String)             extends TestingError
-    final case class NoScenario(scenarioName: ProcessName)            extends TestingError
-    final case class NoProcessingType(processingType: ProcessingType) extends TestingError
-    final case object NoPermission                                    extends TestingError with CustomAuthorizationError
-    final case class MalformedTypingResult(msg: String)               extends TestingError
+    final case object NoPermission extends TestingError with CustomAuthorizationError
 
-    implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
+    sealed trait BadRequestTestingError extends TestingError
+
+    object BadRequestTestingError {
+      final case class TooManyCharactersGenerated(length: Int, limit: Int) extends BadRequestTestingError
+      final case class TooManySamplesRequested(maxSamples: Int)            extends BadRequestTestingError
+
+      implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
+          case TooManyCharactersGenerated(length, limit) =>
+            TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+          case TooManySamplesRequested(maxSamples) =>
+            TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+        }
+      }
+
     }
 
-    implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
-        s"ProcessingType type: ${e.processingType} not found"
-      )
-    }
+    sealed trait NotFoundTestingError extends TestingError
 
-    implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
-        s"The request content was malformed:\n${e.msg}"
-      )
-    }
+    object NotFoundTestingError {
+      final case class NoScenario(scenarioName: ProcessName) extends NotFoundTestingError
+      final case object NoDataGenerated                      extends NotFoundTestingError
+      final case object NoSourcesWithTestDataGeneration      extends NotFoundTestingError
 
-    implicit val testDataGenerationErrortCoded: Codec[String, TestDataGenerationError, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[TestDataGenerationError](e =>
-        s"Error during generation of test data: \n${e.msg}"
-      )
+      implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
+          case NoScenario(scenarioName)        => s"No scenario ${scenarioName.value} found"
+          case NoDataGenerated                 => TestingApiErrorMessages.noDataGenerated
+          case NoSourcesWithTestDataGeneration => TestingApiErrorMessages.noSourcesWithTestDataGeneration
+        }
+      }
+
+      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+          s"No scenario ${e.scenarioName} found"
+        )
+      }
+
     }
 
   }
 
   object Examples {
 
-    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
-      oneOfVariantFromMatchType(
+    val noScenarioExample: Example[NoScenario] = Example.of(
+      summary = Some("No scenario {scenarioName} found"),
+      value = NoScenario(ProcessName("'example scenario'"))
+    )
+
+    val noScenarioErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
+      oneOfVariant(
         NotFound,
-        plainBody[NoScenario]
-          .example(
-            Example.of(
-              summary = Some("No scenario {scenarioName} found"),
-              value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
-      )
-
-    val testDataGenerationErrorExample: EndpointOutput.OneOfVariant[TestDataGenerationError] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[TestDataGenerationError]
-          .example(
-            Example.of(
-              summary = Some("There was a problem with parsing test data"),
-              value = TestDataGenerationError("Parsing of data failed")
-            )
-          )
-      )
-
-    val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
-      oneOfVariantFromMatchType(
-        BadRequest,
-        plainBody[MalformedTypingResult]
-          .example(
-            Example.of(
-              summary = Some("Malformed TypingResult sent in request"),
-              value = MalformedTypingResult(
-                "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
-              )
-            )
-          )
+        plainBody[NoScenario].example(noScenarioExample)
       )
 
   }

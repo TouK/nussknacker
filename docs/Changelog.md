@@ -94,6 +94,10 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7591](https://github.com/TouK/nussknacker/pull/7591) Improve scenario testing error messages
+  - Error messages should point to the appropriate `testDataSettings` where possible
+  - `testDataSettings.testDataMaxLength` is validated also for received test data
+  - Change `testDataSettings.resultsMaxBytes` to long to allow higher limit than 2 GiB
 
 ## 1.18
 

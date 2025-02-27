@@ -7,17 +7,21 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
+
+import scala.util.parsing.input.NoPosition.longString
+import scala.util.parsing.json.JSON
 
 class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   private val maxSamplesCount   = 5
-  private val testDataMaxLength = 200
+  private val testDataMaxLength = 1000
 
   private val serDe = new PreliminaryScenarioTestDataSerDe(
     TestDataSettings(
       maxSamplesCount = maxSamplesCount,
       testDataMaxLength = testDataMaxLength,
-      resultsMaxBytes = Int.MaxValue
+      resultsMaxBytes = Long.MaxValue
     )
   )
 
@@ -45,13 +49,15 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   test("should fail trying to serialize too much bytes") {
     val testData = PreliminaryScenarioTestData(
       NonEmptyList.fromListUnsafe(
-        List.fill(10)(PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a JSON string")))
+        List.fill(10)(
+          PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a long JSON string...".repeat(10)))
+        )
       )
     )
 
     val error = serDe.serialize(testData).leftValue
 
-    error shouldBe s"Too much data generated, limit is: $testDataMaxLength"
+    error shouldBe SerializationError.TooManyCharactersGenerated(length = 2449, limit = testDataMaxLength)
   }
 
   test("should deserialize scenario test data") {
@@ -60,13 +66,23 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
     result shouldBe scenarioTestData
   }
 
+  test("should fail trying to parse too many characters") {
+    val longString = "a long JSON string...".repeat(10)
+    val tooBigRawScenarioTestData =
+      RawScenarioTestData(List.fill(10)(s"""{"sourceId":"source1","record":"$longString"}""").mkString("\n"))
+
+    val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
+
+    error shouldBe DeserializationError.TooManyCharacters(length = 2449, limit = testDataMaxLength)
+  }
+
   test("should fail trying to parse too many records") {
     val tooBigRawScenarioTestData =
       RawScenarioTestData(List.fill(10)("""{"sourceId":"source1","record":"a JSON string"}""").mkString("\n"))
 
     val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
 
-    error shouldBe s"Too many samples: 10, limit is: $maxSamplesCount"
+    error shouldBe DeserializationError.TooManySamples(size = 10, limit = maxSamplesCount)
   }
 
   test("should fail trying to parse invalid record") {
@@ -74,7 +90,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
     val error = serDe.deserialize(RawScenarioTestData(invalidRecord)).leftValue
 
-    error shouldBe s"Could not parse record: '$invalidRecord'"
+    error shouldBe DeserializationError.RecordParsingError(invalidRecord)
   }
 
 }

@@ -2214,10 +2214,12 @@ paths:
                   value: 'Expected Filter but got: Source'
                 Example3:
                   summary: Too many samples requested
-                  value: Too many samples requested, limit is 100
+                  value: Too many samples requested, limit is 100. Please configure
+                    'testDataSettings.maxSamplesCount' to increase the limit
                 Example4:
-                  summary: Serialization error
-                  value: 'Error during serialization: Failed to serialize test data'
+                  summary: Too many characters generated
+                  value: 1000 characters were generated, limit is 500. Please configure
+                    'testDataSettings.testDataMaxLength' to increase the limit
         '401':
           description: ''
           content:
@@ -2253,7 +2255,7 @@ paths:
                   value: No scenario 'example scenario' found
                 Example1:
                   summary: No test data generated
-                  value: No test data was generated
+                  value: No data was generated
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3222,17 +3224,12 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: ''
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: Malformed TypingResult sent in request
-                  value: |-
-                    The request content was malformed:
-                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
         '401':
           description: ''
           content:
@@ -3446,10 +3443,14 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: There was a problem with parsing test data
-                  value: "Error during generation of test data: \nParsing of data\
-                    \ failed"
+                Example0:
+                  summary: Too many characters were generated
+                  value: 5000 characters were generated, limit is 2000. Please configure
+                    'testDataSettings.testDataMaxLength' to increase the limit
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested, limit is 1000. Please configure
+                    'testDataSettings.maxSamplesCount' to increase the limit
         '401':
           description: ''
           content:
@@ -3480,9 +3481,15 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: No data was generated
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:

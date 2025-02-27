@@ -425,7 +425,7 @@ class ManagementResourcesSpec
     }
   }
 
-  test("refuses to test if too much data") {
+  test("refuses to test if too much data received") {
 
     import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -434,15 +434,66 @@ class ManagementResourcesSpec
         .streaming(processName.value)
         .parallelism(1)
         .source("startProcess", "csv-source")
-        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'".spel)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
     }
     saveCanonicalProcessAndAssertSuccess(process)
-    val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
-    tooLargeTestDataContentList.foreach { tooLargeData =>
-      testScenario(process, tooLargeData) ~> check {
-        status shouldEqual StatusCodes.BadRequest
-      }
+    val tooManySamples = List
+      .fill(50)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, tooManySamples) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Received 50 samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
+    }
+
+    val longString = "a long json string".repeat(50)
+    val tooManyCharacters = List
+      .fill(20)("\"" + longString + "\"")
+      .mkString("\n")
+    testScenario(process, tooManyCharacters) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Received 18059 characters, limit is 10000. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
+    }
+  }
+
+  test("refuses to test if too big test results generated") {
+
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+    val bigListExpression = (1 to 1000).mkString("{", ",", "}").spel
+    val process = {
+      ScenarioBuilder
+        .streaming(processName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .buildSimpleVariable("big list", "bigList", bigListExpression)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
+    }
+    saveCanonicalProcessAndAssertSuccess(process)
+
+    val testDataContent = List
+      .fill(10)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, testDataContent) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      // Approximate size can differ slightly depending on test execution environment.
+      responseAs[
+        String
+      ] should fullyMatch regex "Test results size exceeded, approximate size in bytes: \\d+, but limit is: 500000. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
     }
   }
 

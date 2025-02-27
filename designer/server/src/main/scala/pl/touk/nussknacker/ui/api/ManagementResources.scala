@@ -15,8 +15,13 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ScenarioTestDataGenerationError,
+  TestDataPreparationError
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.ui.{BadRequestError, OtherError}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -25,6 +30,9 @@ import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError.TooManySamples
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{GenerateTestDataError, PerformTestError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,6 +64,61 @@ object ManagementResources {
           }.asJson,
           "exceptions" -> exceptions.sortBy(_.context.id).asJson
         )
+    }
+
+  }
+
+  final case class GenerateTestDataDesignerError(message: String) extends BadRequestError(message)
+
+  private object GenerateTestDataDesignerError {
+
+    def apply(generateTestDataError: ScenarioTestService.GenerateTestDataError): GenerateTestDataDesignerError = {
+      GenerateTestDataDesignerError(generateTestDataError match {
+        case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
+          cause match {
+            case ScenarioTestDataGenerationError.NoDataGenerated => TestingApiErrorMessages.noDataGenerated
+            case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
+              TestingApiErrorMessages.noSourcesWithTestDataGeneration
+          }
+        case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
+          cause match {
+            case SerializationError.TooManyCharactersGenerated(length, limit) =>
+              TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+          }
+        case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
+          TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+      })
+    }
+
+  }
+
+  final case class PerformTestDesignerError(message: String) extends BadRequestError(message)
+
+  private object PerformTestDesignerError {
+
+    def apply(performTestError: ScenarioTestService.PerformTestError): PerformTestDesignerError = {
+      PerformTestDesignerError(performTestError match {
+        case PerformTestError.DeserializationError(cause) =>
+          cause match {
+            case DeserializationError.TooManyCharacters(length, limit) =>
+              TestingApiErrorMessages.tooManyCharactersReceived(length, limit)
+            case DeserializationError.TooManySamples(size, limit) =>
+              TestingApiErrorMessages.tooManySamplesReceived(size, limit)
+            case DeserializationError.RecordParsingError(rawTestRecord) =>
+              TestingApiErrorMessages.recordParsingError(rawTestRecord)
+            case DeserializationError.NoRecords =>
+              TestingApiErrorMessages.noInputRecords
+          }
+        case PerformTestError.TestDataPreparationError(cause) =>
+          cause match {
+            case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
+              TestingApiErrorMessages.missingSourceForRecord(sourceId, recordIndex)
+            case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
+              TestingApiErrorMessages.multipleSourcesRequiredForRecord(recordIndex)
+          }
+        case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+          TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
+      })
     }
 
   }
@@ -235,7 +298,10 @@ class ManagementResources(
                             details.isFragment,
                             RawScenarioTestData(testDataContent)
                           )
-                          .flatMap(mapResultsToHttpResponse)
+                          .flatMap {
+                            case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                            case Right(value) => mapResultsToHttpResponse(value)
+                          }
                       case Left(error) =>
                         Future.failed(ProcessUnmarshallingError(error.toString))
                     }
@@ -260,7 +326,7 @@ class ManagementResources(
                           details.isFragment,
                           testSampleSize
                         ) match {
-                          case Left(error) => Future.failed(ProcessUnmarshallingError(error))
+                          case Left(error) => Future.failed(GenerateTestDataDesignerError(error))
                           case Right(rawScenarioTestData) =>
                             scenarioTestService
                               .performTest(
@@ -269,7 +335,10 @@ class ManagementResources(
                                 details.isFragment,
                                 rawScenarioTestData
                               )
-                              .flatMap(mapResultsToHttpResponse)
+                              .flatMap {
+                                case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                                case Right(value) => mapResultsToHttpResponse(value)
+                              }
                         }
                       }
                     }
@@ -294,7 +363,10 @@ class ManagementResources(
                           process.isFragment,
                           testParametersRequest.sourceParameters
                         )
-                        .flatMap(mapResultsToHttpResponse)
+                        .flatMap {
+                          case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                          case Right(value) => mapResultsToHttpResponse(value)
+                        }
                     }
                   }
                 }

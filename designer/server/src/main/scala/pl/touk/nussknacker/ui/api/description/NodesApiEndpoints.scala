@@ -29,8 +29,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => EvaluatedParameter}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => EvaluatedParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -54,6 +53,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   BadRequestNodesError,
@@ -62,8 +62,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
-  Serialization,
   SourceCompilation,
+  TooManyCharactersGenerated,
   TooManySamplesRequested,
   UnsupportedSourcePreview
 }
@@ -82,7 +82,7 @@ import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectTyping
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedTaggedSchemaHelper.typedTaggedTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedUnionSchemaHelper.typedUnionTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.UnknownSchemaHelper.unknownTypeSchema
-import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
@@ -426,8 +426,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     value = TooManySamplesRequested(100)
                   ),
                   Example.of(
-                    summary = Some("Serialization error"),
-                    value = Serialization("Failed to serialize test data")
+                    summary = Some("Too many characters generated"),
+                    value = TooManyCharactersGenerated(length = 1000, limit = 500)
                   )
                 )
               )
@@ -1572,7 +1572,7 @@ object NodesApiEndpoints {
         case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
         case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
         case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
-        case class Serialization(msg: String)                                extends BadRequestNodesError
+        case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
 
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
@@ -1580,9 +1580,11 @@ object NodesApiEndpoints {
               s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
-            case TooManySamplesRequested(maxSamples)       => s"Too many samples requested, limit is ${maxSamples}"
-            case MalformedTypingResult(msg)                => s"The request content was malformed:\n${msg}"
-            case Serialization(msg)                        => s"Error during serialization: ${msg}"
+            case TooManySamplesRequested(maxSamples) =>
+              TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+            case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
+            case TooManyCharactersGenerated(length, limit) =>
+              TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1601,7 +1603,7 @@ object NodesApiEndpoints {
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
             case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
-            case NoDataGenerated                  => "No test data was generated"
+            case NoDataGenerated                  => TestingApiErrorMessages.noDataGenerated
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
 
