@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
@@ -19,6 +19,12 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.confluent.{AzureKafkaAvroElementSerde, ConfluentKafkaAvroElementSerde}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaId,
+  SchemaIdFromMessageExtractor,
+  SchemaRegistryClientFactoryWithRegistration,
+  SchemaRegistryClientWithRegistration
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -26,14 +32,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockSchemaRegistryClient
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  SchemaId,
-  SchemaIdFromMessageExtractor,
-  SchemaRegistryClientFactoryWithRegistration,
-  SchemaRegistryClientWithRegistration
-}
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets

@@ -7,13 +7,13 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.UUID

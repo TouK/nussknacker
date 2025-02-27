@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.k8s.manager
 
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  DeploymentUpdateStrategy,
   DMCancelScenarioCommand,
   DMRunDeploymentCommand,
-  DMValidateScenarioCommand,
-  DataFreshnessPolicy,
-  DeploymentUpdateStrategy
+  DMValidateScenarioCommand
 }
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -25,11 +25,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
+import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volume}
 import skuber.Container.Port
 import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volume}
 import sttp.client3._
 
 import java.nio.file.Files

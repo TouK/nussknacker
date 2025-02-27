@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import org.apache.avro.SchemaBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue

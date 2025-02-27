@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
-  SupertypeClassResolutionStrategy,
-  looseFinder
+  looseFinder,
+  SupertypeClassResolutionStrategy
 }
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.Implicits.RichIterable

@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.resultcollector
 import cats.Monad
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.ContextId
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 
 import scala.language.higherKinds
 

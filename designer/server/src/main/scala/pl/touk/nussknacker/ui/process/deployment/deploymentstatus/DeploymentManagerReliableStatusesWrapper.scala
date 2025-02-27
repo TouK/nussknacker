@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 
 import akka.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentStatusDetails, WithDataFreshnessStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.ScenarioIdData
 import pl.touk.nussknacker.ui.security.api.LoggedUser

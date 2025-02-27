@@ -14,11 +14,11 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
   versionAnnotationForScenario
 }
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
+import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.apps.v1.Deployment.Strategy
-import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
 case class MountableResources(
     commonConfigConfigMap: String,

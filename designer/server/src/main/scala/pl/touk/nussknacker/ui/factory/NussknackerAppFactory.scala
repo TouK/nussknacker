@@ -2,28 +2,28 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.{
   ExecutionContextWithIORuntimeAdapter,
   JavaClassVersionChecker,
   SLF4JBridgeHandlerRegistrar
 }
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypeDataLoader,
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend

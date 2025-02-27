@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.test.containers
 
 import com.typesafe.scalalogging.LazyLogging
-import org.testcontainers.containers.output.OutputFrame.OutputType
 import org.testcontainers.containers.output.{BaseConsumer, OutputFrame}
+import org.testcontainers.containers.output.OutputFrame.OutputType
 import pl.touk.nussknacker.test.containers.LogLevelConfigurableScalaLoggingConsumer.LoggerLevel
 
 class LogLevelConfigurableScalaLoggingConsumer(stdoutLogLevel: LoggerLevel, stderrLogLevel: LoggerLevel)

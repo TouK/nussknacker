@@ -2,22 +2,22 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
   DeploymentManagerProvider,
   MetaDataInitializer
 }
+import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymentManager {
 

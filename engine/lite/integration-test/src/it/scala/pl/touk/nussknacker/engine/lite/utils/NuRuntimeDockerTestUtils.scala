@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.lite.utils
 
 import com.dimafeng.testcontainers.GenericContainer
 import org.slf4j.Logger
+import org.testcontainers.containers.{BindMode, Network}
 import org.testcontainers.containers.output.{OutputFrame, Slf4jLogConsumer}
 import org.testcontainers.containers.wait.strategy.{Wait, WaitStrategy, WaitStrategyTarget}
-import org.testcontainers.containers.{BindMode, Network}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 

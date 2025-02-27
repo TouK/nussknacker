@@ -1,27 +1,27 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
-import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.esotericsoftware.kryo.io.{Input, Output}
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.api.common.typeutils.base.array.StringArraySerializer
 import org.apache.flink.api.common.typeutils.base.{
   GenericArraySerializer,
   IntSerializer,
   LongSerializer,
   StringSerializer
 }
+import org.apache.flink.api.common.typeutils.base.array.StringArraySerializer
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
+import org.scalatest.{Assertion, OptionValues}
 import org.scalatest.Inside.inside
 import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, OptionValues}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin

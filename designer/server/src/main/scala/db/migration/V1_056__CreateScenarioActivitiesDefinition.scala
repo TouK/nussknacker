@@ -102,7 +102,8 @@ object V1_056__CreateScenarioActivitiesDefinition {
 
       override def * =
         (id :: tupleWithoutAutoIncId.productElements).tupled <> (
-          ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
+          ScenarioActivityEntityData.apply _ tupled,
+          ScenarioActivityEntityData.unapply
         )
 
     }

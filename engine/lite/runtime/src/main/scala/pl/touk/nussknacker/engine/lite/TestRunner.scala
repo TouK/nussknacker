@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite
 
+import cats.{~>, Id, Monad}
 import cats.data.Validated.{Invalid, Valid}
-import cats.{Id, Monad, ~>}
 import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
@@ -14,12 +14,12 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode._
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.DurationInt
 import scala.language.higherKinds
 
 trait TestRunner {

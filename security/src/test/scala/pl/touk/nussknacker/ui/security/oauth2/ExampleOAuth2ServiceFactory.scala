@@ -8,8 +8,8 @@ import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestA
 import sttp.client3.SttpBackend
 
 import java.net.URI
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse])(
     implicit ec: ExecutionContext

@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.DefaultActions
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ProblemStateStatus, statusActionsPF}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessStateDefinitionManager,
   ScenarioActionName,
   StateDefinitionDetails,
   StateStatus
 }
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.DefaultActions
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{statusActionsPF, ProblemStateStatus}
 
 /**
   * Base [[ProcessStateDefinitionManager]] with basic state definitions and state transitions.

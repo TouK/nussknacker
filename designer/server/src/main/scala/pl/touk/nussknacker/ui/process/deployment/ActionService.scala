@@ -6,21 +6,21 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider,
   ScenarioStatusWithAllowedActions
 }
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
 import java.time.Clock
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
 // Responsibility of this class is to wrap deployment actions with persistent, transactional context.

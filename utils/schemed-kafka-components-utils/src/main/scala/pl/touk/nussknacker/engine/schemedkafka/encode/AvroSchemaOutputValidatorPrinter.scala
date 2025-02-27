@@ -8,9 +8,10 @@ import scala.jdk.CollectionConverters._
 
 object AvroSchemaOutputValidatorPrinter {
 
-  import OutputValidatorErrorsMessageFormatter._
   import cats._
   import implicits._
+
+  import OutputValidatorErrorsMessageFormatter._
 
   private implicit class ListTypesPrinter(list: List[String]) {
     def printType: String = list.mkString(TypesSeparator)

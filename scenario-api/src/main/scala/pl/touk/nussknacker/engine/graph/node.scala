@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueCompileTimeValidation,
   ParameterValueInput
 }
-import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef

@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.testmode
 
 import cats.Monad
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.language.higherKinds

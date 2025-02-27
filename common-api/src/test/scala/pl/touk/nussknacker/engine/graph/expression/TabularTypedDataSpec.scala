@@ -5,12 +5,12 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
   CellsCountInRowDifferentThanColumnsCount,
   ColumnNameUniquenessViolation,
   InvalidCellValues
 }
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
 
 class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
 

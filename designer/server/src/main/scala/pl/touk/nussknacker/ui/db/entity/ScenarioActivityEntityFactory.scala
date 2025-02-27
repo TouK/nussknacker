@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum._
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -82,7 +82,8 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
         errorMessage,
         additionalProperties,
       ) <> (
-        ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
+        ScenarioActivityEntityData.apply _ tupled,
+        ScenarioActivityEntityData.unapply
       )
 
   }

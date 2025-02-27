@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.loader
 
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
 
 import java.net.{URL, URLClassLoader}
 import java.nio.file.Files

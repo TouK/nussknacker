@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.api.description.stickynotes
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions

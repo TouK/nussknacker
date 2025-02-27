@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 
-import io.circe.{Json, parser}
+import io.circe.{parser, Json}
 import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.validation.ValidationMode

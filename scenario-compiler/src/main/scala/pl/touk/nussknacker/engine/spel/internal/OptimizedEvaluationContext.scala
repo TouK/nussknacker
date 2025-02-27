@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.spel.internal
 
 import org.springframework.core.convert.{ConversionService, TypeDescriptor}
-import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
-import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
+import org.springframework.expression.spel.support._
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.extension.ExtensionMethodResolver
+import pl.touk.nussknacker.engine.spel.{internal, NuReflectiveMethodExecutor}
 import pl.touk.nussknacker.engine.spel.internal.propertyAccessors.MethodAccessChecker
-import pl.touk.nussknacker.engine.spel.{NuReflectiveMethodExecutor, internal}
 
 import java.util
 import java.util.Collections

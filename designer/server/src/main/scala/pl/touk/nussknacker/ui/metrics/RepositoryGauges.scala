@@ -8,9 +8,9 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
 
 class RepositoryGauges(
     metricRegistry: MetricRegistry,

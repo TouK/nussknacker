@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.security.oidc
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import io.circe.Decoder
 import pdi.jwt.JwtAlgorithm
-import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 import pl.touk.nussknacker.ui.security.oauth2.{IntrospectedAccessTokenData, OAuth2ClientApi}
+import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 import pl.touk.nussknacker.ui.security.oidc.OidcService.createJwtValidator
 import sttp.client3.SttpBackend
 

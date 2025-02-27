@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.util.functions
 import cats.data.ValidatedNel
 import cats.implicits._
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{
   TypingResult,
   Unknown
 }
-import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
 import scala.annotation.{tailrec, varargs}

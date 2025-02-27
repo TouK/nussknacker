@@ -7,9 +7,9 @@ import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.streaming.connectors.kafka
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.kafka.serialization
 

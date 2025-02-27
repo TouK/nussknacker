@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}

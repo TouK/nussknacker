@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.javaapi.context.transformation
 
-import java.util.Optional
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, NodeId, Params}
-import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.transformation._
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 
+import java.util.Optional
 import scala.jdk.CollectionConverters._
 
 trait JavaDynamicComponent[T, VC, PAR, ST] {

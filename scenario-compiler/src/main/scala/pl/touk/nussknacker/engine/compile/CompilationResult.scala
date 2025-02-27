@@ -1,26 +1,25 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.{Applicative, Traverse}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.map._
 import cats.kernel.Semigroup
-import cats.{Applicative, Traverse}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyProcess,
   InvalidRootNode,
   InvalidTailOfBranch
 }
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor, ProcessUncanonizationNodeError}
 import pl.touk.nussknacker.engine.canonize
-
-import scala.language.{higherKinds, reflectiveCalls}
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor, ProcessUncanonizationNodeError}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.language.{higherKinds, reflectiveCalls}
 import scala.reflect.ClassTag
 
 case class CompilationResult[+Result](

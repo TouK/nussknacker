@@ -12,8 +12,8 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaClient, KafkaRecordUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaRecordUtils, UnspecializedTopicName, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.AbstractConfluentKafkaAvroSerializer

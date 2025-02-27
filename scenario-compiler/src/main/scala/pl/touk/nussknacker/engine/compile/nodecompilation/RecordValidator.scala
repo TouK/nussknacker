@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid, valid}
+import cats.data.Validated.{valid, Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidationHelper.validateVariableValue
-import pl.touk.nussknacker.engine.graph.node.{recordKeyFieldName, recordValueFieldName}
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
+import pl.touk.nussknacker.engine.graph.node.{recordKeyFieldName, recordValueFieldName}
 
 final case class CompiledIndexedRecordField(
     field: Field,

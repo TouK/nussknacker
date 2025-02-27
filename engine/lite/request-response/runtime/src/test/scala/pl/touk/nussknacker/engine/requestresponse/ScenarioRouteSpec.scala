@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenge}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenge}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.http.scaladsl.testkit.ScalatestRouteTest

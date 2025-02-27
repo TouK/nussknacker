@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.graph
 
 import io.circe.generic.extras.ConfiguredJsonCodec
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 //unstable, may change in the future...
 @ConfiguredJsonCodec sealed abstract class EdgeType {

@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.dict
 
 import cats.data.Validated
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictEntryWithKeyNotExists
 import pl.touk.nussknacker.engine.api.dict._
+import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictEntryWithKeyNotExists
 import pl.touk.nussknacker.engine.api.dict.embedded.{EmbeddedDictQueryService, EmbeddedDictRegistry}
 
 import scala.concurrent.{ExecutionContext, Future}

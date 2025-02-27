@@ -14,9 +14,9 @@ import scala.reflect.ClassTag
 
 class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
-  import RichKafkaConsumer._
-
   import scala.jdk.CollectionConverters._
+
+  import RichKafkaConsumer._
 
   def consumeWithJson[V: Decoder: ClassTag](
       topic: String,

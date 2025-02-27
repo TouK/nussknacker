@@ -1,8 +1,8 @@
 import better.files.File
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
+import sbt.{taskKey, Def, Global, Level, Setting, State}
 import sbt.Keys.{aggregate, onLoad, streams}
 import sbt.internal.util.ManagedLogger
-import sbt.{Def, Global, Level, Setting, State, taskKey}
 
 import scala.util.Using
 

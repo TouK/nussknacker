@@ -14,19 +14,19 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
+import pl.touk.nussknacker.engine.kafka.source.delayed.{DelayCalculator, FixedDelayCalculator}
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
   extractDelayInMillis,
   extractTimestampField
 }
-import pl.touk.nussknacker.engine.kafka.source.delayed.{DelayCalculator, FixedDelayCalculator}
 import pl.touk.nussknacker.engine.kafka.source.flink.{
   FlinkConsumerRecordBasedKafkaSource,
   FlinkKafkaSource,
   FlinkKafkaSourceImplFactory
 }
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 /**
   * `createDelayedKafkaSourceWithFixedDelay` is used to create KafkaSource with specified fixed delay (eg 2 hours).

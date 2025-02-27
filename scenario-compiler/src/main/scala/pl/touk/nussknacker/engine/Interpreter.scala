@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
+import scala.util.control.NonFatal
 
 // TODO Interpreter and things around for sake of clarity of responsibilities between modules should be moved to the separate
 //      module used only on runtime side. In the scenario-compiler module would stay only things responsible for

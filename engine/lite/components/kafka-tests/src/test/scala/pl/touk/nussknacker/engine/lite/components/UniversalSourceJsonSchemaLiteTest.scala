@@ -22,10 +22,11 @@ class UniversalSourceJsonSchemaLiteTest
     with ValidatedValuesDetailedMessage
     with FunctionalTestMixin {
 
-  import LiteKafkaComponentProvider._
   import io.circe.parser._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import LiteKafkaComponentProvider._
 
   private val schema = JsonSchemaBuilder.parseSchema("""{
       |  "type": "object",

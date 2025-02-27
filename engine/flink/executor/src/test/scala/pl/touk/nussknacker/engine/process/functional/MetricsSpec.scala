@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine.process.functional
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Counter, Gauge, Histogram}
+import org.scalatest.{BeforeAndAfterEach, Outcome}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName

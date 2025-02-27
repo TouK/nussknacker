@@ -23,8 +23,8 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.
   StickyNoteCountLimitReached
 }
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
 
 import java.time.Instant
@@ -32,6 +32,7 @@ import java.time.Instant
 class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import stickynotes.Dtos._
+
   import TapirCodecs.VersionIdCodec._
 
   lazy val encoder: Encoder[TypingResult] = TypingResult.encoder

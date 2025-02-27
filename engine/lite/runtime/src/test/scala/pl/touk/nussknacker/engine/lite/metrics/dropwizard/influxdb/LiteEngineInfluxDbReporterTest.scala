@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb
 
 import com.typesafe.config.{Config, ConfigFactory}
-import io.dropwizard.metrics5.influxdb.InfluxDbReporter
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
+import io.dropwizard.metrics5.influxdb.InfluxDbReporter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

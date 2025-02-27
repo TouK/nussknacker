@@ -2,9 +2,9 @@ package pl.touk.nussknacker.test.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -16,12 +16,12 @@ import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.stickynotes.{DbStickyNotesRepository, StickyNotesRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}

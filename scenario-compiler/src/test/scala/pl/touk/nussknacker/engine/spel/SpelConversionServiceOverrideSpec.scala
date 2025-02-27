@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Invalid
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory

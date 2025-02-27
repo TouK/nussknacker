@@ -13,12 +13,12 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
-import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
-import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Response, SttpBackend}
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, StatusCode}
 
 import java.net.URL

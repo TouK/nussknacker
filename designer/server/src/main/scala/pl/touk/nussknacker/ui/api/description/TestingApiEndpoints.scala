@@ -25,8 +25,8 @@ import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.model.StatusCode.Ok
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
 
 class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {

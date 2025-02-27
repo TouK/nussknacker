@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.development.manager
 
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment._
 
 class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager)
     extends OverridingProcessStateDefinitionManager(

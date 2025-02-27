@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.SafeLazyValues
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 
-import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.{Failure, Success, Try}
 
 trait TimeMeasuringService extends Lifecycle { self: Service =>

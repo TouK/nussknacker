@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.FragmentIcon
 import pl.touk.nussknacker.engine.definition.fragment.{

@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessingTypeActionService,
   ProcessingTypeDeployedScenariosProvider,
   ScenarioActivityManager
 }
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}

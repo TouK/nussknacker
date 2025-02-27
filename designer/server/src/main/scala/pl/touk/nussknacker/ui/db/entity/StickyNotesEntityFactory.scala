@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import io.circe._
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent
-import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent.StickyNoteEvent
-import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
-import slick.sql.SqlProfile.ColumnOption.NotNull
-import io.circe.syntax._
-import io.circe._
 import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
   Dimensions,
   StickyNote,
   StickyNoteCorrelationId,
   StickyNoteId
 }
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent.StickyNoteEvent
+import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
+import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
 import java.util.UUID

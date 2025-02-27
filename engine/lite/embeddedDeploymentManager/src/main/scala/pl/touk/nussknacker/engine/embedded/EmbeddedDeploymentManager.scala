@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.embedded
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.{newdeployment, ModelData}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -8,11 +9,10 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.{ModelData, newdeployment}
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
 /*

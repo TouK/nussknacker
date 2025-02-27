@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.test.utils
 
 import com.typesafe.config.{Config, ConfigObject}
+
 import scala.jdk.CollectionConverters._
 
 private[test] class DesignerTestConfigValidator(config: Config) {

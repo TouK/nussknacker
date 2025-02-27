@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
-import pl.touk.nussknacker.engine.management.jobrunner.RemoteFlinkScenarioJobRunner.{MainClassName, prepareProgramArgs}
+import pl.touk.nussknacker.engine.management.jobrunner.RemoteFlinkScenarioJobRunner.{prepareProgramArgs, MainClassName}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
 import scala.concurrent.{ExecutionContext, Future}

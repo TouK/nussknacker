@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector

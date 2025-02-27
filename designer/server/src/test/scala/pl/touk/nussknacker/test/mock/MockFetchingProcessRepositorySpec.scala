@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
 import pl.touk.nussknacker.test.base.it.ProcessesQueryEnrichments._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioShapeFetchStrategy, ScenarioWithDetailsEntity}

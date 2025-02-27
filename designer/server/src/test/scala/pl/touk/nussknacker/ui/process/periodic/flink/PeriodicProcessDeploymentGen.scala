@@ -1,6 +1,12 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
-import pl.touk.nussknacker.ui.process.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, ScheduleName}
+import pl.touk.nussknacker.ui.process.periodic.model.{
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentState,
+  PeriodicProcessDeploymentStatus,
+  ScheduleName
+}
 
 import java.time.LocalDateTime
 

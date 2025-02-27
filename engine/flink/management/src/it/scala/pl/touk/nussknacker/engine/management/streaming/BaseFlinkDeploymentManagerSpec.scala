@@ -4,10 +4,11 @@ import com.typesafe.scalalogging.StrictLogging
 import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 
 import java.net.URI
 import java.nio.file.{Files, Paths}

@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.openapi
 
 import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.{Assertion, BeforeAndAfterAll, LoneElement, TryValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, BeforeAndAfterAll, LoneElement, TryValues}
 import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Request, Response, SttpBackend}
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{HeaderNames, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global

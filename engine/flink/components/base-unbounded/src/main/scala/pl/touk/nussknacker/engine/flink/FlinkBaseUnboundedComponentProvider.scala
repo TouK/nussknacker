@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.flink.util.transformer.{EventGeneratorSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{
   SessionWindowAggregateTransformer,
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
   TumblingAggregateTransformer
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{EventGeneratorSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkBaseUnboundedComponentProvider extends ComponentProvider {

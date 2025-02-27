@@ -8,24 +8,24 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.ScheduledDeploymentDetails
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.EnrichedProcessConfig
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.EnrichedProcessConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic._
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 
-import java.time.temporal.ChronoField
 import java.time.{Clock, LocalDate, LocalDateTime}
+import java.time.temporal.ChronoField
 import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future

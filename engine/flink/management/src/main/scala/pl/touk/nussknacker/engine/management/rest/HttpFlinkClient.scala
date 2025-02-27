@@ -15,8 +15,8 @@ import sttp.model.Uri
 import java.io.File
 import java.net.URI
 import java.util.concurrent.TimeoutException
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 class HttpFlinkClient(restUrl: URI, scenarioStateRequestTimeout: FiniteDuration, jobManagerTimeout: FiniteDuration)(
     implicit backend: SttpBackend[Future, Any],

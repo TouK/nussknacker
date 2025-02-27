@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.openapi.parser
 
 import cats.data.Validated
-import io.swagger.v3.oas.models.PathItem.HttpMethod
 import io.swagger.v3.oas.models.{OpenAPI, Operation}
+import io.swagger.v3.oas.models.PathItem.HttpMethod
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, ServiceName, SwaggerService}
 
 import scala.jdk.CollectionConverters._

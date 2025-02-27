@@ -1,24 +1,24 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, StateT}
+import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, MethodTypeInfo, Parameter, TypingFunction}
-import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
-  AddPropertyNextToGetter,
-  DoNothing,
-  ReplaceGetterWithProperty
-}
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   TypingFunctionForClassMember,
   VisibleMembersPredicate
 }
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
+  AddPropertyNextToGetter,
+  DoNothing,
+  ReplaceGetterWithProperty
+}
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.{
   extractClass,
   extractGenericReturnType,

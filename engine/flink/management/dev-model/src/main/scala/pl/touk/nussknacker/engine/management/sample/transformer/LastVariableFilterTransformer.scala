@@ -4,6 +4,7 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
@@ -12,9 +13,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,

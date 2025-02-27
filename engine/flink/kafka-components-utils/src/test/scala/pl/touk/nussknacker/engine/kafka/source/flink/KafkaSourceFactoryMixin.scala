@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
@@ -13,6 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaConfig, KafkaRecordUtils, KafkaSpec}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{
   ConsumerRecordDeserializationSchemaFactory,
   ConsumerRecordToJsonFormatterFactory
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.{
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets

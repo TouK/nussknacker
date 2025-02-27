@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.Invalid
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, OptionValues}
+import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -16,22 +17,19 @@ import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 
-import scala.jdk.CollectionConverters._
 import scala.jdk.CollectionConverters._
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {

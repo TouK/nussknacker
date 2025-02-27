@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.util
 
-import java.time.{Instant, OffsetDateTime, ZonedDateTime}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+
+import java.time.{Instant, OffsetDateTime, ZonedDateTime}
 
 object TimestampUtils {
 

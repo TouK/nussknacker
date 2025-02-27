@@ -8,8 +8,8 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTo
 import sttp.client3.SttpBackend
 
 import java.time.Instant
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 class BaseOAuth2Service[
     UserInfoData,

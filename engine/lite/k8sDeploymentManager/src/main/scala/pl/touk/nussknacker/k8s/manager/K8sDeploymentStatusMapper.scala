@@ -2,12 +2,12 @@ package pl.touk.nussknacker.k8s.manager
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
-import skuber.apps.v1.Deployment
 import skuber.{Container, Pod}
+import skuber.apps.v1.Deployment
 
 //Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
 object K8sDeploymentStatusMapper extends LazyLogging {

@@ -18,13 +18,14 @@ import java.util.UUID
 class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider, zoneId: ZoneId)
     extends BaseEndpointDefinitions {
 
+  import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
+  import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError._
+  import pl.touk.nussknacker.ui.api.description.scenarioActivity.InputOutput._
+
   import TapirCodecs.ContentDispositionCodec._
   import TapirCodecs.HeaderCodec._
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
-  import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError._
-  import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
-  import pl.touk.nussknacker.ui.api.description.scenarioActivity.InputOutput._
 
   lazy val deprecatedScenarioActivityEndpoint
       : SecuredEndpoint[ProcessName, ScenarioActivityError, Legacy.ProcessActivity, Any] =

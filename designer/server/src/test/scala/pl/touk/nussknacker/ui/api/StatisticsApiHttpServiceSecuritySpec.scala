@@ -4,12 +4,12 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
   WithAccessControlCheckingDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers}
 
 class StatisticsApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike

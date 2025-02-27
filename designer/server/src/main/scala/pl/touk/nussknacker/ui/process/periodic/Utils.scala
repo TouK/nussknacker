@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.process.periodic
 import akka.actor.{ActorRef, ActorSystem, Props}
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
 object Utils extends LazyLogging {

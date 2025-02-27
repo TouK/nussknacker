@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.http.scaladsl.server.Route
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
-import fr.davit.akka.http.metrics.core.HttpMetrics._
 import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
+import fr.davit.akka.http.metrics.core.HttpMetrics._
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -15,8 +15,8 @@ import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslCo
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
 class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem) extends LazyLogging {

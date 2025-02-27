@@ -5,18 +5,18 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
   AttachmentEntityData,
   ScenarioActivityEntityData,
   ScenarioActivityType
 }
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{

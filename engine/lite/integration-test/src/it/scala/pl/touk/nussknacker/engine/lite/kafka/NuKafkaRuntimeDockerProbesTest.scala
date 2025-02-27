@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ExtremelyPatientScalaFutures}
+import sttp.client3.{asString, basicRequest, SttpBackend, UriContext}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client3.{SttpBackend, UriContext, asString, basicRequest}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json.encode
 
-import cats.data.Validated.condNel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.condNel
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
@@ -57,9 +57,9 @@ object JsonSchemaOutputValidator {
 // root schema is a container for eventual ref schemas - in particular it can be the same schema as outputSchema
 class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
 
-  import JsonSchemaOutputValidator._
-
   import scala.jdk.CollectionConverters._
+
+  import JsonSchemaOutputValidator._
 
   private val valid = Validated.Valid(())
 

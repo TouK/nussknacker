@@ -5,12 +5,12 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   EmptyScheduledProcessListenerFactory,
   ProcessConfigEnricherFactory,
   SchedulePropertyExtractorFactory
 }
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, SchedulingSupported}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}

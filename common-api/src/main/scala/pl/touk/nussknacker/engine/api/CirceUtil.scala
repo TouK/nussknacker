@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.api
 
 import com.github.ghik.silencer.silent
 import io.circe
-import io.circe.generic.extras.Configuration
 import io.circe._
+import io.circe.generic.extras.Configuration
 
 import java.net.{URI, URL}
 import java.nio.charset.StandardCharsets

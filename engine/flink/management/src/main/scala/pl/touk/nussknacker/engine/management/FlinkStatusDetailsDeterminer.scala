@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
-import pl.touk.nussknacker.engine.management.FlinkStatusDetailsDeterminer.{ParsedJobConfig, toDeploymentStatus}
+import pl.touk.nussknacker.engine.management.FlinkStatusDetailsDeterminer.{toDeploymentStatus, ParsedJobConfig}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList

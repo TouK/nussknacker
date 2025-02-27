@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon

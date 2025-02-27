@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.management.sample.transformer
 
 import cats.data.Validated.Invalid
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{
   ContextTransformation,
   JoinContextTransformation,
   OutputVar,
   ProcessCompilationError
 }
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.sample.JavaSampleEnum
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.description
 import cats.data.NonEmptyList
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyProcess,
@@ -19,11 +20,10 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.engine.api.Comment
 import sttp.model.StatusCode
+import sttp.tapir._
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.{Example, Info}
-import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 

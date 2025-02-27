@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample.global
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, TypedMap}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 /**
   * Returns sample configuration - list of typed maps, based on environment property from process properties.

@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{
+  standard,
   SpelCompilerMode,
   SpelEvaluationException,
-  SpelParserConfiguration,
-  standard
+  SpelParserConfiguration
 }
+import org.springframework.expression.spel.ast.SpelNodeImpl
+import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -20,14 +21,13 @@ import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer

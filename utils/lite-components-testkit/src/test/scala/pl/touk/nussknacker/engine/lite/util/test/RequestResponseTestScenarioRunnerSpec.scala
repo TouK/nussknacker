@@ -4,8 +4,8 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel.SpelExtension._

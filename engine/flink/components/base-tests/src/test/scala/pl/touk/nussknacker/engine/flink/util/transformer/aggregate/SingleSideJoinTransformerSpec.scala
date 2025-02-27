@@ -37,8 +37,9 @@ import scala.util.Using
 
 class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
-  import SingleSideJoinTransformerSpec._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import SingleSideJoinTransformerSpec._
 
   private val MainBranchId = "main"
 

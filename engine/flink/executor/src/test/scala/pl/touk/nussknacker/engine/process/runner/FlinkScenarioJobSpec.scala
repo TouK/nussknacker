@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.ConfigFactory
+import org.scalatest.{BeforeAndAfterAll, Inside}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, Inside}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData

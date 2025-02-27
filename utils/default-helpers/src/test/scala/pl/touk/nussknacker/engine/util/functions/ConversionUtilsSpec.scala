@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
+
 import java.math.{BigDecimal => JBigDecimal}
 import java.util.{List => JList}
 import java.util.{Map => JMap}

@@ -12,8 +12,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui._
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._

@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.lite.api.utils
 
+import cats.{Monad, Monoid}
 import cats.data.Writer
 import cats.implicits._
-import cats.{Monad, Monoid}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
-import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{monoid, DataBatch, ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteSink}
 import pl.touk.nussknacker.engine.lite.api.utils.errors.withErrors
+
 import scala.language.higherKinds
 
 object sinks {

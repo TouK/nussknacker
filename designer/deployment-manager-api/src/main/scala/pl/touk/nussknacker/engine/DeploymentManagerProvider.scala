@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
+import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
 

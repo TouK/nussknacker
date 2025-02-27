@@ -1,5 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  ChainedSchemaIdFromMessageExtractor,
+  SchemaBasedSerdeProvider,
+  SchemaRegistryClient,
+  SchemaRegistryClientFactory
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.schemaid.SchemaIdFromAzureHeader
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
@@ -10,12 +16,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{
   KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory,
   KafkaSchemaRegistryBasedValueSerializationSchemaFactory
-}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  ChainedSchemaIdFromMessageExtractor,
-  SchemaBasedSerdeProvider,
-  SchemaRegistryClient,
-  SchemaRegistryClientFactory
 }
 
 object UniversalSchemaBasedSerdeProvider {

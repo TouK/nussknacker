@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Valid, invalid, invalidNel, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalid, invalidNel, valid, Valid}
 import cats.implicits.toTraverseOps
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueInput,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -23,14 +23,14 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParameterTypingParser
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{
+  qualifiedParamFieldName,
   DictIdFieldName,
   FixedValuesListFieldName,
   InitialValueFieldName,
-  ParameterNameFieldName,
-  qualifiedParamFieldName
+  ParameterNameFieldName
 }
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 
 import scala.util.Try

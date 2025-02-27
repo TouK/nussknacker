@@ -25,9 +25,10 @@ case class BasicAuthenticationConfiguration(
 
 object BasicAuthenticationConfiguration {
 
-  import AuthenticationConfiguration._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+
+  import AuthenticationConfiguration._
 
   val name: String = "BasicAuth"
 

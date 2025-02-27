@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload
 
 import io.circe.Decoder
+import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import org.apache.avro.Conversions.UUIDConversion
 import org.apache.avro.data.RecordBuilderBase
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.schemedkafka.LogicalTypesGenericRecordBuilder
-import tech.allegro.schema.json2avro.converter.types._
 import tech.allegro.schema.json2avro.converter.{
   CompositeJsonToAvroReader,
   JsonAvroConverter,
   PathsPrinter,
   UnknownFieldListener
 }
+import tech.allegro.schema.json2avro.converter.types._
 
-import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalTime}
+import java.time.format.DateTimeFormatter
 import java.util
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._

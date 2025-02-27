@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.benchmarks.aggregate
 
-import java.util.concurrent.TimeUnit
-
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{MathAggregator, SumAggregator}
+
+import java.util.concurrent.TimeUnit
 
 class AggregatorSetup(aggregator: Aggregator, outputType: TypingResult) {
 

@@ -9,8 +9,8 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{
   OAuth2CompoundException,
   OAuth2ServerError
 }
+import sttp.client3.{basicRequest, Response, ResponseException, SttpBackend}
 import sttp.client3.circe._
-import sttp.client3.{Response, ResponseException, SttpBackend, basicRequest}
 import sttp.model.{MediaType, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.config.processingtype
 
-import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Ref}
+import cats.effect.unsafe.implicits.global
 import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite

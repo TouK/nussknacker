@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 
 import scala.concurrent.Future
 

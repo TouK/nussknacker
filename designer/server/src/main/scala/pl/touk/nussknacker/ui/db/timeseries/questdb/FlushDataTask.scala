@@ -5,8 +5,8 @@ import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.wal.{ApplyWal2TableJob, WalWriter}
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 private[questdb] class FlushDataTask(
     private val engine: CairoEngine,
