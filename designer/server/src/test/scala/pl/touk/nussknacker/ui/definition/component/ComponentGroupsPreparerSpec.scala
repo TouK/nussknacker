@@ -9,14 +9,14 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
-import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
-import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   Components,
   CustomComponentSpecificData
 }
+import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
+import pl.touk.nussknacker.ui.definition.{component, AlignedComponentsDefinitionProvider}
 
 class ComponentGroupsPreparerSpec
     extends AnyFunSuite

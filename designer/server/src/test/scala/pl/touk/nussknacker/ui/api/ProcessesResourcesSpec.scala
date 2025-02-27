@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.OptionT
 import cats.instances.all._
 import com.typesafe.config.{Config, ConfigValueFactory}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.LoneElement._
 import org.scalatest._
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.BasicStatusDetails
@@ -28,31 +28,31 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it._
+import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.{
   Streaming1,
   Streaming2
 }
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   existingSinkFactory,
   existingSourceFactory,
   sampleFragmentOneOut,
   sampleFragmentWithPreset
 }
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
-  Available,
-  NotAvailable
-}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   ScenarioActivities,
   ScenarioActivity,
   ScenarioActivityComment,
   ScenarioActivityType
+}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
+  Available,
+  NotAvailable
 }
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
@@ -62,12 +62,12 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   SearchPanel,
   TipsPanel
 }
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
 import scala.concurrent.Future
@@ -90,9 +90,10 @@ class ProcessesResourcesSpec
     with OptionValues
     with EitherValues {
 
-  import ProcessesQueryEnrichments._
   import io.circe._
   import io.circe.parser._
+
+  import ProcessesQueryEnrichments._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

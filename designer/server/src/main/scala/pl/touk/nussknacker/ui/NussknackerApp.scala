@@ -17,9 +17,9 @@ object NussknackerApp extends IOApp with LazyLogging {
       .as(ExitCode.Success)
   }
 
-  private def program = for {
-    appFactory <- NussknackerAppFactory.create(AlwaysLoadingFileBasedDesignerConfigLoader(getClass.getClassLoader))
-    _          <- appFactory.createApp()
-  } yield ()
+  private def program = {
+    val appFactory = NussknackerAppFactory(AlwaysLoadingFileBasedDesignerConfigLoader(getClass.getClassLoader))
+    appFactory.createApp()
+  }
 
 }

@@ -12,12 +12,12 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
@@ -25,18 +25,18 @@ import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
+import sttp.client3.{Response, StringBody, SttpBackend, SttpClientException}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Response, StringBody, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.NoRouteToHostException
 import java.util.Collections
 import java.util.concurrent.TimeoutException
 import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures with LoneElement {

@@ -1,26 +1,26 @@
 package pl.touk.nussknacker.ui.integration
 
-import io.circe.Json.{Null, arr, fromBoolean, fromFields, fromString, obj}
-import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json, JsonObject}
+import io.circe.Json.{arr, fromBoolean, fromFields, fromString, obj, Null}
+import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
@@ -39,16 +40,15 @@ import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
+import sttp.client3.{quickRequest, UriContext}
 import sttp.client3.circe.asJson
-import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{Header, MediaType, StatusCode}
 
 import java.io.File

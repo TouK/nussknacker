@@ -2,15 +2,15 @@ package pl.touk.nussknacker.k8s.manager
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import play.api.libs.json.{Format, Json}
+import skuber.{ListResource, Pod}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ListResource, Pod}
 
 //It's no so easy to move deployment in unstable state reliably, so
 //for now we have unit tests based on real responses - generated manually, using kubectl -v=9 describe deployment [...]

@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
-
-import java.lang
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import java.lang
 import scala.util.Try
 
 /**

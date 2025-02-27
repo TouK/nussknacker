@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
-import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.implicits.global
 import io.circe.Json
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo

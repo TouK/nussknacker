@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI

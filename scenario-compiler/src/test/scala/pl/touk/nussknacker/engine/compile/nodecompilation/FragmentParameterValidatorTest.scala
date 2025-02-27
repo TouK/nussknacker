@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Valid, invalidNel}
+import cats.data.Validated.{invalidNel, Valid}
 import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

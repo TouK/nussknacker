@@ -4,18 +4,18 @@ import cats.data.NonEmptyList
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator

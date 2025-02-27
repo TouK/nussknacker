@@ -11,11 +11,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.source.flink.{
   KafkaSourceFactoryMixin,
   SampleConsumerRecordDeserializationSchemaFactory
 }
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional

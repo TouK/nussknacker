@@ -7,11 +7,11 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.{process, CirceUtil, MetaData, Params, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, Params, ProcessVersion, StreamMetaData, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{

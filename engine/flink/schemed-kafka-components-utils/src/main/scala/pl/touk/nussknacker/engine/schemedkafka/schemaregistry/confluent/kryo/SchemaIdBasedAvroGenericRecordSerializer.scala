@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo
 
-import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.esotericsoftware.kryo.io.{Input, Output}
 import com.github.ghik.silencer.silent
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}

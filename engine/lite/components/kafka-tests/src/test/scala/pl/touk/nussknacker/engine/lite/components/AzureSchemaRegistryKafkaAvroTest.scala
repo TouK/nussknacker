@@ -5,8 +5,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.avro.{Schema, SchemaBuilder}
+import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.funsuite.AnyFunSuite
@@ -15,8 +15,8 @@ import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider.KafkaUniversalName
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, KafkaConsumerRecord}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
@@ -27,12 +27,12 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   sinkValueParamName,
   topicParamName
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{
   AzureSchemaRegistryClientFactory,
   AzureUtils,
   SchemaNameTopicMatchStrategy
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult

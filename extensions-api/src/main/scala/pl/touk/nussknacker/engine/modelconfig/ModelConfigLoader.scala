@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.modelconfig
 
-import com.typesafe.config.impl.ConfigImpl
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
+import com.typesafe.config.impl.ConfigImpl
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader.defaultModelConfigResource

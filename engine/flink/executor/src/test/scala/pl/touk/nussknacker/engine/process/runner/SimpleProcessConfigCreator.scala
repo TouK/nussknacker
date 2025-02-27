@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator.{

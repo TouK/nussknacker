@@ -18,6 +18,7 @@ import java.util.{Date, UUID}
 class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
   import SingleValueSinkFactory._
 
   test("skip null records") {

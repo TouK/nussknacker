@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.functions
 
+import cats.implicits._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import cats.implicits._
 
 class NumericUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 

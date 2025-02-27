@@ -4,8 +4,8 @@ import cats.data.EitherT
 import pl.touk.nussknacker.engine.api.deployment.{ManagerSpecificScenarioActivitiesStoredByManager, ScenarioActivity}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService.ScenarioActivityFetchError
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService.ScenarioActivityFetchError.NoScenario
 import pl.touk.nussknacker.ui.security.api.LoggedUser

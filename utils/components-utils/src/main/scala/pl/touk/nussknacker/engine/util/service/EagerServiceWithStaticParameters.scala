@@ -2,25 +2,25 @@ package pl.touk.nussknacker.engine.util.service
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedSingleParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent,
   WithStaticParameters
 }
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   OutputVariableNameDependency,
   Parameter,
   TypedNodeDependency
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.runtime.BoxedUnit

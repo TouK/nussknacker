@@ -5,8 +5,8 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
 import pl.touk.nussknacker.engine.api.generics._
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.definition.test
 
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ScenarioTestDataGenerationError,

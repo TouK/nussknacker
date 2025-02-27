@@ -4,11 +4,12 @@ import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
@@ -24,18 +25,20 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueCompileTimeValidation,
   ParameterValueInput
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => EvaluatedParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, FragmentInput}
+import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -52,6 +55,10 @@ import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  BadRequestNodesError,
+  NotFoundNodesError
+}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
@@ -65,10 +72,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoProcessingType,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
-  BadRequestNodesError,
-  NotFoundNodesError
-}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOutputs._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
@@ -80,10 +83,10 @@ import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedTaggedSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedUnionSchemaHelper.typedUnionTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.UnknownSchemaHelper.unknownTypeSchema
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
-import sttp.tapir.SchemaType.{SProduct, SProductField, SString, SchemaWithValue}
-import sttp.tapir._
+import sttp.tapir.SchemaType.{SchemaWithValue, SProduct, SProductField, SString}
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
@@ -1637,9 +1640,9 @@ object NodesApiEndpoints {
 object TypingDtoSchemas {
 
   import pl.touk.nussknacker.engine.api.typed.typing._
+  import sttp.tapir.{FieldName, Schema, SchemaType}
   import sttp.tapir.Schema.SName
   import sttp.tapir.SchemaType.SProductField
-  import sttp.tapir.{FieldName, Schema, SchemaType}
 
   implicit lazy val typingResult: Schema[TypingResult] = {
     Schema(

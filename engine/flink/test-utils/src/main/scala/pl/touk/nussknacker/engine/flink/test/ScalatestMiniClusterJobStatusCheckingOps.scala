@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.flink.test
 
 import org.apache.flink.api.common.JobID
 import org.apache.flink.runtime.minicluster.MiniCluster
-import org.scalatest.concurrent.ScalaFutures.{PatienceConfig, convertScalaFuture, scaled}
+import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterWithServices, MiniClusterJobStatusCheckingOps}
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 
+import scala.concurrent.{blocking, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Future, blocking}
 import scala.language.implicitConversions
 
 object ScalatestMiniClusterJobStatusCheckingOps {

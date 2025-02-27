@@ -8,9 +8,10 @@ import java.util.UUID
 
 class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matchers {
 
+  import org.scalatest.prop.TableDrivenPropertyChecks._
+
   import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
-  import org.scalatest.prop.TableDrivenPropertyChecks._
 
   private val scenarioToolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(
     ConfigFactory.parseString("""

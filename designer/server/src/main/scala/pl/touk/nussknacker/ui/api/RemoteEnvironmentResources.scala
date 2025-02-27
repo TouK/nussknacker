@@ -13,14 +13,14 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}

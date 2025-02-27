@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.process.typeinformation
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
 import org.apache.flink.types.Row
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo

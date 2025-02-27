@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
   schemaVersionParamName,
   sinkKeyParamName,
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   sinkValueParamName,
   topicParamName
 }
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 object NuKafkaRuntimeTestSamples {
 

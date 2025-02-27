@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.process.ScenarioActivityAuditLog
 import pl.touk.nussknacker.ui.security.api.LoggedUser

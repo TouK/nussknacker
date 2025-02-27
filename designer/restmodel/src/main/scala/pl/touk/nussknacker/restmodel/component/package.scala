@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.restmodel
 
 import cats.data.NonEmptySet
+import io.circe.{Decoder, DecodingFailure, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, DecodingFailure, Encoder}
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
   DesignerWideComponentId,
   ProcessingMode
 }
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import sttp.tapir.{Schema, SchemaType}
 

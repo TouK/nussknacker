@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.api.dict.embedded
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictEntry, DictQueryService, DictRegistry}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.{
   DictEntryWithKeyNotExists,
   DictEntryWithLabelNotExists,
   DictNotDeclared
 }
-import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictEntry, DictQueryService, DictRegistry}
 
 import scala.concurrent.{ExecutionContext, Future}
 

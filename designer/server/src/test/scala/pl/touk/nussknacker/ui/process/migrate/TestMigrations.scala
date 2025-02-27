@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node

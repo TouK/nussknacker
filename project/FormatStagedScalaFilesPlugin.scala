@@ -1,7 +1,7 @@
 import org.scalafmt.sbt.ScalafmtPlugin
+import sbt.{taskKey, Compile, Global, Setting}
 import sbt.Keys._
-import sbt.nio.Keys.{ReloadOnSourceChanges, onChangedBuildSource}
-import sbt.{Compile, Global, Setting, taskKey}
+import sbt.nio.Keys.{onChangedBuildSource, ReloadOnSourceChanges}
 import utils.Step
 
 object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
@@ -49,13 +49,18 @@ object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
       .toList
   }
 
+  private def quoteSbtArgument(filePath: String) = {
+    // use quoting for StringEscapable parser
+    "\"" + filePath.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+  }
+
   private def callFormatFiles(files: List[String]) = {
     for {
       _ <- Step.task {
         streams.map(_.log.info("Formatting backend files ..."))
       }
       _ <- Step.task {
-        (Compile / ScalafmtPlugin.autoImport.scalafmtOnly).toTask(s" ${files.mkString(" ")}")
+        (Compile / ScalafmtPlugin.autoImport.scalafmtOnly).toTask(s" ${files.map(quoteSbtArgument).mkString(" ")}")
       }
     } yield ()
 

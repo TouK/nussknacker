@@ -44,8 +44,10 @@ object RecordingExceptionConsumerProvider {
 }
 
 class RecordingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
-  import RecordingExceptionConsumerProvider._
+
   import net.ceedubs.ficus.Ficus._
+
+  import RecordingExceptionConsumerProvider._
 
   override val name: String = providerName
 

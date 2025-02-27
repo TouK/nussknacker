@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 
 import java.net.URLClassLoader
 import java.util.ServiceLoader
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 object ScalaServiceLoader extends LazyLogging {
   import scala.jdk.CollectionConverters._

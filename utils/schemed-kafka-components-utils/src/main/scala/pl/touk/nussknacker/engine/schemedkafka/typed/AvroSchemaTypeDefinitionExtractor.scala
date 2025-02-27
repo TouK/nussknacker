@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.typed
 
-import org.apache.avro.generic.GenericData.EnumSymbol
-import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{LogicalTypes, Schema}
+import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericData.EnumSymbol
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypingResult}
 
 import java.nio.ByteBuffer

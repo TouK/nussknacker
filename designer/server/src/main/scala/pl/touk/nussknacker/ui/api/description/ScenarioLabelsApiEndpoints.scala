@@ -12,8 +12,8 @@ import pl.touk.nussknacker.ui.api.description.ScenarioLabelsApiEndpoints.Dtos.{
   ValidationError
 }
 import sttp.model.StatusCode.Ok
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 

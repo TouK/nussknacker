@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import java.util
-
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+
+import java.util
 
 /**
  * This class determine type of values for classes which behave like a maps - basically implementing Maps or having get(key) method.

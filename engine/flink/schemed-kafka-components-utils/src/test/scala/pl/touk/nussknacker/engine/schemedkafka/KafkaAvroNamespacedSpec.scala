@@ -10,12 +10,12 @@ import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockConfluentSchemaRegistryClientBuilder,
   MockSchemaRegistryClient
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {

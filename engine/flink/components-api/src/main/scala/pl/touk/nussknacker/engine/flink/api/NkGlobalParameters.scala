@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api
 
+import _root_.java.util
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
 
-import _root_.java.util
 import scala.jdk.CollectionConverters._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise

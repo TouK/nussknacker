@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
+import pl.touk.nussknacker.engine.api.{Context, CustomMetaData, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{CompileTimeEvaluableValueValidator, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{Context, CustomMetaData, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression

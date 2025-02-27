@@ -3,8 +3,8 @@ package pl.touk.nussknacker.restmodel.validation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.{forAll, Table}
 import org.scalatest.prop.TableFor3
-import org.scalatest.prop.TableDrivenPropertyChecks.{Table, forAll}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   BlankId,

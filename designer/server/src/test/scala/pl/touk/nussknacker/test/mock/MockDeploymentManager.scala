@@ -7,7 +7,6 @@ import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
-import sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -16,9 +15,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
+import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
-import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager.{
@@ -28,12 +27,13 @@ import pl.touk.nussknacker.test.mock.MockDeploymentManager.{
 }
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
+import sttp.client3.testing.SttpBackendStub
 
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 

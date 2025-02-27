@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.serialization
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 /**

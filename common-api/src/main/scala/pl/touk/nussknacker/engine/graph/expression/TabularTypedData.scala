@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.graph.expression
 
 import cats.data.NonEmptyList
-import io.circe.Decoder.Result
 import io.circe._
+import io.circe.Decoder.Result
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
   CellsCountInRowDifferentThanColumnsCount,
   ColumnNameUniquenessViolation,
   InvalidCellValues
 }
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error.{JsonParsingError, ValidationError}
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 
 import scala.util.Try
 

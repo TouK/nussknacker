@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.test
 
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.exceptions.TestFailedException
 
 import scala.concurrent.Future

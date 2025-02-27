@@ -6,9 +6,9 @@ import cats.effect.unsafe.IORuntime
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
+import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,

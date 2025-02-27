@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.containers.{FileSystemBind, WithDockerContainers}
 
-import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
+import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import scala.jdk.CollectionConverters._
 
 trait WithFlinkContainers extends WithDockerContainers { self: Suite with StrictLogging =>

@@ -5,9 +5,9 @@ import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
 import sttp.capabilities.Streams
 import sttp.capabilities.akka.AkkaStreams
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, EndpointInput, EndpointIO, EndpointOutput, Schema, StreamBodyIO}
 import sttp.tapir.CodecFormat.OctetStream
 import sttp.tapir.EndpointIO.StreamBodyWrapper
-import sttp.tapir.{Codec, CodecFormat, DecodeResult, EndpointIO, EndpointInput, EndpointOutput, Schema, StreamBodyIO}
 
 import java.io.InputStream
 import java.util.concurrent.TimeUnit

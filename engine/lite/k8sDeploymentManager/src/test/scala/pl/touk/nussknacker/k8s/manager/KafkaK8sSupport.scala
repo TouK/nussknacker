@@ -6,9 +6,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.k8s.manager.KafkaK8sSupport.{kafkaServiceName, srServiceName}
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
+import skuber.{Container, EnvVar, HTTPGetAction, ObjectMeta, Pod, Probe, Service}
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
-import skuber.{Container, EnvVar, HTTPGetAction, ObjectMeta, Pod, Probe, Service}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

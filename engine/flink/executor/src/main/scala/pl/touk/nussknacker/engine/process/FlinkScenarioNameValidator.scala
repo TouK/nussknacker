@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.process
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.{CustomProcessValidator, CustomProcessValidatorFactory}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioNameValidationError
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.{CustomProcessValidator, CustomProcessValidatorFactory}
 
 class FlinkScenarioNameValidatorFactory extends CustomProcessValidatorFactory {
   override def validator(config: Config): CustomProcessValidator = new FlinkScenarioNameValidator(config)

@@ -4,12 +4,12 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.StrictLogging
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, OptionValues, Suite}
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess

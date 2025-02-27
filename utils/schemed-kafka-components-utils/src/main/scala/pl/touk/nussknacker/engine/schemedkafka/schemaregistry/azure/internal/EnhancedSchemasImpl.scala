@@ -6,7 +6,7 @@ import com.azure.core.http.rest.{Response, RestProxy}
 import com.azure.core.util.Context
 import com.azure.core.util.serializer.SerializerAdapter
 import com.azure.data.schemaregistry.implementation.models.{ErrorException, SchemasGetByIdResponse}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.model.{SchemaVersions, Schemas}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.model.{Schemas, SchemaVersions}
 import reactor.core.publisher.Mono
 
 class EnhancedSchemasImpl(

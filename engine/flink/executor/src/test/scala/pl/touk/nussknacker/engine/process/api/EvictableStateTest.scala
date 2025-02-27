@@ -6,9 +6,9 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.util.Collector
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps

@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
 import com.dimafeng.testcontainers._
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.{BeforeAndAfterAll, Suite}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties, WithConfig}
 
 import scala.jdk.CollectionConverters._

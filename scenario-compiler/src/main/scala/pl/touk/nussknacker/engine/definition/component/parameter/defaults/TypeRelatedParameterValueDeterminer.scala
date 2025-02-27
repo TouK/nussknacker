@@ -23,8 +23,8 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   ): Option[Expression] = {
     // TODO: use classes instead of class names
     Option(className).map(_.getName).collect {
-      case "long" | "short" | "int" | "java.lang.Number" | "java.lang.Long" |
-          "java.lang.Short" | "java.lang.Integer" | "java.math.BigInteger" =>
+      case "long" | "short" | "int" | "java.lang.Number" | "java.lang.Long" | "java.lang.Short" | "java.lang.Integer" |
+          "java.math.BigInteger" =>
         Expression.spel("0")
       case "float" | "double" | "java.math.BigDecimal" | "java.lang.Float" | "java.lang.Double" =>
         Expression.spel("0.0")

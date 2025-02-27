@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
-import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.test._
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob

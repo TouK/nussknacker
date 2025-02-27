@@ -5,11 +5,11 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import io.circe.Json.{Null, fromString, obj}
+import io.circe.Json.{fromString, obj, Null}
 import org.apache.kafka.common.record.TimestampType
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder

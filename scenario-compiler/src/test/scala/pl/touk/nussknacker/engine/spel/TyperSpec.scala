@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange

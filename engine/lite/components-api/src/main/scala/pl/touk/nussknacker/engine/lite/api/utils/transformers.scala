@@ -4,9 +4,9 @@ import cats.Monad
 import cats.implicits._
 import cats.kernel.Monoid
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
-import pl.touk.nussknacker.engine.lite.api.commonTypes._
 
 import scala.language.higherKinds
 

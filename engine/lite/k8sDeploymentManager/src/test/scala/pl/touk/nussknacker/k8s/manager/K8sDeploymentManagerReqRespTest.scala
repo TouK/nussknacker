@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import org.scalatest.OptionValues
@@ -11,13 +11,13 @@ import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
-  DMRunDeploymentCommand,
-  DMValidateScenarioCommand,
   DataFreshnessPolicy,
-  DeploymentUpdateStrategy
+  DeploymentUpdateStrategy,
+  DMRunDeploymentCommand,
+  DMValidateScenarioCommand
 }
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -27,10 +27,10 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+import skuber.{LabelSelector, ListResource, Service}
 import skuber.LabelSelector.dsl._
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{LabelSelector, ListResource, Service}
 import sttp.client3._
 
 import scala.concurrent.ExecutionContext.Implicits._

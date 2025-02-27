@@ -8,6 +8,7 @@ import org.scalatest.matchers.should.Matchers
 class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionValues {
 
   import net.ceedubs.ficus.Ficus._
+
   import OpenAPIServicesConfig._
 
   test("should parse apikey secret for each scheme") {

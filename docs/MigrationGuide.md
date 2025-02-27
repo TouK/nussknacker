@@ -83,6 +83,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Other changes:
     * `StatusDetails` was renamed to `DeploymentStatusDetails`
     * Fields: `externalDeploymentId`, `externalDeploymentId`, `attributes`, `attributes` were removed from `StatusDetails`
+* [#7598](https://github.com/TouK/nussknacker/pull/7598) Classes from `pl.touk.nussknacker.engine.sttp` package
+  were moved to `pl.touk.nussknacker.http.backend`
 
 ### Other changes
 

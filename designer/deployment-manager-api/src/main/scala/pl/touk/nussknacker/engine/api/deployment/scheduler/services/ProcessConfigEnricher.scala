@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.api.deployment.scheduler.services
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduledDeploymentDetails, ScheduledProcessDetails}
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.{
+  DeployData,
+  EnrichedProcessConfig,
+  InitialScheduleData
+}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client3.SttpBackend
@@ -42,10 +46,10 @@ object ProcessConfigEnricher {
   ) extends ProcessConfigEnricherInputData
 
   case class DeployData(
-                         canonicalProcess: CanonicalProcess,
-                         processVersion: ProcessVersion,
-                         inputConfigDuringExecutionJson: String,
-                         deploymentDetails: ScheduledDeploymentDetails,
+      canonicalProcess: CanonicalProcess,
+      processVersion: ProcessVersion,
+      inputConfigDuringExecutionJson: String,
+      deploymentDetails: ScheduledDeploymentDetails,
   ) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)

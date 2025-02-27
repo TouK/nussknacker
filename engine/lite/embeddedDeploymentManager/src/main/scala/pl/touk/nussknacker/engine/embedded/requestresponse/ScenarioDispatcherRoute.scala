@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.embedded.requestresponse
 
 import akka.event.Logging
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
+import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 

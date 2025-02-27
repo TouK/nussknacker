@@ -2,17 +2,17 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.FragmentResolver
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers

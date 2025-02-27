@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, ExpiryC
 
 import java.time.{Duration, Instant}
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.util.{Failure, Success, Try}
 
 class CachingOAuth2Service[

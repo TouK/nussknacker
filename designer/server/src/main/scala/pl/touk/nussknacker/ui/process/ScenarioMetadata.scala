@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, ProcessName}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 
 import java.sql.Timestamp

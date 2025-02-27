@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import java.util.Collections
 import io.circe.Json
-import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerTyped}
+import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
+
+import java.util.Collections
 
 object HandleResponse {
 

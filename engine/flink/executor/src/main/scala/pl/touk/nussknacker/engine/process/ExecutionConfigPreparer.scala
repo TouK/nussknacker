@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.flink.api.{NamespaceMetricsTags, NkGlobalParameters}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.process.util.Serializers
 
 /**

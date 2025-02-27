@@ -19,9 +19,10 @@ class UnionTransformerSpec
     with LazyLogging
     with VeryPatientScalaFutures {
 
-  import ValidatedValuesDetailedMessage._
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import ValidatedValuesDetailedMessage._
 
   private val BranchFooId = "foo"
 

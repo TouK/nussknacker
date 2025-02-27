@@ -5,14 +5,14 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AbstractSchemaBasedRecordFormatter
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json.KafkaJsonKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaId,
   SchemaIdFromMessageExtractor,
   SchemaRegistryClient,
   SchemaRegistryClientFactory
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AbstractSchemaBasedRecordFormatter
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json.KafkaJsonKeyValueDeserializationSchemaFactory
 
 import scala.reflect.ClassTag
 

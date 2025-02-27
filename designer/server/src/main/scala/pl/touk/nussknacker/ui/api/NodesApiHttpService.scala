@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
@@ -16,6 +16,19 @@ import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  decodeVariableTypes,
+  prepareTypingResultDecoder,
+  ExpressionSuggestionDto,
+  NodesError,
+  NodeValidationRequest,
+  NodeValidationRequestDto,
+  NodeValidationResult,
+  NodeValidationResultDto,
+  ParametersValidationRequest,
+  ParametersValidationRequestDto,
+  ParametersValidationResultDto
+}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
   MalformedTypingResult,
@@ -29,19 +42,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   NoDataGenerated,
   NoProcessingType,
   NoScenario
-}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
-  ExpressionSuggestionDto,
-  NodeValidationRequest,
-  NodeValidationRequestDto,
-  NodeValidationResult,
-  NodeValidationResultDto,
-  NodesError,
-  ParametersValidationRequest,
-  ParametersValidationRequestDto,
-  ParametersValidationResultDto,
-  decodeVariableTypes,
-  prepareTypingResultDecoder
 }
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions

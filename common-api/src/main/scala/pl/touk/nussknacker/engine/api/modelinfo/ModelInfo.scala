@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api.modelinfo
 
 import io.circe
+import io.circe.{Decoder, Encoder, Printer}
 import io.circe.parser._
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder, Printer}
 
 case class ModelInfo private (parameters: Map[String, String]) {
 

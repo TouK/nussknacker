@@ -19,19 +19,20 @@ import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError.{
   TooManyCharactersGenerated,
   TooManySamplesRequested
 }
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTestingError.{
   NoDataGenerated,
   NoSourcesWithTestDataGeneration
 }
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.tapir.EndpointIO.Example
+import sttp.model.StatusCode.Ok
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
 
 class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {

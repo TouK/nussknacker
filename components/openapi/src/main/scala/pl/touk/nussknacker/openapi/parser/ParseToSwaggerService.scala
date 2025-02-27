@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.openapi.parser
 
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
+import io.swagger.v3.oas.models.{OpenAPI, Operation}
 import io.swagger.v3.oas.models.PathItem.HttpMethod
 import io.swagger.v3.oas.models.media.{Content, MediaType, Schema}
 import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.ApiResponse
-import io.swagger.v3.oas.models.{OpenAPI, Operation}
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.parser.ParseSwaggerRefSchemas
 import pl.touk.nussknacker.openapi._
@@ -52,8 +52,9 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
   private val swaggerRefSchemas = ParseSwaggerRefSchemas(openapi)
   private val servers           = openapi.getServers.asScala.toList
 
-  import ParseToSwaggerService._
   import cats.implicits._
+
+  import ParseToSwaggerService._
 
   def apply(
       serviceName: ServiceName,

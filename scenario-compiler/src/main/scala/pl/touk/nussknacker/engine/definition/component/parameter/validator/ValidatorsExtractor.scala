@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import pl.touk.nussknacker.engine.api.definition
-
-import javax.validation.constraints.{Max, Min, NotBlank}
 import pl.touk.nussknacker.engine.api.definition.{
   MaximalNumberValidator,
   MinimalNumberValidator,
@@ -10,6 +8,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterValidator
 }
 import pl.touk.nussknacker.engine.api.validation.JsonValidator
+
+import javax.validation.constraints.{Max, Min, NotBlank}
 
 object ValidatorsExtractor {
 

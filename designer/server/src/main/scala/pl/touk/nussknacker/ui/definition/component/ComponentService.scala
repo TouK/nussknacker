@@ -17,16 +17,16 @@ import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
-  FetchAllWithUsages,
   FetchAllWithoutUsages,
-  FetchNonFragmentsWithUsages,
-  FetchNonFragmentsWithoutUsages
+  FetchAllWithUsages,
+  FetchNonFragmentsWithoutUsages,
+  FetchNonFragmentsWithUsages
 }
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}

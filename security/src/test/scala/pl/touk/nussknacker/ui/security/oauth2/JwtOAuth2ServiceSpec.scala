@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.config.ConfigFactory
 import io.circe.Decoder
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend

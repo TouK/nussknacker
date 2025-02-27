@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.test.utils.domain
 
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -19,8 +20,8 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.spelTemplate
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
@@ -37,13 +38,13 @@ import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {
 
-  import KafkaFactory._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import KafkaFactory._
 
   val existingSourceFactory      = "barSource"
   val otherExistingSourceFactory = "fooSource"

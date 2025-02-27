@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
 
 object FlinkScenarioJob {
 

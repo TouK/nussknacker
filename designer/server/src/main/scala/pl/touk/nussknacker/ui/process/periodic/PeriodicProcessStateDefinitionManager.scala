@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.process.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
-  DefaultVisibleActions,
-  ScenarioStatusWithScenarioContext
-}
 import pl.touk.nussknacker.engine.api.deployment.{
   OverridingProcessStateDefinitionManager,
   ProcessStateDefinitionManager,
   ScenarioActionName,
   StateStatus
+}
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
+  DefaultVisibleActions,
+  ScenarioStatusWithScenarioContext
 }
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{
   MaxDeploymentsStatus,

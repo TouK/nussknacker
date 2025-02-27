@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.security.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -9,7 +10,6 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 
 import scala.concurrent.duration._
 

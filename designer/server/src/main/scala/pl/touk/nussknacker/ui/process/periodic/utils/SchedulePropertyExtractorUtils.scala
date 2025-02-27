@@ -3,7 +3,12 @@ package pl.touk.nussknacker.ui.process.periodic.utils
 import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.periodic.{CronScheduleProperty, MultipleScheduleProperty, ScheduleProperty, SingleScheduleProperty}
+import pl.touk.nussknacker.ui.process.periodic.{
+  CronScheduleProperty,
+  MultipleScheduleProperty,
+  ScheduleProperty,
+  SingleScheduleProperty
+}
 
 import java.time.Clock
 

@@ -45,7 +45,8 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
       impersonatedByUsername,
       createDate
     ) <> (
-      AttachmentEntityData.apply _ tupled, AttachmentEntityData.unapply
+      AttachmentEntityData.apply _ tupled,
+      AttachmentEntityData.unapply
     )
 
   }

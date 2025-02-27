@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.test
 
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.implicits.global
 import org.scalatest.{BeforeAndAfterAll, Suite}
+import sttp.client3.{HttpClientSyncBackend, Identity, SttpBackend}
 import sttp.client3.logging.LoggingBackend
 import sttp.client3.logging.slf4j._
-import sttp.client3.{HttpClientSyncBackend, Identity, SttpBackend}
-import cats.effect.unsafe.implicits.global
+
 import java.net.http.HttpClient
 import javax.net.ssl.SSLContext
 

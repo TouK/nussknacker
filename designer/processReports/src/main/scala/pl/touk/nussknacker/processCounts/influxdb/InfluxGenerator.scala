@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZonedDateTime}
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import sttp.client3.SttpBackend
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.ProcessName
 
+import java.time.{Instant, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import scala.language.higherKinds
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)(implicit backend: SttpBackend[F, Any])
     extends LazyLogging {

@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.ui.security.api
 
-import java.net.URI
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigUser, getRules, usersConfigurationPath}
-import GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.security.Permission.Permission
-
-import net.ceedubs.ficus.readers.EnumerationReader._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.EnumerationReader._
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+import pl.touk.nussknacker.security.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{getRules, usersConfigurationPath, ConfigUser}
+
+import java.net.URI
+
+import GlobalPermission.GlobalPermission
 
 trait AuthenticationConfiguration {
   def name: String

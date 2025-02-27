@@ -7,15 +7,15 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
+import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.ui.security.api.AuthManager.ImpersonationConsideringInputEndpoint
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedTapirStreamEndpointProvider, TapirStreamEndpointProvider}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
+import sttp.tapir.{auth, Endpoint, EndpointInput}
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
-import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
 import java.time.{ZoneId, ZoneOffset}

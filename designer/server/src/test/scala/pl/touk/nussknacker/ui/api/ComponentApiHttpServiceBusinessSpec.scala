@@ -8,21 +8,21 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 
 class ComponentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike

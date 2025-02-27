@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite
 
 import cats.Monad
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{State, StateT, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
@@ -39,8 +39,8 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.syncEc
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 

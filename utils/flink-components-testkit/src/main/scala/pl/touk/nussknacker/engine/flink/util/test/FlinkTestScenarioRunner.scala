@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.flink.api.connector.source.Boundedness
-import org.scalatest.concurrent.ScalaFutures.{PatienceConfig, convertScalaFuture, scaled}
+import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -21,14 +21,14 @@ import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestRunId
+import pl.touk.nussknacker.engine.util.test._
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
-import pl.touk.nussknacker.engine.util.test._
 
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag

@@ -6,13 +6,13 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike

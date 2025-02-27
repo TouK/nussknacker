@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import java.time.LocalDateTime
-import java.util.Optional
-
-import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 
+import java.time.LocalDateTime
+import java.util.Optional
+import javax.annotation.Nullable
 import scala.concurrent.Future
 
 class OptionalTypesService extends Service with Serializable {

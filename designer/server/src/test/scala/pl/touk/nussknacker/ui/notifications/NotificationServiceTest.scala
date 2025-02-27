@@ -3,14 +3,14 @@ package pl.touk.nussknacker.ui.notifications
 import akka.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -21,34 +21,34 @@ import pl.touk.nussknacker.engine.deployment.{
   DeploymentId,
   ExternalDeploymentId
 }
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
-import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DbScenarioActionRepository,
   ScenarioWithDetailsEntity
 }
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
-import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration, Instant, ZoneId}
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt

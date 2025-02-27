@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
-import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName

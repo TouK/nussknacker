@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test
 
-import io.circe.{ACursor, Json, parser}
+import io.circe.{parser, ACursor, Json}
 import pl.touk.nussknacker.test.WithSttpTestUtils.ResponseOps
 
 import scala.language.implicitConversions

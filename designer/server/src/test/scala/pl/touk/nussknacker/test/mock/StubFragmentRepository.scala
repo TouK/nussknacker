@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.mock
 
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser

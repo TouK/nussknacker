@@ -22,20 +22,20 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor.fromScenarioNode
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkCompatibilityProvider, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.compiler.{
   FlinkEngineRuntimeContextImpl,
   FlinkProcessCompilerData,
   FlinkProcessCompilerDataFactory,
   UsedNodes
 }
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkCompatibilityProvider, FlinkJobConfig}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.splittedgraph.{splittednode, SplittedNodesCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
-import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
 import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
+import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import shapeless.syntax.typeable.typeableOps
 
 import java.util.concurrent.TimeUnit
@@ -193,10 +193,13 @@ class FlinkProcessRegistrar(
     ): Map[BranchEndDefinition, BranchEndData] = {
       val inputs: Map[String, (DataStream[Context], ValidationContext)] = branchEnds.collect {
         case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
-          id -> (stream.map(
-            (value: InterpretationResult) => value.finalContext,
-            TypeInformationDetection.instance.forContext(validationContext)
-          ), validationContext)
+          id -> (
+            stream.map(
+              (value: InterpretationResult) => value.finalContext,
+              TypeInformationDetection.instance.forContext(validationContext)
+            ),
+            validationContext
+          )
       }
 
       val transformer = joinPart.transformer match {

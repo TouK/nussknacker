@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
@@ -14,9 +14,10 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.util.{NumberUtils, StringUtils}
+import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
@@ -25,12 +26,16 @@ import pl.touk.nussknacker.engine.api.generics.{
 }
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
+  ArgumentTypeError,
+  ExpressionTypeError,
+  GenericFunctionError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
   IllegalInvocationError,
   IllegalProjectionSelectionError,
@@ -45,11 +50,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
-  ArgumentTypeError,
-  ExpressionTypeError,
-  GenericFunctionError
-}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
@@ -66,11 +66,11 @@ import java.lang.{
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.nio.charset.{Charset, StandardCharsets}
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util
-import java.util.concurrent.Executors
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
+import java.util.concurrent.Executors
 import scala.annotation.varargs
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._

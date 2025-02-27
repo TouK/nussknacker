@@ -5,9 +5,9 @@ import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.sttp.SttpJson
-import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
+import pl.touk.nussknacker.http.backend.SttpJson
+import pl.touk.nussknacker.http.backend.SttpJson.asOptionalJson
 import sttp.client3._
 import sttp.client3.circe._
 import sttp.model.Uri
@@ -15,8 +15,8 @@ import sttp.model.Uri
 import java.io.File
 import java.net.URI
 import java.util.concurrent.TimeoutException
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 class HttpFlinkClient(restUrl: URI, scenarioStateRequestTimeout: FiniteDuration, jobManagerTimeout: FiniteDuration)(
     implicit backend: SttpBackend[Future, Any],
@@ -26,7 +26,7 @@ class HttpFlinkClient(restUrl: URI, scenarioStateRequestTimeout: FiniteDuration,
 
   private val flinkUrl = Uri(restUrl)
 
-  import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
+  import pl.touk.nussknacker.http.backend.HttpClientErrorHandler._
 
   def uploadJarFileIfNotExists(jarFile: File): Future[JarFile] = {
     checkThatJarWithNameExists(jarFile.getName).flatMap {

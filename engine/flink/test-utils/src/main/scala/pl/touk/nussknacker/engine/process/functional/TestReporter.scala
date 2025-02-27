@@ -5,12 +5,11 @@ import org.apache.flink.metrics._
 import org.apache.flink.metrics.reporter.{MetricReporter, MetricReporterFactory}
 import org.apache.flink.runtime.metrics.scope.ScopeFormat
 import pl.touk.nussknacker.engine.api.process.ProcessName
-
-import java.util.concurrent.ConcurrentHashMap
-import scala.jdk.CollectionConverters._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util.Properties
+import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters._
 
 object TestReporterUtil {
 

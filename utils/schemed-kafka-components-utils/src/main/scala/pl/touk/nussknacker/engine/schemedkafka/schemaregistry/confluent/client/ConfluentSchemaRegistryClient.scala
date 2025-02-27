@@ -3,14 +3,14 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.{ParsedSchema, SchemaProvider}
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{
   CachedSchemaRegistryClient => CCachedSchemaRegistryClient,
   SchemaRegistryClient => CSchemaRegistryClient
 }
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
-import io.confluent.kafka.schemaregistry.{ParsedSchema, SchemaProvider}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.kafka.{SchemaRegistryClientKafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._

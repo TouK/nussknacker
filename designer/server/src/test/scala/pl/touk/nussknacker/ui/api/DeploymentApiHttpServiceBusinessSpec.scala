@@ -11,13 +11,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails,
   VeryPatientScalaFutures
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path

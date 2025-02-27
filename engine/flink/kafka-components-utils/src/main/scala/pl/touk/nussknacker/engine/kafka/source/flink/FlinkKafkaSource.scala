@@ -25,15 +25,15 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{
-  FlinkDeserializationSchemaWrapper,
-  wrapToFlinkDeserializationSchema
+  wrapToFlinkDeserializationSchema,
+  FlinkDeserializationSchemaWrapper
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME

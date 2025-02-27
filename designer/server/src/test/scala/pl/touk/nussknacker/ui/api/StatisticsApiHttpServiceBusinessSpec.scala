@@ -7,8 +7,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.response.ValidatableResponse
-import org.hamcrest.Matchers.{equalTo, matchesRegex}
 import org.hamcrest.{BaseMatcher, Description, Matcher}
+import org.hamcrest.Matchers.{equalTo, matchesRegex}
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -21,25 +21,25 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.{
-  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
-  WithAccessControlCheckingDesignerConfig,
-  WithDesignerConfig
-}
-import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig,
+  WithDesignerConfig
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticName
 import pl.touk.nussknacker.ui.statistics._
 
+import java.time.{Clock, Instant, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, ZoneOffset}
 import java.util.UUID
 import scala.util.{Failure, Random, Success, Try}
 

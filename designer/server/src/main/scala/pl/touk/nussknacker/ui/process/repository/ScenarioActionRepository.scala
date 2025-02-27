@@ -4,17 +4,17 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
   ScenarioActivityEntityData,
   ScenarioActivityEntityFactory,
   ScenarioActivityType
 }
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
@@ -382,8 +382,10 @@ class DbScenarioActionReadOnlyRepository(
       .map(pa => (pa.scenarioId, pa.activityType))
     run(
       query.result
-        .map(_.groupBy { case (process_id, _) => ProcessId(process_id.value) }
-          .mapValuesNow(_.map(_._2).toSet.flatMap(actionName)))
+        .map(
+          _.groupBy { case (process_id, _) => ProcessId(process_id.value) }
+            .mapValuesNow(_.map(_._2).toSet.flatMap(actionName))
+        )
     )
   }
 

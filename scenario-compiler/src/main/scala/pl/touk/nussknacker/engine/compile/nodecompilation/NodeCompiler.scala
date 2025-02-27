@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
+import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
+import pl.touk.nussknacker.engine.{api, compiledgraph}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicComponent, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -14,13 +15,13 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
   ExpressionCompiler,
   FragmentSourceWithTestWithParametersSupportFactory,
   NodeValidationExceptionHandler
 }
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
@@ -33,14 +34,13 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDef
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 

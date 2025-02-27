@@ -16,7 +16,7 @@ import org.testcontainers.utility.LogUtils
 import pl.touk.nussknacker.test.MiscUtils._
 import pl.touk.nussknacker.test.WithTestHttpClientCreator
 import pl.touk.nussknacker.test.containers.ContainerExt.toContainerExt
-import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment.{JSON, slf4jLogger}
+import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment.{slf4jLogger, JSON}
 import sttp.client3._
 import sttp.model.MediaType
 import ujson.Value

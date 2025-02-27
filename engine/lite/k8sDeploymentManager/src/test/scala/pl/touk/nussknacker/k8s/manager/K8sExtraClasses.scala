@@ -5,13 +5,13 @@ import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.k8s.manager.K8sExtraClasses.{extraClassesSecretName, serviceLoaderConfigItemName}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import play.api.libs.json.Format
+import skuber.{ObjectMeta, ResourceDefinition, Secret}
 import skuber.api.client.{KubernetesClient, LoggingContext}
 import skuber.json.format._
-import skuber.{ObjectMeta, ResourceDefinition, Secret}
 
 import java.net.URL
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 
 class K8sExtraClasses(k8s: KubernetesClient, classes: List[Class[_]], serviceLoaderConfigURL: URL)
     extends VeryPatientScalaFutures {

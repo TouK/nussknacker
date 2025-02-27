@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler
 
-import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.language.higherKinds
 
 /*

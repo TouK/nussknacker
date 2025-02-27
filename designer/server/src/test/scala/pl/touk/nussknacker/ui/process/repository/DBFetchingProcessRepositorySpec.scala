@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
@@ -14,8 +14,8 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Comment
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists

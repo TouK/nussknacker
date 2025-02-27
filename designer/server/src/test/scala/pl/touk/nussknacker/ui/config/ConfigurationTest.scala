@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.config
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 
 import java.net.URI
 import java.nio.file.Files

@@ -5,8 +5,8 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.RestAssuredVerboseLoggingIfValidationFails
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 
 class DictApiHttpServiceSpec
     extends AnyFreeSpecLike

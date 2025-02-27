@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -13,8 +13,8 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,

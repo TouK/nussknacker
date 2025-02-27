@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.JoinContextTransformation
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,

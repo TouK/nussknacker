@@ -9,12 +9,12 @@ import pl.touk.nussknacker.engine.lite.TaskStatus
 import pl.touk.nussknacker.engine.lite.TaskStatus.{DuringDeploy, Restarting, Running, TaskStatus}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 
 //Runs task in loop, in several parallel copies restarting on errors
 //TODO: probably there is some util for that? :)

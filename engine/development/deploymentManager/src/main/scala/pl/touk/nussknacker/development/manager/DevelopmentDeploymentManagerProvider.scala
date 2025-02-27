@@ -20,16 +20,17 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Future, Promise}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, modelData: BaseModelData)
     extends DeploymentManager
     with LazyLogging {
 
-  import SimpleStateStatus._
   import dependencies._
+
+  import SimpleStateStatus._
 
   // Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"

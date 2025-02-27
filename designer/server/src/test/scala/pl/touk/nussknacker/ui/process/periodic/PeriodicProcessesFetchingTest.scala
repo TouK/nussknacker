@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
-import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
 
 import java.time.Clock

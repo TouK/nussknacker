@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.flink.table.join
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.types.Row
+import org.scalatest.{BeforeAndAfterAll, Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, Inside, LoneElement}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName

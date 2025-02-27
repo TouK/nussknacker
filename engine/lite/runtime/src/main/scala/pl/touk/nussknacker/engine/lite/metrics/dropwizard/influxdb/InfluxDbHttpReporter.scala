@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb
 
 import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.influxdb._
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
+import io.dropwizard.metrics5.influxdb._
 import sttp.client3._
 
 import java.lang

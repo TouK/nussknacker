@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.definition.component._
 
 object DefaultComponentConfigDeterminer {

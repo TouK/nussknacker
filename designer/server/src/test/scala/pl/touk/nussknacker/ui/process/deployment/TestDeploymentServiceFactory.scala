@@ -3,19 +3,19 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{actorSystem, clock, ec, processingType}
@@ -24,8 +24,8 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeployme
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ScenarioActionRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import sttp.client3.testing.SttpBackendStub
 
 import java.time.Clock

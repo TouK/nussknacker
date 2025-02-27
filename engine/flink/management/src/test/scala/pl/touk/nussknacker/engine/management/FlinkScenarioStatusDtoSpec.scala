@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.management
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
   ScenarioStatusPresentationDetails,
   ScenarioStatusWithScenarioContext
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 
 class FlinkScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Inside {
 

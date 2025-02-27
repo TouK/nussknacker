@@ -5,10 +5,10 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.SourceFactory
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -22,14 +22,15 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-import java.time.Duration
 import java.{util => jul}
+import java.time.Duration
 import scala.jdk.CollectionConverters._
 
 class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
-  import UnionWithMemoTransformerSpec._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import UnionWithMemoTransformerSpec._
 
   private val UnionNodeId = "joined-node-id"
 

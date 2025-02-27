@@ -3,25 +3,25 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Json, parser}
+import io.circe.{parser, Json}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,

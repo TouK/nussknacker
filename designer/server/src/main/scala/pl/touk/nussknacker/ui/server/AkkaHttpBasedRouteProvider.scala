@@ -9,6 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -17,13 +18,11 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
-import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
+import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{
   AttachmentsConfig,
   ComponentLinksConfigExtractor,
@@ -31,14 +30,15 @@ import pl.touk.nussknacker.ui.config.{
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
 }
+import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
-import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
   ScenarioPropertiesConfigFinalizer
 }
+import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -47,13 +47,6 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{Notification, NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
-  FinishedDeploymentsStatusesSynchronizationConfig,
-  FinishedDeploymentsStatusesSynchronizationScheduler,
-  ScenarioDeploymentReconciler
-}
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionInfoService,
   ActionService,
@@ -65,19 +58,26 @@ import pl.touk.nussknacker.ui.process.deployment.{
   ScenarioResolver,
   ScenarioTestExecutorServiceImpl
 }
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
+  FinishedDeploymentsStatusesSynchronizationConfig,
+  FinishedDeploymentsStatusesSynchronizationScheduler,
+  ScenarioDeploymentReconciler
+}
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationConfig,
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
-import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
@@ -85,15 +85,15 @@ import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityServ
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
-import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{
   FingerprintService,
   PublicEncryptionKey,
   StatisticUrlConfig,
   UsageStatisticsReportsSettingsService
 }
+import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util._
@@ -120,6 +120,7 @@ class AkkaHttpBasedRouteProvider(
     processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
     designerClock: Clock,
+    deploymentManagersClassLoader: DeploymentManagersClassLoader,
     modelClassLoaderProvider: ModelClassLoaderProvider
 )(
     implicit system: ActorSystem,
@@ -184,16 +185,22 @@ class AkkaHttpBasedRouteProvider(
         DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
       writeProcessRepository =
         ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
-      processChangeListener = ProcessChangeListenerLoader.loadListeners(
-        getClass.getClassLoader,
-        resolvedDesignerConfig,
-        NussknackerServices(new PullProcessRepository(futureProcessRepository))
-      )
       dmDispatcher =
         new DeploymentManagerDispatcher(
           processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
           futureProcessRepository
         )
+      fetchScenarioActivityService = new FetchScenarioActivityService(
+        dmDispatcher,
+        scenarioActivityRepository,
+        futureProcessRepository,
+        dbioRunner,
+      )
+      processChangeListener = ProcessChangeListenerLoader.loadListeners(
+        getClass.getClassLoader,
+        resolvedDesignerConfig,
+        NussknackerServices(new PullProcessRepository(futureProcessRepository, fetchScenarioActivityService))
+      )
       deploymentsStatusesProvider =
         new EngineSideDeploymentStatusesProvider(dmDispatcher, featureTogglesConfig.scenarioStateTimeout)
       scenarioStatusProvider = new ScenarioStatusProvider(
@@ -349,12 +356,6 @@ class AkkaHttpBasedRouteProvider(
           },
         processService,
         fragmentRepository
-      )
-      val fetchScenarioActivityService = new FetchScenarioActivityService(
-        dmDispatcher,
-        scenarioActivityRepository,
-        futureProcessRepository,
-        dbioRunner,
       )
       val notificationService = new NotificationServiceImpl(
         fetchScenarioActivityService,
@@ -782,6 +783,7 @@ class AkkaHttpBasedRouteProvider(
               sttpBackend,
               _
             ),
+            deploymentManagersClassLoader,
             modelClassLoaderProvider,
             Some(dbRef),
           )
