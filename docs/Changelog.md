@@ -94,6 +94,12 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7600](https://github.com/TouK/nussknacker/pull/7600) Added 'Custom HTTP Service' SPI
+  * it can be used to run custom services and expose custom endpoints alongside Nu Designer API
+  * it can be used by providing implementation of `class CustomHttpServiceProviderFactory`
+  * this SPI can be provided only on compile-time, not as a plugin on a later time
+  * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
+  * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
 
 ## 1.18
 
