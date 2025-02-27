@@ -5,9 +5,10 @@ import org.apache.flink.api.connector.source.Boundedness
 import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
+import pl.touk.nussknacker.engine.ComponentUseCase
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -200,7 +201,8 @@ class FlinkTestScenarioRunner(
             testExtensionsHolder,
             testScenarioCollectorHandler.resultsCollectingListener,
             modelData,
-            componentUseCase
+            componentUseCase,
+            nodesData = NodesDeploymentData.empty
           )
 
         // We directly use Compiler even if registrar already do this to return compilation errors
@@ -209,7 +211,7 @@ class FlinkTestScenarioRunner(
           scenario.metaData,
           processVersion,
           testScenarioCollectorHandler.resultCollector,
-          getClass.getClassLoader
+          getClass.getClassLoader,
         )
 
         compileProcessData.compileProcess(scenario).map { _ =>

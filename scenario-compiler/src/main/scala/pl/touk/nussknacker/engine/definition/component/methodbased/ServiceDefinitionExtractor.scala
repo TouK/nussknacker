@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import java.util.concurrent.Executor
@@ -17,7 +17,7 @@ object ServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Serv
     classOf[MetaData],
     classOf[NodeId],
     classOf[Context],
-    classOf[ComponentUseCase]
+    classOf[ComponentUseContext]
   )
 
   override def acceptCustomTransformation: Boolean = false
@@ -33,7 +33,7 @@ object JavaServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[
     classOf[MetaData],
     classOf[NodeId],
     classOf[Context],
-    classOf[ComponentUseCase]
+    classOf[ComponentUseContext]
   )
 
   override def acceptCustomTransformation: Boolean = false
@@ -49,7 +49,7 @@ object EagerServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor
     classOf[MetaData],
     classOf[NodeId],
     classOf[Context],
-    classOf[ComponentUseCase]
+    classOf[ComponentUseContext]
   )
 
 }

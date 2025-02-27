@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.ComponentUseCase
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ValidationContext

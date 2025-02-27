@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -18,7 +18,7 @@ object UnionReturnObjectService extends EagerServiceWithStaticParametersAndRetur
       collector: ServiceInvocationCollector,
       contextId: ContextId,
       metaData: MetaData,
-      componentUseCase: ComponentUseCase
+      componentUseContext: ComponentUseContext
   ): Future[Any] =
     Future.successful(Map("foo" -> 1))
 

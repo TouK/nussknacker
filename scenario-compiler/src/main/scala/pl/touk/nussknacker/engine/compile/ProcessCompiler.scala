@@ -1,22 +1,22 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
-import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compiledgraph.{part, CompiledProcessParts}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -358,7 +358,8 @@ object ProcessValidator {
       Seq.empty,
       PreventInvocationCollector,
       ComponentUseCase.Validation,
-      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
+      NodesDeploymentData.empty,
+      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default,
     )
     val sub = new PartSubGraphCompiler(nodeCompiler)
     new ProcessCompiler(

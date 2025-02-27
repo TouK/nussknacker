@@ -3,21 +3,21 @@ package pl.touk.nussknacker.openapi.functional
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClient
-import org.scalatest.{BeforeAndAfterAll, Outcome}
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, Outcome}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.http.backend.FixedAsyncHttpClientBackendProvider
-import pl.touk.nussknacker.openapi.{ApiKeySecret, OpenAPIServicesConfig, SecurityConfig, SecuritySchemeName}
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
+import pl.touk.nussknacker.openapi.{ApiKeySecret, OpenAPIServicesConfig, SecuritySchemeName}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URL
@@ -31,9 +31,9 @@ class OpenAPIServiceSpec
     with LazyLogging
     with PatientScalaFutures {
 
-  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
-  implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val context: Context                   = Context("testContextId", Map.empty)
+  implicit val componentUseCase: ComponentUseContext = ComponentUseContext.EngineRuntime(None)
+  implicit val metaData: MetaData                    = MetaData("testProc", StreamMetaData())
+  implicit val context: Context                      = Context("testContextId", Map.empty)
   val jobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType

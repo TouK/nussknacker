@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.lite
 
-import cats.{Monad, Monoid}
-import cats.data._
 import cats.data.Validated.{Invalid, Valid}
+import cats.data._
 import cats.implicits._
-import pl.touk.nussknacker.engine.{compiledgraph, InterpretationResult, ModelData}
+import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
+import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseCase,
+  ComponentUseContext,
   ProcessObjectDependencies,
   ServiceExecutionContext,
   Source
@@ -25,7 +24,7 @@ import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
-import pl.touk.nussknacker.engine.lite.api.commonTypes.{monoid, DataBatch, ErrorType, ResultType}
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
   EndResult,
@@ -42,6 +41,7 @@ import pl.touk.nussknacker.engine.util.metrics.common.{
   ExceptionCountingListener,
   NodeCountingListener
 }
+import pl.touk.nussknacker.engine.{ComponentUseCase, InterpretationResult, ModelData, compiledgraph}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -63,7 +63,8 @@ object ScenarioInterpreterFactory {
       modelData: ModelData,
       additionalListeners: List[ProcessListener] = Nil,
       resultCollector: ResultCollector = ProductionServiceInvocationCollector,
-      componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
+      componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime,
+      nodesDeploymentData: NodesDeploymentData = NodesDeploymentData.empty
   )(
       implicit ec: ExecutionContext,
       shape: InterpreterShape[F],
@@ -91,7 +92,8 @@ object ScenarioInterpreterFactory {
         modelData.modelClassLoader,
         resultCollector,
         componentUseCase,
-        modelData.customProcessValidator
+        modelData.customProcessValidator,
+        nodesDeploymentData,
       )
 
       compilerData.compile(process).andThen { compiledProcess =>

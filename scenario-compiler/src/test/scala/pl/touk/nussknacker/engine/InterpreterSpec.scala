@@ -1,18 +1,20 @@
 package pl.touk.nussknacker.engine
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.Tables.Table
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  DesignerWideComponentId,
+  NodesDeploymentData,
+  UnboundedStreamComponent
+}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -20,6 +22,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -31,8 +34,8 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.component.Components
@@ -42,8 +45,8 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -51,11 +54,11 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.testcomponents.SpelTemplatePartsService
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
 import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
   EnricherContextTransformation
 }
+import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
 
 import java.util.{Collections, Optional}
 import javax.annotation.Nullable
@@ -202,7 +205,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
       ComponentUseCase.EngineRuntime,
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
+      CustomProcessValidatorLoader.emptyCustomProcessValidator,
+      NodesDeploymentData.empty,
     )
   }
 
@@ -1175,7 +1179,7 @@ object InterpreterSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
       Future.successful(eagerParameters.head._2.toString)
     }
@@ -1199,7 +1203,7 @@ object InterpreterSpec {
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
       Future.successful(params(spelTemplateParameterName).asInstanceOf[TemplateEvaluationResult].renderedTemplate)
     }
@@ -1221,7 +1225,7 @@ object InterpreterSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[Any] = {
       Future.successful(eagerParameters.head._2.toString)
     }
@@ -1244,7 +1248,7 @@ object InterpreterSpec {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         Future.successful(param)
       }
@@ -1271,7 +1275,7 @@ object InterpreterSpec {
             override def invoke(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                componentUseCase: ComponentUseCase
+                componentUseContext: ComponentUseContext,
             ): Future[AnyRef] = {
               Future.successful(lazyOne.evaluate(context))
             }
@@ -1324,7 +1328,7 @@ object InterpreterSpec {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseContext: ComponentUseContext,
         ): Future[AnyRef] = {
           Future.successful(lazyDynamicParamValue.evaluate(context))
         }
