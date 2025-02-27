@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.customhttpservice.services
 
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName, UserName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService._
@@ -9,17 +9,16 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 import java.time.Instant
-import scala.concurrent.Future
 
-trait ScenarioService {
+trait ScenarioService[M[_]] {
 
   def getLatestProcessesWithDetails(query: ScenarioQuery)(
       implicit user: LoggedUser
-  ): Future[List[ScenarioWithDetails]]
+  ): M[List[ScenarioWithDetails]]
 
   def getLatestVersionForProcesses(query: ScenarioQuery, excludedUserNames: Set[String])(
       implicit user: LoggedUser
-  ): Future[Map[ProcessId, ScenarioVersionMetadata]]
+  ): M[Map[ProcessId, ScenarioVersionMetadata]]
 
 }
 
@@ -73,7 +72,7 @@ object ScenarioService {
   final case class ScenarioVersionMetadata(
       versionId: VersionId,
       createdAt: Instant,
-      createdByUser: String,
+      createdByUser: UserName,
   )
 
 }

@@ -23,7 +23,18 @@ class CustomHttpServiceTest
   test("send request to the http endpoint exposed by CustomHttpService SPI with authentication data") {
     val response1 = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/custom/testPathPart1/testPathPart2")
+        .get(uri"$nuDesignerHttpAddress/api/custom/testProvider/testPathPart")
+        .auth
+        .basic("admin", "admin")
+    )
+    response1.code shouldEqual StatusCode.Ok
+    response1.body shouldEqual "testResponse"
+  }
+
+  test("send request to the http endpoint exposed by second CustomHttpService SPI with authentication data") {
+    val response1 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/custom/secondTestProvider/testPathPart")
         .auth
         .basic("admin", "admin")
     )
@@ -33,18 +44,10 @@ class CustomHttpServiceTest
 
   test("send request to the http endpoint exposed by CustomHttpService SPI without authentication data") {
     val response1 = httpClient.send(
-      quickRequest.get(uri"$nuDesignerHttpAddress/api/custom/testPathPart1/testPathPart2")
+      quickRequest.get(uri"$nuDesignerHttpAddress/api/custom/testProvider/testPathPart")
     )
     response1.code shouldEqual StatusCode.Unauthorized
     response1.body shouldEqual "The resource requires authentication, which was not supplied with the request"
-  }
-
-  test("send request to the public http endpoint exposed by CustomHttpService SPI without authentication data") {
-    val response1 = httpClient.send(
-      quickRequest.get(uri"$nuDesignerHttpAddress/api/custom/public/testPathPart1/testPathPart2")
-    )
-    response1.code shouldEqual StatusCode.Ok
-    response1.body shouldEqual "testResponse"
   }
 
 }

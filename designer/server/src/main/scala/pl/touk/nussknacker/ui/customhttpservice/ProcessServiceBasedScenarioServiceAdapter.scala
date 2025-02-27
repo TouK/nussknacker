@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
+import cats.effect.{Async, Sync}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService
@@ -11,14 +12,14 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
-class ScenarioServiceImpl(
+class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
     processService: ProcessService
 )(implicit executionContext: ExecutionContext)
-    extends ScenarioService {
+    extends ScenarioService[M] {
 
   override def getLatestProcessesWithDetails(
       query: ScenarioService.ScenarioQuery
-  )(implicit user: LoggedUser): Future[List[ScenarioService.ScenarioWithDetails]] =
+  )(implicit user: LoggedUser): M[List[ScenarioService.ScenarioWithDetails]] =
     processService
       .getLatestProcessesWithDetails(
         toDomain(query),
@@ -29,10 +30,12 @@ class ScenarioServiceImpl(
   override def getLatestVersionForProcesses(
       query: ScenarioService.ScenarioQuery,
       excludedUserNames: Set[String]
-  )(implicit user: LoggedUser): Future[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
+  )(implicit user: LoggedUser): M[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
     processService
       .getLatestVersionForProcesses(toDomain(query), excludedUserNames)
       .map(_.map { case (processId, metadata) => (processId, toApi(metadata)) })
+
+  private implicit def deferToM[T](f: => Future[T]): M[T] = Async[M].fromFuture(Sync[M].delay(f))
 
   private def toDomain(query: ScenarioService.ScenarioQuery): ScenarioQuery =
     ScenarioQuery(

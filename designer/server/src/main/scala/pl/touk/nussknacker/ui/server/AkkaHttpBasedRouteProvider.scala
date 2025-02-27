@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
+import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
@@ -35,7 +36,7 @@ import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForC
 import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProvider,
   CustomHttpServiceProviderFactory,
-  ScenarioServiceImpl
+  ProcessServiceBasedScenarioServiceAdapter
 }
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
@@ -341,7 +342,7 @@ class AkkaHttpBasedRouteProvider(
         actionRepository,
         writeProcessRepository,
       )
-      customHttpServiceProvider <- createCustomHttpServiceProvider(resolvedDesignerConfig, processService)
+      customHttpServiceProviders <- createCustomHttpServiceProvider(resolvedDesignerConfig, processService)
     } yield {
 
       val configProcessToolbarService = new ConfigScenarioToolbarService(
@@ -601,13 +602,16 @@ class AkkaHttpBasedRouteProvider(
           ),
         ).flatten
 
-        val customHttpServiceRouteWithUser = new RouteWithUser {
-          override protected def securedRoute(implicit user: LoggedUser): Route = pathPrefix("custom") {
-            customHttpServiceProvider.provideRouteWithUser(user)
+        val customHttpServiceRoutes = customHttpServiceProviders.map { case (name, provider) =>
+          new RouteWithUser {
+            override protected def securedRoute(implicit user: LoggedUser): Route =
+              pathPrefix("custom" / name) {
+                provider.provideRouteWithUser(user)
+              }
           }
         }
 
-        routes ++ optionalRoutes ++ List(customHttpServiceRouteWithUser)
+        routes ++ optionalRoutes ++ customHttpServiceRoutes
       }
 
       val usageStatisticsReportsConfig =
@@ -653,16 +657,9 @@ class AkkaHttpBasedRouteProvider(
         fingerprintService
       )
 
-      val customHttpServiceRouteWithoutUser = new RouteWithoutUser {
-        override protected def publicRoute(): Route = pathPrefix("custom") {
-          customHttpServiceProvider.provideRouteWithoutUser()
-        }
-      }
-
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
         authenticationResources.routeWithPathPrefix,
-        customHttpServiceRouteWithoutUser.publicRouteWithErrorHandling(),
       )
 
       val nuDesignerApi =
@@ -881,23 +878,32 @@ class AkkaHttpBasedRouteProvider(
   private def createCustomHttpServiceProvider(
       config: Config,
       processService: ProcessService
-  ): Resource[IO, CustomHttpServiceProvider] = {
+  ): Resource[IO, Map[String, CustomHttpServiceProvider]] = {
     Multiplicity(
       ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
     ) match {
       case Empty() =>
-        Resource.pure[IO, CustomHttpServiceProvider](CustomHttpServiceProvider.noop)
+        List.empty[CustomHttpServiceProviderFactory]
       case One(providerFactory) =>
-        providerFactory.create(
-          config,
-          NussknackerServicesForCustomHttpService(new ScenarioServiceImpl(processService)),
-        )
+        List(providerFactory)
+      case Many(moreThanOne) if moreThanOne.map(_.name).distinct.size == moreThanOne.size =>
+        moreThanOne
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(
-          s"More than one CustomHttpServiceProviderFactory instance found: $moreThanOne"
+          s"CustomHttpServiceProviderFactory instances with conflicting names found: $moreThanOne"
         )
     }
-  }
+  }.map { factory =>
+    factory
+      .create[IO](
+        config,
+        new NussknackerServicesForCustomHttpService[IO](
+          new ProcessServiceBasedScenarioServiceAdapter(processService)
+        ),
+      )
+      .map(factory.name -> _)
+  }.sequence
+    .map(_.toMap)
 
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
     private val actionServiceRef = new AtomicReference[Option[ActionService]](None)

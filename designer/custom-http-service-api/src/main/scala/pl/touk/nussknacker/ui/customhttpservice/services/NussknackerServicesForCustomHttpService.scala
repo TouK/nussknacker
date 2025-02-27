@@ -1,5 +1,5 @@
 package pl.touk.nussknacker.ui.customhttpservice.services
 
-final case class NussknackerServicesForCustomHttpService(
-    scenarioService: ScenarioService,
+final class NussknackerServicesForCustomHttpService[M[_]](
+    val scenarioService: ScenarioService[M],
 )
