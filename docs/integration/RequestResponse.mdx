@@ -26,11 +26,11 @@ curl -X POST -d "payload_based_on_input_schema" 'http://<ingress_domain>/<scenar
 
 ## Swagger UI
 
-For each saved scenario Swagger UI will be available at `http://<ingress_domain>/<scenario_slug>/swagger-ui` (ingress case).
+For each saved scenario Swagger UI will be available at `http://<ingress_domain>/<scenario_slug>/swagger-ui` (ingress case). In the service case, Swagger UI will be availabe at `http://<scenario_slug>/swagger-ui`.
 
 ## OpenAPI interface definition
 
-For each deployed `Request-Response` scenario an OpenAPI interface definition will be available at `http://<ingress_domain>/<scenario_slug>/definition` (ingress case).
+For each deployed `Request-Response` scenario an OpenAPI interface definition will be available at `http://<ingress_domain>/<scenario_slug>/definition` (ingress case). In the service case it will be availabe at `http://<scenario_slug>/definition`.
 
 You can see example definition below:
 
