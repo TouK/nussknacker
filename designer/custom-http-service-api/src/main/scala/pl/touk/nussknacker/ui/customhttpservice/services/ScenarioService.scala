@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 import java.time.Instant
+import scala.language.higherKinds
 
 trait ScenarioService[M[_]] {
 
