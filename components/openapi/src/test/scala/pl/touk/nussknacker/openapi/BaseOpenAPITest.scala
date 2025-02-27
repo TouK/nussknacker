@@ -19,7 +19,7 @@ trait BaseOpenAPITest {
 
   protected val baseConfig: OpenAPIServicesConfig = OpenAPIServicesConfig(new URL("http://foo"))
 
-  implicit val componentUseContext: ComponentUseContext = ComponentUseContext.EngineRuntime(None)
+  implicit val componentUseContext: ComponentUseContext = ComponentUseContext.LiveRuntime(None)
   implicit val metaData: MetaData                       = MetaData("testProc", StreamMetaData())
   implicit val context: Context                         = Context("testContextId", Map.empty)
   private val jobData        = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))

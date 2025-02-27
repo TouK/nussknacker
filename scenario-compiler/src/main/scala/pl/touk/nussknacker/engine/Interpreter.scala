@@ -29,7 +29,7 @@ private class InterpreterInternal[F[_]: Monad](
     listeners: Seq[ProcessListener],
     expressionEvaluator: ExpressionEvaluator,
     interpreterShape: InterpreterShape[F],
-    componentUseCase: ComponentUseCase,
+    componentUseContextProvider: ComponentUseContextProvider,
     serviceExecutionContext: ServiceExecutionContext,
     nodesDeploymentData: NodesDeploymentData,
 )(implicit jobData: JobData) {
@@ -250,7 +250,7 @@ private class InterpreterInternal[F[_]: Monad](
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
     val nodeDeploymentData                                = nodesDeploymentData.get(NodeId(node.id))
-    implicit val componentUseContext: ComponentUseContext = componentUseCase.toContext(nodeDeploymentData)
+    implicit val componentUseContext: ComponentUseContext = componentUseContextProvider.toContext(nodeDeploymentData)
     val resultFuture                                      = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
     resultFuture.onComplete { result =>
@@ -270,7 +270,7 @@ private class InterpreterInternal[F[_]: Monad](
 class Interpreter(
     listeners: Seq[ProcessListener],
     expressionEvaluator: ExpressionEvaluator,
-    componentUseCase: ComponentUseCase,
+    componentUseContextProvider: ComponentUseContextProvider,
     nodesDeploymentData: NodesDeploymentData,
 ) {
 
@@ -288,7 +288,7 @@ class Interpreter(
       listeners,
       expressionEvaluator,
       shape,
-      componentUseCase,
+      componentUseContextProvider,
       serviceExecutionContext,
       nodesDeploymentData,
     )
@@ -302,10 +302,10 @@ object Interpreter {
   def apply(
       listeners: Seq[ProcessListener],
       expressionEvaluator: ExpressionEvaluator,
-      componentUseCase: ComponentUseCase,
+      componentUseContextProvider: ComponentUseContextProvider,
       nodesDeploymentData: NodesDeploymentData,
   ): Interpreter = {
-    new Interpreter(listeners, expressionEvaluator, componentUseCase, nodesDeploymentData)
+    new Interpreter(listeners, expressionEvaluator, componentUseContextProvider, nodesDeploymentData)
   }
 
   object InterpreterShape {

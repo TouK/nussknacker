@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidator, Interpreter}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, CustomProcessValidator, Interpreter}
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -30,7 +30,7 @@ object ProcessCompilerData {
       listeners: Seq[ProcessListener],
       userCodeClassLoader: ClassLoader,
       resultsCollector: ResultCollector,
-      componentUseCase: ComponentUseCase,
+      componentUseContextProvider: ComponentUseContextProvider,
       customProcessValidator: CustomProcessValidator,
       nodesData: NodesDeploymentData,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default,
@@ -58,7 +58,7 @@ object ProcessCompilerData {
       userCodeClassLoader,
       listeners,
       resultsCollector,
-      componentUseCase,
+      componentUseContextProvider,
       nodesData,
       nonServicesLazyParamStrategy,
     )
@@ -71,7 +71,7 @@ object ProcessCompilerData {
       customProcessValidator
     )
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
-    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseCase, nodesData)
+    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseContextProvider, nodesData)
 
     new ProcessCompilerData(
       processCompiler,

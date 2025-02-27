@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.functional
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ComponentUseCase
+import pl.touk.nussknacker.engine.ComponentUseContextProvider
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -295,7 +295,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     processInvoker.invokeWithSampleData(process, data)
 
     ProcessTestHelpers.sinkForStringsResultsHolder.results.loneElement shouldBe ComponentUseContext
-      .EngineRuntime(None)
+      .LiveRuntime(None)
       .toString
   }
 

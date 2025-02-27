@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -30,7 +30,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     modelData.modelClassLoader,
     Seq.empty,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.TestDataGeneration,
+    ComponentUseContextProvider.LiveRuntime,
     NodesDeploymentData.empty,
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )

@@ -823,8 +823,16 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         .streaming(scenarioName)
         .source("start", "input")
         .enricher("componentUseContextService", "componentUseContextService", "returningComponentUseContextService")
-        .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUseCase")
-        .emptySink("out", "valueMonitor", "Value" -> "{#componentUseContextService, #componentUseCaseCustomNode}".spel)
+        .customNode(
+          "componentUseContextCustomNode",
+          "componentUseContextCustomNode",
+          "transformerAddingComponentUseContext"
+        )
+        .emptySink(
+          "out",
+          "valueMonitor",
+          "Value" -> "{#componentUseContextService, #componentUseContextCustomNode}".spel
+        )
 
       val results =
         prepareTestRunner(useIOMonadInInterpreter)
@@ -835,7 +843,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .futureValue
 
       results.invocationResults("out").map(_.value) shouldBe List(
-        variable(List(ComponentUseContext.TestRuntime, ComponentUseContext.TestRuntime))
+        variable(List(ComponentUseContext.ScenarioTesting, ComponentUseContext.ScenarioTesting))
       )
     }
 

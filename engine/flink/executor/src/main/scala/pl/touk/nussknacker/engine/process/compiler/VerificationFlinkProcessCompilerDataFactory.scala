@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -17,7 +17,7 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      componentUseCase = ComponentUseCase.Validation,
+      componentUseContextProvider = ComponentUseContextProvider.LiveRuntime,
       modelData.additionalConfigsFromProvider,
       NodesDeploymentData.empty
     ) {

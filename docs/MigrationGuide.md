@@ -86,9 +86,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7598](https://github.com/TouK/nussknacker/pull/7598) Classes from `pl.touk.nussknacker.engine.sttp` package
   were moved to `pl.touk.nussknacker.http.backend`
 * [#7586](https://github.com/TouK/nussknacker/pull/7586) Renamed ComponentUseCase to ComponentUseContext.
-    * Moved NodeDeploymentData from FlinkCustomNodeContext to ComponentUseContext.EngineRuntime.
-    * Introduced ComponentUseCase in ScenarioCompiler, which retains its previous functionality but is now intended for
-      internal use only.  
+    * Moved NodeDeploymentData from FlinkCustomNodeContext to ComponentUseContext.LiveRuntime.
+    * Introduced ComponentUseContextProvider in ScenarioCompiler, which retains ComponentUseCase functionality but is 
+      now intended for internal use only.  
 
 ### Other changes
 

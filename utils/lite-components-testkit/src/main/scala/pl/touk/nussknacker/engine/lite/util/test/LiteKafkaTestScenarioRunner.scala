@@ -12,7 +12,7 @@ import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
-import pl.touk.nussknacker.engine.ComponentUseCase
+import pl.touk.nussknacker.engine.ComponentUseContextProvider
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -112,7 +112,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
       globalVariables,
       config,
       schemaRegistryClient,
-      componentUseCase(testRuntimeMode),
+      componentUseContextProvider(testRuntimeMode),
       serde
     )
   }
@@ -124,7 +124,7 @@ class LiteKafkaTestScenarioRunner(
     globalVariables: Map[String, AnyRef],
     config: Config,
     schemaRegistryClient: SchemaRegistryClientWithRegistration,
-    componentUseCase: ComponentUseCase,
+    componentUseContextProvider: ComponentUseContextProvider,
     serde: KafkaAvroElementSerde
 ) extends TestScenarioRunner {
 
@@ -135,7 +135,7 @@ class LiteKafkaTestScenarioRunner(
   type AvroInput   = ConsumerRecord[Any, KafkaAvroElement]
 
   private val delegate: LiteTestScenarioRunner =
-    new LiteTestScenarioRunner(components, globalVariables, config, componentUseCase)
+    new LiteTestScenarioRunner(components, globalVariables, config, componentUseContextProvider)
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
   private val keyStringDeserializer    = new StringDeserializer
 

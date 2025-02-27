@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -30,14 +30,14 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
       modelData: ModelData,
-      componentUseCase: ComponentUseCase,
+      componentUseContextProvider: ComponentUseContextProvider,
       nodesData: NodesDeploymentData,
   ): FlinkProcessCompilerDataFactory =
     FlinkProcessCompilerDataFactoryWithTestComponents(
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      componentUseCase,
+      componentUseContextProvider,
       testExtensionsHolder,
       resultsCollectingListener,
       modelData.additionalConfigsFromProvider,
@@ -48,7 +48,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator: ProcessConfigCreator,
       extractModelDefinition: ExtractDefinitionFun,
       modelConfig: Config,
-      componentUseCase: ComponentUseCase,
+      componentUseContextProvider: ComponentUseContextProvider,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
       configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
@@ -58,7 +58,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator,
       extractModelDefinition,
       modelConfig,
-      componentUseCase,
+      componentUseContextProvider,
       configsFromProviderWithDictionaryEditor,
       nodesData
     ) {
@@ -98,8 +98,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           modelDependencies: ProcessObjectDependencies,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
-      ): FlinkExceptionHandler = componentUseCase match {
-        case ComponentUseCase.TestRuntime => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
+      ): FlinkExceptionHandler = componentUseContextProvider match {
+        case ComponentUseContextProvider.TestRuntime => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
           new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
         case _ =>
           super.exceptionHandler(metaData, modelDependencies, listeners, classLoader)

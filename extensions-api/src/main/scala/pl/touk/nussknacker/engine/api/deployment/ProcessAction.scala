@@ -109,7 +109,7 @@ object ScenarioActionName {
 }
 
 /**
- * Used to define Flink deployment parameters for each action
+ * Used to define Flink parameters for each action
  */
 trait WithActionParametersSupport {
   def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]

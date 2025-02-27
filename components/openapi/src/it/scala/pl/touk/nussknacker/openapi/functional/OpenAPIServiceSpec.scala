@@ -31,9 +31,9 @@ class OpenAPIServiceSpec
     with LazyLogging
     with PatientScalaFutures {
 
-  implicit val componentUseCase: ComponentUseContext = ComponentUseContext.EngineRuntime(None)
-  implicit val metaData: MetaData                    = MetaData("testProc", StreamMetaData())
-  implicit val context: Context                      = Context("testContextId", Map.empty)
+  implicit val componentUseContext: ComponentUseContext = ComponentUseContext.LiveRuntime(None)
+  implicit val metaData: MetaData                       = MetaData("testProc", StreamMetaData())
+  implicit val context: Context                         = Context("testContextId", Map.empty)
   val jobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType

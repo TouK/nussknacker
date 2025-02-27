@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process._
@@ -35,7 +35,7 @@ object TestFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      ComponentUseCase.TestRuntime,
+      ComponentUseContextProvider.TestRuntime,
       modelData.additionalConfigsFromProvider,
       NodesDeploymentData.empty,
     ) {
