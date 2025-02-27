@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.{Context, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.{Context, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
 import pl.touk.nussknacker.sql.db.query._

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidatorLoader, ModelData}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
@@ -9,7 +11,6 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -24,7 +25,6 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, NodeCountingListener}
-import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidatorLoader, ModelData}
 
 import scala.concurrent.duration.FiniteDuration
 

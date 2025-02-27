@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
@@ -9,7 +10,6 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}

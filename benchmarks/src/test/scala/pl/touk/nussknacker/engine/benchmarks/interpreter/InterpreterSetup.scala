@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.{api, ComponentUseCase, CustomProcessValidatorLoader, InterpretationResult}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -24,7 +25,6 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.{ComponentUseCase, CustomProcessValidatorLoader, InterpretationResult, api}
 
 import scala.language.higherKinds
 import scala.reflect.ClassTag

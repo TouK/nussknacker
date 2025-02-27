@@ -6,6 +6,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toFunctorOps
 import io.circe.Json
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -28,7 +29,6 @@ import pl.touk.nussknacker.engine.requestresponse.openapi.{
   RequestResponseOpenApiGenerator
 }
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds

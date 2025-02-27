@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.requestresponse
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.{RunnableScenarioInterpreter, TaskStatus}
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 
 import scala.concurrent.{ExecutionContext, Future}
 

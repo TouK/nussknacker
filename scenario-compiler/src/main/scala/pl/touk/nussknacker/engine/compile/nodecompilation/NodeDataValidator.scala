@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{invalidNel, valid}
 import cats.implicits.catsSyntaxTuple2Semigroupal
+import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.expression.parse.TypedValue
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
-import pl.touk.nussknacker.engine.{ComponentUseCase, ModelData}
 
 sealed trait ValidationResponse
 
