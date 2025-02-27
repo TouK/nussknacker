@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtype.loader
 import cats.effect.IO
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
