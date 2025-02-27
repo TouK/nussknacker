@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatusName,
@@ -42,19 +41,5 @@ trait BaseEntityFactory extends LazyLogging {
 
   implicit def deploymentStatusName: BaseColumnType[DeploymentStatusName] =
     MappedColumnType.base[DeploymentStatusName, String](_.value, DeploymentStatusName.apply)
-
-  implicit def modelInfoMapper: BaseColumnType[ModelInfo] =
-    MappedColumnType.base[ModelInfo, String](
-      _.asJsonString,
-      ModelInfo
-        .parseJsonString(_)
-        .fold(
-          { err =>
-            logger.warn(s"Saved model info is not a json's object: ${err.getMessage}. Empty map will be returned")
-            ModelInfo.empty
-          },
-          identity
-        )
-    )
 
 }

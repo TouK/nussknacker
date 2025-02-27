@@ -93,8 +93,7 @@ class ComponentApiHttpServiceBusinessSpec
                |  "modifiedAt": "${regexes.zuluDateRegex}",
                |  "modifiedBy": "admin",
                |  "createdAt": "${regexes.zuluDateRegex}",
-               |  "createdBy": "admin",
-               |  "lastAction": null
+               |  "createdBy": "admin"
                |}]""".stripMargin
           )
         )

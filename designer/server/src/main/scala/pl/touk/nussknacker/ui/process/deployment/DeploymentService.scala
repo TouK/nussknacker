@@ -50,30 +50,34 @@ class DeploymentService(
     // TODO: This inconsistent action-state handling needs a fix.
     actionService
       .actionProcessorForVersion[Unit](_.lastDeployedAction.map(_.processVersionId))
-      .processAction(
-        command = command,
-        actionName = ScenarioActionName.Cancel,
-        dmCommandCreator = _ =>
-          DMCancelScenarioCommand(
-            command.commonData.processIdWithName.name,
-            command.commonData.user.toManagerUser
+      .processAction[CancelScenarioCommand, Unit](command = command, actionName = ScenarioActionName.Cancel) { ctx =>
+        import command.commonData._
+        dispatcher
+          .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+          .processCommand(
+            DMCancelScenarioCommand(command.commonData.processIdWithName.name, command.commonData.user.toManagerUser)
           )
-      )
+      }
   }
 
   private def runOffSchedule(command: RunOffScheduleCommand): Future[RunOffScheduleResult] = {
     actionService
       .actionProcessorForLatestVersion[CanonicalProcess]
-      .processAction(
+      .processAction[RunOffScheduleCommand, RunOffScheduleResult](
         command = command,
-        actionName = ScenarioActionName.RunOffSchedule,
-        dmCommandCreator = ctx =>
-          DMRunOffScheduleCommand(
-            ctx.latestScenarioDetails.toEngineProcessVersion,
-            ctx.latestScenarioDetails.json,
-            command.commonData.user.toManagerUser,
+        actionName = ScenarioActionName.RunOffSchedule
+      ) { ctx =>
+        import command.commonData._
+        dispatcher
+          .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+          .processCommand(
+            DMRunOffScheduleCommand(
+              ctx.latestScenarioDetails.toEngineProcessVersion,
+              ctx.latestScenarioDetails.json,
+              command.commonData.user.toManagerUser,
+            )
           )
-      )
+      }
   }
 
   private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
@@ -81,7 +85,6 @@ class DeploymentService(
 
     actionService
       .actionProcessorForLatestVersion[CanonicalProcess]
-      .withModelInfoSaving
       .processActionWithCustomFinalization[RunDeploymentCommand, Future[Option[ExternalDeploymentId]]](
         command = command,
         actionName = ScenarioActionName.Deploy

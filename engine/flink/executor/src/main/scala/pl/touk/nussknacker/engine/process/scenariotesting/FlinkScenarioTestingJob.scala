@@ -58,7 +58,9 @@ private class FlinkScenarioTestingJob(modelData: ModelData) extends LazyLogging 
     )
     streamExecutionEnv.getCheckpointConfig.disableCheckpointing()
 
-    streamExecutionEnv.execute(scenario.name.value)
+    // We don't set name because we don't want that these jobs were be included in some other places such
+    // as scenario status determining
+    streamExecutionEnv.execute()
   }
 
   protected def prepareRegistrar(

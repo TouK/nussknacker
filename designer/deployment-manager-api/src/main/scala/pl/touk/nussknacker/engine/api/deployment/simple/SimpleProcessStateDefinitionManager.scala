@@ -1,19 +1,15 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.DefaultActions
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ProblemStateStatus, statusActionsPF}
 import pl.touk.nussknacker.engine.api.deployment.{
-  ProcessState,
   ProcessStateDefinitionManager,
   ScenarioActionName,
   StateDefinitionDetails,
-  StateStatus,
-  StatusDetails
+  StateStatus
 }
-import pl.touk.nussknacker.engine.api.process.VersionId
 
 /**
   * Base [[ProcessStateDefinitionManager]] with basic state definitions and state transitions.
@@ -22,23 +18,27 @@ import pl.touk.nussknacker.engine.api.process.VersionId
   */
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
 
-  override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] =
-    statusActionsPF.applyOrElse(processStatus, (_: ProcessStatus) => DefaultActions)
+  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    statusActionsPF.lift(input.scenarioStatus).getOrElse(DefaultActions.toSet)
 
-  override def statusDescription(stateStatus: StateStatus): String = stateStatus match {
-    case _ @ProblemStateStatus(message, _) => message
-    case _                                 => SimpleStateStatus.definitions(stateStatus.name).description
+  override def statusDescription(input: ScenarioStatusWithScenarioContext): String = statusDescription(
+    input.scenarioStatus
+  )
+
+  private[nussknacker] def statusDescription(status: StateStatus): String = status match {
+    case _ @ProblemStateStatus(message, _, _) => message
+    case _                                    => SimpleStateStatus.definitions(status.name).description
   }
 
-  override def statusTooltip(stateStatus: StateStatus): String = stateStatus match {
-    case _ @ProblemStateStatus(message, _) => message
-    case _                                 => SimpleStateStatus.definitions(stateStatus.name).tooltip
+  override def statusTooltip(input: ScenarioStatusWithScenarioContext): String = statusTooltip(input.scenarioStatus)
+
+  private[nussknacker] def statusTooltip(status: StateStatus): String = status match {
+    case _ @ProblemStateStatus(message, _, Some(tooltip)) => tooltip
+    case _ @ProblemStateStatus(message, _, _)             => message
+    case _                                                => SimpleStateStatus.definitions(status.name).tooltip
   }
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     SimpleStateStatus.definitions
-
-  def errorFailedToGet(versionId: VersionId): ProcessState =
-    processState(StatusDetails(FailedToGet, None), versionId, None, None)
 
 }

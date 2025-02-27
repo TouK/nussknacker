@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -15,22 +14,33 @@ import java.util.UUID
 // TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
 //  - this class is currently a compatibility layer for older fragments of code, new code should use ScenarioActivity
+//  - this class is used in REST API (JsonCodec) only by external project
 @JsonCodec case class ProcessAction(
     id: ProcessActionId,
+    // Used by external project (listener api)
     processId: ProcessId,
+    // Used by external project
     // We use process action only for finished/execution finished actions so processVersionId is always defined
-    processVersionId: VersionId,
-    user: String,
-    createdAt: Instant,
+    override val processVersionId: VersionId,
+    override val user: String,
     // We use process action only for finished/execution finished actions so performedAt is always defined
+    // Used by external project
     performedAt: Instant,
-    actionName: ScenarioActionName,
-    state: ProcessActionState,
+    // Used by external project
+    override val actionName: ScenarioActionName,
+    override val state: ProcessActionState,
     failureMessage: Option[String],
-    commentId: Option[Long],
+    // Used by external project
     comment: Option[String],
-    modelInfo: Option[ModelInfo]
-)
+) extends ScenarioStatusActionDetails
+
+// This is the narrowest set of information required by scenario status resolving mechanism.
+trait ScenarioStatusActionDetails {
+  def actionName: ScenarioActionName
+  def state: ProcessActionState
+  def processVersionId: VersionId
+  def user: String
+}
 
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString
@@ -74,8 +84,9 @@ object ScenarioActionName {
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
-  val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
-  val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
+  // TODO remove unused action
+  val Pause: ScenarioActionName  = ScenarioActionName("PAUSE") // TODO: To implement in future..
+  val Rename: ScenarioActionName = ScenarioActionName("RENAME")
   // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
   //       In the future it can be changed to better name, according to convention, but that would require database migration
   //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
@@ -83,7 +94,7 @@ object ScenarioActionName {
 
   val DefaultActions: List[ScenarioActionName] = Nil
 
-  val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
+  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy)
 
   def serialize(name: ScenarioActionName): String = name match {
     case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.Monad
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionMetadata}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext

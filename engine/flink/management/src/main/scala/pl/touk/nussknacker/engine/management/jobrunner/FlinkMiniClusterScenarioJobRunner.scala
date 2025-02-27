@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
-import org.apache.flink.api.common.JobExecutionResult
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.{JobExecutionResult, JobID}
+import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,14 +29,17 @@ class FlinkMiniClusterScenarioJobRunner(
   override def runScenarioJob(
       command: DMRunDeploymentCommand,
       savepointPathOpt: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  ): Future[Option[JobID]] = {
     Future {
       miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
+        val conf = new Configuration()
         savepointPathOpt.foreach { savepointPath =>
-          val conf = new Configuration()
           SavepointRestoreSettings.toConfiguration(SavepointRestoreSettings.forPath(savepointPath, true), conf)
-          env.configure(conf)
         }
+        command.deploymentData.deploymentId.toNewDeploymentIdOpt.map(_.toJobID).foreach { jobId =>
+          conf.set(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID, jobId.toHexString)
+        }
+        env.configure(conf)
         val jobID = jobInvoker
           .invokeStaticMethod(
             modelData,
@@ -46,7 +49,7 @@ class FlinkMiniClusterScenarioJobRunner(
             env
           )
           .getJobID
-        Some(ExternalDeploymentId(jobID.toHexString))
+        Some(jobID)
       }
     }
   }

@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.customhttpservice.services
 
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.net.URI
 import java.time.Instant
 import scala.concurrent.Future
 
@@ -47,7 +48,17 @@ object ScenarioService {
       lastAction: Option[ProcessAction],
       //
       modelVersion: Option[Int],
-      state: Option[ProcessState],
+      state: Option[ScenarioStatus],
+  )
+
+  final case class ScenarioStatus(
+      status: String,
+      visibleActions: List[ScenarioActionName],
+      allowedActions: List[ScenarioActionName],
+      actionTooltips: Map[ScenarioActionName, String],
+      icon: URI,
+      tooltip: String,
+      description: String,
   )
 
   final case class ScenarioQuery(

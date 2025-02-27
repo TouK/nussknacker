@@ -123,7 +123,7 @@ object TestProcessUtil {
       scenarioLabels = scenarioLabels,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)
+        case action if ScenarioActionName.ScenarioStatusActions.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect { case Deploy =>
         createProcessAction(Deploy)
@@ -177,15 +177,12 @@ object TestProcessUtil {
     id = ProcessActionId(UUID.randomUUID()),
     processId = ProcessId(generateId()),
     processVersionId = VersionId(generateId()),
-    createdAt = Instant.now(),
     performedAt = Instant.now(),
     user = "user",
     actionName = action,
     state = ProcessActionState.Finished,
     failureMessage = None,
-    commentId = None,
     comment = None,
-    modelInfo = None
   )
 
   private def generateId() = Math.abs(randomGenerator.nextLong())

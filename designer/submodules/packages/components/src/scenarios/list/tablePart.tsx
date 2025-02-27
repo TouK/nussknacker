@@ -8,8 +8,7 @@ import { ScenarioCell } from "../../components/usages/scenarioCell";
 import { useDebouncedValue } from "rooks";
 import { IconButton } from "@mui/material";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { LastAction } from "./item";
-import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import { formatDateTime } from "nussknackerUi/DateUtils";
 import { useScenariosWithCategoryVisible } from "../useScenariosQuery";
 
@@ -80,17 +79,6 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} value={formatDateTime(props.value)} />,
                 sortingOrder: ["desc", "asc", null],
-            },
-            {
-                field: "lastAction",
-                headerName: t("table.scenarios.title.LAST_ACTION", "Last action"),
-                renderCell: (props) => <LastAction lastAction={props.value} />,
-                sortComparator: (v1, v2) =>
-                    (v1?.["action"] || "")
-                        .toString()
-                        .toLowerCase()
-                        .localeCompare((v2?.["action"] || "").toString().toLowerCase()),
-                flex: 1,
             },
             {
                 field: "metrics",

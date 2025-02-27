@@ -42,7 +42,7 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     kafkaServerWithDependencies.shutdownKafkaServer()
 
     eventually {
-      val jobStatuses = manager.getProcessStates(name).futureValue.value
+      val jobStatuses = manager.getScenarioDeploymentsStatuses(name).futureValue.value
       jobStatuses.map(_.status) shouldBe List(SimpleStateStatus.Restarting)
     }
 
@@ -51,7 +51,9 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     kafkaServerWithDependencies.startupKafkaServer()
 
     eventually {
-      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
+        SimpleStateStatus.Running
+      )
     }
   }
 

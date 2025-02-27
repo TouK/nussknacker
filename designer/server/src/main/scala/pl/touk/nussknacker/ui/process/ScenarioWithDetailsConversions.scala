@@ -2,11 +2,13 @@ package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.process.ProcessService.SkipAdditionalFields
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+
+import java.time.Instant
 
 object ScenarioWithDetailsConversions {
 
@@ -61,9 +63,7 @@ object ScenarioWithDetailsConversions {
     def skipProcessActionOptionalFields(processAction: Option[ProcessAction]) = processAction.map(
       _.copy(
         failureMessage = None,
-        commentId = None,
         comment = None,
-        modelInfo = None
       )
     )
     def getProcessAction(processAction: Option[ProcessAction]) =
@@ -78,7 +78,8 @@ object ScenarioWithDetailsConversions {
 
   implicit class Ops(scenarioWithDetails: ScenarioWithDetails) {
 
-    // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
+    // TODO: Instead of doing these conversions below, wee should transform ScenarioWithDetailsEntity with some additional context
+    //       and build DTO at the end
     def toEntity: ScenarioWithDetailsEntity[Unit] = {
       toEntity(())
     }
@@ -114,3 +115,9 @@ object ScenarioWithDetailsConversions {
   }
 
 }
+
+final case class ScenarioVersionMetadata(
+    versionId: VersionId,
+    createdAt: Instant,
+    createdByUser: String,
+)

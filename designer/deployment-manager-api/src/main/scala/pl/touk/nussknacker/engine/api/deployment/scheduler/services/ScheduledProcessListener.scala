@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment.scheduler.services
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.deployment.StatusDetails
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusDetails
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.ScheduledDeploymentDetails
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
@@ -32,17 +32,17 @@ case class DeployedEvent(
 case class FinishedEvent(
     deployment: ScheduledDeploymentDetails,
     canonicalProcess: CanonicalProcess,
-    processState: Option[StatusDetails]
+    processState: Option[DeploymentStatusDetails]
 ) extends ScheduledProcessEvent
 
 case class FailedOnDeployEvent(
     deployment: ScheduledDeploymentDetails,
-    processState: Option[StatusDetails]
+    processState: Option[DeploymentStatusDetails]
 ) extends ScheduledProcessEvent
 
 case class FailedOnRunEvent(
     deployment: ScheduledDeploymentDetails,
-    processState: Option[StatusDetails]
+    processState: Option[DeploymentStatusDetails]
 ) extends ScheduledProcessEvent
 
 case class ScheduledEvent(deployment: ScheduledDeploymentDetails, firstSchedule: Boolean) extends ScheduledProcessEvent

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Cache, Caffeine}
+import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCached, Fresh}
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, JobDetails, JobOverview}
 
 import java.io.File
@@ -26,11 +26,11 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
       .expireAfterWrite(java.time.Duration.ofMillis(jobsOverviewCacheTTL.toMillis))
       .buildAsync[String, List[JobOverview]]()
 
-  private val jobsConfigCache: Cache[String, ExecutionConfig] =
+  private val jobsConfigCache: Cache[JobID, ExecutionConfig] =
     Caffeine
       .newBuilder()
       .maximumSize(jobsConfigCacheSize)
-      .build[String, ExecutionConfig]()
+      .build[JobID, ExecutionConfig]()
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] =
     delegate.deleteJarIfExists(jarFileName)
@@ -57,7 +57,7 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
           )
     }
 
-  override def getJobConfig(jobId: String): Future[ExecutionConfig] =
+  override def getJobConfig(jobId: JobID): Future[ExecutionConfig] =
     Option(jobsConfigCache.getIfPresent(jobId))
       .map(Future.successful)
       .getOrElse(
@@ -69,27 +69,27 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
         }
       )
 
-  override def getJobDetails(jobId: String): Future[Option[JobDetails]] = delegate.getJobDetails(jobId)
+  override def getJobDetails(jobId: JobID): Future[Option[JobDetails]] = delegate.getJobDetails(jobId)
 
-  override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] =
-    delegate.cancel(deploymentId)
+  override def cancel(jobId: JobID): Future[Unit] =
+    delegate.cancel(jobId)
 
   override def makeSavepoint(
-      deploymentId: ExternalDeploymentId,
+      jobId: JobID,
       savepointDir: Option[String]
   ): Future[SavepointResult] =
-    delegate.makeSavepoint(deploymentId, savepointDir)
+    delegate.makeSavepoint(jobId, savepointDir)
 
-  override def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] =
-    delegate.stop(deploymentId, savepointDir)
+  override def stop(jobId: JobID, savepointDir: Option[String]): Future[SavepointResult] =
+    delegate.stop(jobId, savepointDir)
 
   override def runProgram(
       jarFile: File,
       mainClass: String,
       args: List[String],
       savepointPath: Option[String],
-      jobId: Option[String]
-  ): Future[Option[ExternalDeploymentId]] =
+      jobId: Option[JobID]
+  ): Future[Option[JobID]] =
     delegate.runProgram(jarFile, mainClass, args, savepointPath, jobId)
 
   // TODO: Do we need cache here?

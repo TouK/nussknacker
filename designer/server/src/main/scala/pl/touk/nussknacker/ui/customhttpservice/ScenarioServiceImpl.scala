@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.repository.ScenarioVersionMetadata
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery, ScenarioVersionMetadata}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +50,7 @@ class ScenarioServiceImpl(
       createdByUser = metadata.createdByUser,
     )
 
-  private implicit def toApi(scenario: ScenarioWithDetails): ScenarioService.ScenarioWithDetails =
+  private def toApi(scenario: ScenarioWithDetails): ScenarioService.ScenarioWithDetails =
     ScenarioService.ScenarioWithDetails(
       name = scenario.name,
       processId = scenario.processId,
@@ -73,7 +72,18 @@ class ScenarioServiceImpl(
       lastStateAction = scenario.lastStateAction,
       lastAction = scenario.lastAction,
       modelVersion = scenario.modelVersion,
-      state = scenario.state,
+      state = scenario.state.map(toApi),
+    )
+
+  private def toApi(scenario: ScenarioStatusDto): ScenarioService.ScenarioStatus =
+    ScenarioService.ScenarioStatus(
+      status = scenario.status.name,
+      visibleActions = scenario.visibleActions,
+      allowedActions = scenario.allowedActions,
+      actionTooltips = scenario.actionTooltips,
+      icon = scenario.icon,
+      tooltip = scenario.tooltip,
+      description = scenario.description,
     )
 
 }

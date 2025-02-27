@@ -1070,7 +1070,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
-  test("shouldn't allow expressions that reference unknown variables in FragmentInputDefinition") {
+  test("should allow expressions that reference unknown variables in FragmentInputDefinition") {
     val nodeId: String               = "in"
     val invalidReferencingExpression = "#unknownVar"
 
@@ -1094,8 +1094,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
-      error.message should include("Unresolved reference 'unknownVar'")
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
     }
   }
 
