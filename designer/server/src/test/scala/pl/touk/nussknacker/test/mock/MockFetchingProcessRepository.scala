@@ -61,6 +61,14 @@ class MockFetchingProcessRepository private (
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[PS]] =
     fetchLatestProcessesDetails[PS](q).map(_.map(_.json))
 
+  override def fetchLatestVersionForProcesses(
+      query: ScenarioQuery,
+      excludedUserNames: Set[String],
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[ProcessId, ScenarioVersionMetadata]] = Future.successful(Map.empty)
+
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ScenarioWithDetailsEntity[PS]]] =
