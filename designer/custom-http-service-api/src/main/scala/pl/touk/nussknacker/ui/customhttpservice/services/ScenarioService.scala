@@ -26,6 +26,7 @@ object ScenarioService {
 
   final case class ScenarioWithDetails(
       name: ProcessName,
+      processId: Option[ProcessId],
       processVersionId: VersionId,
       isLatestVersion: Boolean,
       description: Option[String],

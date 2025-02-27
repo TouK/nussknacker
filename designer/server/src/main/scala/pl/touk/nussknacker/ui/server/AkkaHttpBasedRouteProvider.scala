@@ -178,26 +178,24 @@ class AkkaHttpBasedRouteProvider(
           Source.fromURL(getClass.getResource("/encryption.key"))
         }
       )
-    } yield {
-      val migrations = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
-      val modelInfos = processingTypeDataProvider.mapValues(_.designerModelData.modelData.info)
+      migrations = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
+      modelInfos = processingTypeDataProvider.mapValues(_.designerModelData.modelData.info)
 
-      implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
-      val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
-      val actionRepository                              = DbScenarioActionRepository.create(dbRef)
-      val stickyNotesRepository                         = DbStickyNotesRepository.create(dbRef, designerClock)
-      val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
+      actionRepository           = DbScenarioActionRepository.create(dbRef)
+      stickyNotesRepository      = DbStickyNotesRepository.create(dbRef, designerClock)
+      scenarioLabelsRepository   = new ScenarioLabelsRepository(dbRef)
+      processRepository          = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository =
+      futureProcessRepository =
         DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-      val writeProcessRepository =
+      writeProcessRepository =
         ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
-      val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
-      val fragmentResolver   = new FragmentResolver(fragmentRepository)
+      fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
+      fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val scenarioTestServiceDeps = processingTypeDataProvider.mapValues { processingTypeData =>
+      scenarioTestServiceDeps = processingTypeDataProvider.mapValues { processingTypeData =>
         val validator = new UIProcessValidator(
           processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
@@ -220,9 +218,9 @@ class AkkaHttpBasedRouteProvider(
         )
       }
 
-      val counter = new ProcessCounter(fragmentRepository)
+      counter = new ProcessCounter(fragmentRepository)
 
-      val scenarioTestService = scenarioTestServiceDeps.mapValues {
+      scenarioTestService = scenarioTestServiceDeps.mapValues {
         case (_, processResolver, scenarioResolver, modelData, deploymentManager) =>
           new ScenarioTestService(
             new ModelDataTestInfoProvider(modelData),
@@ -233,35 +231,35 @@ class AkkaHttpBasedRouteProvider(
             new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
           )
       }
-      val actionInfoService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
+      actionInfoService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
         new ActionInfoService(
           new ModelDataActionInfoProvider(modelData),
           processResolver
         )
       }
 
-      val processValidator = scenarioTestServiceDeps.mapValues(_._1)
-      val processResolver  = scenarioTestServiceDeps.mapValues(_._2)
-      val scenarioResolver = scenarioTestServiceDeps.mapValues(_._3)
+      processValidator = scenarioTestServiceDeps.mapValues(_._1)
+      processResolver  = scenarioTestServiceDeps.mapValues(_._2)
+      scenarioResolver = scenarioTestServiceDeps.mapValues(_._3)
 
-      val notificationsConfig = resolvedDesignerConfig.as[NotificationConfig]("notifications")
-      val processChangeListener = ProcessChangeListenerLoader.loadListeners(
+      notificationsConfig = resolvedDesignerConfig.as[NotificationConfig]("notifications")
+      processChangeListener = ProcessChangeListenerLoader.loadListeners(
         getClass.getClassLoader,
         resolvedDesignerConfig,
         NussknackerServices(new PullProcessRepository(futureProcessRepository))
       )
 
-      val dmDispatcher =
+      dmDispatcher =
         new DeploymentManagerDispatcher(
           processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
           futureProcessRepository
         )
 
-      val additionalComponentConfigs = processingTypeDataProvider.mapValues { processingTypeData =>
+      additionalComponentConfigs = processingTypeDataProvider.mapValues { processingTypeData =>
         processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
       }
 
-      val scenarioStateProvider =
+      scenarioStateProvider =
         ScenarioStateProvider(
           dmDispatcher,
           processRepository,
@@ -269,7 +267,7 @@ class AkkaHttpBasedRouteProvider(
           dbioRunner,
           featureTogglesConfig.scenarioStateTimeout
         )
-      val actionService = new ActionService(
+      actionService = new ActionService(
         dmDispatcher,
         processRepository,
         actionRepository,
@@ -280,19 +278,19 @@ class AkkaHttpBasedRouteProvider(
         modelInfos,
         designerClock
       )
-      actionService.invalidateInProgressActions()
+      _ = actionService.invalidateInProgressActions()
 
-      actionServiceSupplier.set(actionService)
+      _ = actionServiceSupplier.set(actionService)
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
-      processingTypeDataProvider.reloadAll().unsafeRunSync()
+      _ = processingTypeDataProvider.reloadAll().unsafeRunSync()
 
-      val authenticationResources =
+      authenticationResources =
         AuthenticationResources(resolvedDesignerConfig, getClass.getClassLoader, sttpBackend)
-      val authManager = new AuthManager(authenticationResources)
+      authManager = new AuthManager(authenticationResources)
 
-      Initialization.init(
+      _ = Initialization.init(
         migrations,
         dbRef,
         designerClock,
@@ -302,7 +300,7 @@ class AkkaHttpBasedRouteProvider(
         environment
       )
 
-      val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
+      newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
           processingTypeData.deploymentData.scenarioPropertiesConfig,
@@ -310,13 +308,13 @@ class AkkaHttpBasedRouteProvider(
         )
       }
 
-      val stateDefinitionService = new ProcessStateDefinitionService(
+      stateDefinitionService = new ProcessStateDefinitionService(
         processingTypeDataProvider
           .mapValues(_.category)
           .mapCombined(_.statusNameToStateDefinitionsMapping)
       )
 
-      val processService = new DBProcessService(
+      processService = new DBProcessService(
         scenarioStateProvider,
         newProcessPreparer,
         processingTypeDataProvider.mapCombined(_.parametersService),
@@ -326,6 +324,8 @@ class AkkaHttpBasedRouteProvider(
         actionRepository,
         writeProcessRepository,
       )
+      customHttpServiceProvider <- createCustomHttpServiceProvider(resolvedDesignerConfig, processService)
+    } yield {
 
       val configProcessToolbarService = new ConfigScenarioToolbarService(
         CategoriesScenarioToolbarsConfigParser.parse(resolvedDesignerConfig)
@@ -514,8 +514,6 @@ class AkkaHttpBasedRouteProvider(
 
       initMetrics(metricsRegistry, resolvedDesignerConfig, futureProcessRepository)
 
-      val customHttpServiceProvider = createCustomHttpServiceProvider(resolvedDesignerConfig, processService)
-
       val apiResourcesWithAuthentication: List[RouteWithUser] = {
         val legacyDeploymentService = new LegacyDeploymentService(
           dmDispatcher,
@@ -603,7 +601,8 @@ class AkkaHttpBasedRouteProvider(
 
       val usageStatisticsReportsConfig =
         resolvedDesignerConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-      val fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
+      val fingerprintService =
+        new FingerprintService(new FingerprintRepositoryImpl(dbRef))(executionContextWithIORuntime, dbioRunner)
       val usageStatisticsReportsSettingsService = UsageStatisticsReportsSettingsService(
         usageStatisticsReportsConfig,
         processService,
@@ -868,16 +867,18 @@ class AkkaHttpBasedRouteProvider(
     additionalUIConfigProviderFactory.create(config, sttpBackend)
   }
 
-  private def createCustomHttpServiceProvider(config: Config, processService: ProcessService) = {
+  private def createCustomHttpServiceProvider(
+      config: Config,
+      processService: ProcessService
+  ): Resource[IO, CustomHttpServiceProvider] = {
     Multiplicity(
       ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
     ) match {
       case Empty() =>
-        CustomHttpServiceProvider.noop
+        Resource.pure[IO, CustomHttpServiceProvider](CustomHttpServiceProvider.noop)
       case One(providerFactory) =>
         providerFactory.create(
           config,
-          executionContextWithIORuntime,
           NussknackerServicesForCustomHttpService(new ScenarioServiceImpl(processService)),
         )
       case Many(moreThanOne) =>

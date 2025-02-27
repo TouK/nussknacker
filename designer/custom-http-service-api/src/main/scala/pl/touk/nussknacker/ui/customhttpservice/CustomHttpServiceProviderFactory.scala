@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 
@@ -9,8 +10,7 @@ trait CustomHttpServiceProviderFactory {
 
   def create(
       config: Config,
-      executionContext: ExecutionContext,
       services: NussknackerServicesForCustomHttpService
-  ): CustomHttpServiceProvider
+  )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProvider]
 
 }

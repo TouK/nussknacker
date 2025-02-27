@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.test.mock
 
 import akka.http.scaladsl.server.{Directives, Route}
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.customhttpservice.{CustomHttpServiceProvider, CustomHttpServiceProviderFactory}
@@ -12,20 +13,22 @@ class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFact
 
   override def create(
       config: Config,
-      executionContext: ExecutionContext,
       services: NussknackerServicesForCustomHttpService
-  ): CustomHttpServiceProvider = new CustomHttpServiceProvider with Directives {
+  )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProvider] =
+    Resource.pure(TestCustomHttpServiceProvider)
 
-    override def provideRouteWithUser(implicit user: LoggedUser): Route =
-      path("testPathPart1" / "testPathPart2") {
-        get { complete("testResponse") }
-      }
+}
 
-    override def provideRouteWithoutUser(): Route =
-      path("public" / "testPathPart1" / "testPathPart2") {
-        get { complete("testResponse") }
-      }
+object TestCustomHttpServiceProvider extends CustomHttpServiceProvider with Directives {
 
-  }
+  override def provideRouteWithUser(implicit user: LoggedUser): Route =
+    path("testPathPart1" / "testPathPart2") {
+      get { complete("testResponse") }
+    }
+
+  override def provideRouteWithoutUser(): Route =
+    path("public" / "testPathPart1" / "testPathPart2") {
+      get { complete("testResponse") }
+    }
 
 }
