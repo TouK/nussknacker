@@ -35,7 +35,7 @@ export const getCreatorType = (node: NodeType): string | null => {
     return null;
 };
 
-export const fakeComponentType = `testCreator`;
+export const fakeComponentType = `componentsCreator`;
 
 export const getCreator = (type: string): Component => ({
     componentId: `${fakeComponentType}-${type}`,

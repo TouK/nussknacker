@@ -1,11 +1,12 @@
 import { g } from "jointjs";
 import { mapValues } from "lodash";
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { bindActionCreators } from "redux";
 import {
     editNode,
+    fetchProcessDefinition,
     injectNode,
     layoutChanged,
     nodeAdded,
@@ -18,10 +19,16 @@ import {
     stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
+import { ThunkAction } from "../../actions/reduxTypes";
+import HttpService from "../../http/HttpService";
+import { createUniqueName } from "../../reducers/graph/utils";
+import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 import { getLayout, getProcessCounts, getScenario, getStickyNotes } from "../../reducers/selectors/graph";
 import { Capabilities } from "../../reducers/selectors/other";
 import { NodeType } from "../../types";
+import { Scenario } from "../Process/types";
 import { DndTypes } from "../toolbars/creator/Tool";
+import { jsonToFileInFormData } from "./createFragment";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
@@ -94,6 +101,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
         [dispatch],
     );
 
+    const createFragment = useCallback((callback) => dispatch(createFragmentAction(scenario, callback)), [dispatch, scenario]);
+
     return (
         <GraphWrapped
             ref={graph}
@@ -107,6 +116,76 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             processCounts={processCounts}
             layout={layout}
             {...actions}
+            createFragment={createFragment}
         />
     );
 });
+
+const FRAGMENT_TEMPLATE = {
+    metaData: {
+        id: "test-frament",
+        additionalFields: {
+            description: null,
+            properties: {
+                docsUrl: "",
+                componentGroup: "fragments",
+                icon: "/assets/components/FragmentInput.svg",
+            },
+            metaDataType: "FragmentSpecificData",
+            showDescription: false,
+        },
+    },
+    nodes: [
+        {
+            id: "input",
+            parameters: [],
+            additionalFields: {
+                description: null,
+                layoutData: {
+                    x: 0,
+                    y: 0,
+                },
+            },
+            type: "FragmentInputDefinition",
+        },
+        {
+            id: "output",
+            outputName: "output",
+            fields: [],
+            additionalFields: {
+                description: null,
+                layoutData: {
+                    x: 0,
+                    y: 180,
+                },
+            },
+            type: "FragmentOutputDefinition",
+        },
+    ],
+    additionalBranches: [],
+};
+
+function createFragmentAction(scenario: Scenario, callback: (node: NodeType) => void): ThunkAction {
+    return async (dispatch, getState) => {
+        await dispatch(fetchScenarios());
+        const scenarios = getScenariosNames(getState());
+        const uniqueName = createUniqueName("empty fragment", scenarios);
+
+        const { processingType, engineSetupName, processCategory, processingMode } = scenario;
+        await HttpService.createProcess({
+            name: uniqueName,
+            isFragment: true,
+            category: processCategory,
+            processingMode: processingMode,
+            engineSetupName: engineSetupName,
+        });
+        const { data } = await HttpService.importProcess(uniqueName, jsonToFileInFormData(FRAGMENT_TEMPLATE));
+        await HttpService.saveProcess(uniqueName, data.scenarioGraph, "import placeholder data", []);
+        const { componentGroups } = await dispatch(fetchProcessDefinition(processingType, false));
+        const component = componentGroups.find((g) => g.name === "fragments")?.components.find((c) => c.label === uniqueName);
+        callback({
+            ...component.node,
+            id: component.label,
+        });
+    };
+}

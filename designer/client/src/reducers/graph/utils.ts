@@ -34,7 +34,7 @@ export function createUniqueName(name: string, usedNames: string[], isCopy = fal
     return name && !usedNames.includes(name) ? name : generateUniqueName(name, usedNames, 1, isCopy);
 }
 
-function getUniqueIds(initialIds: NodeId[], alreadyUsedIds: NodeId[], isCopy: boolean): NodeId[] {
+function getUniqueIds(initialIds: NodeId[], alreadyUsedIds: NodeId[], isCopy?: boolean): NodeId[] {
     return initialIds.reduce((uniqueIds, initialId) => {
         const reservedIds = alreadyUsedIds.concat(uniqueIds);
         const uniqueId = createUniqueName(initialId, reservedIds, isCopy);
@@ -42,7 +42,7 @@ function getUniqueIds(initialIds: NodeId[], alreadyUsedIds: NodeId[], isCopy: bo
     }, []);
 }
 
-function getIdMapping(currentNodes: NodeType[], newNodes: NodeType[], isCopy: boolean) {
+export function getIdMapping(currentNodes: Pick<NodeType, "id">[], newNodes: Pick<NodeType, "id">[], isCopy?: boolean) {
     const alreadyUsedIds = currentNodes.map((node) => node.id);
     const initialIds = newNodes.map(({ id }) => id);
     const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
