@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
@@ -66,5 +67,6 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
       helper: FlinkLazyParameterFunctionHelper
   ): FlatMapFunction[Context, ValueWithContext[Value]]
 
+  @silent("deprecated")
   def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value]
 }
