@@ -3,6 +3,7 @@ import { combineReducers } from "redux";
 import { StateWithHistory } from "redux-undo";
 import { ProcessStateType } from "../components/Process/types";
 import { reducer as cloudData } from "./cloudData";
+import { reducer as scenarios } from "./scenarios";
 import { GraphState, reducerWithUndo as graphReducer } from "./graph";
 import { reducer as httpErrorHandler } from "./httpErrorHandler";
 import { NodeDetailsState, reducer as nodeDetails } from "./nodeDetailsState";
@@ -27,6 +28,7 @@ export const reducer = combineReducers<RootState>({
     nodeDetails,
     scenarioState,
     cloudData,
+    scenarios,
 });
 
 export type RootState = {
@@ -42,6 +44,7 @@ export type RootState = {
     nodeDetails: NodeDetailsState;
     scenarioState: ProcessStateType;
     cloudData: ReturnType<typeof cloudData>;
+    scenarios: ReturnType<typeof scenarios>;
 };
 
 export default reducer;
