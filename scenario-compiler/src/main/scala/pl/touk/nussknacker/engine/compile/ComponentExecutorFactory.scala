@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.IorNel
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, Params, Service}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, Params, Service}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation

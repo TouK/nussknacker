@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data._
+import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.{ComponentUseCase, Interpreter}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.nussknacker.engine.{ComponentUseCase, Interpreter}
 
 import scala.concurrent.duration.FiniteDuration
 
