@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.processingtype.loader
 
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   CustomProcessValidator,
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.{
   DeploymentManagerProvider,
   MetaDataInitializer
 }
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.ThreadUtils

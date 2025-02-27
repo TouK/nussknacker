@@ -83,6 +83,30 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       .on { case ((_, latestVersion), processId) => latestVersion.processId === processId }
       .map(_._1)
 
+  protected def fetchLatestVersionForProcessesExcludingUsers(
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+      excludedUserNames: Set[String],
+  )(implicit loggedUser: LoggedUser): Query[
+    (Rep[ProcessId], (Rep[VersionId], Rep[Timestamp], Rep[String])),
+    (ProcessId, (VersionId, Timestamp, String)),
+    Seq
+  ] =
+    processVersionsTableWithUnit
+      .filterNot(_.user.inSet(excludedUserNames))
+      .groupBy(_.processId)
+      .map { case (n, group) => (n, group.map(_.createDate).max) }
+      .join {
+        processVersionsTableWithUnit.map(version => (version.processId, version.id, version.createDate, version.user))
+      }
+      .on { case ((processId, latestVersionDate), (versionProcessId, _, versionCreateDate, _)) =>
+        versionProcessId === processId && versionCreateDate === latestVersionDate
+      }
+      .join(processTableFilteredByUser.filter(query).map(_.id))
+      .on { case ((_, (versionProcessId, _, _, _)), processId) => versionProcessId === processId }
+      .map { case (((processId, _), (_, versionId, versionCreateDate, versionCreatedByUser)), _) =>
+        (processId, (versionId, versionCreateDate, versionCreatedByUser))
+      }
+
   protected def processVersionsTableQuery(
       implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
