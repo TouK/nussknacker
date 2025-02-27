@@ -40,11 +40,12 @@ trait SchemaRegistryClient extends Serializable {
 
   def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
 
+  // FIXME: strategy created once
   def isTopicWithSchema(topic: String, kafkaConfig: KafkaConfig): Boolean = {
     if (!kafkaConfig.showTopicsWithoutSchema) {
       true
     } else {
-      val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy().getTopics(this, kafkaConfig)
+      val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy(this).getTopics
       topicsWithSchema.exists(_.map(_.name).contains(topic))
     }
   }
