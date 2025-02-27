@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseCase,
+  ComponentUseContext,
   EmptyProcessConfigCreator,
   ExpressionConfig,
   ProcessingType,
@@ -2624,7 +2624,7 @@ private object UIProcessValidatorSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[Any] = {
       Future.successful(eagerParameters.head._2.toString)
     }

@@ -6,7 +6,7 @@ import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrapped
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessId, Source, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
@@ -109,8 +109,8 @@ object ScenarioActionName {
 }
 
 /**
- * Used to define Source parameters for each action
+ * Used to define Flink parameters for each action
  */
-trait WithActionParametersSupport { self: Source =>
+trait WithActionParametersSupport {
   def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
 }

@@ -199,7 +199,7 @@ object SampleNodes {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseContext: ComponentUseContext,
         ): Future[Any] = {
           if (!opened) {
             throw new IllegalArgumentException
@@ -225,7 +225,7 @@ object SampleNodes {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
           Future.successful(())
@@ -250,7 +250,7 @@ object SampleNodes {
     def execute(
         @ParamName("stringVal") stringVal: String,
         @ParamName("groupBy") groupBy: LazyParameter[String]
-    )(implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) =
+    )(implicit nodeId: NodeId, metaData: MetaData, componentUseContext: ComponentUseContext) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         setUidToNodeIdIfNeed(
           context,
@@ -437,7 +437,7 @@ object SampleNodes {
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Any] = {
             val result = (1 to count)
               .map(_ => definition.asScala.map(_ -> toFill.evaluate(context)).toMap)
@@ -520,15 +520,15 @@ object SampleNodes {
 
   }
 
-  object TransformerAddingComponentUseCase extends CustomStreamTransformer with Serializable {
+  object TransformerAddingComponentUseContext extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute = {
       FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
-        val componentUseCase = flinkCustomNodeContext.componentUseCase
+        val componentUseContext = flinkCustomNodeContext.componentUseContext
         start
           .map(
-            (ctx: Context) => ValueWithContext[AnyRef](componentUseCase, ctx),
+            (ctx: Context) => ValueWithContext[AnyRef](componentUseContext, ctx),
             flinkCustomNodeContext.valueWithContextInfo.forUnknown
           )
       })
@@ -912,7 +912,7 @@ object SampleNodes {
       with SingleInputDynamicComponent[Sink]
       with Serializable {
 
-    private val componentUseCaseDependency = TypedNodeDependency[ComponentUseCase]
+    private val componentUseContextProviderDependency = TypedNodeDependency[ComponentUseContext]
 
     override type State = Nothing
 
@@ -987,7 +987,7 @@ object SampleNodes {
           .map(
             (v: ValueWithContext[String]) =>
               v.copy(value =
-                s"${v.value}+$typeValue-$versionValue+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"
+                s"${v.value}+$typeValue-$versionValue+componentUseContextProvider:${componentUseContextProviderDependency.extract(dependencies)}"
               ),
             flinkNodeContext.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
           )
@@ -1001,7 +1001,7 @@ object SampleNodes {
 
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(componentUseCaseDependency)
+    override def nodeDependencies: List[NodeDependency] = List(componentUseContextProviderDependency)
   }
 
   object ProcessHelper {
@@ -1068,7 +1068,7 @@ object SampleNodes {
     @MethodToInvoke
     def create(
         processMetaData: MetaData,
-        componentUseCase: ComponentUseCase,
+        componentUseContext: ComponentUseContext,
         @ParamName("type") definition: java.util.Map[String, _]
     ): Source = {
       new CollectionSource[TypedMap](List(), None, Typed[TypedMap])
@@ -1091,11 +1091,11 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  object ReturningComponentUseCaseService extends Service with Serializable {
+  object ReturningComponentUseContextService extends Service with Serializable {
 
     @MethodToInvoke
-    def invoke(implicit componentUseCase: ComponentUseCase): Future[ComponentUseCase] = {
-      Future.successful(componentUseCase)
+    def invoke(implicit componentUseContext: ComponentUseContext): Future[ComponentUseContext] = {
+      Future.successful(componentUseContext)
     }
 
   }

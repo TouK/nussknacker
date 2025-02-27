@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessListener}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -16,8 +17,9 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      componentUseCase = ComponentUseCase.Validation,
-      modelData.additionalConfigsFromProvider
+      componentUseContextProvider = ComponentUseContextProvider.LiveRuntime,
+      modelData.additionalConfigsFromProvider,
+      NodesDeploymentData.empty
     ) {
 
       override protected def adjustListeners(

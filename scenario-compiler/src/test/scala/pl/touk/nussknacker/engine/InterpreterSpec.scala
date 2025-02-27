@@ -6,12 +6,15 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.Tables.Table
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  DesignerWideComponentId,
+  NodesDeploymentData,
+  UnboundedStreamComponent
+}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -201,8 +204,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
+      ComponentUseContextProvider.LiveRuntime,
+      CustomProcessValidatorLoader.emptyCustomProcessValidator,
+      NodesDeploymentData.empty,
     )
   }
 
@@ -1175,7 +1179,7 @@ object InterpreterSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
       Future.successful(eagerParameters.head._2.toString)
     }
@@ -1199,7 +1203,7 @@ object InterpreterSpec {
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
       Future.successful(params(spelTemplateParameterName).asInstanceOf[TemplateEvaluationResult].renderedTemplate)
     }
@@ -1221,7 +1225,7 @@ object InterpreterSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[Any] = {
       Future.successful(eagerParameters.head._2.toString)
     }
@@ -1244,7 +1248,7 @@ object InterpreterSpec {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         Future.successful(param)
       }
@@ -1271,7 +1275,7 @@ object InterpreterSpec {
             override def invoke(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                componentUseCase: ComponentUseCase
+                componentUseContext: ComponentUseContext,
             ): Future[AnyRef] = {
               Future.successful(lazyOne.evaluate(context))
             }
@@ -1324,7 +1328,7 @@ object InterpreterSpec {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseContext: ComponentUseContext,
         ): Future[AnyRef] = {
           Future.successful(lazyDynamicParamValue.evaluate(context))
         }

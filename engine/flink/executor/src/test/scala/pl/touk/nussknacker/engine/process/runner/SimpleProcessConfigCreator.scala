@@ -17,10 +17,10 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     Map(
       "logService"      -> WithCategories(LogService, "c1"),
       "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
-      "throwingTransientService"         -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
-      "returningDependentTypeService"    -> WithCategories(ReturningDependentTypeService, "c1"),
-      "collectingEager"                  -> WithCategories(CollectingEagerService, "c1"),
-      "returningComponentUseCaseService" -> WithCategories(ReturningComponentUseCaseService, "c1")
+      "throwingTransientService"            -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
+      "returningDependentTypeService"       -> WithCategories(ReturningDependentTypeService, "c1"),
+      "collectingEager"                     -> WithCategories(CollectingEagerService, "c1"),
+      "returningComponentUseContextService" -> WithCategories(ReturningComponentUseContextService, "c1")
     )
 
   override def sinkFactories(
@@ -34,11 +34,11 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   override def customStreamTransformers(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "stateCustom"                       -> WithCategories.anyCategory(StateCustomNode),
-    "transformWithTime"                 -> WithCategories.anyCategory(TransformerWithTime),
-    "joinBranchExpression"              -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
-    "transformerAddingComponentUseCase" -> WithCategories.anyCategory(TransformerAddingComponentUseCase),
-    "sleep"                             -> WithCategories.anyCategory(SimpleSleepTransformer),
+    "stateCustom"                          -> WithCategories.anyCategory(StateCustomNode),
+    "transformWithTime"                    -> WithCategories.anyCategory(TransformerWithTime),
+    "joinBranchExpression"                 -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
+    "transformerAddingComponentUseContext" -> WithCategories.anyCategory(TransformerAddingComponentUseContext),
+    "sleep"                                -> WithCategories.anyCategory(SimpleSleepTransformer),
   )
 
   override def sourceFactories(

@@ -1,4 +1,5 @@
 import { css, cx } from "@emotion/css";
+import { groupBy } from "lodash";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,16 +15,16 @@ import { ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/ty
 import { ActionNodeParameters } from "../../types/action";
 import { AdvancedParametersSection } from "./AdvancedParametersSection";
 import { mapValues } from "lodash";
-import HttpService from "../../http/HttpService";
-import { ActionParameter } from "./ActionParameter";
+import HttpService, { NodesDeploymentData } from "../../http/HttpService";
+import { GroupedActionParameter } from "./GroupedActionParameter";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ToggleProcessActionModalData } from "./DeployProcessDialog";
 import LoaderSpinner from "../spinner/Spinner";
 import { useErrorBoundary } from "react-error-boundary";
 
-function initialNodesData(params: ActionNodeParameters[]) {
+function initialNodesData(params: ActionNodeParameters[]): NodesDeploymentData {
     return params.reduce(
-        (paramObj, { nodeId, parameters }) => ({
+        (paramObj, { nodeId, componentId, parameters }) => ({
             ...paramObj,
             [nodeId]: mapValues(parameters, (value) => value.defaultValue || ""),
         }),
@@ -40,8 +41,8 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const processVersionId = useSelector(getProcessVersionId);
     const { showBoundary } = useErrorBoundary();
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [parametersDefinition, setParametersDefinition] = useState([]);
-    const [parametersValues, setParametersValues] = useState({});
+    const [parametersDefinition, setParametersDefinition] = useState<ActionNodeParameters[]>([]);
+    const [parametersValues, setParametersValues] = useState<NodesDeploymentData>({});
 
     const getActionParameters = useCallback(async () => {
         setIsLoading(true);
@@ -130,27 +131,32 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                         >
                             {t("dialog.advancedParameters.title", "Advanced parameters")}
                         </Typography>
-                        {parametersDefinition.map((nodeParameters: ActionNodeParameters) => (
-                            <AdvancedParametersSection key={nodeParameters.nodeId} nodeId={nodeParameters.nodeId}>
+                        {Object.entries(groupBy(parametersDefinition, (def) => def.componentId)).map(([componentId, nodeParameters]) => (
+                            <AdvancedParametersSection key={componentId} componentId={componentId}>
                                 <NodeTable>
-                                    {Object.entries(nodeParameters.parameters).map(([paramName, paramConfig]) => {
+                                    {Object.entries(nodeParameters[0].parameters).map(([paramName, paramConfig]) => {
                                         return (
-                                            <ActionParameter
+                                            <GroupedActionParameter
                                                 key={paramName}
-                                                nodeId={nodeParameters.nodeId}
+                                                nodeIds={nodeParameters.map((n) => n.nodeId)}
                                                 parameterName={paramName}
                                                 parameterConfig={paramConfig}
                                                 errors={[]}
-                                                onChange={(nodeId, parameterName, newValue) => {
+                                                onChange={(nodeIds, parameterName, newValue) => {
                                                     setParametersValues({
                                                         ...parametersValues,
-                                                        [nodeId]: {
-                                                            ...parametersValues[nodeId],
-                                                            [parameterName]: newValue,
-                                                        },
+                                                        ...Object.fromEntries(
+                                                            nodeIds.map((nodeId) => [
+                                                                [nodeId],
+                                                                {
+                                                                    ...parametersValues[nodeId],
+                                                                    [parameterName]: newValue,
+                                                                },
+                                                            ]),
+                                                        ),
                                                     });
                                                 }}
-                                                parameterValue={parametersValues[nodeParameters.nodeId][paramName] || ""}
+                                                parameterValue={parametersValues[nodeParameters[0].nodeId][paramName] || ""}
                                             />
                                         );
                                     })}

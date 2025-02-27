@@ -12,6 +12,7 @@ export type ActionParameterName = string;
 
 export interface ActionNodeParameters {
     nodeId: NodeId;
+    componentId: string;
     parameters: { [key: ActionParameterName]: ActionParameterConfig };
 }
 

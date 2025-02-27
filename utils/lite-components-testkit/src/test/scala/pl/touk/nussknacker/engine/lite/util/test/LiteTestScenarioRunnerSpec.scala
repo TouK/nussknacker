@@ -4,17 +4,15 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ComponentUseContextProvider.LiveRuntime
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.util.functions.DateUtils
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.Future
 
 class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with Inside {
@@ -32,7 +30,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
       Map.empty,
       ConfigFactory.empty,
-      EngineRuntime
+      LiveRuntime
     )
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
@@ -46,7 +44,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .buildVariable("v", "v", "varField" -> "#input.field".spel)
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField".spel)
 
-    val runner = new LiteTestScenarioRunner(List.empty, Map.empty, ConfigFactory.empty(), EngineRuntime)
+    val runner = new LiteTestScenarioRunner(List.empty, Map.empty, ConfigFactory.empty(), LiveRuntime)
 
     val result = runner.runWithData[SourceData, String](scenario, List(SourceData("abc")))
     result.validValue shouldBe RunResult.success("abc")

@@ -9,8 +9,9 @@ import com.typesafe.config.ConfigFactory
 import io.circe.parser._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ComponentUseContextProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
@@ -55,7 +56,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     modelData,
     Nil,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.EngineRuntime
+    ComponentUseContextProvider.LiveRuntime,
   ).valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   private val definitionConfig: OpenApiDefinitionConfig = OpenApiDefinitionConfig(

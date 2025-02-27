@@ -3,9 +3,8 @@ package pl.touk.nussknacker.engine.flink.api.process
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ValueWithContext}
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -25,8 +24,7 @@ case class FlinkCustomNodeContext(
     exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
     globalParameters: Option[NkGlobalParameters],
     validationContext: Either[ValidationContext, Map[String, ValidationContext]],
-    componentUseCase: ComponentUseCase,
-    nodeDeploymentData: Option[NodeDeploymentData]
+    componentUseContext: ComponentUseContext,
 ) {
   def metaData: MetaData = jobData.metaData
 

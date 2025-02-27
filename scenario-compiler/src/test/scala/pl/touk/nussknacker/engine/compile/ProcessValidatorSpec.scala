@@ -10,12 +10,13 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -1804,7 +1805,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Any] = Future.successful(null)
 
         }
@@ -1841,7 +1842,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = Future.successful(null)
 
     }
@@ -1889,7 +1890,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Any] =
             Future.successful(
               s"name: ${fields.evaluate(context).get("name")}, age: $age"

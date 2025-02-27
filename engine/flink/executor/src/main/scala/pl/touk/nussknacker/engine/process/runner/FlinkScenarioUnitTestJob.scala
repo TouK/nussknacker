@@ -32,7 +32,7 @@ class FlinkScenarioUnitTestJob(modelData: ModelData) {
     val version = ProcessVersion.empty
     val registrar =
       FlinkProcessRegistrar(
-        new FlinkProcessCompilerDataFactory(modelData),
+        new FlinkProcessCompilerDataFactory(modelData, deploymentData),
         FlinkJobConfig.parse(modelData.modelConfig),
         ExecutionConfigPreparer.unOptimizedChain(modelData)
       )

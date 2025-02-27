@@ -10,10 +10,16 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentId,
+  ComponentType,
+  NodeComponentInfo,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
@@ -113,8 +119,9 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       Seq.empty,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
+      ComponentUseContextProvider.LiveRuntime,
+      CustomProcessValidatorLoader.emptyCustomProcessValidator,
+      NodesDeploymentData.empty,
     )
     val parts  = compilerData.compile(process).value
     val source = parts.sources.head

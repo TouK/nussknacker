@@ -4,6 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedSingleParameter,
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   TypedNodeDependency
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
@@ -102,7 +103,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,
       metaData: MetaData,
-      componentUseCase: ComponentUseCase
+      componentUseContext: ComponentUseContext
   ): Future[Any]
 
   override final def createServiceInvoker(
@@ -128,7 +129,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext,
     ): Future[Any] = {
       implicit val contextId: ContextId   = ContextId(context.id)
       implicit val metaImplicit: MetaData = metaData

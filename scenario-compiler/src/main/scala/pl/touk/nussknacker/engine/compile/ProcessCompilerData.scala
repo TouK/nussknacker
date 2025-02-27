@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter}
+import pl.touk.nussknacker.engine.{ComponentUseContextProvider, CustomProcessValidator, Interpreter}
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -31,9 +30,10 @@ object ProcessCompilerData {
       listeners: Seq[ProcessListener],
       userCodeClassLoader: ClassLoader,
       resultsCollector: ResultCollector,
-      componentUseCase: ComponentUseCase,
+      componentUseContextProvider: ComponentUseContextProvider,
       customProcessValidator: CustomProcessValidator,
-      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
+      nodesData: NodesDeploymentData,
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default,
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components.components
       .filter(_.componentType == ComponentType.Service)
@@ -58,8 +58,9 @@ object ProcessCompilerData {
       userCodeClassLoader,
       listeners,
       resultsCollector,
-      componentUseCase,
-      nonServicesLazyParamStrategy
+      componentUseContextProvider,
+      nodesData,
+      nonServicesLazyParamStrategy,
     )
     val subCompiler = new PartSubGraphCompiler(nodeCompiler)
     val processCompiler = new ProcessCompiler(
@@ -70,7 +71,7 @@ object ProcessCompilerData {
       customProcessValidator
     )
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
-    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseCase)
+    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseContextProvider, nodesData)
 
     new ProcessCompilerData(
       processCompiler,

@@ -6,10 +6,10 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import org.everit.json.schema.TrueSchema
+import pl.touk.nussknacker.engine.ComponentUseContextProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -53,13 +53,13 @@ class RequestResponseTestScenarioRunner(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
     config: Config,
-    componentUseCase: ComponentUseCase
+    componentUseContextProvider: ComponentUseContextProvider
 ) extends TestScenarioRunner {
 
   def runWithRequests[T](
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
-    TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
+    TestScenarioCollectorHandler.withHandler(componentUseContextProvider) { testScenarioCollectorHandler =>
       val modelData = ModelWithTestExtensions(
         config,
         LiteBaseComponentProvider.Components :::
@@ -74,7 +74,7 @@ class RequestResponseTestScenarioRunner(
         modelData,
         additionalListeners = Nil,
         resultCollector = testScenarioCollectorHandler.resultCollector,
-        componentUseCase = componentUseCase
+        componentUseContextProvider = componentUseContextProvider
       ).map { interpreter =>
         interpreter.open()
         try {
@@ -115,6 +115,11 @@ case class RequestResponseTestScenarioRunnerBuilder(
     copy(testRuntimeMode = true)
 
   override def build(): RequestResponseTestScenarioRunner =
-    new RequestResponseTestScenarioRunner(components, globalVariables, config, componentUseCase(testRuntimeMode))
+    new RequestResponseTestScenarioRunner(
+      components,
+      globalVariables,
+      config,
+      componentUseContextProvider(testRuntimeMode)
+    )
 
 }

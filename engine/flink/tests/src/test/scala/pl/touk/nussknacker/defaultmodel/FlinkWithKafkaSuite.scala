@@ -87,7 +87,7 @@ abstract class FlinkWithKafkaSuite
     val modelData =
       LocalModelData(config, components, configCreator = creator)
     registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompilerDataFactory(modelData),
+      new FlinkProcessCompilerDataFactory(modelData, DeploymentData.empty),
       FlinkJobConfig.parse(modelData.modelConfig),
       executionConfigPreparerChain(modelData, schemaRegistryClientProvider)
     )
