@@ -6,3 +6,5 @@ aa98eeaa8b65b95938e414a2519f97009f958bb4
 d033fb2a21f7309b7f360e897697766c1e856137
 # formatting new lines
 11d64bd79eaa7c6436278fe168ecdee5866bf9fc
+# update scalafmt, add import formatting
+9d6fc55d8702a89a3c38b90e6737afcbcd271174
