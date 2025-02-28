@@ -116,8 +116,7 @@ class FlinkKafkaSource[T](
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
     val offsetResetStrategy =
-      flinkNodeContext.componentUseContext
-        .deploymentData()
+      flinkNodeContext.componentUseContext.deploymentData
         .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
         .map(OffsetResetStrategy.withName)
         .getOrElse(defaultOffsetResetStrategy)

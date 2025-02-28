@@ -50,8 +50,7 @@ class TableSource(
 
     val selectQuery = tableEnv.from(tableDefinition.tableId.toString)
 
-    val finalQuery = flinkNodeContext.componentUseContext
-      .deploymentData()
+    val finalQuery = flinkNodeContext.componentUseContext.deploymentData
       .flatMap(_.get(SQL_EXPRESSION_PARAMETER_NAME))
       .collect { case sqlExpression =>
         tableEnv.executeSql(

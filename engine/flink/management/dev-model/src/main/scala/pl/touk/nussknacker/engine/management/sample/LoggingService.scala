@@ -52,8 +52,7 @@ object LoggingService extends EagerService {
       }
 
       private def isLoggingAllowed(componentUseContext: ComponentUseContext) =
-        componentUseContext
-          .deploymentData()
+        componentUseContext.deploymentData
           .flatMap(_.get(debuggingWithLoggingComponentsAllowedPropertyName))
           .exists(_.toBoolean)
 

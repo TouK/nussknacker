@@ -10,17 +10,17 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeployme
   * </ul>
   */
 sealed trait ComponentUseContext {
-  def deploymentData(): Option[NodeDeploymentData]
+  def deploymentData: Option[NodeDeploymentData]
 }
 
 object ComponentUseContext {
 
   case class LiveRuntime(nodeData: Option[NodeDeploymentData]) extends ComponentUseContext {
-    override def deploymentData(): Option[NodeDeploymentData] = nodeData
+    override def deploymentData: Option[NodeDeploymentData] = nodeData
   }
 
   case object ScenarioTesting extends ComponentUseContext {
-    override def deploymentData(): Option[NodeDeploymentData] = None
+    override def deploymentData: Option[NodeDeploymentData] = None
   }
 
 }
