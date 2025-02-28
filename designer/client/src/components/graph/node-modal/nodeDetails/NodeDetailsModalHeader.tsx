@@ -56,7 +56,7 @@ export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactEl
         return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
     }, [components, node]);
     const label = useMemo(() => {
-        return ProcessUtils.extractComponentDefinition(node, components).label;
+        return ProcessUtils.extractComponentDefinition(node, components)?.label;
     }, [components, node]);
 
     return <NodeDocs name={label} href={docsUrl} />;
