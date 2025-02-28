@@ -25,7 +25,7 @@ class ActionInfoHttpServiceSecuritySpec
         val scenario = ScenarioBuilder
           .streaming("scenarioWithSourceWithDeployParameters")
           .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
-          .emptySink("exampleSinkId", "emptySink")
+          .emptySink("exampleSinkId", "monitor")
 
         given()
           .applicationState {

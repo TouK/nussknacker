@@ -23,7 +23,7 @@ class ActionInfoHttpServiceBusinessSpec
       val scenario = ScenarioBuilder
         .streaming("scenarioWithSourceWithDeployParameters")
         .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
-        .emptySink("exampleSinkId", "emptySink")
+        .emptySink("exampleSinkId", "monitor")
 
       given()
         .applicationState {
@@ -61,18 +61,20 @@ class ActionInfoHttpServiceBusinessSpec
         .processor(
           "logging1",
           "log",
-          "message" -> "test1".spelTemplate,
+          "message" -> "Hello #{#input}".spelTemplate,
           "logger"  -> "'test'".spel,
           "level"   -> "T(org.slf4j.event.Level).DEBUG".spel
         )
+        .buildSimpleVariable("var1", "var1", "'there!'".spel)
         .processor(
           "logging2",
           "log",
-          "message" -> "test2".spelTemplate,
+          "message" -> "Hello #{#var1}".spelTemplate,
           "logger"  -> "'test'".spel,
           "level"   -> "T(org.slf4j.event.Level).DEBUG".spel
         )
-        .emptySink("exampleSinkId", "emptySink")
+        .customNode("stateful", "stateVar", "constantStateTransformer")
+        .emptySink("end", "monitor")
 
       given()
         .applicationState {
@@ -99,7 +101,7 @@ class ActionInfoHttpServiceBusinessSpec
                            |        }
                            |      },
                            |      {
-                           |          "nodeId": "logging1",
+                           |          "nodeId": "logging2",
                            |          "componentId": "log",
                            |          "parameters": {
                            |              "debuggingWithLoggingComponentsAllowed": {
@@ -113,7 +115,7 @@ class ActionInfoHttpServiceBusinessSpec
                            |          }
                            |      },
                            |      {
-                           |          "nodeId": "logging2",
+                           |          "nodeId": "logging1",
                            |          "componentId": "log",
                            |          "parameters": {
                            |              "debuggingWithLoggingComponentsAllowed": {
