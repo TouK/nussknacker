@@ -14,7 +14,7 @@ trait Repository[F[_]] {
   protected val dbRef: DbRef
 
   // this has to be val, not def to have *stable* scala identifiers - we want to be able to do import api._
-  protected lazy val profile: JdbcProfile = dbRef.profile
+  protected lazy val profile: JdbcProfile = dbRef.profile.jdbcProfile
 
   protected lazy val api: profile.API = profile.api
 

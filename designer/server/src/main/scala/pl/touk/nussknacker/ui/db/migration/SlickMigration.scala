@@ -5,17 +5,19 @@ import io.circe.Json
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.NuTables
+import pl.touk.nussknacker.ui.db.{NuTables, ProfileWithDbSchema}
+import pl.touk.nussknacker.ui.db.migration.SlickMigration.getConfiguredAppSchema
 import slick.jdbc.JdbcProfile
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 trait SlickMigration extends BaseJavaMigration {
 
-  protected val profile: JdbcProfile
+  protected val profile: ProfileWithDbSchema
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   protected def migrateActions: DBIOAction[Any, NoStream, _ <: Effect]
 
@@ -29,11 +31,21 @@ trait SlickMigration extends BaseJavaMigration {
     Await.result(database.run(migrateActions), Duration.Inf)
   }
 
+  protected def createProfileWithSchema(jdbcProfile: JdbcProfile): ProfileWithDbSchema =
+    ProfileWithDbSchema(jdbcProfile, getConfiguredAppSchema)
+}
+
+object SlickMigration {
+
+  private def configuredAppSchema = new AtomicReference[String]("public")
+
+  def getConfiguredAppSchema: String                               = configuredAppSchema.get()
+  private[db] def setConfiguredAppSchema(schemaName: String): Unit = configuredAppSchema.set(schemaName)
 }
 
 trait ProcessJsonMigration extends SlickMigration with NuTables with LazyLogging {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
   import slick.dbio.DBIOAction
 
   import scala.concurrent.ExecutionContext.Implicits.global

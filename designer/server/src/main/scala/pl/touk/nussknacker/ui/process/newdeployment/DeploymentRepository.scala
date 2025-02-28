@@ -5,7 +5,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables, SqlStates}
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables, ProfileWithDbSchema, SqlStates}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.{
@@ -20,9 +20,8 @@ import scala.concurrent.ExecutionContext
 
 class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionContext) extends NuTables {
 
-  override protected val profile: JdbcProfile = dbRef.profile
-
-  import profile.api._
+  override protected val profile: ProfileWithDbSchema = dbRef.profile
+  import profile.jdbcProfile.api._
 
   def getProcessingTypeDeploymentsIdsInNotMatchingStatus(
       processingType: ProcessingType,

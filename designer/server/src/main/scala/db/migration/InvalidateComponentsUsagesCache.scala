@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
 
 trait InvalidateComponentsUsagesCache extends SlickMigration with NuTables with LazyLogging {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
   import slick.dbio.DBIOAction
 
   import scala.concurrent.ExecutionContext.Implicits.global

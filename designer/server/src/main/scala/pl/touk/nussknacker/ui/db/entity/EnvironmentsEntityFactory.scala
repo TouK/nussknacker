@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 
 //TODO: Remove it in next release
 trait EnvironmentsEntityFactory {
 
-  protected val profile: JdbcProfile
-  import profile.api._
+  protected val profile: ProfileWithDbSchema
+  import profile.jdbcProfile.api._
 
   val environmentsTable: LTableQuery[EnvironmentsEntityFactory#EnvironmentsEntity] = LTableQuery(
     new EnvironmentsEntity(_)
   )
 
-  class EnvironmentsEntity(tag: Tag) extends Table[EnvironmentsEntityData](tag, "environments") {
+  class EnvironmentsEntity(tag: Tag)
+      extends Table[EnvironmentsEntityData](tag, Some(profile.schemaName), "environments") {
     def name: Rep[String] = column[String]("name", O.PrimaryKey)
 
     def * : ProvenShape[EnvironmentsEntityData] = name <> (EnvironmentsEntityData.apply, EnvironmentsEntityData.unapply)

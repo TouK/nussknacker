@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 class DBIOActionRunner(dbRef: DbRef)(implicit ec: ExecutionContext) {
 
-  protected lazy val profile: JdbcProfile = dbRef.profile
+  protected lazy val profile: JdbcProfile = dbRef.profile.jdbcProfile
   protected lazy val api: profile.API     = profile.api
   import api._
 

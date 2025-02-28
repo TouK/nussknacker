@@ -2,8 +2,8 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_061__PeriodicDeploymentManagerTablesDefinition.Definitions
+import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
-import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_061__PeriodicDeploymentManagerTablesDefinition extends SlickMigration with LazyLogging {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   private val definitions = new Definitions(profile)
 
@@ -29,13 +29,13 @@ trait V1_061__PeriodicDeploymentManagerTablesDefinition extends SlickMigration w
 
 object V1_061__PeriodicDeploymentManagerTablesDefinition {
 
-  class Definitions(val profile: JdbcProfile) {
-    import profile.api._
+  class Definitions(val profile: ProfileWithDbSchema) {
+    import profile.jdbcProfile.api._
 
     val periodicProcessDeploymentsTable = TableQuery[PeriodicProcessDeploymentsTable]
 
     class PeriodicProcessDeploymentsTable(tag: Tag)
-        extends Table[PeriodicProcessDeploymentEntity](tag, "periodic_scenario_deployments") {
+        extends Table[PeriodicProcessDeploymentEntity](tag, Some(profile.schemaName), "periodic_scenario_deployments") {
 
       def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
@@ -92,7 +92,8 @@ object V1_061__PeriodicDeploymentManagerTablesDefinition {
 
     val periodicProcessesTable = TableQuery[PeriodicProcessesTable]
 
-    class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_scenarios") {
+    class PeriodicProcessesTable(tag: Tag)
+        extends Table[PeriodicProcessEntity](tag, Some(profile.schemaName), "periodic_scenarios") {
 
       def periodicProcessId: Rep[Long] = column[Long]("id", O.Unique, O.AutoInc)
 

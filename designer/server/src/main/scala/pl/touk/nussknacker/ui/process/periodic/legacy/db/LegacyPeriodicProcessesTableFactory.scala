@@ -5,8 +5,8 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessId
-import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -15,9 +15,9 @@ import java.util.UUID
 
 trait LegacyPeriodicProcessesTableFactory {
 
-  protected val profile: JdbcProfile
+  protected val profile: ProfileWithDbSchema
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   implicit val periodicProcessIdMapping: BaseColumnType[PeriodicProcessId] =
     MappedColumnType.base[PeriodicProcessId, Long](_.value, PeriodicProcessId.apply)
@@ -32,7 +32,7 @@ trait LegacyPeriodicProcessesTableFactory {
     MappedColumnType.base[ProcessActionId, UUID](_.value, ProcessActionId.apply)
 
   abstract class PeriodicProcessesTable[ENTITY <: PeriodicProcessEntity](tag: Tag)
-      extends Table[ENTITY](tag, "periodic_processes") {
+      extends Table[ENTITY](tag, Some(profile.schemaName), "periodic_processes") {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 

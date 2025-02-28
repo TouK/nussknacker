@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.model._
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentSt
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository.createPeriodicProcess
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import slick.dbio.{DBIOAction, Effect, NoStream}
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.{Clock, LocalDateTime}
@@ -173,7 +174,7 @@ trait PeriodicProcessesRepository {
 class SlickPeriodicProcessesRepository(
     processingType: String,
     db: JdbcBackend.DatabaseDef,
-    override val profile: JdbcProfile,
+    override val profile: ProfileWithDbSchema,
     clock: Clock,
     fetchingProcessRepository: FetchingProcessRepository[Future],
 )(implicit ec: ExecutionContext)
@@ -379,7 +380,7 @@ class SlickPeriodicProcessesRepository(
       deploymentsPerScheduleMaxCount: Int,
   ): Action[Map[ProcessName, SchedulesState]] = {
     val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType)
-    val latestDeploymentsForSchedules = profile match {
+    val latestDeploymentsForSchedules = profile.jdbcProfile match {
       case _: ExPostgresProfile =>
         getLatestDeploymentsForEachSchedulePostgres(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
       case _ =>

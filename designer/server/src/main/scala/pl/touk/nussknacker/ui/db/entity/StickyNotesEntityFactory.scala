@@ -20,11 +20,12 @@ import java.util.UUID
 
 trait StickyNotesEntityFactory extends BaseEntityFactory {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
 
-  class StickyNotesEntity(tag: Tag) extends Table[StickyNoteEventEntityData](tag, "sticky_notes") {
+  class StickyNotesEntity(tag: Tag)
+      extends Table[StickyNoteEventEntityData](tag, Some(profile.schemaName), "sticky_notes") {
 
     def id                = column[StickyNoteId]("id", O.PrimaryKey, O.AutoInc)
     def noteCorrelationId = column[StickyNoteCorrelationId]("note_correlation_id", NotNull)

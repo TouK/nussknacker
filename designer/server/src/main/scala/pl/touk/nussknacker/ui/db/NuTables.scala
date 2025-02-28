@@ -13,6 +13,6 @@ trait NuTables
     with AttachmentEntityFactory
     with DeploymentEntityFactory
     with StickyNotesEntityFactory {
-  protected val profile: JdbcProfile
 
+  protected val profile: ProfileWithDbSchema
 }

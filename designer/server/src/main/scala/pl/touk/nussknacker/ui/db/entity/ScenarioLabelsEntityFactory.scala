@@ -6,11 +6,12 @@ import slick.sql.SqlProfile.ColumnOption.NotNull
 
 trait ScenarioLabelsEntityFactory extends BaseEntityFactory {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
-  class ScenarioLabelsEntity(tag: Tag) extends Table[ScenarioLabelEntityData](tag, "scenario_labels") {
+  class ScenarioLabelsEntity(tag: Tag)
+      extends Table[ScenarioLabelEntityData](tag, Some(profile.schemaName), "scenario_labels") {
 
     def label = column[String]("label")
 

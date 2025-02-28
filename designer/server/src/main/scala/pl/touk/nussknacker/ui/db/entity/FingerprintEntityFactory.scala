@@ -3,9 +3,11 @@ package pl.touk.nussknacker.ui.db.entity
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 
 trait FingerprintEntityFactory extends BaseEntityFactory {
-  import profile.api._
+  import profile.jdbcProfile.api._
 
-  class FingerprintEntity(tag: Tag) extends Table[FingerprintEntityData](tag, "fingerprints") {
+  class FingerprintEntity(tag: Tag)
+      extends Table[FingerprintEntityData](tag, Some(profile.schemaName), "fingerprints") {
+
     def value: Rep[String] = column[String]("value", O.PrimaryKey)
 
     def * : ProvenShape[FingerprintEntityData] = value <> (FingerprintEntityData.apply, FingerprintEntityData.unapply)

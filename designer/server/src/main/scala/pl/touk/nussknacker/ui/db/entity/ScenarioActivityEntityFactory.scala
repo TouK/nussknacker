@@ -17,13 +17,14 @@ import scala.util.matching.Regex
 
 trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   val scenarioActivityTable: LTableQuery[ScenarioActivityEntityFactory#ScenarioActivityEntity] = LTableQuery(
     new ScenarioActivityEntity(_)
   )
 
-  class ScenarioActivityEntity(tag: Tag) extends Table[ScenarioActivityEntityData](tag, "scenario_activities") {
+  class ScenarioActivityEntity(tag: Tag)
+      extends Table[ScenarioActivityEntityData](tag, Some(profile.schemaName), "scenario_activities") {
 
     def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
