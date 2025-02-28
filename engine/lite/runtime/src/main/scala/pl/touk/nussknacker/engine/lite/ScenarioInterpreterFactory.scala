@@ -4,7 +4,7 @@ import cats.{Monad, Monoid}
 import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
-import pl.touk.nussknacker.engine.{compiledgraph, ComponentUseContextProvider, InterpretationResult, ModelData}
+import pl.touk.nussknacker.engine.{compiledgraph, InterpretationResult, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
@@ -63,7 +63,7 @@ object ScenarioInterpreterFactory {
       modelData: ModelData,
       additionalListeners: List[ProcessListener] = Nil,
       resultCollector: ResultCollector = ProductionServiceInvocationCollector,
-      componentUseContextProvider: ComponentUseContextProvider = ComponentUseContextProvider.LiveRuntime,
+      runtimeMode: RuntimeMode = RuntimeMode.Live,
       nodesDeploymentData: NodesDeploymentData = NodesDeploymentData.empty
   )(
       implicit ec: ExecutionContext,
@@ -91,7 +91,7 @@ object ScenarioInterpreterFactory {
         listeners,
         modelData.modelClassLoader,
         resultCollector,
-        componentUseContextProvider,
+        runtimeMode,
         modelData.customProcessValidator,
         nodesDeploymentData,
       )
@@ -106,7 +106,7 @@ object ScenarioInterpreterFactory {
         InvokerCompiler[F, Input, Res](
           compiledProcess,
           compilerData,
-          componentUseContextProvider,
+          runtimeMode,
           capabilityTransformer,
           jobData
         ).compile
@@ -167,7 +167,7 @@ object ScenarioInterpreterFactory {
   private case class InvokerCompiler[F[_]: Monad, Input, Res <: AnyRef](
       compiledProcess: CompiledProcessParts,
       processCompilerData: ProcessCompilerData,
-      componentUseContextProvider: ComponentUseContextProvider,
+      runtimeMode: RuntimeMode,
       capabilityTransformer: CapabilityTransformer[F],
       jobData: JobData
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
@@ -390,8 +390,7 @@ object ScenarioInterpreterFactory {
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
-        case (_: Source, fragmentInputDef: FragmentInputDefinition)
-            if componentUseContextProvider == ComponentUseContextProvider.TestRuntime =>
+        case (_: Source, fragmentInputDef: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
           sourceForFragmentInputTestng(fragmentInputDef)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }

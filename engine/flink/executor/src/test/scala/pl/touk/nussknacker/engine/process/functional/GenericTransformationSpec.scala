@@ -79,7 +79,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
     processInvoker.invokeWithSampleData(process, Nil)
 
     ProcessTestHelpers.genericParameterSinkResultsHolder.results shouldBe List(
-      s"type2-3+type1-2+componentUseContextProvider:${ComponentUseContext.LiveRuntime(None)}"
+      s"type2-3+type1-2+componentUseContext:${ComponentUseContext.LiveRuntime(None)}"
     )
   }
 
@@ -107,7 +107,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
     processInvoker.invokeWithSampleData(process, Nil)
 
     ProcessTestHelpers.genericParameterSinkResultsHolder.results shouldBe List(
-      s"test|transformed:test|4+type1-2+componentUseContextProvider:${ComponentUseContext.LiveRuntime(None)}"
+      s"test|transformed:test|4+type1-2+componentUseContext:${ComponentUseContext.LiveRuntime(None)}"
     )
   }
 

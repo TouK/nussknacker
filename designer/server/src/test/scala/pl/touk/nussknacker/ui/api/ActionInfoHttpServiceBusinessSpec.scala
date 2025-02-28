@@ -102,12 +102,12 @@ class ActionInfoHttpServiceBusinessSpec
                            |          "nodeId": "logging1",
                            |          "componentId": "log",
                            |          "parameters": {
-                           |              "loggingComponentsDisabled": {
+                           |              "debuggingWithLoggingComponentsAllowed": {
                            |                  "defaultValue": "false",
                            |                  "editor": {
                            |                      "type": "BoolParameterEditor"
                            |                  },
-                           |                  "label": "Disable custom logging",
+                           |                  "label": "Enable debugging with logging components",
                            |                  "hintText": null
                            |              }
                            |          }
@@ -116,12 +116,12 @@ class ActionInfoHttpServiceBusinessSpec
                            |          "nodeId": "logging2",
                            |          "componentId": "log",
                            |          "parameters": {
-                           |              "loggingComponentsDisabled": {
+                           |              "debuggingWithLoggingComponentsAllowed": {
                            |                  "defaultValue": "false",
                            |                  "editor": {
                            |                      "type": "BoolParameterEditor"
                            |                  },
-                           |                  "label": "Disable custom logging",
+                           |                  "label": "Enable debugging with logging components",
                            |                  "hintText": null
                            |              }
                            |          }

@@ -4,8 +4,8 @@ import cats.Monad
 import cats.data.{State, StateT, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
-import pl.touk.nussknacker.engine.ComponentUseContextProvider
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
@@ -102,7 +102,7 @@ object sample {
         modelData,
         Nil,
         ProductionServiceInvocationCollector,
-        ComponentUseContextProvider.LiveRuntime,
+        RuntimeMode.Live,
         nodesDeploymentData = NodesDeploymentData.empty
       )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)

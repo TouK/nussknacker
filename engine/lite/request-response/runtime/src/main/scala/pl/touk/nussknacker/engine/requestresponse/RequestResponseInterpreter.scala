@@ -6,7 +6,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toFunctorOps
 import io.circe.Json
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.{ComponentUseContextProvider, ModelData}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -49,7 +49,7 @@ object RequestResponseInterpreter {
       modelData: ModelData,
       additionalListeners: List[ProcessListener],
       resultCollector: ResultCollector,
-      componentUseContextProvider: ComponentUseContextProvider
+      runtimeMode: RuntimeMode
   )(
       implicit ec: ExecutionContext
   ): Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
@@ -60,7 +60,7 @@ object RequestResponseInterpreter {
         modelData,
         additionalListeners,
         resultCollector,
-        componentUseContextProvider
+        runtimeMode
       )
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion)), _))
   }

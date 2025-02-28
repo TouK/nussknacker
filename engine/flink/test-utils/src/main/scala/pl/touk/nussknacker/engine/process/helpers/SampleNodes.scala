@@ -987,7 +987,7 @@ object SampleNodes {
           .map(
             (v: ValueWithContext[String]) =>
               v.copy(value =
-                s"${v.value}+$typeValue-$versionValue+componentUseContextProvider:${componentUseContextProviderDependency.extract(dependencies)}"
+                s"${v.value}+$typeValue-$versionValue+componentUseContext:${componentUseContextProviderDependency.extract(dependencies)}"
               ),
             flinkNodeContext.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
           )

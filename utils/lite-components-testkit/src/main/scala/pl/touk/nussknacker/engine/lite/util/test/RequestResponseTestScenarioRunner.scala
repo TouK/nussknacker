@@ -6,7 +6,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import org.everit.json.schema.TrueSchema
-import pl.touk.nussknacker.engine.ComponentUseContextProvider
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -53,13 +53,13 @@ class RequestResponseTestScenarioRunner(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
     config: Config,
-    componentUseContextProvider: ComponentUseContextProvider
+    runtimeMode: RuntimeMode
 ) extends TestScenarioRunner {
 
   def runWithRequests[T](
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
-    TestScenarioCollectorHandler.withHandler(componentUseContextProvider) { testScenarioCollectorHandler =>
+    TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
       val modelData = ModelWithTestExtensions(
         config,
         LiteBaseComponentProvider.Components :::
@@ -74,7 +74,7 @@ class RequestResponseTestScenarioRunner(
         modelData,
         additionalListeners = Nil,
         resultCollector = testScenarioCollectorHandler.resultCollector,
-        componentUseContextProvider = componentUseContextProvider
+        runtimeMode = runtimeMode
       ).map { interpreter =>
         interpreter.open()
         try {
@@ -119,7 +119,7 @@ case class RequestResponseTestScenarioRunnerBuilder(
       components,
       globalVariables,
       config,
-      componentUseContextProvider(testRuntimeMode)
+      runtimeMode(testRuntimeMode)
     )
 
 }

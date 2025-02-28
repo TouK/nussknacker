@@ -137,7 +137,7 @@ class FlinkProcessRegistrar(
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData                     = compilerData.jobData
-      val componentUseContextProvider = compilerData.componentUseContextProvider
+      val componentUseContextProvider = compilerData.runtimeMode
 
       FlinkCustomNodeContext(
         jobData,
@@ -152,7 +152,7 @@ class FlinkProcessRegistrar(
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
-        compilerData.componentUseContextProvider.toContext(
+        compilerData.runtimeMode.createContext(
           deploymentData.nodesData.get(NodeId(nodeComponentId.nodeId))
         ),
         // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
@@ -180,7 +180,7 @@ class FlinkProcessRegistrar(
 
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id, compilerData.componentUseContextProvider), contextTypeInformation)
+        .process(new SourceMetricsFunction(part.id, compilerData.runtimeMode), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 

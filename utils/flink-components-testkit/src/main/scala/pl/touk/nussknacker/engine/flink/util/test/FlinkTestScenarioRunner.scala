@@ -5,7 +5,7 @@ import org.apache.flink.api.connector.source.Boundedness
 import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
-import pl.touk.nussknacker.engine.ComponentUseContextProvider
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
@@ -76,7 +76,7 @@ class FlinkTestScenarioRunner(
     val globalVariables: Map[String, AnyRef],
     val config: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
-    componentUseContextProvider: ComponentUseContextProvider,
+    runtimeMode: RuntimeMode,
 ) extends ClassBasedTestScenarioRunner {
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
@@ -195,13 +195,13 @@ class FlinkTestScenarioRunner(
     )
 
     flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
-      TestScenarioCollectorHandler.withHandler(componentUseContextProvider) { testScenarioCollectorHandler =>
+      TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
         val compilerFactory =
           FlinkProcessCompilerDataFactoryWithTestComponents(
             testExtensionsHolder,
             testScenarioCollectorHandler.resultsCollectingListener,
             modelData,
-            componentUseContextProvider,
+            runtimeMode,
             nodesData = NodesDeploymentData.empty
           )
 
@@ -323,7 +323,7 @@ case class FlinkTestScenarioRunnerBuilder(
       globalVariables,
       config,
       flinkMiniClusterWithServices,
-      componentUseContextProvider(testRuntimeMode)
+      runtimeMode(testRuntimeMode)
     )
 
 }

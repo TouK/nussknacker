@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.ComponentUseContextProvider
-import pl.touk.nussknacker.engine.ComponentUseContextProvider.{LiveRuntime, TestRuntime}
+import pl.touk.nussknacker.engine.RuntimeMode
+import pl.touk.nussknacker.engine.RuntimeMode.{Live, Test}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -39,8 +39,8 @@ object TestScenarioRunner {
   val noopSource     = "noopSource"
   val testResultSink = "sink"
 
-  def componentUseContextProvider(testRuntimeMode: Boolean): ComponentUseContextProvider =
-    if (testRuntimeMode) TestRuntime else LiveRuntime
+  def runtimeMode(testRuntimeMode: Boolean): RuntimeMode =
+    if (testRuntimeMode) Test else Live
 }
 
 /**
@@ -66,10 +66,10 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 object TestScenarioCollectorHandler {
 
   def withHandler[T](
-      componentUseContextProvider: ComponentUseContextProvider
+      runtimeMode: RuntimeMode
   )(action: TestScenarioCollectorHandler => T): T = {
     ResultsCollectingListenerHolder.withListener { resultsCollectingListener =>
-      val resultCollector = if (ComponentUseContextProvider.TestRuntime == componentUseContextProvider) {
+      val resultCollector = if (RuntimeMode.Test == runtimeMode) {
         new TestServiceInvocationCollector(resultsCollectingListener)
       } else {
         ProductionServiceInvocationCollector

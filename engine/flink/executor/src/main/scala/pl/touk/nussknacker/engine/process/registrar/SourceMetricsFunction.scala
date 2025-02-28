@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.process.registrar
 import org.apache.flink.api.common.functions.OpenContext
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.ComponentUseContextProvider
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.createMetricsProvider
 import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
 
 private[registrar] class SourceMetricsFunction[T](
     sourceId: String,
-    componentUseContextProvider: ComponentUseContextProvider
+    componentUseContextProvider: RuntimeMode
 ) extends ProcessFunction[T, T] {
 
   @transient private var metrics: OneSourceMetrics = _

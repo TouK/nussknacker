@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{ComponentUseContextProvider, CustomProcessValidatorLoader, ModelData}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
@@ -38,7 +38,7 @@ class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    componentUseContextProvider: ComponentUseContextProvider,
+    runtimeMode: RuntimeMode,
     configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     nodesData: NodesDeploymentData,
 ) extends Serializable {
@@ -50,7 +50,7 @@ class FlinkProcessCompilerDataFactory(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
-    componentUseContextProvider = ComponentUseContextProvider.LiveRuntime,
+    runtimeMode = RuntimeMode.Live,
     modelData.additionalConfigsFromProvider,
     nodesData = deploymentData.nodesData
   )
@@ -92,7 +92,7 @@ class FlinkProcessCompilerDataFactory(
         listenersToUse,
         userCodeClassLoader,
         resultCollector,
-        componentUseContextProvider,
+        runtimeMode,
         customProcessValidator,
         nodesData,
         nonServicesLazyParamStrategy = LazyParameterCreationStrategy.postponed,
@@ -103,7 +103,7 @@ class FlinkProcessCompilerDataFactory(
       exceptionHandler = exceptionHandler(metaData, modelDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
-      componentUseContextProvider = componentUseContextProvider
+      runtimeMode = runtimeMode
     )
   }
 
