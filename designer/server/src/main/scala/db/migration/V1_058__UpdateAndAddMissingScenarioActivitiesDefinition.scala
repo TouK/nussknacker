@@ -7,7 +7,6 @@ import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.ast.Library.JdbcFunction
-import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.sql.SqlProfile.ColumnOption.NotNull

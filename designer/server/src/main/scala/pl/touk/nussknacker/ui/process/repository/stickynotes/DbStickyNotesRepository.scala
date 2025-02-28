@@ -29,7 +29,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     with StickyNotesRepository
     with LazyLogging {
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   override def findStickyNotes(scenarioId: ProcessId, scenarioVersionId: VersionId): DB[Seq[StickyNote]] = {
     run(

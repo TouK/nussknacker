@@ -7,14 +7,16 @@ import net.ceedubs.ficus.readers.ValueReader
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration
 import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
+import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 object LegacyDbInitializer extends LazyLogging {
 
-  def init(configDb: Config): (JdbcBackend.DatabaseDef, JdbcProfile) = {
+  def init(configDb: Config): (JdbcBackend.DatabaseDef, ProfileWithDbSchema) = {
     import net.ceedubs.ficus.Ficus._
-    val url     = configDb.as[String]("url")
-    val profile = chooseDbProfile(url)
+    val url        = configDb.as[String]("url")
+    val schemaName = Option(configDb.as[String]("schema")).getOrElse("public")
+    val profile    = chooseDbProfile(url)
     logger.info("Applying db migrations")
 
     // we want to set property on FluentConfiguration only if there is property in config
@@ -43,7 +45,7 @@ object LegacyDbInitializer extends LazyLogging {
       .load()
       .migrate()
 
-    (JdbcBackend.Database.forConfig(path = "", configDb), profile)
+    (JdbcBackend.Database.forConfig(path = "", configDb), ProfileWithDbSchema(profile, schemaName))
   }
 
   private def chooseDbProfile(dbUrl: String): JdbcProfile = {

@@ -4,15 +4,14 @@ import db.util.DBIOActionInstances.{toEffectAll, DB}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext
 
 class ScenarioGraphVersionRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends NuTables {
 
-  override protected val profile: JdbcProfile = dbRef.profile
+  override protected val profile = dbRef.profile
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   def getLatestScenarioGraphVersion(scenarioId: ProcessId): DB[ProcessVersionEntityData] = {
     toEffectAll(

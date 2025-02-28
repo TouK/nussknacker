@@ -26,7 +26,7 @@ trait LegacyPeriodicProcessDeploymentsTableFactory extends LegacyPeriodicProcess
     MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
 
   class PeriodicProcessDeploymentsTable(tag: Tag)
-      extends Table[PeriodicProcessDeploymentEntity](tag, Some(profile.jdbcProfile), "periodic_process_deployments") {
+      extends Table[PeriodicProcessDeploymentEntity](tag, Some(profile.schemaName), "periodic_process_deployments") {
 
     def id: Rep[PeriodicProcessDeploymentId] = column[PeriodicProcessDeploymentId]("id", O.PrimaryKey, O.AutoInc)
 

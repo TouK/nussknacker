@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext
 
@@ -14,9 +13,9 @@ import scala.concurrent.ExecutionContext
 //       split things like scenario graph (versions), scenario metadata, state related things (actions)
 class ScenarioMetadataRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends NuTables {
 
-  override protected val profile: JdbcProfile = dbRef.profile
+  override protected val profile = dbRef.profile
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   def getScenarioMetadata(scenarioName: ProcessName): DB[Option[ScenarioMetadata]] =
     (for {

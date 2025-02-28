@@ -42,8 +42,6 @@ import pl.touk.nussknacker.ui.process.repository.{
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.security.api.AdminUser
-import slick.jdbc
-import slick.jdbc.JdbcProfile
 
 import java.time._
 import java.time.temporal.ChronoUnit
@@ -113,12 +111,12 @@ class PeriodicProcessServiceIntegrationTest
     )
 
     def runWithLegacyRepository(dbConfig: Config): Unit = {
-      val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(dbConfig)
+      val (db, profile) = LegacyDbInitializer.init(dbConfig)
       val creator = (processingType: String, currentTime: Instant) =>
         new SlickLegacyPeriodicProcessesRepository(
           processingType,
           db,
-          dbProfile,
+          profile,
           fixedClock(currentTime),
           fetchingProcessRepository,
         )

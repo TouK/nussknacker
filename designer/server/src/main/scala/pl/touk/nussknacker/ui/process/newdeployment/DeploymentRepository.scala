@@ -12,7 +12,6 @@ import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.{
   ConflictingDeploymentIdError,
   DeploymentWithScenarioMetadata
 }
-import slick.jdbc.JdbcProfile
 
 import java.sql.{SQLException, Timestamp}
 import java.time.Clock

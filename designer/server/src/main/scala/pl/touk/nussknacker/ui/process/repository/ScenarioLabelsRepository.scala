@@ -5,20 +5,19 @@ import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessEntityFactory, ScenarioLabelEntityData}
+import pl.touk.nussknacker.ui.db.entity.ScenarioLabelEntityData
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.security.api._
 
 import scala.concurrent.ExecutionContext
 
 class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: ExecutionContext) extends NuTables {
 
-  override protected val profile: JdbcProfile = dbRef.profile
+  override protected val profile = dbRef.profile
 
   private implicit val scenarioLabelOrdering: Ordering[ScenarioLabel] = Ordering.by(_.value)
 
-  import profile.api._
+  import profile.jdbcProfile.api._
 
   def getLabels(processId: ProcessId): DB[List[ScenarioLabel]] = findLabels(processId).map(_.toList.sorted)
 

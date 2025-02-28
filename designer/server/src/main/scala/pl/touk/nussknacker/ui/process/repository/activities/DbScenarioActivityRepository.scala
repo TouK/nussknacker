@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -41,7 +40,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     with ScenarioActivityRepository
     with LazyLogging {
 
-  import dbRef.profile.api._
+  import dbRef.profile.jdbcProfile.api._
 
   def findActivities(
       scenarioId: ProcessId,
