@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
   FixedValuesParameterEditor,
   SpelTemplateParameterEditor,
+  SqlParameterEditor,
   TabularTypedDataEditor
 }
 import pl.touk.nussknacker.engine.graph.expression.{Expression, TabularTypedData}
@@ -22,7 +23,7 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
           Some(Expression.spel(firstValue.expression))
         case TabularTypedDataEditor =>
           Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
-        case SpelTemplateParameterEditor =>
+        case SpelTemplateParameterEditor | SqlParameterEditor =>
           Some(Expression.spelTemplate(""))
         case DictParameterEditor(_) => Some(Expression(Language.DictKeyWithLabel, ""))
         case _                      => None
