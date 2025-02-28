@@ -14,22 +14,32 @@ import java.nio.charset.StandardCharsets
 import scala.util.Using
 import scala.util.control.NonFatal
 
-object FlinkStreamingProcessMain extends LazyLogging {
+object FlinkStandaloneScenarioMain extends FlinkScenarioMain(identity)
+
+// This class is used by external project only
+object FlinkK8sScenarioMain extends FlinkScenarioMain(FlinkK8sArgsDecodeHack.prepareProgramArgs)
+
+class FlinkScenarioMain(preprocessArgs: Array[String] => Array[String]) extends LazyLogging {
 
   def main(args: Array[String]): Unit = {
     try {
-      require(args.nonEmpty, "Scenario json should be passed as a first argument")
-      val process        = readScenarioFromArg(args(0))
-      val processVersion = parseProcessVersion(args(1))
-      val deploymentData = parseDeploymentData(args(2))
+      val preprocessedArgs = preprocessArgs(args)
+
+      require(
+        preprocessedArgs.length >= 3,
+        "Missing arguments. Usage: CanonicalProcess, ProcessVersion, DeploymentData"
+      )
+      val scenario       = readScenarioFromArg(preprocessedArgs(0))
+      val processVersion = parseProcessVersion(preprocessedArgs(1))
+      val deploymentData = parseDeploymentData(preprocessedArgs(2))
       logger.info(
         s"Running deployment ${deploymentData.deploymentId} of scenario ${processVersion.processName} in version ${processVersion.versionId}. " +
           s"Model version ${processVersion.modelVersion}. Deploying user [id=${deploymentData.user.id}, name=${deploymentData.user.name}]"
       )
-      val modelConfig = readModelConfigFromArgs(args)
+      val modelConfig = readModelConfigFromArgs(preprocessedArgs)
       val modelData   = ModelData.duringFlinkExecution(ModelConfigs(modelConfig, deploymentData.additionalModelConfigs))
       new FlinkScenarioJob(modelData).run(
-        process,
+        scenario,
         processVersion,
         deploymentData,
         StreamExecutionEnvironment.getExecutionEnvironment,
