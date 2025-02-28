@@ -55,6 +55,6 @@ object RemoteFlinkScenarioJobRunner {
       serializedConfig
     )
 
-  private[management] val MainClassName = "pl.touk.nussknacker.engine.process.runner.FlinkStreamingProcessMain"
+  private[management] val MainClassName = "pl.touk.nussknacker.engine.process.runner.FlinkStandaloneScenarioMain"
 
 }
