@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.compiledgraph.node._
 
-//NOTE: logic of collector should match logic in ProcessSplitter
 object CompiledNodesCollector {
 
   def collectNodes(node: Node): List[Node] = {
