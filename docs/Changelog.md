@@ -94,6 +94,7 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels are now independent of component Id. Labels can be set during the component defining or can be set in ui configuration in application config 
 
 ## 1.18
 
