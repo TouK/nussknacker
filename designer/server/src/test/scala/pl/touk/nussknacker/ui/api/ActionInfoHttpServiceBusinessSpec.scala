@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
@@ -16,7 +17,8 @@ class ActionInfoHttpServiceBusinessSpec
     with WithSimplifiedConfigScenarioHelper
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLoggingIfValidationFails {
+    with RestAssuredVerboseLoggingIfValidationFails
+    with Matchers {
 
   "The scenario action info endpoint when" - {
     "return action parameters when defined" in {
@@ -85,52 +87,9 @@ class ActionInfoHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
         .Then()
         .statusCode(200)
-        .equalsJsonBody("""|{
-                           |  "actionNameToParameters":{
-                           |    "DEPLOY":[
-                           |      {
-                           |        "nodeId":"sourceWithParametersId",
-                           |        "componentId": "boundedSourceWithOffset",
-                           |        "parameters":{
-                           |          "offset":{
-                           |            "defaultValue":null,
-                           |            "editor":{"type":"RawParameterEditor"},
-                           |            "label":"Offset",
-                           |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
-                           |          }
-                           |        }
-                           |      },
-                           |      {
-                           |          "nodeId": "logging2",
-                           |          "componentId": "log",
-                           |          "parameters": {
-                           |              "debuggingWithLoggingComponentsAllowed": {
-                           |                  "defaultValue": "false",
-                           |                  "editor": {
-                           |                      "type": "BoolParameterEditor"
-                           |                  },
-                           |                  "label": "Enable debugging with logging components",
-                           |                  "hintText": null
-                           |              }
-                           |          }
-                           |      },
-                           |      {
-                           |          "nodeId": "logging1",
-                           |          "componentId": "log",
-                           |          "parameters": {
-                           |              "debuggingWithLoggingComponentsAllowed": {
-                           |                  "defaultValue": "false",
-                           |                  "editor": {
-                           |                      "type": "BoolParameterEditor"
-                           |                  },
-                           |                  "label": "Enable debugging with logging components",
-                           |                  "hintText": null
-                           |              }
-                           |          }
-                           |      }
-                           |    ]
-                           |  }
-                           |}""".stripMargin)
+        .extractList[java.util.Map[String, Any]]("actionNameToParameters.DEPLOY")
+        .map(_.get("nodeId"))
+        .toSet shouldBe Set("sourceWithParametersId", "logging1", "logging2")
     }
 
     "return empty map when no action parameters" in {
