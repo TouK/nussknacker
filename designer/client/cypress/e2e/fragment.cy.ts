@@ -175,7 +175,7 @@ describe("Fragment", () => {
         cy.contains(/^fragments$/)
             .should("exist")
             .scrollIntoView();
-        cy.contains("fragment-test")
+        cy.contains("Fragment Test")
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {
@@ -189,7 +189,7 @@ describe("Fragment", () => {
 
         cy.intercept("POST", "/api/nodes/*/validation").as("fragmentInputValidation");
 
-        cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
+        cy.get('[model-id^=E2e][model-id$="001 Fragment Test Process"]').should("be.visible").trigger("dblclick");
         cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
 
         cy.wait("@fragmentInputValidation");
@@ -350,7 +350,7 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.contains("fragments").should("exist").scrollIntoView();
-        cy.contains(`${seed2}-test`)
+        cy.contains('[model-id^=E2e][model-id$="001 Fragment2 Test Process"]')
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {
@@ -362,7 +362,9 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
+        cy.get(`E2e 001 ${seed2.charAt(0).toUpperCase() + seed2.slice(1)} Test Process`)
+            .should("be.visible")
+            .trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage();
 
@@ -379,7 +381,7 @@ describe("Fragment", () => {
 
         cy.contains("fragments").should("exist").scrollIntoView();
         cy.getNode("enricher").as("enricher");
-        cy.contains(`${fragmentName}-test`)
+        cy.contains(`${fragmentName} Test`)
             .last()
             .should("be.visible")
             .drag("@enricher", {

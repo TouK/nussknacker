@@ -28,7 +28,7 @@ describe("Compare versions", () => {
         cy.contains(/^fragments$/)
             .should("exist")
             .scrollIntoView();
-        cy.contains("fragment_xxx-test-process")
+        cy.contains("Fragment_xxx Test Process")
             .last()
             .should("be.visible")
             .move({ x, y, position: "right", force: true })
