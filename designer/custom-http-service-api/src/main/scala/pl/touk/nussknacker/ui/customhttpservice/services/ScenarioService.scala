@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.customhttpservice.services
 
+import cats.effect.IO
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName, UserName}
 import pl.touk.nussknacker.engine.api.process._
@@ -9,17 +10,16 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 import java.time.Instant
-import scala.language.higherKinds
 
-trait ScenarioService[M[_]] {
+trait ScenarioService {
 
-  def getLatestProcessesWithDetails(query: ScenarioQuery)(
+  def getLatestScenariosWithDetails(query: LatestScenariosWithDetailsQuery)(
       implicit user: LoggedUser
-  ): M[List[ScenarioWithDetails]]
+  ): IO[List[ScenarioWithDetails]]
 
-  def getLatestVersionForProcesses(query: ScenarioQuery, scenarioVersionQuery: ScenarioVersionQuery)(
+  def getLatestVersionsForScenarios(query: LatestVersionsForScenarios)(
       implicit user: LoggedUser
-  ): M[Map[ProcessId, ScenarioVersionMetadata]]
+  ): IO[Map[ProcessId, ScenarioVersionMetadata]]
 
 }
 
@@ -61,7 +61,7 @@ object ScenarioService {
       description: String,
   )
 
-  final case class ScenarioQuery(
+  final case class LatestScenariosWithDetailsQuery(
       isFragment: Option[Boolean] = None,
       isArchived: Option[Boolean] = None,
       isDeployed: Option[Boolean] = None,
@@ -70,8 +70,14 @@ object ScenarioService {
       names: Option[Seq[ProcessName]] = None,
   )
 
-  final case class ScenarioVersionQuery(
-      excludedUserNames: Option[Seq[String]] = None,
+  final case class LatestVersionsForScenarios(
+      isFragment: Option[Boolean] = None,
+      isArchived: Option[Boolean] = None,
+      isDeployed: Option[Boolean] = None,
+      categories: Option[Seq[String]] = None,
+      processingTypes: Option[Seq[String]] = None,
+      names: Option[Seq[ProcessName]] = None,
+      excludeVersionCreatedByUsers: Option[Seq[String]] = None,
   )
 
   final case class ScenarioVersionMetadata(

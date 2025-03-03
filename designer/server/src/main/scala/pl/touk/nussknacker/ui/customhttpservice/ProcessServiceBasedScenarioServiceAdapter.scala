@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
-import cats.effect.{Async, Sync}
+import cats.effect.IO
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.customhttpservice.services.ScenarioService
@@ -10,16 +10,16 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioVersionMetadata
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
-class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
+class ProcessServiceBasedScenarioServiceAdapter(
     processService: ProcessService
 )(implicit executionContext: ExecutionContext)
-    extends ScenarioService[M] {
+    extends ScenarioService {
 
-  override def getLatestProcessesWithDetails(
-      query: ScenarioService.ScenarioQuery
-  )(implicit user: LoggedUser): M[List[ScenarioService.ScenarioWithDetails]] =
+  override def getLatestScenariosWithDetails(
+      query: ScenarioService.LatestScenariosWithDetailsQuery
+  )(implicit user: LoggedUser): IO[List[ScenarioService.ScenarioWithDetails]] =
     processService
       .getLatestProcessesWithDetails(
         toDomain(query),
@@ -27,17 +27,16 @@ class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
       )
       .map(_.map(toApi))
 
-  override def getLatestVersionForProcesses(
-      query: ScenarioService.ScenarioQuery,
-      scenarioVersionQuery: ScenarioService.ScenarioVersionQuery,
-  )(implicit user: LoggedUser): M[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
+  override def getLatestVersionsForScenarios(
+      query: ScenarioService.LatestVersionsForScenarios,
+  )(implicit user: LoggedUser): IO[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
     processService
-      .getLatestVersionForProcesses(toDomain(query), toDomain(scenarioVersionQuery))
+      .getLatestVersionForProcesses(toDomainScenarioQuery(query), toDomainScenarioVersionQuery(query))
       .map(_.map { case (processId, metadata) => (processId, toApi(metadata)) })
 
-  private implicit def deferToM[T](f: => Future[T]): M[T] = Async[M].fromFuture(Sync[M].delay(f))
+  private implicit def deferToIO[T](f: => Future[T]): IO[T] = IO.fromFuture(IO.delay(f))
 
-  private def toDomain(query: ScenarioService.ScenarioQuery): ScenarioQuery =
+  private def toDomain(query: ScenarioService.LatestScenariosWithDetailsQuery): ScenarioQuery =
     ScenarioQuery(
       isFragment = query.isFragment,
       isArchived = query.isArchived,
@@ -47,9 +46,19 @@ class ProcessServiceBasedScenarioServiceAdapter[M[_]: Async](
       names = query.names,
     )
 
-  private def toDomain(query: ScenarioService.ScenarioVersionQuery): ScenarioVersionQuery =
+  private def toDomainScenarioQuery(query: ScenarioService.LatestVersionsForScenarios): ScenarioQuery =
+    ScenarioQuery(
+      isFragment = query.isFragment,
+      isArchived = query.isArchived,
+      isDeployed = query.isDeployed,
+      categories = query.categories,
+      processingTypes = query.processingTypes,
+      names = query.names,
+    )
+
+  private def toDomainScenarioVersionQuery(query: ScenarioService.LatestVersionsForScenarios): ScenarioVersionQuery =
     ScenarioVersionQuery(
-      excludedUserNames = query.excludedUserNames
+      excludedUserNames = query.excludeVersionCreatedByUsers
     )
 
   private def toApi(metadata: ScenarioVersionMetadata): ScenarioService.ScenarioVersionMetadata =

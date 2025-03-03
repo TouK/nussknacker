@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
-import cats.effect.{Async, Resource}
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
-
-import scala.language.higherKinds
 
 trait CustomHttpServiceProviderFactory {
 
   def name: String
 
-  def create[M[_]: Async](
+  def create(
       config: Config,
-      services: NussknackerServicesForCustomHttpService[M],
-  ): Resource[M, CustomHttpServiceProvider]
+      services: NussknackerServicesForCustomHttpService,
+  ): Resource[IO, CustomHttpServiceProvider]
 
 }

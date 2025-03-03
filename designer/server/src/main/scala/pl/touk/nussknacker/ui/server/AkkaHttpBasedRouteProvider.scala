@@ -881,6 +881,17 @@ class AkkaHttpBasedRouteProvider(
       config: Config,
       processService: ProcessService
   ): Resource[IO, Map[String, CustomHttpServiceProvider]] = {
+    lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
+      new ProcessServiceBasedScenarioServiceAdapter(processService)
+    )
+
+    loadCustomHttpServiceProviderFactories()
+      .map { factory => factory.create(config, nussknackerServices).map(factory.name -> _) }
+      .sequence
+      .map(_.toMap)
+  }
+
+  private def loadCustomHttpServiceProviderFactories(): List[CustomHttpServiceProviderFactory] = {
     Multiplicity(
       ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
     ) match {
@@ -895,17 +906,7 @@ class AkkaHttpBasedRouteProvider(
           s"CustomHttpServiceProviderFactory instances with conflicting names found: $moreThanOne"
         )
     }
-  }.map { factory =>
-    factory
-      .create[IO](
-        config,
-        new NussknackerServicesForCustomHttpService[IO](
-          new ProcessServiceBasedScenarioServiceAdapter(processService)
-        ),
-      )
-      .map(factory.name -> _)
-  }.sequence
-    .map(_.toMap)
+  }
 
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
     private val actionServiceRef = new AtomicReference[Option[ActionService]](None)
