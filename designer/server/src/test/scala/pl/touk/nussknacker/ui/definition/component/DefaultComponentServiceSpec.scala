@@ -10,6 +10,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition.kebabCaseToTitleCase
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
@@ -369,7 +370,7 @@ class DefaultComponentServiceSpec
       links,
       usageCount,
       nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
-      componentId.name
+      kebabCaseToTitleCase(componentId.name)
     )
   }
 
@@ -390,7 +391,7 @@ class DefaultComponentServiceSpec
         links,
         0,
         AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
-        componentId.name
+        kebabCaseToTitleCase(componentId.name)
       )
     )
   }
@@ -411,7 +412,7 @@ class DefaultComponentServiceSpec
         links,
         0,
         AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
-        componentId.name
+        kebabCaseToTitleCase(componentId.name)
       )
     )
   }
@@ -476,7 +477,7 @@ class DefaultComponentServiceSpec
       links,
       usageCount,
       nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
-      componentId.name,
+      kebabCaseToTitleCase(componentId.name),
     )
   }
 
@@ -499,7 +500,7 @@ class DefaultComponentServiceSpec
       links,
       0,
       AllowedProcessingModes.All,
-      componentId.name
+      kebabCaseToTitleCase(componentId.name)
     )
   }
 

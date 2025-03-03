@@ -166,8 +166,12 @@ object ComponentDefinition {
   ): ComponentDefinition = {
     label match {
       case Some(value) => ComponentDefinition(name, component, icon, docsUrl, designerWideId, value)
-      case None        => ComponentDefinition(name, component, icon, docsUrl, designerWideId, name)
+      case None => ComponentDefinition(name, component, icon, docsUrl, designerWideId, kebabCaseToTitleCase(name))
     }
+  }
+
+  def kebabCaseToTitleCase(name: String): String = {
+    name.split("-").map(_.capitalize).mkString(" ")
   }
 
 }
