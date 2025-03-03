@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.compiledgraph.node._
 
 object CompiledNodesCollector {
 
-  def collectNodes(node: Node): List[Node] = {
+  def collectAllNodes(node: Node): List[Node] = {
     val children = node match {
       case n: Source          => collectNodes(n.next)
       case n: VariableBuilder => collectNodes(n.next)
@@ -31,7 +31,7 @@ object CompiledNodesCollector {
 
   private def collectNodes(next: Next): List[Node] =
     next match {
-      case NextNode(node) => collectNodes(node)
+      case NextNode(node) => collectAllNodes(node)
       case _: PartRef     => List.empty
     }
 

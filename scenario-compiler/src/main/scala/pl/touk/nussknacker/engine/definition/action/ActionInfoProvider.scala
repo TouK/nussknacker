@@ -11,6 +11,6 @@ trait ActionInfoProvider {
   def getActionParameters(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]]
+  ): Either[ActionInfoError, Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]]]
 
 }

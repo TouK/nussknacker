@@ -96,7 +96,7 @@ class ActionInfoHttpServiceBusinessSpec
       val scenario = ScenarioBuilder
         .streaming("scenarioWithoutParameters")
         .source("sourceNoParamsId", "boundedSource", "elements" -> "{'one', 'two', 'three'}".spel)
-        .emptySink("exampleSinkId", "emptySink")
+        .emptySink("exampleSinkId", "monitor")
 
       given()
         .applicationState {
@@ -114,7 +114,7 @@ class ActionInfoHttpServiceBusinessSpec
       val scenario = ScenarioBuilder
         .streaming("invalidScenario")
         .source("exampleSource", "boundedSource", "elements" -> "{'one', 'two', 'three'}".spel)
-        .emptySink("exampleSinkId", "emptySink")
+        .emptySink("exampleSinkId", "monitor")
 
       given()
         .when()
@@ -125,6 +125,24 @@ class ActionInfoHttpServiceBusinessSpec
         .equalsPlainBody(
           s"No scenario ${scenario.name.value} found"
         )
+    }
+
+    "return cannot compile scenario where scenarios has errors" in {
+      val scenario = ScenarioBuilder
+        .streaming("invalidScenario")
+        .source("exampleSource", "boundedSource", "elements" -> "{'one', 'two', 'three'}".spel)
+        .emptySink("exampleSinkId", "emptySink")
+
+      given()
+        .applicationState {
+          createSavedScenario(scenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody("Cannot compile scenario")
     }
   }
 

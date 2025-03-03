@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import sttp.tapir.{Codec, CodecFormat}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ActionInfoHttpService(
     authManager: AuthManager,
@@ -53,10 +54,12 @@ class ActionInfoHttpService(
           actionInfoService = processingTypeToActionInfoService.forProcessingTypeUnsafe(
             scenarioWithDetails.processingType
           )
-          actionNodeParameters = actionInfoService.getActionParameters(
-            scenarioWithDetails.scenarioGraphUnsafe,
-            scenarioWithDetails.processVersionUnsafe,
-            scenarioWithDetails.isFragment
+          actionNodeParameters <- EitherT.fromEither[Future](
+            actionInfoService.getActionParameters(
+              scenarioWithDetails.scenarioGraphUnsafe,
+              scenarioWithDetails.processVersionUnsafe,
+              scenarioWithDetails.isFragment
+            )
           )
         } yield toUiParameters(actionNodeParameters)
       }
@@ -71,9 +74,16 @@ object ActionInfoHttpService {
   object ActionInfoError {
     final case class NoScenario(scenarioName: ProcessName) extends ActionInfoError
     final case object NoPermission                         extends ActionInfoError with CustomAuthorizationError
+    final case object CannotCompileScenario                extends ActionInfoError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
+    }
+
+    implicit val cannotCompileScenarioCodec: Codec[String, CannotCompileScenario.type, CodecFormat.TextPlain] = {
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[CannotCompileScenario.type](_ =>
+        s"Cannot compile scenario"
+      )
     }
 
   }

@@ -56,33 +56,39 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     nodeCompiler.compileSource(source).compiledObject
   }
 
-  def compileScenario(scenario: CanonicalProcess)(implicit jobData: JobData): Map[NodeComponentInfo, Any] = {
-    scenarioCompiler.compile(scenario).result match {
-      case Validated.Valid(compiledScenario: CompiledProcessParts) =>
-        extractComponents(compiledScenario.sources.toList)
-      case _ => Map.empty
-    }
-  }
+  def compileAllCustomNodes(
+      scenario: CanonicalProcess
+  )(implicit jobData: JobData): ValidatedNel[ProcessCompilationError, Map[NodeComponentInfo, Any]] =
+    scenarioCompiler
+      .compile(scenario)
+      .result
+      .map(compiledParts => extractCustomComponents(compiledParts.sources.toList))
 
-  private def extractComponents(parts: List[ProcessPart])(implicit jobData: JobData): Map[NodeComponentInfo, Any] =
+  private def extractCustomComponents(
+      parts: List[ProcessPart]
+  )(implicit jobData: JobData): Map[NodeComponentInfo, Any] =
     parts.foldLeft(Map.empty[NodeComponentInfo, Any]) { (acc, part) =>
       val nodeComponentInfo = NodeComponentInfoExtractor.fromScenarioNode(part.node.data)
       part match {
         case source: SourcePart =>
-          acc + (nodeComponentInfo -> source.obj) ++ compilePart(source) ++ extractComponents(source.nextParts)
+          acc + (nodeComponentInfo -> source.obj) ++
+            compilePartsAllCustomNodes(source) ++
+            extractCustomComponents(source.nextParts)
         case custom: CustomNodePart =>
-          acc + (nodeComponentInfo -> custom.transformer) ++ compilePart(custom) ++ extractComponents(custom.nextParts)
+          acc + (nodeComponentInfo -> custom.transformer) ++
+            compilePartsAllCustomNodes(custom) ++
+            extractCustomComponents(custom.nextParts)
         case sink: SinkPart =>
           acc + (nodeComponentInfo -> sink.obj)
       }
     }
 
-  private def compilePart(part: ProcessPart)(implicit jobData: JobData): Map[NodeComponentInfo, Any] =
+  private def compilePartsAllCustomNodes(part: ProcessPart)(implicit jobData: JobData): Map[NodeComponentInfo, Any] =
     subGraphCompiler
       .compile(part.node, part.validationContext)
       .result
       .toList
-      .flatMap(n => CompiledNodesCollector.collectNodes(n))
+      .flatMap(n => CompiledNodesCollector.collectAllNodes(n))
       .flatMap {
         case n: compiledNode.Processor => Some(NodeComponentInfoExtractor.fromCompiledNode(n) -> n.service.invoker)
         case n: compiledNode.Enricher  => Some(NodeComponentInfoExtractor.fromCompiledNode(n) -> n.service.invoker)

@@ -5,7 +5,11 @@ import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.definition.action.ActionInfoProvider
+import pl.touk.nussknacker.engine.definition.action.{ActionInfoProvider, CannotCompileScenario}
+import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
+import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{
+  CannotCompileScenario => ApiCannotCompileScenario
+}
 import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.{
   UiActionNodeParameters,
   UiActionParameterConfig,
@@ -22,11 +26,11 @@ class ActionInfoService(actionInfoProvider: ActionInfoProvider, processResolver:
       isFragment: Boolean
   )(
       implicit user: LoggedUser
-  ): UiActionParameters = {
+  ): Either[ActionInfoError, UiActionParameters] = {
     val canonical = processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment)
     val parameters = actionInfoProvider
       .getActionParameters(processVersion, canonical)
-      .map { case (scenarioActionName, nodeParamsMap) =>
+      .map(_.map { case (scenarioActionName, nodeParamsMap) =>
         scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
           UiActionNodeParameters(
             NodeId(nodeComponentInfo.nodeId),
@@ -41,8 +45,11 @@ class ActionInfoService(actionInfoProvider: ActionInfoProvider, processResolver:
             }
           )
         }.toList
-      }
-    UiActionParameters(parameters)
+      })
+    parameters match {
+      case Left(CannotCompileScenario) => Left(ApiCannotCompileScenario)
+      case Right(value)                => Right(UiActionParameters(value))
+    }
   }
 
 }
