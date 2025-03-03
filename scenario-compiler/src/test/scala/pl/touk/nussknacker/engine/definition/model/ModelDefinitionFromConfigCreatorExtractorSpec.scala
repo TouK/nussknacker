@@ -381,7 +381,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[Any] = ???
 
   }

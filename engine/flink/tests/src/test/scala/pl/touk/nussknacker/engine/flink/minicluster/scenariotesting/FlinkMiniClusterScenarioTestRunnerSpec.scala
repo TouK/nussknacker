@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor
 }
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -822,9 +822,17 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process = ScenarioBuilder
         .streaming(scenarioName)
         .source("start", "input")
-        .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUseCaseService")
-        .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUseCase")
-        .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}".spel)
+        .enricher("componentUseContextService", "componentUseContextService", "returningComponentUseContextService")
+        .customNode(
+          "componentUseContextCustomNode",
+          "componentUseContextCustomNode",
+          "transformerAddingComponentUseContext"
+        )
+        .emptySink(
+          "out",
+          "valueMonitor",
+          "Value" -> "{#componentUseContextService, #componentUseContextCustomNode}".spel
+        )
 
       val results =
         prepareTestRunner(useIOMonadInInterpreter)
@@ -835,7 +843,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .futureValue
 
       results.invocationResults("out").map(_.value) shouldBe List(
-        variable(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime))
+        variable(List(ComponentUseContext.ScenarioTesting, ComponentUseContext.ScenarioTesting))
       )
     }
 

@@ -4,15 +4,15 @@ import cats.{Monad, Monoid}
 import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
-import pl.touk.nussknacker.engine.{compiledgraph, InterpretationResult, ModelData}
+import pl.touk.nussknacker.engine.{compiledgraph, InterpretationResult, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseCase,
+  ComponentUseContext,
   ProcessObjectDependencies,
   ServiceExecutionContext,
   Source
@@ -63,7 +63,8 @@ object ScenarioInterpreterFactory {
       modelData: ModelData,
       additionalListeners: List[ProcessListener] = Nil,
       resultCollector: ResultCollector = ProductionServiceInvocationCollector,
-      componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
+      runtimeMode: RuntimeMode = RuntimeMode.Live,
+      nodesDeploymentData: NodesDeploymentData = NodesDeploymentData.empty
   )(
       implicit ec: ExecutionContext,
       shape: InterpreterShape[F],
@@ -90,8 +91,9 @@ object ScenarioInterpreterFactory {
         listeners,
         modelData.modelClassLoader,
         resultCollector,
-        componentUseCase,
-        modelData.customProcessValidator
+        runtimeMode,
+        modelData.customProcessValidator,
+        nodesDeploymentData,
       )
 
       compilerData.compile(process).andThen { compiledProcess =>
@@ -104,7 +106,7 @@ object ScenarioInterpreterFactory {
         InvokerCompiler[F, Input, Res](
           compiledProcess,
           compilerData,
-          componentUseCase,
+          runtimeMode,
           capabilityTransformer,
           jobData
         ).compile
@@ -165,7 +167,7 @@ object ScenarioInterpreterFactory {
   private case class InvokerCompiler[F[_]: Monad, Input, Res <: AnyRef](
       compiledProcess: CompiledProcessParts,
       processCompilerData: ProcessCompilerData,
-      componentUseCase: ComponentUseCase,
+      runtimeMode: RuntimeMode,
       capabilityTransformer: CapabilityTransformer[F],
       jobData: JobData
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
@@ -388,8 +390,7 @@ object ScenarioInterpreterFactory {
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
-        case (_: Source, fragmentInputDef: FragmentInputDefinition)
-            if componentUseCase == ComponentUseCase.TestRuntime =>
+        case (_: Source, fragmentInputDef: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
           sourceForFragmentInputTestng(fragmentInputDef)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }

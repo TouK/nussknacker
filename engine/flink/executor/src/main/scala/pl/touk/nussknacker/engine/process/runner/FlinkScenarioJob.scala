@@ -37,7 +37,7 @@ class FlinkScenarioJob(modelData: ModelData) {
       deploymentData: DeploymentData,
       env: StreamExecutionEnvironment
   ): JobExecutionResult = {
-    val compilerFactory         = new FlinkProcessCompilerDataFactory(modelData)
+    val compilerFactory         = new FlinkProcessCompilerDataFactory(modelData, deploymentData)
     val executionConfigPreparer = ExecutionConfigPreparer.defaultChain(modelData)
     val registrar =
       FlinkProcessRegistrar(compilerFactory, FlinkJobConfig.parse(modelData.modelConfig), executionConfigPreparer)
