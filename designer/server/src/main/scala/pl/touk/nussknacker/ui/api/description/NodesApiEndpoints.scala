@@ -1581,10 +1581,10 @@ object NodesApiEndpoints {
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
             case TooManySamplesRequested(maxSamples) =>
-              TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+              TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
-              TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+              TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1602,8 +1602,8 @@ object NodesApiEndpoints {
 
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
-            case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
-            case NoDataGenerated                  => TestingApiErrorMessages.noDataGenerated
+            case NoScenario(scenarioName) => s"No scenario ${scenarioName} found"
+            case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
 

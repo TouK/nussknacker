@@ -172,9 +172,9 @@ object TestingApiHttpService {
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
           case TooManyCharactersGenerated(length, limit) =>
-            TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+            TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
           case TooManySamplesRequested(maxSamples) =>
-            TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+            TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
         }
       }
 
@@ -189,9 +189,10 @@ object TestingApiHttpService {
 
       implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
-          case NoScenario(scenarioName)        => s"No scenario ${scenarioName.value} found"
-          case NoDataGenerated                 => TestingApiErrorMessages.noDataGenerated
-          case NoSourcesWithTestDataGeneration => TestingApiErrorMessages.noSourcesWithTestDataGeneration
+          case NoScenario(scenarioName) => s"No scenario ${scenarioName.value} found"
+          case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
+          case NoSourcesWithTestDataGeneration =>
+            TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
         }
       }
 

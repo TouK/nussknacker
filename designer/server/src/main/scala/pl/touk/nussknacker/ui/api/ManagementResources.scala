@@ -76,17 +76,18 @@ object ManagementResources {
       GenerateTestDataDesignerError(generateTestDataError match {
         case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
           cause match {
-            case ScenarioTestDataGenerationError.NoDataGenerated => TestingApiErrorMessages.noDataGenerated
+            case ScenarioTestDataGenerationError.NoDataGenerated =>
+              TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
             case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
-              TestingApiErrorMessages.noSourcesWithTestDataGeneration
+              TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
           }
         case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
           cause match {
             case SerializationError.TooManyCharactersGenerated(length, limit) =>
-              TestingApiErrorMessages.tooManyCharactersGenerated(length, limit)
+              TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
           }
         case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
-          TestingApiErrorMessages.requestedTooManySamplesToGenerate(maxSamples)
+          TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
       })
     }
 
@@ -101,20 +102,20 @@ object ManagementResources {
         case PerformTestError.DeserializationError(cause) =>
           cause match {
             case DeserializationError.TooManyCharacters(length, limit) =>
-              TestingApiErrorMessages.tooManyCharactersReceived(length, limit)
+              TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
             case DeserializationError.TooManySamples(size, limit) =>
-              TestingApiErrorMessages.tooManySamplesReceived(size, limit)
-            case DeserializationError.RecordParsingError(rawTestRecord) =>
-              TestingApiErrorMessages.recordParsingError(rawTestRecord)
+              TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
             case DeserializationError.NoRecords =>
-              TestingApiErrorMessages.noInputRecords
+              TestingApiErrorMessages.passedTestData.empty
+            case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
+              TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
           }
         case PerformTestError.TestDataPreparationError(cause) =>
           cause match {
             case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
-              TestingApiErrorMessages.missingSourceForRecord(sourceId, recordIndex)
+              TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId)
             case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
-              TestingApiErrorMessages.multipleSourcesRequiredForRecord(recordIndex)
+              TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
           }
         case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
           TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)

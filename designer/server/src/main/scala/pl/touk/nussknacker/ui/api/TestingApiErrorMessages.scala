@@ -2,40 +2,51 @@ package pl.touk.nussknacker.ui.api
 
 object TestingApiErrorMessages {
 
-  val noSourcesWithTestDataGeneration = "No sources with test data generation available"
+  object generatedTestData {
+    def requestedTooManySamplesToGenerate(maxSamples: Int) =
+      s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
 
-  val noDataGenerated = "No data was generated"
+    val couldNotProvideTestDataSample =
+      "Could not provide a sample of test data. Possible cause: no live sample data available"
 
-  val noInputRecords = "No input records found"
+    val noSourcesWithTestDataGeneration = "No sources with test data generation available"
 
-  def requestedTooManySamplesToGenerate(maxSamples: Int) =
-    s"Too many samples requested, limit is $maxSamples. Please configure 'testDataSettings.maxSamplesCount' to increase the limit"
-
-  def tooManyCharactersGenerated(length: Int, limit: Int) =
-    s"$length characters were generated, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
-
-  def tooManyCharactersReceived(length: Int, limit: Int) =
-    s"Received $length characters, limit is $limit. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
-
-  def tooManySamplesReceived(count: Int, maxSamples: Int) =
-    s"Received $count samples, limit is: $maxSamples. Please configure 'testDataSettings.maxSamplesCount'"
-
-  def recordParsingError(rawTestRecord: String): String = {
-    val trimmedRawTestRecord = rawTestRecord.take(300)
-    if (trimmedRawTestRecord.length < rawTestRecord.length) {
-      s"Could not parse record (shows fragment): '$trimmedRawTestRecord'"
-    } else {
-      s"Could not parse record: '$rawTestRecord'"
-    }
+    def tooManyCharacters(length: Int, limit: Int) =
+      s"Too many characters were found in the generated test data ($length). Please try to decrease the number of requested samples or configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
   }
 
-  def missingSourceForRecord(sourceId: String, recordIndex: Int) =
-    s"Record ${recordIndex + 1} - scenario does not have source id: '$sourceId'"
+  object passedTestData {
+    val empty = "Test data is empty"
 
-  def multipleSourcesRequiredForRecord(recordIndex: Int) =
-    s"Record ${recordIndex + 1} - scenario has multiple sources but got record without source id"
+    def tooManyCharacters(length: Int, limit: Int) =
+      s"Test data has too many characters ($length). Please configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
+
+    def tooManySamples(count: Int, maxSamples: Int) =
+      s"Test data has too many samples ($count). Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+  }
+
+  case class problemInSample(private val recordIndex: Int) {
+
+    def parsingError(rawTestRecord: String): String = {
+      val trimmedRawTestRecord = rawTestRecord.take(300)
+      if (trimmedRawTestRecord.length < rawTestRecord.length) {
+        messageForRecord(s"could not parse (shows fragment): '$trimmedRawTestRecord'")
+      } else {
+        messageForRecord(s"could not parse: '$rawTestRecord'")
+      }
+    }
+
+    def missingSource(sourceId: String): String =
+      messageForRecord(s"source with id '$sourceId' doesn't exist in the scenario")
+
+    def multipleSourcesRequired: String =
+      messageForRecord("scenario has multiple sources, but got sample with unspecified source id")
+
+    private def messageForRecord(message: String) =
+      s"Problem in sample ${recordIndex + 1} detected: $message"
+  }
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
-    s"Test results size exceeded, approximate size in bytes: $approxSizeInBytes, but limit is: $maxBytes. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
+    s"Test results size exceeded (approximate size in bytes: $approxSizeInBytes). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit ($maxBytes)"
 
 }

@@ -145,7 +145,7 @@ class TestingApiHttpServiceSpec
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
         .equalsPlainBody(
-          "Too many samples requested, limit is 20. Please configure 'testDataSettings.maxSamplesCount' to increase the limit"
+          "Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
         )
     }
   }

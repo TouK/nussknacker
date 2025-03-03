@@ -24,8 +24,8 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
@@ -450,7 +450,7 @@ class ManagementResourcesSpec
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Received 50 samples, limit is: 20. Please configure 'testDataSettings.maxSamplesCount'"
+      ] shouldBe "Test data has too many samples (50). Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
     }
 
     val longString = "a long json string".repeat(50)
@@ -461,7 +461,7 @@ class ManagementResourcesSpec
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Received 18059 characters, limit is 10000. Please configure 'testDataSettings.testDataMaxLength' to increase the limit"
+      ] shouldBe "Test data has too many characters (18059). Please configure 'testDataSettings.testDataMaxLength' to increase the limit (10000)"
     }
   }
 
@@ -493,7 +493,7 @@ class ManagementResourcesSpec
       // Approximate size can differ slightly depending on test execution environment.
       responseAs[
         String
-      ] should fullyMatch regex "Test results size exceeded, approximate size in bytes: \\d+, but limit is: 500000. Please configure 'testDataSettings.resultsMaxBytes' to increase the limit"
+      ] should fullyMatch regex "Test results size exceeded \\(approximate size in bytes: \\d+\\). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit \\(500000\\)"
     }
   }
 
@@ -505,7 +505,7 @@ class ManagementResourcesSpec
 
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
-      responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
+      responseAs[String] shouldBe "Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario"
     }
   }
 

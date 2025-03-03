@@ -2214,12 +2214,14 @@ paths:
                   value: 'Expected Filter but got: Source'
                 Example3:
                   summary: Too many samples requested
-                  value: Too many samples requested, limit is 100. Please configure
-                    'testDataSettings.maxSamplesCount' to increase the limit
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (100)
                 Example4:
                   summary: Too many characters generated
-                  value: 1000 characters were generated, limit is 500. Please configure
-                    'testDataSettings.testDataMaxLength' to increase the limit
+                  value: Too many characters were found in the generated test data
+                    (1000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (500)
         '401':
           description: ''
           content:
@@ -2255,7 +2257,8 @@ paths:
                   value: No scenario 'example scenario' found
                 Example1:
                   summary: No test data generated
-                  value: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live sample data available'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3445,12 +3448,14 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: 5000 characters were generated, limit is 2000. Please configure
-                    'testDataSettings.testDataMaxLength' to increase the limit
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
                 Example1:
                   summary: Too many samples requested
-                  value: Too many samples requested, limit is 1000. Please configure
-                    'testDataSettings.maxSamplesCount' to increase the limit
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
         '401':
           description: ''
           content:
@@ -3486,7 +3491,8 @@ paths:
                   value: No scenario 'example scenario' found
                 Example1:
                   summary: No data was generated
-                  value: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live sample data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available

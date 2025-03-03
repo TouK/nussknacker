@@ -42,9 +42,9 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
         (),
         DeserializationError.TooManySamples(size = rawRecords.size, limit = testDataSettings.maxSamplesCount)
       )
-      decodedRecords <- rawRecords.map { rawTestRecord =>
+      decodedRecords <- rawRecords.mapWithIndex { (rawTestRecord, recordIndex) =>
         val parsedRecord = parser.decode[PreliminaryScenarioTestRecord](rawTestRecord)
-        parsedRecord.leftMap(_ => DeserializationError.RecordParsingError(rawTestRecord))
+        parsedRecord.leftMap(_ => DeserializationError.RecordParsingError(rawTestRecord, recordIndex))
       }.sequence
       result <- NonEmptyList
         .fromList(decodedRecords)
@@ -65,10 +65,10 @@ object PreliminaryScenarioTestDataSerDe {
   sealed trait DeserializationError
 
   object DeserializationError {
-    final case class TooManyCharacters(length: Int, limit: Int) extends DeserializationError
-    final case class TooManySamples(size: Int, limit: Int)      extends DeserializationError
-    final case class RecordParsingError(rawTestRecord: String)  extends DeserializationError
-    final case object NoRecords                                 extends DeserializationError
+    final case class TooManyCharacters(length: Int, limit: Int)                  extends DeserializationError
+    final case class TooManySamples(size: Int, limit: Int)                       extends DeserializationError
+    final case class RecordParsingError(rawTestRecord: String, recordIndex: Int) extends DeserializationError
+    final case object NoRecords                                                  extends DeserializationError
   }
 
 }

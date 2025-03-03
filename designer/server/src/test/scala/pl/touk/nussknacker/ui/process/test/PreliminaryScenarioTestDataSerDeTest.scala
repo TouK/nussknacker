@@ -9,9 +9,6 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
 
-import scala.util.parsing.input.NoPosition.longString
-import scala.util.parsing.json.JSON
-
 class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   private val maxSamplesCount   = 5
@@ -87,10 +84,13 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
   test("should fail trying to parse invalid record") {
     val invalidRecord = "not a test record"
+    val scenarioTestData =
+      s""""a JSON string"
+        |$invalidRecord""".stripMargin
 
-    val error = serDe.deserialize(RawScenarioTestData(invalidRecord)).leftValue
+    val error = serDe.deserialize(RawScenarioTestData(scenarioTestData)).leftValue
 
-    error shouldBe DeserializationError.RecordParsingError(invalidRecord)
+    error shouldBe DeserializationError.RecordParsingError(invalidRecord, recordIndex = 1)
   }
 
 }
