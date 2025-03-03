@@ -9,7 +9,8 @@ case class ProcessingTypeConfig(
     classPath: List[String],
     deploymentConfig: Config,
     modelConfig: ConfigWithUnresolvedVersion,
-    category: String
+    category: String,
+    skipInvalidComponents: Boolean,
 )
 
 object ProcessingTypeConfig {
@@ -24,7 +25,8 @@ object ProcessingTypeConfig {
       config.resolved.as[List[String]]("modelConfig.classPath"),
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig"),
-      config.resolved.as[String]("category")
+      config.resolved.as[String]("category"),
+      config.resolved.as[Boolean]("skipInvalidComponents"),
     )
   }
 

@@ -16,7 +16,8 @@ object ModelDefinitionExtractor {
       category: Option[String],
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+      skipInvalidComponents: Boolean,
   ): ModelDefinition = {
     val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
     val modelDefinitionBasedOnConfigCreator =
@@ -30,7 +31,7 @@ object ModelDefinitionExtractor {
         componentDefinitionExtractionMode
       )
     val componentsFromProviders =
-      ComponentsFromProvidersExtractor(classLoader).extractComponents(
+      ComponentsFromProvidersExtractor(classLoader, skipInvalidComponents).extractComponents(
         modelDependencies,
         componentsUiConfig,
         determineDesignerWideId,

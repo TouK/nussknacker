@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import cats.data.NonEmptyList
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
@@ -10,20 +11,27 @@ import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersEx
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
+import scala.util.{Failure, Success, Try}
+
 object ComponentsFromProvidersExtractor {
 
   val componentConfigPath = "components"
 
-  def apply(classLoader: ClassLoader): ComponentsFromProvidersExtractor = {
+  def apply(classLoader: ClassLoader, skipInvalidComponents: Boolean): ComponentsFromProvidersExtractor = {
     new ComponentsFromProvidersExtractor(
       classLoader,
-      NussknackerVersion.current
+      NussknackerVersion.current,
+      skipInvalidComponents,
     )
   }
 
 }
 
-class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
+class ComponentsFromProvidersExtractor(
+    classLoader: ClassLoader,
+    nussknackerVersion: NussknackerVersion,
+    skipInvalidComponents: Boolean,
+) extends LazyLogging {
 
   private lazy val providers: Map[String, List[ComponentProvider]] = {
     ScalaServiceLoader
@@ -144,10 +152,17 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    val components = provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
-      config.componentPrefix
-        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
-        .getOrElse(inputComponentDefinition)
+    val components = Try(provider.create(config.config, modelDependencies)) match {
+      case Success(defs) =>
+        defs.map { inputComponentDefinition =>
+          config.componentPrefix
+            .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+            .getOrElse(inputComponentDefinition)
+        }
+      case Failure(ex) if skipInvalidComponents =>
+        logger.warn("Exception occurred during abc", ex)
+        List.empty
+      case Failure(ex) => throw ex
     }
 
     Components.forList(

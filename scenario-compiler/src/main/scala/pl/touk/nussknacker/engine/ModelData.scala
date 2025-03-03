@@ -46,7 +46,8 @@ object ModelData extends LazyLogging {
       Some(processingTypeConfig.category),
       dependencies.determineDesignerWideId,
       dependencies.additionalConfigsFromProvider,
-      dependencies.componentDefinitionExtractionMode
+      dependencies.componentDefinitionExtractionMode,
+      processingTypeConfig.skipInvalidComponents,
     )
   }
 
@@ -117,6 +118,7 @@ case class ClassLoaderModelData private (
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+    private val skipInvalidComponents: Boolean,
 ) extends ModelData
     with LazyLogging {
 
@@ -159,7 +161,8 @@ case class ClassLoaderModelData private (
     new ExtractDefinitionFunImpl(
       configCreator,
       category,
-      componentDefinitionExtractionMode
+      componentDefinitionExtractionMode,
+      skipInvalidComponents,
     )
 
 }
@@ -169,7 +172,8 @@ object ClassLoaderModelData {
   class ExtractDefinitionFunImpl(
       configCreator: ProcessConfigCreator,
       category: Option[String],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+      skipInvalidComponents: Boolean,
   ) extends ExtractDefinitionFun
       with Serializable {
 
@@ -186,7 +190,8 @@ object ClassLoaderModelData {
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
-        componentDefinitionExtractionMode
+        componentDefinitionExtractionMode,
+        skipInvalidComponents,
       )
     }
 
