@@ -7,6 +7,8 @@ import net.ceedubs.ficus.Ficus._
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 import java.sql.Connection
+import java.util.Properties
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.control.NonFatal
 
 class DbRef private (val db: JdbcBackend.Database, val profile: JdbcProfile)
@@ -33,12 +35,7 @@ object DbRef {
   }
 
   private def createDataSource(config: Config): Resource[IO, HikariDataSource] = {
-    val hikariConfig = new HikariConfig()
-    hikariConfig.setJdbcUrl(config.getString("db.url"))
-    hikariConfig.setUsername(config.getString("db.user"))
-    hikariConfig.setPassword(config.getString("db.password"))
-    hikariConfig.setMaximumPoolSize(config.getInt("db.maxPoolSize"))
-
+    val hikariConfig = new HikariConfig(toHikariProperties(config.getConfig("db")))
     Resource.make(IO(createHikariDataSource(hikariConfig)))(ds => IO(ds.close()))
   }
 
@@ -65,6 +62,14 @@ object DbRef {
         } catch { case NonFatal(_) => }
       }
     }
+  }
+
+  private def toHikariProperties(hikariConf: Config): Properties = {
+    val props = new Properties()
+    for (entry <- hikariConf.entrySet().asScala) {
+      props.setProperty(entry.getKey, entry.getValue.unwrapped().toString)
+    }
+    props
   }
 
 }
