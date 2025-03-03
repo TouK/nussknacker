@@ -8,7 +8,7 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 import java.sql.Connection
 import java.util.Properties
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 class DbRef private (val db: JdbcBackend.Database, val profile: JdbcProfile)
