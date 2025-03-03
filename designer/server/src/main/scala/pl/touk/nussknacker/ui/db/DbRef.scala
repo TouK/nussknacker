@@ -3,11 +3,9 @@ package pl.touk.nussknacker.ui.db
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import net.ceedubs.ficus.Ficus._
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 import java.sql.Connection
-import java.util.Properties
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
@@ -35,7 +33,7 @@ object DbRef {
   }
 
   private def createDataSource(config: Config): Resource[IO, HikariDataSource] = {
-    val hikariConfig = new HikariConfig(toHikariProperties(config.getConfig("db")))
+    val hikariConfig = toHikariConfig(config.getConfig("db"))
     Resource.make(IO(createHikariDataSource(hikariConfig)))(ds => IO(ds.close()))
   }
 
@@ -59,17 +57,27 @@ object DbRef {
       private def silentClose(conn: Connection): Unit = {
         try {
           conn.close()
-        } catch { case NonFatal(_) => }
+        } catch {
+          case NonFatal(_) =>
+        }
       }
     }
   }
 
-  private def toHikariProperties(hikariConf: Config): Properties = {
-    val props = new Properties()
-    for (entry <- hikariConf.entrySet().asScala) {
-      props.setProperty(entry.getKey, entry.getValue.unwrapped().toString)
+  private def toHikariConfig(conf: Config): HikariConfig = {
+    val hikariConf = new HikariConfig()
+    hikariConf.setJdbcUrl(conf.getString("url"))
+    hikariConf.setUsername(conf.getString("user"))
+    hikariConf.setPassword(conf.getString("tenantSharedUserPassword"))
+    hikariConf.setMinimumIdle(conf.getInt("minimumIdle"))
+    hikariConf.setMaximumPoolSize(conf.getInt("maximumPoolSize"))
+    hikariConf.setIdleTimeout(conf.getInt("idleTimeout"))
+    hikariConf.setDriverClassName(conf.getString("driver"))
+    hikariConf.setSchema(conf.getString("schema"))
+    conf.getConfig("properties").entrySet().asScala.foreach { entry =>
+      hikariConf.addDataSourceProperty(entry.getKey, entry.getValue)
     }
-    props
+    hikariConf
   }
 
 }
