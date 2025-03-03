@@ -30,19 +30,19 @@ object TestingApiErrorMessages {
     def parsingError(rawTestRecord: String): String = {
       val trimmedRawTestRecord = rawTestRecord.take(300)
       if (trimmedRawTestRecord.length < rawTestRecord.length) {
-        messageForRecord(s"could not parse (shows fragment): '$trimmedRawTestRecord'")
+        messageForSample(s"could not parse (shows fragment): '$trimmedRawTestRecord'")
       } else {
-        messageForRecord(s"could not parse: '$rawTestRecord'")
+        messageForSample(s"could not parse: '$rawTestRecord'")
       }
     }
 
     def missingSource(sourceId: String): String =
-      messageForRecord(s"source with id '$sourceId' doesn't exist in the scenario")
+      messageForSample(s"source with id '$sourceId' doesn't exist in the scenario")
 
     def multipleSourcesRequired: String =
-      messageForRecord("scenario has multiple sources, but got sample with unspecified source id")
+      messageForSample("scenario has multiple sources, but got sample with unspecified source id")
 
-    private def messageForRecord(message: String) =
+    private def messageForSample(message: String) =
       s"Problem in sample ${recordIndex + 1} detected: $message"
   }
 
