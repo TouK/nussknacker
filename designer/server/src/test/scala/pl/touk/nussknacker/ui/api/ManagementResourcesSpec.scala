@@ -24,8 +24,8 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
@@ -425,7 +425,7 @@ class ManagementResourcesSpec
     }
   }
 
-  test("refuses to test if too much data") {
+  test("refuses to test if too much data received") {
 
     import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -434,15 +434,66 @@ class ManagementResourcesSpec
         .streaming(processName.value)
         .parallelism(1)
         .source("startProcess", "csv-source")
-        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'".spel)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
     }
     saveCanonicalProcessAndAssertSuccess(process)
-    val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
-    tooLargeTestDataContentList.foreach { tooLargeData =>
-      testScenario(process, tooLargeData) ~> check {
-        status shouldEqual StatusCodes.BadRequest
-      }
+    val tooManySamples = List
+      .fill(50)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, tooManySamples) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Test data has too many samples (50). Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+    }
+
+    val longString = "a long json string".repeat(50)
+    val tooManyCharacters = List
+      .fill(20)("\"" + longString + "\"")
+      .mkString("\n")
+    testScenario(process, tooManyCharacters) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Test data has too many characters (18059). Please configure 'testDataSettings.testDataMaxLength' to increase the limit (10000)"
+    }
+  }
+
+  test("refuses to test if too big test results generated") {
+
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+    val bigListExpression = (1 to 1000).mkString("{", ",", "}").spel
+    val process = {
+      ScenarioBuilder
+        .streaming(processName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .buildSimpleVariable("big list", "bigList", bigListExpression)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
+    }
+    saveCanonicalProcessAndAssertSuccess(process)
+
+    val testDataContent = List
+      .fill(10)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, testDataContent) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      // Approximate size can differ slightly depending on test execution environment.
+      responseAs[
+        String
+      ] should fullyMatch regex "Test results size exceeded \\(approximate size in bytes: \\d+\\). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit \\(500000\\)"
     }
   }
 
@@ -454,7 +505,7 @@ class ManagementResourcesSpec
 
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
-      responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
+      responseAs[String] shouldBe "Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario"
     }
   }
 

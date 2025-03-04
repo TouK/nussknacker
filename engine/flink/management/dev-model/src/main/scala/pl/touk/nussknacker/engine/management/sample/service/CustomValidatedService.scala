@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
@@ -43,7 +43,7 @@ class CustomValidatedService extends EagerService {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseContext: ComponentUseContext,
         ): Future[Any] = {
           Future.successful(
             s"name: ${fields.evaluate(context).get("name")}, age: $age"

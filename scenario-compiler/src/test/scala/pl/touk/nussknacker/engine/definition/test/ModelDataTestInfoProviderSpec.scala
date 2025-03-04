@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{
   SourceWithTestParameters
 }
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPreparationError.{
-  MissingSourceError,
-  MultipleSourcesError
+  MissingSource,
+  MultipleSourcesRequired
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -302,7 +302,7 @@ class ModelDataTestInfoProviderSpec
     forEvery(testingData) { scenario =>
       val error = testInfoProvider.prepareTestData(preliminaryTestData, scenario).leftValue
 
-      error shouldBe MissingSourceError("non-existing source", 1)
+      error shouldBe MissingSource("non-existing source", 1)
     }
   }
 
@@ -317,7 +317,7 @@ class ModelDataTestInfoProviderSpec
 
     val error = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).leftValue
 
-    error shouldBe MultipleSourcesError(1)
+    error shouldBe MultipleSourcesRequired(1)
   }
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {
