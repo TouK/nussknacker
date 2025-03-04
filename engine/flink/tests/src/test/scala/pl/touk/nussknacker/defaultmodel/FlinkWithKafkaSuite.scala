@@ -127,7 +127,7 @@ abstract class FlinkWithKafkaSuite
       .empty()
       .withValue(
         KafkaConfigProperties.bootstrapServersProperty("config"),
-        fromAnyRef(kafkaServerWithDependencies.kafkaAddress)
+        fromAnyRef(kafkaServer.bootstrapServers)
       )
       .withValue(
         KafkaConfigProperties.property("config", "auto.offset.reset"),

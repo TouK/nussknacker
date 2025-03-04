@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.scalalogging.LazyLogging
 import kafka.server
-import kafka.server.{KafkaRaftServer, KafkaServer, Server}
+import kafka.server.{KafkaRaftServer, Server}
 import kafka.tools.StorageTool
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.output.NullOutputStream
@@ -12,10 +12,8 @@ import org.apache.kafka.common.{IsolationLevel, Uuid}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.kafka.server.common.MetadataVersion
-import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
 import java.io.{File, PrintStream}
-import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.{Locale, Properties}
 import scala.language.implicitConversions
@@ -23,10 +21,7 @@ import scala.util.control.NonFatal
 
 // We should consider switching to KafkaClusterTestKit (https://github.com/apache/kafka/blob/3.6/core/src/test/java/kafka/testkit/KafkaClusterTestKit.java),
 // it's used by spring-kafka (https://github.com/spring-projects/spring-kafka/blob/3.1.x/spring-kafka-test/src/main/java/org/springframework/kafka/test/EmbeddedKafkaKraftBroker.java).
-object EmbeddedKafkaServerWithDependencies {
-
-  // TODO: Remove supprot for legacy zk setup
-  private val kRaftEnabled: Boolean = true
+object EmbeddedKafkaKraftServer {
 
   private val localhost: String = "127.0.0.1"
 
@@ -34,31 +29,20 @@ object EmbeddedKafkaServerWithDependencies {
       brokerPort: Int,
       controllerPort: Int,
       kafkaBrokerConfig: Map[String, String]
-  ): EmbeddedKafkaServerWithDependencies = {
+  ): EmbeddedKafkaKraftServer = {
     val kafkaServerLogDir = Files.createTempDirectory("embeddedKafka").toFile
     val clusterId         = Uuid.randomUuid()
     val kafkaConfig =
       prepareKafkaServerConfig(brokerPort, controllerPort, kafkaServerLogDir, kafkaBrokerConfig, clusterId)
-    val kafkaServer = if (kRaftEnabled) {
-      new EmbeddedKafkaServerWithDependencies(
-        None,
-        () => {
-          prepareRaftStorage(kafkaServerLogDir, kafkaConfig, clusterId)
-          new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM)
-        },
-        s"$localhost:$brokerPort",
-        kafkaServerLogDir
-      )
-    } else {
-      val zk = createZookeeperServer(controllerPort)
-      new EmbeddedKafkaServerWithDependencies(
-        Some(zk),
-        () => new KafkaServer(kafkaConfig, time = Time.SYSTEM),
-        s"$localhost:$brokerPort",
-        kafkaServerLogDir
-      )
-    }
-    kafkaServer.startupKafkaServerAndDependencies()
+    val kafkaServer = new EmbeddedKafkaKraftServer(
+      () => {
+        prepareRaftStorage(kafkaServerLogDir, kafkaConfig, clusterId)
+        new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM)
+      },
+      s"$localhost:$brokerPort",
+      kafkaServerLogDir
+    )
+    kafkaServer.startupKafkaServer()
     kafkaServer
   }
 
@@ -70,20 +54,14 @@ object EmbeddedKafkaServerWithDependencies {
       clusterId: Uuid
   ) = {
     val properties = new Properties()
-    if (kRaftEnabled) {
-      properties.setProperty("node.id", "0")
-      properties.setProperty("process.roles", "broker,controller")
-      properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort,CONTROLLER://$localhost:$controllerPort")
-      properties.setProperty("listener.security.protocol.map", s"PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
-      properties.setProperty("controller.listener.names", s"CONTROLLER")
-      properties.setProperty("inter.broker.listener.name", "PLAINTEXT")
-      properties.setProperty("controller.quorum.voters", s"0@$localhost:$controllerPort")
-      properties.setProperty("cluster.id", clusterId.toString)
-    } else {
-      properties.setProperty("broker.id", "0")
-      properties.setProperty("zookeeper.connect", s"$localhost:$controllerPort")
-      properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort")
-    }
+    properties.setProperty("node.id", "0")
+    properties.setProperty("process.roles", "broker,controller")
+    properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort,CONTROLLER://$localhost:$controllerPort")
+    properties.setProperty("listener.security.protocol.map", s"PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
+    properties.setProperty("controller.listener.names", s"CONTROLLER")
+    properties.setProperty("inter.broker.listener.name", "PLAINTEXT")
+    properties.setProperty("controller.quorum.voters", s"0@$localhost:$controllerPort")
+    properties.setProperty("cluster.id", clusterId.toString)
     properties.setProperty("num.partitions", "1")
     properties.setProperty("group.initial.rebalance.delay.ms", "0")
     properties.setProperty("offsets.topic.num.partitions", "1")
@@ -112,20 +90,11 @@ object EmbeddedKafkaServerWithDependencies {
     )
   }
 
-  private def createZookeeperServer(zkPort: Int) = {
-    val factory = new NIOServerCnxnFactory()
-    factory.configure(new InetSocketAddress(localhost, zkPort), 1024)
-    val tempDir  = Files.createTempDirectory("embeddedKafkaZk").toFile
-    val zkServer = new ZooKeeperServer(tempDir, tempDir, ZooKeeperServer.DEFAULT_TICK_TIME)
-    (factory, zkServer, tempDir)
-  }
-
 }
 
-class EmbeddedKafkaServerWithDependencies(
-    zooKeeperServerOpt: Option[(NIOServerCnxnFactory, ZooKeeperServer, File)],
+class EmbeddedKafkaKraftServer(
     createKafkaServer: () => Server,
-    val kafkaAddress: String,
+    val bootstrapServers: String,
     kafkaServerLogDir: File
 ) extends LazyLogging {
 
@@ -136,23 +105,8 @@ class EmbeddedKafkaServerWithDependencies(
     kafkaServer = createKafkaServer()
   }
 
-  def startupKafkaServerAndDependencies(): Unit = {
-    zooKeeperServerOpt.foreach(t => t._1.startup(t._2))
-    startupKafkaServer()
-  }
-
   def startupKafkaServer(): Unit = {
     kafkaServer.startup()
-  }
-
-  def shutdownKafkaServerAndDependencies(): Unit = {
-    shutdownKafkaServer()
-    zooKeeperServerOpt.foreach { case (cnxnFactory, zkServer, zkTempDir) =>
-      cnxnFactory.shutdown()
-      // factory shutdown doesn't pass 'fullyShutDown' flag to ZkServer.shutdown, we need to explicitly close database
-      zkServer.getZKDatabase.close()
-      cleanDirectorySilently(zkTempDir)
-    }
   }
 
   def shutdownKafkaServer(): Unit = {
