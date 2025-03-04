@@ -131,11 +131,11 @@ trait NuRestAssureExtensions {
         .getString(jsonPath)
     }
 
-    def extractList(jsonPath: String): List[String] = {
+    def extractList[R](jsonPath: String): List[R] = {
       validatableResponse
         .extract()
         .jsonPath()
-        .getList[String](jsonPath)
+        .getList[R](jsonPath)
         .asScala
         .toList
     }

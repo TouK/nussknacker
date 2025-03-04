@@ -9,14 +9,17 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
-import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.NoScenario
+import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{CannotCompileScenario, NoScenario}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Dtos.{
   UiActionParameterConfigDto,
   UiActionParametersDto
 }
-import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Examples.noScenarioExample
-import sttp.model.StatusCode.{NotFound, Ok}
+import pl.touk.nussknacker.ui.api.description.ActionInfoEndpoints.Examples.{
+  cannotCompileScenarioExample,
+  noScenarioExample
+}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
@@ -54,7 +57,8 @@ class ActionInfoEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[ActionInfoError](
-          noScenarioExample
+          noScenarioExample,
+          cannotCompileScenarioExample,
         )
       )
       .withSecurity(auth)
@@ -73,6 +77,18 @@ object ActionInfoEndpoints {
             Example.of(
               summary = Some("No scenario {scenarioName} found"),
               value = NoScenario(ProcessName("'example scenario'"))
+            )
+          )
+      )
+
+    val cannotCompileScenarioExample: EndpointOutput.OneOfVariant[CannotCompileScenario.type] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[CannotCompileScenario.type]
+          .example(
+            Example.of(
+              summary = Some("Cannot compile scenario"),
+              value = CannotCompileScenario
             )
           )
       )
@@ -104,7 +120,11 @@ object ActionInfoEndpoints {
 
     }
 
-    @JsonCodec case class UiActionNodeParametersDto(nodeId: NodeId, parameters: Map[String, UiActionParameterConfigDto])
+    @JsonCodec case class UiActionNodeParametersDto(
+        nodeId: NodeId,
+        componentId: String,
+        parameters: Map[String, UiActionParameterConfigDto]
+    )
 
     @JsonCodec final case class UiActionParameterConfigDto(
         defaultValue: Option[String],

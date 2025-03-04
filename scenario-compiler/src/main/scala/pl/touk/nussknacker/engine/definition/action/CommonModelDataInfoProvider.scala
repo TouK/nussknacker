@@ -1,18 +1,23 @@
 package pl.touk.nussknacker.engine.definition.action
 
-import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{process, JobData, NodeId}
+import cats.data.{Validated, ValidatedNel}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, ProcessCompiler}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.compiledgraph.{node => compiledNode, CompiledNodesCollector, CompiledProcessParts}
+import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart, SourcePart}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{asFragmentInputDefinition, asSource, SourceNodeData}
+import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-abstract class CommonModelDataInfoProvider(modelData: ModelData) {
+class CommonModelDataInfoProvider(modelData: ModelData) {
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
@@ -26,18 +31,71 @@ abstract class CommonModelDataInfoProvider(modelData: ModelData) {
     modelData.modelClassLoader,
     Seq.empty,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.TestDataGeneration,
+    RuntimeMode.Live,
+    NodesDeploymentData.empty,
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
-  protected def compileSourceNode(
+  private lazy val subGraphCompiler = new PartSubGraphCompiler(nodeCompiler)
+
+  private lazy val scenarioCompiler = new ProcessCompiler(
+    modelData.modelClassLoader,
+    subGraphCompiler,
+    GlobalVariablesPreparer(modelData.modelDefinitionWithClasses.modelDefinition.expressionConfig),
+    nodeCompiler,
+    modelData.customProcessValidator
+  )
+
+  def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
+    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
+  }
+
+  def compileSourceNode(
       source: SourceNodeData
   )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
     nodeCompiler.compileSource(source).compiledObject
   }
 
-  protected def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
-  }
+  def compileAllCustomNodes(
+      scenario: CanonicalProcess
+  )(implicit jobData: JobData): ValidatedNel[ProcessCompilationError, Map[NodeComponentInfo, Any]] =
+    scenarioCompiler
+      .compile(scenario)
+      .result
+      .map(compiledParts => extractCustomComponents(compiledParts.sources.toList))
+
+  private def extractCustomComponents(
+      parts: List[ProcessPart]
+  )(implicit jobData: JobData): Map[NodeComponentInfo, Any] =
+    parts.foldLeft(Map.empty[NodeComponentInfo, Any]) { (acc, part) =>
+      val nodeComponentInfo = NodeComponentInfoExtractor.fromScenarioNode(part.node.data)
+      part match {
+        case source: SourcePart =>
+          acc + (nodeComponentInfo -> source.obj) ++
+            compilePartsAllCustomNodes(source) ++
+            extractCustomComponents(source.nextParts)
+        case custom: CustomNodePart =>
+          acc + (nodeComponentInfo -> custom.transformer) ++
+            compilePartsAllCustomNodes(custom) ++
+            extractCustomComponents(custom.nextParts)
+        case sink: SinkPart =>
+          acc + (nodeComponentInfo -> sink.obj)
+      }
+    }
+
+  private def compilePartsAllCustomNodes(part: ProcessPart)(implicit jobData: JobData): Map[NodeComponentInfo, Any] =
+    subGraphCompiler
+      .compile(part.node, part.validationContext)
+      .result
+      .toList
+      .flatMap(n => CompiledNodesCollector.collectAllNodes(n))
+      .flatMap {
+        case n: compiledNode.Processor => Some(NodeComponentInfoExtractor.fromCompiledNode(n) -> n.service.invoker)
+        case n: compiledNode.Enricher  => Some(NodeComponentInfoExtractor.fromCompiledNode(n) -> n.service.invoker)
+        case n: compiledNode.EndingProcessor =>
+          Some(NodeComponentInfoExtractor.fromCompiledNode(n) -> n.service.invoker)
+        case _ => None
+      }
+      .toMap
 
 }

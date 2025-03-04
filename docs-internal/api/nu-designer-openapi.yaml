@@ -244,11 +244,15 @@ paths:
                     actionNameToParameters:
                       DEPLOY: []
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Cannot compile scenario
+                  value: Cannot compile scenario
         '401':
           description: ''
           content:
@@ -7732,9 +7736,12 @@ components:
       type: object
       required:
       - nodeId
+      - componentId
       - parameters
       properties:
         nodeId:
+          type: string
+        componentId:
           type: string
         parameters:
           $ref: '#/components/schemas/Map_UiActionParameterConfigDto'
