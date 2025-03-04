@@ -19,7 +19,7 @@ class FingerprintRepositoryImpl(protected val dbRef: DbRef)(implicit ec: Executi
     with FingerprintEntityFactory {
 
   protected val profile = dbRef.profile
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   override def read(): DB[Option[Fingerprint]] = fingerprintsTable
     .take(1)

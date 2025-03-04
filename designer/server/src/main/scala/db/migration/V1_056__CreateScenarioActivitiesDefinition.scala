@@ -2,7 +2,7 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
-import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   private val definitions = new ScenarioActivitiesDefinitions(profile)
 
@@ -30,13 +30,13 @@ trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with Laz
 
 object V1_056__CreateScenarioActivitiesDefinition {
 
-  class ScenarioActivitiesDefinitions(val profile: ProfileWithDbSchema) {
-    import profile.jdbcProfile.api._
+  class ScenarioActivitiesDefinitions(val profile: NuJdbcProfile) {
+    import profile.apiWithEnforcedSchema._
 
     val scenarioActivitiesTable = TableQuery[ScenarioActivityEntity]
 
     class ScenarioActivityEntity(tag: Tag)
-        extends Table[ScenarioActivityEntityData](tag, Some(profile.schemaName), "scenario_activities") {
+        extends TableWithSchema[ScenarioActivityEntityData](tag, "scenario_activities") {
 
       def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 

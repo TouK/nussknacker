@@ -2,7 +2,7 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_060__CreateStickyNotesDefinition.StickyNotesDefinitions
-import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_060__CreateStickyNotesDefinition extends SlickMigration with LazyLogging {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   private val definitions = new StickyNotesDefinitions(profile)
 
@@ -30,12 +30,11 @@ trait V1_060__CreateStickyNotesDefinition extends SlickMigration with LazyLoggin
 
 object V1_060__CreateStickyNotesDefinition {
 
-  class StickyNotesDefinitions(val profile: ProfileWithDbSchema) {
-    import profile.jdbcProfile.api._
+  class StickyNotesDefinitions(val profile: NuJdbcProfile) {
+    import profile.apiWithEnforcedSchema._
     val stickyNotesEntityTable = TableQuery[StickyNotesEntity]
 
-    class StickyNotesEntity(tag: Tag)
-        extends Table[StickyNoteEventEntityData](tag, Some(profile.schemaName), "sticky_notes") {
+    class StickyNotesEntity(tag: Tag) extends TableWithSchema[StickyNoteEventEntityData](tag, "sticky_notes") {
 
       def id                = column[Long]("id", O.PrimaryKey, O.AutoInc)
       def noteCorrelationId = column[UUID]("note_correlation_id", NotNull)

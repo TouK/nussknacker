@@ -12,11 +12,11 @@ import java.sql.Timestamp
 
 trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFactory =>
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   lazy val deploymentsTable: LTableQuery[DeploymentsEntity] = TableQuery(new DeploymentsEntity(_))
 
-  class DeploymentsEntity(tag: Tag) extends Table[DeploymentEntityData](tag, Some(profile.schemaName), "deployments") {
+  class DeploymentsEntity(tag: Tag) extends TableWithSchema[DeploymentEntityData](tag, "deployments") {
 
     def id: Rep[DeploymentId] = column[DeploymentId]("id", O.PrimaryKey)
 

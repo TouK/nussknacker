@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.ui.db.{DbRef, ProfileWithDbSchema}
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -13,9 +14,9 @@ trait Repository[F[_]] {
   protected val dbRef: DbRef
 
   // this has to be val, not def to have *stable* scala identifiers - we want to be able to do import api._
-  protected lazy val profile: ProfileWithDbSchema = dbRef.profile
+  protected lazy val profile: NuJdbcProfile = dbRef.profile
 
-  protected lazy val api: profile.jdbcProfile.API = profile.jdbcProfile.api
+  protected lazy val api: profile.API = profile.apiWithEnforcedSchema
 
 }
 

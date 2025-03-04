@@ -10,10 +10,9 @@ import java.time.Instant
 
 trait AttachmentEntityFactory extends BaseEntityFactory {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
-  class AttachmentEntity(tag: Tag)
-      extends Table[AttachmentEntityData](tag, Some(profile.schemaName), "process_attachments") {
+  class AttachmentEntity(tag: Tag) extends TableWithSchema[AttachmentEntityData](tag, "process_attachments") {
 
     def id = column[Long]("id", PrimaryKey, O.AutoInc)
 

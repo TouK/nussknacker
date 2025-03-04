@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.model.RuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessId
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -17,9 +17,9 @@ import java.util.UUID
 
 trait PeriodicProcessesTableFactory extends BaseEntityFactory {
 
-  protected val profile: ProfileWithDbSchema
+  protected val profile: NuJdbcProfile
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   implicit val periodicProcessIdMapping: BaseColumnType[PeriodicProcessId] =
     MappedColumnType.base[PeriodicProcessId, Long](_.value, PeriodicProcessId.apply)
@@ -47,7 +47,7 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
     )
 
   abstract class PeriodicProcessesTable[ENTITY <: PeriodicProcessEntity](tag: Tag)
-      extends Table[ENTITY](tag, Some(profile.schemaName), "scheduled_scenarios") {
+      extends TableWithSchema[ENTITY](tag, "scheduled_scenarios") {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 

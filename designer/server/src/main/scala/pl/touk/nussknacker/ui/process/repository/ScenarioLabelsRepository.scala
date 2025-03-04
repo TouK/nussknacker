@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.NonEmptyList
-import db.util.DBIOActionInstances.{DB, _}
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -17,7 +17,7 @@ class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: Executio
 
   private implicit val scenarioLabelOrdering: Ordering[ScenarioLabel] = Ordering.by(_.value)
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   def getLabels(processId: ProcessId): DB[List[ScenarioLabel]] = findLabels(processId).map(_.toList.sorted)
 

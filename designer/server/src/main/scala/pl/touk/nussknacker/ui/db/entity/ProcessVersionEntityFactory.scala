@@ -17,13 +17,13 @@ import java.sql.Timestamp
 
 trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   import ScenarioComponentsUsagesJsonCodec._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
-  class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag, profile.schemaName) {
+  class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     def json: Rep[String] = column[String]("json", NotNull)
 
@@ -59,7 +59,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  class ProcessVersionEntityWithScenarioJson(tag: Tag) extends BaseProcessVersionEntity(tag, profile.schemaName) {
+  class ProcessVersionEntityWithScenarioJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     def json: Rep[String] = column[String]("json", NotNull)
 
@@ -89,7 +89,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  class ProcessVersionEntityWithComponentsUsages(tag: Tag) extends BaseProcessVersionEntity(tag, profile.schemaName) {
+  class ProcessVersionEntityWithComponentsUsages(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     def componentsUsages: Rep[String] = column[String]("components_usages", NotNull)
 
@@ -120,7 +120,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  class ProcessVersionEntityWithUnit(tag: Tag) extends BaseProcessVersionEntity(tag, profile.schemaName) {
+  class ProcessVersionEntityWithUnit(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     override def * : ProvenShape[ProcessVersionEntityData] = (id, processId, createDate, user, modelVersion) <> (
       (ProcessVersionEntityData
@@ -131,8 +131,8 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  abstract class BaseProcessVersionEntity(tag: Tag, schemaName: String)
-      extends Table[ProcessVersionEntityData](tag, Some(schemaName), "process_versions") {
+  abstract class BaseProcessVersionEntity(tag: Tag)
+      extends TableWithSchema[ProcessVersionEntityData](tag, "process_versions") {
 
     def id: Rep[VersionId] = column[VersionId]("id", NotNull)
 

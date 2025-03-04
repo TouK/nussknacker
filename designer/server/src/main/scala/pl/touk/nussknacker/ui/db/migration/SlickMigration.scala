@@ -5,9 +5,10 @@ import io.circe.Json
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.{NuTables, ProfileWithDbSchema}
-import pl.touk.nussknacker.ui.db.migration.SlickMigration.getConfiguredAppSchema
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.db.{NuHsqldbProfile, NuPostgresProfile}
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuTables
+import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Await
@@ -15,9 +16,9 @@ import scala.concurrent.duration._
 
 trait SlickMigration extends BaseJavaMigration {
 
-  protected val profile: ProfileWithDbSchema
+  protected val profile: NuJdbcProfile
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   protected def migrateActions: DBIOAction[Any, NoStream, _ <: Effect]
 
@@ -31,13 +32,21 @@ trait SlickMigration extends BaseJavaMigration {
     Await.result(database.run(migrateActions), Duration.Inf)
   }
 
-  protected def createProfileWithSchema(jdbcProfile: JdbcProfile): ProfileWithDbSchema =
-    ProfileWithDbSchema(jdbcProfile, getConfiguredAppSchema)
+  protected def createNuJdbcProfileFrom(jdbcProfile: JdbcProfile): NuJdbcProfile = {
+    val schema = SlickMigration.getConfiguredAppSchema
+    jdbcProfile match {
+      case PostgresProfile => new NuPostgresProfile(schema)
+      case HsqldbProfile   => new NuHsqldbProfile(schema)
+      case other =>
+        throw new IllegalArgumentException(s"NuJdbcProfile doesn't support ${other.getClass} underlying profile")
+    }
+  }
+
 }
 
 object SlickMigration {
 
-  private def configuredAppSchema = new AtomicReference[String]("public")
+  private def configuredAppSchema = new AtomicReference[String]("public") // todo: throw schema not configured?
 
   def getConfiguredAppSchema: String                               = configuredAppSchema.get()
   private[db] def setConfiguredAppSchema(schemaName: String): Unit = configuredAppSchema.set(schemaName)
@@ -45,7 +54,7 @@ object SlickMigration {
 
 trait ProcessJsonMigration extends SlickMigration with NuTables with LazyLogging {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
   import slick.dbio.DBIOAction
 
   import scala.concurrent.ExecutionContext.Implicits.global

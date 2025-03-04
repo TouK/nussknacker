@@ -8,11 +8,11 @@ import slick.sql.SqlProfile.ColumnOption.NotNull
 // table can be dropped after next version release
 trait TagsEntityFactory extends BaseEntityFactory {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
-  class TagsEntity(tag: Tag) extends Table[TagsEntityData](tag, Some(profile.schemaName), "tags") {
+  class TagsEntity(tag: Tag) extends TableWithSchema[TagsEntityData](tag, "tags") {
 
     def name = column[String]("name")
 

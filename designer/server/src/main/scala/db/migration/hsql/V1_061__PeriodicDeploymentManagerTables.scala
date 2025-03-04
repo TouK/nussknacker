@@ -4,5 +4,5 @@ import db.migration.V1_061__PeriodicDeploymentManagerTablesDefinition
 import slick.jdbc.HsqldbProfile
 
 class V1_061__PeriodicDeploymentManagerTables extends V1_061__PeriodicDeploymentManagerTablesDefinition {
-  override protected lazy val profile = createProfileWithSchema(HsqldbProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(HsqldbProfile)
 }

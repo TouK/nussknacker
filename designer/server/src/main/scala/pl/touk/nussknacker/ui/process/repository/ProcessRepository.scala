@@ -138,7 +138,7 @@ class DBProcessRepository(
     with LazyLogging
     with ProcessDBQueryRepository[DB] {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   // FIXME: It's temporary way.. After merge and refactor process repositories we can remove it.
   override def run[R]: DB[R] => DB[R] = identity

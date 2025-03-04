@@ -40,7 +40,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     with ScenarioActivityRepository
     with LazyLogging {
 
-  import dbRef.profile.jdbcProfile.api._
+  import dbRef.profile.apiWithEnforcedSchema._
 
   def findActivities(
       scenarioId: ProcessId,

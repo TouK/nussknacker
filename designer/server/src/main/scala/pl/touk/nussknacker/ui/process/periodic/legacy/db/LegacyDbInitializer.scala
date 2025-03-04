@@ -1,22 +1,22 @@
 package pl.touk.nussknacker.ui.process.periodic.legacy.db
 
-import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration
 import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
-import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
-import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
+import pl.touk.nussknacker.ui.db.{NuExPostgresProfile, NuHsqldbProfile}
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 object LegacyDbInitializer extends LazyLogging {
 
-  def init(configDb: Config): (JdbcBackend.DatabaseDef, ProfileWithDbSchema) = {
+  def init(configDb: Config): (JdbcBackend.DatabaseDef, NuJdbcProfile) = {
     import net.ceedubs.ficus.Ficus._
     val url        = configDb.as[String]("url")
     val schemaName = Option(configDb.as[String]("schema")).getOrElse("public")
-    val profile    = chooseDbProfile(url)
+    val profile    = chooseDbProfile(url, schemaName)
     logger.info("Applying db migrations")
 
     // we want to set property on FluentConfiguration only if there is property in config
@@ -45,13 +45,13 @@ object LegacyDbInitializer extends LazyLogging {
       .load()
       .migrate()
 
-    (JdbcBackend.Database.forConfig(path = "", configDb), ProfileWithDbSchema(profile, schemaName))
+    (JdbcBackend.Database.forConfig(path = "", configDb), profile)
   }
 
-  private def chooseDbProfile(dbUrl: String): JdbcProfile = {
+  private def chooseDbProfile(dbUrl: String, schemaName: String): NuJdbcProfile = {
     dbUrl match {
-      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => ExPostgresProfile
-      case _                                                       => HsqldbProfile
+      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => new NuExPostgresProfile(schemaName)
+      case _                                                       => new NuHsqldbProfile(schemaName)
     }
   }
 

@@ -1,14 +1,18 @@
 package pl.touk.nussknacker.ui.db
 
 import cats.effect.{IO, Resource}
+import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
-import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
+import slick.jdbc._
 
-class DbRef private (val db: JdbcBackend.Database, val profile: ProfileWithDbSchema)
+class DbRef private (val db: JdbcBackend.Database, val profile: NuJdbcProfile)
 
 object DbRef {
+
+  type NuJdbcProfile = NuProfile
 
   def create(config: Config): Resource[IO, DbRef] = {
     for {
@@ -23,16 +27,16 @@ object DbRef {
         )(
           release = db => IO(db.close())
         )
-    } yield new DbRef(db, ProfileWithDbSchema(chooseDbProfile(config), schemaName))
+    } yield new DbRef(db, chooseDbProfile(config))
   }
 
-  private def chooseDbProfile(config: Config): JdbcProfile = {
+  private def chooseDbProfile(config: Config): NuJdbcProfile = {
     val jdbcUrlPattern = "jdbc:([0-9a-zA-Z]+):.*".r
+    val schema         = schemaNameFrom(config)
     config.getAs[String]("db.url") match {
-      case Some(jdbcUrlPattern("postgresql")) => PostgresProfile
-      case Some(jdbcUrlPattern("hsqldb"))     => HsqldbProfile
-      case None                               => HsqldbProfile
-      case _                                  => throw new IllegalStateException("unsupported jdbc url")
+      case Some(jdbcUrlPattern("postgresql"))    => new NuPostgresProfile(schema)
+      case Some(jdbcUrlPattern("hsqldb")) | None => new NuHsqldbProfile(schema)
+      case _                                     => throw new IllegalStateException("unsupported jdbc url")
     }
   }
 
@@ -42,4 +46,26 @@ object DbRef {
 
 }
 
-final case class ProfileWithDbSchema(jdbcProfile: JdbcProfile, schemaName: String)
+trait NuProfile extends JdbcProfile {
+  this: JdbcProfile =>
+
+  def schemaName: String
+
+  val apiWithEnforcedSchema: MyApi = new MyApi {}
+
+  override val api: API = {
+    throw new UnsupportedOperationException(
+      "Use `apiWithEnforcedSchema` instead of `api` and/or `TableWithSchema[T]` instead of `Table[T], which enforces schema usage."
+    )
+  }
+
+  trait MyApi extends super.API { // todo: change name
+    abstract class TableWithSchema[T](tag: Tag, tableName: String)
+        extends super.Table[T](tag, Some(schemaName), tableName)
+  }
+
+}
+
+class NuPostgresProfile(override val schemaName: String)   extends PostgresProfile with NuProfile
+class NuExPostgresProfile(override val schemaName: String) extends NuPostgresProfile(schemaName) with ExPostgresProfile
+class NuHsqldbProfile(override val schemaName: String)     extends PostgresProfile with NuProfile

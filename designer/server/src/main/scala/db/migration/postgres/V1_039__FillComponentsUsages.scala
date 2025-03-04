@@ -4,5 +4,5 @@ import db.migration.InvalidateComponentsUsagesCache
 import slick.jdbc.PostgresProfile
 
 class V1_039__FillComponentsUsages extends InvalidateComponentsUsagesCache {
-  override protected lazy val profile = createProfileWithSchema(PostgresProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(PostgresProfile)
 }

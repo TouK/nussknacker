@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.LegacyPeriodicProcessesRepository.createPeriodicProcess
 import pl.touk.nussknacker.ui.process.periodic.model._
@@ -84,7 +84,7 @@ object LegacyPeriodicProcessesRepository {
 class SlickLegacyPeriodicProcessesRepository(
     processingType: String,
     db: JdbcBackend.DatabaseDef,
-    override val profile: ProfileWithDbSchema,
+    override val profile: NuJdbcProfile,
     clock: Clock,
     fetchingProcessRepository: FetchingProcessRepository[Future],
 )(implicit ec: ExecutionContext)
@@ -293,7 +293,7 @@ class SlickLegacyPeriodicProcessesRepository(
       processingType: String,
   ): Action[Map[ProcessName, SchedulesState]] = {
     val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType)
-    val latestDeploymentsForSchedules = profile.jdbcProfile match {
+    val latestDeploymentsForSchedules = profile match {
       case _: ExPostgresProfile =>
         getLatestDeploymentsForEachSchedulePostgres(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
       case _ =>

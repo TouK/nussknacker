@@ -8,11 +8,11 @@ import java.sql.Timestamp
 
 trait ProcessEntityFactory extends BaseEntityFactory {
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity] = LTableQuery(new ProcessEntity(_))
 
-  class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, Some(profile.schemaName), "processes") {
+  class ProcessEntity(tag: Tag) extends TableWithSchema[ProcessEntityData](tag, "processes") {
 
     def id: Rep[ProcessId] = column[ProcessId]("id", O.PrimaryKey, O.AutoInc)
 

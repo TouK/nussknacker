@@ -4,5 +4,5 @@ import db.migration.V1_056__CreateScenarioActivitiesDefinition
 import slick.jdbc.HsqldbProfile
 
 class V1_056__CreateScenarioActivities extends V1_056__CreateScenarioActivitiesDefinition {
-  override protected lazy val profile = createProfileWithSchema(HsqldbProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(HsqldbProfile)
 }

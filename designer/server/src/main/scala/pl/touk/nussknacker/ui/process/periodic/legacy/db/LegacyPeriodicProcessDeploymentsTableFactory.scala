@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.legacy.db
 
-import pl.touk.nussknacker.ui.db.ProfileWithDbSchema
+import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.process.periodic.model.{
   PeriodicProcessDeploymentId,
   PeriodicProcessDeploymentStatus,
@@ -15,9 +15,9 @@ import java.time.LocalDateTime
 
 trait LegacyPeriodicProcessDeploymentsTableFactory extends LegacyPeriodicProcessesTableFactory {
 
-  protected val profile: ProfileWithDbSchema
+  protected val profile: NuJdbcProfile
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   implicit val periodicProcessDeploymentIdMapping: BaseColumnType[PeriodicProcessDeploymentId] =
     MappedColumnType.base[PeriodicProcessDeploymentId, Long](_.value, PeriodicProcessDeploymentId.apply)
@@ -26,7 +26,7 @@ trait LegacyPeriodicProcessDeploymentsTableFactory extends LegacyPeriodicProcess
     MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
 
   class PeriodicProcessDeploymentsTable(tag: Tag)
-      extends Table[PeriodicProcessDeploymentEntity](tag, Some(profile.schemaName), "periodic_process_deployments") {
+      extends TableWithSchema[PeriodicProcessDeploymentEntity](tag, "periodic_process_deployments") {
 
     def id: Rep[PeriodicProcessDeploymentId] = column[PeriodicProcessDeploymentId]("id", O.PrimaryKey, O.AutoInc)
 

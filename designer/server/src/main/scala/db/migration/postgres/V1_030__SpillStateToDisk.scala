@@ -4,5 +4,5 @@ import db.migration.{V1_030__SpillStateToDisk => V1_030__SpillStateToDiskDefinit
 import slick.jdbc.PostgresProfile
 
 class V1_030__SpillStateToDisk extends V1_030__SpillStateToDiskDefinition {
-  override protected lazy val profile = createProfileWithSchema(PostgresProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(PostgresProfile)
 }

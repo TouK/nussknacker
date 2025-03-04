@@ -4,5 +4,5 @@ import db.migration.{V1_029__AdditionalBranchesChange => V1_029__AdditionalBranc
 import slick.jdbc.PostgresProfile
 
 class V1_029__AdditionalBranchesChange extends V1_029__AdditionalBranchesChangeDefinition {
-  override protected lazy val profile = createProfileWithSchema(PostgresProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(PostgresProfile)
 }

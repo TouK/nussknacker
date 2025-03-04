@@ -4,5 +4,5 @@ import db.migration.{V1_016__TypeSpecificMetaDataChange => V1_016__TypeSpecificM
 import slick.jdbc.HsqldbProfile
 
 class V1_016__TypeSpecificMetaDataChange extends V1_016__TypeSpecificMetaDataChangeDefinition {
-  override protected lazy val profile = createProfileWithSchema(HsqldbProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(HsqldbProfile)
 }

@@ -5,9 +5,9 @@ import slick.jdbc.HsqldbProfile
 
 class V1_057__MigrateActionsAndCommentsToScenarioActivities
     extends V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition {
-  override protected lazy val profile = createProfileWithSchema(HsqldbProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(HsqldbProfile)
 
-  import profile.jdbcProfile.api._
+  import profile.apiWithEnforcedSchema._
 
   override protected def createGenerateRandomUuidFunction(): DBIOAction[Int, NoStream, Effect.All] = {
     sqlu"""CREATE FUNCTION "${profile.schemaName}".generate_random_uuid() RETURNS UUID DETERMINISTIC RETURN UUID();"""

@@ -4,5 +4,5 @@ import db.migration.{V1_031__FragmentSpecificData => V1_031__FragmentSpecificDat
 import slick.jdbc.HsqldbProfile
 
 class V1_031__FragmentSpecificData extends V1_031__FragmentSpecificDataDefinition {
-  override protected lazy val profile = createProfileWithSchema(HsqldbProfile)
+  override protected lazy val profile = createNuJdbcProfileFrom(HsqldbProfile)
 }
