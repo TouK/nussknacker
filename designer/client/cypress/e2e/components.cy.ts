@@ -79,7 +79,7 @@ describe("Components list", () => {
             .click();
         cy.get("[role=row]")
             .should("have.lengthOf", baseGroupComponents + 1)
-            .contains(":not(title)", /^filter$/)
+            .contains(":not(title)", /^Filter$/)
             .should("be.visible");
         cy.get(`[data-testid="FilterListOffIcon"]`).click();
         cy.get("[role=row]").should("have.length.greaterThan", 2);
@@ -191,7 +191,7 @@ describe("Components list", () => {
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
         cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
         cy.layoutScenario();
-        cy.contains(`${seed}_xxx`)
+        cy.contains(`${seed.charAt(0).toUpperCase() + seed.slice(1)}_xxx`)
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {

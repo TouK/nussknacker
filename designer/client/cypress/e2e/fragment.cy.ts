@@ -273,7 +273,7 @@ describe("Fragment", () => {
         cy.contains(/^ok$/i).click();
 
         // Verify if Frontend received correct data after save
-        cy.get("[model-id^=e2e][model-id$=fragment-test-process]").trigger("dblclick");
+        cy.get('[model-id^=E2e][model-id$="001 Fragment Test Process"]').trigger("dblclick");
         cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
         cy.contains(/^apply/i)
             .should("be.enabled")
@@ -297,7 +297,7 @@ describe("Fragment", () => {
         cy.go(1);
 
         // Verify existing fragment after properties change
-        cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
+        cy.get('[model-id^=E2e][model-id$="001 Fragment Test Process"]').should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").get("[title='name_value_string_any_value']").siblings().eq(0).find("[id='ace-editor']").type("test");
 
         cy.get("@window")
