@@ -362,9 +362,7 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.get(`E2e 001 ${seed2.charAt(0).toUpperCase() + seed2.slice(1)} Test Process`)
-            .should("be.visible")
-            .trigger("dblclick");
+        cy.get('[model-id^=E2e][model-id$="001 Fragment2 Test Process"]').should("be.visible").trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage();
 
