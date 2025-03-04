@@ -98,6 +98,10 @@
   DEPLOY parameters to be configured for services.
   * Instead of having separate entries for each node, action parameters are now grouped into a single entry per
     component in the UI. The configured parameters are then applied to all nodes for that component.  
+* [#7591](https://github.com/TouK/nussknacker/pull/7591) Improve scenario testing error messages
+  - Error messages should point to the appropriate `testDataSettings` where possible
+  - `testDataSettings.testDataMaxLength` is validated also for received test data
+  - Change `testDataSettings.resultsMaxBytes` to long to allow higher limit than 2 GiB
 
 ## 1.18
 

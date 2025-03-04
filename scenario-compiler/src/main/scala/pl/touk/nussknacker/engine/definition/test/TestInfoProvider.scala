@@ -39,56 +39,29 @@ trait TestInfoProvider {
 
 object TestInfoProvider {
 
-  sealed trait TestDataError {
-    def message: String
-  }
+  sealed trait TestDataError
 
   sealed trait SourceTestDataGenerationError extends TestDataError
 
   object SourceTestDataGenerationError {
-
     final case class SourceCompilationError(nodeId: String, errors: List[ProcessCompilationError])
-        extends SourceTestDataGenerationError {
-      override def message: String = s"Source node can't be compiled. Problems: ${errors.mkString(", ")}"
-    }
-
-    final case class UnsupportedSourceError(nodeId: String) extends SourceTestDataGenerationError {
-      override def message: String = s"Source '$nodeId' doesn't support records preview"
-    }
-
-    final case object NoDataGenerated extends SourceTestDataGenerationError {
-      override def message: String = "No test data was generated"
-    }
-
+        extends SourceTestDataGenerationError
+    final case class UnsupportedSourceError(nodeId: String) extends SourceTestDataGenerationError
+    final case object NoDataGenerated                       extends SourceTestDataGenerationError
   }
 
   sealed trait ScenarioTestDataGenerationError extends TestDataError
 
   object ScenarioTestDataGenerationError {
-
-    final case object NoDataGenerated extends ScenarioTestDataGenerationError {
-      override def message: String = "No test data was generated"
-    }
-
-    final case object NoSourcesWithTestDataGeneration extends ScenarioTestDataGenerationError {
-      override def message: String = "Scenario doesn't have any valid source supporting test data generation"
-    }
-
+    final case object NoDataGenerated                 extends ScenarioTestDataGenerationError
+    final case object NoSourcesWithTestDataGeneration extends ScenarioTestDataGenerationError
   }
 
   sealed trait TestDataPreparationError extends TestDataError
 
   object TestDataPreparationError {
-
-    final case class MissingSourceError(sourceId: String, recordIndex: Int) extends TestDataPreparationError {
-      override def message: String = s"Record ${recordIndex + 1} - scenario does not have source id: '$sourceId'"
-    }
-
-    final case class MultipleSourcesError(recordIndex: Int) extends TestDataPreparationError {
-      override def message: String =
-        s"Record ${recordIndex + 1} - scenario has multiple sources but got record without source id"
-    }
-
+    final case class MissingSource(sourceId: String, recordIndex: Int) extends TestDataPreparationError
+    final case class MultipleSourcesRequired(recordIndex: Int)         extends TestDataPreparationError
   }
 
 }
