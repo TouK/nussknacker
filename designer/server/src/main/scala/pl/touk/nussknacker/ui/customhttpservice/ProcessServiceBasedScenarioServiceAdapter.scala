@@ -28,7 +28,7 @@ class ProcessServiceBasedScenarioServiceAdapter(
       .map(_.map(toApi))
 
   override def getLatestVersionsForScenarios(
-      query: ScenarioService.LatestVersionsForScenarios,
+      query: ScenarioService.LatestVersionsForScenariosQuery,
   )(implicit user: LoggedUser): IO[Map[ProcessId, ScenarioService.ScenarioVersionMetadata]] =
     processService
       .getLatestVersionForProcesses(toDomainScenarioQuery(query), toDomainScenarioVersionQuery(query))
@@ -46,7 +46,7 @@ class ProcessServiceBasedScenarioServiceAdapter(
       names = query.names,
     )
 
-  private def toDomainScenarioQuery(query: ScenarioService.LatestVersionsForScenarios): ScenarioQuery =
+  private def toDomainScenarioQuery(query: ScenarioService.LatestVersionsForScenariosQuery): ScenarioQuery =
     ScenarioQuery(
       isFragment = query.isFragment,
       isArchived = query.isArchived,
@@ -56,7 +56,9 @@ class ProcessServiceBasedScenarioServiceAdapter(
       names = query.names,
     )
 
-  private def toDomainScenarioVersionQuery(query: ScenarioService.LatestVersionsForScenarios): ScenarioVersionQuery =
+  private def toDomainScenarioVersionQuery(
+      query: ScenarioService.LatestVersionsForScenariosQuery
+  ): ScenarioVersionQuery =
     ScenarioVersionQuery(
       excludedUserNames = query.excludeVersionCreatedByUsers
     )

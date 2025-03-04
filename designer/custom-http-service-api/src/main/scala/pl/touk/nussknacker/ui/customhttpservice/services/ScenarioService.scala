@@ -17,7 +17,7 @@ trait ScenarioService {
       implicit user: LoggedUser
   ): IO[List[ScenarioWithDetails]]
 
-  def getLatestVersionsForScenarios(query: LatestVersionsForScenarios)(
+  def getLatestVersionsForScenarios(query: LatestVersionsForScenariosQuery)(
       implicit user: LoggedUser
   ): IO[Map[ProcessId, ScenarioVersionMetadata]]
 
@@ -70,7 +70,7 @@ object ScenarioService {
       names: Option[Seq[ProcessName]] = None,
   )
 
-  final case class LatestVersionsForScenarios(
+  final case class LatestVersionsForScenariosQuery(
       isFragment: Option[Boolean] = None,
       isArchived: Option[Boolean] = None,
       isDeployed: Option[Boolean] = None,
