@@ -102,6 +102,12 @@
   - Error messages should point to the appropriate `testDataSettings` where possible
   - `testDataSettings.testDataMaxLength` is validated also for received test data
   - Change `testDataSettings.resultsMaxBytes` to long to allow higher limit than 2 GiB
+* [#7600](https://github.com/TouK/nussknacker/pull/7600) Added 'Custom HTTP Service' SPI
+    * it can be used to run custom services and expose custom endpoints alongside Nu Designer API
+    * it can be used by providing implementation of `class CustomHttpServiceProviderFactory`
+    * this SPI can be provided only on compile-time, not as a plugin on a later time
+    * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
+    * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
 
 ## 1.18
 
