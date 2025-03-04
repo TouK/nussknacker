@@ -350,7 +350,7 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.contains("fragments").should("exist").scrollIntoView();
-        cy.contains('[model-id^=E2e][model-id$="001 Fragment2 Test Process"]')
+        cy.contains(`${seed2.charAt(0).toUpperCase() + seed2.slice(1)} Test`)
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {

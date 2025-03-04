@@ -44,7 +44,7 @@ describe("Undo/Redo", () => {
                 force: true,
             });
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.dragNode("customFilter", { x: 560, y: 500 });
+        cy.dragNode("CustomFilter", { x: 560, y: 500 });
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("@undo").should("be.enabled").click();
         cy.get("@graph").matchImage(screenshotOptions);
