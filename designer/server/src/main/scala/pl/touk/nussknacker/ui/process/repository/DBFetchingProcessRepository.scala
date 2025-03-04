@@ -2,16 +2,17 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
 import cats.data.OptionT
+import cats.implicits.toFunctorOps
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName, UserName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.{repository, ScenarioQuery}
+import pl.touk.nussknacker.ui.process.{repository, ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -106,6 +107,31 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         },
       )
     )
+  }
+
+  override def fetchLatestVersionForProcesses(
+      query: ScenarioQuery,
+      scenarioVersionQuery: ScenarioVersionQuery,
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): F[Map[ProcessId, ScenarioVersionMetadata]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestVersionForProcessesExcludingUsers(
+        process => expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process)),
+        scenarioVersionQuery.excludedUserNames.map(_.toSet).getOrElse(Set.empty),
+      ).result
+    ).map(_.toMap.map { case (processId, (versionId, timestamp, username)) =>
+      processId -> ScenarioVersionMetadata(versionId, timestamp.toInstant, UserName(username))
+    })
   }
 
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
@@ -270,7 +296,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       labels: List[ScenarioLabel],
       history: Option[Seq[ScenarioVersion]]
   ): ScenarioWithDetailsEntity[PS] = {
-    repository.ScenarioWithDetailsEntity[PS](
+    ScenarioWithDetailsEntity[PS](
       processId = process.id,
       name = process.name,
       processVersionId = processVersion.id,
