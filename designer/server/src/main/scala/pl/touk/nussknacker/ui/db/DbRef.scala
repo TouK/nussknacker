@@ -51,15 +51,9 @@ trait NuProfile extends JdbcProfile {
 
   def schemaName: String
 
-  val apiWithEnforcedSchema: MyApi = new MyApi {}
+  val apiWithEnforcedSchema: ApiWithEnforcedSchema = new ApiWithEnforcedSchema {}
 
-  override val api: API = {
-    throw new UnsupportedOperationException(
-      "Use `apiWithEnforcedSchema` instead of `api` and/or `TableWithSchema[T]` instead of `Table[T], which enforces schema usage."
-    )
-  }
-
-  trait MyApi extends super.API { // todo: change name
+  trait ApiWithEnforcedSchema extends super.API {
     abstract class TableWithSchema[T](tag: Tag, tableName: String)
         extends super.Table[T](tag, Some(schemaName), tableName)
   }

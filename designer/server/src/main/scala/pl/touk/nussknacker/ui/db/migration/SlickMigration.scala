@@ -46,7 +46,7 @@ trait SlickMigration extends BaseJavaMigration {
 
 object SlickMigration {
 
-  private def configuredAppSchema = new AtomicReference[String]("public") // todo: throw schema not configured?
+  private def configuredAppSchema = new AtomicReference[String]("public")
 
   def getConfiguredAppSchema: String                               = configuredAppSchema.get()
   private[db] def setConfiguredAppSchema(schemaName: String): Unit = configuredAppSchema.set(schemaName)

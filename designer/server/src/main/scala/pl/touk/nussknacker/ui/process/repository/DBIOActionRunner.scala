@@ -14,8 +14,8 @@ import scala.util.{Failure, Success, Try}
 
 class DBIOActionRunner(dbRef: DbRef)(implicit ec: ExecutionContext) {
 
-  protected lazy val profile: NuJdbcProfile = dbRef.profile
-  protected lazy val api: profile.MyApi     = profile.apiWithEnforcedSchema
+  protected lazy val profile: NuJdbcProfile             = dbRef.profile
+  protected lazy val api: profile.ApiWithEnforcedSchema = profile.apiWithEnforcedSchema
   import api._
 
   def runInTransaction[T](action: DB[T]): Future[T] =
