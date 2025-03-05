@@ -63,7 +63,7 @@ class ComponentGroupsPreparerSpec
     val groups = prepareGroupForServices(List("foo", "alaMaKota", "BarFilter"))
     groups.map(_.components.map(n => n.label)) shouldBe List(
       List("Choice", "Filter", "Record Variable", "Split", "Variable"),
-      List("AlaMaKota", "BarFilter", "Foo")
+      List("Alamakota", "Barfilter", "Foo")
     )
   }
 
