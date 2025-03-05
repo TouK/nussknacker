@@ -29,7 +29,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("Event Generator").dblclick(); //? here problem
+        cy.getNode("Event Generator").dblclick();
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");
