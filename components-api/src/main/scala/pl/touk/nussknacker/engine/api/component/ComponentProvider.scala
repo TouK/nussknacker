@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
 import org.semver4j.Semver
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 /**
@@ -166,12 +167,8 @@ object ComponentDefinition {
   ): ComponentDefinition = {
     label match {
       case Some(value) => ComponentDefinition(name, component, icon, docsUrl, designerWideId, value)
-      case None => ComponentDefinition(name, component, icon, docsUrl, designerWideId, kebabCaseToTitleCase(name))
+      case None => ComponentDefinition(name, component, icon, docsUrl, designerWideId, IdToTitleConverter.toTitle(name))
     }
-  }
-
-  def kebabCaseToTitleCase(name: String): String = {
-    name.split("-").map(_.capitalize).mkString(" ")
   }
 
 }

@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition.kebabCaseToTitleCase
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 // This class represents component's definition and implementation. It is used on the designer side for definitions
 // served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
@@ -36,9 +36,9 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   final def label: String = {
     uiDefinition.label.getOrElse {
       if (componentType != ComponentType.Fragment) {
-        kebabCaseToTitleCase(name)
+        IdToTitleConverter.toTitle(name)
       } else {
-        kebabCaseToTitleCase(id.name)
+        IdToTitleConverter.toTitle(id.name)
       }
     }
   }

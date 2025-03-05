@@ -10,7 +10,6 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition.kebabCaseToTitleCase
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
@@ -20,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
@@ -370,7 +370,7 @@ class DefaultComponentServiceSpec
       links,
       usageCount,
       nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
-      kebabCaseToTitleCase(componentId.name)
+      IdToTitleConverter.toTitle(componentId.name)
     )
   }
 
@@ -391,7 +391,7 @@ class DefaultComponentServiceSpec
         links,
         0,
         AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
-        kebabCaseToTitleCase(componentId.name)
+        IdToTitleConverter.toTitle(componentId.name)
       )
     )
   }
@@ -412,7 +412,7 @@ class DefaultComponentServiceSpec
         links,
         0,
         AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
-        kebabCaseToTitleCase(componentId.name)
+        IdToTitleConverter.toTitle(componentId.name)
       )
     )
   }
@@ -477,7 +477,7 @@ class DefaultComponentServiceSpec
       links,
       usageCount,
       nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
-      kebabCaseToTitleCase(componentId.name),
+      IdToTitleConverter.toTitle(componentId.name),
     )
   }
 
@@ -500,7 +500,7 @@ class DefaultComponentServiceSpec
       links,
       0,
       AllowedProcessingModes.All,
-      kebabCaseToTitleCase(componentId.name)
+      IdToTitleConverter.toTitle(componentId.name)
     )
   }
 

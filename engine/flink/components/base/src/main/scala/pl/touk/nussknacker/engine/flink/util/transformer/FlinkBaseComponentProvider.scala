@@ -50,7 +50,7 @@ object FlinkBaseComponentProvider {
         .withDesignerWideId("decision-table"),
       ComponentDefinition("delay", DelayTransformer)
         .withRelativeDocs("DataSourcesAndSinks#delay"),
-      ComponentDefinition("previousValue", PreviousValueTransformer)
+      ComponentDefinition("previousValue", PreviousValueTransformer, label = Some("Previous Value"))
         .withRelativeDocs("DataSourcesAndSinks#previousvalue"),
     )
   }

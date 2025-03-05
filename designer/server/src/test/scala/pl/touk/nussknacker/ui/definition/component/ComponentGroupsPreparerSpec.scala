@@ -5,7 +5,6 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition.kebabCaseToTitleCase
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -25,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
@@ -89,7 +89,7 @@ class ComponentGroupsPreparerSpec
       .filter(n => n.componentId.`type` == ComponentType.BuiltIn)
       .map(_.label) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario
       .map(_.name)
-      .map(kebabCaseToTitleCase)
+      .map(IdToTitleConverter.toTitle)
     baseComponents.filter(n => n.componentId.`type` == ComponentType.CustomComponent) should have size 5
   }
 
