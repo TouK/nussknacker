@@ -95,7 +95,7 @@ jobs:
           TMPDIR: ${{ github.workspace }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" publish dist/Docker/publish liteEngineRuntimeApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ inputs.ref != 'refs/heads/staging' }}
         env:
@@ -103,4 +103,4 @@ jobs:
           TMPDIR: ${{ github.workspace }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" publish dist/Docker/publish liteEngineRuntimeApp/Docker/publish

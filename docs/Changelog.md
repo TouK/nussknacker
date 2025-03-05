@@ -8,7 +8,16 @@
 
 ##### Administrator
 
-### 1.19.0 (Not released yet)
+### ESP cherry-picks after commit c67b0d3
+
+* [#7600](https://github.com/TouK/nussknacker/pull/7600) Added 'Custom HTTP Service' SPI
+    * it can be used to run custom services and expose custom endpoints alongside Nu Designer API
+    * it can be used by providing implementation of `class CustomHttpServiceProviderFactory`
+    * this SPI can be provided only on compile-time, not as a plugin on a later time
+    * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
+    * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
+
+### From Nu staging between 1.18 release and up to commit c67b0d3
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
@@ -94,12 +103,6 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
-* [#7600](https://github.com/TouK/nussknacker/pull/7600) Added 'Custom HTTP Service' SPI
-    * it can be used to run custom services and expose custom endpoints alongside Nu Designer API
-    * it can be used by providing implementation of `class CustomHttpServiceProviderFactory`
-    * this SPI can be provided only on compile-time, not as a plugin on a later time
-    * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
-    * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
 
 ## 1.18
 
