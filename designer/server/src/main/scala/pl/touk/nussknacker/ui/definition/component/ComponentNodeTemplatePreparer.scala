@@ -76,7 +76,8 @@ private[component] object ComponentNodeTemplatePreparer {
       val componentNodeTemplate = UIComponentNodeTemplate.create(
         component.id,
         nodeTemplate,
-        branchParametersTemplate
+        branchParametersTemplate,
+        component.label
       )
       ComponentNodeTemplateWithGroupNames(
         componentNodeTemplate,

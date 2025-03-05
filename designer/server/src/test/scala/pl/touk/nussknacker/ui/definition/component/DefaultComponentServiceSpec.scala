@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
@@ -368,7 +369,8 @@ class DefaultComponentServiceSpec
       availableCategories,
       links,
       usageCount,
-      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
+      IdToTitleConverter.toTitle(componentId.name)
     )
   }
 
@@ -388,7 +390,8 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
+        IdToTitleConverter.toTitle(componentId.name)
       )
     )
   }
@@ -408,7 +411,8 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream),
+        IdToTitleConverter.toTitle(componentId.name)
       )
     )
   }
@@ -472,7 +476,8 @@ class DefaultComponentServiceSpec
       categories,
       links,
       usageCount,
-      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All),
+      IdToTitleConverter.toTitle(componentId.name),
     )
   }
 
@@ -494,7 +499,8 @@ class DefaultComponentServiceSpec
       categories,
       links,
       0,
-      AllowedProcessingModes.All
+      AllowedProcessingModes.All,
+      IdToTitleConverter.toTitle(componentId.name)
     )
   }
 

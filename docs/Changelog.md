@@ -108,6 +108,7 @@
     * this SPI can be provided only on compile-time, not as a plugin on a later time
     * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
     * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
+* [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels are now independent of component Id. Labels can be set during the component defining or can be set in ui configuration in application config 
 
 ## 1.18
 

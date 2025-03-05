@@ -91,6 +91,7 @@ In model configuration you can also define some UI attributes of components. Thi
 in most cases you should not need to defined these settings. The settings you can configure include:
 * icons - `icon` property
 * documentation - `docsUrl` property
+* label - `label` property
 * should component be disabled - `disabled` property
 * in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
@@ -122,6 +123,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
       }
       docsUrl: "https://en.wikipedia.org/wiki/Customer_service"
       icon: "icon_file.svg"
+      label: "Customer Service"
     }
   }
 ```

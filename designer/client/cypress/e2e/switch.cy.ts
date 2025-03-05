@@ -18,7 +18,7 @@ describe("Process", () => {
             cy.contains(/^base$/)
                 .should("exist")
                 .scrollIntoView();
-            cy.contains(/^choice$/)
+            cy.contains(/^Choice$/)
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
@@ -28,7 +28,7 @@ describe("Process", () => {
                     force: true,
                 });
             cy.layoutScenario();
-            cy.get("[model-id$=choice-sendSms-true]").should("be.visible").trigger("dblclick");
+            cy.get("[model-id$=Choice-sendSms-true]").should("be.visible").trigger("dblclick");
 
             cy.get("[data-testid=window]").should("be.visible");
             cy.get("[data-testid=window]").find("[data-testid='fieldsRow:0']").find(".ace_editor").as("input");
