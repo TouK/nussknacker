@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import io.circe.{Decoder, Json, JsonObject}
-import io.circe.Json.{arr, fromBoolean, fromFields, fromString, obj, Null}
+import io.circe.Json.{arr, fromBoolean, fromFields, fromString, fromValues, obj, Null}
 import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
@@ -117,10 +117,16 @@ class BaseFlowTest
       "service-enricher" -> obj(
         "parameters" -> arr(
           obj(
-            "name"          -> fromString("param"),
-            "label"         -> fromString("param"),
-            "defaultValue"  -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
-            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "name"         -> fromString("param"),
+            "label"        -> fromString("param"),
+            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelParameterEditor),
+                encodeEditor(SpelTemplateParameterEditor),
+              )
+            ),
             "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
             "requiredParam" -> fromBoolean(true),
           ),
@@ -141,6 +147,22 @@ class BaseFlowTest
                 DualEditorMode.SIMPLE
               )
             ),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(
+                  FixedValuesParameterEditor(
+                    List(
+                      FixedExpressionValue(
+                        "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL",
+                        "normal"
+                      ),
+                      FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
+                    )
+                  )
+                ),
+                encodeEditor(SpelParameterEditor),
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
           ),
@@ -151,18 +173,29 @@ class BaseFlowTest
       "service-multipleParamsService" -> obj(
         "parameters" -> arr(
           obj(
-            "name"          -> fromString("foo"),
-            "label"         -> fromString("foo"),
-            "defaultValue"  -> Expression.spel("'test'").asJson,
-            "editor"        -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            "name"         -> fromString("foo"),
+            "label"        -> fromString("foo"),
+            "defaultValue" -> Expression.spel("'test'").asJson,
+            "editor"       -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
           ),
           obj(
-            "name"          -> fromString("bar"),
-            "label"         -> fromString("bar"),
-            "defaultValue"  -> Expression.spel("''").asJson,
-            "editor"        -> encodeEditor(StringParameterEditor),
+            "name"         -> fromString("bar"),
+            "label"        -> fromString("bar"),
+            "defaultValue" -> Expression.spel("''").asJson,
+            "editor"       -> encodeEditor(StringParameterEditor),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor)
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
           ),
@@ -173,14 +206,27 @@ class BaseFlowTest
             "editor" -> encodeEditor(
               FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
             ),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(
+                  FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
+                )
+              )
+            ),
             "hintText"      -> fromString("some hint text"),
             "requiredParam" -> fromBoolean(true),
           ),
           obj(
-            "name"          -> fromString("quax"),
-            "label"         -> fromString("quax"),
-            "defaultValue"  -> Expression.spel("''").asJson,
-            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "name"         -> fromString("quax"),
+            "label"        -> fromString("quax"),
+            "defaultValue" -> Expression.spel("''").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelParameterEditor),
+                encodeEditor(SpelTemplateParameterEditor),
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
           ),
@@ -196,10 +242,16 @@ class BaseFlowTest
       "service-providedComponent-component-v1" -> obj(
         "parameters" -> arr(
           obj(
-            "name"          -> fromString("fromConfig-v1"),
-            "label"         -> fromString("fromConfig-v1"),
-            "defaultValue"  -> Expression.spel("''").asJson,
-            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "name"         -> fromString("fromConfig-v1"),
+            "label"        -> fromString("fromConfig-v1"),
+            "defaultValue" -> Expression.spel("''").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelParameterEditor),
+                encodeEditor(SpelTemplateParameterEditor),
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
           )

@@ -13,6 +13,8 @@ import scala.util.Try
 
 case object RawParameterEditor extends ParameterEditor
 
+case object SpelParameterEditor extends ParameterEditor
+
 @ConfiguredJsonCodec sealed trait SimpleParameterEditor extends ParameterEditor
 
 case object BoolParameterEditor extends SimpleParameterEditor
