@@ -1,4 +1,4 @@
-import sbt.{Def, Inc, Result, SettingKey, Task, TaskKey, Value}
+import sbt.{CrossVersion, Def, Inc, Result, SettingKey, Task, TaskKey, Value}
 
 object utils {
 

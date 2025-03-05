@@ -23,25 +23,32 @@ class NoSlickTableWithoutSchema extends SemanticRule("NoSlickTableWithoutSchema"
 
   private def process(implicit doc: SemanticDocument) = {
     doc.tree.collect {
-      case t @ Type.Apply.After_4_6_0(_, _) if t.symbol.value == slickTableSymbol =>
-        Patch.lint(
-          Diagnostic(
-            id = this.getClass.getSimpleName,
-            message = "Use TableWithSchema (from apiWithEnforcedSchema) instead of raw Table",
-            position = t.pos
-          )
+      case t @ Type.Apply.After_4_6_0(_, _) if isSlickTable(t.symbol) =>
+        createLintPatch(
+          "Use TableWithSchema (from apiWithEnforcedSchema) instead of raw Table",
+          t.pos
         )
       case t @ Term.Interpolate((Term.Name("sqlu") | Term.Name("sql"), List(arg: Lit.String), _))
           if isMissingRequiredSchema(arg.value) =>
-        Patch.lint(
-          Diagnostic(
-            id = "NoRawSlickSqlu",
-            message =
-              "Avoid using `sqlu`|`sql` without specifying an explicit schema. Example: `my_schema.users` instead of `users`",
-            position = t.pos
-          )
+        createLintPatch(
+          "Avoid using `sqlu`|`sql` without specifying an explicit schema. Example: `my_schema.users` instead of `users`",
+          t.pos
         )
     }.asPatch
+  }
+
+  private def isSlickTable(symbol: Symbol) = {
+    symbol.value == slickTableSymbol
+  }
+
+  private def createLintPatch(msg: String, position: Position) = {
+    Patch.lint(
+      Diagnostic(
+        id = this.getClass.getSimpleName,
+        message = msg,
+        position = position
+      )
+    )
   }
 
 }
