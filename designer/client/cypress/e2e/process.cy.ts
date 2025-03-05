@@ -139,7 +139,7 @@ describe("Process", () => {
                 .should("exist")
                 .scrollIntoView();
             cy.layoutScenario();
-            cy.get("[data-testid='component:CustomFilter']")
+            cy.get("[data-testid='component:Customfilter']")
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
@@ -177,19 +177,19 @@ describe("Process", () => {
 
         it("should display some node details in modal", () => {
             cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("DynamicService").should("be.visible");
+            cy.get("[data-testid=window]").contains("Dynamicservice").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
             cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("BoundedSource").should("be.visible");
+            cy.get("[data-testid=window]").contains("Boundedsource").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
             cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("SendSms").should("be.visible");
+            cy.get("[data-testid=window]").contains("Sendsms").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
         });
     });

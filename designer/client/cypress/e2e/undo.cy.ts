@@ -34,7 +34,7 @@ describe("Undo/Redo", () => {
 
     it("should work for add and move to edge", () => {
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.get("[data-testid='component:CustomFilter']")
+        cy.get("[data-testid='component:Customfilter']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
@@ -44,7 +44,7 @@ describe("Undo/Redo", () => {
                 force: true,
             });
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.dragNode("CustomFilter", { x: 560, y: 500 });
+        cy.dragNode("Customfilter", { x: 560, y: 500 });
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("@undo").should("be.enabled").click();
         cy.get("@graph").matchImage(screenshotOptions);
@@ -60,7 +60,7 @@ describe("Undo/Redo", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.getNode("boundedSource-enricher").find("[event=remove]").eq(0).click();
         cy.getNode("enricher-dynamicService").find("[event=remove]").eq(0).click();
-        cy.get("[data-testid='component:CustomFilter']")
+        cy.get("[data-testid='component:Customfilter']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
