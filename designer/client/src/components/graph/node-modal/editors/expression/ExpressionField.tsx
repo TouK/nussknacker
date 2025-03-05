@@ -51,7 +51,7 @@ function ExpressionField(props: Props): JSX.Element {
 
     const onValueChange: OnValueChange = useCallback(
         (value: ExpressionObj | string) => {
-            const adjustedExpressionLanguage = determineLangaugeBasedOnEditor(editor);
+            const adjustedExpressionLanguage = determineLangaugeBasedOnEditor(editors);
             if (typeof value === "string") {
                 if (adjustedExpressionLanguage) {
                     setNodeDataAt(exprLanguagePath, adjustedExpressionLanguage);
@@ -61,7 +61,7 @@ function ExpressionField(props: Props): JSX.Element {
             setNodeDataAt(exprTextPath, value.expression);
             setNodeDataAt(exprLanguagePath, adjustedExpressionLanguage ?? value.language);
         },
-        [exprLanguagePath, exprTextPath, setNodeDataAt, editor],
+        [exprLanguagePath, exprTextPath, setNodeDataAt, editors],
     );
 
     if (
