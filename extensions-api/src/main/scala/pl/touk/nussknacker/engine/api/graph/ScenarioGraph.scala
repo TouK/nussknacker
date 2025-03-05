@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.api.graph
 
+import io.circe.{Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Encoder, HCursor}
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
-import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.graph.EdgeType
+import pl.touk.nussknacker.engine.graph.node.NodeData
 
 @JsonCodec final case class ScenarioGraph(
     properties: ProcessProperties,

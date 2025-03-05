@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.{Codec, Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -16,8 +17,12 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.schemedkafka.{
+  KafkaUniversalComponentTransformer,
+  RuntimeSchemaData,
+  SchemaDeterminerErrorHandler
+}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
@@ -26,11 +31,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactory
 }
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
-import pl.touk.nussknacker.engine.schemedkafka.{
-  KafkaUniversalComponentTransformer,
-  RuntimeSchemaData,
-  SchemaDeterminerErrorHandler
-}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 

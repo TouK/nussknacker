@@ -8,8 +8,8 @@ import pl.touk.nussknacker.openapi._
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.model.Uri.PathSegment
 import sttp.model.{Header, MediaType, Method, Uri}
+import sttp.model.Uri.PathSegment
 
 import java.net.URL
 

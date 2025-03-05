@@ -5,8 +5,8 @@ import pl.touk.nussknacker.engine.api.json.FromJsonDecoder
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
 
-import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import scala.util.Try
 
 // TODO: Validated
@@ -71,7 +71,6 @@ object FromJsonSchemaBasedDecoder {
         case SwaggerInteger =>
           extract[JsonNumber](_.asNumber, n => int2Integer(n.toDouble.toInt))
         case SwaggerLong =>
-          // FIXME: to ok?
           extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
         case SwaggerBigInteger =>
           extract[JsonNumber](_.asNumber, _.toBigInt.map(_.bigInteger).orNull)

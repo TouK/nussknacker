@@ -23,10 +23,9 @@ class StubModelDataWithModelDefinition(
 
   override def modelClassLoader: ModelClassLoader = ModelClassLoader.empty
 
-  override def modelConfigLoader: ModelConfigLoader =
-    new DefaultModelConfigLoader(_ => true)
+  override def modelConfigLoader: ModelConfigLoader = DefaultModelConfigLoader
 
-  override def namingStrategy: NamingStrategy = NamingStrategy(None)
+  override def namingStrategy: NamingStrategy = NamingStrategy.Disabled
 
   override def inputConfigDuringExecution: InputConfigDuringExecution = InputConfigDuringExecution(
     configDuringExecution

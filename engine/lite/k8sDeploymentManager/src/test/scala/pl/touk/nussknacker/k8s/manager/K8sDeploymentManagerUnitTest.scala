@@ -2,6 +2,7 @@ package pl.touk.nussknacker.k8s.manager
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
   scenarioNameLabel,
   scenarioVersionLabel
 }
-import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import scala.collection.compat.immutable.LazyList.continually
 

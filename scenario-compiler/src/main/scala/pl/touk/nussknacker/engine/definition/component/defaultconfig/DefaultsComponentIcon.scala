@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
 object DefaultsComponentIcon {
   // Warning: In case if component's definition is missing for a node, we have implicit contract that these icon url's

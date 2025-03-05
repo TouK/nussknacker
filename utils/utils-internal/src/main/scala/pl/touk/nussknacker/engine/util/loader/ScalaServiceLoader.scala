@@ -7,12 +7,12 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 
 import java.net.URLClassLoader
 import java.util.ServiceLoader
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 object ScalaServiceLoader extends LazyLogging {
   import scala.jdk.CollectionConverters._
 
-  def loadClass[T](classLoader: ClassLoader)(createDefault: => T)(implicit classTag: ClassTag[T]): T =
+  def loadClass[T: ClassTag](classLoader: ClassLoader)(createDefault: => T): T =
     chooseClass[T](createDefault, load[T](classLoader))
 
   def chooseClass[T](createDefault: => T, loaded: List[T]): T = {

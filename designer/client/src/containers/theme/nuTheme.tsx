@@ -165,6 +165,7 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                         }),
                         standardWarning: ({ theme }) => ({
                             backgroundColor: theme.palette.warning.main,
+                            color: blendDarken(theme.palette.text.primary, 0.9),
                         }),
                         standardInfo: ({ theme }) => ({
                             backgroundColor: theme.palette.primary.main,

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 

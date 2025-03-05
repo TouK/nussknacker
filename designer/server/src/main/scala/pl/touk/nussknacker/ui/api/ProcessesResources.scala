@@ -10,9 +10,11 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui._
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
@@ -20,7 +22,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -28,7 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(
     protected val processService: ProcessService,
-    processStateService: ProcessStateProvider,
+    scenarioStatusProvider: ScenarioStatusProvider,
+    scenarioStatusPresenter: ScenarioStatusPresenter,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener
@@ -81,7 +84,7 @@ class ProcessesResources(
             complete {
               processService.getLatestProcessesWithDetails(
                 query,
-                GetScenarioWithDetailsOptions.detailsOnly.withFetchState
+                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
               )
             }
           }
@@ -122,13 +125,6 @@ class ProcessesResources(
             }
           }
         }
-      } ~ path("processes" / ProcessNameSegment / "deployments") { processName =>
-        processId(processName) { processId =>
-          complete {
-            // FIXME: We should provide Deployment definition and return there all deployments, not actions..
-            processService.getProcessActions(processId.id)
-          }
-        }
       } ~ path("processes" / ProcessNameSegment) { processName =>
         processId(processName) { processId =>
           (delete & canWrite(processId)) {
@@ -151,6 +147,9 @@ class ProcessesResources(
               }
             }
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+            // FIXME: The `skipValidateAndResolve` flag has a non-trivial side effect.
+            //        Besides skipping validation (that is the intended and obvious result) it causes the `dictKeyWithLabel` expressions to miss the label field.
+            //        It happens, because in the current implementation we need the full compilation and type resolving in order to obtain the dict expression label.
             (skipValidateAndResolve, skipNodeResults) =>
               complete {
                 processService.getLatestProcessWithDetails(
@@ -211,7 +210,12 @@ class ProcessesResources(
           currentlyPresentedVersionIdParameter { currentlyPresentedVersionId =>
             complete {
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-              processStateService.getProcessState(processId, currentlyPresentedVersionId).map(ToResponseMarshallable(_))
+              for {
+                scenarioDetails <- processService
+                  .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
+                statusDetails <- scenarioStatusProvider.getScenarioStatus(processId)
+                dto = scenarioStatusPresenter.toDto(statusDetails, scenarioDetails, currentlyPresentedVersionId)
+              } yield dto
             }
           }
         }
@@ -232,12 +236,12 @@ class ProcessesResources(
                 thisVersion <- processService.getProcessWithDetails(
                   processId,
                   thisVersion,
-                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
                 otherVersion <- processService.getProcessWithDetails(
                   processId,
                   otherVersion,
-                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
               } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }

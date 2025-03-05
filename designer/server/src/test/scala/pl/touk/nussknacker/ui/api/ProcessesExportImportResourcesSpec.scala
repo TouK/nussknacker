@@ -6,18 +6,18 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{asAdmin, processResolverByProcessingType, withAllPermissions}
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{asAdmin, processResolverByProcessingType, withAllPermissions}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils
 

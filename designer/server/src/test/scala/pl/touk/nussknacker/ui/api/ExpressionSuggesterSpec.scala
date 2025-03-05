@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
   ClassDefinitionSet,
@@ -25,8 +25,8 @@ import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.nio.charset.Charset
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util.{Currency, Locale, UUID}
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext

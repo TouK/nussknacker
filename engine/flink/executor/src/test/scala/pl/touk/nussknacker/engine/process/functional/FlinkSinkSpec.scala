@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.process.functional
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, SinkAccessingNodeContext}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 
 import java.util.Date
 

@@ -1,10 +1,10 @@
 package db.migration
 
 import db.migration.V1_041__RemoveTypeSpecificDataDefinition.migrateMetaData
+import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
-import io.circe.Json
 
 class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
 

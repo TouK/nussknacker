@@ -5,8 +5,8 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.{AuthenticationError, AuthorizationError, SecurityError}
 import pl.touk.nussknacker.ui.security.api.SecurityError._
 import sttp.model.StatusCode.{Forbidden, NotImplemented, Unauthorized}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 
 import scala.language.implicitConversions
 

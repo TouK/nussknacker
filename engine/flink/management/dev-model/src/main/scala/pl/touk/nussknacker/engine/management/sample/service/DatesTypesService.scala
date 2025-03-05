@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period, ZonedDateTime}
-import java.time.temporal.ChronoUnit
-
 import com.cronutils.model.Cron
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period, ZonedDateTime}
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Future
 
 class DatesTypesService extends Service with Serializable {

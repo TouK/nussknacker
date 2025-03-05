@@ -11,11 +11,11 @@ import org.apache.kafka.common.header.Headers
 import java.time.Duration
 import java.util
 import java.util.{Collections, UUID}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
 
 class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
 

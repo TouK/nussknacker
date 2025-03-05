@@ -6,9 +6,9 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.notifications.{DataToRefresh, Notification}
 import sttp.model.StatusCode.Ok
+import sttp.tapir.{query, statusCode, Codec, CodecFormat, EndpointInput}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir.{Codec, CodecFormat, EndpointInput, query, statusCode}
 
 class NotificationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.schemaid
 
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   GetSchemaIdArgs,
   SchemaIdFromMessageExtractor,
   SchemaIdWithPositionedBuffer
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureUtils
 
 import java.nio.ByteBuffer
 

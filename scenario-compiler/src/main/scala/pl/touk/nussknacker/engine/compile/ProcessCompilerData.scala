@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, RuntimeMode}
+import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter}
 
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
@@ -31,9 +30,10 @@ object ProcessCompilerData {
       listeners: Seq[ProcessListener],
       userCodeClassLoader: ClassLoader,
       resultsCollector: ResultCollector,
-      componentUseCase: ComponentUseCase,
+      runtimeMode: RuntimeMode,
       customProcessValidator: CustomProcessValidator,
-      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
+      nodesData: NodesDeploymentData,
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default,
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components.components
       .filter(_.componentType == ComponentType.Service)
@@ -53,13 +53,14 @@ object ProcessCompilerData {
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
       definitionWithTypes.modelDefinition,
-      new FragmentParametersDefinitionExtractor(userCodeClassLoader, definitionWithTypes.classDefinitions.all),
+      new FragmentParametersDefinitionExtractor(userCodeClassLoader, definitionWithTypes.classDefinitions),
       expressionCompiler,
       userCodeClassLoader,
       listeners,
       resultsCollector,
-      componentUseCase,
-      nonServicesLazyParamStrategy
+      runtimeMode,
+      nodesData,
+      nonServicesLazyParamStrategy,
     )
     val subCompiler = new PartSubGraphCompiler(nodeCompiler)
     val processCompiler = new ProcessCompiler(
@@ -70,7 +71,7 @@ object ProcessCompilerData {
       customProcessValidator
     )
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
-    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseCase)
+    val interpreter         = Interpreter(listeners, expressionEvaluator, runtimeMode, nodesData)
 
     new ProcessCompilerData(
       processCompiler,

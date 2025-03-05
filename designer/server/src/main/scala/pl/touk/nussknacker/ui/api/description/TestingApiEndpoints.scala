@@ -1,34 +1,39 @@
 package pl.touk.nussknacker.ui.api.description
 
+import io.circe.Encoder
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.definition.{UIParameter, UISourceParameters}
+import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
-import pl.touk.nussknacker.ui.definition.DefinitionsService
-import sttp.model.StatusCode.Ok
-import sttp.tapir.EndpointIO.Example
-import sttp.tapir._
-import sttp.tapir.json.circe.jsonBody
-import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{
-  malformedTypingResultExample,
-  noScenarioExample,
-  testDataGenerationErrorExample
-}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError.{
+  TooManyCharactersGenerated,
+  TooManySamplesRequested
+}
+import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTestingError.{
+  NoDataGenerated,
+  NoSourcesWithTestDataGeneration
+}
+import pl.touk.nussknacker.ui.definition.DefinitionsService
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.model.StatusCode.Ok
+import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
+import sttp.tapir.json.circe.jsonBody
 
 class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
   import NodesApiEndpoints.Dtos._
@@ -96,8 +101,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample,
-          malformedTypingResultExample
+          noScenarioErrorOutput,
         )
       )
       .withSecurity(auth)
@@ -133,7 +137,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample
+          noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
@@ -172,7 +176,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample
+          noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
@@ -204,8 +208,39 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          testDataGenerationErrorExample,
-          noScenarioExample
+          oneOfVariantFromMatchType[NotFoundTestingError](
+            NotFound,
+            plainBody[NotFoundTestingError]
+              .examples(
+                List(
+                  noScenarioExample,
+                  Example.of(
+                    summary = Some("No data was generated"),
+                    value = NoDataGenerated
+                  ),
+                  Example.of(
+                    summary = Some("No sources with test data generation available"),
+                    value = NoSourcesWithTestDataGeneration
+                  )
+                )
+              )
+          ),
+          oneOfVariantFromMatchType[BadRequestTestingError](
+            BadRequest,
+            plainBody[BadRequestTestingError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Too many characters were generated"),
+                    value = TooManyCharactersGenerated(length = 5000, limit = 2000)
+                  ),
+                  Example.of(
+                    summary = Some("Too many samples requested"),
+                    value = TooManySamplesRequested(maxSamples = 1000)
+                  )
+                )
+              )
+          )
         )
       )
       .withSecurity(auth)

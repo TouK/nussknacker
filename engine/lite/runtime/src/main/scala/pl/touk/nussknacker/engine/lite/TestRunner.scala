@@ -1,25 +1,25 @@
 package pl.touk.nussknacker.engine.lite
 
+import cats.{~>, Id, Monad}
 import cats.data.Validated.{Invalid, Valid}
-import cats.{Id, Monad, ~>}
 import io.circe.Json
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source}
+import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode._
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.DurationInt
 import scala.language.higherKinds
 
 trait TestRunner {
@@ -45,62 +45,62 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
   ): TestResults[Json] = {
 
     // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
-    val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
-    // in tests we don't send metrics anywhere
-    val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(jobData)
-    val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
-    val testServiceInvocationCollector     = new TestServiceInvocationCollector(collectingListener)
+    ResultsCollectingListenerHolder.withTestEngineListener { collectingListener =>
+      // in tests we don't send metrics anywhere
+      val testContext                              = LiteEngineRuntimeContextPreparer.noOp.prepare(jobData)
+      val componentUseContextProvider: RuntimeMode = RuntimeMode.Test
+      val testServiceInvocationCollector           = new TestServiceInvocationCollector(collectingListener)
 
-    // FIXME: validation??
-    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](
-      process,
-      jobData,
-      modelData,
-      additionalListeners = List(collectingListener),
-      testServiceInvocationCollector,
-      componentUseCase
-    )(
-      implicitly[Monad[F]],
-      SynchronousExecutionContextAndIORuntime.syncEc,
-      implicitly[InterpreterShape[F]],
-      implicitly[CapabilityTransformer[F]]
-    ) match {
-      case Valid(interpreter) => interpreter
-      case Invalid(errors) =>
-        throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
-    }
+      // FIXME: validation??
+      val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](
+        process,
+        jobData,
+        modelData,
+        additionalListeners = List(collectingListener),
+        testServiceInvocationCollector,
+        componentUseContextProvider
+      )(
+        implicitly[Monad[F]],
+        SynchronousExecutionContextAndIORuntime.syncEc,
+        implicitly[InterpreterShape[F]],
+        implicitly[CapabilityTransformer[F]]
+      ) match {
+        case Valid(interpreter) => interpreter
+        case Invalid(errors) =>
+          throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
+      }
 
-    def getSourceById(sourceId: SourceId): Source = scenarioInterpreter.sources.getOrElse(
-      sourceId,
-      throw new IllegalArgumentException(
-        s"Found source '${sourceId.value}' in a test record but is not present in the scenario"
+      def getSourceById(sourceId: SourceId): Source = scenarioInterpreter.sources.getOrElse(
+        sourceId,
+        throw new IllegalArgumentException(
+          s"Found source '${sourceId.value}' in a test record but is not present in the scenario"
+        )
       )
-    )
 
-    val testDataPreparer = TestDataPreparer(modelData, jobData)
-    val inputs = ScenarioInputBatch(
-      scenarioTestData.testRecords
-        .groupBy(_.sourceId)
-        .toList
-        .flatMap { case (nodeId, scenarioTestRecords) =>
-          val sourceId                     = SourceId(nodeId.id)
-          val source                       = getSourceById(sourceId)
-          val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
-          preparedRecords.map(record => sourceId -> record)
-        }
-    )
+      val testDataPreparer = TestDataPreparer(modelData, jobData)
+      val inputs = ScenarioInputBatch(
+        scenarioTestData.testRecords
+          .groupBy(_.sourceId)
+          .toList
+          .flatMap { case (nodeId, scenarioTestRecords) =>
+            val sourceId                     = SourceId(nodeId.id)
+            val source                       = getSourceById(sourceId)
+            val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
+            preparedRecords.map(record => sourceId -> record)
+          }
+      )
 
-    try {
-      scenarioInterpreter.open(testContext)
+      try {
+        scenarioInterpreter.open(testContext)
 
-      val results = implicitly[EffectUnwrapper[F]].apply(scenarioInterpreter.invoke(inputs))
+        val results = implicitly[EffectUnwrapper[F]].apply(scenarioInterpreter.invoke(inputs))
 
-      collectSinkResults(testServiceInvocationCollector, results)
-      collectingListener.results
-    } finally {
-      collectingListener.clean()
-      scenarioInterpreter.close()
-      testContext.close()
+        collectSinkResults(testServiceInvocationCollector, results)
+        collectingListener.results
+      } finally {
+        scenarioInterpreter.close()
+        testContext.close()
+      }
     }
   }
 

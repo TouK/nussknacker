@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.process.fragment
 
 import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 trait FragmentRepository {
 
@@ -35,10 +35,9 @@ class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Fut
       processingType: ProcessingType
   )(implicit user: LoggedUser): Future[List[CanonicalProcess]] = {
     processRepository
-      .fetchLatestProcessesDetails[CanonicalProcess](
+      .fetchLatestProcesses[CanonicalProcess](
         ScenarioQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
       )
-      .map(_.map(_.json))
   }
 
   override def fetchLatestFragment(

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.sample.global
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.Documentation
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.generics.{
   GenericFunctionTypingError,
   GenericType,
@@ -11,6 +10,7 @@ import pl.touk.nussknacker.engine.api.generics.{
   Parameter,
   TypingFunction
 }
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.typed.typing.{
   Typed,
   TypedClass,

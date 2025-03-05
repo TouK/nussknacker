@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ParamName, Service}
 
 import scala.concurrent.Future
 

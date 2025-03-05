@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import com.typesafe.config.{Config, ConfigValueFactory}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
@@ -10,13 +10,13 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails,
   VeryPatientScalaFutures
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -31,7 +31,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with LazyLogging
+    with StrictLogging
     with VeryPatientScalaFutures
     with Matchers
     with LoneElement {

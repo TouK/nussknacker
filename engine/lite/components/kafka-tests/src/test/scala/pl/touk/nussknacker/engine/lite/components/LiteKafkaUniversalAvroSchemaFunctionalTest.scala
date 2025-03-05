@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.Valid
 import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated.Valid
+import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericRecord
-import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Inside
@@ -17,14 +17,14 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
-import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
 import pl.touk.nussknacker.engine.lite.util.test.KafkaAvroConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.nio.ByteBuffer
@@ -39,12 +39,13 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
     with ValidatedValuesDetailedMessage
     with FunctionalTestMixin {
 
-  import LiteKafkaComponentProvider._
-  import SpecialSpELElement._
-  import ValidationMode._
   import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import LiteKafkaComponentProvider._
+  import SpecialSpELElement._
+  import ValidationMode._
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)

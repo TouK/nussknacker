@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.process.functional
 
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Counter, Gauge, Histogram}
+import org.scalatest.{BeforeAndAfterEach, Outcome}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -230,6 +230,25 @@ class MetricsSpec
     }
   }
 
+  test("should add namespace to metrics") { implicit scenarioName =>
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
+      .source("source1", "input")
+      .emptySink("out1", "monitor")
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0))
+    )
+    val namespace = "a-tenant"
+
+    processInvoker.invokeWithSampleData(
+      process,
+      data,
+      ConfigFactory.empty().withValue("namespace", ConfigValueFactory.fromAnyRef(namespace))
+    )
+
+    counter(s"namespace.$namespace.nodeId.source1.originalProcessName.${scenarioName.value}.nodeCount") shouldBe 1
+  }
+
   private def counter(name: String)(implicit scenarioName: ProcessName): Long = withClue(s"counter $name") {
     reporter.testMetrics[Counter](name).loneElement.getCount
   }
@@ -239,7 +258,7 @@ class MetricsSpec
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics(reporterName, FlinkTestConfiguration.configuration())
+    TestReporterUtil.configWithTestMetrics(reporterName, new Configuration())
   }
 
 }

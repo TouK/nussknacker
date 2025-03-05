@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.security.api
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.{TableFor2, TableFor3, TableFor4}
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 

@@ -36,15 +36,7 @@ export function FixedValuesSetting({
     return (
         <>
             {fixedValuesType === FixedValuesType.ValueInputWithDictEditor && (
-                <DictSelect
-                    typ={{ ...typ, refClazzName: "java.lang." + typ.refClazzName } as ReturnedType}
-                    name={name}
-                    dictId={dictId}
-                    readOnly={readOnly}
-                    onChange={onChange}
-                    path={path}
-                    errors={errors}
-                />
+                <DictSelect typ={typ} name={name} dictId={dictId} readOnly={readOnly} onChange={onChange} path={path} errors={errors} />
             )}
             {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided && (
                 <UserDefinedListInput
@@ -54,7 +46,7 @@ export function FixedValuesSetting({
                     onChange={onChange}
                     path={path}
                     errors={errors}
-                    typ={{ ...typ, refClazzName: "java.lang." + typ.refClazzName } as ReturnedType}
+                    typ={typ}
                     name={name}
                     initialValue={initialValue}
                     inputLabel={userDefinedListInputLabel}

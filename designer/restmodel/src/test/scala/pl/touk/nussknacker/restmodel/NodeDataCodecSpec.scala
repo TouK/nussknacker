@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.{Decoder, Encoder, Json, parser}
+import io.circe.{parser, Decoder, Encoder, Json}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {

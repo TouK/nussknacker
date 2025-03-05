@@ -57,7 +57,7 @@ object ExpressionSuggester {
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithClasses.classDefinitions,
       modelData.designerDictServices,
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       scenarioPropertiesNames
     )
   }

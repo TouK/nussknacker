@@ -1,22 +1,22 @@
 package pl.touk.nussknacker.engine.process
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, ConfigWithUnresolvedVersion}
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ClassLoaderModelData, ConfigWithUnresolvedVersion}
 
 class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
-  override protected lazy val config = ConfigFactory.empty()
+  override protected lazy val config: Config = ConfigFactory.empty()
 
   test("detects component service") {
     val process =
@@ -40,19 +40,14 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
       category = None,
       componentId => DesignerWideComponentId(componentId.toString),
       additionalConfigsFromProvider = Map.empty,
-      // This ugly hack is because of Idea classloader issue, see comment in ClassLoaderModelData
-      shouldIncludeConfigCreator = {
-        case _: DevProcessConfigCreator => true
-        case _                          => false
-      },
-      shouldIncludeComponentProvider = _ => true,
       ComponentDefinitionExtractionMode.FinalDefinition
     )
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    env.withJobRunning(process.name.value)(action)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
+    }
   }
 
 }

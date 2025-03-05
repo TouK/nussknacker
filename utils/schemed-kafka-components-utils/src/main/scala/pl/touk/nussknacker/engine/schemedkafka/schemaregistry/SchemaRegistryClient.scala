@@ -51,6 +51,33 @@ trait SchemaRegistryClient extends Serializable {
 
 }
 
+object EmptySchemaRegistry extends SchemaRegistryClient {
+
+  private val errorMessage = "There is no schema in empty schema registry";
+  private val error        = SchemaError(errorMessage)
+
+  override def getSchemaById(id: SchemaId): SchemaWithMetadata = throw new IllegalStateException(errorMessage)
+
+  override protected def getByTopicAndVersion(
+      topic: UnspecializedTopicName,
+      version: Int,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = Validated.Invalid(error)
+
+  override protected def getLatestFreshSchema(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = Validated.Invalid(error)
+
+  override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = Validated.Valid(List())
+
+  override def getAllVersions(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, List[Integer]] = Validated.Invalid(error)
+
+}
+
 // This trait is mainly for testing mechanism purpose - in production implementation we assume that all schemas
 // are registered before usage of client. We don't want to merge both traits because it can be hard to
 // manage caching when both writing and reading operation will be available

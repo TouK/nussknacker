@@ -3,9 +3,9 @@ package pl.touk.nussknacker.k8s.manager
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
+import skuber.{ListResource, Resource, ResourceQuotaList}
 import skuber.Resource.ResourceList
 import skuber.apps.v1.Deployment.{RollingUpdate, Strategy}
-import skuber.{ListResource, Resource, ResourceQuotaList}
 
 import scala.language.reflectiveCalls
 import scala.util.Try

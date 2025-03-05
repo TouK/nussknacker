@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig

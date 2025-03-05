@@ -28,7 +28,7 @@
         "react-highlight-words": "0.20.0",
         "react-i18next": "13.0.1",
         "react-query": "3.39.3",
-        "react-router-dom": "6.8.1",
+        "react-router-dom": "6.28.1",
         "react-truncate-list": "1.0.1",
         "react-virtualized": "9.22.5",
         "rooks": "7.9.0",

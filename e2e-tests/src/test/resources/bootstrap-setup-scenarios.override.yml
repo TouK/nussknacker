@@ -4,3 +4,4 @@ services:
     volumes:
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
       - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
+      - ../../e2e-tests/src/test/resources/loan-request:/scenario-examples/loan-request

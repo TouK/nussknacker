@@ -25,5 +25,5 @@ export const useErrorRegister = () => {
         });
 
         apm.setCustomContext({ nuApiVersion: buildInfo.version, nuUiVersion: __BUILD_VERSION__ });
-    }, [buildInfo?.version]);
+    }, [areErrorReportsEnabled, buildInfo?.version, environment]);
 };

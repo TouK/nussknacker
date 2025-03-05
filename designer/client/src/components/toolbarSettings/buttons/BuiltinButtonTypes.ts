@@ -13,7 +13,7 @@ export enum BuiltinButtonTypes {
     processCompare = "process-compare",
     processMigrate = "process-migrate",
     processImport = "process-import",
-    processJSON = "process-json",
+    processExport = "process-export",
     processPDF = "process-pdf",
     processArchiveToggle = "process-archive-toggle",
     processArchive = "process-archive",

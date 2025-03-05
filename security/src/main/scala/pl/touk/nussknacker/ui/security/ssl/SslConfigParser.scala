@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.security.ssl
 
-import java.io.File
-
 import com.typesafe.config.Config
+
+import java.io.File
 
 object SslConfigParser {
 

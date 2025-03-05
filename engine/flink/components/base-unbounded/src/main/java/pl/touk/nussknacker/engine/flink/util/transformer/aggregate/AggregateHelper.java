@@ -31,6 +31,7 @@ public class AggregateHelper implements Serializable {
             new FixedExpressionValue("#AGG.stddevSamp", "StddevSamp"),
             new FixedExpressionValue("#AGG.varPop", "VarPop"),
             new FixedExpressionValue("#AGG.varSamp", "VarSamp"),
+            new FixedExpressionValue("#AGG.median", "Median"),
             new FixedExpressionValue("#AGG.min", "Min"),
             new FixedExpressionValue("#AGG.max", "Max"),
             new FixedExpressionValue("#AGG.sum", "Sum"),
@@ -54,6 +55,7 @@ public class AggregateHelper implements Serializable {
     private static final Aggregator STDDEV_SAMP = aggregates.SampleStandardDeviationAggregator$.MODULE$;
     private static final Aggregator VAR_POP = aggregates.PopulationVarianceAggregator$.MODULE$;
     private static final Aggregator VAR_SAMP = aggregates.SampleVarianceAggregator$.MODULE$;
+    private static final Aggregator MEDIAN = aggregates.MedianAggregator$.MODULE$;
     private static final Aggregator APPROX_CARDINALITY = HyperLogLogPlusAggregator$.MODULE$.apply(5, 10);
 
     // Instance methods below are for purpose of using in SpEL so your IDE can report that they are not used.
@@ -79,6 +81,8 @@ public class AggregateHelper implements Serializable {
     public Aggregator stddevSamp = STDDEV_SAMP;
     public Aggregator varPop = VAR_POP;
     public Aggregator varSamp = VAR_SAMP;
+
+    public Aggregator median = MEDIAN;
 
     public Aggregator approxCardinality = APPROX_CARDINALITY;
 

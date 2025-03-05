@@ -6,9 +6,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
 import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import scala.jdk.CollectionConverters._

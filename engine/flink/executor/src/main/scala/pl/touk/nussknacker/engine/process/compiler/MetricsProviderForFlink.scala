@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.functions.RuntimeContext
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
 object MetricsProviderForFlink {
 
   def createMetricsProvider(
-      componentUseCase: ComponentUseCase,
+      runtimeMode: RuntimeMode,
       runtimeContext: RuntimeContext
   ): MetricsProviderForScenario = {
-    componentUseCase match {
-      case ComponentUseCase.TestRuntime => NoOpMetricsProviderForScenario
-      case _                            => new FlinkMetricsProviderForScenario(runtimeContext)
+    runtimeMode match {
+      case RuntimeMode.Test => NoOpMetricsProviderForScenario
+      case _                => new FlinkMetricsProviderForScenario(runtimeContext)
     }
   }
 

@@ -2,11 +2,11 @@ package pl.touk.nussknacker.processCounts.influxdb
 
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.http.backend.SttpJson
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.monad.syntax.MonadErrorOps
 import sttp.monad.MonadError
+import sttp.monad.syntax.MonadErrorOps
 
 import scala.language.{higherKinds, implicitConversions}
 

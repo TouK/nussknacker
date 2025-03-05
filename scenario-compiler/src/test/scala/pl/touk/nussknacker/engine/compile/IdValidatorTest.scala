@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.{Table, forAll}
+import org.scalatest.prop.TableDrivenPropertyChecks.{forAll, Table}
 import org.scalatest.prop.TableFor2
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._

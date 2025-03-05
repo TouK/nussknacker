@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.statistics
 import com.typesafe.scalalogging.LazyLogging
 
 import java.nio.charset.StandardCharsets
-import java.security.spec.{EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{Key, KeyFactory, PublicKey}
+import java.security.spec.{EncodedKeySpec, X509EncodedKeySpec}
 import java.util.Base64
 import javax.crypto.{Cipher, KeyGenerator, SecretKey}
 import scala.util.{Failure, Success, Try}

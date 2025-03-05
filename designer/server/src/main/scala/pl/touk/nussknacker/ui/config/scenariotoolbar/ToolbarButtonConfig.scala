@@ -58,7 +58,7 @@ object ToolbarButtonConfigType extends Enumeration {
   val ProcessCompare: Value    = Value("process-compare")
   val ProcessMigrate: Value    = Value("process-migrate")
   val ProcessImport: Value     = Value("process-import")
-  val ProcessJSON: Value       = Value("process-json")
+  val ProcessExport: Value     = Value("process-export")
   val ProcessPDF: Value        = Value("process-pdf")
 
   val ProcessArchiveToggle: Value = Value("process-archive-toggle")

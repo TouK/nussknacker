@@ -10,6 +10,30 @@ import { Scenario } from "../components/Process/types";
 import NodeUtils from "../components/graph/NodeUtils";
 import { NodeOrPropertiesType } from "../types";
 
+const measureText = (text: string, font: string, elementWidth: number): { width: number; height: number } => {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return { width: 0, height: 0 };
+
+    context.font = font;
+    const lines = text.split("\n");
+    let totalHeight = 0;
+    let maxWidth = 0;
+
+    lines.forEach((line) => {
+        const metrics = context.measureText(line);
+        const width = metrics.width;
+        const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+        // Calculate the number of lines based on the element width
+        const lineCount = Math.ceil(width / elementWidth);
+        totalHeight += lineHeight * lineCount;
+        maxWidth = Math.max(maxWidth, width);
+    });
+
+    return { width: Math.min(maxWidth, elementWidth), height: totalHeight };
+};
+
 export const DescriptionViewMode = {
     descriptionView: "description",
     descriptionEdit: "descriptionEdit",
@@ -25,14 +49,26 @@ export function useOpenDescription() {
             scenario: Scenario,
             descriptionViewMode?: DescriptionViewMode,
             layoutData?: WindowType["layoutData"],
-        ) =>
-            open({
+        ) => {
+            const textMetric = measureText(scenario.scenarioGraph.properties.additionalFields.description, "14px monospace", 600);
+
+            const descriptionHeightInPercentage = (textMetric.height / window.innerHeight) * 100;
+            const maxHeightInPercentage = 35;
+            const maxPercentageHeightAsNumber = window.innerHeight * (maxHeightInPercentage / 100);
+            const isRestrictedMaxHeight = descriptionHeightInPercentage > maxHeightInPercentage;
+
+            return open({
                 kind: descriptionViewMode === DescriptionViewMode.descriptionEdit ? WindowKind.editDescription : WindowKind.viewDescription,
                 isResizable: true,
                 shouldCloseOnEsc: false,
                 meta: { node, scenario },
-                layoutData,
-            }),
+                height: isRestrictedMaxHeight ? maxPercentageHeightAsNumber : undefined,
+                layoutData: {
+                    ...layoutData,
+                },
+            });
+        },
+
         [open],
     );
 }

@@ -3,13 +3,13 @@ package pl.touk.nussknacker.ui.server
 import com.typesafe.scalalogging.LazyLogging
 import sttp.model.StatusCode
 import sttp.monad.FutureMonad
+import sttp.tapir.{statusCode, stringBody, DecodeResult}
 import sttp.tapir.EndpointIO.Header
 import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
 import sttp.tapir.server.interceptor._
 import sttp.tapir.server.interceptor.decodefailure.{DecodeFailureHandler, DefaultDecodeFailureHandler}
 import sttp.tapir.server.interceptor.exception.{ExceptionContext, ExceptionHandler}
 import sttp.tapir.server.model.ValuedEndpointOutput
-import sttp.tapir.{DecodeResult, statusCode, stringBody}
 
 import scala.concurrent.{ExecutionContext, Future}
 

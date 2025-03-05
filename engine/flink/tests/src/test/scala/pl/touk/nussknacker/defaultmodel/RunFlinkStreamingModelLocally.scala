@@ -24,7 +24,7 @@ object RunFlinkStreamingModelLocally extends IOApp.Simple {
     configCreator = new DefaultConfigCreator
   )
 
-  // For simplicity we use stub here, one can add real Flink implementation after add appropriate dependencies
+  // For simplicity, we use stub here, one can add real Flink implementation after add appropriate dependencies
   private val provider: DeploymentManagerProvider = new DeploymentManagerProviderStub
 
   override def run: IO[Unit] = {

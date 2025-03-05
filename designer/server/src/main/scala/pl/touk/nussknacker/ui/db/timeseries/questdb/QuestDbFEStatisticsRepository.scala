@@ -10,6 +10,7 @@ import io.questdb.cairo.security.AllowAllSecurityContext
 import io.questdb.cairo.sql.RecordCursorFactory
 import io.questdb.cairo.wal.WalWriter
 import io.questdb.griffin.{SqlExecutionContext, SqlExecutionContextImpl}
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
   BuildCairoEngineExtension,
   CairoEngineExtension,
@@ -21,14 +22,13 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepositor
   selectQuery,
   tableName
 }
-import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 import pl.touk.nussknacker.ui.statistics.RawFEStatistics
 
 import java.time.Clock
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
@@ -46,9 +46,8 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
   private val recordCursorPool: ThreadAwareObjectPool[RecordCursorFactory] =
     new ThreadAwareObjectPool(() => engine.get().select(selectQuery, sqlContextPool.get()))
 
-  private val walTableWriterPool: ThreadAwareObjectPool[WalWriter] = new ThreadAwareObjectPool(() =>
-    engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName))
-  )
+  private val walTableWriterPool: ThreadAwareObjectPool[WalWriter] =
+    new ThreadAwareObjectPool(() => engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName)))
 
   private val taskRecovery       = new TaskRecovery(engine, recover, tableName)
   private val flushDataTask      = new AtomicReference(createFlushDataTask())

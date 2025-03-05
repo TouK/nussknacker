@@ -1,5 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
+import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   BaseDefinedParameter,
   DefinedEagerParameter,
@@ -14,10 +18,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   Parameter,
   TypedNodeDependency
 }
-import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 trait DynamicParametersMixin extends SingleInputDynamicComponent[AnyRef] {

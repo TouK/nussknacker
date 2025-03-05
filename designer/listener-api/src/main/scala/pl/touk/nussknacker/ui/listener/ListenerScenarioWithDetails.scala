@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.listener
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, ProcessName, ScenarioVersion, VersionId}
 
 import java.time.Instant
 

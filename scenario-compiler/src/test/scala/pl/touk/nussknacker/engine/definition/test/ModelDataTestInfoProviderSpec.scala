@@ -7,11 +7,11 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.{process, CirceUtil, MetaData, Params, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, Params, ProcessVersion, StreamMetaData, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{
@@ -19,6 +19,10 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{
   GenericParametersSourceNoGenerate,
   GenericParametersSourceNoTestSupport,
   SourceWithTestParameters
+}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPreparationError.{
+  MissingSource,
+  MultipleSourcesRequired
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -298,7 +302,7 @@ class ModelDataTestInfoProviderSpec
     forEvery(testingData) { scenario =>
       val error = testInfoProvider.prepareTestData(preliminaryTestData, scenario).leftValue
 
-      error shouldBe "Record 2 - scenario does not have source id: 'non-existing source'"
+      error shouldBe MissingSource("non-existing source", 1)
     }
   }
 
@@ -313,7 +317,7 @@ class ModelDataTestInfoProviderSpec
 
     val error = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).leftValue
 
-    error shouldBe "Record 2 - scenario has multiple sources but got record without source id"
+    error shouldBe MultipleSourcesRequired(1)
   }
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {

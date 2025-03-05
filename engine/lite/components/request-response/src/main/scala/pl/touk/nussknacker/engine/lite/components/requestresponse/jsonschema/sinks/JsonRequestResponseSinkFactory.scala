@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.si
 
 import cats.data.Validated.valid
 import org.everit.json.schema.Schema
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.RequestResponseComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -13,13 +14,12 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonSchemaExtractor}
+import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
 object JsonRequestResponseSink {
 

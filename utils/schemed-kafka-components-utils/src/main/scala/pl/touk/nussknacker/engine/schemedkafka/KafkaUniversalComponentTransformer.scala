@@ -2,22 +2,22 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
+import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")

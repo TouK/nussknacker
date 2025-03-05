@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import cats.data.Validated.{invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalid, valid}
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -14,10 +15,9 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDependency, Parameter, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory

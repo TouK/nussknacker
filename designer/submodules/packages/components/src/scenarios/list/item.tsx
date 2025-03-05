@@ -1,14 +1,12 @@
-import { History } from "@mui/icons-material";
 import { Divider, Stack, styled, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoryButton, Highlight, useFilterContext, TruncateWrapper } from "../../common";
+import { CategoryButton, Highlight, TruncateWrapper, useFilterContext } from "../../common";
 import { Author } from "./author";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { FiltersContextType } from "../../common/filters/filtersContext";
 import { CopyTooltip } from "./copyTooltip";
-import { ProcessActionType } from "nussknackerUi/components/Process/types";
 import { ScenarioStatus } from "./scenarioStatus";
 import { ProcessingModeItem } from "./processingMode";
 import { formatDateTime } from "nussknackerUi/DateUtils";
@@ -33,24 +31,6 @@ function Labels({ values, filtersContext }: { values: string[]; filtersContext: 
 
     const elements = values.map((v) => <LabelChip key={v} id={v} value={v} filterValue={filterValue} setFilter={setFilter("LABEL")} />);
     return <TruncateWrapper>{elements}</TruncateWrapper>;
-}
-
-export function LastAction({ lastAction }: { lastAction: ProcessActionType }): JSX.Element {
-    const { t } = useTranslation();
-
-    return lastAction ? (
-        <Stack
-            spacing={1}
-            direction="row"
-            alignItems="center"
-            title={t("scenario.lastAction", "Last action performed {{date, relativeDate}}.", {
-                date: new Date(lastAction.performedAt),
-            })}
-        >
-            <History />
-            <Typography variant="caption">{lastAction.actionName}</Typography>
-        </Stack>
-    ) : null;
 }
 
 const HighlightedName = styled(Highlight)({

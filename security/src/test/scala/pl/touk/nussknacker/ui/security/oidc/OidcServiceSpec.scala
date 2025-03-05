@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.oidc
 
 import cats.data.Validated.Invalid
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, OptionValues}
 import pdi.jwt._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{

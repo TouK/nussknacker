@@ -11,7 +11,8 @@ trait NuTables
     with ScenarioActivityEntityFactory
     with ScenarioLabelsEntityFactory
     with AttachmentEntityFactory
-    with DeploymentEntityFactory {
+    with DeploymentEntityFactory
+    with StickyNotesEntityFactory {
   protected val profile: JdbcProfile
 
 }

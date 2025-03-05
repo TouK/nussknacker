@@ -25,7 +25,11 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
     getParameterlessMethods(staticMethods = true) ++ getParameterlessMethods(staticMethods = false)
   }
 
-  def all: Set[ClassDefinition] = classDefinitionsMap.values.toSet
+  lazy val all: Set[ClassDefinition] = classDefinitionsMap.values.toSet
+
+  lazy val byName: Map[String, ClassDefinition] = classDefinitionsMap.values.map { definition =>
+    definition.clazzName.display -> definition
+  }.toMap
 
   def get(clazz: Class[_]): Option[ClassDefinition] = classDefinitionsMap.get(clazz)
 

@@ -5,7 +5,6 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.openapi.parser.ParseToSwaggerService.ValidationResult
 import pl.touk.nussknacker.openapi.{
   ApiKeyInCookie,
   ApiKeyInHeader,
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.openapi.{
   SecuritySchemeName,
   SwaggerSecurity
 }
+import pl.touk.nussknacker.openapi.parser.ParseToSwaggerService.ValidationResult
 
 import scala.jdk.CollectionConverters._
 

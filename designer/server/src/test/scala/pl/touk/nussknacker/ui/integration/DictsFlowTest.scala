@@ -14,18 +14,18 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import sttp.client3.{UriContext, quickRequest}
+import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
 import java.util.UUID

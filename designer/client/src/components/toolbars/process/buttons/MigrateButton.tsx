@@ -39,7 +39,7 @@ function MigrateButton(props: Props) {
                 confirmText: t("panels.actions.process-migrate.yes", "Yes"),
                 denyText: t("panels.actions.process-migrate.no", "No"),
             }),
-        [confirm, processName, t, targetEnvironmentId, versionId],
+        [confirm, dispatch, processName, t, targetEnvironmentId, versionId],
     );
 
     if (isEmpty(featuresSettings?.remoteEnvironment)) {

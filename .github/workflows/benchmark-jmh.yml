@@ -10,10 +10,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup Scala
-        uses: olafurpg/setup-scala@v10
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
+      - uses: sbt/setup-sbt@v1
       - name: Run benchmarks
         run: sbt "benchmarks/jmh:run -i 8 -wi 3 -f1 -t1 -rf csv"
       - name: Store benchmark results

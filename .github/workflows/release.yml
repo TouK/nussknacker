@@ -58,6 +58,8 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
 
+      - uses: sbt/setup-sbt@v1
+
       - name: Cache ivy packages
         uses: actions/cache@v3
         with:

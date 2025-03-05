@@ -4,11 +4,6 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{
   Context,
   CustomStreamTransformer,
@@ -17,6 +12,11 @@ import pl.touk.nussknacker.engine.api.{
   Params,
   ValueWithContext
 }
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.transformation._
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomJoinTransformation,
   FlinkCustomNodeContext,

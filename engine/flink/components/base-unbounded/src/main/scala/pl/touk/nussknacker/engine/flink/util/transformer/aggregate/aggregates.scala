@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import org.apache.flink.api.common.typeinfo.TypeInfo
+import pl.touk.nussknacker.engine.api.typed.{typing, NumberTypeUtils}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.median.MedianHelper
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
@@ -66,6 +67,38 @@ object aggregates {
     override def addElement(n1: Number, n2: Number): Number = MathUtils.min(n1, n2)
 
     override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
+
+  }
+
+  object MedianAggregator extends Aggregator with LargeFloatingNumberAggregate {
+
+    override type Aggregate = java.util.ArrayList[Number]
+
+    override type Element = Number
+
+    override def zero: Aggregate = new java.util.ArrayList[Number]()
+
+    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg
+    else {
+      agg.add(el)
+      agg
+    }
+
+    override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean = element == null
+
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = {
+      val result = new java.util.ArrayList[Number]()
+      result.addAll(agg1)
+      result.addAll(agg2)
+      result
+    }
+
+    override def result(finalAggregate: Aggregate): AnyRef =
+      MedianHelper.calculateMedian(finalAggregate.asScala.toList).orNull
+
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
+      Typed.genericTypeClass[java.util.ArrayList[_]](List(input))
+    )
 
   }
 

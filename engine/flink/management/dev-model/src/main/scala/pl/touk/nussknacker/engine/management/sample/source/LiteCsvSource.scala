@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import io.circe.Json
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 

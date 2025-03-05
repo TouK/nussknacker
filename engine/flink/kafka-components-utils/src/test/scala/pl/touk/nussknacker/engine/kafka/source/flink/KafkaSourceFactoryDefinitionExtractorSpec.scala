@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, StaticMethodDefinition}
-import KafkaSourceFactoryMixin.{SampleKey, SampleValue}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, StaticMethodDefinition}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
+
+import KafkaSourceFactoryMixin.{SampleKey, SampleValue}
 
 class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
 

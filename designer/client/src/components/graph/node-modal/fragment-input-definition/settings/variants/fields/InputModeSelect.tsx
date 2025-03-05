@@ -1,4 +1,5 @@
 import React from "react";
+import { isNil } from "lodash";
 import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
@@ -23,12 +24,11 @@ export default function InputModeSelect(props: Props) {
     const { t } = useTranslation();
     const { temporaryUserDefinedList } = useSettings();
 
-    const value =
-        item.valueEditor === null
-            ? InputMode.AnyValue
-            : item.valueEditor.allowOtherValue
-            ? InputMode.AnyValueWithSuggestions
-            : InputMode.FixedList;
+    const value = isNil(item.valueEditor)
+        ? InputMode.AnyValue
+        : item.valueEditor.allowOtherValue
+        ? InputMode.AnyValueWithSuggestions
+        : InputMode.FixedList;
     return (
         <>
             <FormControl>

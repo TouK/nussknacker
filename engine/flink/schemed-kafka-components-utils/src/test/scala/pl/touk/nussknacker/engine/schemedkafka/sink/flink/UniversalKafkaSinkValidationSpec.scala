@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -19,8 +19,9 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
-  import KafkaAvroSinkMockSchemaRegistry._
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
+
+  import KafkaAvroSinkMockSchemaRegistry._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 

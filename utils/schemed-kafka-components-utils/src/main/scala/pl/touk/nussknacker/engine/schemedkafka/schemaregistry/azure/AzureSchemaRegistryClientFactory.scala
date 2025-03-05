@@ -4,16 +4,16 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.azure.core.exception.ResourceNotFoundException
 import com.azure.core.util.{Context, FluxUtil}
+import com.azure.data.schemaregistry.{SchemaRegistryClientBuilder, SchemaRegistryVersion}
 import com.azure.data.schemaregistry.implementation.models.SchemasGetByIdResponse
 import com.azure.data.schemaregistry.models.{SchemaFormat, SchemaProperties, SchemaRegistrySchema}
-import com.azure.data.schemaregistry.{SchemaRegistryClientBuilder, SchemaRegistryVersion}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal._
 import reactor.core.publisher.Mono
 
 import java.nio.charset.StandardCharsets

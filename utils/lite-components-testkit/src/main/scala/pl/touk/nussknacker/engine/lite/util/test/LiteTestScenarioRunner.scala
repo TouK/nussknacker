@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -16,8 +17,8 @@ import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test._
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
 import scala.reflect.ClassTag
 
@@ -54,7 +55,7 @@ case class LiteTestScenarioRunnerBuilder(
     copy(testRuntimeMode = true)
 
   override def build(): LiteTestScenarioRunner =
-    new LiteTestScenarioRunner(components, globalVariables, config, componentUseCase(testRuntimeMode))
+    new LiteTestScenarioRunner(components, globalVariables, config, runtimeMode(testRuntimeMode))
 
 }
 
@@ -67,7 +68,7 @@ class LiteTestScenarioRunner(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
     config: Config,
-    componentUseCase: ComponentUseCase
+    runtimeMode: RuntimeMode
 ) extends ClassBasedTestScenarioRunner {
 
   /**
@@ -103,7 +104,7 @@ class LiteTestScenarioRunner(
       LiteBaseComponentProvider.Components :::
       components
     val modelData = ModelWithTestExtensions(config, allComponents, globalVariables)
-    SynchronousLiteInterpreter.run(modelData, jobData, scenario, inputBatch, componentUseCase)
+    SynchronousLiteInterpreter.run(modelData, jobData, scenario, inputBatch, runtimeMode)
   }
 
 }

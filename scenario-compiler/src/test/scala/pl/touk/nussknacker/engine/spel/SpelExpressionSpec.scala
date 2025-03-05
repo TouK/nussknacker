@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
@@ -14,9 +14,10 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.util.{NumberUtils, StringUtils}
+import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
@@ -25,12 +26,16 @@ import pl.touk.nussknacker.engine.api.generics.{
 }
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
+  ArgumentTypeError,
+  ExpressionTypeError,
+  GenericFunctionError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
   IllegalInvocationError,
   IllegalProjectionSelectionError,
@@ -45,11 +50,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
-  ArgumentTypeError,
-  ExpressionTypeError,
-  GenericFunctionError
-}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
@@ -66,11 +66,11 @@ import java.lang.{
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.nio.charset.{Charset, StandardCharsets}
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util
-import java.util.concurrent.Executors
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
+import java.util.concurrent.Executors
 import scala.annotation.varargs
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -259,6 +259,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[java.math.BigDecimal],
       classOf[LocalDate],
       classOf[ChronoLocalDate],
+      classOf[Locale],
+      classOf[Charset],
+      classOf[Currency],
       classOf[SampleValue],
       classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
@@ -268,6 +271,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private def evaluate[T: TypeTag](expr: String, context: Context = ctx): T =
     parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
+
+  test("should be able to dynamically index record") {
+    evaluate[Int]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "a")) shouldBe 5
+    evaluate[Integer]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "asdf")) shouldBe null
+  }
+
+  test("should figure out result type when dynamically indexing record") {
+    evaluate[Int](
+      "{a: {g: 5, h: 10}, b: {g: 50, h: 100}}[#input.toString()].h",
+      Context("abc").withVariable("input", "b")
+    ) shouldBe 100
+  }
 
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
@@ -894,6 +909,28 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
+  test("should not validate map indexing if index type and map key type are different") {
+    parse[Any]("""{{key: "a", value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap["0"]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1.toLong, value: 5}}.toMap[0]""") shouldBe Symbol("invalid")
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0.toLong]""") shouldBe Symbol("invalid")
+  }
+
+  test("should validate map indexing if index type and map key type are the same") {
+    parse[Any]("""{{key: 1, value: 5}}.toMap[0]""") shouldBe Symbol("valid")
+  }
+
+  test("should handle map indexing with unknown key type") {
+    val context = Context("sth").withVariables(
+      Map(
+        "unknownString" -> ContainerOfUnknown("a"),
+      )
+    )
+
+    evaluate[Int]("""{{key: "a", value: 5}}.toMap[#unknownString.value]""", context) shouldBe 5
+    evaluate[Integer]("""{{key: "b", value: 5}}.toMap[#unknownString.value]""", context) shouldBe null
+  }
+
   test("validate ternary operator") {
     parse[Long]("'d'? 3 : 4", ctx) should not be Symbol("valid")
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be Symbol("valid")
@@ -1504,11 +1541,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should allow using list methods on array projection") {
     evaluate[Any]("'a,b'.split(',').![#this].isEmpty()") shouldBe false
+    evaluate[String]("'a,b'.split(',').![#this].get(0)") shouldBe "a"
   }
 
   test("should allow using list methods on array") {
     evaluate[Any]("#array.isEmpty()") shouldBe false
     evaluate[Any]("#intArray.isEmpty()") shouldBe false
+    evaluate[String]("#array.get(0)") shouldBe "a"
   }
 
   test("should allow using list methods on nested arrays") {
@@ -1733,6 +1772,23 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should convert value to given type with correct return type") {
+    evaluate[Int]("'1'.to('Integer')") shouldBe 1
+    evaluate[Int]("'1'.toOrNull('Integer')") shouldBe 1
+    evaluate[JBoolean]("'1'.canBe('Integer')") shouldBe true
+    evaluate[Long]("'1'.toLong") shouldBe 1
+    evaluate[Long]("'1'.toLongOrNull") shouldBe 1
+    evaluate[JBoolean]("'1'.canBeLong") shouldBe true
+  }
+
+  test("should be able to run indexer on created with toMap map") {
+    evaluate[Int]("{{key: 1, value: 5}}.toMap[1]") shouldBe 5
+  }
+
+  test("should be able to run indexer on created with toMapOrNull map") {
+    evaluate[Int]("{{key: 1, value: 5}}.toMapOrNull[1]") shouldBe 5
+  }
+
   test("should convert value to a given type") {
     val map                         = Map("a" -> "b").asJava
     val emptyMap                    = Map().asJava
@@ -1918,6 +1974,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDouble.value.toLong()", longTyping, 1),
         ("#unknownDoubleString.value.toLong()", longTyping, 1),
         ("#unknownBoolean.value.toLongOrNull()", longTyping, null),
+        ("1L.toInteger()", integerTyping, 1),
+        ("1.1.toInteger()", integerTyping, 1),
+        ("'1'.toInteger()", integerTyping, 1),
+        ("1L.toIntegerOrNull()", integerTyping, 1),
+        ("1.1.toIntegerOrNull()", integerTyping, 1),
+        ("'1'.toIntegerOrNull()", integerTyping, 1),
+        ("'a'.toIntegerOrNull()", integerTyping, null),
+        ("#unknownLong.value.toInteger()", integerTyping, 11),
+        ("#unknownLongString.value.toInteger()", integerTyping, 11),
+        ("#unknownDouble.value.toInteger()", integerTyping, 1),
+        ("#unknownDoubleString.value.toInteger()", integerTyping, 1),
+        ("#unknownBoolean.value.toIntegerOrNull()", integerTyping, null),
         ("1.toDouble()", doubleTyping, 1.0),
         ("'1'.toDouble()", doubleTyping, 1.0),
         ("1.toDoubleOrNull()", doubleTyping, 1.0),
@@ -1998,6 +2066,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownBoolean", ContainerOfUnknown(true))
       .withVariable("unknownBooleanString", ContainerOfUnknown("false"))
       .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownInteger", ContainerOfUnknown(1))
+      .withVariable("unknownIntegerString", ContainerOfUnknown("1"))
       .withVariable("unknownLongString", ContainerOfUnknown("11"))
       .withVariable("unknownDouble", ContainerOfUnknown(1.1))
       .withVariable("unknownDoubleString", ContainerOfUnknown("1.1"))
@@ -2048,6 +2118,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownLong.value.canBeLong", true),
         ("#unknownLongString.value.canBeLong", true),
         ("#unknownString.value.canBeLong", false),
+        ("#unknownInteger.value.canBeInteger", true),
+        ("#unknownIntegerString.value.canBeInteger", true),
+        ("#unknownString.value.canBeInteger", false),
         ("#unknownDouble.value.canBeDouble", true),
         ("#unknownDoubleString.value.canBeDouble", true),
         ("#unknownString.value.canBeDouble", false),
@@ -2080,6 +2153,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "#unknownString.value.toBoolean()",
       "#unknownString.value.toLong()",
       "#unknownBoolean.value.toLong()",
+      "#unknownString.value.toInteger()",
+      "#unknownBoolean.value.toInteger()",
       "#unknownString.value.toDouble()",
       "#unknownBoolean.value.toDouble()",
       "#unknownBoolean.value.toBigDecimal()",

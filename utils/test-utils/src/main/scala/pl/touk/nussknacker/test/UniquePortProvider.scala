@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.test
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import java.net.ServerSocket
-
+import java.util.concurrent.atomic.AtomicInteger
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 

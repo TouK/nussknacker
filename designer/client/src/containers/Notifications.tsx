@@ -10,8 +10,8 @@ import Notification from "../components/notifications/Notification";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
-import { loadProcessState } from "../actions/nk";
-import { getProcessName, getProcessVersionId } from "../reducers/selectors/graph";
+import { fetchProcessDefinition, loadProcessState } from "../actions/nk";
+import { getProcessingType, getProcessName, getProcessVersionId, isFragment } from "../reducers/selectors/graph";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
 import { ThunkAction } from "../actions/reduxTypes";
@@ -44,23 +44,37 @@ const prepareNotification =
     };
 
 const handleRefresh =
-    ({ scenarioName, toRefresh }: BackendNotification, currentScenarioName: string, processVersionId: number): ThunkAction =>
+    (
+        { scenarioName, toRefresh }: BackendNotification,
+        currentScenarioName: string,
+        processVersionId: number,
+        currentProcessingType: string,
+        currentIsFragment: boolean,
+    ): ThunkAction =>
     (dispatch) => {
-        if (!scenarioName || scenarioName !== currentScenarioName) {
+        if (scenarioName && scenarioName !== currentScenarioName) {
             return;
         }
-        toRefresh.forEach((data) => {
-            switch (data) {
-                case "activity":
-                    return dispatch(getScenarioActivities(scenarioName));
-                case "state":
-                    return dispatch(loadProcessState(scenarioName, processVersionId));
-            }
-        });
+        if (toRefresh.indexOf("activity") >= 0 && currentScenarioName) {
+            dispatch(getScenarioActivities(currentScenarioName));
+        }
+        if (toRefresh.indexOf("state") >= 0 && currentScenarioName && processVersionId) {
+            dispatch(loadProcessState(currentScenarioName, processVersionId));
+        }
+        if (toRefresh.indexOf("creator") >= 0 && currentProcessingType && currentIsFragment != null) {
+            dispatch(fetchProcessDefinition(currentProcessingType, currentIsFragment));
+        }
+        return;
     };
 
 const prepareNotifications =
-    (notifications: BackendNotification[], scenarioName: string, processVersionId: number): ThunkAction =>
+    (
+        notifications: BackendNotification[],
+        scenarioName: string,
+        processVersionId: number,
+        currentProcessingType: string,
+        currentIsFragment: boolean,
+    ): ThunkAction =>
     (dispatch, getState) => {
         const state = getState();
         const { processedNotificationIds } = getBackendNotifications(state);
@@ -74,7 +88,7 @@ const prepareNotifications =
 
         notifications.filter(onlyUnreadPredicate).forEach((notification) => {
             dispatch(prepareNotification(notification));
-            dispatch(handleRefresh(notification, scenarioName, processVersionId));
+            dispatch(handleRefresh(notification, scenarioName, processVersionId, currentProcessingType, currentIsFragment));
         });
     };
 
@@ -87,13 +101,17 @@ export function Notifications(): JSX.Element {
 
     const currentScenarioName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
+    const currentProcessingType = useSelector(getProcessingType);
+    const currentIsFragment = useSelector(isFragment);
 
     const refresh = useCallback(() => {
         HttpService.loadBackendNotifications(currentScenarioName)
             .then((notifications) => {
                 handleChangeConnectionError(null);
                 dispatch(updateBackendNotifications(notifications.map(({ id }) => id)));
-                dispatch(prepareNotifications(notifications, currentScenarioName, processVersionId));
+                dispatch(
+                    prepareNotifications(notifications, currentScenarioName, processVersionId, currentProcessingType, currentIsFragment),
+                );
             })
             .catch((error) => {
                 const isNetworkAccess = navigator.onLine;
@@ -111,7 +129,7 @@ export function Notifications(): JSX.Element {
                     );
                 }
             });
-    }, [currentScenarioName, dispatch, handleChangeConnectionError]);
+    }, [currentScenarioName, processVersionId, currentProcessingType, currentIsFragment, dispatch, handleChangeConnectionError]);
     useInterval(refresh, {
         refreshTime: 2000,
         ignoreFirst: true,
@@ -123,7 +141,7 @@ export function Notifications(): JSX.Element {
 
 type NotificationType = "info" | "error" | "success";
 
-type DataToRefresh = "activity" | "state";
+type DataToRefresh = "activity" | "state" | "creator";
 
 export type BackendNotification = {
     id: string;

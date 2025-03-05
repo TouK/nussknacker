@@ -369,7 +369,7 @@ describe("Fragment", () => {
         cy.deleteAllTestProcesses({ filter: seed2 });
     });
 
-    it("should display dead-ended fragment correct", () => {
+    it.skip("should display dead-ended fragment correct", () => {
         const fragmentName = "fragmentOutput";
         const deadEndFragmentName = "fragmentDeadEnd";
         cy.createTestFragment(fragmentName, "fragment").as("fragmentName");

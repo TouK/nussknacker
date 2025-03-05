@@ -2,15 +2,15 @@ package pl.touk.nussknacker.engine.kafka.sink.flink
 
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.flink.api.process.{
   BasicFlinkSink,
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 
 import java.nio.charset.StandardCharsets
 

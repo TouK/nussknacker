@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 object TestProcess {
 

@@ -5,21 +5,21 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
-import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.engine.sttp.HttpClientError
+import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
+import pl.touk.nussknacker.http.backend.HttpClientError
 import pl.touk.nussknacker.test.PatientScalaFutures
+import sttp.client3.{HttpError, Response, SttpBackend}
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{HttpError, Response}
 import sttp.model.{Method, StatusCode}
 import sttp.monad.FutureMonad
 
 import java.io.File
+import java.net.URI
 import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.duration._
 import scala.util.Failure
 
 class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
@@ -28,9 +28,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
   private val jarFile      = new File(s"/tmp/${jarFileName}")
   private val jarId        = s"${UUID.randomUUID()}-example.jar"
   private val flinkJarFile = JarFile(jarId, jarFileName)
-  private val deploymentId = ExternalDeploymentId("someDeploymentId")
-
-  val config: FlinkConfig = FlinkConfig(Some("http://localhost:12345/"))
+  private val jobId        = generateJobId
 
   test("uploadJarFileIfNotExists - should upload jar") {
     implicit val backend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
@@ -38,7 +36,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
       case req if req.uri.path == List("jars", "upload") =>
         Response.ok(Right(UploadJarResponse(filename = jarId)))
     }
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     val result = flinkClient.uploadJarFileIfNotExists(jarFile).futureValue
 
@@ -50,7 +48,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
       case req if req.uri.path == List("jars") =>
         Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName))))))
     }
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     val result = flinkClient.uploadJarFileIfNotExists(jarFile).futureValue
 
@@ -64,7 +62,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
       case req if req.uri.path == List("jars", "upload") =>
         Response.ok(Right(UploadJarResponse(filename = jarId)))
     }
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     val result = flinkClient.uploadJarFileIfNotExists(jarFile).futureValue
 
@@ -78,7 +76,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
       case req if req.uri.path == List("jars", jarId) && req.method == Method.DELETE =>
         Response.ok(Right(()))
     }
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 
@@ -89,7 +87,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
     implicit val backend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
       case req if req.uri.path == List("jars") => Response.ok(Right(JarsResponse(files = Some(Nil))))
     }
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 
@@ -103,7 +101,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
       case req if req.uri.path == List("jars", jarId) && req.method == Method.DELETE =>
         Response(Right(()), StatusCode.InternalServerError)
     }
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 
@@ -120,13 +118,13 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
           )
         case req if req.uri.path == List("jars", jarId, "run") =>
           Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
-        case req if req.uri.path == List("jobs", deploymentId.value) && req.method == Method.PATCH =>
+        case req if req.uri.path == List("jobs", jobId.toHexString) && req.method == Method.PATCH =>
           Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
       },
       None
     )
 
-    val flinkClient = HttpFlinkClient.createUnsafe(config)
+    val flinkClient = createHttpClient
 
     def checkIfWrapped(action: Future[_]) = {
       Await.ready(action, convertSpanToDuration(patienceConfig.timeout)).value should matchPattern {
@@ -134,8 +132,11 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
       }
     }
 
-    checkIfWrapped(flinkClient.cancel(deploymentId))
-    checkIfWrapped(flinkClient.runProgram(jarFile, "any", Nil, None, Some(DeploymentId.generate.toString)))
+    checkIfWrapped(flinkClient.cancel(jobId))
+    checkIfWrapped(flinkClient.runProgram(jarFile, "any", Nil, None, Some(jobId)))
   }
+
+  private def createHttpClient(implicit backend: SttpBackend[Future, Any]) =
+    new HttpFlinkClient(new URI("http://localhost:12345/"), 10.seconds, 10.seconds)
 
 }

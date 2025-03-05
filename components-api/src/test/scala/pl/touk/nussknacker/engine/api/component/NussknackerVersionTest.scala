@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.component
 
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+
 import scala.jdk.CollectionConverters._
 
 class NussknackerVersionTest extends AnyFunSuiteLike with Matchers {

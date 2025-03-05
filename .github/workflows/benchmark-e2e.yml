@@ -10,10 +10,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup Scala
-        uses: olafurpg/setup-scala@v10
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
+      - uses: sbt/setup-sbt@v1
       - name: Run benchmarks
         run: |
           bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt \"benchmarks/test:runMain pl.touk.nussknacker.engine.benchmarks.e2e.FlinkSteamingScenarioBenchmark 10000000\""

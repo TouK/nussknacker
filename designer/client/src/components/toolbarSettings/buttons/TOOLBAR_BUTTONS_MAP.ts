@@ -9,7 +9,7 @@ import ArchiveButton from "../../toolbars/process/buttons/ArchiveButton";
 import { ArchiveToggleButton } from "../../toolbars/process/buttons/ArchiveToggleButton";
 import CompareButton from "../../toolbars/process/buttons/CompareButton";
 import ImportButton from "../../toolbars/process/buttons/ImportButton";
-import JSONButton from "../../toolbars/process/buttons/JSONButton";
+import ExportButton from "../../toolbars/process/buttons/ExportButton";
 import MigrateButton from "../../toolbars/process/buttons/MigrateButton";
 import PDFButton from "../../toolbars/process/buttons/PDFButton";
 import SaveButton from "../../toolbars/process/buttons/SaveButton";
@@ -58,7 +58,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.processCompare]: CompareButton,
     [BuiltinButtonTypes.processMigrate]: MigrateButton,
     [BuiltinButtonTypes.processImport]: ImportButton,
-    [BuiltinButtonTypes.processJSON]: JSONButton,
+    [BuiltinButtonTypes.processExport]: ExportButton,
     [BuiltinButtonTypes.processPDF]: PDFButton,
     [BuiltinButtonTypes.processArchiveToggle]: ArchiveToggleButton,
     [BuiltinButtonTypes.processArchive]: ArchiveButton,

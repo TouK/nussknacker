@@ -1,21 +1,20 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.definition.component.FragmentSpecificData
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{
-  ComponentUiConfigMode,
   createUIParameter,
-  createUIScenarioPropertyConfig
+  createUIScenarioPropertyConfig,
+  ComponentUiConfigMode
 }
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
@@ -32,11 +31,10 @@ class DefinitionsService(
     staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository,
-    fragmentPropertiesDocsUrl: Option[String]
+    fragmentPropertiesDocsUrl: Option[String],
 )(implicit ec: ExecutionContext) {
 
   def prepareUIDefinitions(
@@ -106,7 +104,13 @@ class DefinitionsService(
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
-      classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
+      classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList
+        .map(_.clazzName)
+        .filter {
+          case t: TypedClass if t.klass.isArray => false
+          case _                                => true
+        }
+        .sortBy(_.display.toLowerCase),
       scenarioProperties = {
         if (forFragment) {
           createUIProperties(FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, fragmentPropertiesDocsUrl)
@@ -153,7 +157,6 @@ object DefinitionsService {
       processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
       processingTypeData.deploymentData.scenarioPropertiesConfig,
       processingTypeData.deploymentData.fragmentPropertiesConfig,
-      processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository,

@@ -13,13 +13,13 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
@@ -144,6 +144,9 @@ class TestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generate/100")
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
+        .equalsPlainBody(
+          "Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+        )
     }
   }
 

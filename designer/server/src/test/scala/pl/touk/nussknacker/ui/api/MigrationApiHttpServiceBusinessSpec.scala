@@ -10,16 +10,16 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
-import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails,
   StandardPatientScalaFutures
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
+import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)

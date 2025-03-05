@@ -45,6 +45,7 @@ object sampleTransformers {
               new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
               new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
               new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+              new LabeledExpression(label = "Median", expression = "#AGG.median"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -53,7 +54,7 @@ object sampleTransformers {
           defaultMode = DualEditorMode.SIMPLE
         ) aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-        @ParamName("windowLength") length: java.time.Duration,
+        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
         @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId): ContextTransformation = {
@@ -102,6 +103,7 @@ object sampleTransformers {
               new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
               new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
               new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+              new LabeledExpression(label = "Median", expression = "#AGG.median"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -110,7 +112,7 @@ object sampleTransformers {
           defaultMode = DualEditorMode.SIMPLE
         ) aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-        @ParamName("windowLength") length: java.time.Duration,
+        @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
         @ParamName("emitWhen") trigger: TumblingWindowTrigger,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId): ContextTransformation = {
@@ -163,6 +165,7 @@ object sampleTransformers {
               new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
               new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
               new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+              new LabeledExpression(label = "Median", expression = "#AGG.median"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -171,8 +174,10 @@ object sampleTransformers {
           defaultMode = DualEditorMode.SIMPLE
         ) aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-        @ParamName("endSessionCondition") endSessionCondition: LazyParameter[java.lang.Boolean],
-        @ParamName("sessionTimeout") sessionTimeout: java.time.Duration,
+        @ParamName("endSessionCondition") @DefaultValue("false") endSessionCondition: LazyParameter[java.lang.Boolean],
+        @ParamName("sessionTimeout") @DefaultValue(
+          "T(java.time.Duration).parse('PT1H')"
+        ) sessionTimeout: java.time.Duration,
         @ParamName("emitWhen") trigger: SessionWindowTrigger,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId): ContextTransformation = {

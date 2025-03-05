@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.api.dict.embedded
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictEntry, DictQueryService, DictRegistry}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.{
   DictEntryWithKeyNotExists,
   DictEntryWithLabelNotExists,
   DictNotDeclared
 }
-import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictEntry, DictQueryService, DictRegistry}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -83,9 +83,23 @@ abstract class EmbeddedDictQueryService extends DictQueryService {
         handleNotEmbeddedQueryEntriesByLabel(dictId, notEmbeddedDefinition, labelPattern)
     }
 
+  override def queryEntryByKey(dictId: String, key: String)(
+      implicit ec: ExecutionContext
+  ): Validated[DictRegistry.DictNotDeclared, Future[Option[DictEntry]]] =
+    dictRegistry.labels(dictId).map {
+      case Right(embeddedLabels) =>
+        Future.successful(embeddedLabels.find(_.key == key))
+      case Left(notEmbeddedDefinition) =>
+        handleNotEmbeddedQueryEntriesByKey(dictId, notEmbeddedDefinition, key)
+    }
+
   protected def handleNotEmbeddedQueryEntriesByLabel(dictId: String, definition: DictDefinition, labelPattern: String)(
       implicit ec: ExecutionContext
   ): Future[List[DictEntry]]
+
+  protected def handleNotEmbeddedQueryEntriesByKey(dictId: String, definition: DictDefinition, key: String)(
+      implicit ec: ExecutionContext
+  ): Future[Option[DictEntry]]
 
   override def close(): Unit = {}
 

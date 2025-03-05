@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -9,15 +10,14 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstants}
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.{
   KafkaConfig,
   PreparedKafkaTopic,
   RecordFormatter,
   RecordFormatterBaseTestDataGenerator
 }
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 

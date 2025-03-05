@@ -213,6 +213,25 @@ class NodeUtils {
             }
         }
     };
+
+    // We can recognize that a node is part of a referenced fragment by making sure that:
+    // 1. The nodeId is not present in the scenarioGraph
+    // 2. There is a fragment node in the scenarioGraph whose name is part of the nodeId
+    isFragmentNodeReference = (nodeId: NodeId, scenarioGraph: ScenarioGraph): boolean => {
+        const isNodePresentInScenarioGraph = !!this.getNodeById(nodeId, scenarioGraph);
+        return !isNodePresentInScenarioGraph && scenarioGraph.nodes.some((n) => nodeId.startsWith(n.id));
+    };
+
+    getDetailsFromFragmentNode = (nodeId: NodeId, scenarioGraph: ScenarioGraph): { fragmentId: string; fragmentNodeId: string } | null => {
+        if (this.isFragmentNodeReference(nodeId, scenarioGraph)) {
+            const fragment = scenarioGraph.nodes.find((n) => nodeId.startsWith(n.id));
+            return {
+                fragmentId: fragment.ref.id,
+                fragmentNodeId: nodeId.replace(`${fragment.id}-`, ""),
+            };
+        }
+        return null;
+    };
 }
 
 //TODO this pattern is not necessary, just export every public function as in actions.js

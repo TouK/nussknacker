@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   InvalidComment,
   NoActivity,
@@ -9,7 +10,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   NoComment,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import sttp.tapir.EndpointIO.Example
 
 import java.time.{Instant, ZoneId}

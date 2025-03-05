@@ -5,13 +5,13 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
@@ -131,7 +131,7 @@ class DynamicNodeValidator(
               processRemainingTransformationSteps(parametersCombined, state, newErrorsCombined, newNodeParameters)
           }
         case Failure(ex) =>
-          logger.debug(
+          logger.warn(
             s"Exception thrown during handling of transformation step: $transformationStep. " +
               s"Will be returned fallback results with fallback context and errors collected during parameters validation.",
             ex

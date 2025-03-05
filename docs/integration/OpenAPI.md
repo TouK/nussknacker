@@ -29,6 +29,8 @@ Table below describes data types that OpenAPI integration handles:
 | string       |                | String              |
 | string       | date-time      | LocalDateTime       |
 | integer      |                | Long                |
+| integer      | int32          | Integer             |
+| integer      | int64          | Long                |
 | number       |                | BigDecimal          |
 | number       | double         | Double              |
 | number       | float          | Double              |

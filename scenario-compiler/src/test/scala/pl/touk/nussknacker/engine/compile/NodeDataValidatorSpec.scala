@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ParameterAdditionalUIConfig
 }
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -29,13 +29,13 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
   ValidationNotPerformed,
   ValidationPerformed,
   ValidationResponse
 }
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
@@ -43,8 +43,8 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParamet
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -1070,7 +1070,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
-  test("shouldn't allow expressions that reference unknown variables in FragmentInputDefinition") {
+  test("should allow expressions that reference unknown variables in FragmentInputDefinition") {
     val nodeId: String               = "in"
     val invalidReferencingExpression = "#unknownVar"
 
@@ -1094,8 +1094,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
-      error.message should include("Unresolved reference 'unknownVar'")
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
     }
   }
 

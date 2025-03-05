@@ -3,14 +3,14 @@ package pl.touk.nussknacker.engine.definition.component.bultin
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.BuiltInComponentId
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   BuiltInComponentSpecificData,
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
   ComponentStaticDefinition
 }
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfig) {

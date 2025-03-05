@@ -6,18 +6,18 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{
+  createDeserializer,
   SampleKey,
-  SampleValue,
-  createDeserializer
+  SampleValue
 }
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.{
   KafkaConsumerRecordSourceHelper,
   ResultsHolders
 }
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{ExtractAndTransformTimestamp, SinkForStrings}
 import pl.touk.nussknacker.engine.process.helpers.{SinkForType, TestResultsHolder}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{ExtractAndTransformTimestamp, SinkForStrings}
 
 import scala.reflect.ClassTag
 

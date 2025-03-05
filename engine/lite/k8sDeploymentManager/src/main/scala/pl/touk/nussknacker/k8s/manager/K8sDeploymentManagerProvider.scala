@@ -2,11 +2,11 @@ package pl.touk.nussknacker.k8s.manager
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManagerProvider
 
@@ -30,7 +30,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     Validated.valid(
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
         new K8sDeploymentManager(
-          modelData.asInvokableModelData,
+          modelData,
           K8sDeploymentManagerConfig.parse(config),
           config,
           dependencies

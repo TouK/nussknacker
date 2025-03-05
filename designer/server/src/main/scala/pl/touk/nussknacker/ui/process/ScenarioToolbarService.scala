@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.UriUtils
+import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.ToolbarButtonType
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
-import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 trait ScenarioToolbarService {

@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
-import java.time.temporal.ChronoUnit
-import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
 import com.cronutils.model.Cron
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.clazz.JavaSampleEnum
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
+import java.time.temporal.ChronoUnit
 import scala.reflect.ClassTag
 
 class EditorExtractorTest extends AnyFunSuite with Matchers {

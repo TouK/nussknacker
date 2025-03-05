@@ -39,6 +39,13 @@ export type FeaturesSettings = {
     redirectAfterArchive: boolean;
     usageStatisticsReports: UsageStatisticsReports;
     surveySettings: SurveySettings;
+    stickyNotesSettings: StickyNotesSettings;
+};
+
+export type StickyNotesSettings = {
+    maxContentLength: number;
+    maxNotesCount: number;
+    enabled: boolean;
 };
 
 export type TestDataSettings = {

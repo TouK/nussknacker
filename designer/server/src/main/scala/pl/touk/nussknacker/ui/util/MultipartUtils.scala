@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.util
 
-import akka.http.scaladsl.model.Multipart.FormData
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
+import akka.http.scaladsl.model.Multipart.FormData
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString

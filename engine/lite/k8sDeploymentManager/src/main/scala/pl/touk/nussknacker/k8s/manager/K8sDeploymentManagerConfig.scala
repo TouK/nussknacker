@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.config.{Config, ConfigFactory}
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig
 import pl.touk.nussknacker.k8s.manager.ingress.IngressConfig
-import K8sScalingConfig.valueReader
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+
 import scala.concurrent.duration._
+
+import K8sScalingConfig.valueReader
 
 object K8sDeploymentManagerConfig {
   def parse(config: Config): K8sDeploymentManagerConfig = config.rootAs[K8sDeploymentManagerConfig]

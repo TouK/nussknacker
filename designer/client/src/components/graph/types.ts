@@ -7,10 +7,14 @@ import {
     nodesConnected,
     nodesDisconnected,
     resetSelection,
+    stickyNoteAdded,
+    stickyNoteDeleted,
+    stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
 import { Capabilities } from "../../reducers/selectors/other";
 import { Scenario } from "../Process/types";
+import { StickyNote } from "../../common/StickyNote";
 
 type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
@@ -18,9 +22,13 @@ type ScenarioGraphProps = {
     layoutChanged: typeof layoutChanged;
     injectNode: typeof injectNode;
     nodeAdded: typeof nodeAdded;
+    stickyNoteAdded: typeof stickyNoteAdded;
+    stickyNoteUpdated: typeof stickyNoteUpdated;
+    stickyNoteDeleted: typeof stickyNoteDeleted;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 
+    stickyNotes: StickyNote[];
     scenario: Scenario;
     divId: string;
     nodeIdPrefixForFragmentTests?: string;
@@ -38,6 +46,7 @@ type ScenarioGraphProps = {
 
 type FragmentGraphProps = {
     scenario: Scenario;
+    stickyNotes: StickyNote[];
     divId: string;
     nodeIdPrefixForFragmentTests: string;
     processCounts: ProcessCounts;
@@ -65,6 +74,9 @@ export enum Events {
     CELL_MOUSEENTER = "cell:mouseenter",
     CELL_MOUSELEAVE = "cell:mouseleave",
     CELL_MOVED = "cellCustom:moved",
+    CELL_RESIZED = "cellCustom:resized",
+    CELL_CONTENT_UPDATED = "cellCustom:contentUpdated",
+    CELL_DELETED = "cellCustom:deleted",
     BLANK_POINTERCLICK = "blank:pointerclick",
     BLANK_POINTERDOWN = "blank:pointerdown",
     BLANK_POINTERUP = "blank:pointerup",

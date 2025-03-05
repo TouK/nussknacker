@@ -6,6 +6,11 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -13,11 +18,6 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  RestAssuredVerboseLoggingIfValidationFails
-}
 
 import java.util.UUID
 

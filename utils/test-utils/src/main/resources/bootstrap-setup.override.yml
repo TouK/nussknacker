@@ -1,7 +1,7 @@
 services:
 
   bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:0.3.0
+    image: touk/nussknacker-example-scenarios-library:0.4.1
     depends_on:
       nginx:
         condition: service_healthy
@@ -22,3 +22,7 @@ services:
         limits:
           memory: 256M
           cpus: '0.5'
+
+  designer:
+    expose:
+      - 8181

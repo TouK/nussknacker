@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.{
   GenericFunctionTypingError,
   GenericType,
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.generics.{
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.{
   LargeNumberOperatorTypingFunction,
@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.util.functions.NumericUtils.{
   ToNumberTypingFunction
 }
 
+import scala.collection.compat.immutable.LazyList
 import scala.util.{Success, Try}
 
 object numeric extends NumericUtils
@@ -63,7 +64,7 @@ trait NumericUtils extends MathUtils with HideToString {
     case s: CharSequence =>
       val ss = s.toString
       // we pick the narrowest type as possible to reduce the amount of memory and computations overheads
-      val tries: List[Try[java.lang.Number]] = List(
+      val tries: LazyList[Try[java.lang.Number]] = LazyList(
         Try(java.lang.Integer.parseInt(ss)),
         Try(java.lang.Long.parseLong(ss)),
         Try(java.lang.Double.parseDouble(ss)),

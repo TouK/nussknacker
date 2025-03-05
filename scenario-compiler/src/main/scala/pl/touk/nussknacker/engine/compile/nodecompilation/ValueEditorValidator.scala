@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Valid, invalidNel}
+import cats.data.Validated.{invalidNel, Valid}
 import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError

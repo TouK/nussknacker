@@ -10,13 +10,13 @@ import akka.http.scaladsl.server.{
   Route
 }
 import akka.http.scaladsl.server.Directives.{complete, handleRejections, optionalHeaderValueByName, provide, reject}
+import pl.touk.nussknacker.security.{AuthCredentials, ImpersonatedUserIdentity}
 import pl.touk.nussknacker.security.AuthCredentials.{
   ImpersonatedAuthCredentials,
   NoCredentialsProvided,
   PassedAuthCredentials
 }
-import pl.touk.nussknacker.security.{AuthCredentials, ImpersonatedUserIdentity}
-import pl.touk.nussknacker.ui.security.api.AuthManager.{ImpersonationConsideringInputEndpoint, impersonateHeaderName}
+import pl.touk.nussknacker.ui.security.api.AuthManager.{impersonateHeaderName, ImpersonationConsideringInputEndpoint}
 import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 import pl.touk.nussknacker.ui.security.api.SecurityError._
 import sttp.tapir._

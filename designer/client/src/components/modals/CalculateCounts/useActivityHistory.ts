@@ -62,7 +62,7 @@ export function useActivityHistory(processName: string, processingMode: string):
                 return res;
             })
             .then(setActivities);
-    }, [t, processName]);
+    }, [t, processName, processingMode]);
 
     return activities;
 }

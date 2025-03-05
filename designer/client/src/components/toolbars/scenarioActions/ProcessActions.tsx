@@ -15,18 +15,18 @@ const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPane
     const scenario = useSelector((state: RootState) => getScenario(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
 
-    const description = ProcessStateUtils.getStateDescription(scenario, processState);
-
     // TODO: better styling of process info toolbar in case of many custom actions
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.scenarioActions.title", "Scenario actions")}>
-            <Box display={"flex"} px={2} pt={2} pb={1.5}>
-                <ProcessStateIcon scenario={scenario} processState={processState} />
-                <Typography component={"div"} variant={"body2"} pl={1}>
-                    {description}
-                </Typography>
-            </Box>
+            {!scenario.isFragment && (
+                <Box display={"flex"} px={2} pt={2} pb={1.5}>
+                    <ProcessStateIcon scenario={scenario} processState={processState} />
+                    <Typography component={"div"} variant={"body2"} pl={1}>
+                        {ProcessStateUtils.getStateDescription(scenario, processState)}
+                    </Typography>
+                </Box>
+            )}
             <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>
         </ToolbarWrapper>
     );

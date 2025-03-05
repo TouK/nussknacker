@@ -8,20 +8,20 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.test.config.{
-  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
-  WithAccessControlCheckingDesignerConfig
-}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 
 class ComponentApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -127,8 +127,7 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "modifiedAt": "${regexes.zuluDateRegex}",
                  |  "modifiedBy": "admin",
                  |  "createdAt": "${regexes.zuluDateRegex}",
-                 |  "createdBy": "admin",
-                 |  "lastAction": null
+                 |  "createdBy": "admin"
                  |}]""".stripMargin
             )
           )
@@ -187,8 +186,7 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "modifiedAt": "${regexes.zuluDateRegex}",
                  |  "modifiedBy": "admin",
                  |  "createdAt": "${regexes.zuluDateRegex}",
-                 |  "createdBy": "admin",
-                 |  "lastAction": null
+                 |  "createdBy": "admin"
                  |}]""".stripMargin
             )
           )
@@ -241,6 +239,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-service-echoenumservice",
     "streaming1-service-enricher",
     "streaming1-service-enrichernullresult",
+    "streaming1-service-env",
     "streaming1-service-listreturnobjectservice",
     "streaming1-service-log",
     "streaming1-service-meetingservice",
@@ -262,6 +261,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-sink-monitor",
     "streaming1-sink-sendsms",
     "streaming1-source-boundedsource",
+    "streaming1-source-boundedsourcewithoffset",
     "streaming1-source-classinstancesource",
     "streaming1-source-communicationsource",
     "streaming1-source-csv-source",
@@ -306,6 +306,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-service-echoenumservice",
     "streaming2-service-enricher",
     "streaming2-service-enrichernullresult",
+    "streaming2-service-env",
     "streaming2-service-listreturnobjectservice",
     "streaming2-service-log",
     "streaming2-service-meetingservice",
@@ -327,6 +328,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-sink-monitor",
     "streaming2-sink-sendsms",
     "streaming2-source-boundedsource",
+    "streaming2-source-boundedsourcewithoffset",
     "streaming2-source-classinstancesource",
     "streaming2-source-communicationsource",
     "streaming2-source-csv-source",
@@ -370,6 +372,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-service-echoenumservice",
     "streaming1-service-enricher",
     "streaming1-service-enrichernullresult",
+    "streaming1-service-env",
     "streaming1-service-listreturnobjectservice",
     "streaming1-service-log",
     "streaming1-service-meetingservice",
@@ -391,6 +394,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-sink-monitor",
     "streaming1-sink-sendsms",
     "streaming1-source-boundedsource",
+    "streaming1-source-boundedsourcewithoffset",
     "streaming1-source-classinstancesource",
     "streaming1-source-communicationsource",
     "streaming1-source-csv-source",
@@ -427,6 +431,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-service-echoenumservice",
     "streaming2-service-enricher",
     "streaming2-service-enrichernullresult",
+    "streaming2-service-env",
     "streaming2-service-listreturnobjectservice",
     "streaming2-service-log",
     "streaming2-service-meetingservice",
@@ -448,6 +453,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-sink-monitor",
     "streaming2-sink-sendsms",
     "streaming2-source-boundedsource",
+    "streaming2-source-boundedsourcewithoffset",
     "streaming2-source-classinstancesource",
     "streaming2-source-communicationsource",
     "streaming2-source-csv-source",

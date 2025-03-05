@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.util
 
 import better.files.File
+
 import java.nio.file.Path
 
 object Project {

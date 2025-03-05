@@ -2,9 +2,9 @@ package pl.touk.nussknacker.openapi.extractor
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerObject, SwaggerTyped}
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerObject, SwaggerTyped}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.openapi._
 

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
@@ -24,13 +24,13 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.containers.FileSystemBind
 
 import java.io.File
-import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
+import java.nio.file.attribute.PosixFilePermissions
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
     with Suite
-    with LazyLogging
+    with StrictLogging
     with Matchers
     with Eventually
     with LoneElement

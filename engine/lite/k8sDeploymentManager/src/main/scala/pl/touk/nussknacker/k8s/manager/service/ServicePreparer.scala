@@ -6,8 +6,8 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import pl.touk.nussknacker.k8s.manager.K8sUtils.sanitizeObjectName
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.determineSlug
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer.{runtimePodTargetPort, serviceName}
-import skuber.Service.Port
 import skuber.{ObjectMeta, Service}
+import skuber.Service.Port
 
 class ServicePreparer(config: K8sDeploymentManagerConfig) {
 

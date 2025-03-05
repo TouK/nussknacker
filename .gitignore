@@ -1,4 +1,5 @@
-.idea/
+.idea/*
+!.idea/icon.svg
 target/
 *.iml
 .*orig

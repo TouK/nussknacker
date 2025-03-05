@@ -225,7 +225,7 @@ object ScenarioStatistics {
       LiteK8sDMCount       -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
       LiteEmbeddedDMCount  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
       UnknownDMCount       -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
-      ActiveScenarioCount  -> inputData.status.contains(SimpleStateStatus.Running),
+      ActiveScenarioCount  -> inputData.status.contains(SimpleStateStatus.Running.name),
     ).map { case (k, v) => (k.toString, if (v) 1 else 0) }
   }
 

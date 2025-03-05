@@ -9,7 +9,7 @@ import scala.io.Source
 // The purpose of this listing is to be possible to dynamically (without changing application image)
 // add some java scripts to our main.html. Example usage:
 //
-// docker run -it --network host -e CLASSPATH="/opt/nussknacker/lib/*:/opt/nussknacker/managers/*:/opt/nussknacker/extra-resources"
+// docker run -it --network host -e CLASSPATH="/opt/nussknacker/lib/*:/opt/nussknacker/extra-resources"
 // -v ./extrajs:/opt/nussknacker/extra-resources/web/static/extra touk/nussknacker:latest
 //
 // After this, all *.js in the extrajs directory will be injected into main.html in the lexicographic order. Notice that if you want to locally

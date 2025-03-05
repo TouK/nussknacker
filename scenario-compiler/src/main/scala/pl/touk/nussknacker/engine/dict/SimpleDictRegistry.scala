@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.dict
 
 import cats.data.Validated
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictEntryWithKeyNotExists
 import pl.touk.nussknacker.engine.api.dict._
+import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictEntryWithKeyNotExists
 import pl.touk.nussknacker.engine.api.dict.embedded.{EmbeddedDictQueryService, EmbeddedDictRegistry}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,6 +37,13 @@ class SimpleDictQueryService(protected val dictRegistry: EmbeddedDictRegistry, p
       definition: DictDefinition,
       labelPattern: String
   )(implicit ec: ExecutionContext): Future[List[DictEntry]] =
+    Future.failed(new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId"))
+
+  override protected def handleNotEmbeddedQueryEntriesByKey(
+      dictId: String,
+      definition: DictDefinition,
+      key: String
+  )(implicit ec: ExecutionContext): Future[Option[DictEntry]] =
     Future.failed(new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId"))
 
 }

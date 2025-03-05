@@ -2,22 +2,28 @@ package pl.touk.nussknacker.test.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNoteAddRequest, StickyNoteCorrelationId}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
+  CreateProcessAction,
+  ProcessUpdated,
+  UpdateProcessAction
+}
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.stickynotes.{DbStickyNotesRepository, StickyNotesRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
@@ -33,12 +39,10 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(
-    dbRef,
-    mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
-  )
+  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(dbRef)
 
   private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
+  private val stickyNotesRepository: StickyNotesRepository       = DbStickyNotesRepository.create(dbRef, clock)
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
@@ -75,10 +79,24 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     saveAndGetId(scenario, category, isFragment).futureValue
   }
 
+  def updateScenario(
+      scenarioName: ProcessName,
+      newScenario: CanonicalProcess
+  ): ProcessUpdated = {
+    updateAndGetScenarioVersions(scenarioName, newScenario).futureValue
+  }
+
+  def addStickyNote(
+      scenarioName: ProcessName,
+      request: StickyNoteAddRequest
+  ): StickyNoteCorrelationId = {
+    addStickyNoteForScenario(scenarioName, request).futureValue
+  }
+
   def createDeployedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -89,7 +107,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- Future(createSavedScenario(scenario, category, isFragment))
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -100,7 +118,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
       _  <- prepareCancel(id)
     } yield id).futureValue
   }
@@ -112,7 +130,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
@@ -130,11 +148,11 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     dbioRunner.runInTransaction(
       DBIOAction.seq(
         writeScenarioRepository.archive(processId = idWithName, isArchived = true),
-        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None, None)
+        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None)
       )
     )
 
-  private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
+  private def prepareDeploy(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Deploy
     val comment    = Comment.from("Deploy comment")
     dbioRunner.run(
@@ -143,7 +161,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
         VersionId.initialVersionId,
         actionName,
         comment,
-        Some(processingType)
       )
     )
   }
@@ -152,7 +169,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     val actionName = ScenarioActionName.Cancel
     val comment    = Comment.from("Cancel comment")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment)
     )
   }
 
@@ -187,6 +204,44 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       _  <- dbioRunner.runInSerializableTransactionWithRetry(writeScenarioRepository.saveNewProcess(action))
       id <- futureFetchingScenarioRepository.fetchProcessId(scenarioName).map(_.get)
     } yield id
+  }
+
+  private def updateAndGetScenarioVersions(
+      scenarioName: ProcessName,
+      newScenario: CanonicalProcess
+  ): Future[ProcessUpdated] = {
+    for {
+      scenarioId <- futureFetchingScenarioRepository.fetchProcessId(scenarioName).map(_.get)
+      action = UpdateProcessAction(
+        scenarioId,
+        newScenario,
+        comment = None,
+        labels = List.empty,
+        increaseVersionWhenJsonNotChanged = true,
+        forwardedUserName = None
+      )
+      processUpdated <- dbioRunner.runInTransaction(writeScenarioRepository.updateProcess(action))
+    } yield processUpdated
+  }
+
+  private def addStickyNoteForScenario(
+      scenarioName: ProcessName,
+      request: StickyNoteAddRequest
+  ): Future[StickyNoteCorrelationId] = {
+    for {
+      scenarioId <- futureFetchingScenarioRepository.fetchProcessId(scenarioName).map(_.get)
+      noteCorrelationId <- dbioRunner.runInTransaction(
+        stickyNotesRepository.addStickyNote(
+          request.content,
+          request.layoutData,
+          request.color,
+          request.dimensions,
+          request.targetEdge,
+          scenarioId,
+          request.scenarioVersionId
+        )
+      )
+    } yield noteCorrelationId
   }
 
   private def mapProcessingTypeDataProvider[T](value: T) = {

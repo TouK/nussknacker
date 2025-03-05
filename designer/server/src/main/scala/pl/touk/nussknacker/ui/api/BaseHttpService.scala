@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
-import pl.touk.nussknacker.ui.security.api.SecurityError.InsufficientPermission
 import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.api.SecurityError.InsufficientPermission
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
 import java.util.concurrent.atomic.AtomicReference

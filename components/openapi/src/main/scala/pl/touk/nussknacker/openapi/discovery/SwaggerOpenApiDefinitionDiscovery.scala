@@ -6,16 +6,16 @@ import org.apache.commons.io.FileUtils
 import org.asynchttpclient.DefaultAsyncHttpClient
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.http.backend.HttpClientConfig
-import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
+import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
+import sttp.client3.{basicRequest, SttpBackend}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client3.{SttpBackend, basicRequest}
 import sttp.model.Uri
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.DurationInt
 
 object SwaggerOpenApiDefinitionDiscovery
     extends SwaggerOpenApiDefinitionDiscovery()(

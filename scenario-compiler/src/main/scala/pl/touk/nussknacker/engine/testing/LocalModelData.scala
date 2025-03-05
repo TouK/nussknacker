@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessConfigCreator,
   ProcessObjectDependencies
 }
+import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{
@@ -39,7 +38,7 @@ object LocalModelData {
       configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator,
       category: Option[String] = None,
       migrations: ProcessMigrations = ProcessMigrations.empty,
-      modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader(_ => true),
+      modelConfigLoader: ModelConfigLoader = DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,

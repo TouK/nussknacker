@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.streaming.api.datastream.DataStream
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 object FlinkCustomStreamTransformation {
 

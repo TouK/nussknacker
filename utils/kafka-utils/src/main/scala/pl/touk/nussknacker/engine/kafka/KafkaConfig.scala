@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
+import enumeratum.{Enum, EnumEntry}
 import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
 import pl.touk.nussknacker.engine.kafka.KafkaConfig._
 
+import scala.collection.immutable
 import scala.concurrent.duration._
 
 case class SchemaRegistryClientKafkaConfig(
@@ -30,7 +32,8 @@ case class KafkaConfig(
     kafkaAddress: Option[String] = None,
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
-    showTopicsWithoutSchema: Boolean = true
+    showTopicsWithoutSchema: Boolean = true,
+    topicsWithoutSchemaFetchTimeout: FiniteDuration = 1 second
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -39,8 +42,8 @@ case class KafkaConfig(
     avroAsJsonSerialization
   )
 
-  def forceLatestRead: Option[Boolean] =
-    kafkaEspProperties.flatMap(_.get(DefaultForceLatestReadPath)).map(_.toBoolean)
+  def defaultOffsetResetStrategy: Option[OffsetResetStrategy] =
+    kafkaEspProperties.flatMap(_.get(DefaultOffsetResetStrategyPath)).map(OffsetResetStrategy.withName)
 
   def defaultMaxOutOfOrdernessMillis: java.time.Duration =
     kafkaEspProperties
@@ -77,7 +80,7 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.EnumerationReader._
 
   val DefaultGlobalKafkaConfigPath                              = "kafka"
-  val DefaultForceLatestReadPath                                = "forceLatestRead"
+  val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 
@@ -123,4 +126,14 @@ object SinkDeliveryGuarantee extends Enumeration {
   val ExactlyOnce: SinkDeliveryGuarantee.Value = Value("EXACTLY_ONCE")
   val AtLeastOnce: SinkDeliveryGuarantee.Value = Value("AT_LEAST_ONCE")
   val None: SinkDeliveryGuarantee.Value        = Value("NONE")
+}
+
+sealed trait OffsetResetStrategy extends EnumEntry
+
+object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
+  override def values: immutable.IndexedSeq[OffsetResetStrategy] = findValues
+
+  case object None       extends OffsetResetStrategy
+  case object ToEarliest extends OffsetResetStrategy
+  case object ToLatest   extends OffsetResetStrategy
 }

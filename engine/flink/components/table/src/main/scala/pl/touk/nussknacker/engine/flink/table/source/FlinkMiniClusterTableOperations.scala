@@ -6,8 +6,8 @@ import io.circe.parser.parse
 import org.apache.commons.io.FileUtils
 import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptions}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api._
+import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.ObjectIdentifier
 import org.apache.flink.types.Row

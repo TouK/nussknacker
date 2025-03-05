@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.schemedkafka.{
   TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
   TopicsWithExistingSubjectSelectionStrategy
 }
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 
 import java.util.regex.Pattern
 

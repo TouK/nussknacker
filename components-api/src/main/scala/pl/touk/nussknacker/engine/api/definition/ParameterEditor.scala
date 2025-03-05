@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
@@ -77,6 +77,9 @@ case object CronParameterEditor extends SimpleParameterEditor
     extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesWithIconParameterEditor(possibleValues: List[FixedExpressionValueWithIcon])
+    extends SimpleParameterEditor
+
+@JsonCodec case class FixedValuesWithRadioParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
 
 // TODO: currently only supports String/Boolean/Long dictionaries (same set of supported types as AdditionalDataValue)

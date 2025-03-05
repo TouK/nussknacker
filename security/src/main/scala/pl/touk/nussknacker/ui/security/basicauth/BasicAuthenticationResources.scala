@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.security.basicauth
 
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources.defaultRealm
 import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources.defaultRealm
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
 

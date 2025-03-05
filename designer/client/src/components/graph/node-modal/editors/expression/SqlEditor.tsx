@@ -47,24 +47,25 @@ function useAliasUsageHighlight(token = "alias") {
         [session, token],
     );
 
-    const toggleClassname = useCallback(
-        debounce(
-            (classname: string, enabled: boolean): void => {
-                const el = ref.current?.refEditor;
+    const toggleClassname = useMemo(
+        () =>
+            debounce(
+                (classname: string, enabled: boolean): void => {
+                    const el = ref.current?.refEditor;
 
-                if (el) {
-                    if (!enabled) {
-                        el.className = el.className.replace(classname, "");
-                    }
+                    if (el) {
+                        if (!enabled) {
+                            el.className = el.className.replace(classname, "");
+                        }
 
-                    if (!el.className.includes(classname)) {
-                        el.className = cx(el.className, { [classname]: enabled });
+                        if (!el.className.includes(classname)) {
+                            el.className = cx(el.className, { [classname]: enabled });
+                        }
                     }
-                }
-            },
-            1000,
-            { trailing: true, leading: true },
-        ),
+                },
+                1000,
+                { trailing: true, leading: true },
+            ),
         [],
     );
 

@@ -7,9 +7,10 @@ import java.net.URI
 
 object DummyAuthenticationConfiguration {
 
-  import AuthenticationConfiguration._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+
+  import AuthenticationConfiguration._
 
   def create(config: Config): DummyAuthenticationConfiguration =
     config.as[DummyAuthenticationConfiguration](authenticationConfigPath)

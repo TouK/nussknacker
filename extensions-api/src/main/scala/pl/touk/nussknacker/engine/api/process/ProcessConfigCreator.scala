@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 
 /**
   * There Nussknacker fetches information about user defined model.
@@ -22,8 +23,7 @@ trait ProcessConfigCreator extends Serializable {
 
   def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig
 
-  // TODO: Rename to modelInfo or similar, as it can contain any information related to model, not only build info
-  def buildInfo(): Map[String, String]
+  def modelInfo(): ModelInfo
 
   def asyncExecutionContextPreparer(
       modelDependencies: ProcessObjectDependencies

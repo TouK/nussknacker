@@ -4,9 +4,9 @@ import io.circe.Json
 import io.circe.Json._
 import io.circe.generic.JsonCodec
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 

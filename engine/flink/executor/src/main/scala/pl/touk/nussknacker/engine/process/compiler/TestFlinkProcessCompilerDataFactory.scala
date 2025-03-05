@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessListener}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
@@ -34,9 +35,9 @@ object TestFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.namingStrategy,
-      ComponentUseCase.TestRuntime,
-      modelData.additionalConfigsFromProvider
+      RuntimeMode.Test,
+      modelData.additionalConfigsFromProvider,
+      NodesDeploymentData.empty,
     ) {
 
       override protected def adjustListeners(

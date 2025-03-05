@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{SourceNode, SubsequentNode}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 
 class ProcessMetaDataBuilder private[build] (metaData: MetaData) {
 

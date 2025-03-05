@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 import io.confluent.kafka.serializers.NonRecordContainer
-import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.generic.{GenericContainer, GenericData}
-import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
+import org.apache.avro.generic.{GenericContainer, GenericData}
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
+import org.apache.avro.util.Utf8
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
+import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.time.chrono.ChronoZonedDateTime
 import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
+import java.time.chrono.ChronoZonedDateTime
 import java.util
 import java.util.UUID
 import scala.collection.compat.immutable.LazyList

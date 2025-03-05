@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.security.api
 
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
-import GlobalPermission.GlobalPermission
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
+
+import GlobalPermission.GlobalPermission
 
 class RulesSetSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
   val emptyRule = ConfigRule(role = "")

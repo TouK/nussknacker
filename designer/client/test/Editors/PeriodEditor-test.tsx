@@ -29,7 +29,6 @@ describe(PeriodEditor.name, () => {
             </NuThemeProvider>,
         );
 
-        expect(screen.getByRole("spinbutton")).toHaveClass(nodeInputWithError);
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });
 });

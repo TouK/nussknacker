@@ -4,14 +4,14 @@ import cats.Applicative
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
   NodesDeploymentData
 }
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
-import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{
   AdditionalModelConfigs,
   DeploymentData,

@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.kafka.sink
 
 import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.{
   FixedKafkaSerializationSchemaFactory,
   KafkaSerializationSchema,
   KafkaSerializationSchemaFactory
 }
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, serialization}
 
 import javax.validation.constraints.NotBlank
 

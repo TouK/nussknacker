@@ -4,7 +4,7 @@ import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
 
 import scala.jdk.CollectionConverters._
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 object ReflectionBasedUtils {
 

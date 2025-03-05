@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.benchmarks.e2e
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.test.MiscUtils._
 import pl.touk.nussknacker.test.installationexample.{
   DockerBasedInstallationExampleClient,
   DockerBasedInstallationExampleNuEnvironment
 }
-import pl.touk.nussknacker.test.MiscUtils._
 
 // Before running benchmarks in this module, a fresh docker image should be built from sources and placed in the local
 // registry. If you run tests based on this trait in Intellij Idea and the images is not built, you can do it manually:

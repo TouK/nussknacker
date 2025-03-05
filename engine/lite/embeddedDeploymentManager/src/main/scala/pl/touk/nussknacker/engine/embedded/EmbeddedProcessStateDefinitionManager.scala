@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.embedded
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefinitionManager, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
 // Here we use default stateDefinitions set from SimpleProcessStateDefinitionManager,
 // but we want to override the behaviour of default "FAILED" state, without introducing another "failed" state:
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefiniti
 object EmbeddedProcessStateDefinitionManager
     extends OverridingProcessStateDefinitionManager(
       delegate = SimpleProcessStateDefinitionManager,
-      statusActionsPF = { case ProcessStatus(SimpleStateStatus.Restarting, _, _, _) =>
-        List(ScenarioActionName.Cancel)
+      statusActionsPF = { case ScenarioStatusWithScenarioContext(SimpleStateStatus.Restarting, _, _) =>
+        Set(ScenarioActionName.Cancel)
       }
     )

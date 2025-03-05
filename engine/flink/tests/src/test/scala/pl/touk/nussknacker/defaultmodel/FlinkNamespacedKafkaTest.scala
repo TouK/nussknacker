@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.engine.api.process.TopicName

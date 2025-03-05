@@ -75,8 +75,6 @@ describe(CompareVersionsDialog.name, () => {
                 processVersionId: 1,
                 createDate: "2024-05-31",
                 user: "test",
-                modelVersion: 1,
-                actions: [],
             },
         ];
 
@@ -120,8 +118,6 @@ describe(CompareVersionsDialog.name, () => {
                 processVersionId: 1,
                 createDate: "2024-05-31",
                 user: "test",
-                modelVersion: 1,
-                actions: [],
             },
         ];
 

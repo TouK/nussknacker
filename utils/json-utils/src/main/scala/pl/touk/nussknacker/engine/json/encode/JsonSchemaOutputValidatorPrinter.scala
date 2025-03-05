@@ -9,8 +9,9 @@ import scala.jdk.CollectionConverters._
 
 class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
 
-  import OutputValidatorErrorsMessageFormatter._
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
+
+  import OutputValidatorErrorsMessageFormatter._
 
   private implicit class ListTypesPrinter(list: List[String]) {
     def printType: String = list.mkString(TypesSeparator)

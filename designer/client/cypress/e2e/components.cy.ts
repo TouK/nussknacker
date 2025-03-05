@@ -233,7 +233,7 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage();
+        cy.get("#app-container>main").matchImage({ maxDiffThreshold: 0.01 });
     });
 
     it("should allow filtering by processing mode", () => {

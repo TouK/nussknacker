@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.util.functions
 
 import com.github.ghik.silencer.silent
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.json.FromJsonDecoder
-import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 

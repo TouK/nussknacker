@@ -17,16 +17,16 @@ import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
-  FetchAllWithUsages,
   FetchAllWithoutUsages,
-  FetchNonFragmentsWithUsages,
-  FetchNonFragmentsWithoutUsages
+  FetchAllWithUsages,
+  FetchNonFragmentsWithoutUsages,
+  FetchNonFragmentsWithUsages
 }
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,8 +63,7 @@ object DefaultComponentService {
       modifiedAt = process.modifiedAt,
       modifiedBy = process.modifiedBy,
       createdAt = process.createdAt,
-      createdBy = process.createdBy,
-      lastAction = process.lastAction
+      createdBy = process.createdBy
     )
 
 }
@@ -155,7 +154,7 @@ class DefaultComponentService(
   private def createComponents(
       componentsDefinition: List[ComponentDefinitionWithImplementation],
       category: String,
-  ): List[ComponentListElement] = {
+  )(implicit loggedUser: LoggedUser): List[ComponentListElement] = {
     componentsDefinition
       .map { definition =>
         val designerWideId = definition.designerWideId
@@ -212,9 +211,9 @@ class DefaultComponentService(
   private def createComponentLinks(
       designerWideId: DesignerWideComponentId,
       component: ComponentDefinitionWithImplementation
-  ): List[ComponentLink] = {
+  )(implicit loggedUser: LoggedUser): List[ComponentLink] = {
     val componentLinks = componentLinksConfig
-      .filter(_.isAvailable(component.componentType))
+      .filter(_.isAvailable(component.componentType, loggedUser))
       .map(_.toComponentLink(designerWideId, component.name))
 
     // If component configuration contains documentation link then we add base link

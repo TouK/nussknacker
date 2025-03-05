@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.k8s.manager
 
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  DeploymentUpdateStrategy,
   DMCancelScenarioCommand,
   DMRunDeploymentCommand,
-  DMValidateScenarioCommand,
-  DataFreshnessPolicy,
-  DeploymentUpdateStrategy
+  DMValidateScenarioCommand
 }
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -25,11 +25,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
+import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volume}
 import skuber.Container.Port
 import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volume}
 import sttp.client3._
 
 import java.nio.file.Files
@@ -102,8 +102,8 @@ class K8sDeploymentManagerKafkaTest
 
     def waitForRunning(version: ProcessVersion) = {
       eventually {
-        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
-        state.flatMap(_.version) shouldBe List(version)
+        val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
+        state.flatMap(_.version) shouldBe List(version.versionId)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
     }
@@ -152,33 +152,29 @@ class K8sDeploymentManagerKafkaTest
         "resources",
         fromMap(
           Map(
-            "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
-            "limits"   -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
+            "requests" -> fromMap(Map("memory" -> "512Mi", "cpu" -> "1024m").asJava),
+            "limits"   -> fromMap(Map("memory" -> "512Mi", "cpu" -> "1024m").asJava)
           ).asJava
         )
       )
       .root()
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
-        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
+        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(2))
         .withValue(
           "k8sDeploymentConfig.spec.template.spec.containers",
-          fromIterable(
-            List(
-              runtimeContainerConfig
-            ).asJava
-          )
+          fromIterable(List(runtimeContainerConfig).asJava)
         )
     )
     f.withRunningScenario {
       eventually {
         val pods = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items
-        pods.size shouldBe 3
+        pods.size shouldBe 2
         forAll(pods.head.spec.get.containers) { container =>
           container.resources shouldBe Some(
             skuber.Resource.Requirements(
-              limits = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi")),
-              requests = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi"))
+              limits = Map("cpu" -> Quantity("1024m"), "memory" -> Quantity("512Mi")),
+              requests = Map("cpu" -> Quantity("1024m"), "memory" -> Quantity("512Mi"))
             )
           )
           container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
@@ -395,7 +391,7 @@ class K8sDeploymentManagerKafkaTest
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {
     manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
     eventually {
-      manager.getProcessStates(version.processName).map(_.value).futureValue shouldBe List.empty
+      manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue shouldBe List.empty
     }
     assertNoGarbageLeft()
   }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import io.circe.Json
-import org.apache.flink.api.common.JobStatus
+import org.apache.flink.api.common.{JobID, JobStatus}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.mockito.invocation.InvocationOnMock
@@ -11,8 +11,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
+import pl.touk.nussknacker.engine.management.utils.JobIdGenerator.generateJobId
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -22,6 +24,8 @@ class CachedFlinkClientTest
     with PatientScalaFutures
     with Matchers
     with OptionValues {
+
+  private val sampleJobId = generateJobId
 
   test("should ask delegate for a fresh jobs by name each time") {
     val delegate           = prepareMockedFlinkClient
@@ -56,21 +60,21 @@ class CachedFlinkClientTest
     val cachingFlinkClient = new CachedFlinkClient(delegate, 10 seconds, 10)
 
     val results = List(
-      cachingFlinkClient.getJobConfig("foo").futureValue,
-      cachingFlinkClient.getJobConfig("foo").futureValue,
-      cachingFlinkClient.getJobConfig("foo").futureValue,
+      cachingFlinkClient.getJobConfig(sampleJobId).futureValue,
+      cachingFlinkClient.getJobConfig(sampleJobId).futureValue,
+      cachingFlinkClient.getJobConfig(sampleJobId).futureValue,
     )
 
     results.map(_.`user-config`.get("time")).distinct should have size 1
 
-    verify(delegate, times(1)).getJobConfig(any[String])
+    verify(delegate, times(1)).getJobConfig(any[JobID])
   }
 
   test("shouldn't cache job configs with missing deploymentId") {
     val delegate           = mock[FlinkClient]
     val cachingFlinkClient = new CachedFlinkClient(delegate, 10 seconds, 10)
 
-    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+    when(delegate.getJobConfig(any[JobID])).thenAnswer { _: InvocationOnMock =>
       val config = flinkRestModel.ExecutionConfig(
         `job-parallelism` = 1,
         `user-config` = Map.empty
@@ -78,12 +82,12 @@ class CachedFlinkClientTest
       Future.successful(config)
     }
     cachingFlinkClient
-      .getJobConfig("foo")
+      .getJobConfig(sampleJobId)
       .futureValue
       .`user-config`
       .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe empty
 
-    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+    when(delegate.getJobConfig(any[JobID])).thenAnswer { _: InvocationOnMock =>
       val config = flinkRestModel.ExecutionConfig(
         `job-parallelism` = 1,
         `user-config` = Map(CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("someDeploymentId"))
@@ -91,7 +95,7 @@ class CachedFlinkClientTest
       Future.successful(config)
     }
     cachingFlinkClient
-      .getJobConfig("foo")
+      .getJobConfig(sampleJobId)
       .futureValue
       .`user-config`
       .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe defined
@@ -103,7 +107,7 @@ class CachedFlinkClientTest
     when(delegate.getJobsOverviews()(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
       val jobs = List(
         JobOverview(
-          "123",
+          sampleJobId,
           "p1",
           10L,
           10L,
@@ -115,7 +119,7 @@ class CachedFlinkClientTest
       Future.successful(WithDataFreshnessStatus.fresh(jobs))
     }
 
-    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+    when(delegate.getJobConfig(any[JobID])).thenAnswer { _: InvocationOnMock =>
       val config = flinkRestModel.ExecutionConfig(
         `job-parallelism` = 1,
         `user-config` = Map(

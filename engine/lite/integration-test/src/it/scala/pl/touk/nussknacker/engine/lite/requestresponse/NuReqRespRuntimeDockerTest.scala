@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.testCaseId
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, VeryPatientScalaFutures}
-import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, UriContext, basicRequest}
+import sttp.client3.{basicRequest, HttpURLConnectionBackend, Identity, SttpBackend, UriContext}
 
 class NuReqRespRuntimeDockerTest
     extends AnyFunSuite

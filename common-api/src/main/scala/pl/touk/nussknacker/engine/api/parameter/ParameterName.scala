@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.parameter
 
-import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 
 final case class ParameterName(value: String) {
   def withBranchId(branchId: String): ParameterName = ParameterName(s"$value for branch $branchId")

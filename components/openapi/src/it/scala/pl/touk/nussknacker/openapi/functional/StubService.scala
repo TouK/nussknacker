@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.openapi.functional
 
+import org.apache.http.{HttpRequest, HttpResponse}
 import org.apache.http.entity.{InputStreamEntity, StringEntity}
 import org.apache.http.impl.bootstrap.ServerBootstrap
 import org.apache.http.protocol.{HttpContext, HttpRequestHandler}
-import org.apache.http.{HttpRequest, HttpResponse}
 import pl.touk.nussknacker.test.AvailablePortFinder
 
 class StubService(val swaggerDefinition: String = "/customer-swagger.json") {

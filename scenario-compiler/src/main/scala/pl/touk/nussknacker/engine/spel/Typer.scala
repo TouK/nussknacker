@@ -1,36 +1,37 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
-import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.ast._
-import org.springframework.expression.spel.{SpelNode, standard}
 import org.springframework.expression.{EvaluationContext, Expression}
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
+import org.springframework.expression.spel.{standard, SpelNode}
+import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   ConstructionOfUnknown,
-  NoPropertyError,
   NonReferenceError,
+  NoPropertyError,
+  NoPropertyTypeError,
   UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
   IllegalProjectionError,
   IllegalSelectionError,
@@ -53,8 +54,8 @@ import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-import scala.jdk.CollectionConverters._
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
@@ -65,7 +66,8 @@ private[spel] class Typer(
     classDefinitionSet: ClassDefinitionSet,
     evaluationContextPreparer: EvaluationContextPreparer,
     anyMethodExecutionForUnknownAllowed: Boolean,
-    dynamicPropertyAccessAllowed: Boolean
+    dynamicPropertyAccessAllowed: Boolean,
+    absentVariableReferenceAllowed: Boolean
 ) extends LazyLogging {
 
   import ast.SpelAst._
@@ -199,11 +201,16 @@ private[spel] class Typer(
             case _                                      => typeFieldNameReferenceOnRecord(indexString, record)
           }
         case indexKey :: Nil if indexKey.canBeConvertedTo(Typed[String]) =>
-          if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
-        case _ :: Nil =>
+          if (dynamicPropertyAccessAllowed) valid(Unknown)
+          else
+            record.runtimeObjType.params match {
+              case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] => valid(value)
+              case _                                                                                => valid(Unknown)
+            }
+        case e :: Nil =>
           indexer.children match {
             case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
-            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
+            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyTypeError(record, e))
           }
         case _ =>
           invalid(IllegalIndexingOperation)
@@ -218,7 +225,17 @@ private[spel] class Typer(
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           withTypedChildren(_ => valid(param))
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
-          withTypedChildren(_ => valid(valueParam))
+          withTypedChildren {
+            // Spel implementation of map indexer (in class org.springframework.expression.spel.ast.Indexer, line 154) tries to convert
+            // indexer to key type of map, but this conversion can be accomplished only if key type of map is known to spel.
+            // Currently .asMap extension is implemented in such a way, that spel does not know key type of the resulting map
+            // (that is when spel evaluates this expression it only knows that it got map, but does not know its type parameters).
+            // It would be hard to change implementation of .asMap extension so we partially turn off this feature of indexer conversion
+            // by allowing in typing only situations when map key type and indexer type are the same (though we have to allow
+            // indexing with unknown type)
+            case indexKey :: Nil if indexKey.canBeConvertedWithoutConversionTo(keyParam) => valid(valueParam)
+            case _ => invalid(IllegalIndexingOperation)
+          }
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
@@ -483,7 +500,7 @@ private[spel] class Typer(
           .get(name)
           .orElse(current.stackHead.filter(_ => name == "this"))
           .map(valid)
-          .getOrElse(invalid(UnresolvedReferenceError(name)))
+          .getOrElse(if (absentVariableReferenceAllowed) valid(Unknown) else invalid(UnresolvedReferenceError(name)))
           .map(toNodeResult)
     })
   }
@@ -770,7 +787,20 @@ private[spel] class Typer(
       classDefinitionSet,
       evaluationContextPreparer,
       anyMethodExecutionForUnknownAllowed,
-      dynamicPropertyAccessAllowed
+      dynamicPropertyAccessAllowed,
+      absentVariableReferenceAllowed
+    )
+
+  def withAbsentVariableReferenceAllowed(value: Boolean): Typer =
+    new Typer(
+      dictTyper,
+      strictMethodsChecking,
+      staticMethodInvocationsChecking,
+      classDefinitionSet,
+      evaluationContextPreparer,
+      anyMethodExecutionForUnknownAllowed,
+      dynamicPropertyAccessAllowed,
+      absentVariableReferenceAllowed = value
     )
 
 }
@@ -781,7 +811,8 @@ object Typer {
       classLoader: ClassLoader,
       expressionConfig: ExpressionConfigDefinition,
       spelDictTyper: SpelDictTyper,
-      classDefinitionSet: ClassDefinitionSet
+      classDefinitionSet: ClassDefinitionSet,
+      absentVariableReferenceAllowed: Boolean
   ): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
 
@@ -792,7 +823,8 @@ object Typer {
       classDefinitionSet,
       evaluationContextPreparer,
       expressionConfig.methodExecutionForUnknownAllowed,
-      expressionConfig.dynamicPropertyAccessAllowed
+      expressionConfig.dynamicPropertyAccessAllowed,
+      absentVariableReferenceAllowed
     )
   }
 

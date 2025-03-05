@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import org.springframework.expression.Expression
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext

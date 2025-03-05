@@ -74,6 +74,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     }));
 
     const colors = isOver ? nodeColorsHover : nodeColors;
+
     return (
         <div className={cx(colors, nodeStyles)}>
             <div className={cx(imageStyles, imageColors)}>

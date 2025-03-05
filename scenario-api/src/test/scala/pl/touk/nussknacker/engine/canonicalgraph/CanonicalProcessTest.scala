@@ -14,10 +14,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 
 import scala.language.implicitConversions
 

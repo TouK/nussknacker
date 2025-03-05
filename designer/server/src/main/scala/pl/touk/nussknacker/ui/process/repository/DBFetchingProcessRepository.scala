@@ -2,17 +2,20 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
 import cats.data.OptionT
+import cats.implicits.toFunctorOps
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName, UserName}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.{repository, ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,19 +25,20 @@ object DBFetchingProcessRepository {
 
   def create(
       dbRef: DbRef,
-      actionRepository: ScenarioActionRepository,
+      actionRepository: ScenarioActionReadOnlyRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[DB](dbRef, actionRepository, scenarioLabelsRepository) with DbioRepository
 
   def createFutureRepository(
       dbRef: DbRef,
-      actionRepository: ScenarioActionRepository,
+      actionReadOnlyRepository: ScenarioActionReadOnlyRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(
       implicit ec: ExecutionContext
   ) =
-    new DBFetchingProcessRepository[Future](dbRef, actionRepository, scenarioLabelsRepository) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbRef, actionReadOnlyRepository, scenarioLabelsRepository)
+      with BasicRepository
 
 }
 
@@ -43,13 +47,26 @@ object DBFetchingProcessRepository {
 //       to the resource on the services side
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
-    actionRepository: ScenarioActionRepository,
+    actionRepository: ScenarioActionReadOnlyRepository,
     scenarioLabelsRepository: ScenarioLabelsRepository,
 )(protected implicit val ec: ExecutionContext)
     extends FetchingProcessRepository[F]
     with LazyLogging {
 
   import api._
+
+  override def getProcessVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  )(
+      implicit user: LoggedUser,
+  ): F[Option[ProcessVersion]] = {
+    val result = for {
+      processId <- OptionT(fetchProcessId(processName))
+      details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
+    } yield details.toEngineProcessVersion
+    result.value
+  }
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
@@ -72,6 +89,51 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     )
   }
 
+  override def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
+      query: ScenarioQuery
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestProcessByQueryAction(
+        { process =>
+          expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
+        },
+      )
+    )
+  }
+
+  override def fetchLatestVersionForProcesses(
+      query: ScenarioQuery,
+      scenarioVersionQuery: ScenarioVersionQuery,
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): F[Map[ProcessId, ScenarioVersionMetadata]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isFragment.map(arg => process => process.isFragment === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
+    )
+
+    run(
+      fetchLatestVersionForProcessesExcludingUsers(
+        process => expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process)),
+        scenarioVersionQuery.excludedUserNames.map(_.toSet).getOrElse(Set.empty),
+      ).result
+    ).map(_.toMap.map { case (processId, (versionId, timestamp, username)) =>
+      processId -> ScenarioVersionMetadata(versionId, timestamp.toInstant, UserName(username))
+    })
+  }
+
   private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
       isDeployed: Option[Boolean]
@@ -85,19 +147,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       )
       lastStateActionPerProcess <- fetchActionsOrEmpty(
         actionRepository
-          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
+          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.ScenarioStatusActions))
       )
       // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
       // so that the presence of such an action means that the process is currently deployed
-      lastDeployedActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository
-          .getLastActionPerProcess(
-            ProcessActionState.FinishedStates,
-            Some(Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel))
-          )
-      ).map(_.filter { case (_, action) =>
+      lastDeployedActionPerProcess = lastStateActionPerProcess.filter { case (_, action) =>
         action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
-      })
+      }
 
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
       labels          <- scenarioLabelsRepository.getLabels
@@ -115,6 +171,19 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           history = None
         )
       }).map(_.toList)
+  }
+
+  private def fetchLatestProcessByQueryAction[PS: ScenarioShapeFetchStrategy](
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+  )(
+      implicit loggedUser: LoggedUser,
+  ): DBIOAction[List[PS], NoStream, Effect.All with Effect.Read] = {
+    for {
+      latestProcessEntities <- fetchLatestProcessesQuery(query).result
+      latestProcesses = latestProcessEntities.map { case ((_, _), processVersion) =>
+        convertToTargetShape(processVersion)
+      }.toList
+    } yield latestProcesses
   }
 
   private def fetchActionsOrEmpty[PS: ScenarioShapeFetchStrategy](
@@ -199,11 +268,11 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
+      lastStateActionData = actions.find(a => ScenarioActionName.ScenarioStatusActions.contains(a.actionName)),
       // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
       // so that the presence of such an action means that the process is currently deployed
       lastDeployedActionData = actions
-        .find(action => Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel).contains(action.actionName))
+        .find(action => ScenarioActionName.ScenarioStatusActions.contains(action.actionName))
         .filter(action =>
           action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
         ),
@@ -227,7 +296,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       labels: List[ScenarioLabel],
       history: Option[Seq[ScenarioVersion]]
   ): ScenarioWithDetailsEntity[PS] = {
-    repository.ScenarioWithDetailsEntity[PS](
+    ScenarioWithDetailsEntity[PS](
       processId = process.id,
       name = process.name,
       processVersionId = processVersion.id,

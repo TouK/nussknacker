@@ -6,8 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
@@ -19,8 +19,8 @@ import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
 import java.time.Clock
-import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration._
 
 object Initialization {
 

@@ -1,99 +1,64 @@
 package pl.touk.nussknacker.engine.management
 
+import cats.data.NonEmptyList
 import cats.implicits._
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.ModelData._
+import org.apache.flink.api.common.{JobID, JobStatus}
+import pl.touk.nussknacker.engine.{newdeployment, BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
+  FlinkMiniClusterScenarioStateVerifier,
+  FlinkMiniClusterScenarioTestRunner
+}
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps.DurationOps
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
+import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
+import pl.touk.nussknacker.engine.management.rest.FlinkClient
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 
 import scala.concurrent.Future
 
-abstract class FlinkDeploymentManager(
+class FlinkDeploymentManager(
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
-    shouldVerifyBeforeDeploy: Boolean,
-    mainClassName: String
+    flinkConfig: FlinkConfig,
+    miniClusterWithServicesOpt: Option[FlinkMiniClusterWithServices],
+    client: FlinkClient,
+    jobRunner: FlinkScenarioJobRunner
 ) extends DeploymentManager
     with LazyLogging {
 
   import dependencies._
 
-  private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
+  private val slotsChecker = new FlinkSlotsChecker(client)
 
-  private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
+  private val testRunner = new FlinkMiniClusterScenarioTestRunner(
+    modelData,
+    miniClusterWithServicesOpt
+      .filter(_ => flinkConfig.scenarioTesting.reuseSharedMiniCluster),
+    flinkConfig.scenarioTesting.parallelism,
+    flinkConfig.scenarioTesting.timeout.toPausePolicy
+  )
 
-  /**
-    * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
-    */
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] = {
-    for {
-      actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
-      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(
-        statusDetails,
-        actionAfterPostprocessOpt.orElse(lastStateAction)
-      )
-    } yield processStateDefinitionManager.processState(
-      engineStateResolvedWithLastAction,
-      latestVersionId,
-      deployedVersionId,
-      currentlyPresentedVersionId,
-    )
-  }
+  private val verification = new FlinkMiniClusterScenarioStateVerifier(
+    modelData,
+    miniClusterWithServicesOpt
+      .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster),
+    flinkConfig.scenarioStateVerification.timeout.toPausePolicy
+  )
 
-  // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
-  // - job is finished without troubles
-  // - job has failed
-  // So we synchronize the information that the job was finished by marking deployments actions as execution finished
-  // and treat another case as ProblemStateStatus.shouldBeRunning (see InconsistentStateDetector)
-  // TODO: We should synchronize the status of deployment more explicitly as we already do in periodic case
-  //       See PeriodicProcessService.synchronizeDeploymentsStates and remove the InconsistentStateDetector
-  private def postprocess(
-      idWithName: ProcessIdWithName,
-      statusDetailsList: List[StatusDetails]
-  ): Future[Option[ProcessAction]] = {
-    val allDeploymentIdsAsCorrectActionIds =
-      statusDetailsList.flatMap(details =>
-        details.deploymentId.flatMap(_.toActionIdOpt).map(id => (id, details.status))
-      )
-    markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(
-      idWithName,
-      allDeploymentIdsAsCorrectActionIds
-    )
-  }
-
-  private def markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(
-      idWithName: ProcessIdWithName,
-      deploymentActionStatuses: List[(ProcessActionId, StateStatus)]
-  ): Future[Option[ProcessAction]] = {
-    val finishedDeploymentActionsIds = deploymentActionStatuses.collect { case (id, SimpleStateStatus.Finished) =>
-      id
-    }
-    Future.sequence(finishedDeploymentActionsIds.map(actionService.markActionExecutionFinished)).flatMap {
-      markingResult =>
-        Option(markingResult)
-          .filter(_.contains(true))
-          .map { _ =>
-            actionService.getLastStateAction(idWithName.id)
-          }
-          .getOrElse(Future.successful(None))
-    }
-  }
+  private val statusDeterminer = new FlinkStatusDetailsDeterminer(modelData.namingStrategy, client.getJobConfig)
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
@@ -103,19 +68,19 @@ abstract class FlinkDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case DMStopDeploymentCommand(processName, deploymentId, savepointDir, _) =>
         requireSingleRunningJob(processName, _.deploymentId.contains(deploymentId)) {
-          stop(_, savepointDir)
+          client.stop(_, savepointDir)
         }
       case DMStopScenarioCommand(processName, savepointDir, _) =>
         requireSingleRunningJob(processName, _ => true) {
-          stop(_, savepointDir)
+          client.stop(_, savepointDir)
         }
       case DMMakeScenarioSavepointCommand(processName, savepointDir) =>
         // TODO: savepoint for given deployment id
         requireSingleRunningJob(processName, _ => true) {
-          makeSavepoint(_, savepointDir)
+          client.makeSavepoint(_, savepointDir)
         }
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-        testRunner.test(canonicalProcess, scenarioTestData)
+        testRunner.runTests(canonicalProcess, scenarioTestData)
       case _: DMRunOffScheduleCommand => notImplemented
     }
 
@@ -126,7 +91,7 @@ abstract class FlinkDeploymentManager(
         case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) => oldJobsToStop(processVersion)
         case DeploymentUpdateStrategy.DontReplaceDeployment                    => Future.successful(List.empty)
       }
-      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJobs.flatMap(_.externalDeploymentId))
+      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJobs.map(_.jid))
     } yield ()
   }
 
@@ -134,80 +99,84 @@ abstract class FlinkDeploymentManager(
     import command._
     val processName = processVersion.processName
 
-    val stoppingResult = command.updateStrategy match {
+    for {
+      stoppedJobsSavepoints <- stopOldJobsIfNeeded(command)
+      _ = {
+        logger.info(s"Deploying $processName. ${NonEmptyList
+            .fromList(stoppedJobsSavepoints)
+            .map(_.toList.mkString("Saving savepoints finished: ", ", ", "."))
+            .getOrElse("There was no job to stop.")}")
+      }
+      savepointPath = determineSavepointPath(command.updateStrategy, stoppedJobsSavepoints)
+      // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
+      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, List.empty)
+      _ = {
+        logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
+      }
+      jobIdOpt <- jobRunner.runScenarioJob(
+        command,
+        savepointPath,
+      )
+      _ <- jobIdOpt.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
+    } yield jobIdOpt.map(_.toHexString).map(ExternalDeploymentId(_))
+  }
+
+  private def stopOldJobsIfNeeded(command: DMRunDeploymentCommand) = {
+    import command._
+
+    command.updateStrategy match {
       case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
         for {
           oldJobs <- oldJobsToStop(processVersion)
           externalDeploymentIds = oldJobs
-            .sortBy(_.startTime)(Ordering[Option[Long]].reverse)
-            .flatMap(_.externalDeploymentId)
+            .sortBy(_.`start-time`)(Ordering[Long].reverse)
+            .map(_.jid)
           savepoints <- Future.sequence(
             externalDeploymentIds.map(stopSavingSavepoint(processVersion, _, canonicalProcess))
           )
-        } yield {
-          logger.info(s"Deploying $processName. ${Option(savepoints)
-              .filter(_.nonEmpty)
-              .map(_.mkString("Saving savepoints finished: ", ", ", "."))
-              .getOrElse("There was no job to stop.")}")
-          savepoints
-        }
+        } yield savepoints
       case DeploymentUpdateStrategy.DontReplaceDeployment =>
         Future.successful(List.empty)
     }
-    for {
-      savepointList <- stoppingResult
-      // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
-      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, List.empty)
-      savepointPath = command.updateStrategy match {
-        case DeploymentUpdateStrategy.DontReplaceDeployment => None
-        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
-              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
-            ) =>
-          // TODO: Better handle situation with more than one jobs stopped
-          savepointList.headOption
-        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
-              StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
-            ) =>
-          Some(savepointPath)
-      }
-      runResult <- runProgram(
-        processName,
-        mainClassName,
-        prepareProgramArgs(
-          modelData.inputConfigDuringExecution.serialized,
-          processVersion,
-          deploymentData,
-          canonicalProcess
-        ),
-        savepointPath,
-        command.deploymentData.deploymentId.toNewDeploymentIdOpt
-      )
-      _ <- runResult.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
-    } yield runResult
   }
 
-  protected def waitForDuringDeployFinished(processName: ProcessName, deploymentId: ExternalDeploymentId): Future[Unit]
-
-  private def oldJobsToStop(processVersion: ProcessVersion): Future[List[StatusDetails]] = {
+  private def oldJobsToStop(processVersion: ProcessVersion): Future[List[JobOverview]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(processVersion.processName)
-      .map(_.value.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
+    getScenarioDeploymentsStatusesWithJobOverview(processVersion.processName)
+      .map(_.value.collect {
+        case (details, jobOverview) if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status) =>
+          jobOverview
+      })
   }
 
-  protected def checkRequiredSlotsExceedAvailableSlots(
-      canonicalProcess: CanonicalProcess,
-      currentlyDeployedJobsIds: List[ExternalDeploymentId]
-  ): Future[Unit]
+  private def determineSavepointPath(updateStrategy: DeploymentUpdateStrategy, stoppedJobsSavepoints: List[String]) =
+    updateStrategy match {
+      case DeploymentUpdateStrategy.DontReplaceDeployment => None
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          ) =>
+        // TODO: Better handle situation with more than one jobs stopped
+        stoppedJobsSavepoints.headOption
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
+          ) =>
+        Some(savepointPath)
+    }
 
-  private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
-      action: ExternalDeploymentId => Future[T]
+  private def requireSingleRunningJob[T](
+      processName: ProcessName,
+      statusDetailsPredicate: DeploymentStatusDetails => Boolean
+  )(
+      action: JobID => Future[T]
   ): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(processName).flatMap { statuses =>
-      val runningDeploymentIds = statuses.value.filter(statusDetailsPredicate).collect {
-        case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
+    getScenarioDeploymentsStatusesWithJobOverview(processName).flatMap { statusesWithJobOverviews =>
+      val runningJobIds = statusesWithJobOverviews.value.collect {
+        case (details @ DeploymentStatusDetails(SimpleStateStatus.Running, Some(_), _), jobOverview)
+            if statusDetailsPredicate(details) =>
+          jobOverview.jid
       }
-      runningDeploymentIds match {
+      runningJobIds match {
         case Nil =>
           Future.failed(new IllegalStateException(s"Job $processName not found"))
         case single :: Nil =>
@@ -218,65 +187,194 @@ abstract class FlinkDeploymentManager(
     }
   }
 
+  private def stopSavingSavepoint(
+      processVersion: ProcessVersion,
+      deploymentId: JobID,
+      canonicalProcess: CanonicalProcess
+  ): Future[String] = {
+    logger.debug(s"Making savepoint of  ${processVersion.processName}. Deployment: $deploymentId")
+    for {
+      savepointResult <- client.makeSavepoint(deploymentId, savepointDir = None)
+      savepointPath = savepointResult.path
+      _ <- checkIfJobIsCompatible(savepointPath, canonicalProcess, processVersion)
+      _ <- client.cancel(deploymentId)
+    } yield savepointPath
+  }
+
   private def checkIfJobIsCompatible(
       savepointPath: String,
       canonicalProcess: CanonicalProcess,
       processVersion: ProcessVersion
   ): Future[Unit] =
-    if (shouldVerifyBeforeDeploy)
+    if (flinkConfig.scenarioStateVerification.enabled)
       verification.verify(processVersion, canonicalProcess, savepointPath)
-    else Future.successful(())
+    else
+      Future.successful(())
 
-  private def stopSavingSavepoint(
-      processVersion: ProcessVersion,
-      deploymentId: ExternalDeploymentId,
-      canonicalProcess: CanonicalProcess
-  ): Future[String] = {
-    logger.debug(s"Making savepoint of  ${processVersion.processName}. Deployment: $deploymentId")
-    for {
-      savepointResult <- makeSavepoint(deploymentId, savepointDir = None)
-      savepointPath = savepointResult.path
-      _ <- checkIfJobIsCompatible(savepointPath, canonicalProcess, processVersion)
-      _ <- cancelFlinkJob(deploymentId)
-    } yield savepointPath
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+    getScenarioDeploymentsStatusesWithJobOverview(scenarioName).map(_.map(_.map(_._1)))
   }
 
-  protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit]
+  protected def getScenarioDeploymentsStatusesWithJobOverview(scenarioName: ProcessName)(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[(DeploymentStatusDetails, JobOverview)]]] = {
+    getAllJobsStatusesFromFlink().map(_.getOrElse(scenarioName, List.empty))
+  }
 
-  protected def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit]
+  override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+    new DeploymentSynchronisationSupported {
 
-  protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit]
+      override def getDeploymentStatusesToUpdate(
+          deploymentIdsToCheck: Set[newdeployment.DeploymentId]
+      ): Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
+        Future
+          .sequence(
+            deploymentIdsToCheck.toSeq
+              .map { deploymentId =>
+                client
+                  .getJobDetails(deploymentId.toJobID)
+                  .map(_.map { jobDetails =>
+                    deploymentId -> FlinkStatusDetailsDeterminer
+                      .toDeploymentStatus(JobStatus.valueOf(jobDetails.state), jobDetails.`status-counts`)
+                  })
+              }
+          )
+          .map(_.flatten.toMap)
+      }
 
-  protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
+    }
 
-  protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    new DeploymentsStatusesQueryForAllScenariosSupported {
 
-  protected def runProgram(
+      override def getAllScenariosDeploymentsStatuses()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] =
+        getAllJobsStatusesFromFlink().map(_.map(_.mapValuesNow(_.map(_._1))))
+
+    }
+
+  override def schedulingSupport: SchedulingSupport = new SchedulingSupported {
+
+    override def createScheduledExecutionPerformer(
+        rawSchedulingConfig: Config,
+    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(client, modelData, rawSchedulingConfig)
+
+  }
+
+  private def getAllJobsStatusesFromFlink()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[(DeploymentStatusDetails, JobOverview)]]]] = {
+    client
+      .getJobsOverviews()
+      .flatMap { result =>
+        statusDeterminer
+          .statusDetailsFromJobOverviews(result.value)
+          .map(
+            WithDataFreshnessStatus(_, cached = result.cached)
+          ) // TODO: How to do it nicer?
+      }
+  }
+
+  private def waitForDuringDeployFinished(
       processName: ProcessName,
-      mainClass: String,
-      args: List[String],
-      savepointPath: Option[String],
-      // TODO: make it mandatory - see TODO in newdeployment.DeploymentService
-      deploymentId: Option[newdeployment.DeploymentId]
-  ): Future[Option[ExternalDeploymentId]]
+      jobId: JobID
+  ): Future[Unit] = {
+    flinkConfig.waitForDuringDeployFinish.toEnabledConfig
+      .map { config =>
+        retry
+          .Pause(config.maxChecks, config.delay)
+          .apply {
+            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+            getScenarioDeploymentsStatusesWithJobOverview(processName).map { statusesWithJobOverview =>
+              statusesWithJobOverview.value
+                .find { case (details, jobOverview) =>
+                  jobOverview.jid == jobId && details.status == SimpleStateStatus.DuringDeploy
+                }
+                .map(Left(_))
+                .getOrElse(Right(()))
+            }
+          }
+          .map(
+            _.getOrElse(
+              throw new IllegalStateException(
+                "Deploy execution finished, but job is still in during deploy state on Flink"
+              )
+            )
+          )
+      }
+      .getOrElse(Future.successful(()))
+  }
+
+  protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
+    import command._
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    getScenarioDeploymentsStatusesWithJobOverview(scenarioName).map(_.value).flatMap { detailsWithJobOverview =>
+      cancelEachMatchingJob(scenarioName, None, detailsWithJobOverview)
+    }
+  }
+
+  private def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = {
+    import command._
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    getScenarioDeploymentsStatusesWithJobOverview(scenarioName).map(_.value).flatMap { detailsWithJobOverview =>
+      cancelEachMatchingJob(
+        scenarioName,
+        Some(deploymentId),
+        detailsWithJobOverview.filter(_._1.deploymentId.contains(deploymentId))
+      )
+    }
+  }
+
+  private def cancelEachMatchingJob(
+      processName: ProcessName,
+      deploymentId: Option[DeploymentId],
+      detailsWithJobOverview: List[(DeploymentStatusDetails, JobOverview)]
+  ) = {
+    detailsWithJobOverview.collect {
+      case (details, jobOverview) if !SimpleStateStatus.isFinalOrTransitioningToFinalStatus(details.status) =>
+        jobOverview.jid
+    } match {
+      case Nil =>
+        logger.warn(
+          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not active on Flink."
+        )
+        Future.successful(())
+      case singleJobId :: Nil => client.cancel(singleJobId)
+      case moreThanOneJobIds =>
+        logger.warn(
+          s"Found duplicate jobs of $processName${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOneJobIds. Cancelling all in non terminal state."
+        )
+        Future.sequence(moreThanOneJobIds.map(client.cancel)).map(_ => ())
+    }
+  }
+
+  private def checkRequiredSlotsExceedAvailableSlots(
+      canonicalProcess: CanonicalProcess,
+      currentlyDeployedJobsIds: List[JobID]
+  ): Future[Unit] = {
+    if (flinkConfig.shouldCheckAvailableSlots) {
+      slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobsIds)
+    } else
+      Future.successful(())
+  }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+
+  override def close(): Unit = {
+    logger.info("Closing Flink Deployment Manager")
+    miniClusterWithServicesOpt.foreach(_.close())
+  }
 
 }
 
 object FlinkDeploymentManager {
 
-  def prepareProgramArgs(
-      serializedConfig: String,
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): List[String] =
-    List(
-      canonicalProcess.asJson.spaces2,
-      processVersion.asJson.spaces2,
-      deploymentData.asJson.spaces2,
-      serializedConfig
-    )
+  implicit class DeploymentIdOps(did: newdeployment.DeploymentId) {
+    def toJobID: JobID =
+      new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits)
+  }
 
 }

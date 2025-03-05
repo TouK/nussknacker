@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
-import java.time.LocalDate
-import java.util.Optional
-import javax.annotation.Nullable
-import javax.validation.constraints.{Max, Min, NotBlank}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.{OptionalDeterminer, ParameterData}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
+
+import java.time.LocalDate
+import java.util.Optional
+import javax.annotation.Nullable
+import javax.validation.constraints.{Max, Min, NotBlank}
 
 class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
 

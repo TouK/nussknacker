@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary._
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

@@ -33,7 +33,7 @@ enum ClickEventsSelector {
     EditRedo = "EDIT_REDO",
     EditUndo = "EDIT_UNDO",
     TestGenerateFile = "TEST_GENERATE_FILE",
-    ScenarioJson = "SCENARIO_JSON",
+    ScenarioExport = "SCENARIO_EXPORT",
     ScenarioArchive = "SCENARIO_ARCHIVE",
     ScenarioCompare = "SCENARIO_COMPARE",
     ActionDeploy = "ACTION_DEPLOY",

@@ -2,17 +2,18 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.Uppercase
 import enumeratum._
-import io.circe.syntax.EncoderOps
+import enumeratum.EnumEntry.Uppercase
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
@@ -126,10 +127,12 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
                   buildTime = "2023-09-25T09:26:30.402299",
                   version = "1.234.0",
                   processingType = Map(
-                    "streaming" -> Map(
-                      "process-version" -> "0.1",
-                      "engine-version"  -> "0.2",
-                      "generation-time" -> "2023-09-25T09:26:30.402299"
+                    "streaming" -> ModelInfo.fromMap(
+                      Map(
+                        "process-version" -> "0.1",
+                        "engine-version"  -> "0.2",
+                        "generation-time" -> "2023-09-25T09:26:30.402299"
+                      )
                     )
                   )
                 )
@@ -223,6 +226,8 @@ object AppApiEndpoints {
 
   object Dtos {
 
+    private implicit val modelInfoSchema: Schema[ModelInfo] = Schema.schemaForMap[String].as[ModelInfo]
+
     @derive(encoder, decoder, schema)
     final case class HealthCheckProcessSuccessResponseDto private (
         status: HealthCheckProcessSuccessResponseDto.Status,
@@ -270,7 +275,7 @@ object AppApiEndpoints {
         gitCommit: String,
         buildTime: String,
         version: String,
-        processingType: Map[String, Map[String, String]],
+        processingType: Map[String, ModelInfo],
         globalBuildInfo: Option[Map[String, String]] = None
     )
 
@@ -284,7 +289,7 @@ object AppApiEndpoints {
               version            <- c.downField("version").as[String]
               buildTime          <- c.downField("buildTime").as[String]
               gitCommit          <- c.downField("gitCommit").as[String]
-              processingType     <- c.downField("processingType").as[Map[String, Map[String, String]]]
+              processingType     <- c.downField("processingType").as[Map[String, ModelInfo]]
               globalBuildInfoOpt <- c.downField("globalBuildInfo").as[Option[Map[String, String]]]
               globalBuildInfo <- globalBuildInfoOpt match {
                 case globalBuildInfo @ Some(_) =>

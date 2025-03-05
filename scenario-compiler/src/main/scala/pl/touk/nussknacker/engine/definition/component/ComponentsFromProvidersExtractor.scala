@@ -14,24 +14,16 @@ object ComponentsFromProvidersExtractor {
 
   val componentConfigPath = "components"
 
-  def apply(
-      classLoader: ClassLoader,
-      shouldIncludeComponentProvider: ComponentProvider => Boolean
-  ): ComponentsFromProvidersExtractor = {
+  def apply(classLoader: ClassLoader): ComponentsFromProvidersExtractor = {
     new ComponentsFromProvidersExtractor(
       classLoader,
-      shouldIncludeComponentProvider,
       NussknackerVersion.current
     )
   }
 
 }
 
-class ComponentsFromProvidersExtractor(
-    classLoader: ClassLoader,
-    shouldIncludeComponentProvider: ComponentProvider => Boolean,
-    nussknackerVersion: NussknackerVersion
-) {
+class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
 
   private lazy val providers: Map[String, List[ComponentProvider]] = {
     ScalaServiceLoader
@@ -78,8 +70,7 @@ class ComponentsFromProvidersExtractor(
         providerName,
         throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found")
       )
-      val filteredClassloaderProviders = componentProviders.filter(shouldIncludeComponentProvider)
-      NonEmptyList.fromList(filteredClassloaderProviders).map { nel =>
+      NonEmptyList.fromList(componentProviders).map { nel =>
         val provider = findSingleCompatible(name, providerName, nel)
         name -> (providerConfig, provider)
       }
@@ -95,8 +86,7 @@ class ComponentsFromProvidersExtractor(
       .filter(provider =>
         provider.isAutoLoaded &&
           !manuallyLoadedProviders.contains(provider) &&
-          !componentsConfig.get(provider.providerName).exists(_.disabled) &&
-          shouldIncludeComponentProvider(provider)
+          !componentsConfig.get(provider.providerName).exists(_.disabled)
       )
       .map { provider =>
         if (!provider.isCompatible(nussknackerVersion)) {

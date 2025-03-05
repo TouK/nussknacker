@@ -15,17 +15,6 @@ class ArrayWrapper(target: Any) extends util.AbstractList[Object] {
 
 object ArrayExt extends ExtensionMethodsDefinition {
 
-  private val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
-    "get"         -> SingleArg((target, arg: Int) => new ArrayWrapper(target).get(arg)),
-    "size"        -> NoArg(target => new ArrayWrapper(target).size()),
-    "lastIndexOf" -> SingleArg((target, arg: Any) => new ArrayWrapper(target).lastIndexOf(arg)),
-    "contains"    -> SingleArg((target, arg: Any) => new ArrayWrapper(target).contains(arg)),
-    "indexOf"     -> SingleArg((target, arg: Any) => new ArrayWrapper(target).indexOf(arg)),
-    "containsAll" -> SingleArg((target, arg: util.Collection[_]) => new ArrayWrapper(target).containsAll(arg)),
-    "isEmpty"     -> NoArg(target => new ArrayWrapper(target).isEmpty),
-    "empty"       -> NoArg(target => new ArrayWrapper(target).isEmpty),
-  )
-
   override def findMethod(
       clazz: Class[_],
       methodName: String,
@@ -33,9 +22,24 @@ object ArrayExt extends ExtensionMethodsDefinition {
       set: ClassDefinitionSet
   ): Option[ExtensionMethod[_]] =
     if (appliesToClassInRuntime(clazz))
-      methodRegistry.findMethod(methodName, argsSize)
+      findMethod(methodName, argsSize, clazz.getComponentType)
     else
       None
+
+  private def findMethod(methodName: String, argsSize: Int, arrayComponentType: Class[_]): Option[ExtensionMethod[_]] =
+    (methodName match {
+      case "get" =>
+        Some(SingleArg((target, arg: Int) => new ArrayWrapper(target).get(arg), (_: Int) => arrayComponentType))
+      case "size"        => Some(NoArg(target => new ArrayWrapper(target).size()))
+      case "lastIndexOf" => Some(SingleArg((target, arg: Any) => new ArrayWrapper(target).lastIndexOf(arg)))
+      case "contains"    => Some(SingleArg((target, arg: Any) => new ArrayWrapper(target).contains(arg)))
+      case "indexOf"     => Some(SingleArg((target, arg: Any) => new ArrayWrapper(target).indexOf(arg)))
+      case "containsAll" =>
+        Some(SingleArg((target, arg: util.Collection[_]) => new ArrayWrapper(target).containsAll(arg)))
+      case "isEmpty" => Some(NoArg(target => new ArrayWrapper(target).isEmpty))
+      case "empty"   => Some(NoArg(target => new ArrayWrapper(target).isEmpty))
+      case _         => None
+    }).filter(_.argsSize == argsSize)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
     if (appliesToClassInRuntime(clazz)) {

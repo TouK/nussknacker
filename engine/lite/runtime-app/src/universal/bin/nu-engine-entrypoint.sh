@@ -11,6 +11,7 @@ fi
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
+LOGBACK_FILE=${LOGBACK_FILE:-$CONF_DIR/logback.xml}
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*}
 CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}

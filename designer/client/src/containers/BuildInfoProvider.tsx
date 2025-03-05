@@ -1,10 +1,8 @@
-import React, { useContext } from "react";
-import { createContext, PropsWithChildren, useEffect, useState } from "react";
-import { BuildInfoType } from "../components/Process/types";
+import React, { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
 import HttpService, { AppBuildInfo } from "../http/HttpService";
 import LoaderSpinner from "../components/spinner/Spinner";
 
-const BuildInfoContext = createContext<BuildInfoType>(null);
+const BuildInfoContext = createContext<AppBuildInfo>(null);
 
 export const BuildInfoProvider = ({ children }: PropsWithChildren) => {
     const [buildInfo, setBuildInfo] = useState<AppBuildInfo>();

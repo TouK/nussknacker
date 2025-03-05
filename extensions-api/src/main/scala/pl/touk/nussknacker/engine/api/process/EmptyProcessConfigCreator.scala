@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 
 class EmptyProcessConfigCreator extends ProcessConfigCreator {
 
@@ -28,7 +29,7 @@ class EmptyProcessConfigCreator extends ProcessConfigCreator {
   override def expressionConfig(modelDependencies: ProcessObjectDependencies) =
     ExpressionConfig(Map.empty, List.empty)
 
-  override def buildInfo(): Map[String, String] =
-    Map.empty
+  override def modelInfo(): ModelInfo =
+    ModelInfo.empty
 
 }

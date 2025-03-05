@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import cats.Id
 import cats.data.{NonEmptyList, Validated}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process._
@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler
 
-import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.language.higherKinds
 
 /*
@@ -46,29 +46,29 @@ object SynchronousLiteInterpreter {
       jobData: JobData,
       scenario: CanonicalProcess,
       data: ScenarioInputBatch[Any],
-      componentUseCase: ComponentUseCase,
+      runtimeMode: RuntimeMode,
       runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): SynchronousResult = {
-    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
-    ScenarioInterpreterFactory
-      .createInterpreter[Id, Any, AnyRef](
-        scenario,
-        jobData,
-        modelData,
-        Nil,
-        testScenarioCollectorHandler.resultCollector,
-        componentUseCase
-      )
-      .map { interpreter =>
-        interpreter.open(runtimeContextPreparer.prepare(jobData))
-        try {
-          val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
-          value.run
-        } finally {
-          testScenarioCollectorHandler.close()
-          interpreter.close()
+    TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
+      ScenarioInterpreterFactory
+        .createInterpreter[Id, Any, AnyRef](
+          scenario,
+          jobData,
+          modelData,
+          Nil,
+          testScenarioCollectorHandler.resultCollector,
+          runtimeMode
+        )
+        .map { interpreter =>
+          interpreter.open(runtimeContextPreparer.prepare(jobData))
+          try {
+            val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
+            value.run
+          } finally {
+            interpreter.close()
+          }
         }
-      }
+    }
   }
 
 }

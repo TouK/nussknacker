@@ -2,15 +2,15 @@ package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.flink.api.{NamespaceMetricsTags, NkGlobalParameters}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.process.util.Serializers
 
 /**
@@ -47,7 +47,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  class ProcessSettingsPreparer(modelConfig: Config, namingStrategy: NamingStrategy, buildInfo: String)
+  class ProcessSettingsPreparer(modelConfig: Config, namingStrategy: NamingStrategy, modelInfo: ModelInfo)
       extends ExecutionConfigPreparer {
 
     override def prepareExecutionConfig(
@@ -55,39 +55,27 @@ object ExecutionConfigPreparer extends LazyLogging {
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       config.setGlobalJobParameters(
         NkGlobalParameters.create(
-          buildInfo,
+          modelInfo,
+          deploymentData.deploymentId.value,
           jobData.processVersion,
           modelConfig,
           namespaceTags = NamespaceMetricsTags(jobData.metaData.name.value, namingStrategy),
-          prepareMap(jobData.processVersion, deploymentData)
+          prepareMap(deploymentData)
         )
       )
     }
 
-    private def prepareMap(processVersion: ProcessVersion, deploymentData: DeploymentData) = {
-
-      val baseProperties = Map[String, String](
-        "buildInfo"    -> buildInfo,
-        "versionId"    -> processVersion.versionId.value.toString,
-        "processId"    -> processVersion.processId.value.toString,
-        "labels"       -> Encoder[List[String]].apply(processVersion.labels).noSpaces,
-        "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
-        "user"         -> processVersion.user,
-        "deploymentId" -> deploymentData.deploymentId.value
-      )
-      val scenarioProperties = deploymentData.additionalDeploymentData.map { case (k, v) =>
+    private def prepareMap(deploymentData: DeploymentData) =
+      deploymentData.additionalDeploymentData.map { case (k, v) =>
         s"deployment.properties.$k" -> v
       }
-      baseProperties ++ scenarioProperties
-    }
 
   }
 
   object ProcessSettingsPreparer {
 
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
-      val buildInfo = Encoder[Map[String, String]].apply(modelData.buildInfo).spaces2
-      new ProcessSettingsPreparer(modelData.modelConfig, modelData.namingStrategy, buildInfo)
+      new ProcessSettingsPreparer(modelData.modelConfig, modelData.namingStrategy, modelData.info)
     }
 
   }

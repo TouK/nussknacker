@@ -2,8 +2,8 @@ package pl.touk.nussknacker.k8s.manager
 
 import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json.Format
-import skuber.api.client.{KubernetesClient, LoggingContext}
 import skuber.{ObjectResource, ResourceDefinition}
+import skuber.api.client.{KubernetesClient, LoggingContext}
 
 import scala.concurrent.{ExecutionContext, Future}
 

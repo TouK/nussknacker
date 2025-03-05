@@ -34,8 +34,10 @@ object AvroDefaultExpressionDeterminer {
   * @param handleNotSupported when true values of not supported types are returned as valid None, otherwise invalid TypeNotSupported is returned
   */
 class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
-  import AvroDefaultExpressionDeterminer._
+
   import scala.jdk.CollectionConverters._
+
+  import AvroDefaultExpressionDeterminer._
 
   private val validatedNullExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     Valid(Some(asSpelExpression("null")))

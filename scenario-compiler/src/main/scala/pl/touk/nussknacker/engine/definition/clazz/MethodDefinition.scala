@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.definition.clazz
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
   MethodTypeInfo,
   Parameter
 }
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter

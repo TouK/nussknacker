@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json.encode
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._

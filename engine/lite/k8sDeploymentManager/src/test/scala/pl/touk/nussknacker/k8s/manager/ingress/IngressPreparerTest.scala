@@ -4,8 +4,8 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromIterable, fromMap}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import skuber.ObjectMeta
 import skuber.networking.v1.Ingress
 

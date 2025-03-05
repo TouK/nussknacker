@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import javax.validation.constraints.NotBlank
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 
+import javax.validation.constraints.NotBlank
 import scala.concurrent.Future
 
 // In services all parameters are lazy evaluated

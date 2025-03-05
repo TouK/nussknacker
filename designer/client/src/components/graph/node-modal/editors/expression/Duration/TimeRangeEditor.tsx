@@ -24,11 +24,15 @@ export default function TimeRangeEditor(props: Props): JSX.Element {
     const [value, setValue] = useState(() => decode(expression));
 
     const onComponentChange = useCallback(
-        (fieldName: string, fieldValue: number) => {
-            setValue({
-                ...value,
-                [fieldName]: isNaN(fieldValue) ? null : fieldValue,
-            });
+        (fieldName: string, fieldValue: string) => {
+            // treating empty string as null to allow deleting single digit
+            const parsedValue = fieldValue === "" ? null : parseInt(fieldValue);
+            if (parsedValue === null || !isNaN(parsedValue)) {
+                setValue({
+                    ...value,
+                    [fieldName]: parsedValue,
+                });
+            }
         },
         [value],
     );

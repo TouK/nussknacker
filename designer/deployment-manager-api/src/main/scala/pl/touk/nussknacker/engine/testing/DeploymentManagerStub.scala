@@ -2,56 +2,51 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
   DeploymentManagerProvider,
   MetaDataInitializer
 }
+import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
-import scala.concurrent.Future
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
-class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
+class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymentManager {
 
-  // We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] = {
-    val lastStateActionStatus = lastStateAction match {
-      case Some(action) if action.actionName == ScenarioActionName.Deploy =>
-        SimpleStateStatus.Running
-      case Some(action) if action.actionName == ScenarioActionName.Cancel =>
-        SimpleStateStatus.Canceled
-      case _ =>
-        SimpleStateStatus.NotDeployed
-    }
-    Future.successful(
-      processStateDefinitionManager.processState(
-        StatusDetails(lastStateActionStatus, None),
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId,
-      )
-    )
+  private val scenarioStatusMap = TrieMap.empty[ProcessName, StateStatus]
+
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
+    case _: DMValidateScenarioCommand => Future.successful(())
+    case run: DMRunDeploymentCommand =>
+      Future {
+        scenarioStatusMap.put(run.processVersion.processName, SimpleStateStatus.Running)
+        None
+      }
+    case cancel: DMCancelScenarioCommand =>
+      Future.successful {
+        scenarioStatusMap.put(cancel.scenarioName, SimpleStateStatus.Canceled)
+        ()
+      }
+    case _: DMStopScenarioCommand | _: DMStopDeploymentCommand | _: DMCancelDeploymentCommand |
+        _: DMMakeScenarioSavepointCommand | _: DMRunOffScheduleCommand | _: DMTestScenarioCommand =>
+      notImplemented
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(
-      WithDataFreshnessStatus.fresh(List.empty)
+      WithDataFreshnessStatus.fresh(
+        scenarioStatusMap.get(scenarioName).map(DeploymentStatusDetails(_, None, None)).toList
+      )
     )
   }
 
@@ -59,24 +54,12 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
+
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
   override def close(): Unit = {}
-
-}
-
-trait StubbingCommands { self: DeploymentManager =>
-
-  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
-    case _: DMValidateScenarioCommand                          => Future.successful(())
-    case _: DMRunDeploymentCommand                             => Future.successful(None)
-    case _: DMStopDeploymentCommand                            => Future.successful(SavepointResult(""))
-    case _: DMStopScenarioCommand                              => Future.successful(SavepointResult(""))
-    case _: DMCancelDeploymentCommand                          => Future.successful(())
-    case _: DMCancelScenarioCommand                            => Future.successful(())
-    case _: DMMakeScenarioSavepointCommand                     => Future.successful(SavepointResult(""))
-    case _: DMRunOffScheduleCommand | _: DMTestScenarioCommand => notImplemented
-  }
 
 }
 
@@ -89,7 +72,10 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] = Validated.valid(new DeploymentManagerStub)
+  ): ValidatedNel[String, DeploymentManager] = {
+    import deploymentManagerDependencies._
+    Validated.valid(new DeploymentManagerStub)
+  }
 
   override def name: String = "stub"
 

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.generics
 
+import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
-import io.circe.{Codec, Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 

@@ -18,7 +18,7 @@ public interface ProcessConfigCreator extends Serializable {
     Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ProcessObjectDependencies processObjectDependencies);
     Collection<ProcessListener> listeners(ProcessObjectDependencies processObjectDependencies);
     ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies);
-    Map<String, String> buildInfo();
+    Map<String, String> modelInfo();
     default Optional<AsyncExecutionContextPreparer> asyncExecutionContextPreparer(ProcessObjectDependencies processObjectDependencies) {
       return Optional.empty();
     }

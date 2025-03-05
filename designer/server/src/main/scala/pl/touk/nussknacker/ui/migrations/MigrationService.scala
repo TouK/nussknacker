@@ -3,15 +3,16 @@ package pl.touk.nussknacker.ui.migrations
 import cats.data.EitherT
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -30,7 +31,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
-import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}

@@ -61,7 +61,7 @@ object RestartStrategyFromConfiguration {
     val flinkConfig = new Configuration
     // restart-strategy.fixed-delay.attempts
     val strategy = config.getString(strategyPath)
-    flinkConfig.setString(restartStrategyFlinkConfigPrefix, strategy)
+    flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.type", strategy)
     config.entrySet().asScala.foreach { entry =>
       flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.$strategy.${entry.getKey}", toString(entry.getValue))
     }

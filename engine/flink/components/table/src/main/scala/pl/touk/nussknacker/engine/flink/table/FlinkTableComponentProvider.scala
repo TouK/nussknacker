@@ -102,8 +102,8 @@ final case class TableComponentProviderConfig(
 object TableComponentProviderConfig {
 
   import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.EnumerationReader._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
   private[table] def parse(config: Config) = config.rootAs[TableComponentProviderConfig]

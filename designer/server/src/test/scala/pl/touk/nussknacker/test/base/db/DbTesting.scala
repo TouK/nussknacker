@@ -3,8 +3,8 @@ package pl.touk.nussknacker.test.base.db
 import cats.effect.unsafe.implicits.global
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import org.scalatest.time.{Second, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
@@ -93,6 +93,8 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     session.prepareStatement("""delete from "environments"""").execute()
     session.prepareStatement("""delete from "processes"""").execute()
     session.prepareStatement("""delete from "fingerprints"""").execute()
+    session.prepareStatement("""delete from "scheduled_scenarios"""").execute()
+    session.prepareStatement("""delete from "scheduled_scenario_deployments"""").execute()
   }
 
 }

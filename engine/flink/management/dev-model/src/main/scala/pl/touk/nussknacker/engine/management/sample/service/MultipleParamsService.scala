@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 
 import scala.concurrent.Future
 

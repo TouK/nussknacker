@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{invalidNel, valid}
 import cats.implicits.catsSyntaxTuple2Semigroupal
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.expression.parse.TypedValue
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -46,14 +46,15 @@ class NodeDataValidator(modelData: ModelData) {
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader.classLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions.all
+      modelData.modelClassLoader,
+      modelData.modelDefinitionWithClasses.classDefinitions
     ),
     expressionCompiler,
-    modelData.modelClassLoader.classLoader,
+    modelData.modelClassLoader,
     Seq.empty,
     PreventInvocationCollector,
-    ComponentUseCase.Validation,
+    RuntimeMode.Live,
+    NodesDeploymentData.empty,
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 

@@ -11,14 +11,14 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{
   ContextTransformation,
   OutputVar,
   ProcessCompilationError,
   ValidationContext
 }
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -34,8 +34,9 @@ import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{MapAggregator, OptionAggregator}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{MapAggregator, OptionAggregator}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
@@ -43,7 +44,6 @@ import java.util.concurrent.TimeUnit
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class FullOuterJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]

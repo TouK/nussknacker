@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.security.http
 
-import scala.language.higherKinds
 import sttp.capabilities.Effect
 import sttp.client3.{DelegateSttpBackend, Request, Response, SttpBackend}
 import sttp.monad.syntax._
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.UnaryOperator
+import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 // This is taken from sttp3, extends original with 'clear()' method

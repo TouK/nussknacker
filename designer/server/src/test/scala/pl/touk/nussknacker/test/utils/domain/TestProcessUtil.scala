@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.test.utils.domain
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.Deploy
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessAction,
   ProcessActionId,
   ProcessActionState,
   ScenarioActionName
 }
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.Deploy
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
@@ -123,7 +123,7 @@ object TestProcessUtil {
       scenarioLabels = scenarioLabels,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)
+        case action if ScenarioActionName.ScenarioStatusActions.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect { case Deploy =>
         createProcessAction(Deploy)
@@ -177,15 +177,12 @@ object TestProcessUtil {
     id = ProcessActionId(UUID.randomUUID()),
     processId = ProcessId(generateId()),
     processVersionId = VersionId(generateId()),
-    createdAt = Instant.now(),
     performedAt = Instant.now(),
     user = "user",
     actionName = action,
     state = ProcessActionState.Finished,
     failureMessage = None,
-    commentId = None,
     comment = None,
-    buildInfo = Map.empty
   )
 
   private def generateId() = Math.abs(randomGenerator.nextLong())

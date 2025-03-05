@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
-import cats.data.Validated.{Invalid, condNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{condNel, Invalid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode

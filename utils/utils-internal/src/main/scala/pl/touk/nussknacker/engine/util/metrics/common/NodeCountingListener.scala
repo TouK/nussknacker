@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.metrics.{Counter, MetricIdentifier, WithMetrics}
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 private[engine] class NodeCountingListener(nodeIds: Iterable[String]) extends EmptyProcessListener with WithMetrics {
 

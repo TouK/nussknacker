@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite
 
-import cats.data.Validated.Valid
-import cats.data.{Validated, ValidatedNel}
 import cats.~>
+import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer

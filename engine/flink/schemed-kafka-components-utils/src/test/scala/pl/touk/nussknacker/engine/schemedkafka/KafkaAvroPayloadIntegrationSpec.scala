@@ -24,17 +24,18 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import scala.jdk.CollectionConverters._
 
 import java.nio.charset.StandardCharsets
+import scala.jdk.CollectionConverters._
 
 class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
-  import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
+
+  import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator(
     sinkForInputMetaResultsHolder

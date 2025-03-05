@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
@@ -18,14 +19,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.restmodel.definition.UIDefinitions
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{ComponentUiConfigMode, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIScenarioPropertyConfig, ComponentUiConfigMode}
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
@@ -296,7 +296,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
-        model.modelDefinitionWithClasses.classDefinitions.all,
+        model.modelDefinitionWithClasses.classDefinitions,
         Some(_),
         DesignerWideComponentId.default(processingType.stringify, _)
       ),
@@ -315,7 +315,6 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ),
       fragmentPropertiesConfig = Map.empty,
       scenarioPropertiesConfig = Map.empty,
-      deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),

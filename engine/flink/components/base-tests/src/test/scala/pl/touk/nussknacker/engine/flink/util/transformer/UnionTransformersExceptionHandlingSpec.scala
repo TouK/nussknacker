@@ -1,23 +1,25 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
+import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
-import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, MiniClusterExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, ScalatestMiniClusterJobStatusCheckingOps}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
-  override protected def registerInEnvironment(
-      env: MiniClusterExecutionEnvironment,
+  override protected def runScenario(
+      env: StreamExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
+  ): JobExecutionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util
 
 import org.slf4j.Logger
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try

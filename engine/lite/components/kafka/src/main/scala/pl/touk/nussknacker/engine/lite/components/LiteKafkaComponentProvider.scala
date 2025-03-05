@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   ComponentProvider,
   ComponentType,
   NussknackerVersion
 }
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory

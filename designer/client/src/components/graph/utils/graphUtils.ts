@@ -127,8 +127,9 @@ export const handleGraphEvent =
     <T = dia.CellView>(
         touchEvent: ((view: T, event: dia.Event) => void) | null,
         mouseEvent: ((view: T, event: dia.Event) => void) | null,
+        preventDefault: (view: T) => boolean = () => true,
     ) =>
     (view: T, event: dia.Event) => {
-        event.preventDefault();
+        if (preventDefault(view)) event.preventDefault();
         return isTouchEvent(event) ? touchEvent?.(view, event) : mouseEvent?.(view, event);
     };

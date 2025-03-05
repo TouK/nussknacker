@@ -1,25 +1,25 @@
 package pl.touk.nussknacker.engine.requestresponse
 
 import cats.Monad
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, WriterT}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toFunctorOps
 import io.circe.Json
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
@@ -49,7 +49,7 @@ object RequestResponseInterpreter {
       modelData: ModelData,
       additionalListeners: List[ProcessListener],
       resultCollector: ResultCollector,
-      componentUseCase: ComponentUseCase
+      runtimeMode: RuntimeMode
   )(
       implicit ec: ExecutionContext
   ): Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
@@ -60,7 +60,7 @@ object RequestResponseInterpreter {
         modelData,
         additionalListeners,
         resultCollector,
-        componentUseCase
+        runtimeMode
       )
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion)), _))
   }

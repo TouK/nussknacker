@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.LazyParameter.CustomLazyParameter
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.LazyParameter.CustomLazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 

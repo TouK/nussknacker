@@ -10,47 +10,55 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{parser, Decoder, Encoder, Json}
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
+import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.ProcessesQueryEnrichments.RichProcessesQuery
+import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener}
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.mock.{
+  MockDeploymentManager,
+  MockManagerProvider,
+  TestProcessChangeListener,
+  WithTestDeploymentManagerClassLoader
+}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.config.{DesignerConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype._
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -59,6 +67,7 @@ import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
 import java.net.URI
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
@@ -67,6 +76,7 @@ trait NuResourcesTest
     with WithClock
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
+    with WithTestDeploymentManagerClassLoader
     with EitherValuesDetailedMessage
     with OptionValues
     with BeforeAndAfterEach
@@ -98,7 +108,7 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
+  protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
 
@@ -107,27 +117,54 @@ trait NuResourcesTest
     futureFetchingScenarioRepository
   )
 
+  protected val deploymentsStatusesProvider =
+    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)
+
+  protected val scenarioStatusProvider: ScenarioStatusProvider = new ScenarioStatusProvider(
+    deploymentsStatusesProvider,
+    dmDispatcher,
+    fetchingProcessRepository,
+    actionRepository,
+    dbioRunner,
+  )
+
+  protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
+
+  protected val actionService: ActionService = new ActionService(
+    fetchingProcessRepository,
+    actionRepository,
+    dbioRunner,
+    processChangeListener,
+    scenarioStatusProvider,
+    deploymentCommentSettings,
+    Clock.systemUTC()
+  )
+
   protected val deploymentService: DeploymentService =
     new DeploymentService(
       dmDispatcher,
-      fetchingProcessRepository,
-      actionRepository,
-      dbioRunner,
       processValidatorByProcessingType,
       scenarioResolverByProcessingType,
-      processChangeListener,
-      None,
-      deploymentCommentSettings,
-      mapProcessingTypeDataProvider()
+      actionService,
+      mapProcessingTypeDataProvider(),
     )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
-  protected val deploymentManagerProvider: DeploymentManagerProvider =
-    new MockManagerProvider(deploymentManager)
+  protected val deploymentManagerProvider: DeploymentManagerProvider = new MockManagerProvider(deploymentManager)
 
-  private val modelData = ModelData(processingTypeConfig, modelDependencies)
+  private val modelClassLoaderProvider = ModelClassLoaderProvider(
+    Map(Streaming.stringify -> ModelClassLoaderDependencies(processingTypeConfig.classPath, None)),
+    deploymentManagersClassLoader
+  )
+
+  private val modelData =
+    ModelData(
+      processingTypeConfig,
+      modelDependencies,
+      modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
+    )
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
@@ -135,6 +172,7 @@ trait NuResourcesTest
         Streaming.stringify,
         modelData,
         deploymentManagerProvider,
+        SchedulingForProcessingType.NotAvailable,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
@@ -151,13 +189,16 @@ trait NuResourcesTest
       new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
         .loadProcessingTypeData(
           _ => modelDependencies,
-          _ => deploymentManagerDependencies
+          _ => deploymentManagerDependencies,
+          deploymentManagersClassLoader,
+          modelClassLoaderProvider,
+          Some(testDbRef),
         )
         .unsafeRunSync()
     )
   }
 
-  protected val processService: DBProcessService = createDBProcessService(deploymentService)
+  protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -169,7 +210,8 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    processStateService = deploymentService,
+    scenarioStatusProvider = scenarioStatusProvider,
+    scenarioStatusPresenter = scenarioStatusPresenter,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener
@@ -188,9 +230,10 @@ trait NuResourcesTest
     RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(processStateProvider: ProcessStateProvider): DBProcessService =
+  protected def createDBProcessService(processStateProvider: ScenarioStatusProvider): DBProcessService =
     new DBProcessService(
       processStateProvider,
+      scenarioStatusPresenter,
       newProcessPreparerByProcessingType,
       typeToConfig.mapCombined(_.parametersService),
       processResolverByProcessingType,
@@ -226,7 +269,6 @@ trait NuResourcesTest
       dispatcher = dmDispatcher,
       metricRegistry = new MetricRegistry,
       scenarioTestServices = scenarioTestServiceByProcessingType,
-      typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData)
     )
 
   override def beforeEach(): Unit = {
@@ -244,7 +286,8 @@ trait NuResourcesTest
   protected def saveCanonicalProcess(process: CanonicalProcess)(
       testCode: => Assertion
   ): Assertion =
-    createProcessRequest(process.name) { _ =>
+    createProcessRequest(process.name) { code =>
+      code shouldBe StatusCodes.Created
       val json = parser.decode[Json](responseAs[String]).rightValue
       val resp = CreateProcessResponse(json)
 
@@ -336,11 +379,39 @@ trait NuResourcesTest
   ): RouteTestResult =
     Post(
       s"/processManagement/deploy/$processName",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        DeployRequest(comment, None).asJson.noSpaces
+      )
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def deployProcessCommentDeprecated(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/deploy/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def cancelProcess(
+      processName: ProcessName,
+      comment: Option[String] = None
+  ): RouteTestResult =
+    Post(
+      s"/processManagement/cancel/$processName",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        CancelRequest(comment).asJson.noSpaces
+      )
+    ) ~>
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
+
+  // TODO: See comment in ManagementResources.deployRequestEntity
+  protected def cancelProcessCommentDeprecated(
       processName: ProcessName,
       comment: Option[String] = None
   ): RouteTestResult =
@@ -499,7 +570,7 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None, None)
+          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None)
         )
       )
     } yield id).futureValue

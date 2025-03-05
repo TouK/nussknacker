@@ -1,5 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  ChainedSchemaIdFromMessageExtractor,
+  SchemaBasedSerdeProvider,
+  SchemaRegistryClient,
+  SchemaRegistryClientFactory
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.schemaid.SchemaIdFromAzureHeader
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
@@ -10,12 +16,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{
   KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory,
   KafkaSchemaRegistryBasedValueSerializationSchemaFactory
-}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  ChainedSchemaIdFromMessageExtractor,
-  SchemaBasedSerdeProvider,
-  SchemaRegistryClient,
-  SchemaRegistryClientFactory
 }
 
 object UniversalSchemaBasedSerdeProvider {
@@ -43,7 +43,7 @@ object UniversalSchemaBasedSerdeProvider {
     createSchemaIdFromMessageExtractor(isConfluent, isAzure)
   }
 
-  // SchemaId can be obtain in several ways. Precedent:
+  // SchemaId can be obtained in several ways. Precedent:
   // * from nu kafka headers - it is our own, Nussknacker headers standard format: key.schemaId and value.schemaId headers
   // * from azure header - content-type: avro/binary+schemaId (only value schema ids are supported)
   // * from payload serialized in 'Confluent way' ([magicbyte][schemaid][payload])

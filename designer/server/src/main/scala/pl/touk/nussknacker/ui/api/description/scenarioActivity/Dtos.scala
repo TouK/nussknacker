@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
-import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -21,8 +21,8 @@ import sttp.tapir.derevo.schema
 import sttp.tapir.generic.Configuration
 
 import java.io.InputStream
-import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.collection.immutable
 

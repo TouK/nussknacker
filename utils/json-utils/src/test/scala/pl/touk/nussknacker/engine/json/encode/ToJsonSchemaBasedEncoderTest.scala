@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.json.encode
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
-import io.circe.Json.{Null, obj}
+import io.circe.Json.{obj, Null}
 import org.everit.json.schema._
 import org.scalatest.Inside.inside
 import org.scalatest.LoneElement._
@@ -13,11 +13,11 @@ import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
-import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import java.util.Collections
 
 class ToJsonSchemaBasedEncoderTest

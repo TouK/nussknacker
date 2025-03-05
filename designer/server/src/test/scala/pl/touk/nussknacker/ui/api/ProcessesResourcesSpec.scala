@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.OptionT
 import cats.instances.all._
 import com.typesafe.config.{Config, ConfigValueFactory}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.LoneElement._
 import org.scalatest._
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -19,32 +20,39 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it._
+import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.{
   Streaming1,
   Streaming2
 }
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
-  Available,
-  NotAvailable
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
+  existingSinkFactory,
+  existingSourceFactory,
+  sampleFragmentOneOut,
+  sampleFragmentWithPreset
 }
+import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   ScenarioActivities,
   ScenarioActivity,
   ScenarioActivityComment,
   ScenarioActivityType
+}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
+  Available,
+  NotAvailable
 }
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
@@ -54,15 +62,16 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   SearchPanel,
   TipsPanel
 }
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 /**
  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
@@ -81,9 +90,10 @@ class ProcessesResourcesSpec
     with OptionValues
     with EitherValues {
 
-  import ProcessesQueryEnrichments._
   import io.circe._
   import io.circe.parser._
+
+  import ProcessesQueryEnrichments._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
@@ -96,6 +106,8 @@ class ProcessesResourcesSpec
   private val archivedProcessName      = ProcessName("archived")
   private val fragmentName             = ProcessName("fragment")
   private val archivedFragmentName     = ProcessName("archived-fragment")
+
+  private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds)
 
   override def designerConfig: Config = super.designerConfig
     .withValue(
@@ -129,10 +141,47 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("/api/processes should return lighter details without ProcessAction's additional fields and null values") {
+    def hasNullAttributes(json: Json): Boolean = {
+      json.fold(
+        jsonNull = true, // null found
+        jsonBoolean = _ => false,
+        jsonNumber = _ => false,
+        jsonString = _ => false,
+        jsonArray = _.exists(hasNullAttributes),
+        jsonObject = _.values.exists(hasNullAttributes)
+      )
+    }
+    createDeployedScenario(processName, category = Category1)
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      // verify that unnecessary fields were omitted
+      val decodedScenarios = responseAs[List[ScenarioWithDetails]]
+      decodedScenarios.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, None, None)
+            ) =>
+      }
+      decodedScenarios.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, None, None)
+            ) =>
+      }
+      decodedScenarios.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, None, None)
+            ) =>
+      }
+      // verify that null values were not present in JSON response
+      val rawFetchedScenarios = responseAs[Json]
+      hasNullAttributes(rawFetchedScenarios) shouldBe false
+    }
+  }
+
   test("return single process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> SimpleStateStatus.Running)
+      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
     )
 
     forScenarioReturned(processName) { process =>
@@ -196,10 +245,46 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("should return validation error when fragment was modified in an incompatible way") {
+    // Create a fragment that has a preset parameter and a scenario that uses that fragment
+    val fragmentWithPreset = CanonicalProcessConverter.toScenarioGraph(sampleFragmentWithPreset)
+    val fragmentName       = sampleFragmentWithPreset.name.value
+    val scenarioWithFragment = ScenarioBuilder
+      .streaming(processName.value)
+      .source("source", existingSourceFactory)
+      .fragment(
+        fragmentName,
+        fragmentName,
+        List(("param1", Expression.dictKeyWithLabel("H000000", Some("Black")))),
+        Map("output" -> "fragmentResult"),
+        Map(
+          "output" -> GraphBuilder.emptySink("sink", existingSinkFactory)
+        )
+      )
+    saveFragment(ProcessName(fragmentName), fragmentWithPreset, category = Category1)(succeed)
+    saveCanonicalProcess(scenarioWithFragment, category = Category1)(succeed)
+
+    // Modify fragment so the parameter is no longer a preset
+    updateProcess(CanonicalProcessConverter.toScenarioGraph(sampleFragmentOneOut), ProcessName(fragmentName))(succeed)
+
+    // Verify that incompatible changes were introduced in the fragment and thus error is returned for scenario
+    Get(
+      s"/api/processes/${processName.value}"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
+      val scenarioDetails = responseAs[ScenarioWithDetails]
+      scenarioDetails.validationResult.value.errors.invalidNodes should not be empty
+      scenarioDetails.validationResult.value.errors.invalidNodes
+        .get(fragmentName)
+        .value
+        .find(_.typ == "IncompatibleParameterDefinitionModification")
+        .value
+    }
+  }
+
   test("not allow to archive still running process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> SimpleStateStatus.Running)
+      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
     )
 
     archiveProcess(processName) { status =>
@@ -260,7 +345,7 @@ class ProcessesResourcesSpec
   test("should not allow to rename deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> SimpleStateStatus.Running)
+      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
     )
 
     val newName = ProcessName("ProcessChangedName")
@@ -286,7 +371,7 @@ class ProcessesResourcesSpec
   ignore("should not allow to rename process with running state") {
     createEmptyScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> SimpleStateStatus.Running)
+      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
     )
 
     val newName = ProcessName("ProcessChangedName")
@@ -519,8 +604,8 @@ class ProcessesResourcesSpec
 
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        secondProcessor.value -> SimpleStateStatus.Canceled,
-        thirdProcessor.value  -> SimpleStateStatus.Running
+        secondProcessor.value -> BasicStatusDetails(SimpleStateStatus.Canceled, Some(VersionId(1))),
+        thirdProcessor.value  -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1)))
       )
     )
 
@@ -1063,17 +1148,17 @@ class ProcessesResourcesSpec
 
       loadedProcess.head.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.head.lastStateAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.head.lastDeployedAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
     }
@@ -1084,17 +1169,17 @@ class ProcessesResourcesSpec
 
       loadedProcess.lastAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.lastStateAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
       loadedProcess.lastDeployedAction should matchPattern {
         case Some(
-              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+              ProcessAction(_, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _)
             ) =>
       }
     }
@@ -1182,7 +1267,7 @@ class ProcessesResourcesSpec
   test("should return status for single deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> SimpleStateStatus.Running)
+      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
     )
 
     forScenarioStatus(processName) { (code, state) =>
@@ -1263,7 +1348,7 @@ class ProcessesResourcesSpec
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> SimpleStateStatus.Running)
+      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
     )
 
     forScenariosReturned(ScenarioQuery.empty) { processes =>

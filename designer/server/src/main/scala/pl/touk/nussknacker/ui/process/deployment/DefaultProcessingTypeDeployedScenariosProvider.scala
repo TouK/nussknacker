@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, Deployment
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
@@ -82,11 +80,8 @@ object DefaultProcessingTypeDeployedScenariosProvider {
   def apply(dbRef: DbRef, processingType: ProcessingType)(
       implicit ec: ExecutionContext
   ): ProcessingTypeDeployedScenariosProvider = {
-    val dbioRunner = DBIOActionRunner(dbRef)
-    val dumbModelInfoProvier = ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(processingType -> ValueWithRestriction.anyUser(Map.empty[String, String]))
-    )
-    val actionRepository         = DbScenarioActionRepository.create(dbRef, dumbModelInfoProvier)
+    val dbioRunner               = DBIOActionRunner(dbRef)
+    val actionRepository         = DbScenarioActionRepository.create(dbRef)
     val scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
     val processRepository        = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
     val futureProcessRepository =

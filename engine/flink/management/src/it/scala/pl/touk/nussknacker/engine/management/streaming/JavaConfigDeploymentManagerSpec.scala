@@ -1,25 +1,26 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentUpdateStrategy,
   DMCancelScenarioCommand,
-  DMRunDeploymentCommand,
-  DeploymentUpdateStrategy
+  DMRunDeploymentCommand
 }
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import scala.concurrent.duration._
 
-class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with LazyLogging {
+class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with StrictLogging {
 
-  override protected def classPath: List[String] = ClassPaths.javaClasspath
+  override protected def useMiniClusterForDeployment: Boolean = false
+
+  override protected def modelClassPath: List[String] = TestModelClassPaths.javaClasspath
 
   test("deploy java scenario in running flink") {
     val processId = "runningJavaFlink"
@@ -45,7 +46,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
     )
 
     eventually {
-      val jobStatus = deploymentManager.getProcessStates(process.name).futureValue.value
+      val jobStatus = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
       jobStatus.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 

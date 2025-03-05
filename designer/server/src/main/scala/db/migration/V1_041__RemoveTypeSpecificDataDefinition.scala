@@ -3,9 +3,9 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_041__RemoveTypeSpecificDataDefinition.migrateMetaData
 import io.circe._
-import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 
 trait V1_041__RemoveTypeSpecificDataDefinition extends ProcessJsonMigration with LazyLogging {
 

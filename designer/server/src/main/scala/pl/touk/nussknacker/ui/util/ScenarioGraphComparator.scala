@@ -50,8 +50,8 @@ object ScenarioGraphComparator {
       .toMap
   }
 
-  import pl.touk.nussknacker.engine.graph.node.NodeData._
   import pl.touk.nussknacker.engine.api.CirceUtil._
+  import pl.touk.nussknacker.engine.graph.node.NodeData._
 
   @ConfiguredJsonCodec sealed trait Difference {
     def id: String

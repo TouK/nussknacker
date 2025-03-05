@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import java.io.{ByteArrayOutputStream, OutputStream}
 import java.nio.ByteBuffer
 import java.util
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 import scala.util.Using
 
 object AvroUtils extends LazyLogging {

@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.process
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
+import pl.touk.nussknacker.ui.process.ProcessService.SkipAdditionalFields
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
@@ -55,9 +57,27 @@ object ScenarioWithDetailsConversions {
     )
   }
 
+  def skipAdditionalFields(details: ScenarioWithDetails, skipOptions: SkipAdditionalFields): ScenarioWithDetails = {
+    def skipProcessActionOptionalFields(processAction: Option[ProcessAction]) = processAction.map(
+      _.copy(
+        failureMessage = None,
+        comment = None,
+      )
+    )
+    def getProcessAction(processAction: Option[ProcessAction]) =
+      if (skipOptions.skipProcessActionOptionalFields) skipProcessActionOptionalFields(processAction) else processAction
+
+    details.copy(
+      lastDeployedAction = getProcessAction(details.lastDeployedAction),
+      lastStateAction = getProcessAction(details.lastStateAction),
+      lastAction = getProcessAction(details.lastAction)
+    )
+  }
+
   implicit class Ops(scenarioWithDetails: ScenarioWithDetails) {
 
-    // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
+    // TODO: Instead of doing these conversions below, wee should transform ScenarioWithDetailsEntity with some additional context
+    //       and build DTO at the end
     def toEntity: ScenarioWithDetailsEntity[Unit] = {
       toEntity(())
     }

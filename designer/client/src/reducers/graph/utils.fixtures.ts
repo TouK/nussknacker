@@ -162,20 +162,15 @@ export const state: GraphState = {
             ],
         },
         state: {
-            externalDeploymentId: null,
             status: {
                 name: "NOT_DEPLOYED",
             },
-            version: null,
             visibleActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             allowedActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             actionTooltips: {},
             icon: "/assets/states/not-deployed.svg",
             tooltip: "The scenario is not deployed.",
             description: "The scenario is not deployed.",
-            startTime: null,
-            attributes: null,
-            errors: [],
         },
         validationResult: {
             errors: {
@@ -614,29 +609,21 @@ export const state: GraphState = {
                 },
             },
         },
-        lastDeployedAction: null,
-        lastAction: null,
         history: [
             {
                 processVersionId: 3,
                 createDate: "2024-10-03T08:36:52.856496Z",
                 user: "writer",
-                modelVersion: 4,
-                actions: [],
             },
             {
                 processVersionId: 2,
                 createDate: "2024-10-03T08:14:04.647992Z",
                 user: "writer",
-                modelVersion: 4,
-                actions: [],
             },
             {
                 processVersionId: 1,
                 createDate: "2024-10-03T08:08:02.059243Z",
                 user: "writer",
-                modelVersion: 4,
-                actions: [],
             },
         ],
     },

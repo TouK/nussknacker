@@ -3,21 +3,22 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioStatusNameWrapperDto}
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.provider.{
   ProcessingTypeDataProvider,
   ReloadableProcessingTypeDataProvider
 }
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.util.ExecutionContextWithIORuntime
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -26,7 +27,7 @@ class AppApiHttpService(
     config: Config,
     authManager: AuthManager,
     processingTypeDataReloader: ReloadableProcessingTypeDataProvider,
-    modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
+    modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
     shouldExposeConfig: Boolean
@@ -106,14 +107,14 @@ class AppApiHttpService(
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
-          val modelBuildInfo: Map[ProcessingType, Map[String, String]] =
-            modelBuildInfos.all(NussknackerInternalUser.instance)
+          val modelInfo: Map[ProcessingType, ModelInfo] =
+            modelInfos.all(NussknackerInternalUser.instance)
           BuildInfoDto(
             BuildInfo.name,
             BuildInfo.gitCommit,
             BuildInfo.buildTime,
             BuildInfo.version,
-            modelBuildInfo,
+            modelInfo,
             configuredBuildInfo
           )
         }
@@ -164,15 +165,19 @@ class AppApiHttpService(
       }
   }
 
-  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ProcessState]] = {
+  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ScenarioStatusDto]] = {
     for {
       processes <- processService.getLatestProcessesWithDetails(
         ScenarioQuery.deployed,
         GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
       )
       statusMap = processes.flatMap(process => process.state.map(process.name -> _)).toMap
+      // TODO: we should use domain objects instead of DTOs
       withProblem = statusMap.collect {
-        case (name, processStatus @ ProcessState(_, _ @ProblemStateStatus(_, _), _, _, _, _, _, _, _, _, _, _)) =>
+        case (
+              name,
+              processStatus @ ScenarioStatusDto(ScenarioStatusNameWrapperDto(ProblemStateStatus.name), _, _, _, _, _, _)
+            ) =>
           (name, processStatus)
       }
     } yield withProblem
@@ -182,7 +187,7 @@ class AppApiHttpService(
     processService
       .getLatestProcessesWithDetails(
         ScenarioQuery.unarchivedProcesses,
-        GetScenarioWithDetailsOptions.withsScenarioGraph.withValidation
+        GetScenarioWithDetailsOptions.withScenarioGraph.withValidation
       )
       .map { processes =>
         processes

@@ -3,19 +3,20 @@ package pl.touk.nussknacker.engine.flink.test
 import cats.data.NonEmptyList
 import cats.implicits.toFunctorOps
 import com.typesafe.scalalogging.LazyLogging
+import io.circe._
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import io.circe._
 import org.apache.commons.io.FileUtils
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
   FunctionalMethodDefinition,
@@ -27,8 +28,6 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import pl.touk.nussknacker.engine.api.CirceUtil._
-
 import scala.util.Properties
 
 trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside with LazyLogging {

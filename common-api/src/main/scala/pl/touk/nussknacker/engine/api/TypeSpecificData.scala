@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.api
 
+import io.circe.generic.extras.ConfiguredJsonCodec
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.TypeSpecificDataConversionUtils.{
   convertPropertyOrNone,
   mapEmptyStringToNone,
   toStringWithEmptyDefault
 }
-import io.circe.generic.extras.ConfiguredJsonCodec
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
-import pl.touk.nussknacker.engine.api.CirceUtil._
-
 import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {

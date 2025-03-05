@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ProcessCanonizer {
 
-  import MaybeArtificial.applicative
   import cats.syntax.apply._
+
+  import MaybeArtificial.applicative
 
   def canonize(process: EspProcess): CanonicalProcess = {
     CanonicalProcess(

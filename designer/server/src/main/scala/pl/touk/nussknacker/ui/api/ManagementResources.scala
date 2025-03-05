@@ -6,34 +6,41 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{parser, Decoder, Encoder, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ScenarioTestDataGenerationError,
+  TestDataPreparationError
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.restmodel.{RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.ui.{BadRequestError, OtherError}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError.TooManySamples
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{GenerateTestDataError, PerformTestError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
 
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-
   import io.circe.syntax._
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
 
@@ -61,6 +68,62 @@ object ManagementResources {
 
   }
 
+  final case class GenerateTestDataDesignerError(message: String) extends BadRequestError(message)
+
+  private object GenerateTestDataDesignerError {
+
+    def apply(generateTestDataError: ScenarioTestService.GenerateTestDataError): GenerateTestDataDesignerError = {
+      GenerateTestDataDesignerError(generateTestDataError match {
+        case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
+          cause match {
+            case ScenarioTestDataGenerationError.NoDataGenerated =>
+              TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
+            case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
+              TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
+          }
+        case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
+          cause match {
+            case SerializationError.TooManyCharactersGenerated(length, limit) =>
+              TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
+          }
+        case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
+          TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+      })
+    }
+
+  }
+
+  final case class PerformTestDesignerError(message: String) extends BadRequestError(message)
+
+  private object PerformTestDesignerError {
+
+    def apply(performTestError: ScenarioTestService.PerformTestError): PerformTestDesignerError = {
+      PerformTestDesignerError(performTestError match {
+        case PerformTestError.DeserializationError(cause) =>
+          cause match {
+            case DeserializationError.TooManyCharacters(length, limit) =>
+              TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
+            case DeserializationError.TooManySamples(size, limit) =>
+              TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
+            case DeserializationError.NoRecords =>
+              TestingApiErrorMessages.passedTestData.empty
+            case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
+              TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
+          }
+        case PerformTestError.TestDataPreparationError(cause) =>
+          cause match {
+            case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
+              TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId)
+            case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
+              TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
+          }
+        case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+          TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
+      })
+    }
+
+  }
+
 }
 
 class ManagementResources(
@@ -70,7 +133,6 @@ class ManagementResources(
     dispatcher: DeploymentManagerDispatcher,
     metricRegistry: MetricRegistry,
     scenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
-    typeToConfig: ProcessingTypeDataProvider[ModelData, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
     with LazyLogging
@@ -84,6 +146,56 @@ class ManagementResources(
   // TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
+
+  // TODO: This (deployRequestEntity and cancelRequestEntity) is used as a transition from comment-as-plain-text-body to json.
+  //  e.g. touk/nussknacker-example-scenarios-library, that is used in e2e tests, uses plain text comment.
+  // https://github.com/TouK/nussknacker-scenario-examples-library/pull/7
+  // To be replaced by `entity(as[DeployRequest]))` and `entity(as[CancelRequest]))`.
+  private def deployRequestEntity: Directive1[DeployRequest] = {
+    entity(as[Option[String]]).flatMap { optStr =>
+      {
+        optStr match {
+          case None => provide(DeployRequest(None, None))
+          case Some(body) =>
+            io.circe.parser.parse(body) match {
+              case Right(json) =>
+                json.as[DeployRequest] match {
+                  case Right(request) =>
+                    provide(request)
+                  case Left(notValidDeployRequest) =>
+                    reject(MalformedRequestContentRejection("Invalid deploy request", notValidDeployRequest))
+                }
+              case Left(notJson) =>
+                // assume deployment request contains plaintext comment only
+                provide(DeployRequest(Some(body), None))
+            }
+        }
+      }
+    }
+  }
+
+  private def cancelRequestEntity: Directive1[CancelRequest] = {
+    entity(as[Option[String]]).flatMap { optStr =>
+      {
+        optStr match {
+          case None => provide(CancelRequest(None))
+          case Some(body) =>
+            io.circe.parser.parse(body) match {
+              case Right(json) =>
+                json.as[CancelRequest] match {
+                  case Right(request) =>
+                    provide(request)
+                  case Left(notValidRequest) =>
+                    reject(MalformedRequestContentRejection("Invalid cancel request", notValidRequest))
+                }
+              case Left(notJson) =>
+                // assume cancel request contains plaintext comment only
+                provide(CancelRequest(Some(body)))
+            }
+        }
+      }
+    }
+  }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("adminProcessManagement") {
@@ -114,16 +226,16 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
-            (processIdWithName, comment, savepointPath) =>
+          (post & processId(processName) & deployRequestEntity & parameters(Symbol("savepointPath"))) {
+            (processIdWithName, request, savepointPath) =>
               canDeploy(processIdWithName) {
                 complete {
                   deploymentService
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
-                        nodesDeploymentData = NodesDeploymentData.empty,
+                        commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
@@ -137,15 +249,15 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+        (post & processId(processName) & deployRequestEntity) { (processIdWithName, request) =>
           canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
-                      nodesDeploymentData = NodesDeploymentData.empty,
+                      commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                      nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )
@@ -156,13 +268,13 @@ class ManagementResources(
         }
       } ~
         path("cancel" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+          (post & processId(processName) & cancelRequestEntity) { (processIdWithName, request) =>
             canDeploy(processIdWithName) {
               complete {
                 measureTime("cancel", metricRegistry) {
                   deploymentService.processCommand(
                     CancelScenarioCommand(commonData =
-                      CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user)
+                      CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user)
                     )
                   )
                 }
@@ -187,7 +299,10 @@ class ManagementResources(
                             details.isFragment,
                             RawScenarioTestData(testDataContent)
                           )
-                          .flatMap(mapResultsToHttpResponse)
+                          .flatMap {
+                            case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                            case Right(value) => mapResultsToHttpResponse(value)
+                          }
                       case Left(error) =>
                         Future.failed(ProcessUnmarshallingError(error.toString))
                     }
@@ -212,7 +327,7 @@ class ManagementResources(
                           details.isFragment,
                           testSampleSize
                         ) match {
-                          case Left(error) => Future.failed(ProcessUnmarshallingError(error))
+                          case Left(error) => Future.failed(GenerateTestDataDesignerError(error))
                           case Right(rawScenarioTestData) =>
                             scenarioTestService
                               .performTest(
@@ -221,7 +336,10 @@ class ManagementResources(
                                 details.isFragment,
                                 rawScenarioTestData
                               )
-                              .flatMap(mapResultsToHttpResponse)
+                              .flatMap {
+                                case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                                case Right(value) => mapResultsToHttpResponse(value)
+                              }
                         }
                       }
                     }
@@ -246,7 +364,10 @@ class ManagementResources(
                           process.isFragment,
                           testParametersRequest.sourceParameters
                         )
-                        .flatMap(mapResultsToHttpResponse)
+                        .flatMap {
+                          case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                          case Right(value) => mapResultsToHttpResponse(value)
+                        }
                     }
                   }
                 }

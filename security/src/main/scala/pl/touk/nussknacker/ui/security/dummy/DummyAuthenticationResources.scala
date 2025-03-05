@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.dummy
 
 import akka.http.scaladsl.model.headers.HttpChallenge
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1}
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsMissing
 import akka.http.scaladsl.server.directives.AuthenticationDirective
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1}
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.api.{
   AuthenticatedUser,

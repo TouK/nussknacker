@@ -6,9 +6,9 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
@@ -232,7 +232,7 @@ object validationHelpers {
     }
 
     override def nodeDependencies: List[NodeDependency] =
-      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
+      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
 
   }
 
@@ -429,7 +429,7 @@ object validationHelpers {
     }
 
     override def nodeDependencies: List[NodeDependency] =
-      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
+      List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
   }
 
   trait GenericParameters[T] extends SingleInputDynamicComponent[T] {
@@ -499,7 +499,7 @@ object validationHelpers {
     }
 
     override def nodeDependencies: List[NodeDependency] =
-      List(TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
+      List(TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
 
   }
 

@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
+import pl.touk.nussknacker.engine.api.json.FromJsonDecoder.jsonToAny
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.api.json.FromJsonDecoder.jsonToAny
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
@@ -131,6 +131,8 @@ object SwaggerTyped {
             case (Some("string"), Some("date"))      => SwaggerDate
             case (Some("string"), Some("time"))      => SwaggerTime
             case (Some("string"), _)                 => SwaggerString
+            case (Some("integer"), Some("int32"))    => SwaggerInteger
+            case (Some("integer"), Some("int64"))    => SwaggerLong
             case (Some("integer"), _) =>
               inferredIntType(
                 schema.getMinimum,

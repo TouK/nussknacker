@@ -277,7 +277,7 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                                                                                                                                                                     |
 | authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                                                                                                                                                               |
 | authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                                                                                                                                                              |
-| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile`                                                                                                                             |
+| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. These roles must correspond to those defined in the `usersFile`.                                                                                                                   |
 | authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                                                                                                                                                              |
 | authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                                                                                                                                                             |
 | authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider                                                                                                                                                       |
@@ -640,7 +640,7 @@ processToolbarConfig {
           { type: "process-compare" }
           { type: "process-migrate", disabled: { archived: true } }
           { type: "process-import", disabled: { archived: true } }
-          { type: "process-json" }
+          { type: "process-export" }
           { type: "process-pdf" }
           { type: "process-archive", hidden: { archived: true } }
           { type: "process-unarchive", hidden: { archived: false } }
@@ -735,11 +735,11 @@ You can configure `secondaryEnvironment` to allow for
 
 ## Testing
 
-| Parameter name                     | Importance | Type | Default value | Description                                                   |
-|------------------------------------|------------|------|---------------|---------------------------------------------------------------|
-| testDataSettings.maxSampleCount    | Medium     | int  | 20            | Limits number of samples for tests from file                  |
-| testDataSettings.testDataMaxLength | Low        | int  | 200000        | Limits size (in characters) of test input for tests from file |
-| testDataSettings.resultsMaxBytes   | Low        | int  | 50000000      | Limits size of returned test data for tests from file         |
+| Parameter name                     | Importance | Type | Default value | Description                                                                                                       |
+|------------------------------------|------------|------|---------------|-------------------------------------------------------------------------------------------------------------------|
+| testDataSettings.maxSamplesCount   | Medium     | int  | 20            | Limits the number of samples to be generated and received from a file                                             |
+| testDataSettings.testDataMaxLength | Low        | int  | 200000        | Limits the size (in characters) of the test data generated and received in tests from a file                      |
+| testDataSettings.resultsMaxBytes   | Low        | long | 50000000      | Limits the size (in bytes) of returned test results (i.e. variables for each node, invocation results and errors) |
 
 
 ## Other configuration options

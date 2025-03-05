@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.ui.process
 
 import cats._
+import cats.data.Ior.Both
 import cats.data.Validated
-import cats.implicits.toTraverseOps
+import cats.implicits.{toAlignOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -20,19 +21,21 @@ import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand,
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
+import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
   ProcessNotFoundError,
   ProcessVersionNotFoundError
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
-import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
@@ -73,11 +76,19 @@ object ProcessService {
     val detailsOnly: GetScenarioWithDetailsOptions =
       new GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = false)
 
-    val withsScenarioGraph: GetScenarioWithDetailsOptions =
+    val withScenarioGraph: GetScenarioWithDetailsOptions =
       new GetScenarioWithDetailsOptions(FetchScenarioGraph(), fetchState = false)
+
+    val withoutAdditionalFields: GetScenarioWithDetailsOptions =
+      detailsOnly.copy(additionalFieldsOptions = SkipAdditionalFields(skipProcessActionOptionalFields = true))
+
   }
 
-  final case class GetScenarioWithDetailsOptions(fetchGraphOptions: ScenarioGraphOptions, fetchState: Boolean) {
+  final case class GetScenarioWithDetailsOptions(
+      fetchGraphOptions: ScenarioGraphOptions,
+      fetchState: Boolean,
+      additionalFieldsOptions: AdditionalFieldsOptions = DoNotSkipAdditionalFields
+  ) {
 
     def withValidation: GetScenarioWithDetailsOptions = {
       val newFetchGraphOptions = fetchGraphOptions match {
@@ -105,6 +116,12 @@ object ProcessService {
     case class ValidateAndResolve(includeValidationNodeResults: Boolean = true) extends ValidationMode
   }
 
+  sealed trait AdditionalFieldsOptions
+
+  case object DoNotSkipAdditionalFields extends AdditionalFieldsOptions
+
+  case class SkipAdditionalFields(skipProcessActionOptionalFields: Boolean) extends AdditionalFieldsOptions
+
 }
 
 trait ProcessService {
@@ -123,6 +140,10 @@ trait ProcessService {
   def getLatestProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetails]]
+
+  def getLatestVersionForProcesses(query: ScenarioQuery, scenarioVersionQuery: ScenarioVersionQuery)(
+      implicit user: LoggedUser
+  ): Future[Map[ProcessId, ScenarioVersionMetadata]]
 
   def getLatestRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](query: ScenarioQuery)(
       implicit user: LoggedUser
@@ -163,7 +184,8 @@ trait ProcessService {
  * Each action includes verification based on actual process state and checking process is fragment / archived.
  */
 class DBProcessService(
-    processStateProvider: ProcessStateProvider,
+    scenarioStatusProvider: ScenarioStatusProvider,
+    scenarioStatusPresenter: ScenarioStatusPresenter,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
     scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
@@ -235,11 +257,17 @@ class DBProcessService(
     )
   }
 
+  override def getLatestVersionForProcesses(query: ScenarioQuery, scenarioVersionQuery: ScenarioVersionQuery)(
+      implicit user: LoggedUser
+  ): Future[Map[ProcessId, ScenarioVersionMetadata]] = {
+    fetchingProcessRepository.fetchLatestVersionForProcesses(query, scenarioVersionQuery)
+  }
+
   private abstract class FetchScenarioFun[F[_]] {
     def apply[PS: ScenarioShapeFetchStrategy]: Future[F[ScenarioWithDetailsEntity[PS]]]
   }
 
-  private def doGetProcessWithDetails[F[_]: Traverse](
+  private def doGetProcessWithDetails[F[_]: Traverse: Align](
       fetchScenario: FetchScenarioFun[F],
       options: GetScenarioWithDetailsOptions
   )(
@@ -257,11 +285,30 @@ class DBProcessService(
       case FetchScenarioGraph(validate) =>
         fetchScenario[CanonicalProcess]
           .map(_.map(validateAndReverseResolve(_, validate)))
-    }).flatMap { details =>
+    }).map(_.map { details =>
+      options.additionalFieldsOptions match {
+        case DoNotSkipAdditionalFields => details
+        case skipFieldsOption: SkipAdditionalFields =>
+          ScenarioWithDetailsConversions.skipAdditionalFields(details, skipFieldsOption)
+      }
+    }).flatMap { scenarioDetailsTraverse =>
       if (options.fetchState)
-        processStateProvider.enrichDetailsWithProcessState(details)
+        scenarioStatusProvider.getScenariosStatuses(scenarioDetailsTraverse.map(_.toEntity)).map {
+          statusesDetailsTraverse =>
+            scenarioDetailsTraverse.alignWith(statusesDetailsTraverse) {
+              case Both(scenarioDetails, scenarioStatusOpt) =>
+                scenarioDetails.copy(state =
+                  scenarioStatusOpt
+                    .map(scenarioStatusPresenter.toDto(_, scenarioDetails, currentlyPresentedVersionId = None))
+                )
+              case other =>
+                throw new IllegalStateException(
+                  s"Traverse with different sizes during scenario status enrichment: $other"
+                )
+            }
+        }
       else
-        Future.successful(details)
+        Future.successful(scenarioDetailsTraverse)
     }
   }
 
@@ -355,7 +402,6 @@ class DBProcessService(
                   process.processVersionId,
                   ScenarioActionName.UnArchive,
                   None,
-                  None
                 )
             )
           )
@@ -517,15 +563,15 @@ class DBProcessService(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    processStateProvider
-      .getProcessState(process.toEntity)
-      .flatMap(state => {
-        if (state.allowedActions.contains(actionToCheck)) {
+    scenarioStatusProvider
+      .getAllowedActionsForScenarioStatus(process.toEntity)
+      .flatMap { statusWithAllowedActions =>
+        if (statusWithAllowedActions.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(actionToCheck, process.name, state)
+          throw ProcessIllegalAction(actionToCheck, process.name, statusWithAllowedActions)
         }
-      })
+      }
   }
 
   private def doArchive(process: ScenarioWithDetails)(implicit user: LoggedUser): Future[Unit] =
@@ -538,7 +584,6 @@ class DBProcessService(
             process.processVersionId,
             ScenarioActionName.Archive,
             None,
-            None
           )
         )
       )

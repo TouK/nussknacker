@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.requestresponse.api
 
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.RequestResponseComponent
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializingFunction, SourceFactory}
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 

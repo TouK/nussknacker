@@ -54,10 +54,3 @@ class SimpleConfigLoadingDesignerConfigLoader(loadConfig: => Config) extends Des
   override def loadDesignerConfig(): IO[DesignerConfig] = IO.delay(DesignerConfig.from(loadConfig))
 
 }
-
-object DesignerConfigLoader {
-
-  def fromConfig(loadConfig: => Config): SimpleConfigLoadingDesignerConfigLoader =
-    new SimpleConfigLoadingDesignerConfigLoader(loadConfig)
-
-}

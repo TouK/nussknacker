@@ -3,7 +3,7 @@ package pl.touk.nussknacker.streaming.embedded
 import io.circe.Json
 import io.circe.Json.{fromInt, fromString, obj}
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
-import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 class StreamingEmbeddedDeploymentManagerTest
     extends BaseStreamingEmbeddedDeploymentManagerTest
@@ -27,6 +26,7 @@ class StreamingEmbeddedDeploymentManagerTest
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
   import KafkaUniversalComponentTransformer._
 
   test("Deploys scenario and cancels") {
@@ -57,7 +57,9 @@ class StreamingEmbeddedDeploymentManagerTest
     }
 
     eventually {
-      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
+        SimpleStateStatus.Running
+      )
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -67,7 +69,7 @@ class StreamingEmbeddedDeploymentManagerTest
     wrapInFailingLoader {
       manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
     }
-    manager.getProcessStates(name).futureValue.value shouldBe List.empty
+    manager.getScenarioDeploymentsStatuses(name).futureValue.value shouldBe List.empty
   }
 
   test("Run persisted scenario deployments") {
@@ -98,7 +100,9 @@ class StreamingEmbeddedDeploymentManagerTest
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     eventually {
-      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
+        SimpleStateStatus.Running
+      )
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -107,7 +111,7 @@ class StreamingEmbeddedDeploymentManagerTest
     kafkaClient.createConsumer().consumeWithJson[Json](outputTopic.name).take(1).head.message() shouldBe input
 
     manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
-    manager.getProcessStates(name).futureValue.value shouldBe List.empty
+    manager.getScenarioDeploymentsStatuses(name).futureValue.value shouldBe List.empty
   }
 
   test("Run persisted scenario deployment with scenario json incompatible with current component API") {
@@ -141,8 +145,8 @@ class StreamingEmbeddedDeploymentManagerTest
     )
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
-    manager.getProcessStates(name).futureValue.value.map(_.status) should matchPattern {
-      case ProblemStateStatus("Scenario compilation errors", _) :: Nil =>
+    manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
+      case ProblemStateStatus("Scenario compilation errors", _, _) :: Nil =>
     }
   }
 
@@ -228,7 +232,9 @@ class StreamingEmbeddedDeploymentManagerTest
     fixture.deployScenario(scenarioForOutput("next"))
 
     eventually {
-      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
+        SimpleStateStatus.Running
+      )
     }
 
     kafkaClient.sendMessage(inputTopic.name, message("2")).futureValue
@@ -239,7 +245,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
 
-    manager.getProcessStates(name).futureValue.value shouldBe List.empty
+    manager.getScenarioDeploymentsStatuses(name).futureValue.value shouldBe List.empty
   }
 
   test("Performs test from file") {

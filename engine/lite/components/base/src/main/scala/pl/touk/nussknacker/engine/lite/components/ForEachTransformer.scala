@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.Monad
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent

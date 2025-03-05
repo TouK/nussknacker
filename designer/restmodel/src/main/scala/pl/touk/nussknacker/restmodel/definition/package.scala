@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.restmodel
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-
-import java.net.URI
 
 package object definition {
 
@@ -36,7 +34,7 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
-      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
+      // It is used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
       // and ScenarioWithDetails.json.validationResult.nodeResults is not enough

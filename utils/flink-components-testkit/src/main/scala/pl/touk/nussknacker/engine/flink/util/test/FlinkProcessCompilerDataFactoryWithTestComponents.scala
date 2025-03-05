@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
-import io.circe.Json
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -28,42 +30,43 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
       modelData: ModelData,
-      componentUseCase: ComponentUseCase
+      runtimeMode: RuntimeMode,
+      nodesData: NodesDeploymentData,
   ): FlinkProcessCompilerDataFactory =
     FlinkProcessCompilerDataFactoryWithTestComponents(
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.namingStrategy,
-      componentUseCase,
+      runtimeMode,
       testExtensionsHolder,
       resultsCollectingListener,
-      modelData.additionalConfigsFromProvider
+      modelData.additionalConfigsFromProvider,
+      nodesData
     )
 
   def apply(
       creator: ProcessConfigCreator,
       extractModelDefinition: ExtractDefinitionFun,
       modelConfig: Config,
-      namingStrategy: NamingStrategy,
-      componentUseCase: ComponentUseCase,
+      runtimeMode: RuntimeMode,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
-      configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      nodesData: NodesDeploymentData,
   ): FlinkProcessCompilerDataFactory = {
     new FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
-      namingStrategy,
-      componentUseCase,
-      configsFromProviderWithDictionaryEditor
+      runtimeMode,
+      configsFromProviderWithDictionaryEditor,
+      nodesData
     ) {
 
       override protected def adjustDefinitions(
           originalModelDefinition: ModelDefinition,
           definitionContext: ComponentDefinitionContext,
-          classDefinitions: Set[ClassDefinition]
+          classDefinitions: ClassDefinitionSet,
       ): ModelDefinition = {
         val testComponents =
           ComponentDefinitionWithImplementation.forList(
@@ -95,8 +98,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           modelDependencies: ProcessObjectDependencies,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
-      ): FlinkExceptionHandler = componentUseCase match {
-        case ComponentUseCase.TestRuntime => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
+      ): FlinkExceptionHandler = runtimeMode match {
+        case RuntimeMode.Test => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
           new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
         case _ =>
           super.exceptionHandler(metaData, modelDependencies, listeners, classLoader)

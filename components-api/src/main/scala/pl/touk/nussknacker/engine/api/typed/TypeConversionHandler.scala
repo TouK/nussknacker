@@ -11,7 +11,7 @@ import java.nio.charset.Charset
 import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util.{Currency, UUID}
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 import scala.util.Try
 
 /**

@@ -26,10 +26,11 @@ import java.util.Optional
 
 class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
-  import LiteKafkaComponentProvider._
-  import LiteKafkaTestScenarioRunner._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import LiteKafkaComponentProvider._
+  import LiteKafkaTestScenarioRunner._
 
   val avroSchema: avro.Schema = AvroTestData.personSchema
   val jsonSchema: Schema      = JsonTestData.schemaPerson

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.{NodeId, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.RenderedLiteral
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{NodeId, TemplateEvaluationResult}
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest

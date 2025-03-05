@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random

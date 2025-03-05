@@ -5,13 +5,13 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 
 class NotificationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -25,7 +25,8 @@ class NotificationApiHttpServiceBusinessSpec
     with PatientScalaFutures {
 
   "The endpoint for getting notifications should" - {
-    "return empty list if no notifications are present" in {
+    // We can't easily recognize if configuration was changed between restarts so just in case we send this notification
+    "return initial notification about configuration reload just after start of application" in {
       given()
         .when()
         .basicAuthAdmin()
@@ -33,7 +34,44 @@ class NotificationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(
-          equalTo("[]")
+          matchJsonWithRegexValues(
+            s"""[{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
+               |}]""".stripMargin
+          )
+        )
+    }
+    "return notification when processing type data are reloaded" in {
+      given()
+        .when()
+        .applicationState {
+          reloadConfiguration()
+        }
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/notifications")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""[{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
+               |},
+               |{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
+               |}]""".stripMargin
+          )
         )
     }
     "return a list of notifications" in {
@@ -62,6 +100,20 @@ class NotificationApiHttpServiceBusinessSpec
                |   "message": "Cancel finished",
                |   "type": null,
                |   "toRefresh": [ "activity", "state" ]
+               |},
+               |{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
+               |},
+               |{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": null,
+               |  "message": "Configuration reloaded",
+               |  "type": null,
+               |  "toRefresh": [ "creator" ]
                |}]""".stripMargin
           )
         )
@@ -79,6 +131,15 @@ class NotificationApiHttpServiceBusinessSpec
           )
         )
     }
+  }
+
+  private def reloadConfiguration(): Unit = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+      .Then()
+      .statusCode(204)
   }
 
 }
