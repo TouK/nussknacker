@@ -6,6 +6,7 @@ type SettingsNames =
     | `${string}.showLines`
     | `${string}.noWrap`
     | "node.shortCounts"
+    | "node.showInputsAndOutputs"
     | `survey-panel(${string}).closed`
     | "debug.nodesAsJson"
     | "debug.forceDisableModals";

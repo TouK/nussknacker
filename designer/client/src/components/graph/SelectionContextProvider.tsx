@@ -56,6 +56,7 @@ function useClipboardParse() {
     return useCallback(
         (text) => {
             const selection = tryParseOrNull(text);
+            // TODO: check what happens with wrong nodes.
             const isValid = selection?.edges && selection?.nodes?.every((node) => NodeUtils.isAvailable(node, processDefinitionData));
             return isValid ? selection : null;
         },
