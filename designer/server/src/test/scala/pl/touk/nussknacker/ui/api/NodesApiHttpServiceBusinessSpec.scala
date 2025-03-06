@@ -336,6 +336,14 @@ class NodesApiHttpServiceBusinessSpec
              |        "defaultMode": "RAW",
              |        "type": "DualParameterEditor"
              |      },
+             |      "editors": [
+             |        {
+             |          "type": "SpelParameterEditor"
+             |        },
+             |        {
+             |          "type": "SpelTemplateParameterEditor"
+             |        }
+             |      ],
              |      "defaultValue": {
              |        "language": "spel",
              |        "expression": "''"
@@ -358,6 +366,9 @@ class NodesApiHttpServiceBusinessSpec
              |      "editor": {
              |        "type": "RawParameterEditor"
              |      },
+             |      "editors": [{
+             |        "type": "SpelParameterEditor"
+             |      }],
              |      "defaultValue": {
              |        "language": "spel",
              |        "expression": ""
