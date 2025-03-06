@@ -28,8 +28,8 @@ class NoSlickTableWithoutSchema extends SemanticRule("NoSlickTableWithoutSchema"
           "Use TableWithSchema (from apiWithEnforcedSchema) instead of raw Table",
           t.pos
         )
-      case t @ Term.Interpolate((Term.Name("sqlu") | Term.Name("sql"), List(arg: Lit.String), _))
-          if isMissingRequiredSchema(arg.value) =>
+      case t @ Term.Interpolate((Term.Name("sqlu") | Term.Name("sql"), args, _))
+          if isMissingRequiredSchema(args.mkString("arg")) =>
         createLintPatch(
           "Avoid using `sqlu`|`sql` without specifying an explicit schema. Example: `my_schema.users` instead of `users`",
           t.pos

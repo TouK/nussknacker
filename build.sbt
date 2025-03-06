@@ -547,7 +547,6 @@ lazy val distribution: Project = sbt
     SettingsHelper.makeDeploymentSettings(Universal, Universal / packageZipTarball, "tgz")
   )
   .settings(distDockerSettings)
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(designer)
 
 def engine(name: String) = file(s"engine/$name")
@@ -579,7 +578,6 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     liteEngineRuntime,
     requestResponseComponentsApi,
@@ -624,7 +622,6 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     // override scala-collection-compat from com.softwaremill.retry:retry
     dependencyOverrides += "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     deploymentManagerApi % Provided,
     flinkMiniCluster,
@@ -647,7 +644,6 @@ lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-repo
       )
     },
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
 
 lazy val flinkDevModel = (project in flink("management/dev-model"))
   .settings(commonSettings)
@@ -663,7 +659,6 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     extensionsApi,
     commonComponents,
@@ -693,7 +688,6 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     extensionsApi,
     flinkComponentsUtils % Provided
@@ -711,7 +705,6 @@ lazy val flinkTests = (project in flink("tests"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     defaultModel                     % Test,
     flinkKafkaComponents             % Test,
@@ -743,7 +736,6 @@ lazy val defaultModel = (project in (file("defaultModel")))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(defaultHelpers, extensionsApi % Provided)
 
 lazy val flinkExecutor = (project in flink("executor"))
@@ -787,7 +779,6 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     flinkComponentsUtils,
     flinkExtensionsApi,
@@ -815,7 +806,6 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsUtils, utilsInternal, mathUtils, testUtils % Test)
 
 lazy val benchmarks = (project in file("benchmarks"))
@@ -850,7 +840,6 @@ lazy val benchmarks = (project in file("benchmarks"))
       case (2, 13) => executeMainFromTestSourcesNotSupported
     }
   }
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     designer,
     extensionsApi,
@@ -889,7 +878,6 @@ lazy val kafkaUtils = (project in utils("kafka-utils"))
     // Depends on componentsApi because of dependency to NuExceptionInfo and NonTransientException -
     // lite kafka engine handles component exceptions in runtime part
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(commonUtils % Provided, componentsApi % Provided)
 
 lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils"))
@@ -906,7 +894,6 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(kafkaUtils, componentsUtils % Provided, testUtils % "it, test")
 
 lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-components-utils"))
@@ -950,7 +937,6 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
       )
     },
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsUtils  % Provided,
     kafkaComponentsUtils,
@@ -972,7 +958,6 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     schemedKafkaComponentsUtils % "compile;test->test",
     flinkKafkaComponentsUtils,
@@ -996,7 +981,6 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsApi        % Provided,
     kafkaComponentsUtils,
@@ -1023,7 +1007,6 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(testUtils, kafkaUtils, commonUtils % Provided)
 
 // This module should be provided by one module - interpreter, because it is is the common module shared between designer and runtime
@@ -1036,7 +1019,6 @@ lazy val componentsUtils = (project in utils("components-utils"))
       case _       => Seq()
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsApi, commonUtils, testUtils % Test)
 
 //this should be only added in scope test - 'module % Test' or as dependency to another test module
@@ -1045,7 +1027,6 @@ lazy val componentsTestkit = (project in utils("components-testkit"))
   .settings(
     name := "nussknacker-components-testkit",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsApi, scenarioApi, commonUtils, testUtils, scenarioCompiler)
 
 //this should be only added in scope test - 'module % Test'
@@ -1059,7 +1040,6 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsTestkit,
     flinkExecutor,
@@ -1075,7 +1055,6 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit"))
   .settings(
     name := "nussknacker-lite-components-testkit",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsTestkit,
     requestResponseRuntime,
@@ -1102,7 +1081,6 @@ lazy val commonUtils = (project in utils("utils"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(commonApi, componentsApi, testUtils % Test)
 
 lazy val utilsInternal = (project in utils("utils-internal"))
@@ -1110,7 +1088,6 @@ lazy val utilsInternal = (project in utils("utils-internal"))
   .settings(
     name := "nussknacker-utils-internal"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(commonUtils, extensionsApi, testUtils % Test)
 
 // This module should be provided by one module - interpreter
@@ -1122,7 +1099,6 @@ lazy val mathUtils = (project in utils("math-utils"))
       "org.springframework" % "spring-expression" % springV,
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(commonUtils, componentsApi, testUtils % Test)
 
 lazy val defaultHelpers = (project in utils("default-helpers"))
@@ -1130,7 +1106,6 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(
     name := "nussknacker-default-helpers"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
 lazy val testUtils = (project in utils("test-utils"))
@@ -1162,7 +1137,6 @@ lazy val testUtils = (project in utils("test-utils"))
       ) ++ restAssuredDependency(scalaVersion.value)
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
 
 // rest-assured is not cross compiled, so we have to use different versions
 def restAssuredDependency(scalaVersion: String) = forScalaVersion(scalaVersion) {
@@ -1185,7 +1159,6 @@ lazy val jsonUtils = (project in utils("json-utils"))
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsUtils % Provided, testUtils % Test)
 
 // Similar to components-utils, this module should be provided by one module - flinkExecutor
@@ -1199,7 +1172,6 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     flinkComponentsApi,
     flinkExtensionsApi % Provided,
@@ -1222,7 +1194,6 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(Provided))
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(testUtils % Test)
 
 lazy val flinkMiniCluster = (project in flink("minicluster"))
@@ -1244,7 +1215,6 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     extensionsApi    % Provided,
     utilsInternal    % Provided,
@@ -1265,7 +1235,6 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, scenarioCompiler, flinkMiniCluster)
 
 lazy val requestResponseComponentsUtils = (project in lite("request-response/components-utils"))
@@ -1273,7 +1242,6 @@ lazy val requestResponseComponentsUtils = (project in lite("request-response/com
   .settings(
     name := "nussknacker-request-response-components-utils"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsUtils % Provided, requestResponseComponentsApi % Provided, testUtils % Test)
 
 lazy val requestResponseComponentsApi = (project in lite("request-response/components-api"))
@@ -1281,7 +1249,6 @@ lazy val requestResponseComponentsApi = (project in lite("request-response/compo
   .settings(
     name := "nussknacker-request-response-components-api"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(liteComponentsApi, jsonUtils)
 
 lazy val liteComponentsApi = (project in lite("components-api"))
@@ -1289,7 +1256,6 @@ lazy val liteComponentsApi = (project in lite("components-api"))
   .settings(
     name := "nussknacker-lite-components-api",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsApi)
 
 lazy val liteBaseComponents = (project in lite("components/base"))
@@ -1299,7 +1265,6 @@ lazy val liteBaseComponents = (project in lite("components/base"))
   .settings(
     name := "nussknacker-lite-base-components",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     commonComponents,
     liteComponentsApi % Provided,
@@ -1316,7 +1281,6 @@ lazy val liteKafkaComponents: Project = (project in lite("components/kafka"))
     name := "nussknacker-lite-kafka-components"
     // TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     liteEngineKafkaComponentsApi % Provided,
     liteComponentsApi            % Provided,
@@ -1338,7 +1302,6 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
       )
     },
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(liteEngineKafkaComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response"))
@@ -1348,7 +1311,6 @@ lazy val liteRequestResponseComponents = (project in lite("components/request-re
   .settings(
     name := "nussknacker-lite-request-response-components",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     requestResponseComponentsApi % Provided,
     liteComponentsApi            % Provided,
@@ -1368,7 +1330,6 @@ lazy val liteRequestResponseComponentsTests: Project = (project in lite("compone
       )
     },
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(requestResponseComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
 
 lazy val liteEngineRuntime = (project in lite("runtime"))
@@ -1386,7 +1347,6 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
       )
     },
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     liteComponentsApi,
     scenarioCompiler,
@@ -1414,7 +1374,6 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
       "com.dimafeng" %% "testcontainers-scala-kafka"     % testContainersScalaV % IntegrationTest
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     scenarioCompiler            % IntegrationTest,
     schemedKafkaComponentsUtils % IntegrationTest,
@@ -1431,7 +1390,6 @@ lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")
       "org.apache.kafka" % "kafka-clients" % kafkaV
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(liteComponentsApi)
 
 lazy val liteEngineRuntimeAppDockerSettings = {
@@ -1453,7 +1411,6 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime"))
   .settings(
     name := "nussknacker-lite-kafka-runtime"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     liteEngineRuntime,
     liteEngineKafkaComponentsApi,
@@ -1488,7 +1445,6 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
       "com.typesafe.akka"             %% "akka-http-testkit"    % akkaHttpV % Test,
     ),
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager"))
@@ -1499,7 +1455,6 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   .settings(
     name := "nussknacker-lite-embedded-deploymentManager",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     liteDeploymentManager,
     deploymentManagerApi          % Provided,
@@ -1520,7 +1475,6 @@ lazy val developmentTestsDeploymentManager = (project in development("deployment
   .settings(
     name := "nussknacker-development-tests-manager",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     deploymentManagerApi % Provided,
     flinkDeploymentManager, // for accessing Flink property config
@@ -1568,7 +1522,6 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
       )
       .value
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(liteDeploymentManager, deploymentManagerApi % Provided, testUtils % Test)
 
 lazy val liteDeploymentManager = (project in lite("deploymentManager"))
@@ -1577,7 +1530,6 @@ lazy val liteDeploymentManager = (project in lite("deploymentManager"))
   .settings(
     name := "nussknacker-lite-deploymentManager"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     liteEngineKafkaRuntime,       // for tests mechanism purpose
     requestResponseComponentsApi, // for rr scenario properties
@@ -1607,7 +1559,6 @@ lazy val componentsApi = (project in file("components-api"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(commonApi, testUtils % Test)
 
 // TODO: split into runtime extensions and designer extensions
@@ -1619,7 +1570,6 @@ lazy val extensionsApi = (project in file("extensions-api"))
       "org.springframework" % "spring-expression" % springV,
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(testUtils % Test, componentsApi, scenarioApi)
 
 lazy val commonApi = (project in file("common-api"))
@@ -1636,7 +1586,6 @@ lazy val commonApi = (project in file("common-api"))
       "org.scalatest"          %% "scalatest"               % scalaTestV % Test
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
 
 lazy val buildInfoSettings = Seq(
   buildInfoKeys    := Seq[BuildInfoKey](name, version),
@@ -1656,7 +1605,6 @@ lazy val scenarioApi = (project in file("scenario-api"))
       "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(commonApi, testUtils % Test)
 
 lazy val security = (project in file("security"))
@@ -1688,7 +1636,6 @@ lazy val security = (project in file("security"))
       ) // 3.x requires Java 17
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
 
 lazy val flinkComponentsApi = (project in flink("components-api"))
@@ -1702,7 +1649,6 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsApi)
 
 lazy val flinkExtensionsApi = (project in flink("extensions-api"))
@@ -1715,7 +1661,6 @@ lazy val flinkExtensionsApi = (project in flink("extensions-api"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(flinkComponentsApi, extensionsApi)
 
 lazy val processReports = (project in file("designer/processReports"))
@@ -1732,7 +1677,6 @@ lazy val processReports = (project in file("designer/processReports"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(httpUtils, commonUtils, testUtils % "it,test")
 
 // This dependency is delivered by flink-executor and lite-runtime to ensure the same version of libraries in stack:
@@ -1752,7 +1696,6 @@ lazy val httpUtils = (project in utils("http-utils"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
 val swaggerParserV      = "2.1.24"
@@ -1775,7 +1718,6 @@ lazy val openapiComponents = (project in component("openapi"))
       "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
     ),
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsUtils                % Provided,
     jsonUtils                      % Provided,
@@ -1802,7 +1744,6 @@ lazy val sqlComponents = (project in component("sql"))
       "com.dimafeng"     %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
     ),
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsUtils       % Provided,
     componentsApi         % Provided,
@@ -1815,7 +1756,6 @@ lazy val commonComponents = (project in engine("common/components"))
   .settings(
     name := "nussknacker-common-components"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     componentsApi % Provided
   )
@@ -1825,7 +1765,6 @@ lazy val commonComponentsTests = (project in engine("common/components-tests"))
   .settings(
     name := "nussknacker-common-components-tests"
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     commonComponents,
     liteComponentsTestkit  % Test,
@@ -1842,7 +1781,6 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
       "org.apache.flink" % "flink-streaming-java" % flinkV % Provided
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     commonComponents,
     flinkComponentsUtils % Provided,
@@ -1862,7 +1800,6 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
         .exclude("it.unimi.dsi", "fastutil")
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     commonComponents,
     flinkComponentsUtils % Provided,
@@ -1880,7 +1817,6 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
       "org.apache.flink" % "flink-json"            % flinkV % Test
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     flinkComponentsTestkit  % Test,
     flinkTestUtils          % Test,
@@ -1894,7 +1830,6 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
   .settings(
     name := "nussknacker-flink-kafka-components",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     flinkSchemedKafkaComponentsUtils,
     flinkComponentsApi % Provided,
@@ -1921,7 +1856,6 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     flinkComponentsApi   % Provided,
     componentsApi        % Provided,
@@ -1949,7 +1883,6 @@ lazy val restmodel = (project in file("designer/restmodel"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     extensionsApi,
     security,
@@ -1962,7 +1895,6 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(extensionsApi)
 
 lazy val configLoaderApi = (project in file("designer/config-loader-api"))
@@ -1975,7 +1907,6 @@ lazy val configLoaderApi = (project in file("designer/config-loader-api"))
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(extensionsApi)
 
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
@@ -1992,7 +1923,6 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
       )
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(extensionsApi, testUtils % Test)
 
 lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
@@ -2002,6 +1932,8 @@ lazy val prepareDesignerSlowTests =
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .enablePlugins(GenerateDesignerOpenApiPlugin)
+  .enablePlugins(LintStagedScalaFilesPlugin)
+  .dependsOn(scalafixRules % ScalafixConfig)
   .settings(slowTestsSettings)
   .settings(commonSettings)
   .settings(
@@ -2129,7 +2061,6 @@ lazy val designer = (project in file("designer/server"))
       }
     }
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(
     scenarioCompiler                  % "compile;test->test;test->compile",
     processReports,
@@ -2173,7 +2104,6 @@ lazy val e2eTests = (project in file("e2e-tests"))
   )
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
-  .dependsOn(scalafixRules % ScalafixConfig)
   .dependsOn(testUtils % Test, scenarioApi % Test, designer % Test)
 
 lazy val doTest = Seq(
@@ -2240,7 +2170,6 @@ lazy val bom = (project in file("bom"))
     ))
   )
   .dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
-  .dependsOn(scalafixRules % ScalafixConfig)
 
 lazy val modules = List[ProjectReference](
   requestResponseRuntime,
@@ -2355,7 +2284,6 @@ lazy val root = (project in file("."))
       pushChanges
     )
   )
-  .dependsOn(scalafixRules % ScalafixConfig)
 
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 

@@ -13,7 +13,7 @@ class SchemaInSqlDetectorSpec extends AnyFunSuite {
     ("""INSERT INTO my_schema."orders" (id, name) VALUES (1, 'test')""", false),
     ("""ALTER TABLE "my_schema"."orders" ADD COLUMN status TEXT""", false),
     (
-      """CREATE FUNCTION my_schema.generate_uuid() RETURNS UUID AS $$
+      """CREATE FUNCTION "my_schema".generate_uuid() RETURNS UUID AS $$
         BEGIN
           RETURN gen_random_uuid();
         END
@@ -40,6 +40,14 @@ class SchemaInSqlDetectorSpec extends AnyFunSuite {
     ("""GRANT SELECT ON my_schema.users TO app_user""", false),
     ("""SELECT * FROM information_schema.tables WHERE table_schema = 'my_schema'""", false),
     ("""SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'my_schema'""", false),
+    (
+      """ALTER TABLE "arg"."sticky_notes" ADD CONSTRAINT "sticky_notes_scenario_version_fk" FOREIGN KEY ("scenario_id", "scenario_version_id") REFERENCES "arg"."process_versions" ("process_id", "id") ON DELETE CASCADE;""",
+      false
+    ),
+    (
+      """CREATE OR REPLACE FUNCTION "${profile.schemaName}".generate_random_uuid() RETURNS UUID AS 'BEGIN RETURN uuid_in(overlay(overlay(md5(random()::text || '':'' || random()::text) placing ''4'' from 13) placing to_hex(floor(random() * (11 - 8 + 1) + 8)::int)::text from 17)::cstring);END' LANGUAGE plpgsql;""",
+      false
+    ),
 
     // statements with NO required schema specified
     ("""DELETE FROM users WHERE id = 1""", true),

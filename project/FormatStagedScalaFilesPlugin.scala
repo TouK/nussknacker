@@ -1,8 +1,8 @@
 import org.scalafmt.sbt.ScalafmtPlugin
 import sbt.{taskKey, Compile, Global, Setting}
-import sbt.Keys._
+import sbt.Keys.*
 import sbt.nio.Keys.{onChangedBuildSource, ReloadOnSourceChanges}
-import utils.Step
+import utils.{getStagedScalaFiles, quoteSbtArgument, Step}
 
 object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
   override def trigger = noTrigger
@@ -37,21 +37,6 @@ object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
         }
     } yield ()
     result.runThrowing
-  }
-
-  private def getStagedScalaFiles() = Step.deferredTask {
-    os
-      .proc("git", "diff", "--cached", "--name-only", "--diff-filter=ACM")
-      .call()
-      .out
-      .lines()
-      .filter(f => f.endsWith(".scala") || f.endsWith(".sbt"))
-      .toList
-  }
-
-  private def quoteSbtArgument(filePath: String) = {
-    // use quoting for StringEscapable parser
-    "\"" + filePath.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
   }
 
   private def callFormatFiles(files: List[String]) = {
