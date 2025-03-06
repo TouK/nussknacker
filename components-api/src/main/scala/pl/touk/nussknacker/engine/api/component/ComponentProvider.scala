@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
 import org.semver4j.Semver
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 /**
@@ -144,11 +145,30 @@ case class NussknackerVersion(value: Semver)
 case class ComponentDefinition(
     name: String,
     component: Component,
-    icon: Option[String] = None,
-    docsUrl: Option[String] = None,
-    designerWideId: Option[DesignerWideComponentId] = None
+    icon: Option[String],
+    docsUrl: Option[String],
+    designerWideId: Option[DesignerWideComponentId],
+    label: String
 ) {
 
   def withDesignerWideId(id: String): ComponentDefinition = copy(designerWideId = Some(DesignerWideComponentId(id)))
+
+}
+
+object ComponentDefinition {
+
+  def apply(
+      name: String,
+      component: Component,
+      icon: Option[String] = None,
+      docsUrl: Option[String] = None,
+      designerWideId: Option[DesignerWideComponentId] = None,
+      label: Option[String] = None
+  ): ComponentDefinition = {
+    label match {
+      case Some(value) => ComponentDefinition(name, component, icon, docsUrl, designerWideId, value)
+      case None => ComponentDefinition(name, component, icon, docsUrl, designerWideId, IdToTitleConverter.toTitle(name))
+    }
+  }
 
 }

@@ -9,6 +9,7 @@ class IdToTitleConverterTest extends AnyFunSuite with Matchers {
     IdToTitleConverter.toTitle("") shouldEqual ""
     IdToTitleConverter.toTitle("foo") shouldEqual "Foo"
     IdToTitleConverter.toTitle("foo-bar") shouldEqual "Foo Bar"
+    IdToTitleConverter.toTitle("barFilter") shouldEqual "Barfilter"
   }
 
 }

@@ -24,7 +24,8 @@ object ComponentAdditionalConfigConverter {
       docsUrl = componentAdditionalConfig.docsUrl,
       componentGroup = componentAdditionalConfig.componentGroup,
       disabled = componentAdditionalConfig.disabled,
-      componentId = None
+      componentId = None,
+      label = None
     )
 
   private def toParameterConfig(

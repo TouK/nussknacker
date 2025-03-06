@@ -78,7 +78,7 @@ describe("Process", () => {
             cy.contains(/scenario was archived/i).should("be.visible");
         });
 
-        it("should open properites from tips panel", () => {
+        it("should open properties from tips panel", () => {
             cy.viewport("macbook-15");
             cy.contains(/^properties/i)
                 .should("be.enabled")
@@ -139,7 +139,7 @@ describe("Process", () => {
                 .should("exist")
                 .scrollIntoView();
             cy.layoutScenario();
-            cy.get("[data-testid='component:customFilter']")
+            cy.get("[data-testid='component:Customfilter']")
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
@@ -177,19 +177,19 @@ describe("Process", () => {
 
         it("should display some node details in modal", () => {
             cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("dynamicService").should("be.visible");
+            cy.get("[data-testid=window]").contains("Dynamicservice").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
             cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("boundedSource").should("be.visible");
+            cy.get("[data-testid=window]").contains("Boundedsource").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
             cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("sendSms").should("be.visible");
+            cy.get("[data-testid=window]").contains("Sendsms").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
         });
     });
@@ -214,7 +214,7 @@ describe("Process", () => {
             .scrollIntoView();
         const x = 900;
         const y = 630;
-        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
+        cy.get("[data-testid='component:Dead End']").should("be.visible").drag("#nk-graph-main", {
             target: {
                 x,
                 y,
@@ -269,7 +269,7 @@ describe("Process", () => {
             .scrollIntoView();
         const x = 700;
         const y = 600;
-        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
+        cy.get("[data-testid='component:Dead End']").should("be.visible").drag("#nk-graph-main", {
             target: {
                 x,
                 y,

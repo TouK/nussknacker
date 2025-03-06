@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 // This class represents component's definition and implementation. It is used on the designer side for definitions
 // served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
@@ -24,8 +25,6 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   def componentTypeSpecificData: ComponentTypeSpecificData
 
   // This field is used as a part of identifier so it is important that it should be stable.
-  // Currently it is used also for a label presented at the toolbox palette but we should probably extract another
-  // field (e.g. label) that will be in a more human friendly format`- see Parameter.name vs Parameter.label
   def name: String
 
   final def componentType: ComponentType = componentTypeSpecificData.componentType
@@ -33,6 +32,16 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   final def id: ComponentId = ComponentId(componentType, name)
 
   protected def uiDefinition: ComponentUiDefinition
+
+  final def label: String = {
+    uiDefinition.label.getOrElse {
+      if (componentType != ComponentType.Fragment) {
+        IdToTitleConverter.toTitle(name)
+      } else {
+        IdToTitleConverter.toTitle(id.name)
+      }
+    }
+  }
 
   final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
@@ -69,7 +78,8 @@ final case class ComponentUiDefinition(
     componentGroup: ComponentGroupName,
     icon: String,
     docsUrl: Option[String],
-    designerWideId: DesignerWideComponentId
+    designerWideId: DesignerWideComponentId,
+    label: Option[String]
 )
 
 object ComponentDefinitionWithImplementation {

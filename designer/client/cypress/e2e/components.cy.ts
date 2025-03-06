@@ -25,7 +25,7 @@ describe("Components list", () => {
         filterByDefaultCategory();
         cy.contains(/^name$/i).should("be.visible");
         cy.contains(/^categories$/i).should("be.visible");
-        cy.contains(/^for-each$/).should("be.visible");
+        cy.contains(/^For Each$/).should("be.visible");
         cy.get("#app-container").matchImage();
     });
 
@@ -41,7 +41,7 @@ describe("Components list", () => {
     it("should allow filtering by name", () => {
         filterByDefaultCategory();
         cy.get("[placeholder='Search...']").type("for", { force: true });
-        cy.contains(/^for-each$/i).should("be.visible");
+        cy.contains(/^For Each$/i).should("be.visible");
         cy.get("[role=row]").should("have.lengthOf", 2);
         cy.get("[placeholder='Search...']").type("-dummy");
         cy.get("[role=row]").should("have.lengthOf", 1);
@@ -54,7 +54,7 @@ describe("Components list", () => {
             force: true,
             delay: 100,
         });
-        cy.contains(/^for-each$/i).should("be.visible");
+        cy.contains(/^For Each$/i).should("be.visible");
         cy.get("[role=row]").should("have.lengthOf", 2);
         cy.matchQuery("?CATEGORY=Default&NAME=fo+ea");
         cy.get("[role=grid]").matchImage();
@@ -79,7 +79,7 @@ describe("Components list", () => {
             .click();
         cy.get("[role=row]")
             .should("have.lengthOf", baseGroupComponents + 1)
-            .contains(":not(title)", /^filter$/)
+            .contains(":not(title)", /^Filter$/)
             .should("be.visible");
         cy.get(`[data-testid="FilterListOffIcon"]`).click();
         cy.get("[role=row]").should("have.length.greaterThan", 2);
@@ -191,7 +191,7 @@ describe("Components list", () => {
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
         cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
         cy.layoutScenario();
-        cy.contains(`${seed}_xxx`)
+        cy.contains(`${seed.charAt(0).toUpperCase() + seed.slice(1)}_xxx`)
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {
