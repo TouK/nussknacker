@@ -51,6 +51,7 @@ class NodeUtils {
     };
 
     getOutputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.from === nodeId);
+    getInputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.to === nodeId);
 
     getEdgesForConnectedNodes = (nodeIds: NodeId[], scenarioGraph: ScenarioGraph): Edge[] =>
         scenarioGraph.edges?.filter((edge) => nodeIds.includes(edge.from) && nodeIds.includes(edge.to));
@@ -238,6 +239,19 @@ class NodeUtils {
             };
         }
         return null;
+    };
+
+    getNodesConnectedToOutput = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => {
+        const edges = this.edgesFromScenarioGraph(scenarioGraph);
+        const outputEdges = this.getOutputEdges(nodeId, edges);
+        const connected = outputEdges.filter((e) => e.to);
+        return connected.map((e) => this.getNodeById(e.to, scenarioGraph));
+    };
+
+    getNodesConnectedToInput = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => {
+        const edges = this.edgesFromScenarioGraph(scenarioGraph);
+        const connected = this.getInputEdges(nodeId, edges);
+        return connected.map((e) => this.getNodeById(e.from, scenarioGraph));
     };
 }
 
