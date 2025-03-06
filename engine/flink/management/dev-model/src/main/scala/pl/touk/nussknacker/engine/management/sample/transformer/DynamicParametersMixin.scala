@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesParameterEditor,
   NodeDependency,
   Parameter,
+  ParameterEditors,
   TypedNodeDependency
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -27,11 +28,13 @@ trait DynamicParametersMixin extends SingleInputDynamicComponent[AnyRef] {
   protected val choiceParamName: ParameterName = ParameterName("communicationType")
 
   private val choiceParam = Parameter[String](choiceParamName).copy(
-    editor = Some(
-      FixedValuesParameterEditor(
-        List(
-          FixedExpressionValue("'SMS'", "sms"),
-          FixedExpressionValue("'MAIL'", "mail")
+    editors = Some(
+      ParameterEditors(
+        FixedValuesParameterEditor(
+          List(
+            FixedExpressionValue("'SMS'", "sms"),
+            FixedExpressionValue("'MAIL'", "mail")
+          )
         )
       )
     )

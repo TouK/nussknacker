@@ -6,7 +6,10 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
 
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] =
     Option(parameters).filter(_.isOptional).map { _ =>
-      Expression(EditorBasedLanguageDeterminer.determineLanguageOf(parameters.determinedEditor), "")
+      Expression(
+        EditorBasedLanguageDeterminer.determineLanguageOf(parameters.determinedEditors),
+        ""
+      )
     }
 
 }

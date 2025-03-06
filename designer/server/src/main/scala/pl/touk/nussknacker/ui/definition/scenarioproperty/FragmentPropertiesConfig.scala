@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesParameterEditor,
   FixedValuesWithIconParameterEditor,
   MandatoryParameterValidator,
-  StringParameterEditor
+  SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.{
@@ -29,7 +29,7 @@ object FragmentPropertiesConfig {
   val docsUrlConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.docsUrlName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = Some(SpelTemplateParameterEditor),
       // TODO: some validator
       validators = None,
       label = Some("Documentation url"),

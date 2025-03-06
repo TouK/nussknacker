@@ -206,23 +206,6 @@ trait TestingApiHttpServiceSpec
              |
              |                    ]
              |                },
-             |                "editor": {
-             |                    "possibleValues": [
-             |                        {
-             |                            "expression": "",
-             |                            "label": ""
-             |                        },
-             |                        {
-             |                            "expression": "'uno'",
-             |                            "label": "uno"
-             |                        },
-             |                        {
-             |                            "expression": "'due'",
-             |                            "label": "due"
-             |                        }
-             |                    ],
-             |                    "type": "FixedValuesParameterEditor"
-             |                },
              |                "editors": [{
              |                    "possibleValues": [
              |                        {
@@ -288,15 +271,9 @@ trait TestingApiHttpServiceSpec
              |
              |                    ]
              |                },
-             |                "editor": {
-             |                    "type": "StringParameterEditor"
-             |                },
              |                "editors": [
              |                    {
              |                        "type": "SpelParameterEditor"
-             |                    },
-             |                    {
-             |                        "type": "SpelTemplateParameterEditor"
              |                    }
              |                ],
              |                "defaultValue": {

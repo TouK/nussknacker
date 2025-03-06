@@ -41,7 +41,7 @@ object ComponentAdditionalConfigConverter {
       defaultValue = paramAdditionalConfig.initialValue.map(
         _.expression
       ), // TODO currently this isn't validated (e.g. can be of incorrect type) - not a big issue as it's only used to initially fill the FE form, if sent with this wrong value the process will fail validation
-      editor = paramAdditionalConfig.valueEditor.flatMap(editor =>
+      editors = paramAdditionalConfig.valueEditor.flatMap(editor =>
         ValueEditorValidator
           .validateAndGetEditor(
             valueEditor = editor,
@@ -50,6 +50,7 @@ object ComponentAdditionalConfigConverter {
             nodeIds = Set.empty
           )
           .toOption
+          .map(_.value)
       ),
       validators = if (validators.nonEmpty) Some(validators) else None,
       label = None,

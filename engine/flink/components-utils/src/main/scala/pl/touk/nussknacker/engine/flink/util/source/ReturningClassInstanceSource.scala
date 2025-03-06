@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
@@ -11,10 +11,9 @@ class ReturningClassInstanceSource extends SourceFactory with UnboundedStreamCom
   @MethodToInvoke
   def source(
       @ParamName("Additional class")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-        defaultMode = DualEditorMode.SIMPLE
-      ) additionalClass: String
+      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
+      @SpelEditor
+      additionalClass: String
   ) = {
     val resultClass = Class.forName(additionalClass)
     CollectionSource[Any](List.empty, None, Typed.typedClass(resultClass))

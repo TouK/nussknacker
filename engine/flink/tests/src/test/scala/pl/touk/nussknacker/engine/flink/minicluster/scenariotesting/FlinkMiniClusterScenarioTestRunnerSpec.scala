@@ -870,7 +870,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       }.getCause
       inside(dictEditorException) { case _: IllegalArgumentException =>
         dictEditorException.getMessage.startsWith(
-          "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(DualParameterEditor(StringParameterEditor,RAW))"
+          "Compilation errors: IncompatibleParameterDefinitionModification(ParameterName(static),dictKeyWithLabel,Some(ParameterEditors(SpelParameterEditor,Some(SpelTemplateParameterEditor)))"
         ) shouldBe true
       }
     }

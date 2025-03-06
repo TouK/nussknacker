@@ -118,6 +118,10 @@
 * [#7648](https://github.com/TouK/nussknacker/pull/7648) Strip namespace from topic name in `inputMeta` context variable
 * [#7649](https://github.com/TouK/nussknacker/pull/7649) Renamed 'sticky note' component label to 'Sticky Note' and assigned it to the 'Misc' component group
 * [#7626](https://github.com/TouK/nussknacker/pull/7626) Added test capabilities (tests from file and ad-hoc) for Event Generator source
+* [#7632](https://github.com/TouK/nussknacker/pull/7632) Simplified parameter editors API
+  * Added migration of scenario nodes from a string defined in SpEL to a SpelTemplate string. 
+  * Removed the single `editor` from the UIParameter and now only the `editors` property is available.
+  * Made changes to the Component API regarding editors. For details, please see the Migration Guide.
 
 ## 1.18
 

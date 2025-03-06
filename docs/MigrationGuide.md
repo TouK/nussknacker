@@ -90,7 +90,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Introduced ComponentUseContextProvider in ScenarioCompiler, which retains ComponentUseCase functionality but is 
       now intended for internal use only.  
 * [#7618](https://github.com/TouK/nussknacker/pull/7618) `NonTransientException` is a normal class instead of case class.
-  We recommend to create explicit classes extending this class, but still it can be created directly but with `new NonTransientException(...)` 
+  We recommend to create explicit classes extending this class, but still it can be created directly but with `new NonTransientException(...)`
+* [#7632](https://github.com/TouK/nussknacker/pull/7632) Simplified parameter editors API.
+  * Removed the single `editor` from the UIParameter and now only the `editors` property is available.
+  * Replaced the `editor` parameter with `editors` in the engine API `Parameter`.
+  * Similarly, `ParameterConfig` in engine API now accepts an `editors` list instead of a single editor.
+  * Removed a `DualEditor` from the components API.
+    * Added a `SpelEditor` to the components API.
+    * Added the `isMainEditor` property to the `SimpleEditor` annotation in the components API.
+    * For now on, the `SpelEditor` and `SimpleEditor` can be used together and it means that there are two available
+      editors for a property.
 
 ### Other changes
 

@@ -36,9 +36,6 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       |        }
       |      ]
       |    },
-      |    "editor": {
-      |      "type": "RawParameterEditor"
-      |    },
       |    "editors": [
       |      {
       |        "type": "SpelParameterEditor"
