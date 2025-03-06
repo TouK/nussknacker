@@ -116,8 +116,8 @@ spec:
               value: /data/scenario.json
             - name: CONFIG_FILE
               value: /opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf
-            - name: DEPLOYMENT_CONFIG_FILE
-              value: /data/deploymentConfig.conf
+            - name: DEPLOYMENT_DATA_FILE
+              value: /data/deploymentData.json
             - name: LOGBACK_FILE
               value: /data/logback.xml
             - name: POD_NAME

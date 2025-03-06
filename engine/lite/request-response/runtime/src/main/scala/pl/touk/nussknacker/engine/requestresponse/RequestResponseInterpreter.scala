@@ -9,6 +9,7 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -45,6 +46,7 @@ object RequestResponseInterpreter {
   def apply[Effect[_]: Monad: InterpreterShape: CapabilityTransformer](
       process: CanonicalProcess,
       processVersion: ProcessVersion,
+      nodesDeploymentData: NodesDeploymentData,
       context: LiteEngineRuntimeContextPreparer,
       modelData: ModelData,
       additionalListeners: List[ProcessListener],
@@ -57,6 +59,7 @@ object RequestResponseInterpreter {
       .createInterpreter[Effect, Any, AnyRef](
         process,
         JobData(process.metaData, processVersion),
+        nodesDeploymentData,
         modelData,
         additionalListeners,
         resultCollector,

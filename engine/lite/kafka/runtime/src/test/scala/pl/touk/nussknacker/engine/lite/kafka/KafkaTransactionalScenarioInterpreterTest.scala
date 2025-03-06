@@ -9,6 +9,7 @@ import org.scalatest.{Assertion, OptionValues, Outcome}
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -323,7 +324,7 @@ class KafkaTransactionalScenarioInterpreterTest
     val configToUse      = adjustConfig(fixture.errorTopic, config)
     val modelDataToUse   = modelData(configToUse)
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
+      .createInterpreter[Future, Input, Output](scenario, jobData, NodesDeploymentData.empty, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     val output = Using.resource(
       new KafkaTransactionalScenarioInterpreter(

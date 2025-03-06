@@ -84,7 +84,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                         "CONFIG_FILE",
                         "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
                       ),
-                      EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                      EnvVar("DEPLOYMENT_DATA_FILE", "/config/deploymentData.json"),
                       EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                       // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                       // Hash will be extracted on entrypoint side.
@@ -227,7 +227,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                         "CONFIG_FILE",
                         "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
                       ),
-                      EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                      EnvVar("DEPLOYMENT_DATA_FILE", "/config/deploymentData.json"),
                       EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                       // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                       // Hash will be extracted on entrypoint side.
@@ -355,7 +355,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                         "CONFIG_FILE",
                         "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
                       ),
-                      EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                      EnvVar("DEPLOYMENT_DATA_FILE", "/config/deploymentData.json"),
                       EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                       // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                       // Hash will be extracted on entrypoint side.

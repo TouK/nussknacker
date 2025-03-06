@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -412,6 +412,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val maybeinterpreter = RequestResponseInterpreter[Future](
       scenario,
       ProcessVersion.empty,
+      NodesDeploymentData.empty,
       engineRuntimeContextPreparer,
       simpleModelData,
       Nil,

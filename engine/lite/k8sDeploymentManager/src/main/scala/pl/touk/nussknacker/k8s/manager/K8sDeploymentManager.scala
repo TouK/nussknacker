@@ -171,11 +171,10 @@ class K8sDeploymentManager(
         configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
           Map(
             "scenario.json" -> canonicalProcess.asJson.noSpaces,
-            "deploymentConfig.conf" -> ConfigFactory
-              .empty()
-              .withValue("tasksCount", fromAnyRef(scalingOptions.noOfTasksInReplica))
-              .root()
-              .render()
+            "deploymentData.json" -> LiteDeploymentData(
+              scalingOptions.noOfTasksInReplica,
+              deploymentData.nodesData
+            ).asJson.noSpaces
           )
         )
       )

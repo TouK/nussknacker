@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.embedded.streaming
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
@@ -21,20 +22,26 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
     logger.error(s"Scenario: $version failed unexpectedly", throwable)
   }
 
-  override def onScenarioAdded(jobData: JobData, parsedResolvedScenario: CanonicalProcess)(
+  override def onScenarioAdded(
+      jobData: JobData,
+      nodesDeploymentData: NodesDeploymentData,
+      parsedResolvedScenario: CanonicalProcess
+  )(
       implicit ec: ExecutionContext
   ): Try[StreamingDeployment] = {
-    // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
-    val liteKafkaJobData = LiteKafkaJobData(tasksCount =
-      parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1)
+    val liteKafkaJobData = LiteKafkaJobData(
+      // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
+      tasksCount =
+        parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1)
     )
     val interpreterTry = Try(
       KafkaTransactionalScenarioInterpreter(
+        modelData,
+        contextPreparer,
         parsedResolvedScenario,
         jobData,
+        nodesDeploymentData,
         liteKafkaJobData,
-        modelData,
-        contextPreparer
       )
     )
     interpreterTry.flatMap { interpreter =>

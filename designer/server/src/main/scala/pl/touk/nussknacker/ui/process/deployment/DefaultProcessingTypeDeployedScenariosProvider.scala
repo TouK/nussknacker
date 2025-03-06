@@ -51,11 +51,12 @@ class DefaultProcessingTypeDeployedScenariosProvider(
           val deploymentData = DeploymentData(
             DeploymentId.fromActionId(lastDeployAction.id),
             deployingUser,
-            Map.empty,
-            NodesDeploymentData.empty,
-            AdditionalModelConfigs.empty
-          )
-          scenarioResolver
+            // TODO: Store this data and use them during jobs recovery. Currently after restart some jobs will work differently
+          nodesData = NodesDeploymentData.empty,
+            additionalDeploymentData = Map.empty,
+            additionalModelConfigs = AdditionalModelConfigs.empty
+        )
+        scenarioResolver
             .resolveScenario(details.json)
             .map {
               case Validated.Valid(resolvedScenario) =>
