@@ -59,6 +59,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenarioLoading: true,
             };
         }
+        case "TEST_RESULTS_LOADING": {
+            return {
+                ...state,
+                testResultsLoading: true,
+            };
+        }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
             const newNodeids = sortBy(action.scenarioGraph.nodes.map((n) => n.id));
@@ -119,6 +125,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     ...state.scenario,
                     history: history,
                 },
+            };
+        }
+        case "TEST_RESULTS_FAILED": {
+            return {
+                ...state,
+                testResultsLoading: false,
             };
         }
         case "LOADING_FAILED": {
@@ -292,7 +304,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testResults: action.testResults,
+                testData: {
+                    ...state.testData,
+                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                },
                 scenarioLoading: false,
+                testResultsLoading: false,
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {
