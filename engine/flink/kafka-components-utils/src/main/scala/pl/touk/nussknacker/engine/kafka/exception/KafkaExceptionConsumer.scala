@@ -74,7 +74,7 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
 
         val scenario = metaData.id
         val node     = exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("-")
-        val error    = exceptionInfo.throwable.message
+        val error    = exceptionInfo.throwable.getMessage
         logger.warn(
           s"Cannot write to $topic, retrying with stripped context (scenario: $scenario, node: $node, error: $error)." +
             s"Verify your configuration of Kafka producer, error logging and errors topic and set correct limits. ${e.getMessage}"
@@ -94,7 +94,7 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
       .recover { case e: Throwable =>
         val scenario = metaData.id
         val node     = exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("-")
-        val error    = exceptionInfo.throwable.message
+        val error    = exceptionInfo.throwable.getMessage
 
         logger.warn(
           s"Failed to write to $topic (scenario: $scenario, node: $node, error: $error): ${e.getMessage}",

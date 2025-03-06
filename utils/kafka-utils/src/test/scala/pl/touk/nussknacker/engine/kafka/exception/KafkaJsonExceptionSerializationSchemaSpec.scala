@@ -14,7 +14,7 @@ import java.time.Instant
 
 class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matchers with EitherValues {
   private val timestamp = Instant.now()
-  private val exception = NonTransientException("input", "message", timestamp)
+  private val exception = new NonTransientException("input", "message", timestamp) {}
   private implicit val mapDecoder: Decoder[Map[String, String]] =
     Decoder.decodeMap(KeyDecoder.decodeKeyString, Decoder.decodeString)
 

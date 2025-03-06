@@ -2268,7 +2268,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         } catch {
           // The real problematic exception is wrapped in SpelExpressionEvaluationException by evaluate method
           case e: SpelExpressionEvaluationException =>
-            failurePromise.tryFailure(e.cause)
+            failurePromise.tryFailure(e.getCause)
         }
       }
     }

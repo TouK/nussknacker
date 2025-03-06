@@ -186,7 +186,7 @@ object KafkaExceptionInfo {
     new KafkaExceptionInfo(
       metaData.name,
       exceptionInfo.nodeComponentInfo.map(_.nodeId),
-      Option(exceptionInfo.throwable.message),
+      Option(exceptionInfo.throwable.getMessage),
       Option(exceptionInfo.throwable.input),
       optional(exceptionInfo.context.allVariables, config.includeInputEvent).map(encoder.encode),
       serializeStackTrace(config.stackTraceLengthLimit, exceptionInfo.throwable),

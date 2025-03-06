@@ -92,7 +92,10 @@ object propertyAccessors {
 
     override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
       // can we extract anything else here?
-      throw NonTransientException(name, s"Cannot invoke method/property $name on null object")
+      throw new NullPropertyAccessException(name)
+
+    private class NullPropertyAccessException(name: String)
+        extends NonTransientException(name, s"Cannot invoke method/property $name on null object")
 
   }
 

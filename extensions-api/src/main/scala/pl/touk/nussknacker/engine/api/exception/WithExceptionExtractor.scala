@@ -22,9 +22,15 @@ trait WithExceptionExtractor extends NamedServiceProvider with LazyLogging {
         NuExceptionInfo(exceptionInfo.nodeComponentInfo, nonTransient, exceptionInfo.context)
       case other =>
         val exceptionDetails = s"${ReflectUtils.simpleNameWithoutSuffix(other.getClass)}: ${other.getMessage}"
-        val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
-        logger.debug(s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id}", other)
-        logger.info(s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id}")
+        val nonTransient =
+          new WrappingNonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
+        logger.debug(
+          s"Unknown exception $exceptionDetails for context [${exceptionInfo.context.id}] in node [${exceptionInfo.nodeComponentInfo}]",
+          other
+        )
+        logger.info(
+          s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id} in node [${exceptionInfo.nodeComponentInfo}]"
+        )
         NuExceptionInfo(exceptionInfo.nodeComponentInfo, nonTransient, exceptionInfo.context)
     }
   }

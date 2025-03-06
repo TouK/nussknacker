@@ -13,9 +13,10 @@ case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: 
     with LazyLogging {
 
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
+    val unwrapped = unwrap(e.throwable)
     logger.error(
-      s"${processMetaData.name}: Exception during processing job, params: $params, context: ${e.context}",
-      e.throwable
+      s"${processMetaData.name} > ${e.nodeComponentInfo}: Exception during processing job, params: $params, context: ${e.context}",
+      unwrapped
     )
   }
 
@@ -26,9 +27,11 @@ case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Ma
     with LazyLoggingWithTraces {
 
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
+    val unwrapped = unwrap(e.throwable)
     logger.warnWithDebugStack(
-      s"${processMetaData.name}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params",
-      e.throwable
+      s"${processMetaData.name} > ${e.nodeComponentInfo.getOrElse("<missing nodeComponentInfo>")} > ${e.context.id}: " +
+        s"${unwrapped.toString}${Option(unwrapped.getCause).map(", caused by: " + _).getOrElse("")}, params: $params",
+      unwrapped
     )
   }
 

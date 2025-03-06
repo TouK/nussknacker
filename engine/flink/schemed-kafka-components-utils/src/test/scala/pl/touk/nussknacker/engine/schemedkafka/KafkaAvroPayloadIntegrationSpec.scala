@@ -247,7 +247,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
             NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
           )
           espExceptionInfo.throwable shouldBe a[NonTransientException]
-          val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
+          val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].getCause
           cause shouldBe a[AvroRuntimeException]
           cause.getMessage should include("Not expected null for field: Some(street)")
         }

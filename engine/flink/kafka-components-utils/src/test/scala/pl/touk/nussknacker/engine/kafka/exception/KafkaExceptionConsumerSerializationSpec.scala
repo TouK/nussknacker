@@ -36,7 +36,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
   private val exception = NuExceptionInfo(
     Some(NodeComponentInfo("nodeId", ComponentType.Service, "componentName")),
-    NonTransientException("input1", "mess", Instant.ofEpochMilli(111)),
+    new NonTransientException("input1", "mess", Instant.ofEpochMilli(111)) {},
     context
   )
 

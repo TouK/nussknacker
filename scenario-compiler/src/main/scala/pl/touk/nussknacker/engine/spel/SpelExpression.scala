@@ -88,7 +88,7 @@ final case class ParsedSpelExpression(
 
 }
 
-class SpelExpressionEvaluationException(val expression: String, val ctxId: String, cause: Throwable)
+class SpelExpressionEvaluationException(val expression: String, cause: Throwable)
     extends NonTransientException(
       expression,
       s"Expression [$expression] evaluation failed, message: ${cause.getMessage}",
@@ -151,16 +151,19 @@ class SpelExpression(
       block
     } catch {
       case NonFatal(e) =>
-        logger.info(
-          s"Expression evaluation failed. Original {}, ctxId: {}, message: {}",
-          original,
-          ctx.id,
-          e.getMessage
-        )
-        // we log twice here because LazyLogging cannot print context and stacktrace at the same time
-        logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
-        logger.debug("Expression evaluation failed", e)
-        throw new SpelExpressionEvaluationException(original, ctx.id, e)
+        if (logger.underlying.isDebugEnabled) {
+          // we log twice here because LazyLogging cannot print context and stacktrace at the same time
+          logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
+          logger.debug("Expression evaluation failed", e)
+        } else {
+          logger.info(
+            s"Expression evaluation failed. Original {}, ctxId: {}, message: {}",
+            original,
+            ctx.id,
+            e.getMessage
+          )
+        }
+        throw new SpelExpressionEvaluationException(original, e)
     }
   }
 
