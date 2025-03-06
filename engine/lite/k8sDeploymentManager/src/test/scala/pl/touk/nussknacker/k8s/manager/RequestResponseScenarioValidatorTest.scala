@@ -12,7 +12,7 @@ class RequestResponseScenarioValidatorTest extends AnyFunSuite with Matchers {
   private val notImportantScenarioName = ProcessName("fooScenario")
   private val validSlug                = "asdf"
   private val invalidK8sServiceName    = (1 to (K8sUtils.maxObjectNameLength + 10)).map(_ => "a").mkString
-  private val noInstanceNameValidator  = new RequestResponseScenarioValidator(None)
+  private val noInstanceNameValidator  = new RequestResponseScenarioValidator(OptionalNussknackerInstanceName.empty)
 
   test("validate against service name for not defined instance name") {
     val scenarioWithLongName = ScenarioBuilder
@@ -31,8 +31,9 @@ class RequestResponseScenarioValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate against service name for defined instance name") {
-    val nussknackerInstanceName   = (1 to (K8sUtils.maxObjectNameLength - 3)).map(_ => "a").mkString
-    val longInstanceNameValidator = new RequestResponseScenarioValidator(Some(nussknackerInstanceName))
+    val nussknackerInstanceName = (1 to (K8sUtils.maxObjectNameLength - 3)).map(_ => "a").mkString
+    val longInstanceNameValidator =
+      new RequestResponseScenarioValidator(OptionalNussknackerInstanceName.forInstanceName(nussknackerInstanceName))
     longInstanceNameValidator.validateRequestResponse(
       notImportantScenarioName,
       RequestResponseMetaData(Some("a"))

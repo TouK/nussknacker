@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import monocle.macros.GenLens
 import monocle.std.option.some
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
-import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, RequestResponseSlugUtils}
+import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, OptionalNussknackerInstanceName, RequestResponseSlugUtils}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.labelsForScenario
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer.rewriteAnnotation
 import play.api.libs.json.Json
@@ -17,7 +17,7 @@ case class IngressConfig(
     config: Config = ConfigFactory.empty()
 )
 
-class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
+class IngressPreparer(config: IngressConfig, nuInstanceName: OptionalNussknackerInstanceName) {
 
   def prepare(
       processVersion: ProcessVersion,
