@@ -329,24 +329,17 @@ class NodesApiHttpServiceBusinessSpec
              |        "refClazzName": "java.lang.String",
              |        "params": []
              |      },
-             |      "editor": {
-             |        "simpleEditor": {
-             |          "type": "StringParameterEditor"
-             |        },
-             |        "defaultMode": "RAW",
-             |        "type": "DualParameterEditor"
-             |      },
              |      "editors": [
              |        {
-             |          "type": "SpelParameterEditor"
+             |          "type": "SpelTemplateParameterEditor"
              |        },
              |        {
-             |          "type": "SpelTemplateParameterEditor"
+             |          "type": "SpelParameterEditor"
              |        }
              |      ],
              |      "defaultValue": {
-             |        "language": "spel",
-             |        "expression": "''"
+             |        "language": "spelTemplate",
+             |        "expression": ""
              |      },
              |      "additionalVariables": {},
              |      "variablesToHide": [],
@@ -362,9 +355,6 @@ class NodesApiHttpServiceBusinessSpec
              |        "type": "Unknown",
              |        "refClazzName": "java.lang.Object",
              |        "params": []
-             |      },
-             |      "editor": {
-             |        "type": "RawParameterEditor"
              |      },
              |      "editors": [{
              |        "type": "SpelParameterEditor"

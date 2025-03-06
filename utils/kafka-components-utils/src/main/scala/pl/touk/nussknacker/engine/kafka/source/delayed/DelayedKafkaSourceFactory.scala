@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.TimestampUtils
@@ -26,8 +25,13 @@ object DelayedKafkaSourceFactory {
     ParameterDeclaration
       .optional[String](timestampFieldParamName)
       .withCreator(modify =
-        _.copy(editor =
-          Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
+        _.copy(editors =
+          Some(
+            ParameterEditors(
+              SpelTemplateParameterEditor,
+              SpelParameterEditor,
+            )
+          )
         )
       )
 
@@ -37,7 +41,7 @@ object DelayedKafkaSourceFactory {
   def timestampFieldParameter(
       kafkaRecordValueType: Option[TypingResult]
   ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
-    val editorOpt = kafkaRecordValueType
+    val editors = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
         case (paramName, typing) if TimestampUtils.supportedTimestampTypes.contains(typing) =>
@@ -47,12 +51,26 @@ object DelayedKafkaSourceFactory {
       .map(_.sortBy(_.label))
       .map(FixedExpressionValue("", "") :: _)
       .map(FixedValuesParameterEditor.apply)
-      .map(DualParameterEditor(_, DualEditorMode.SIMPLE))
-      .orElse(Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))
+      .map(editor =>
+        Some(
+          ParameterEditors(
+            editor,
+            SpelParameterEditor
+          )
+        )
+      )
+      .getOrElse(
+        Some(
+          ParameterEditors(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
+          )
+        )
+      )
 
     ParameterDeclaration
       .optional[String](timestampFieldParamName)
-      .withCreator(modify = _.copy(editor = editorOpt))
+      .withCreator(modify = _.copy(editors = editors))
   }
 
   def extractTimestampField(params: Params): Option[String] =

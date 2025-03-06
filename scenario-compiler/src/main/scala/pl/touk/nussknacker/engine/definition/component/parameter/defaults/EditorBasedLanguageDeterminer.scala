@@ -5,20 +5,18 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object EditorBasedLanguageDeterminer {
 
-  def determineLanguageOf(editor: Option[ParameterEditor]): Expression.Language = editor match {
-    case Some(RawParameterEditor)                   => Expression.Language.Spel
-    case Some(SpelParameterEditor)                  => Expression.Language.Spel
-    case Some(simpleEditor: SimpleParameterEditor)  => determineLanguageOf(simpleEditor)
-    case Some(DualParameterEditor(simpleEditor, _)) => determineLanguageOf(simpleEditor)
-    case None                                       => Expression.Language.Spel
+  def determineLanguageOf(editor: Option[ParameterEditors]): Expression.Language = editor.map(_.mainEditor) match {
+    case Some(SpelParameterEditor)                 => Expression.Language.Spel
+    case Some(simpleEditor: SimpleParameterEditor) => determineLanguageOf(simpleEditor)
+    case None                                      => Expression.Language.Spel
   }
 
   private def determineLanguageOf(editor: SimpleParameterEditor): Expression.Language =
     editor match {
-      case BoolParameterEditor | StringParameterEditor | DateParameterEditor | TimeParameterEditor |
-          DateTimeParameterEditor | TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) |
-          PeriodParameterEditor(_) | CronParameterEditor | FixedValuesParameterEditor(_) |
-          FixedValuesWithIconParameterEditor(_) | FixedValuesWithRadioParameterEditor(_) =>
+      case BoolParameterEditor | DateParameterEditor | TimeParameterEditor | DateTimeParameterEditor |
+          TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) | PeriodParameterEditor(_) |
+          CronParameterEditor | FixedValuesParameterEditor(_) | FixedValuesWithIconParameterEditor(_) |
+          FixedValuesWithRadioParameterEditor(_) =>
         Expression.Language.Spel
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate

@@ -1,66 +1,57 @@
 package pl.touk.nussknacker.engine.json.swagger
 
+import cats.implicits.catsSyntaxOptionId
 import pl.touk.nussknacker.engine.api.definition.{
   BoolParameterEditor,
   DateParameterEditor,
   DateTimeParameterEditor,
-  DualParameterEditor,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   ParameterEditor,
-  StringParameterEditor,
+  ParameterEditors,
+  SpelParameterEditor,
+  SpelTemplateParameterEditor,
   TimeParameterEditor
 }
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 object implicits {
 
   implicit class RichSwaggerTyped(st: SwaggerTyped) {
 
-    def editorOpt: Option[ParameterEditor] =
+    def editorList: Option[ParameterEditors] =
       st match {
         case SwaggerString =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = StringParameterEditor,
-              defaultMode = DualEditorMode.RAW
-            )
-          )
+          ParameterEditors(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor
+          ).some
         case SwaggerBool =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = BoolParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
-          )
+          ParameterEditors(
+            BoolParameterEditor,
+            SpelParameterEditor
+          ).some
         case SwaggerTime =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = TimeParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
-          )
+          ParameterEditors(
+            TimeParameterEditor,
+            SpelParameterEditor
+          ).some
         case SwaggerDate =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = DateParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
-          )
+          ParameterEditors(
+            DateParameterEditor,
+            SpelParameterEditor
+          ).some
         case SwaggerDateTime =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = DateTimeParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
-          )
+          ParameterEditors(
+            DateTimeParameterEditor,
+            SpelParameterEditor
+          ).some
         // TODO: FixedValuesParameterEditor for other types e.g. numbers
         case SwaggerEnum(values) if values.forall(v => v.isInstanceOf[String]) =>
-          Some(
+          ParameterEditors(
             FixedValuesParameterEditor(
               values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String]))
             )
-          )
+          ).some
         case _ => None
       }
 

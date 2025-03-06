@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo, ParameterConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -65,7 +65,7 @@ class ActionInfoService(
             params.map { case (name, value) =>
               name.value -> UiActionParameterConfig(
                 value.defaultValue,
-                value.editor.getOrElse(RawParameterEditor),
+                value.parsedEditors.map(_.mainEditor).getOrElse(SpelParameterEditor),
                 value.label,
                 value.hintText
               )

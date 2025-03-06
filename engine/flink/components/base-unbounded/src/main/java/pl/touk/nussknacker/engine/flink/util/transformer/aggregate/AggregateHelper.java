@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate;
 
+import pl.touk.nussknacker.engine.api.Hidden;
+import pl.touk.nussknacker.engine.api.ParamName;
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
+import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.ParameterEditors;
+import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.SpelParameterEditor$;
+import scala.collection.JavaConverters;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
-import pl.touk.nussknacker.engine.api.Hidden;
-import pl.touk.nussknacker.engine.api.ParamName;
-import pl.touk.nussknacker.engine.api.definition.DualParameterEditor;
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
-import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
-import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
-import scala.collection.JavaConverters;
 
 /**
  * This class is in Java, because constants are used in expressions in editors - see
@@ -40,7 +41,12 @@ public class AggregateHelper implements Serializable {
             new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality"))).asScala().toList());
 
     @Hidden
-    public static final DualParameterEditor DUAL_EDITOR = new DualParameterEditor(SIMPLE_EDITOR, DualEditorMode.SIMPLE);
+    public static final ParameterEditors DUAL_EDITOR =
+        ParameterEditors
+            .apply(
+                SIMPLE_EDITOR,
+                SpelParameterEditor$.MODULE$
+            );
 
     private static final Aggregator SUM = aggregates.SumAggregator$.MODULE$;
     private static final Aggregator MAX = aggregates.MaxAggregator$.MODULE$;

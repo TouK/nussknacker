@@ -45,7 +45,7 @@ class ActionInfoHttpServiceBusinessSpec
              |        "parameters":{
              |          "offset":{
              |            "defaultValue":null,
-             |            "editor":{"type":"RawParameterEditor"},
+             |            "editor":{"type":"SpelParameterEditor"},
              |            "label":"Offset",
              |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
              |          }
@@ -123,7 +123,7 @@ class ActionInfoHttpServiceBusinessSpec
                            |        "parameters":{
                            |          "offset":{
                            |            "defaultValue":null,
-                           |            "editor":{"type":"RawParameterEditor"},
+                           |            "editor":{"type":"SpelParameterEditor"},
                            |            "label":"Offset",
                            |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
                            |          }

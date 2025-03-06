@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.testcomponents
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
@@ -13,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   OutputVariableNameDependency,
   Parameter,
+  ParameterEditors,
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -30,7 +30,7 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
     .optional[String](spelTemplateParameterName)
     .copy(
       isLazyParameter = true,
-      editor = Some(SpelTemplateParameterEditor)
+      editors = Some(ParameterEditors(SpelTemplateParameterEditor))
     )
 
   override type State = Any

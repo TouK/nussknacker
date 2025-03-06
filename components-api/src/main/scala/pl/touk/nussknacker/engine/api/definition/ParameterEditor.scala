@@ -4,22 +4,17 @@ import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 import java.time.temporal.ChronoUnit
 import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait ParameterEditor
 
-case object RawParameterEditor extends ParameterEditor
-
 case object SpelParameterEditor extends ParameterEditor
 
 @ConfiguredJsonCodec sealed trait SimpleParameterEditor extends ParameterEditor
 
 case object BoolParameterEditor extends SimpleParameterEditor
-
-case object StringParameterEditor extends SimpleParameterEditor
 
 case object DateParameterEditor extends SimpleParameterEditor
 
@@ -88,20 +83,3 @@ case object CronParameterEditor extends SimpleParameterEditor
 @JsonCodec case class DictParameterEditor(
     dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
 ) extends SimpleParameterEditor
-
-@JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)
-    extends ParameterEditor
-
-object DualParameterEditor {
-
-  implicit val dualEditorModeEncoder: Encoder[DualEditorMode] = {
-    new Encoder[DualEditorMode] {
-      override def apply(editorMode: DualEditorMode): Json = Encoder.encodeString(editorMode.name())
-    }
-  }
-
-  implicit val decodeDualEditorMode: Decoder[DualEditorMode] = {
-    Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
-  }
-
-}

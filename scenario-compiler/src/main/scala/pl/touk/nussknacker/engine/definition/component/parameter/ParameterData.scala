@@ -13,6 +13,11 @@ case class ParameterData(typing: TypingResult, annotations: List[_ <: Annotation
     e
   }
 
+  // TODO: LBG is needed?
+  def getAnnotations[T <: Annotation: ClassTag]: List[T] = annotations.collect { case e: T =>
+    e
+  }
+
 }
 
 object ParameterData {
