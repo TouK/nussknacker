@@ -1,5 +1,5 @@
 import { css } from "@emotion/css";
-import React, { SetStateAction } from "react";
+import React, { memo, SetStateAction } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../../reducers";
 import { Edge, NodeType } from "../../../../types";
@@ -15,7 +15,7 @@ export interface NodeGroupContentProps {
     onChange?: (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => void;
 }
 
-export function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
+export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
     const errors = useSelector((state: RootState) => {
         return getNodeErrors(state, node.id);
     });
@@ -36,4 +36,4 @@ export function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProp
             {NodeUtils.nodeIsFragment(node) && <FragmentContent nodeToDisplay={node} />}
         </div>
     );
-}
+});

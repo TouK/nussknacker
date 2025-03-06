@@ -69,7 +69,7 @@ const nodeStyles = (theme: Theme) => {
     });
 };
 
-const getShadow = (color = `red`, size = 2, size2 = 2 * size) => {
+export const getShadow = (color = `red`, size = 2, size2 = 2 * size) => {
     return `drop-shadow(${size}px ${size}px ${size2}px ${color}) drop-shadow(${size}px -${size}px ${size2}px ${color}) drop-shadow(-${size}px ${size}px ${size2}px ${color}) drop-shadow(-${size}px -${size}px ${size2}px ${color})`;
 };
 
