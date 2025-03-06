@@ -6,9 +6,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sources.JsonSchemaRequestResponseSource
@@ -17,7 +16,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   private val metaData: MetaData = MetaData("test1", RequestResponseMetaData(None))
 
-  case class SimplifiedParam(name: String, typingResult: TypingResult, editor: Option[ParameterEditor])
+  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: Option[ParameterEditors])
 
   private def createSource(rawSchema: String) = {
     val schema = JsonSchemaBuilder.parseSchema(rawSchema)
@@ -41,12 +40,17 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam(
         "name",
         Typed[String],
-        Option(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+        Option(
+          ParameterEditors(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
+          )
+        )
       ),
       SimplifiedParam("age", Typed[Long], None)
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editors)
     ) should contain theSameElementsAs expectedParameters
   }
 
@@ -73,7 +77,12 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam(
         "address.street",
         Typed[String],
-        Option(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+        Some(
+          ParameterEditors(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
+          )
+        )
       ),
       SimplifiedParam("address.number", Typed[Long], None),
       SimplifiedParam(
@@ -83,7 +92,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       )
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editors)
     ) should contain theSameElementsAs expectedParameters
   }
 
@@ -132,7 +141,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       )
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editors)
     ) should contain theSameElementsAs expectedParameters
   }
 

@@ -208,7 +208,7 @@ class ExpressionCompiler(
   ): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     val ctxToUse = if (definition.isLazyParameter || treatEagerParametersAsLazy) ctx else ctx.clearVariables
 
-    substituteDictKeyExpression(nodeParam.expression, definition.editor, nodeParam.name).andThen { finalExpr =>
+    substituteDictKeyExpression(nodeParam.expression, definition.editors, nodeParam.name).andThen { finalExpr =>
       enrichContext(ctxToUse, definition).andThen { finalCtx =>
         compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
           .map(TypedParameter(nodeParam.name, _))
@@ -224,7 +224,7 @@ class ExpressionCompiler(
     branchIdAndExpressions
       .map { case (branchId, expression) =>
         val paramName = definition.name.withBranchId(branchId)
-        substituteDictKeyExpression(expression, definition.editor, paramName).andThen { finalExpr =>
+        substituteDictKeyExpression(expression, definition.editors, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level
             compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(branchId -> _)
@@ -237,7 +237,7 @@ class ExpressionCompiler(
 
   private def substituteDictKeyExpression(
       expression: Expression,
-      editor: Option[ParameterEditor],
+      editors: Option[ParameterEditors],
       paramName: ParameterName
   )(
       implicit nodeId: NodeId
@@ -267,15 +267,15 @@ class ExpressionCompiler(
       expression.language == DictKeyWithLabel
 
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
-      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editor, nodeId.id))
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId.id))
 
     def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
-      editor match {
-        case Some(DictParameterEditor(dictId)) if isDictKeyWithLabel(expression) =>
+      editors match {
+        case Some(ParameterEditors(DictParameterEditor(dictId), _)) if isDictKeyWithLabel(expression) =>
           if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
-        case Some(DualParameterEditor(DictParameterEditor(dictId), _)) if isDictKeyWithLabel(expression) =>
+        case Some(ParameterEditors(_, Some(DictParameterEditor(dictId)))) if isDictKeyWithLabel(expression) =>
           if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
-        case Some(DictParameterEditor(_)) if !isDictKeyWithLabel(expression) =>
+        case Some(ParameterEditors(DictParameterEditor(_), None)) if !isDictKeyWithLabel(expression) =>
           incompatibleChangeToParameterDefinitionDetected
         case _ if isDictKeyWithLabel(expression) => incompatibleChangeToParameterDefinitionDetected
         case _                                   => Valid(expression)

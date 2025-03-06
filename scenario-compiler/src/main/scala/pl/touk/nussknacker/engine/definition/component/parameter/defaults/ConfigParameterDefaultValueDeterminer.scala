@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 object ConfigParameterDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
 
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
-    val language = EditorBasedLanguageDeterminer.determineLanguageOf(parameters.determinedEditor)
+    val language = EditorBasedLanguageDeterminer.determineLanguageOf(parameters.determinedEditors)
     parameters.parameterConfig.defaultValue.map(Expression(language, _))
   }
 

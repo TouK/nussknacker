@@ -12,7 +12,13 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDependency, Parameter, ParameterDeclaration}
+import pl.touk.nussknacker.engine.api.definition.{
+  BoolParameterEditor,
+  NodeDependency,
+  Parameter,
+  ParameterDeclaration,
+  ParameterEditors
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
@@ -196,7 +202,9 @@ object TableSinkFactory {
 
   private val rawModeParameterDeclaration = ParameterDeclaration
     .mandatory[Boolean](rawModeParameterName)
-    .withCreator(c => c.copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor)))
+    .withCreator(c =>
+      c.copy(defaultValue = Some(Expression.spel("false")), editors = Some(ParameterEditors(BoolParameterEditor)))
+    )
 
   private val restrictedParamNamesForNonRawMode: Set[ParameterName] = Set(
     tableNameParamName,

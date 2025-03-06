@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterEditor,
   SimpleParameterEditor
 }
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -1393,7 +1392,6 @@ object NodesApiEndpoints {
     object NodeValidationResultDto {
       implicit lazy val simpleParameterEditorSchema: Schema[SimpleParameterEditor] = Schema.derived
       implicit lazy val parameterEditorSchema: Schema[ParameterEditor]             = Schema.derived
-      implicit lazy val dualEditorSchema: Schema[DualEditorMode]                   = Schema.string
       implicit lazy val durationSchema: Schema[Duration]                           = Schema.schemaForJavaDuration
       implicit lazy val uiParameterSchema: Schema[UIParameter]                     = Schema.derived
 

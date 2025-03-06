@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.description
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -94,7 +94,7 @@ object ActionInfoEndpoints {
       )
 
     val emptyUiActionParameterConfig: UiActionParameterConfigDto =
-      UiActionParameterConfigDto(None, RawParameterEditor, None, None)
+      UiActionParameterConfigDto(None, SpelParameterEditor, None, None)
   }
 
   object Dtos {

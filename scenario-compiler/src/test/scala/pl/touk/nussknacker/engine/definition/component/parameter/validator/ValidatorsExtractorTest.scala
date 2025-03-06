@@ -4,7 +4,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.{OptionalDeterminer, ParameterData}
@@ -105,7 +104,7 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
       .extract(
         validatorParams(
           optionalParam,
-          ParameterConfig.empty.copy(editor = Some(FixedValuesParameterEditor(possibleValues)))
+          ParameterConfig.empty.copy(editors = Some(List(FixedValuesParameterEditor(possibleValues))))
         )
       )
       .shouldBe(List(FixedValuesValidator(possibleValues)))
@@ -118,7 +117,14 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
         validatorParams(
           optionalParam,
           ParameterConfig.empty
-            .copy(editor = Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), DualEditorMode.SIMPLE)))
+            .copy(editors =
+              Some(
+                List(
+                  FixedValuesParameterEditor(possibleValues),
+                  SpelParameterEditor,
+                )
+              )
+            )
         )
       )
       .shouldBe(empty)

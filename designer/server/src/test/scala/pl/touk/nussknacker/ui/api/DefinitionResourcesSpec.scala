@@ -160,12 +160,12 @@ class DefinitionResourcesSpec
         .downField("fragment-fragment1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
-        .downField("editor")
+        .downField("editors")
         .focus
         .value
 
       editor shouldBe parser
-        .parse("""{"possibleValues" : [
+        .parse("""[{"possibleValues" : [
                    |    {
                    |      "expression" : "",
                    |      "label" : ""
@@ -176,7 +176,7 @@ class DefinitionResourcesSpec
                    |    }
                    |  ],
                    |  "type" : "FixedValuesParameterEditor"
-                   |}""".stripMargin)
+                   |}]""".stripMargin)
         .toOption
         .get
     }
