@@ -34,6 +34,7 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
+      editors: List[ParameterEditor],
       // It is used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
