@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
   ParameterValueCompileTimeValidation,
@@ -60,7 +59,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
       c
-        .withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
+        .withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("realDefault"))
         .withValue(s"componentsUiConfig.$n.params.par1.label", fromAnyRef("Parameter 1"))
     )
 
@@ -1500,8 +1499,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   private def genericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
-        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-        defaultValue = Some("'realDefault'".spel),
+        editors = List(
+          SpelTemplateParameterEditor,
+          SpelParameterEditor,
+        ),
+        defaultValue = Some("realDefault".spelTemplate),
         labelOpt = Some("Parameter 1")
       ),
     Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),

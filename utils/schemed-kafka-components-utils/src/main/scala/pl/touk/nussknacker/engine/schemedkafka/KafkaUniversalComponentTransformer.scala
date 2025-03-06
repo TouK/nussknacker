@@ -85,8 +85,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     ParameterDeclaration
       .mandatory[String](topicParamName)
       .withCreator(
-        modify = _.copy(editor =
-          Some(
+        modify = _.copy(editors =
+          List(
             FixedValuesParameterEditor(
               // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
               // TODO: add addNullOption feature flag to FixedValuesParameterEditor
@@ -127,7 +127,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
         ParameterDeclaration
           .mandatory[String](KafkaUniversalComponentTransformer.contentTypeParamName)
           .withCreator(
-            modify = _.copy(editor = Some(FixedValuesParameterEditor(contentTypes)))
+            modify = _.copy(editors = List(FixedValuesParameterEditor(contentTypes)))
           )
       )
     }
@@ -144,7 +144,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     ParameterDeclaration
       .mandatory[String](KafkaUniversalComponentTransformer.schemaVersionParamName)
       .withCreator(
-        modify = _.copy(editor = Some(FixedValuesParameterEditor(versionValues)))
+        modify = _.copy(editors = List(FixedValuesParameterEditor(versionValues)))
       )
   }
 

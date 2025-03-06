@@ -11,6 +11,7 @@ class DefaultModelMigrations extends ProcessMigrations {
     3 -> RequestResponseSinkValidationModeMigration,
     4 -> DecisionTableParameterNamesMigration,
     5 -> PeriodicToSampleGeneratorMigration,
+    6 -> SpelToSpelTemplateNodeMigration,
     // 100 -> NewMigration,
     // Newly added migrations should be in the hundreds: 100, 200, 300 and so on. We do this because
     // many ProcessMigrations can be loaded using SPI, and we want to avoid overlapping numbers when merging.

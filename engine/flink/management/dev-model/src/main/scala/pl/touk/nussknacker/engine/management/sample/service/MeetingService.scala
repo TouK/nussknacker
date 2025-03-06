@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 
 import com.cronutils.model.Cron
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 
 import java.time._
@@ -19,33 +19,25 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
       @ParamName("Date") date: LocalDateTime,
       @ParamName("EndTime") endTime: LocalTime,
       @ParamName("Duration")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(
-          `type` = SimpleEditorType.DURATION_EDITOR,
-          timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
-        ),
-        defaultMode = DualEditorMode.SIMPLE
+      @Editor(
+        `type` = EditorType.DURATION_EDITOR,
+        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
       )
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       duration: Duration,
       @ParamName("Period")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(
-          `type` = SimpleEditorType.PERIOD_EDITOR,
-          timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
-        ),
-        defaultMode = DualEditorMode.SIMPLE
+      @Editor(
+        `type` = EditorType.PERIOD_EDITOR,
+        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
       )
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       period: Period,
       @ParamName("NextMeeting")
       @Nullable
       nextMeeting: LocalDate,
       @ParamName("Scheduler")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(
-          `type` = SimpleEditorType.CRON_EDITOR
-        ),
-        defaultMode = DualEditorMode.SIMPLE
-      )
+      @Editor(`type` = EditorType.CRON_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       @Nullable
       cronScheduler: Cron
   )(implicit ec: ExecutionContext): Future[Unit] = measuring {

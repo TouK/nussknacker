@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   ComponentProvider,
   NussknackerVersion,
-  ParameterConfig
+  ParameterConfig,
+  StaticParameterConfig
 }
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -46,8 +47,8 @@ class DeployParamService extends Service with WithActionParametersSupport {
       deploymentData.get("deployParam").orNull
     }
 
-  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = Map(
-    ScenarioActionName.Deploy -> Map(ParameterName("deployParam") -> ParameterConfig.empty)
+  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = Map(
+    ScenarioActionName.Deploy -> Map(ParameterName("deployParam") -> StaticParameterConfig.empty)
   )
 
 }

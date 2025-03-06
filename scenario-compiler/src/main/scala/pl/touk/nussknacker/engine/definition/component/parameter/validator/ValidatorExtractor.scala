@@ -14,5 +14,5 @@ case class ValidatorExtractorParameters(
     parameterData: ParameterData,
     isOptional: Boolean,
     parameterConfig: ParameterConfig,
-    extractedEditor: Option[ParameterEditor]
+    extractedEditors: List[ParameterEditor]
 )

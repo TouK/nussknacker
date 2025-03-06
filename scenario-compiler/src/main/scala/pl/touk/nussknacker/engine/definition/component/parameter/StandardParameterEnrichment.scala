@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
   EditorBasedValidatorExtractor,
   ValidatorExtractorParameters
 }
+import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 /*
   For parameters defined explicitly in code (e.g. by DynamicComponent or using WithExplicitMethod) we want to define sensible fallback/defaults:
@@ -34,22 +35,22 @@ object StandardParameterEnrichment {
 
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {
     val parameterData = ParameterData(original.typ, Nil)
-    val finalEditor   = original.editor.orElse(EditorExtractor.extract(parameterData, parameterConfig))
+    val finalEditors  = original.editors.orElseIfEmpty(EditorExtractor.extract(parameterData, parameterConfig))
     val finalValidators =
       (original.validators ++
         parameterConfig.validators.toList.flatten ++
-        extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
+        extractAdditionalValidator(parameterData, parameterConfig, finalEditors)).distinct
     val isOptional = !finalValidators.contains(MandatoryParameterValidator)
     val finalDefaultValue = original.defaultValue.orElse(
       DefaultValueDeterminerChain.determineParameterDefaultValue(
-        DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditor)
+        DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditors)
       )
     )
     val finalHintText = original.hintText.orElse(parameterConfig.hintText)
     val finalLabel    = original.labelOpt.orElse(parameterConfig.label)
 
     original.copy(
-      editor = finalEditor,
+      editors = finalEditors,
       validators = finalValidators,
       defaultValue = finalDefaultValue,
       hintText = finalHintText,
@@ -60,10 +61,10 @@ object StandardParameterEnrichment {
   private def extractAdditionalValidator(
       parameterData: ParameterData,
       parameterConfig: ParameterConfig,
-      finalEditor: Option[ParameterEditor]
+      finalEditors: List[ParameterEditor]
   ): Option[ParameterValidator] = {
     val validatorExtractorParameters =
-      ValidatorExtractorParameters(parameterData, isOptional = true, parameterConfig, finalEditor)
+      ValidatorExtractorParameters(parameterData, isOptional = true, parameterConfig, finalEditors)
     EditorBasedValidatorExtractor.extract(validatorExtractorParameters)
   }
 

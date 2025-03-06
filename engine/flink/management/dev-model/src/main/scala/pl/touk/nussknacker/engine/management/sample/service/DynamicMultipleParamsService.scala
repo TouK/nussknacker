@@ -30,8 +30,8 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
       implicit nodeId: NodeId
   ): DynamicMultipleParamsService.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val fooParam = Parameter(ParameterName("foo"), Typed[String]).copy(editor =
-        Some(
+      val fooParam = Parameter(ParameterName("foo"), Typed[String]).copy(editors =
+        List(
           FixedValuesParameterEditor(
             List(
               nullFixedValue,

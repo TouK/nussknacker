@@ -47,8 +47,8 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
           required = true,
           initialValue = Some(
             FixedExpressionValue(
+              "default-from-additional-ui-config-provider",
               "'default-from-additional-ui-config-provider'",
-              "default-from-additional-ui-config-provider"
             )
           ),
           hintText = Some("hint-text-from-additional-ui-config-provider"),

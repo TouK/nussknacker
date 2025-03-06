@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate;
 
+import pl.touk.nussknacker.engine.api.Hidden;
+import pl.touk.nussknacker.engine.api.ParamName;
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
+import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.SpelParameterEditor$;
+import scala.collection.JavaConverters;
+import scala.collection.immutable.List;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
-import pl.touk.nussknacker.engine.api.Hidden;
-import pl.touk.nussknacker.engine.api.ParamName;
-import pl.touk.nussknacker.engine.api.definition.DualParameterEditor;
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
-import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
-import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
-import scala.collection.JavaConverters;
 
 /**
  * This class is in Java, because constants are used in expressions in editors - see
@@ -22,7 +23,7 @@ import scala.collection.JavaConverters;
  */
 public class AggregateHelper implements Serializable {
 
-    public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
+    public static final ParameterEditor EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
             new FixedExpressionValue("#AGG.first", "First"),
             new FixedExpressionValue("#AGG.last", "Last"),
             new FixedExpressionValue("#AGG.countWhen", "CountWhen"),
@@ -40,7 +41,12 @@ public class AggregateHelper implements Serializable {
             new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality"))).asScala().toList());
 
     @Hidden
-    public static final DualParameterEditor DUAL_EDITOR = new DualParameterEditor(SIMPLE_EDITOR, DualEditorMode.SIMPLE);
+    public static final List<ParameterEditor> DUAL_EDITOR = JavaConverters.collectionAsScalaIterableConverter(
+        Arrays.asList(
+            EDITOR,
+            SpelParameterEditor$.MODULE$
+        )
+    ).asScala().toList();
 
     private static final Aggregator SUM = aggregates.SumAggregator$.MODULE$;
     private static final Aggregator MAX = aggregates.MaxAggregator$.MODULE$;

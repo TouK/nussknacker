@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.scenarioproperty
 
+import cats.implicits.catsSyntaxOptionId
 import pl.touk.nussknacker.engine.api.FragmentSpecificData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
@@ -8,7 +9,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesParameterEditor,
   FixedValuesWithIconParameterEditor,
   MandatoryParameterValidator,
-  StringParameterEditor
+  SpelTemplateParameterEditor,
+  StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.{
@@ -29,7 +31,7 @@ object FragmentPropertiesConfig {
   val docsUrlConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.docsUrlName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = StaticStringParameterEditor.some,
       // TODO: some validator
       validators = None,
       label = Some("Documentation url"),
@@ -39,13 +41,11 @@ object FragmentPropertiesConfig {
   val componentGroupNameConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.componentGroupName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(
-        FixedValuesParameterEditor(
-          DefaultsComponentGroupName.allAvailableForFragment.map(groupName =>
-            FixedExpressionValue(groupName.value, groupName.value)
-          )
+      editor = FixedValuesParameterEditor(
+        DefaultsComponentGroupName.allAvailableForFragment.map(groupName =>
+          FixedExpressionValue(groupName.value, groupName.value)
         )
-      ),
+      ).some,
       validators = Some(List(MandatoryParameterValidator)),
       label = Some("Component group"),
       hintText = Some("Group of components in the Creator Panel in which this fragment will be available")

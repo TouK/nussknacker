@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.editor;
 
-public enum SimpleEditorType {
+public enum EditorType {
     BOOL_EDITOR,
     CRON_EDITOR,
     DATE_EDITOR,
@@ -8,12 +8,12 @@ public enum SimpleEditorType {
     DURATION_EDITOR,
     FIXED_VALUES_EDITOR,
     PERIOD_EDITOR,
-    STRING_EDITOR,
     TIME_EDITOR,
     TEXTAREA_EDITOR,
     JSON_EDITOR,
     SQL_EDITOR,
     SPEL_TEMPLATE_EDITOR,
     DICT_EDITOR,
-    TYPED_TABULAR_DATA_EDITOR
+    TYPED_TABULAR_DATA_EDITOR,
+    SPEL_EDITOR,
 }

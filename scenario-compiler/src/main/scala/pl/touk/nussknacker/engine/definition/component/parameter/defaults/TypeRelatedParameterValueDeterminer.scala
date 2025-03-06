@@ -14,7 +14,7 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
       case _ =>
         None
     }
-    klass.flatMap(determineTypeRelatedDefaultParamValue(parameters.determinedEditor, _))
+    klass.flatMap(determineTypeRelatedDefaultParamValue(parameters.determinedEditors.headOption, _))
   }
 
   private[defaults] def determineTypeRelatedDefaultParamValue(

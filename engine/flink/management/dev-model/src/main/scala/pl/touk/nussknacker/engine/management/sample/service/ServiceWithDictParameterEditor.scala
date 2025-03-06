@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 
 import scala.concurrent.Future
@@ -13,22 +13,18 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
   @MethodToInvoke
   def invoke(
       @ParamName("RGBDict")
-      @SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "rgb")
+      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "rgb")
       rgb: String,
       @ParamName("BooleanDict")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "boolean_dict"),
-        defaultMode = DualEditorMode.SIMPLE
-      )
+      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "boolean_dict")
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       booleanDict: Option[java.lang.Boolean],
       @ParamName("LongDict")
-      @SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "long_dict")
+      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "long_dict")
       longDict: Option[java.lang.Long],
       @ParamName("RGBDictRAW")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "rgb"),
-        defaultMode = DualEditorMode.RAW
-      )
+      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "rgb")
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       rgbRaw: Option[String]
   ): Future[String] = {
     Future.successful(s"""RGBDict value to lowercase: ${rgb.toLowerCase}
