@@ -39,21 +39,19 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     @MethodToInvoke
     def method(
         @ParamName("paramDualEditor")
-        @DualEditor(
-          simpleEditor = new SimpleEditor(
-            `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-            possibleValues = Array(new LabeledExpression(expression = "expression", label = "label"))
-          ),
-          defaultMode = DualEditorMode.SIMPLE
+        @SimpleEditor(
+          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(new LabeledExpression(expression = "expression", label = "label"))
         )
+        @SpelEditor
         input: String,
         @SimpleEditor(
-          `type` = SimpleEditorType.STRING_EDITOR
+          `type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR
         )
         @ParamName("paramStringEditor")
         param2: String,
         @ParamName("paramRawEditor")
-        @RawEditor
+        @SpelEditor
         param3: String
     ): Future[String] = ???
 
@@ -70,14 +68,14 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     definitions
       .components(ComponentId(ComponentType.Service, "enricher"))
       .parameters
-      .map(p => (p.name, p.editor))
+      .map(p => (p.name, p.editors))
       .toMap shouldBe Map(
-      "paramDualEditor" -> DualParameterEditor(
-        simpleEditor = FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("expression", "label"))),
-        defaultMode = DualEditorMode.SIMPLE
+      "paramDualEditor" -> List(
+        FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("expression", "label"))),
+        SpelParameterEditor
       ),
-      "paramStringEditor" -> StringParameterEditor,
-      "paramRawEditor"    -> RawParameterEditor
+      "paramStringEditor" -> List(SpelTemplateParameterEditor),
+      "paramRawEditor"    -> List(SpelParameterEditor),
     )
   }
 
@@ -205,7 +203,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions      = prepareDefinitions(model, List.empty)
 
     val expectedOverridenParamDefaultValue =
-      "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
+      "paramStringEditor" -> Expression.spelTemplate("default-from-additional-ui-config-provider")
     val returnedParamDefaultValues =
       definitions.components(ComponentId(ComponentType.Service, "enricher")).parameters.map { param =>
         param.name -> param.defaultValue
@@ -220,7 +218,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions      = prepareDefinitions(model, List.empty, ComponentUiConfigMode.BasicConfig)
 
     val expectedParamDefaultValue =
-      "paramStringEditor" -> Expression.spel("''")
+      "paramStringEditor" -> Expression.spelTemplate("")
     val returnedParamDefaultValues =
       definitions.components(ComponentId(ComponentType.Service, "enricher")).parameters.map { param =>
         param.name -> param.defaultValue
@@ -239,7 +237,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
               required = false,
               initialValue = Some(
                 FixedExpressionValue(
-                  "'default-from-additional-ui-config-provider'",
+                  "default-from-additional-ui-config-provider",
                   "default-from-additional-ui-config-provider"
                 )
               ),

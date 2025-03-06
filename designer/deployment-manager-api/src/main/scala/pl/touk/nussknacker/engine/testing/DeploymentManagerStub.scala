@@ -94,7 +94,8 @@ object FlinkStreamingPropertiesConfig {
   private val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      // TODO: LBG IS ok here and below?
+      editor = Some(SpelTemplateParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
@@ -134,7 +135,7 @@ object FlinkStreamingPropertiesConfig {
   private val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = Some(SpelTemplateParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"),
       hintText = None

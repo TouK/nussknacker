@@ -8,7 +8,6 @@ public enum SimpleEditorType {
     DURATION_EDITOR,
     FIXED_VALUES_EDITOR,
     PERIOD_EDITOR,
-    STRING_EDITOR,
     TIME_EDITOR,
     TEXTAREA_EDITOR,
     JSON_EDITOR,

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.sink
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.{
@@ -29,10 +29,8 @@ class KafkaSinkFactory(
   @MethodToInvoke
   def create(
       processMetaData: MetaData,
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-        defaultMode = DualEditorMode.RAW
-      )
+      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
+      @SpelEditor
       @ParamName("Topic") @NotBlank topic: String,
       @ParamName("Value") value: LazyParameter[AnyRef]
   ): Sink =

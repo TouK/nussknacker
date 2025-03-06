@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
   ParameterValueCompileTimeValidation,
@@ -1500,7 +1499,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   private def genericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
-        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+        editors = Some(
+          ParameterEditors(
+            SpelParameterEditor,
+            SpelTemplateParameterEditor,
+          )
+        ),
         defaultValue = Some("'realDefault'".spel),
         labelOpt = Some("Parameter 1")
       ),

@@ -94,7 +94,7 @@ object ProcessTestData {
       .withService(
         otherExistingServiceId4,
         Parameter[JavaSampleEnum](ParameterName("expression")).copy(
-          editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
+          editors = Some(ParameterEditors(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a"))))),
           validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a"))))
         )
       )
@@ -106,7 +106,7 @@ object ProcessTestData {
       .withService(
         dictParameterEditorServiceId,
         Parameter[String](ParameterName("expression"))
-          .copy(editor = Some(DictParameterEditor("someDictId")), validators = List.empty)
+          .copy(editors = Some(ParameterEditors(DictParameterEditor("someDictId"))), validators = List.empty)
       )
       .withCustom(
         otherExistingStreamTransformer,

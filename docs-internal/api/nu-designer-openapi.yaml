@@ -3635,8 +3635,6 @@ paths:
                         type: TypedClass
                         refClazzName: java.lang.String
                         params: []
-                      editor:
-                        type: RawParameterEditor
                       editors:
                       - type: SpelParameterEditor
                       defaultValue:
@@ -5795,17 +5793,6 @@ components:
           type: array
           items:
             type: string
-    DualParameterEditor:
-      title: DualParameterEditor
-      type: object
-      required:
-      - simpleEditor
-      - defaultMode
-      properties:
-        simpleEditor:
-          $ref: '#/components/schemas/SimpleParameterEditor'
-        defaultMode:
-          type: string
     DurationParameterEditor:
       title: DurationParameterEditor
       type: object
@@ -6845,18 +6832,15 @@ components:
       - $ref: '#/components/schemas/DateParameterEditor'
       - $ref: '#/components/schemas/DateTimeParameterEditor'
       - $ref: '#/components/schemas/DictParameterEditor'
-      - $ref: '#/components/schemas/DualParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
-      - $ref: '#/components/schemas/RawParameterEditor'
       - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
-      - $ref: '#/components/schemas/StringParameterEditor'
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
@@ -6966,9 +6950,6 @@ components:
           $ref: '#/components/schemas/ProcessAdditionalFields'
         name:
           type: string
-    RawParameterEditor:
-      title: RawParameterEditor
-      type: object
     RecordsRequestDto:
       title: RecordsRequestDto
       type: object
@@ -7252,26 +7233,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
-    SimpleParameterEditor:
-      title: SimpleParameterEditor
-      oneOf:
-      - $ref: '#/components/schemas/BoolParameterEditor'
-      - $ref: '#/components/schemas/CronParameterEditor'
-      - $ref: '#/components/schemas/DateParameterEditor'
-      - $ref: '#/components/schemas/DateTimeParameterEditor'
-      - $ref: '#/components/schemas/DictParameterEditor'
-      - $ref: '#/components/schemas/DurationParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
-      - $ref: '#/components/schemas/JsonParameterEditor'
-      - $ref: '#/components/schemas/PeriodParameterEditor'
-      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
-      - $ref: '#/components/schemas/SqlParameterEditor'
-      - $ref: '#/components/schemas/StringParameterEditor'
-      - $ref: '#/components/schemas/TabularTypedDataEditor'
-      - $ref: '#/components/schemas/TextareaParameterEditor'
-      - $ref: '#/components/schemas/TimeParameterEditor'
     SingleTypingResult:
       title: SingleTypingResult
       oneOf:
@@ -7510,9 +7471,6 @@ components:
           type:
           - string
           - 'null'
-    StringParameterEditor:
-      title: StringParameterEditor
-      type: object
     SwitchDefault:
       title: SwitchDefault
       type: object
@@ -7732,7 +7690,6 @@ components:
       required:
       - name
       - typ
-      - editor
       - defaultValue
       - additionalVariables
       - branchParam
@@ -7750,8 +7707,6 @@ components:
           - $ref: '#/components/schemas/TypedTaggedValue'
           - $ref: '#/components/schemas/TypedUnion'
           - $ref: '#/components/schemas/Unknown'
-        editor:
-          $ref: '#/components/schemas/ParameterEditor'
         editors:
           type: array
           items:

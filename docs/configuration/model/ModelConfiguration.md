@@ -95,7 +95,7 @@ in most cases you should not need to defined these settings. The settings you ca
 * should component be disabled - `disabled` property
 * in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
-  * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
+  * `editor` - `BoolParameterEditor`, `SpelTemplateParameterEditor`, `DateParameterEditor` etc. 
   * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
   * `defaultValue`
   * `label`
@@ -108,7 +108,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
       params {
         serviceIdParameter {
             defaultValue: "customerId-10"
-            editor: "StringParameterEditor"
+            editor: "SpelTemplateParameterEditor"
             validators: [ 
               {
                 type: "RegExpParameterValidator"
@@ -173,7 +173,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
 ```
 scenarioPropertiesConfig {
   campaignType: {
-    editor: { type: "StringParameterEditor" }
+    editor: { type: "SpelTemplateParameterEditor" }
     validators: [ { type: "MandatoryParameterValidator" } ]
     label: "Campaign type"
     defaultValue: "Generic campaign"

@@ -17,8 +17,12 @@ object TableComponentFactory {
     ParameterDeclaration
       .mandatory[String](tableNameParamName)
       .withCreator(
-        modify = _.copy(editor =
-          Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues))
+        modify = _.copy(editors =
+          Some(
+            ParameterEditors(
+              FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues)
+            )
+          )
         )
       )
   }

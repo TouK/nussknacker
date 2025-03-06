@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   OutputVariableNameDependency,
   Parameter,
+  ParameterEditors,
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -29,7 +30,7 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
     .optional[TemplateEvaluationResult](spelTemplateParameterName)
     .copy(
       isLazyParameter = true,
-      editor = Some(SpelTemplateParameterEditor)
+      editors = Some(ParameterEditors(SpelTemplateParameterEditor))
     )
 
   override type State = Any

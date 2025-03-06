@@ -247,8 +247,12 @@ object validationHelpers {
       case TransformationStep(Nil, _) =>
         NextParameters(
           List(
-            Parameter(ParameterName("paramWithFixedValues"), Typed[Int]).copy(editor =
-              Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two"))))
+            Parameter(ParameterName("paramWithFixedValues"), Typed[Int]).copy(editors =
+              Some(
+                ParameterEditors(
+                  FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two")))
+                )
+              )
             )
           )
         )

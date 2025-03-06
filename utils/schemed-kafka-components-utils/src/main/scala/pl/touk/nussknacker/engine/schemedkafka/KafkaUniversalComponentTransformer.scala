@@ -85,15 +85,17 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     ParameterDeclaration
       .mandatory[String](topicParamName)
       .withCreator(
-        modify = _.copy(editor =
+        modify = _.copy(editors =
           Some(
-            FixedValuesParameterEditor(
-              // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
-              // TODO: add addNullOption feature flag to FixedValuesParameterEditor
-              nullFixedValue +: topics
-                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name))
-                .sorted
-                .map(v => FixedExpressionValue(s"'$v'", v))
+            ParameterEditors(
+              FixedValuesParameterEditor(
+                // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+                // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+                nullFixedValue +: topics
+                  .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name))
+                  .sorted
+                  .map(v => FixedExpressionValue(s"'$v'", v))
+              )
             )
           )
         )
@@ -127,7 +129,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
         ParameterDeclaration
           .mandatory[String](KafkaUniversalComponentTransformer.contentTypeParamName)
           .withCreator(
-            modify = _.copy(editor = Some(FixedValuesParameterEditor(contentTypes)))
+            modify = _.copy(editors = Some(ParameterEditors(FixedValuesParameterEditor(contentTypes))))
           )
       )
     }
@@ -144,7 +146,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     ParameterDeclaration
       .mandatory[String](KafkaUniversalComponentTransformer.schemaVersionParamName)
       .withCreator(
-        modify = _.copy(editor = Some(FixedValuesParameterEditor(versionValues)))
+        modify = _.copy(editors = Some(ParameterEditors(FixedValuesParameterEditor(versionValues))))
       )
   }
 

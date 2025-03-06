@@ -5,11 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Can be added together with SimpleEditor and then the user has a choice of editors
+ */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DualEditor {
-
-    SimpleEditor simpleEditor();
-
-    DualEditorMode defaultMode();
-}
+public @interface SpelEditor {}
