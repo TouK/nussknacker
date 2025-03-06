@@ -41,7 +41,7 @@ class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
       (nameOfLength(80), s"${nameOfLength(52)}-0f45e858fb"),
     )
     forAll(names) { (scenarioName: String, nameLabel: String) =>
-      val generated = labelsForScenario(versionForName(scenarioName), None)
+      val generated = labelsForScenario(versionForName(scenarioName), OptionalNussknackerInstanceName.empty)
       generated.values.foreach { value =>
         value.length should be <= K8sUtils.maxObjectNameLength
       }
@@ -52,7 +52,10 @@ class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 
   test("should generate labels with instance name when instance name is provided") {
     val nussknackerInstanceName = "foo-release"
-    val generated               = labelsForScenario(versionForName("standard"), Some(nussknackerInstanceName))
+    val generated = labelsForScenario(
+      versionForName("standard"),
+      OptionalNussknackerInstanceName.forInstanceName(nussknackerInstanceName)
+    )
 
     generated shouldBe commonLabels +
       (scenarioNameLabel            -> "standard-fe6d3468cf") +
@@ -74,7 +77,8 @@ class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
     )
 
     forAll(names) { (scenarioName: String, hashInput: Option[String], expectedId: String) =>
-      val generated = objectNameForScenario(versionForName(scenarioName), None, hashInput)
+      val generated =
+        objectNameForScenario(versionForName(scenarioName), OptionalNussknackerInstanceName.empty, hashInput)
       generated.length should be <= K8sUtils.maxObjectNameLength
       generated shouldBe expectedId
     }
@@ -84,12 +88,17 @@ class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 
     val names = Table(
       ("scenario name", "hashInput", "object id", "nussknacker instance name"),
-      ("standard", None, "x-scenario-256-standard", Some("")),
-      ("standard", None, "nu1-scenario-256-standard", Some("nu1"))
+      ("standard", None, "x-scenario-256-standard", OptionalNussknackerInstanceName.forInstanceName("")),
+      ("standard", None, "nu1-scenario-256-standard", OptionalNussknackerInstanceName.forInstanceName("nu1"))
     )
 
     forAll(names) {
-      (scenarioName: String, hashInput: Option[String], expectedId: String, nussknackerInstanceName: Option[String]) =>
+      (
+          scenarioName: String,
+          hashInput: Option[String],
+          expectedId: String,
+          nussknackerInstanceName: OptionalNussknackerInstanceName
+      ) =>
         val generated = objectNameForScenario(versionForName(scenarioName), nussknackerInstanceName, hashInput)
         generated.length should be <= K8sUtils.maxObjectNameLength
         generated shouldBe expectedId

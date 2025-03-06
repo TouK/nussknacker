@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
-import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
+import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment._
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
@@ -332,7 +332,7 @@ class K8sDeploymentManager(
   private def configMapForData(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      nussknackerInstanceName: Option[String]
+      nussknackerInstanceName: OptionalNussknackerInstanceName
   )(
       data: Map[String, String],
       additionalLabels: Map[String, String] = Map.empty,
@@ -361,7 +361,7 @@ class K8sDeploymentManager(
   private def secretForData(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      nussknackerInstanceName: Option[String]
+      nussknackerInstanceName: OptionalNussknackerInstanceName
   )(data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): Secret = {
     val scenario = canonicalProcess.asJson.spaces2
     val objectName =
@@ -441,11 +441,14 @@ object K8sDeploymentManager {
   /*
     Labels contain scenario name, scenario id and version.
    */
-  private[manager] def labelsForScenario(processVersion: ProcessVersion, nussknackerInstanceName: Option[String]) = Map(
+  private[manager] def labelsForScenario(
+      processVersion: ProcessVersion,
+      nussknackerInstanceName: OptionalNussknackerInstanceName
+  ) = Map(
     scenarioNameLabel    -> scenarioNameLabelValue(processVersion.processName),
     scenarioIdLabel      -> processVersion.processId.value.toString,
     scenarioVersionLabel -> processVersion.versionId.value.toString
-  ) ++ nussknackerInstanceName.map(nussknackerInstanceNameLabel -> _)
+  ) ++ nussknackerInstanceName.valueOpt.map(nussknackerInstanceNameLabel -> _)
 
   private[manager] def versionAnnotationForScenario(processVersion: ProcessVersion) =
     Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
@@ -458,32 +461,17 @@ object K8sDeploymentManager {
    */
   private[manager] def objectNameForScenario(
       processVersion: ProcessVersion,
-      nussknackerInstanceName: Option[String],
+      nussknackerInstanceName: OptionalNussknackerInstanceName,
       hashInput: Option[String]
   ): String = {
     // we simulate (more or less) --append-hash kubectl behaviour...
     val hashToAppend      = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
     val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName}"
-    val scenarioName      = objectNamePrefixedWithNussknackerInstanceName(nussknackerInstanceName, plainScenarioName)
-    sanitizeObjectName(scenarioName, hashToAppend)
-  }
-
-  private[manager] def objectNamePrefixedWithNussknackerInstanceName(
-      nussknackerInstanceName: Option[String],
-      objectName: String
-  ) =
-    sanitizeObjectName(
-      objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, objectName)
+    K8sUtils.sanitizeObjectName(
+      nussknackerInstanceName.objectNameWithoutSanitization(plainScenarioName),
+      hashToAppend
     )
-
-  private[manager] def objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(
-      nussknackerInstanceName: Option[String],
-      objectName: String
-  ) =
-    nussknackerInstanceNamePrefix(nussknackerInstanceName) + objectName
-
-  private[manager] def nussknackerInstanceNamePrefix(nussknackerInstanceName: Option[String]) =
-    nussknackerInstanceName.map(_ + "-").getOrElse("")
+  }
 
   private[manager] def parseVersionAnnotation(deployment: ObjectResource): Option[ProcessVersion] = {
     deployment.metadata.annotations

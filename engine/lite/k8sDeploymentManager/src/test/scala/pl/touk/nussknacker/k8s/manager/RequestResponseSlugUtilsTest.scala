@@ -11,12 +11,12 @@ class RequestResponseSlugUtilsTest extends AnyFunSuite with Matchers {
   private val invalidK8sServiceName = (1 to (K8sUtils.maxObjectNameLength + 10)).map(_ => "a").mkString
 
   test("determine default slug using scenario name") {
-    RequestResponseSlugUtils.defaultSlug(ProcessName("foo"), None) shouldEqual "foo"
+    RequestResponseSlugUtils.defaultSlug(ProcessName("foo"), OptionalNussknackerInstanceName.empty) shouldEqual "foo"
   }
 
   test("sanitize scenario name for purpose of default slug preparation") {
     val longScenarioNameWithoutNuInstanceIdDefaultSlug =
-      RequestResponseSlugUtils.defaultSlug(ProcessName(invalidK8sServiceName), None)
+      RequestResponseSlugUtils.defaultSlug(ProcessName(invalidK8sServiceName), OptionalNussknackerInstanceName.empty)
     longScenarioNameWithoutNuInstanceIdDefaultSlug should contain only 'a'
     longScenarioNameWithoutNuInstanceIdDefaultSlug should have length K8sUtils.maxObjectNameLength
   }
@@ -26,25 +26,61 @@ class RequestResponseSlugUtilsTest extends AnyFunSuite with Matchers {
   ) {
     val nuInstanceId = (1 to 10).map(_ => "b").mkString
     val longScenarioNameWithNuInstanceIdDefaultSlug =
-      RequestResponseSlugUtils.defaultSlug(ProcessName(invalidK8sServiceName), Some(nuInstanceId))
+      RequestResponseSlugUtils.defaultSlug(
+        ProcessName(invalidK8sServiceName),
+        OptionalNussknackerInstanceName.forInstanceName(nuInstanceId)
+      )
     ServicePreparer.serviceNameWithoutSanitization(
-      Some(nuInstanceId),
+      OptionalNussknackerInstanceName.forInstanceName(nuInstanceId),
       longScenarioNameWithNuInstanceIdDefaultSlug
     ) shouldEqual
-      ServicePreparer.serviceName(Some(nuInstanceId), longScenarioNameWithNuInstanceIdDefaultSlug)
+      ServicePreparer.serviceName(
+        OptionalNussknackerInstanceName.forInstanceName(nuInstanceId),
+        longScenarioNameWithNuInstanceIdDefaultSlug
+      )
   }
 
   test("replace special characters during default slug preparation") {
-    RequestResponseSlugUtils.defaultSlug(ProcessName("a żółć"), None) shouldEqual "a-x"
+    RequestResponseSlugUtils.defaultSlug(ProcessName("a żółć"), OptionalNussknackerInstanceName.empty) shouldEqual "a-x"
   }
 
   test(
     "lazy determineSlug method uses the same default slug logic sanitization as eager version (determined during scenario creation)"
   ) {
     val longScenarioNameWithoutNuInstanceIdDefaultSlug =
-      RequestResponseSlugUtils.determineSlug(ProcessName(invalidK8sServiceName), RequestResponseMetaData(None), None)
+      RequestResponseSlugUtils.determineSlug(
+        ProcessName(invalidK8sServiceName),
+        RequestResponseMetaData(None),
+        OptionalNussknackerInstanceName.empty
+      )
     longScenarioNameWithoutNuInstanceIdDefaultSlug should contain only 'a'
     longScenarioNameWithoutNuInstanceIdDefaultSlug should have length K8sUtils.maxObjectNameLength
+  }
+
+  test("should generate slug which is a correct service name for long scenario name and given instance name") {
+    val longScenarioName = ProcessName((0.to(100)).map(_ => "x").mkString)
+    RequestResponseSlugUtils
+      .determineSlug(
+        longScenarioName,
+        RequestResponseMetaData(None),
+        OptionalNussknackerInstanceName.forInstanceName("nussknacker")
+      )
+      .length shouldBe K8sUtils.maxObjectNameLength - "nussknacker-".length
+  }
+
+  test(
+    "should generate slug which is a correct service name for scenario name with non alphanumerics and given instance name"
+  ) {
+    val longScenarioName = ProcessName(0.to(100).map(_ => "_").mkString)
+    val determinedSlug =
+      RequestResponseSlugUtils.determineSlug(
+        longScenarioName,
+        RequestResponseMetaData(None),
+        OptionalNussknackerInstanceName.forInstanceName("nussknacker")
+      )
+    // we add instance name (nussknacker-) at the beginning, so first character is not sanitized
+    determinedSlug.head.isLetterOrDigit shouldBe false
+    determinedSlug.last.isLetterOrDigit shouldBe true
   }
 
 }

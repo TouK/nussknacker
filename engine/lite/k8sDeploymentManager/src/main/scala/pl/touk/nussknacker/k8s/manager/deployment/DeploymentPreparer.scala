@@ -6,6 +6,7 @@ import monocle.Iso
 import monocle.macros.GenLens
 import monocle.std.option._
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
+import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManagerConfig, OptionalNussknackerInstanceName}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
   labelsForScenario,
   objectNameForScenario,
@@ -13,7 +14,6 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
   scenarioVersionAnnotation,
   versionAnnotationForScenario
 }
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
@@ -58,7 +58,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       typeSpecificData: TypeSpecificData,
       resourcesToMount: MountableResources,
       determinedReplicasCount: Int,
-      nussknackerInstanceName: Option[String]
+      nussknackerInstanceName: OptionalNussknackerInstanceName
   ) = {
     val objectName  = objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
     val annotations = versionAnnotationForScenario(processVersion)

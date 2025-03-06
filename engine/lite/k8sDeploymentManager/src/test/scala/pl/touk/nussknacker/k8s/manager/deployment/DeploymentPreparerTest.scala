@@ -14,7 +14,11 @@ import pl.touk.nussknacker.engine.api.{
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
+import pl.touk.nussknacker.k8s.manager.{
+  K8sDeploymentManager,
+  K8sDeploymentManagerConfig,
+  OptionalNussknackerInstanceName
+}
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 import skuber.EnvVar.{FieldRef, SecretKeyRef}
 import skuber.Resource.Quantity
@@ -181,7 +185,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             ).asJava
           )
         ),
-      nussknackerInstanceName = Some(nussknackerInstanceName)
+      nussknackerInstanceName = OptionalNussknackerInstanceName.forInstanceName(nussknackerInstanceName)
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
