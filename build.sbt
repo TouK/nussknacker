@@ -33,8 +33,7 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 lazy val silencerV      = "1.7.19"
 lazy val silencerV_2_12 = "1.6.0"
 
-lazy val scalaFixV      = "0.14.2"
-lazy val scalaFixV_2_12 = "0.9.11"
+lazy val scalaFixV = "0.14.2"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -183,7 +182,10 @@ lazy val commonSettings =
         case _       => Seq()
       },
       semanticdbEnabled                := true,
-      semanticdbVersion                := scalafixSemanticdb.revision,
+      semanticdbVersion                := forScalaVersion(scalaVersion.value) {
+        case (2, 12) => "4.8.4"
+        case _       => "4.13.2"
+      },
       scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation:false",
@@ -2193,10 +2195,7 @@ lazy val scalafixRules = (project in file("scalafix-rules"))
   .settings(
     name := "scalafix-rules",
     libraryDependencies ++= Seq(
-      "ch.epfl.scala" %% "scalafix-core" % forScalaVersion(scalaVersion.value) {
-        case (2, 12) => scalaFixV_2_12
-        case _       => scalaFixV
-      },
+      "ch.epfl.scala" %% "scalafix-core" % scalaFixV,
       "org.scalameta" %% "scalameta"     % "4.13.2",
       "org.scalatest" %% "scalatest"     % scalaTestV % Test
     )
