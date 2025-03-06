@@ -9,10 +9,11 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
+import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 object EditorExtractor {
 
-  def extract(valueInput: ParameterValueInput): ParameterEditor = {
+  def extract(valueInput: ParameterValueInput): List[ParameterEditor] = {
     val innerEditor = valueInput match {
       case ValueInputWithFixedValuesProvided(fixedValuesList, _) =>
         FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
@@ -21,58 +22,57 @@ object EditorExtractor {
     }
 
     if (valueInput.allowOtherValue)
-      DualParameterEditor(innerEditor, DualEditorMode.SIMPLE)
+      List(
+        innerEditor,
+        SpelParameterEditor,
+      )
     else
-      innerEditor
+      List(innerEditor)
   }
 
-  def extract(param: ParameterData, parameterConfig: ParameterConfig): Option[ParameterEditor] = {
-    parameterConfig.editor
-      .orElse(extractFromAnnotations(param))
-      .orElse(new ParameterTypeEditorDeterminer(param.typing).determine())
+  def extract(param: ParameterData, parameterConfig: ParameterConfig): List[ParameterEditor] = {
+    parameterConfig.editors
+      .getOrElse(Nil)
+      .orElseIfEmpty(extractFromAnnotation(param))
+      .orElseIfEmpty(extractFromAnnotations(param))
+      .orElseIfEmpty(new ParameterTypeEditorDeterminer(param.typing).determine())
   }
 
-  private def extractFromAnnotations(param: ParameterData): Option[ParameterEditor] = {
-    val dualEditorAnnotation: Option[DualEditor]     = param.getAnnotation[DualEditor]
-    val simpleEditorAnnotation: Option[SimpleEditor] = param.getAnnotation[SimpleEditor]
-    val rawEditorAnnotation: Option[RawEditor]       = param.getAnnotation[RawEditor]
+  private def extractFromAnnotation(param: ParameterData): List[ParameterEditor] =
+    param
+      .getAnnotation[Editor]
+      .map(editor => List(parameterEditor(editor)))
+      .getOrElse(Nil)
 
-    (dualEditorAnnotation, simpleEditorAnnotation, rawEditorAnnotation) match {
-      case (Some(dualEditorAnnotation: DualEditor), None, None) => {
-        val defaultMode  = dualEditorAnnotation.defaultMode()
-        val simpleEditor = dualEditorAnnotation.simpleEditor()
-        Some(DualParameterEditor(simpleParameterEditor(simpleEditor), defaultMode))
-      }
-      case (None, Some(simpleEditorAnnotation: SimpleEditor), None) =>
-        Some(simpleParameterEditor(simpleEditorAnnotation))
-      case (None, None, Some(_: RawEditor)) => Some(RawParameterEditor)
-      case _                                => None
-    }
-  }
+  private def extractFromAnnotations(param: ParameterData): List[ParameterEditor] =
+    param
+      .getAnnotation[Editors]
+      .map(_.value().map(parameterEditor).toList)
+      .getOrElse(Nil)
 
-  private def simpleParameterEditor(simpleEditor: SimpleEditor): SimpleParameterEditor = {
-    simpleEditor.`type`() match {
-      case SimpleEditorType.BOOL_EDITOR   => BoolParameterEditor
-      case SimpleEditorType.STRING_EDITOR => StringParameterEditor
-      case SimpleEditorType.FIXED_VALUES_EDITOR =>
+  private def parameterEditor(editor: Editor): ParameterEditor = {
+    editor.`type`() match {
+      case EditorType.BOOL_EDITOR => BoolParameterEditor
+      case EditorType.FIXED_VALUES_EDITOR =>
         FixedValuesParameterEditor(
-          simpleEditor
+          editor
             .possibleValues()
             .map(value => FixedExpressionValue(value.expression(), value.label()))
             .toList
         )
-      case SimpleEditorType.DATE_EDITOR          => DateParameterEditor
-      case SimpleEditorType.TIME_EDITOR          => TimeParameterEditor
-      case SimpleEditorType.DATE_TIME_EDITOR     => DateTimeParameterEditor
-      case SimpleEditorType.DURATION_EDITOR      => DurationParameterEditor(simpleEditor.timeRangeComponents().toList)
-      case SimpleEditorType.PERIOD_EDITOR        => PeriodParameterEditor(simpleEditor.timeRangeComponents().toList)
-      case SimpleEditorType.CRON_EDITOR          => CronParameterEditor
-      case SimpleEditorType.TEXTAREA_EDITOR      => TextareaParameterEditor
-      case SimpleEditorType.JSON_EDITOR          => JsonParameterEditor
-      case SimpleEditorType.SQL_EDITOR           => SqlParameterEditor
-      case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
-      case SimpleEditorType.DICT_EDITOR          => DictParameterEditor(simpleEditor.dictId())
-      case SimpleEditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
+      case EditorType.DATE_EDITOR               => DateParameterEditor
+      case EditorType.TIME_EDITOR               => TimeParameterEditor
+      case EditorType.DATE_TIME_EDITOR          => DateTimeParameterEditor
+      case EditorType.DURATION_EDITOR           => DurationParameterEditor(editor.timeRangeComponents().toList)
+      case EditorType.PERIOD_EDITOR             => PeriodParameterEditor(editor.timeRangeComponents().toList)
+      case EditorType.CRON_EDITOR               => CronParameterEditor
+      case EditorType.TEXTAREA_EDITOR           => TextareaParameterEditor
+      case EditorType.JSON_EDITOR               => JsonParameterEditor
+      case EditorType.SQL_EDITOR                => SqlParameterEditor
+      case EditorType.SPEL_TEMPLATE_EDITOR      => SpelTemplateParameterEditor
+      case EditorType.DICT_EDITOR               => DictParameterEditor(editor.dictId())
+      case EditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
+      case EditorType.SPEL_EDITOR               => SpelParameterEditor
     }
   }
 

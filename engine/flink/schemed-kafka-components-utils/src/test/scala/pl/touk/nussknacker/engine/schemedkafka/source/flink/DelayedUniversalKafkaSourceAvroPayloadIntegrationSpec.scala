@@ -5,16 +5,14 @@ import org.scalatest.LoneElement
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
-  DualParameterEditor,
   FixedExpressionValue,
   FixedValuesParameterEditor,
-  StringParameterEditor
+  SpelParameterEditor,
+  SpelTemplateParameterEditor
 }
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
@@ -23,27 +21,28 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     extends DelayedUniversalKafkaSourceIntegrationMixinSpec
     with LoneElement {
 
-  test("timestampField editor should be set to simple if schema does not contain eligible fields") {
+  test("timestampField editor should be set to text editor if schema does not contain eligible fields") {
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-without-timestamp-fields", FullNameV1.schema)
 
-    timestampFieldParameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+    timestampFieldParameter.editors shouldBe List(
+      SpelTemplateParameterEditor,
+      SpelParameterEditor,
+    )
   }
 
   test("timestampField editor should contain long field") {
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-with-single-timestamp-fields", LongFieldV1.schema)
 
-    timestampFieldParameter.editor shouldBe Some(
-      DualParameterEditor(
-        FixedValuesParameterEditor(
-          List(
-            FixedExpressionValue("", ""),
-            FixedExpressionValue("'field'", "field")
-          )
-        ),
-        DualEditorMode.SIMPLE
-      )
+    timestampFieldParameter.editors shouldBe List(
+      FixedValuesParameterEditor(
+        List(
+          FixedExpressionValue("", ""),
+          FixedExpressionValue("'field'", "field")
+        )
+      ),
+      SpelParameterEditor,
     )
   }
 
@@ -51,17 +50,15 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-with-multiple-timestamp-fields", PaymentDate.schema)
 
-    timestampFieldParameter.editor shouldBe Some(
-      DualParameterEditor(
-        FixedValuesParameterEditor(
-          List(
-            FixedExpressionValue("", ""),
-            FixedExpressionValue("'dateTime'", "dateTime"),
-            FixedExpressionValue("'vat'", "vat")
-          )
-        ),
-        DualEditorMode.SIMPLE
-      )
+    timestampFieldParameter.editors shouldBe List(
+      FixedValuesParameterEditor(
+        List(
+          FixedExpressionValue("", ""),
+          FixedExpressionValue("'dateTime'", "dateTime"),
+          FixedExpressionValue("'vat'", "vat")
+        )
+      ),
+      SpelParameterEditor,
     )
   }
 

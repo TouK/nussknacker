@@ -2466,7 +2466,7 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map(
       "requiredStringProperty" -> ScenarioPropertyConfig(
         defaultValue = None,
-        editor = Some(StringParameterEditor),
+        editor = Some(StaticStringParameterEditor),
         validators = Some(List(MandatoryParameterValidator)),
         label = Some("label"),
         hintText = None

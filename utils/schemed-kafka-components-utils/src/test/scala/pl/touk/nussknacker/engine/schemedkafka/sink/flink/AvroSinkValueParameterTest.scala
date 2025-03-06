@@ -7,8 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.definition.{Parameter, SpelParameterEditor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
@@ -65,15 +64,15 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
     ) shouldBe List(
       Parameter(name = ParameterName("a"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
-        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-        defaultValue = Some(Expression.spel("''"))
+        editors = List(SpelTemplateParameterEditor, SpelParameterEditor),
+        defaultValue = Some(Expression.spelTemplate(""))
       ),
       Parameter(name = ParameterName("b.c"), typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0"))),
       Parameter(name = ParameterName("c"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
         defaultValue = Some(Expression.spel("'c-field-default'")),
-        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+        editors = List(SpelTemplateParameterEditor, SpelParameterEditor),
       ),
       Parameter(name = ParameterName("d"), typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("42L"))),
