@@ -38,7 +38,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
     .branchMandatory[String](ParameterName("role"))
     .withCreator(modify =
       _.copy(
-        editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))
+        editors = List(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))
       )
     )
 

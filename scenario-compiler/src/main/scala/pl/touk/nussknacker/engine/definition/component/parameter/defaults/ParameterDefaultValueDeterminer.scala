@@ -13,5 +13,6 @@ case class DefaultValueDeterminerParameters(
     parameterData: ParameterData,
     isOptional: Boolean,
     parameterConfig: ParameterConfig,
-    determinedEditor: Option[ParameterEditor]
+    // Order matters for default value
+    determinedEditors: List[ParameterEditor]
 )

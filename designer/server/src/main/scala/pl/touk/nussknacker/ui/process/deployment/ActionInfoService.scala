@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo, ParameterConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo, StaticParameterConfig}
+import pl.touk.nussknacker.engine.api.definition.StaticParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -52,7 +52,7 @@ class ActionInfoService(
   }
 
   private def toUIActionParameters(
-      parameters: Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]]
+      parameters: Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, StaticParameterConfig]]]
   ): UiActionParameters = {
     val mappedParams = parameters
       .map { case (scenarioActionName, nodeParamsMap) =>
@@ -65,7 +65,7 @@ class ActionInfoService(
             params.map { case (name, value) =>
               name.value -> UiActionParameterConfig(
                 value.defaultValue,
-                value.editor.getOrElse(RawParameterEditor),
+                value.editor,
                 value.label,
                 value.hintText
               )
@@ -90,7 +90,7 @@ object ActionInfoService {
 
   case class UiActionParameterConfig(
       defaultValue: Option[String],
-      editor: ParameterEditor,
+      editor: StaticParameterEditor,
       label: Option[String],
       hintText: Option[String]
   )

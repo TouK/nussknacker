@@ -31,7 +31,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
           paramName = ParameterName("someParamName"),
           nodeIds = Set("someNodeId")
         )
-        result shouldBe Valid(DictParameterEditor(dictId))
+        result shouldBe Valid(List(DictParameterEditor(dictId)))
       }
     }
   }
@@ -47,7 +47,11 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
           paramName = ParameterName("someParamName"),
           nodeIds = Set("someNodeId")
         )
-        result shouldBe Valid(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList))
+        result shouldBe Valid(
+          List(
+            FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
+          )
+        )
       }
     }
   }

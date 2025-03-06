@@ -27,7 +27,7 @@ trait DynamicParametersMixin extends SingleInputDynamicComponent[AnyRef] {
   protected val choiceParamName: ParameterName = ParameterName("communicationType")
 
   private val choiceParam = Parameter[String](choiceParamName).copy(
-    editor = Some(
+    editors = List(
       FixedValuesParameterEditor(
         List(
           FixedExpressionValue("'SMS'", "sms"),
