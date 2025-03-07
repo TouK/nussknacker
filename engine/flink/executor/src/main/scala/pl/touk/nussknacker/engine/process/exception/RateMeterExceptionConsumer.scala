@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.exception
 
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.util.exception.ExceptionRateMeter
@@ -14,7 +14,7 @@ class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer)
 
   @transient private var exceptionRateMeter: ExceptionRateMeter = _
 
-  override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
+  override def consume(exceptionInfo: NuExceptionInfo): Unit = {
     try {
       underlying.consume(exceptionInfo)
     } finally {

@@ -2,12 +2,11 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.RecordTooLargeException
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaProducerCreator, KafkaUtils}
@@ -19,6 +18,8 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import scala.concurrent.{ExecutionContext, Future}
 
 class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
+
+  import net.ceedubs.ficus.Ficus._
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
     val kafkaConfig           = KafkaConfig.parseConfig(exceptionHandlerConfig)
@@ -36,7 +37,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
   protected def createSerializationSchema(
       metaData: MetaData,
       consumerConfig: KafkaExceptionConsumerConfig
-  ): KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] =
+  ): KafkaSerializationSchema[NuExceptionInfo] =
     new KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
   // visible for testing
@@ -48,7 +49,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 }
 
 trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogging {
-  protected val serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]]
+  protected val serializationSchema: KafkaSerializationSchema[NuExceptionInfo]
   protected val kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
   protected val metaData: MetaData
 
@@ -61,7 +62,7 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
     kafkaErrorTopicInitializer.init()
   }
 
-  override final def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
+  override final def consume(exceptionInfo: NuExceptionInfo): Unit = {
     sendKafkaMessage(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))
       .recoverWith { case e: RecordTooLargeException =>
         // Kafka message size should be kept within acceptable size by serializer, but it may be incorrectly configured.
@@ -107,7 +108,7 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
 
 case class TempProducerKafkaExceptionConsumer(
     metaData: MetaData,
-    serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]],
+    serializationSchema: KafkaSerializationSchema[NuExceptionInfo],
     kafkaProducerCreator: KafkaProducerCreator.Binary,
     kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
 ) extends BaseKafkaExceptionConsumer {
@@ -121,7 +122,7 @@ case class TempProducerKafkaExceptionConsumer(
 
 case class SharedProducerKafkaExceptionConsumer(
     metaData: MetaData,
-    serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]],
+    serializationSchema: KafkaSerializationSchema[NuExceptionInfo],
     kafkaProducerCreator: KafkaProducerCreator.Binary,
     kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
 ) extends BaseKafkaExceptionConsumer

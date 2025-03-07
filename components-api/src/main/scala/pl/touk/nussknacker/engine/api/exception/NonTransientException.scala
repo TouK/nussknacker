@@ -8,10 +8,3 @@ abstract class NonTransientException(
     val timestamp: Instant = Instant.now(),
     cause: Throwable = null,
 ) extends RuntimeException(message, cause)
-
-class WrappingNonTransientException(
-    input: String,
-    message: String,
-    cause: Throwable,
-    timestamp: Instant = Instant.now(),
-) extends NonTransientException(input, message, timestamp, cause)

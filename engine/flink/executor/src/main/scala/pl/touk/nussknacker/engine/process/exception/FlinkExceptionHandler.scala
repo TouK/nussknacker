@@ -65,7 +65,7 @@ class FlinkExceptionHandler(
 
   protected val extractor: WithExceptionExtractor = extractExceptionExtractor(baseConfig)
 
-  def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
+  def handle(exceptionInfo: NuExceptionInfo): Unit = {
     listeners.foreach(_.exceptionThrown(exceptionInfo))
     consumer.consume(extractor.extractOrThrow(exceptionInfo))
   }

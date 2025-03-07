@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus.{mapValueReader, optionValueReader, stringValueReader, toFicusConfig}
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 
@@ -12,11 +12,10 @@ case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: 
     extends FlinkEspExceptionConsumer
     with LazyLogging {
 
-  override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
-    val unwrapped = unwrap(e.throwable)
+  override def consume(e: NuExceptionInfo): Unit = {
     logger.error(
       s"${processMetaData.name} > ${e.nodeComponentInfo}: Exception during processing job, params: $params, context: ${e.context}",
-      unwrapped
+      e.throwable
     )
   }
 
@@ -26,12 +25,11 @@ case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Ma
     extends FlinkEspExceptionConsumer
     with LazyLoggingWithTraces {
 
-  override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
-    val unwrapped = unwrap(e.throwable)
+  override def consume(e: NuExceptionInfo): Unit = {
     logger.warnWithDebugStack(
       s"${processMetaData.name} > ${e.nodeComponentInfo.getOrElse("<missing nodeComponentInfo>")} > ${e.context.id}: " +
-        s"${unwrapped.toString}${Option(unwrapped.getCause).map(", caused by: " + _).getOrElse("")}, params: $params",
-      unwrapped
+        s"${e.throwable}${Option(e.throwable).map(", caused by: " + _).getOrElse("")}, params: $params",
+      e.throwable
     )
   }
 

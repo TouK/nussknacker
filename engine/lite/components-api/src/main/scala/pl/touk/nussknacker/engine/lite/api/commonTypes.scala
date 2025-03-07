@@ -19,7 +19,7 @@ object commonTypes {
     def map[T](function: Context => T): List[T] = value.map(function)
   }
 
-  type ErrorType = NuExceptionInfo[_ <: Throwable]
+  type ErrorType = NuExceptionInfo
 
   // Errors are collected, we don't stop processing after encountering error
   type ResultType[T] = Writer[List[ErrorType], List[T]]

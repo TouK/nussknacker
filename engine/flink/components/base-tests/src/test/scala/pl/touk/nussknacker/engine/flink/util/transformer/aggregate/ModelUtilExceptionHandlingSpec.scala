@@ -146,8 +146,9 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
       // A bit more complex check, since there are errors from both join sides...
       RecordingExceptionConsumer
         .exceptionsFor(runId)
-        .collect { case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _) =>
-          e.expression
+        .collect {
+          case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _, _, _) =>
+            e.expression
         }
         .toSet shouldBe Set(
         "'right' + '' + (1 / #input[0])",

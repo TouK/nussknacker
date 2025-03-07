@@ -7,14 +7,15 @@ import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matchers with EitherValues {
   private val timestamp = Instant.now()
-  private val exception = new NonTransientException("input", "message", timestamp) {}
+  private val input     = "input"
+  private val exception = new Exception("message")
   private implicit val mapDecoder: Decoder[Map[String, String]] =
     Decoder.decodeMap(KeyDecoder.decodeKeyString, Decoder.decodeString)
 
@@ -96,8 +97,8 @@ class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matcher
     new KafkaJsonExceptionSerializationSchema(MetaData("test", StreamMetaData()), config)
   }
 
-  private def createData(contextVariables: Map[String, Any]): NuExceptionInfo[NonTransientException] = {
-    NuExceptionInfo(None, exception, Context("contextId", contextVariables))
+  private def createData(contextVariables: Map[String, Any]): NuExceptionInfo = {
+    NuExceptionInfo(None, exception, Context("contextId", contextVariables), input, timestamp)
   }
 
   private def createKafkaExceptionInfo(variables: Map[String, Any]) = KafkaExceptionInfo(
