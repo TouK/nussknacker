@@ -39,7 +39,7 @@ object ComponentDefinitionExtractor {
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
         componentId = inputComponentDefinition.designerWideId,
-        label = Option(inputComponentDefinition.label)
+        label = inputComponentDefinition.label
       )
     ComponentDefinitionExtractor
       .extract(

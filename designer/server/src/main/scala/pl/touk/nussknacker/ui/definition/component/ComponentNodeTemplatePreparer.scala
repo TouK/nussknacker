@@ -77,7 +77,7 @@ private[component] object ComponentNodeTemplatePreparer {
         component.id,
         nodeTemplate,
         branchParametersTemplate,
-        component.label
+        component.labelOrDefault
       )
       ComponentNodeTemplateWithGroupNames(
         componentNodeTemplate,

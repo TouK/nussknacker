@@ -33,7 +33,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   protected def uiDefinition: ComponentUiDefinition
 
-  final def label: String = {
+  final def labelOrDefault: String = {
     uiDefinition.label.getOrElse {
       if (componentType != ComponentType.Fragment) {
         IdToTitleConverter.toTitle(name)
