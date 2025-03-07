@@ -92,6 +92,48 @@ class ActionInfoHttpServiceBusinessSpec
         .toSet shouldBe Set("sourceWithParametersId", "logging1", "logging2")
     }
 
+    "return action parameters for scenario with fragment" in {
+      val fragment = ScenarioBuilder
+        .fragment("fragment1", "in" -> classOf[String])
+        .filter("filter", "#in != 'stop'".spel)
+        .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
+      val scenario = ScenarioBuilder
+        .streaming("scenarioWithSourceWithDeployParameters")
+        .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
+        .buildSimpleVariable("var1", "in", "'start!'".spel)
+        .fragmentOneOut("fragment1", "fragment1", "output", "output", "in" -> "#in".spel)
+        .emptySink("end", "monitor")
+
+      given()
+        .applicationState {
+          createSavedFragment(fragment)
+          createSavedScenario(scenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/actionInfo/${scenario.name.value}/parameters")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""|{
+                           |  "actionNameToParameters":{
+                           |    "DEPLOY":[
+                           |      {
+                           |        "nodeId":"sourceWithParametersId",
+                           |        "componentId": "boundedSourceWithOffset",
+                           |        "parameters":{
+                           |          "offset":{
+                           |            "defaultValue":null,
+                           |            "editor":{"type":"RawParameterEditor"},
+                           |            "label":"Offset",
+                           |            "hintText":"Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
+                           |          }
+                           |        }
+                           |      }
+                           |    ]
+                           |  }
+                           |}""".stripMargin)
+    }
+
     "return empty map when no action parameters" in {
       val scenario = ScenarioBuilder
         .streaming("scenarioWithoutParameters")

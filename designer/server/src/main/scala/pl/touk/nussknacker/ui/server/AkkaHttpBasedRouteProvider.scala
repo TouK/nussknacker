@@ -319,11 +319,13 @@ class AkkaHttpBasedRouteProvider(
             new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
           )
       }
-      actionInfoService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
-        new ActionInfoService(
-          new ModelDataActionInfoProvider(modelData),
-          processResolver
-        )
+      actionInfoService = scenarioTestServiceDeps.mapValues {
+        case (_, processResolver, scenarioResolver, modelData, _) =>
+          new ActionInfoService(
+            new ModelDataActionInfoProvider(modelData),
+            processResolver,
+            scenarioResolver
+          )
       }
 
       processValidator = scenarioTestServiceDeps.mapValues(_._1)
