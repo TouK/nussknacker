@@ -2,10 +2,11 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo, ParameterConfig}
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.action.ActionInfoProvider
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{
@@ -42,31 +43,37 @@ class ActionInfoService(
         canonicalWithResolvedFragments.toEither
           .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
           case Right(parameters) =>
-            val mappedParams = parameters
-              .map { case (scenarioActionName, nodeParamsMap) =>
-                scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
-                  UiActionNodeParameters(
-                    NodeId(nodeComponentInfo.nodeId),
-                    nodeComponentInfo.componentId.getOrElse(
-                      throw new IllegalStateException("ComponentId is not present")
-                    ),
-                    params.map { case (name, value) =>
-                      name.value -> UiActionParameterConfig(
-                        value.defaultValue,
-                        value.editor.getOrElse(RawParameterEditor),
-                        value.label,
-                        value.hintText
-                      )
-                    }
-                  )
-                }.toList
-              }
-            Right(UiActionParameters(mappedParams))
+            Right(toUIActionParameters(parameters))
           case Left(e) =>
             logger.warn(s"Scenario compilation failed with error: $e while getting action parameters")
             Left(ApiCannotCompileScenario)
         }
       }
+  }
+
+  private def toUIActionParameters(
+      parameters: Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]]
+  ): UiActionParameters = {
+    val mappedParams = parameters
+      .map { case (scenarioActionName, nodeParamsMap) =>
+        scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
+          UiActionNodeParameters(
+            NodeId(nodeComponentInfo.nodeId),
+            nodeComponentInfo.componentId.getOrElse(
+              throw new IllegalStateException("ComponentId is not present")
+            ),
+            params.map { case (name, value) =>
+              name.value -> UiActionParameterConfig(
+                value.defaultValue,
+                value.editor.getOrElse(RawParameterEditor),
+                value.label,
+                value.hintText
+              )
+            }
+          )
+        }.toList
+      }
+    UiActionParameters(mappedParams)
   }
 
 }
