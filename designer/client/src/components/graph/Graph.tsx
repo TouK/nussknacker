@@ -15,6 +15,7 @@ import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../.
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { NotificationActions } from "../../http/HttpService";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { UserSettings } from "../../reducers/userSettings";
 import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { StickyNoteType } from "../../types/stickyNote";
@@ -117,6 +118,11 @@ function handleActionOnLongPress<T extends dia.CellView>(
     };
 }
 
+export function getNodeData(cell: dia.Cell, graph: ScenarioGraph): NodeType {
+    const { id } = cell.get("nodeData");
+    return NodeUtils.getNodeById(id, graph);
+}
+
 export class Graph extends React.Component<Props> {
     redrawing = false;
     graph: dia.Graph;
@@ -124,14 +130,13 @@ export class Graph extends React.Component<Props> {
     highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
         this.processGraphPaper.freeze();
 
-        const links = this.graph.getLinks();
-        links.forEach((l) => this.#unhighlightCell(l, dragHovered));
+        const cells = this.graph.getCells();
+        cells.forEach((l) => this.#unhighlightCell(l, dragHovered));
 
         if (!forceDisable) {
-            const [active] = filterDragHovered(links);
+            const [active] = filterDragHovered(cells);
             if (active) {
                 this.#highlightCell(active, dragHovered);
-                active.toBack();
             }
         }
 
@@ -451,8 +456,8 @@ export class Graph extends React.Component<Props> {
         //we want to inject node during 'Drag and Drop' from toolbox
         this.graph.on(Events.ADD, (cell: dia.Element) => {
             if (isModelElement(cell)) {
-                const linkBelowCell = this.getLinkBelowCell();
-                this.handleInjectBetweenNodes(cell, linkBelowCell);
+                const cellBelow = this.getCellBelowCell();
+                this.handleInjectBetweenNodes(cell, cellBelow);
                 setLinksHovered(cell.graph);
             }
         });
@@ -470,9 +475,26 @@ export class Graph extends React.Component<Props> {
         if (!this.props.capabilities.editFrontend) return;
 
         if (node.type === StickyNoteType) {
-            this.addStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, position);
+            return this.addStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, position);
+        }
+
+        if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) return;
+
+        const cellBelow = this.getCellBelowCell();
+        if (isModelElement(cellBelow)) {
+            const currentNodes = this.props.scenario.scenarioGraph.nodes;
+            const { nodes } = prepareNewNodesWithLayout(
+                currentNodes,
+                [
+                    {
+                        node,
+                        position,
+                    },
+                ],
+                false,
+            );
+            this.handleReplaceNodes(nodes[0], cellBelow);
         } else {
-            if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) return;
             this.props.nodeAdded(node, position);
         }
     }
@@ -619,25 +641,24 @@ export class Graph extends React.Component<Props> {
         this.#unhighlightCell(link, className);
     }
 
-    handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
-        if (this.props.isFragment === true) return;
-
-        const { scenario, injectNode, processDefinitionData } = this.props;
-
-        if (linkBelowCell && middleMan) {
-            const { sourceNode, targetNode } = getLinkNodes(linkBelowCell);
-            const middleManNode = middleMan.get("nodeData");
+    handleInjectBetweenNodes = (cell: shapes.devs.Model, cellBelow?: dia.Cell): void => {
+        if (!cell) return;
+        if (cellBelow?.isLink()) {
+            if (this.props.isFragment === true) return;
+            const { scenario, injectNode, processDefinitionData } = this.props;
+            const nodeData = getNodeData(cell, scenario.scenarioGraph);
+            const { sourceNode, targetNode } = getLinkNodes(cellBelow);
 
             const canInjectNode = GraphUtils.canInjectNode(
                 scenario.scenarioGraph,
                 sourceNode.id,
-                middleManNode.id,
+                nodeData.id,
                 targetNode.id,
                 processDefinitionData,
             );
 
             if (canInjectNode) {
-                injectNode(sourceNode, middleManNode, targetNode, linkBelowCell.attributes.edgeData);
+                injectNode(sourceNode, nodeData, targetNode, cellBelow.attributes.edgeData);
             }
         }
     };
@@ -791,15 +812,21 @@ export class Graph extends React.Component<Props> {
                 });
             })
             //we want to inject node during 'Drag and Drop' from graph paper
-            .on(Events.CELL_MOVED, (cell: dia.CellView) => {
-                if (isModelElement(cell.model)) {
-                    const linkBelowCell = this.getLinkBelowCell();
+            .on(Events.CELL_MOVED, (cellView: dia.CellView) => {
+                cellView.model.toFront();
+                if (isModelElement(cellView.model)) {
                     const group = batchGroupBy.startOrContinue();
-                    this.changeLayoutIfNeeded();
-                    this.handleInjectBetweenNodes(cell.model, linkBelowCell);
+                    const cellBelow = this.getCellBelowCell();
+                    if (isModelElement(cellBelow)) {
+                        const nodeData = getNodeData(cellView.model, this.props.scenario.scenarioGraph);
+                        this.handleReplaceNodes(nodeData, cellBelow);
+                    } else {
+                        this.changeLayoutIfNeeded();
+                        this.handleInjectBetweenNodes(cellView.model, cellBelow);
+                    }
                     batchGroupBy.end(group);
                 }
-                if (isStickyNoteElement(cell.model)) {
+                if (isStickyNoteElement(cellView.model)) {
                     this.processGraphPaper.hideTools();
                     if (!this.props.isPristine) {
                         this.props.notifications.warn(
@@ -810,10 +837,10 @@ export class Graph extends React.Component<Props> {
                         );
                         return;
                     }
-                    cell.showTools();
-                    const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell.model);
+                    cellView.showTools();
+                    const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cellView.model);
                     if (!updatedStickyNote) return;
-                    const position = cell.model.get("position");
+                    const position = cellView.model.get("position");
                     updatedStickyNote.layoutData = {
                         x: position.x,
                         y: position.y,
@@ -838,10 +865,10 @@ export class Graph extends React.Component<Props> {
             });
     }
 
-    private getLinkBelowCell() {
-        const links = this.graph.getLinks();
-        const [linkBelowCell] = filterDragHovered(links);
-        return linkBelowCell;
+    private getCellBelowCell() {
+        const cells = this.graph.getCells();
+        const [cell] = filterDragHovered(cells);
+        return cell;
     }
 
     #graphContainsEdge(from: NodeId, to: NodeId): boolean {
@@ -854,6 +881,12 @@ export class Graph extends React.Component<Props> {
         }
         const links = this.graph.getLinks();
         return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
+    }
+
+    private handleReplaceNodes(nodeData: NodeType, cellBelow: shapes.devs.Model) {
+        if (this.props.isFragment === true) return;
+        const { replaceNode, scenario } = this.props;
+        replaceNode(getNodeData(cellBelow, scenario.scenarioGraph), nodeData);
     }
 
     #highlightNodes = (selectedNodeIds: string[] = [], scenario = this.props.scenario): void => {
