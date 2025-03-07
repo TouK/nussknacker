@@ -3,17 +3,17 @@ package pl.touk.nussknacker.engine.flink.test
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 
 import java.util.UUID
 
-object RecordingExceptionConsumer extends TestResultsHolder[(String, NuExceptionInfo[_ <: Throwable])] {
+object RecordingExceptionConsumer extends TestResultsHolder[(String, NuExceptionInfo)] {
 
   def createExceptionConsumer(id: String) = new RecordingExceptionConsumer(this, id)
 
-  def exceptionsFor(id: String): List[NuExceptionInfo[_ <: Throwable]] =
+  def exceptionsFor(id: String): List[NuExceptionInfo] =
     results.collect { case (eid, ex) if eid == id => ex }
 
   def clearRecordedExceptions(id: String): Unit = {
@@ -23,11 +23,11 @@ object RecordingExceptionConsumer extends TestResultsHolder[(String, NuException
 }
 
 class RecordingExceptionConsumer(
-    exceptionsHolder: => TestResultsHolder[(String, NuExceptionInfo[_ <: Throwable])],
+    exceptionsHolder: => TestResultsHolder[(String, NuExceptionInfo)],
     id: String
 ) extends FlinkEspExceptionConsumer {
 
-  override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit =
+  override def consume(exceptionInfo: NuExceptionInfo): Unit =
     exceptionsHolder.add((id, exceptionInfo))
 
 }

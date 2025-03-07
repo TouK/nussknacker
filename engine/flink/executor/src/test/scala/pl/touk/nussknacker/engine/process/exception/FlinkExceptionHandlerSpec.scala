@@ -6,7 +6,7 @@ import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.test.ClassLoaderWithServices
@@ -46,8 +46,7 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
   }
 
   test("should use handler from configuration") {
-    val info =
-      new NuExceptionInfo[NonTransientException](None, NonTransientException("", ""), Context(""))
+    val info = NuExceptionInfo(None, new Exception, Context(""))
 
     configurableExceptionHandler.handle(info)
     TestExceptionConsumerProvider.threadLocal.get() shouldBe (metaData, config.getConfig("exceptionHandler"), info)
@@ -57,7 +56,7 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
 
 object TestExceptionConsumerProvider {
 
-  val threadLocal = new ThreadLocal[(MetaData, Config, NuExceptionInfo[NonTransientException])]
+  val threadLocal = new ThreadLocal[(MetaData, Config, NuExceptionInfo)]
 
   val typeName = "test1"
 
@@ -68,7 +67,7 @@ class TestExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
   override val name: String = TestExceptionConsumerProvider.typeName
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer =
-    (exceptionInfo: NuExceptionInfo[NonTransientException]) => {
+    (exceptionInfo: NuExceptionInfo) => {
       TestExceptionConsumerProvider.threadLocal.set((metaData, exceptionHandlerConfig, exceptionInfo))
     }
 

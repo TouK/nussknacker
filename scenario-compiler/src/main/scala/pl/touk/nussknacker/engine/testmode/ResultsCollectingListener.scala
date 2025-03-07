@@ -77,7 +77,7 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
       result: Try[Any]
   ): Unit = {}
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit =
     updateResults(_.updateExceptionResult(exceptionInfo, variableEncoder))
 
   private[testmode] override def updateResults(action: TestResults[Any] => TestResults[Any]): Unit = {

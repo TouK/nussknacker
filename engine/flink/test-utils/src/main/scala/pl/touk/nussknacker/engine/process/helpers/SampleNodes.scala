@@ -1164,7 +1164,7 @@ object SampleNodes {
     ): Unit =
       checkValidState("serviceInvoked")
 
-    override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
+    override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit =
       checkValidState("exceptionThrown")
 
     private def checkValidState(operation: String): Unit = {

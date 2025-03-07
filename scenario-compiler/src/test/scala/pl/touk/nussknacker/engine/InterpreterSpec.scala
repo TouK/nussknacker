@@ -464,7 +464,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           result: Any
       ): Unit = {}
 
-      override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {}
+      override def exceptionThrown(exceptionInfo: NuExceptionInfo) = {}
     }
 
     val process1 = ScenarioBuilder
