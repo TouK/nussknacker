@@ -146,7 +146,10 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
   ): Components = {
     val components = provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
       config.componentPrefix
-        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+        .map(prefix =>
+          inputComponentDefinition
+            .copy(name = prefix + inputComponentDefinition.name, label = prefix + inputComponentDefinition.label)
+        )
         .getOrElse(inputComponentDefinition)
     }
 
