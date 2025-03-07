@@ -34,39 +34,40 @@ class ActionInfoService(
   )(
       implicit user: LoggedUser,
       executionContext: ExecutionContext
-  ): Future[Either[ActionInfoError, UiActionParameters]] =
-    for {
-      canonical <- Future.successful(processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment))
-      canonicalWithResolvedFragments <- scenarioResolver.resolveScenarioAsync(canonical)
-    } yield {
-      canonicalWithResolvedFragments.toEither
-        .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
-        case Right(parameters) =>
-          val mappedParams = parameters
-            .map { case (scenarioActionName, nodeParamsMap) =>
-              scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
-                UiActionNodeParameters(
-                  NodeId(nodeComponentInfo.nodeId),
-                  nodeComponentInfo.componentId.getOrElse(
-                    throw new IllegalStateException("ComponentId is not present")
-                  ),
-                  params.map { case (name, value) =>
-                    name.value -> UiActionParameterConfig(
-                      value.defaultValue,
-                      value.editor.getOrElse(RawParameterEditor),
-                      value.label,
-                      value.hintText
-                    )
-                  }
-                )
-              }.toList
-            }
-          Right(UiActionParameters(mappedParams))
-        case Left(e) =>
-          logger.warn(s"Scenario compilation failed with error: $e while getting action parameters")
-          Left(ApiCannotCompileScenario)
+  ): Future[Either[ActionInfoError, UiActionParameters]] = {
+    val canonical = processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment)
+    scenarioResolver
+      .resolveScenarioAsync(canonical)
+      .map { canonicalWithResolvedFragments =>
+        canonicalWithResolvedFragments.toEither
+          .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
+          case Right(parameters) =>
+            val mappedParams = parameters
+              .map { case (scenarioActionName, nodeParamsMap) =>
+                scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
+                  UiActionNodeParameters(
+                    NodeId(nodeComponentInfo.nodeId),
+                    nodeComponentInfo.componentId.getOrElse(
+                      throw new IllegalStateException("ComponentId is not present")
+                    ),
+                    params.map { case (name, value) =>
+                      name.value -> UiActionParameterConfig(
+                        value.defaultValue,
+                        value.editor.getOrElse(RawParameterEditor),
+                        value.label,
+                        value.hintText
+                      )
+                    }
+                  )
+                }.toList
+              }
+            Right(UiActionParameters(mappedParams))
+          case Left(e) =>
+            logger.warn(s"Scenario compilation failed with error: $e while getting action parameters")
+            Left(ApiCannotCompileScenario)
+        }
       }
-    }
+  }
 
 }
 

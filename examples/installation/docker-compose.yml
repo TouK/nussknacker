@@ -43,9 +43,6 @@ services:
       FLINK_REST_URL: "http://flink-jobmanager:8081"
       JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=300M -XX:MaxDirectMemorySize=100M"
       USAGE_REPORTS_SOURCE: "example-installation-docker-compose"
-      JAVA_DEBUG_PORT: "5005"
-    ports:
-      - "5005:5005"
     depends_on:
       postgres:
         condition: service_healthy

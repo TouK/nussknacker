@@ -31,7 +31,9 @@ class FragmentResolver(fragmentRepository: FragmentRepository) {
   ): Future[ValidatedNel[ProcessCompilationError, CanonicalProcess]] =
     fragmentRepository
       .fetchLatestFragments(processingType)
-      .map(_.map(s => s.name -> s).toMap)
-      .map(fragments => pl.touk.nussknacker.engine.compile.FragmentResolver(fragments.get _).resolve(process))
+      .map { fragments =>
+        val groupedFragments = fragments.map(s => s.name -> s).toMap
+        pl.touk.nussknacker.engine.compile.FragmentResolver(groupedFragments.get _).resolve(process)
+      }
 
 }
