@@ -1,28 +1,26 @@
-import { cloneDeep, Dictionary, map, reject, zipObject, zipWith } from "lodash";
+import { cloneDeep, Dictionary, map, reject, zipObject } from "lodash";
 import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
+import { StickyNote } from "../../common/StickyNote";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { BranchParams, Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
-import { GraphState } from "./types";
-import { StickyNote } from "../../common/StickyNote";
+import { deleteNode } from "../../components/graph/utils/graphUtils";
+import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
 import { createStickyNoteId } from "../../types/stickyNote";
+import { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
     return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));
 }
 
-export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
+export function updateAfterNodeDelete({ layout, scenario, ...state }: GraphState, idToDelete: NodeId) {
     return {
         ...state,
         scenario: {
-            ...state.scenario,
-            scenarioGraph: {
-                ...state.scenario.scenarioGraph,
-                nodes: state.scenario.scenarioGraph.nodes.filter((n) => n.id !== idToDelete),
-            },
+            ...scenario,
+            scenarioGraph: deleteNode(scenario.scenarioGraph, idToDelete),
         },
-        layout: state.layout.filter((n) => n.id !== idToDelete),
+        layout: layout.filter((n) => n.id !== idToDelete),
     };
 }
 
@@ -35,7 +33,7 @@ function createUniqueNodeId(initialId: NodeId, usedIds: NodeId[], isCopy: boolea
     return initialId && !usedIds.includes(initialId) ? initialId : generateUniqueNodeId(initialId, usedIds, 1, isCopy);
 }
 
-function getUniqueIds(initialIds: string[], alreadyUsedIds: string[], isCopy: boolean) {
+function getUniqueIds(initialIds: NodeId[], alreadyUsedIds: NodeId[], isCopy: boolean): NodeId[] {
     return initialIds.reduce((uniqueIds, initialId) => {
         const reservedIds = alreadyUsedIds.concat(uniqueIds);
         const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy);
@@ -43,11 +41,11 @@ function getUniqueIds(initialIds: string[], alreadyUsedIds: string[], isCopy: bo
     }, []);
 }
 
-function adjustBranchParameters(branchParameters: BranchParams[], uniqueIds: string[]) {
-    return branchParameters?.map(({ branchId, ...branchParameter }: BranchParams) => ({
-        ...branchParameter,
-        branchId: uniqueIds.find((uniqueId) => uniqueId.includes(branchId)),
-    }));
+function getIdMapping(currentNodes: NodeType[], newNodes: NodeType[], isCopy: boolean) {
+    const alreadyUsedIds = currentNodes.map((node) => node.id);
+    const initialIds = newNodes.map(({ id }) => id);
+    const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
+    return zipObject(initialIds, uniqueIds);
 }
 
 export function prepareNewNodesWithLayout(
@@ -59,23 +57,25 @@ export function prepareNewNodesWithLayout(
     nodes: NodeType[];
     idMapping: Dictionary<string>;
 } {
-    const newNodes = newNodesWithPositions.map(({ node }) => node);
-    const newPositions = newNodesWithPositions.map(({ position }) => position);
-    const alreadyUsedIds = currentNodes.map((node) => node.id);
-    const initialIds = newNodes.map(({ id }) => id);
-    const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
-
+    const idMapping = getIdMapping(
+        currentNodes,
+        newNodesWithPositions.map((p) => p.node),
+        isCopy,
+    );
     return {
-        nodes: zipWith(newNodes, uniqueIds, (node, id) => ({
+        nodes: newNodesWithPositions.map(({ node }) => ({
             ...node,
-            id,
-            branchParameters: adjustBranchParameters(node.branchParameters, uniqueIds),
+            id: idMapping[node.id],
+            branchParameters: node.branchParameters?.map((parameter) => ({
+                ...parameter,
+                branchId: idMapping[parameter.branchId],
+            })),
         })),
-        layout: zipWith(newPositions, uniqueIds, (position, id) => ({
-            id,
+        layout: newNodesWithPositions.map(({ position, node }) => ({
+            id: idMapping[node.id],
             position,
         })),
-        idMapping: zipObject(initialIds, uniqueIds),
+        idMapping,
     };
 }
 

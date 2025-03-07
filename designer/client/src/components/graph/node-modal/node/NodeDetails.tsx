@@ -40,13 +40,17 @@ type NodeState = {
     isTouched: boolean;
 };
 
+export function getEdgesForNode(scenario: Scenario, node: NodeType) {
+    return scenario.scenarioGraph.edges.filter(({ from }) => from === node.id);
+}
+
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useDispatch();
     const scenarioFromGlobalStore = useSelector(getScenario);
 
     const { node, scenario = scenarioFromGlobalStore } = data;
     const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => scenario.scenarioGraph.edges.filter(({ from }) => from === node.id));
+    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
 
     const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]> = (v) => v) => {
         setEditedNode(node);
