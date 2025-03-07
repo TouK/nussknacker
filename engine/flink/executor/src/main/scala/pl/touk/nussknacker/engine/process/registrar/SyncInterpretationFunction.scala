@@ -48,7 +48,7 @@ private[registrar] class SyncInterpretationFunction(
 
   private def runInterpreter(
       input: Context
-  ): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
+  ): List[Either[InterpretationResult, NuExceptionInfo]] = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       compilerData.interpreter

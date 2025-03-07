@@ -26,7 +26,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
-import scala.jdk.CollectionConverters._
 
 class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
@@ -246,10 +245,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
           espExceptionInfo.nodeComponentInfo shouldBe Some(
             NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
           )
-          espExceptionInfo.throwable shouldBe a[NonTransientException]
-          val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
-          cause shouldBe a[AvroRuntimeException]
-          cause.getMessage should include("Not expected null for field: Some(street)")
+          espExceptionInfo.throwable shouldBe a[AvroRuntimeException]
+          espExceptionInfo.throwable.getMessage should include("Not expected null for field: Some(street)")
         }
       }
     )
