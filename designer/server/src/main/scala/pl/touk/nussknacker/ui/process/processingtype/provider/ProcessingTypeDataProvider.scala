@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
+import cats.effect.{IO, Ref}
 import cats.effect.std.Mutex
 import cats.effect.unsafe.IORuntime
-import cats.effect.{IO, Ref}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessingType
@@ -32,13 +32,14 @@ import scala.util.{Failure, Try}
   * transformations during each lookup to `Data`/`CombinedData`.
   *
   * ProcessingType is associated with Category e.g. Fraud Detection, Marketing. Given user has access to certain
-  * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if their
-  * has access to category.
+  * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if they
+  * have access to category.
   */
 abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: ProcessingTypeDataState[Data, CombinedData])
     extends LazyLogging {
 
-  // TODO: get rid of unsafeRunSync for Ref and Mutex
+  // We use unsafeRunSync because IO-based solution would complicate a lot our application initialization logic where
+  // we pass to every service, various views for our ProcessingTypeData
   protected val stateRef: Ref[IO, ProcessingTypeDataState[Data, CombinedData]] =
     Ref.of[IO, ProcessingTypeDataState[Data, CombinedData]](initialState).unsafeRunSync()(IORuntime.global)
 
@@ -46,49 +47,35 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: Proc
 
   private val observers = new CopyOnWriteArrayList[Observer[ProcessingTypeDataState[Data, CombinedData]]]()
 
-  // TODO: replace with proper forType handling
   final def forProcessingTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data =
-    forProcessingType(processingType)
-      .getOrElse(
-        throw new IllegalArgumentException(
+    forProcessingTypeEUnsafe(processingType).toTry.get
+
+  final def forProcessingType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
+    forProcessingTypeE(processingType).toTry.get
+  }
+
+  final def forProcessingTypeEUnsafe(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): Either[UnauthorizedError, Data] = {
+    forProcessingTypeE(processingType).map(
+      _.getOrElse(
+        throw new IllegalStateException(
           s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
         )
       )
-
-  final def forProcessingType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
-    allAuthorized
-      .get(processingType)
-      .map(_.getOrElse(throw new UnauthorizedError(user)))
+    )
   }
 
   final def forProcessingTypeE(
       processingType: ProcessingType
   )(implicit user: LoggedUser): Either[UnauthorizedError, Option[Data]] = {
-    allAuthorized
-      .get(processingType) match {
+    allAuthorized.get(processingType) match {
       case Some(dataO) =>
         dataO match {
           case Some(data) => Right(Some(data))
           case None       => Left(new UnauthorizedError(user))
         }
       case None => Right(None)
-    }
-  }
-
-  final def forProcessingTypeEUnsafe(
-      processingType: ProcessingType
-  )(implicit user: LoggedUser): Either[UnauthorizedError, Data] = {
-    allAuthorized
-      .get(processingType) match {
-      case Some(dataO) =>
-        dataO match {
-          case Some(data) => Right(data)
-          case None       => Left(new UnauthorizedError(user))
-        }
-      case None =>
-        throw new IllegalStateException(
-          s"Error while providing process resolver for processing type $processingType requested by user ${user.username}"
-        )
     }
   }
 
