@@ -1,23 +1,29 @@
 import { Theme } from "@mui/material";
+import i18next from "i18next";
 import { dia, g, shapes } from "jointjs";
 import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { UseTranslationResponse } from "react-i18next";
 import { Layout, NodePosition, Position } from "../../actions/nk";
+import * as DialogMessages from "../../common/DialogMessages";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
+import { StickyNote } from "../../common/StickyNote";
 import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { NotificationActions } from "../../http/HttpService";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { UserSettings } from "../../reducers/userSettings";
 import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
+import { ConfirmDialogData } from "../modals/GenericConfirmDialog";
 import { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
+import { STICKY_NOTE_CONSTRAINTS } from "./EspNode/stickyNote";
 import {
     applyCellChanges,
     calcLayout,
@@ -41,18 +47,12 @@ import {
     RangeSelectStartEventData,
     SelectionMode,
 } from "./RangeSelectPlugin";
+import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import { Events, GraphProps } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
-import { StickyNote } from "../../common/StickyNote";
-import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
-import { STICKY_NOTE_CONSTRAINTS } from "./EspNode/stickyNote";
-import { NotificationActions } from "../../http/HttpService";
-import i18next from "i18next";
-import * as DialogMessages from "../../common/DialogMessages";
-import { ConfirmDialogData } from "../modals/GenericConfirmDialog";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -118,6 +118,53 @@ function handleActionOnLongPress<T extends dia.CellView>(
 
 export class Graph extends React.Component<Props> {
     redrawing = false;
+    graph: dia.Graph;
+    processGraphPaper: dia.Paper;
+    highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
+        this.processGraphPaper.freeze();
+
+        const links = this.graph.getLinks();
+        links.forEach((l) => this.#unhighlightCell(l, dragHovered));
+
+        if (!forceDisable) {
+            const [active] = filterDragHovered(links);
+            if (active) {
+                this.#highlightCell(active, dragHovered);
+                active.toBack();
+            }
+        }
+
+        this.processGraphPaper.unfreeze();
+    });
+    private panAndZoom: PanZoomPlugin;
+    fit = debounce((cellsToFit?: dia.Cell[]): void => {
+        const area = cellsToFit?.length ? this.graph.getCellsBBox(cellsToFit) : this.processGraphPaper.getContentArea();
+        this.panAndZoom.fitContent(area, this.viewport);
+    }, 250);
+    private _exportGraphOptions: Pick<dia.Paper, "options" | "defs">;
+    private instance: HTMLElement;
+    private viewportAdjustment: {
+        left: number;
+        right: number;
+    } = {
+        left: 0,
+        right: 0,
+    };
+
+    constructor(props: Props) {
+        super(props);
+        this.graph = new dia.Graph({}, { cellNamespace: nuGraphNamespace });
+        this.bindNodeRemove();
+        this.bindNodesMoving();
+    }
+
+    get zoom(): number {
+        return this.panAndZoom?.zoom || 1;
+    }
+
+    get viewport(): g.Rect {
+        return this.adjustViewport();
+    }
 
     directedLayout = (cellsToLayout: dia.Cell[] = []): void => {
         this.redrawing = true;
@@ -125,6 +172,14 @@ export class Graph extends React.Component<Props> {
         this.redrawing = false;
         this.changeLayoutIfNeeded();
     };
+
+    forceLayout = debounce((readOnly?: boolean) => {
+        const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
+        if (!readOnly) {
+            this.directedLayout(cellsToLayout);
+        }
+        this.fit(cellsToLayout);
+    }, 250);
 
     createPaper = (): dia.Paper => {
         const { theme } = this.props;
@@ -169,116 +224,6 @@ export class Graph extends React.Component<Props> {
         return paper;
     };
 
-    private bindMoveWithEdge(cellView: dia.CellView) {
-        const { paper, model } = cellView;
-        const cell = this.graph.getCell(model.id);
-        const border = 80;
-
-        const mousePosition = new g.Point(this.viewport.center());
-
-        const updateMousePosition = (cellView: dia.CellView, event: dia.Event) => {
-            mousePosition.update(event.clientX, event.clientY);
-        };
-
-        let frame: number;
-        const panWithEdge = () => {
-            const rect = this.viewport.clone().inflate(-border, -border);
-            if (!rect.containsPoint(mousePosition)) {
-                const distance = rect.pointNearestToPoint(mousePosition).difference(mousePosition);
-                const x = clamp(distance.x / 2, border / 4);
-                const y = clamp(distance.y / 2, border / 4);
-                this.panAndZoom.panBy({
-                    x,
-                    y,
-                });
-                if (isModelElement(cell)) {
-                    const p = cell.position();
-                    cell.position(p.x - x, p.y - y);
-                }
-            }
-            frame = requestAnimationFrame(panWithEdge);
-        };
-        frame = requestAnimationFrame(panWithEdge);
-
-        paper.on(Events.CELL_POINTERMOVE, updateMousePosition);
-        return () => {
-            paper.off(Events.CELL_POINTERMOVE, updateMousePosition);
-            cancelAnimationFrame(frame);
-        };
-    }
-
-    private bindPaperEvents() {
-        this.processGraphPaper
-            //trigger new custom event on finished cell move
-            .on(Events.CELL_POINTERDOWN, (cellView: dia.CellView) => {
-                const { model, paper } = cellView;
-
-                const moveCallback = () => {
-                    cellView.once(Events.CELL_POINTERUP, () => {
-                        cellView.trigger(Events.CELL_MOVED, cellView);
-                        paper.trigger(Events.CELL_MOVED, cellView);
-                    });
-                };
-
-                model.once(Events.CHANGE_POSITION, moveCallback);
-                const cleanup = this.bindMoveWithEdge(cellView);
-
-                cellView.once(Events.CELL_POINTERUP, () => {
-                    model.off(Events.CHANGE_POSITION, moveCallback);
-                    cleanup();
-                });
-            })
-            //we want to inject node during 'Drag and Drop' from graph paper
-            .on(Events.CELL_MOVED, (cell: dia.CellView) => {
-                if (isModelElement(cell.model)) {
-                    const linkBelowCell = this.getLinkBelowCell();
-                    const group = batchGroupBy.startOrContinue();
-                    this.changeLayoutIfNeeded();
-                    this.handleInjectBetweenNodes(cell.model, linkBelowCell);
-                    batchGroupBy.end(group);
-                }
-                if (isStickyNoteElement(cell.model)) {
-                    this.processGraphPaper.hideTools();
-                    if (!this.props.isPristine) {
-                        this.props.notifications.warn(
-                            i18next.t(
-                                "notification.warn.cannotMoveOnUnsavedVersion",
-                                "Save scenario before making any changes to sticky notes",
-                            ),
-                        );
-                        return;
-                    }
-                    cell.showTools();
-                    const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell.model);
-                    if (!updatedStickyNote) return;
-                    const position = cell.model.get("position");
-                    updatedStickyNote.layoutData = { x: position.x, y: position.y };
-                    this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
-                }
-            })
-            .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
-                if (this.props.isFragment === true) return;
-                const isReversed = targetMagnet?.getAttribute("port") === "Out";
-                const sourceView = linkView.getEndView("source");
-                const type = linkView.model.attributes.edgeData?.edgeType;
-                const from = sourceView?.model.attributes.nodeData;
-                const to = targetView?.model.attributes.nodeData;
-
-                if (from && to) {
-                    isReversed ? this.props.nodesConnected(to, from, type) : this.props.nodesConnected(from, to, type);
-                }
-            })
-            .on(Events.LINK_DISCONNECT, ({ model }) => {
-                this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to);
-            });
-    }
-
-    private getLinkBelowCell() {
-        const links = this.graph.getLinks();
-        const [linkBelowCell] = filterDragHovered(links);
-        return linkBelowCell;
-    }
-
     drawGraph = (
         scenarioGraph: ScenarioGraph,
         stickyNotes: StickyNote[],
@@ -304,30 +249,6 @@ export class Graph extends React.Component<Props> {
             this.props.connectDropTarget(instance);
         }
     };
-    graph: dia.Graph;
-    processGraphPaper: dia.Paper;
-    highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
-        this.processGraphPaper.freeze();
-
-        const links = this.graph.getLinks();
-        links.forEach((l) => this.#unhighlightCell(l, dragHovered));
-
-        if (!forceDisable) {
-            const [active] = filterDragHovered(links);
-            if (active) {
-                this.#highlightCell(active, dragHovered);
-                active.toBack();
-            }
-        }
-
-        this.processGraphPaper.unfreeze();
-    });
-    private panAndZoom: PanZoomPlugin;
-
-    fit = debounce((cellsToFit?: dia.Cell[]): void => {
-        const area = cellsToFit?.length ? this.graph.getCellsBBox(cellsToFit) : this.processGraphPaper.getContentArea();
-        this.panAndZoom.fitContent(area, this.viewport);
-    }, 250);
 
     fitToNode = (nodeId: NodeId): void => {
         const cellToFit = this.graph.getCells().find((c) => c.id === nodeId);
@@ -338,34 +259,7 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : autoZoomThreshold);
     };
 
-    forceLayout = debounce((readOnly?: boolean) => {
-        const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
-        if (!readOnly) {
-            this.directedLayout(cellsToLayout);
-        }
-        this.fit(cellsToLayout);
-    }, 250);
-
-    private _exportGraphOptions: Pick<dia.Paper, "options" | "defs">;
-    private instance: HTMLElement;
-
-    constructor(props: Props) {
-        super(props);
-        this.graph = new dia.Graph({}, { cellNamespace: nuGraphNamespace });
-        this.bindNodeRemove();
-        this.bindNodesMoving();
-    }
-
-    get zoom(): number {
-        return this.panAndZoom?.zoom || 1;
-    }
-
     getEspGraphRef = (): HTMLElement => this.instance;
-
-    componentWillUnmount(): void {
-        // force destroy event on model for plugins cleanup
-        this.processGraphPaper.model.destroy();
-    }
 
     bindEventHandlers(): void {
         const showNodeDetails = (cellView: dia.CellView) => {
@@ -505,8 +399,14 @@ export class Graph extends React.Component<Props> {
                     STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT,
                     Math.min(STICKY_NOTE_CONSTRAINTS.MAX_HEIGHT, Math.round(size.height)),
                 );
-                updatedStickyNote.layoutData = { x: position.x, y: position.y };
-                updatedStickyNote.dimensions = { width, height };
+                updatedStickyNote.layoutData = {
+                    x: position.x,
+                    y: position.y,
+                };
+                updatedStickyNote.dimensions = {
+                    width,
+                    height,
+                };
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
             }
         });
@@ -559,6 +459,11 @@ export class Graph extends React.Component<Props> {
         this.fit();
     }
 
+    componentWillUnmount(): void {
+        // force destroy event on model for plugins cleanup
+        this.processGraphPaper.model.destroy();
+    }
+
     addNode(node: NodeType, position: Position): void {
         if (this.props.isFragment === true) return;
 
@@ -573,7 +478,10 @@ export class Graph extends React.Component<Props> {
         if (this.props.isFragment === true) return;
         const canAddStickyNote = this.props.capabilities.editFrontend;
         if (canAddStickyNote) {
-            const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT };
+            const dimensions = {
+                width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
+                height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
+            };
             this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position, dimensions);
         }
     }
@@ -697,18 +605,6 @@ export class Graph extends React.Component<Props> {
         }
     };
 
-    #graphContainsEdge(from: NodeId, to: NodeId): boolean {
-        return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
-    }
-
-    #findLinkForEdge(edge: Edge): dia.Link {
-        if (!isEdgeConnected(edge) || !this.#graphContainsEdge(edge.from, edge.to)) {
-            return null;
-        }
-        const links = this.graph.getLinks();
-        return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
-    }
-
     highlightEdge(edge: Edge, className: string): void {
         const link = this.#findLinkForEdge(edge);
         link?.toFront();
@@ -750,6 +646,212 @@ export class Graph extends React.Component<Props> {
             defs: defs.cloneNode(true) as SVGDefsElement,
         };
     };
+
+    highlightNode = (nodeId: NodeId, className: string): void => {
+        const cell = this.graph.getCell(nodeId);
+        cell?.toFront();
+        this.#highlightCell(cell, className);
+    };
+
+    unhighlightNode = (nodeId: NodeId, className: string): void => {
+        const cell = this.graph.getCell(nodeId);
+        this.#unhighlightCell(cell, className);
+    };
+
+    changeLayoutIfNeeded = (): void => {
+        if (this.props.isFragment === true) return;
+
+        const { layout, layoutChanged } = this.props;
+
+        const elements = this.graph.getElements().filter(isModelElement);
+        const collection = elements.map((el) => {
+            const { x, y } = el.get("position");
+            return {
+                id: el.id,
+                position: {
+                    x,
+                    y,
+                },
+            };
+        });
+
+        const iteratee = (e) => e.id;
+        const newLayout = sortBy(collection, iteratee);
+        const oldLayout = sortBy(layout, iteratee);
+
+        if (!isEqual(oldLayout, newLayout)) {
+            layoutChanged(newLayout);
+        }
+    };
+
+    hooverHandling(): void {
+        this.processGraphPaper.on(Events.CELL_MOUSEOVER, (cellView: dia.CellView) => {
+            const model = cellView.model;
+            this.showLabelOnHover(model);
+        });
+    }
+
+    //needed for proper switch/filter label handling
+    showLabelOnHover(model: dia.Cell): dia.Cell {
+        model.toFront();
+        return model;
+    }
+
+    findNodeInLayout(nodeId: NodeId): NodePosition {
+        return this.props.layout.find((n) => n.id === nodeId);
+    }
+
+    render(): React.JSX.Element {
+        const { divId, isFragment } = this.props;
+        return (
+            <>
+                {/* for now this can't use theme nor other dynamic props to maintain reference with jointjs. */}
+                <PaperContainer ref={this.setEspGraphRef} onResize={isFragment ? () => this.fit() : null} id={divId} />
+                {!isFragment && <ComponentDragPreview scale={() => this.zoom} />}
+            </>
+        );
+    }
+
+    adjustViewport: (adjustment?: { left?: number; right?: number }) => g.Rect = (
+        adjustment: {
+            left?: number;
+            right?: number;
+        } = {},
+    ) => {
+        this.viewportAdjustment = { ...this.viewportAdjustment, ...adjustment };
+        const { y, height, width } = this.processGraphPaper.el.getBoundingClientRect();
+        return new g.Rect({
+            y,
+            height,
+            x: this.viewportAdjustment.left,
+            width: width - this.viewportAdjustment.left - this.viewportAdjustment.right,
+        });
+    };
+
+    private bindMoveWithEdge(cellView: dia.CellView) {
+        const { paper, model } = cellView;
+        const cell = this.graph.getCell(model.id);
+        const border = 80;
+
+        const mousePosition = new g.Point(this.viewport.center());
+
+        const updateMousePosition = (cellView: dia.CellView, event: dia.Event) => {
+            mousePosition.update(event.clientX, event.clientY);
+        };
+
+        let frame: number;
+        const panWithEdge = () => {
+            const rect = this.viewport.clone().inflate(-border, -border);
+            if (!rect.containsPoint(mousePosition)) {
+                const distance = rect.pointNearestToPoint(mousePosition).difference(mousePosition);
+                const x = clamp(distance.x / 2, border / 4);
+                const y = clamp(distance.y / 2, border / 4);
+                this.panAndZoom.panBy({
+                    x,
+                    y,
+                });
+                if (isModelElement(cell)) {
+                    const p = cell.position();
+                    cell.position(p.x - x, p.y - y);
+                }
+            }
+            frame = requestAnimationFrame(panWithEdge);
+        };
+        frame = requestAnimationFrame(panWithEdge);
+
+        paper.on(Events.CELL_POINTERMOVE, updateMousePosition);
+        return () => {
+            paper.off(Events.CELL_POINTERMOVE, updateMousePosition);
+            cancelAnimationFrame(frame);
+        };
+    }
+
+    private bindPaperEvents() {
+        this.processGraphPaper
+            //trigger new custom event on finished cell move
+            .on(Events.CELL_POINTERDOWN, (cellView: dia.CellView) => {
+                const { model, paper } = cellView;
+
+                const moveCallback = () => {
+                    cellView.once(Events.CELL_POINTERUP, () => {
+                        cellView.trigger(Events.CELL_MOVED, cellView);
+                        paper.trigger(Events.CELL_MOVED, cellView);
+                    });
+                };
+
+                model.once(Events.CHANGE_POSITION, moveCallback);
+                const cleanup = this.bindMoveWithEdge(cellView);
+
+                cellView.once(Events.CELL_POINTERUP, () => {
+                    model.off(Events.CHANGE_POSITION, moveCallback);
+                    cleanup();
+                });
+            })
+            //we want to inject node during 'Drag and Drop' from graph paper
+            .on(Events.CELL_MOVED, (cell: dia.CellView) => {
+                if (isModelElement(cell.model)) {
+                    const linkBelowCell = this.getLinkBelowCell();
+                    const group = batchGroupBy.startOrContinue();
+                    this.changeLayoutIfNeeded();
+                    this.handleInjectBetweenNodes(cell.model, linkBelowCell);
+                    batchGroupBy.end(group);
+                }
+                if (isStickyNoteElement(cell.model)) {
+                    this.processGraphPaper.hideTools();
+                    if (!this.props.isPristine) {
+                        this.props.notifications.warn(
+                            i18next.t(
+                                "notification.warn.cannotMoveOnUnsavedVersion",
+                                "Save scenario before making any changes to sticky notes",
+                            ),
+                        );
+                        return;
+                    }
+                    cell.showTools();
+                    const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell.model);
+                    if (!updatedStickyNote) return;
+                    const position = cell.model.get("position");
+                    updatedStickyNote.layoutData = {
+                        x: position.x,
+                        y: position.y,
+                    };
+                    this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
+                }
+            })
+            .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
+                if (this.props.isFragment === true) return;
+                const isReversed = targetMagnet?.getAttribute("port") === "Out";
+                const sourceView = linkView.getEndView("source");
+                const type = linkView.model.attributes.edgeData?.edgeType;
+                const from = sourceView?.model.attributes.nodeData;
+                const to = targetView?.model.attributes.nodeData;
+
+                if (from && to) {
+                    isReversed ? this.props.nodesConnected(to, from, type) : this.props.nodesConnected(from, to, type);
+                }
+            })
+            .on(Events.LINK_DISCONNECT, ({ model }) => {
+                this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to);
+            });
+    }
+
+    private getLinkBelowCell() {
+        const links = this.graph.getLinks();
+        const [linkBelowCell] = filterDragHovered(links);
+        return linkBelowCell;
+    }
+
+    #graphContainsEdge(from: NodeId, to: NodeId): boolean {
+        return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
+    }
+
+    #findLinkForEdge(edge: Edge): dia.Link {
+        if (!isEdgeConnected(edge) || !this.#graphContainsEdge(edge.from, edge.to)) {
+            return null;
+        }
+        const links = this.graph.getLinks();
+        return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
+    }
 
     #highlightNodes = (selectedNodeIds: string[] = [], scenario = this.props.scenario): void => {
         this.processGraphPaper.freeze();
@@ -807,56 +909,6 @@ export class Graph extends React.Component<Props> {
         });
     }
 
-    highlightNode = (nodeId: NodeId, className: string): void => {
-        const cell = this.graph.getCell(nodeId);
-        cell?.toFront();
-        this.#highlightCell(cell, className);
-    };
-
-    unhighlightNode = (nodeId: NodeId, className: string): void => {
-        const cell = this.graph.getCell(nodeId);
-        this.#unhighlightCell(cell, className);
-    };
-
-    changeLayoutIfNeeded = (): void => {
-        if (this.props.isFragment === true) return;
-
-        const { layout, layoutChanged } = this.props;
-
-        const elements = this.graph.getElements().filter(isModelElement);
-        const collection = elements.map((el) => {
-            const { x, y } = el.get("position");
-            return {
-                id: el.id,
-                position: {
-                    x,
-                    y,
-                },
-            };
-        });
-
-        const iteratee = (e) => e.id;
-        const newLayout = sortBy(collection, iteratee);
-        const oldLayout = sortBy(layout, iteratee);
-
-        if (!isEqual(oldLayout, newLayout)) {
-            layoutChanged(newLayout);
-        }
-    };
-
-    hooverHandling(): void {
-        this.processGraphPaper.on(Events.CELL_MOUSEOVER, (cellView: dia.CellView) => {
-            const model = cellView.model;
-            this.showLabelOnHover(model);
-        });
-    }
-
-    //needed for proper switch/filter label handling
-    showLabelOnHover(model: dia.Cell): dia.Cell {
-        model.toFront();
-        return model;
-    }
-
     private moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
         this.redrawing = true;
         const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId);
@@ -872,21 +924,6 @@ export class Graph extends React.Component<Props> {
         });
         this.redrawing = false;
         return cellsToBeMoved;
-    }
-
-    findNodeInLayout(nodeId: NodeId): NodePosition {
-        return this.props.layout.find((n) => n.id === nodeId);
-    }
-
-    render(): React.JSX.Element {
-        const { divId, isFragment } = this.props;
-        return (
-            <>
-                {/* for now this can't use theme nor other dynamic props to maintain reference with jointjs. */}
-                <PaperContainer ref={this.setEspGraphRef} onResize={isFragment ? () => this.fit() : null} id={divId} />
-                {!isFragment && <ComponentDragPreview scale={() => this.zoom} />}
-            </>
-        );
     }
 
     private bindNodeRemove() {
@@ -913,32 +950,5 @@ export class Graph extends React.Component<Props> {
                 }
             }),
         );
-    }
-
-    private viewportAdjustment: {
-        left: number;
-        right: number;
-    } = {
-        left: 0,
-        right: 0,
-    };
-    adjustViewport: (adjustment?: { left?: number; right?: number }) => g.Rect = (
-        adjustment: {
-            left?: number;
-            right?: number;
-        } = {},
-    ) => {
-        this.viewportAdjustment = { ...this.viewportAdjustment, ...adjustment };
-        const { y, height, width } = this.processGraphPaper.el.getBoundingClientRect();
-        return new g.Rect({
-            y,
-            height,
-            x: this.viewportAdjustment.left,
-            width: width - this.viewportAdjustment.left - this.viewportAdjustment.right,
-        });
-    };
-
-    get viewport(): g.Rect {
-        return this.adjustViewport();
     }
 }
