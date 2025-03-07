@@ -38,7 +38,7 @@ class ActionInfoService(
   ): Future[Either[ActionInfoError, UiActionParameters]] = {
     val canonical = processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment)
     scenarioResolver
-      .resolveScenarioAsync(canonical)
+      .resolveScenario(canonical)
       .map { canonicalWithResolvedFragments =>
         canonicalWithResolvedFragments.toEither
           .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
