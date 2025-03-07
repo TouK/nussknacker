@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.exception
 
 import java.time.Instant
 
-abstract class NonTransientException(
+class NonTransientException(
     val input: String,
     message: String,
     val timestamp: Instant = Instant.now(),
