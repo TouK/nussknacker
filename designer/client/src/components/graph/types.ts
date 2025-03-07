@@ -1,26 +1,30 @@
-import { ProcessCounts } from "../../reducers/graph";
 import {
+    editNode,
     injectNode,
     Layout,
     layoutChanged,
     nodeAdded,
     nodesConnected,
     nodesDisconnected,
+    replaceNode,
     resetSelection,
     stickyNoteAdded,
     stickyNoteDeleted,
     stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
+import { StickyNote } from "../../common/StickyNote";
+import { ProcessCounts } from "../../reducers/graph";
 import { Capabilities } from "../../reducers/selectors/other";
 import { Scenario } from "../Process/types";
-import { StickyNote } from "../../common/StickyNote";
 
 type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
     nodesDisconnected: typeof nodesDisconnected;
     layoutChanged: typeof layoutChanged;
     injectNode: typeof injectNode;
+    editNode: typeof editNode;
+    replaceNode: typeof replaceNode;
     nodeAdded: typeof nodeAdded;
     stickyNoteAdded: typeof stickyNoteAdded;
     stickyNoteUpdated: typeof stickyNoteUpdated;

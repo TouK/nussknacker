@@ -173,7 +173,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
             setTimeout(() => {
                 e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
                     if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
-                        setLinksHovered(el.graph, el.getBBox());
+                        setLinksHovered(el.graph, el.getBBox(), el);
                     }
                 });
             });

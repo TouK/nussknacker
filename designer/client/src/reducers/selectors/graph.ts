@@ -1,14 +1,14 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 import ProcessUtils from "../../common/ProcessUtils";
+import { StickyNote } from "../../common/StickyNote";
+import { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
 import { ScenarioGraph } from "../../types";
 import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
-import { TestFormParameters } from "../../common/TestResultUtils";
-import { StickyNote } from "../../common/StickyNote";
 import { getStickyNotesSettings } from "./settings";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
@@ -17,6 +17,8 @@ export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
     memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
 });
+
+export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
