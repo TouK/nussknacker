@@ -7,9 +7,9 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.{AccessExecutionGraph, AccessExecutionVertex}
 import org.apache.flink.runtime.messages.FlinkJobTerminatedWithoutCancellationException
 import org.apache.flink.runtime.minicluster.MiniCluster
+import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import retry.Success
 
-import java.util.concurrent.CompletionException
 import scala.annotation.tailrec
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,8 +64,10 @@ object MiniClusterJobStatusCheckingOps extends LazyLogging {
           _ <- EitherT.right(
             miniCluster.cancelJob(jobID).toScala.recover {
               // It occurs for example when job was already finished when we cancel it
-              case ex: CompletionException
-                  if ex.getCause.isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
+              case ex
+                  if ExceptionUtils
+                    .unwrapCommonWrappingExceptions(ex)
+                    .isInstanceOf[FlinkJobTerminatedWithoutCancellationException] =>
             }
           )
           _ <- terminalCheckRetryPolicyOpt

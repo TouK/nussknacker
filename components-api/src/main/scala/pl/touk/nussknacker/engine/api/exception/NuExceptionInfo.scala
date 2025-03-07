@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.exception
 
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.api.util.{ExceptionUtils, ReflectUtils}
 
 import java.time.Instant
 
@@ -31,18 +31,18 @@ object NuExceptionInfo {
     )
   }
 
-  // TODO: Maybe we should unwrap some common wrapping exceptions such as ExecutionException, CompletionException, InvocationTargetException
-  //       to provide more detailed information about cause of problem?
   def apply(
       nodeComponentInfo: Option[NodeComponentInfo],
       throwable: Throwable,
       context: Context
   ): NuExceptionInfo = {
+    // we unwrap common wrapping exceptions to return more precise information about cause of problem
+    val unwrapped = ExceptionUtils.unwrapCommonWrappingExceptions(throwable)
     NuExceptionInfo(
       nodeComponentInfo,
-      throwable,
+      unwrapped,
       context,
-      s"${ReflectUtils.simpleNameWithoutSuffix(throwable.getClass)}: ${throwable.getMessage}",
+      s"${ReflectUtils.simpleNameWithoutSuffix(unwrapped.getClass)}: ${unwrapped.getMessage}",
       Instant.now()
     )
   }

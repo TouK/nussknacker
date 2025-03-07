@@ -4,25 +4,40 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.{Context, EagerService, MethodToInvoke, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import scala.compat.java8.FutureConverters._
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 
-class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
+class ModelUtilExceptionHandlingSpec
+    extends AnyFunSuite
+    with CorrectExceptionHandlingSpec
+    with ValidatedValuesDetailedMessage
+    with LoneElement {
 
   override protected def runScenario(
       env: StreamExecutionEnvironment,
@@ -156,6 +171,59 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
         "'aggregate' + '' + (1 / #input[1])"
       )
     }
+  }
+
+  test("should handle exceptions in service") {
+    val scenario =
+      ScenarioBuilder
+        .streaming("service-exception-test")
+        .source("source", TestScenarioRunner.testDataSource)
+        .enricher("enricher", "var", "throwing-enricher")
+        .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "null".spel)
+
+    val exeception = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .withExtraComponents(
+        List(
+          ComponentDefinition(
+            "throwing-enricher",
+            new ThrowingWrappedExceptionEnricher
+          )
+        )
+      )
+      .build()
+      .runWithData(scenario, List(1))
+      .validValue
+      .errors
+      .loneElement
+      .throwable
+
+    exeception shouldBe ThrowingWrappedExceptionEnricher.Exception
+  }
+
+  class ThrowingWrappedExceptionEnricher extends EagerService {
+
+    @MethodToInvoke
+    def createInvoker: ServiceInvoker = new ServiceInvoker {
+      override def invoke(context: Context)(
+          implicit ec: ExecutionContext,
+          collector: InvocationCollectors.ServiceInvocationCollector,
+          componentUseContext: ComponentUseContext
+      ): Future[Any] = {
+        Future {
+          // This is not a typical usage of CompletableFuture's but we have to be ready for that because
+          // this kind of situation may occur somewhere in library used by developer of component
+          CompletableFuture.failedFuture(ThrowingWrappedExceptionEnricher.Exception).get()
+        }
+      }
+    }
+
+  }
+
+  object ThrowingWrappedExceptionEnricher {
+
+    object Exception extends Exception("foo")
+
   }
 
 }

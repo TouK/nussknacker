@@ -6,9 +6,9 @@ import akka.http.scaladsl.server.ExceptionHandler
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
+import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.ui._
 
-import java.util.concurrent.ExecutionException
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
@@ -17,13 +17,8 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(errorToHttpResponse(unwrapException(e)))
+      complete(errorToHttpResponse(ExceptionUtils.unwrapCommonWrappingExceptions(e)))
     }
-  }
-
-  def unwrapException(e: Throwable): Throwable = e match {
-    case ex: ExecutionException => ex.getCause
-    case other                  => other
   }
 
   private def errorToHttpResponse(e: Throwable): HttpResponse = e match {
