@@ -3575,6 +3575,8 @@ paths:
                         params: []
                       editor:
                         type: RawParameterEditor
+                      editors:
+                      - type: SpelParameterEditor
                       defaultValue:
                         language: spel
                         expression: ''
@@ -6797,6 +6799,7 @@ components:
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
+      - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
       - $ref: '#/components/schemas/StringParameterEditor'
@@ -7247,6 +7250,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SpelParameterEditor:
+      title: SpelParameterEditor
+      type: object
     SpelTemplateParameterEditor:
       title: SpelTemplateParameterEditor
       type: object
@@ -7692,6 +7698,10 @@ components:
           - $ref: '#/components/schemas/Unknown'
         editor:
           $ref: '#/components/schemas/ParameterEditor'
+        editors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterEditor'
         defaultValue:
           $ref: '#/components/schemas/Expression'
         additionalVariables:

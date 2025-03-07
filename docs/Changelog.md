@@ -109,7 +109,12 @@
     * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
     * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
 * [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels are now independent of component Id. Labels can be set during the component defining or can be set in ui configuration in application config 
-
+* [#7614](https://github.com/TouK/nussknacker/pull/7614) SpelTemplate as a main text editor
+  * Added a new parameter editor type: SpelParameterEditor which works the same as RawParameterEditor.
+  * Added a list of editors to the UIParameter.
+* [#7616](https://github.com/TouK/nussknacker/pull/7616) (K8s DM) Fix for: k8s object name sanitizing strategy sometimes generated invalid object names, in other cases, 
+  it generated names with unnecessary characters appended
+  
 ## 1.18
 
 #### Highlights

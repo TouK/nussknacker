@@ -7,6 +7,7 @@ object EditorBasedLanguageDeterminer {
 
   def determineLanguageOf(editor: Option[ParameterEditor]): Expression.Language = editor match {
     case Some(RawParameterEditor)                   => Expression.Language.Spel
+    case Some(SpelParameterEditor)                  => Expression.Language.Spel
     case Some(simpleEditor: SimpleParameterEditor)  => determineLanguageOf(simpleEditor)
     case Some(DualParameterEditor(simpleEditor, _)) => determineLanguageOf(simpleEditor)
     case None                                       => Expression.Language.Spel
