@@ -230,113 +230,6 @@ export class Graph extends React.Component<Props> {
         return paper;
     };
 
-    drawGraph = (
-        scenarioGraph: ScenarioGraph,
-        stickyNotes: StickyNote[],
-        layout: Layout,
-        processDefinitionData: ProcessDefinitionData,
-    ): void => {
-        const { theme } = this.props;
-
-        this.redrawing = true;
-        applyCellChanges(this.processGraphPaper, scenarioGraph, stickyNotes, processDefinitionData, theme);
-
-        if (isEmpty(layout)) {
-            this.forceLayout();
-        } else {
-            updateLayout(this.graph, layout);
-            this.redrawing = false;
-        }
-    };
-
-    setEspGraphRef = (instance: HTMLElement): void => {
-        this.instance = instance;
-        if (this.props.isFragment !== true && this.props.connectDropTarget && instance) {
-            this.props.connectDropTarget(instance);
-        }
-    };
-
-    fitToNode = (nodeId: NodeId): void => {
-        const cellToFit = this.graph.getCells().find((c) => c.id === nodeId);
-        const area = cellToFit ? this.graph.getCellsBBox([cellToFit]) : this.processGraphPaper.getContentArea();
-
-        const autoZoomThreshold = 0.63;
-        const withCurrentZoomValue = this.zoom > autoZoomThreshold;
-        this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : autoZoomThreshold);
-    };
-
-    getEspGraphRef = (): HTMLElement => this.instance;
-
-    bindEventHandlers(): void {
-        const showNodeDetails = (cellView: dia.CellView) => {
-            const { scenario, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
-            const { nodeData, edgeData } = cellView.model.attributes;
-            const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null);
-            if (nodeId) {
-                this.props.showModalNodeDetails(
-                    {
-                        ...NodeUtils.getNodeById(nodeId, scenario.scenarioGraph),
-                        id: nodeIdPrefixForFragmentTests + nodeId,
-                    },
-                    scenario,
-                    readonly,
-                );
-            }
-        };
-
-        const showStickyNoteTools = (cellView: dia.CellView) => {
-            cellView.showTools();
-        };
-
-        const hideToolsOnBlankClick = (evt: dia.Event) => {
-            evt.preventDefault();
-            this.processGraphPaper.hideTools();
-        };
-
-        const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
-            if (this.props.isFragment === true) return;
-            this.processGraphPaper.hideTools();
-            if (isStickyNoteElement(cellView.model)) {
-                if (!this.props.isPristine) return;
-                if (this.props.selectionState.length > 0) this.props.resetSelection();
-                showStickyNoteTools(cellView);
-            }
-            if (this.props.nodeSelectionEnabled) {
-                const nodeDataId = cellView.model.attributes.nodeData?.id;
-                if (!nodeDataId) {
-                    return;
-                }
-
-                if (evt.shiftKey || evt.ctrlKey || evt.metaKey || isTouchEvent(evt)) {
-                    this.props.toggleSelection(nodeDataId);
-                } else {
-                    this.props.resetSelection(nodeDataId);
-                }
-            }
-        };
-
-        this.processGraphPaper.on(
-            Events.CELL_POINTERDOWN,
-            handleGraphEvent(handleActionOnLongPress(showNodeDetails, selectNode), null, (view) => !isStickyNoteElement(view.model)),
-        );
-        this.processGraphPaper.on(
-            Events.LINK_POINTERDOWN,
-            handleGraphEvent(
-                handleActionOnLongPress(null, ({ model }) => model.remove(), LONG_PRESS_TIME * 1.5),
-                null,
-            ),
-        );
-
-        this.processGraphPaper.on(
-            Events.CELL_POINTERCLICK,
-            handleGraphEvent(null, selectNode, (view) => !isStickyNoteElement(view.model)),
-        );
-        this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
-        this.processGraphPaper.on(Events.BLANK_POINTERCLICK, hideToolsOnBlankClick);
-
-        this.hooverHandling();
-    }
-
     componentDidMount(): void {
         this.processGraphPaper = this.createPaper();
         this.drawGraph(this.props.scenario.scenarioGraph, this.props.stickyNotes, this.props.layout, this.props.processDefinitionData);
@@ -470,6 +363,32 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.model.destroy();
     }
 
+    drawGraph = (
+        scenarioGraph: ScenarioGraph,
+        stickyNotes: StickyNote[],
+        layout: Layout,
+        processDefinitionData: ProcessDefinitionData,
+    ): void => {
+        const { theme } = this.props;
+
+        this.redrawing = true;
+        applyCellChanges(this.processGraphPaper, scenarioGraph, stickyNotes, processDefinitionData, theme);
+
+        if (isEmpty(layout)) {
+            this.forceLayout();
+        } else {
+            updateLayout(this.graph, layout);
+            this.redrawing = false;
+        }
+    };
+
+    setEspGraphRef = (instance: HTMLElement): void => {
+        this.instance = instance;
+        if (this.props.isFragment !== true && this.props.connectDropTarget && instance) {
+            this.props.connectDropTarget(instance);
+        }
+    };
+
     addNode(node: NodeType, position: Position): void {
         if (this.props.isFragment === true) return;
         if (!this.props.capabilities.editFrontend) return;
@@ -498,6 +417,109 @@ export class Graph extends React.Component<Props> {
             this.props.nodeAdded(node, position);
         }
     }
+
+    fitToNode = (nodeId: NodeId): void => {
+        const cellToFit = this.graph.getCells().find((c) => c.id === nodeId);
+        const area = cellToFit ? this.graph.getCellsBBox([cellToFit]) : this.processGraphPaper.getContentArea();
+
+        const autoZoomThreshold = 0.63;
+        const withCurrentZoomValue = this.zoom > autoZoomThreshold;
+        this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : autoZoomThreshold);
+    };
+
+    getEspGraphRef = (): HTMLElement => this.instance;
+
+    bindEventHandlers(): void {
+        const showNodeDetails = (cellView: dia.CellView) => {
+            const { scenario, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
+            const { nodeData, edgeData } = cellView.model.attributes;
+            const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null);
+            if (nodeId) {
+                this.props.showModalNodeDetails(
+                    {
+                        ...NodeUtils.getNodeById(nodeId, scenario.scenarioGraph),
+                        id: nodeIdPrefixForFragmentTests + nodeId,
+                    },
+                    scenario,
+                    readonly,
+                );
+            }
+        };
+
+        const showStickyNoteTools = (cellView: dia.CellView) => {
+            cellView.showTools();
+        };
+
+        const hideToolsOnBlankClick = (evt: dia.Event) => {
+            evt.preventDefault();
+            this.processGraphPaper.hideTools();
+        };
+
+        const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
+            if (this.props.isFragment === true) return;
+            this.processGraphPaper.hideTools();
+            if (isStickyNoteElement(cellView.model)) {
+                if (!this.props.isPristine) return;
+                if (this.props.selectionState.length > 0) this.props.resetSelection();
+                showStickyNoteTools(cellView);
+            }
+            if (this.props.nodeSelectionEnabled) {
+                const nodeDataId = cellView.model.attributes.nodeData?.id;
+                if (!nodeDataId) {
+                    return;
+                }
+
+                if (evt.shiftKey || evt.ctrlKey || evt.metaKey || isTouchEvent(evt)) {
+                    this.props.toggleSelection(nodeDataId);
+                } else {
+                    this.props.resetSelection(nodeDataId);
+                }
+            }
+        };
+
+        this.processGraphPaper.on(
+            Events.CELL_POINTERDOWN,
+            handleGraphEvent(handleActionOnLongPress(showNodeDetails, selectNode), null, (view) => !isStickyNoteElement(view.model)),
+        );
+        this.processGraphPaper.on(
+            Events.LINK_POINTERDOWN,
+            handleGraphEvent(
+                handleActionOnLongPress(null, ({ model }) => model.remove(), LONG_PRESS_TIME * 1.5),
+                null,
+            ),
+        );
+
+        this.processGraphPaper.on(
+            Events.CELL_POINTERCLICK,
+            handleGraphEvent(null, selectNode, (view) => !isStickyNoteElement(view.model)),
+        );
+        this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
+        this.processGraphPaper.on(Events.BLANK_POINTERCLICK, hideToolsOnBlankClick);
+
+        this.hooverHandling();
+    }
+
+    handleInjectBetweenNodes = (cell: shapes.devs.Model, cellBelow?: dia.Cell): void => {
+        if (!cell) return;
+        if (cellBelow?.isLink()) {
+            if (this.props.isFragment === true) return;
+            const { scenario, injectNode, processDefinitionData } = this.props;
+            const nodeData = getNodeData(cell, scenario.scenarioGraph);
+            const { sourceNode, targetNode } = getLinkNodes(cellBelow);
+
+            const canInjectNode = GraphUtils.canInjectNode(
+                scenario.scenarioGraph,
+                sourceNode.id,
+                nodeData.id,
+                targetNode.id,
+                processDefinitionData,
+            );
+
+            if (canInjectNode) {
+                injectNode(sourceNode, nodeData, targetNode, cellBelow.attributes.edgeData);
+            }
+        }
+    };
 
     addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position): void {
         if (this.props.isFragment === true) return;
@@ -641,28 +663,6 @@ export class Graph extends React.Component<Props> {
         this.#unhighlightCell(link, className);
     }
 
-    handleInjectBetweenNodes = (cell: shapes.devs.Model, cellBelow?: dia.Cell): void => {
-        if (!cell) return;
-        if (cellBelow?.isLink()) {
-            if (this.props.isFragment === true) return;
-            const { scenario, injectNode, processDefinitionData } = this.props;
-            const nodeData = getNodeData(cell, scenario.scenarioGraph);
-            const { sourceNode, targetNode } = getLinkNodes(cellBelow);
-
-            const canInjectNode = GraphUtils.canInjectNode(
-                scenario.scenarioGraph,
-                sourceNode.id,
-                nodeData.id,
-                targetNode.id,
-                processDefinitionData,
-            );
-
-            if (canInjectNode) {
-                injectNode(sourceNode, nodeData, targetNode, cellBelow.attributes.edgeData);
-            }
-        }
-    };
-
     _prepareContentForExport = (): void => {
         const { options, defs } = this.processGraphPaper;
         this._exportGraphOptions = {
@@ -790,6 +790,18 @@ export class Graph extends React.Component<Props> {
         };
     }
 
+    #graphContainsEdge(from: NodeId, to: NodeId): boolean {
+        return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
+    }
+
+    #findLinkForEdge(edge: Edge): dia.Link {
+        if (!isEdgeConnected(edge) || !this.#graphContainsEdge(edge.from, edge.to)) {
+            return null;
+        }
+        const links = this.graph.getLinks();
+        return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
+    }
+
     private bindPaperEvents() {
         this.processGraphPaper
             //trigger new custom event on finished cell move
@@ -869,18 +881,6 @@ export class Graph extends React.Component<Props> {
         const cells = this.graph.getCells();
         const [cell] = filterDragHovered(cells);
         return cell;
-    }
-
-    #graphContainsEdge(from: NodeId, to: NodeId): boolean {
-        return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
-    }
-
-    #findLinkForEdge(edge: Edge): dia.Link {
-        if (!isEdgeConnected(edge) || !this.#graphContainsEdge(edge.from, edge.to)) {
-            return null;
-        }
-        const links = this.graph.getLinks();
-        return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
     }
 
     private handleReplaceNodes(nodeData: NodeType, cellBelow: shapes.devs.Model) {
