@@ -10,6 +10,7 @@ case class NuExceptionInfo(
     nodeComponentInfo: Option[NodeComponentInfo],
     throwable: Throwable,
     context: Context,
+    // TODO: rename/describe what is the purpose of input
     input: String,
     timestamp: Instant
 ) extends Serializable
@@ -30,6 +31,8 @@ object NuExceptionInfo {
     )
   }
 
+  // TODO: Maybe we should unwrap some common wrapping exceptions such as ExecutionException, CompletionException, InvocationTargetException
+  //       to provide more detailed information about cause of problem?
   def apply(
       nodeComponentInfo: Option[NodeComponentInfo],
       throwable: Throwable,
