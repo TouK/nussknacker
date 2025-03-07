@@ -6,7 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Configuration changes
 
-* [#todo](todo) maxNotesCount in stickyNotesSettings is now optional - if not set the amount of sticky notes in scenario is not limited
+* [#7620](https://github.com/TouK/nussknacker/pull/7620) maxNotesCount in stickyNotesSettings is now optional - if not set the amount of sticky notes in scenario is not limited
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
   * maxContentLength - max length of a sticky notes content (characters)
