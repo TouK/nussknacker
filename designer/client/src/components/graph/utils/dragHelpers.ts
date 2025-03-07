@@ -13,7 +13,7 @@ export function getLinkNodes(link: dia.Link): { sourceNode: NodeType; targetNode
     };
 }
 
-export function filterDragHovered(links: dia.Link[] = []): dia.Link[] {
+export function filterDragHovered(links: dia.Cell[] = []): dia.Cell[] {
     return links.filter((l) => l.get(`draggedOver`)).sort((a, b) => b.get(`draggedOver`) - a.get(`draggedOver`));
 }
 
@@ -21,13 +21,16 @@ function getArea(el: g.Rect): number {
     return !el ? 0 : Math.max(1, el.width) * Math.max(1, el.height);
 }
 
-export const setLinksHovered = rafThrottle((graph: dia.Graph, rect?: g.Rect): void => {
-    graph.getLinks().forEach((l) => {
-        let coverRatio = 0;
-        if (rect) {
-            const box = l.getBBox();
-            coverRatio = getArea(box.intersect(rect)) / getArea(box);
-        }
-        l.set(`draggedOver`, coverRatio);
-    });
+export const setLinksHovered = rafThrottle((graph: dia.Graph, rect?: g.Rect, cell?: dia.Cell): void => {
+    graph
+        .getCells()
+        .filter((c) => c !== cell)
+        .forEach((l) => {
+            let coverRatio = 0;
+            if (rect) {
+                const box = l.getBBox();
+                coverRatio = getArea(box.intersect(rect)) / getArea(box);
+            }
+            l.set(`draggedOver`, coverRatio);
+        });
 });

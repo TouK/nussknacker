@@ -11,25 +11,27 @@ export function calculateProcessAfterChange(
     outputEdges: Edge[],
 ): ThunkAction<Promise<ScenarioGraphWithName>> {
     return async (_, getState) => {
-        let changedProcess = scenario.scenarioGraph;
+        let changedGraph = scenario.scenarioGraph;
 
-        changedProcess = cleanupNodeInputEdges(changedProcess, before, after);
+        changedGraph = cleanupNodeInputEdges(changedGraph, before, after);
         if (outputEdges) {
             const processDefinitionData = getProcessDefinitionData(getState());
             const filtered = outputEdges.map(({ to, ...e }) =>
-                changedProcess.nodes.find((n) => n.id === to)
+                changedGraph.nodes.find((n) => n.id === to)
                     ? { ...e, to }
                     : {
                           ...e,
                           to: "",
                       },
             );
-            changedProcess = replaceNodeOutputEdges(changedProcess, processDefinitionData, filtered, before.id);
+            changedGraph = replaceNodeOutputEdges(changedGraph, processDefinitionData, filtered, before.id);
         }
+
+        changedGraph = mapProcessWithNewNode(changedGraph, before, after);
 
         return {
             processName: scenario.name,
-            scenarioGraph: mapProcessWithNewNode(changedProcess, before, after),
+            scenarioGraph: changedGraph,
         };
     };
 }
