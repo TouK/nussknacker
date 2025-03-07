@@ -5,11 +5,13 @@ import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { bindActionCreators } from "redux";
 import {
+    editNode,
     injectNode,
     layoutChanged,
     nodeAdded,
     nodesConnected,
     nodesDisconnected,
+    replaceNode,
     resetSelection,
     stickyNoteAdded,
     stickyNoteDeleted,
@@ -78,6 +80,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     nodesDisconnected,
                     layoutChanged,
                     injectNode,
+                    editNode,
+                    replaceNode,
                     nodeAdded,
                     stickyNoteAdded,
                     stickyNoteUpdated,
