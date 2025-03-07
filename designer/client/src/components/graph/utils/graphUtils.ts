@@ -10,20 +10,27 @@ import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "..
 import NodeUtils from "../NodeUtils";
 
 export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType): ScenarioGraph {
+    const edges = map(scenarioGraph.edges, (e) => {
+        if (isEqual(e.from, before.id)) {
+            return { ...e, from: after.id, to: e.to };
+        } else if (isEqual(e.to, before.id)) {
+            return { ...e, from: e.from, to: after.id };
+        } else {
+            return e;
+        }
+    });
+    const nodes = map(scenarioGraph.nodes, (n) => {
+        const equal = isEqual(n, before);
+        if (equal) {
+            return after;
+        } else {
+            return mapBranchParametersWithNewNode(before.id, after.id, n);
+        }
+    });
     return {
         ...scenarioGraph,
-        edges: map(scenarioGraph.edges, (e) => {
-            if (isEqual(e.from, before.id)) {
-                return { ...e, from: after.id, to: e.to };
-            } else if (isEqual(e.to, before.id)) {
-                return { ...e, from: e.from, to: after.id };
-            } else {
-                return e;
-            }
-        }),
-        nodes: map(scenarioGraph.nodes, (n) => {
-            return isEqual(n, before) ? after : mapBranchParametersWithNewNode(before.id, after.id, n);
-        }),
+        edges: edges,
+        nodes: nodes,
     };
 }
 

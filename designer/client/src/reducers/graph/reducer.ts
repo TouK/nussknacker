@@ -4,7 +4,6 @@ import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction
 import { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import * as GraphUtils from "../../components/graph/utils/graphUtils";
 import { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
@@ -171,15 +170,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
-                const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);
-                const scenarioGraph = GraphUtils.deleteNode(stateAfterNodeDelete.scenario.scenarioGraph, idToDelete);
-                return {
-                    ...stateAfterNodeDelete,
-                    scenario: {
-                        ...stateAfterNodeDelete.scenario,
-                        scenarioGraph: scenarioGraph,
-                    },
-                };
+                return updateAfterNodeDelete(state, idToDelete);
             }, state);
         }
         case "NODES_CONNECTED": {
