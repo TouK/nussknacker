@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo } from "react";
 import { Box, Button, Typography } from "@mui/material";
+import { uniq } from "lodash";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
-import { SearchLabel } from "../../sidePanels/SearchLabel";
-import { resolveSearchQuery, searchQueryToString, selectorByName } from "./utils";
-import { SearchQuery } from "./SearchResults";
-import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
 import { useSelector } from "react-redux";
+import { getComponentGroups } from "../../../reducers/selectors/getComponentGroups";
 import { getScenario } from "../../../reducers/selectors/graph";
 import NodeUtils from "../../graph/NodeUtils";
-import { uniq } from "lodash";
-import { getComponentGroups } from "../../../reducers/selectors/settings";
+import { SearchLabel } from "../../sidePanels/SearchLabel";
+import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
+import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
+import { SearchQuery } from "./SearchResults";
+import { resolveSearchQuery, searchQueryToString, selectorByName } from "./utils";
 
 export function AdvancedSearchFilters({
     filterFields,
