@@ -1,5 +1,5 @@
-import { StickyNoteType } from "../../../types/stickyNote";
 import { ComponentGroup } from "../../../types";
+import { StickyNoteType } from "../../../types/stickyNote";
 
 const noteModel = { id: "StickyNoteToAdd", type: StickyNoteType, isDisabled: false };
 export const stickyNoteComponentGroup = (pristine: boolean) => {
