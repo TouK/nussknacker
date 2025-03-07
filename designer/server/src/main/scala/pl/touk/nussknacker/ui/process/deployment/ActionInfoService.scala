@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.definition.action.{ActionInfoProvider, CannotCompileScenario}
+import pl.touk.nussknacker.engine.definition.action.ActionInfoProvider
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{
   CannotCompileScenario => ApiCannotCompileScenario
@@ -18,39 +19,54 @@ import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.{
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
-class ActionInfoService(actionInfoProvider: ActionInfoProvider, processResolver: UIProcessResolver) {
+import scala.concurrent.{ExecutionContext, Future}
+
+class ActionInfoService(
+    actionInfoProvider: ActionInfoProvider,
+    processResolver: UIProcessResolver,
+    scenarioResolver: ScenarioResolver
+) extends LazyLogging {
 
   def getActionParameters(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
   )(
-      implicit user: LoggedUser
-  ): Either[ActionInfoError, UiActionParameters] = {
-    val canonical = processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment)
-    val parameters = actionInfoProvider
-      .getActionParameters(processVersion, canonical)
-      .map(_.map { case (scenarioActionName, nodeParamsMap) =>
-        scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
-          UiActionNodeParameters(
-            NodeId(nodeComponentInfo.nodeId),
-            nodeComponentInfo.componentId.getOrElse(throw new IllegalStateException("ComponentId is not present")),
-            params.map { case (name, value) =>
-              name.value -> UiActionParameterConfig(
-                value.defaultValue,
-                value.editor.getOrElse(RawParameterEditor),
-                value.label,
-                value.hintText
-              )
+      implicit user: LoggedUser,
+      executionContext: ExecutionContext
+  ): Future[Either[ActionInfoError, UiActionParameters]] =
+    for {
+      canonical <- Future.successful(processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment))
+      canonicalWithResolvedFragments <- scenarioResolver.resolveScenarioAsync(canonical)
+    } yield {
+      canonicalWithResolvedFragments.toEither
+        .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
+        case Right(parameters) =>
+          val mappedParams = parameters
+            .map { case (scenarioActionName, nodeParamsMap) =>
+              scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
+                UiActionNodeParameters(
+                  NodeId(nodeComponentInfo.nodeId),
+                  nodeComponentInfo.componentId.getOrElse(
+                    throw new IllegalStateException("ComponentId is not present")
+                  ),
+                  params.map { case (name, value) =>
+                    name.value -> UiActionParameterConfig(
+                      value.defaultValue,
+                      value.editor.getOrElse(RawParameterEditor),
+                      value.label,
+                      value.hintText
+                    )
+                  }
+                )
+              }.toList
             }
-          )
-        }.toList
-      })
-    parameters match {
-      case Left(CannotCompileScenario) => Left(ApiCannotCompileScenario)
-      case Right(value)                => Right(UiActionParameters(value))
+          Right(UiActionParameters(mappedParams))
+        case Left(e) =>
+          logger.warn(s"Scenario compilation failed with error: $e while getting action parameters")
+          Left(ApiCannotCompileScenario)
+      }
     }
-  }
 
 }
 

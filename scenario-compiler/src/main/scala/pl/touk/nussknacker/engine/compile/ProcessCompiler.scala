@@ -51,6 +51,7 @@ class ProcessCompiler(
       customProcessValidator
     )
 
+  // ProcessCompiler does not compile fragment, you must resolve it with ScenarioResolver before!
   override def compile(
       process: CanonicalProcess
   )(implicit jobData: JobData): CompilationResult[CompiledProcessParts] = {
