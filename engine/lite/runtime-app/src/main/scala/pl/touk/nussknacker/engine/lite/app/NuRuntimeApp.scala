@@ -7,7 +7,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{parser, Decoder, Json}
+import io.circe.{parser, Decoder}
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
 import java.nio.file.Path
 import scala.concurrent.duration._
-import scala.io.Source
 import scala.util.control.NonFatal
 
 object NuRuntimeApp extends IOApp with LazyLogging {
