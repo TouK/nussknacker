@@ -1,17 +1,17 @@
 import React, { forwardRef } from "react";
 import ReactAce from "react-ace/lib/ace";
-import { RawEditor, RawEditorProps } from "../../editors/expression/RawEditor";
-import { ExpressionLang } from "../../editors/expression/types";
+import { SpelEditor, SpelEditorProps } from "../../editors/expression/SpelEditor";
+import { ExpressionLang, ExpressionObj } from "../../editors/expression/types";
 
-type EditorProps = Omit<RawEditorProps, "expressionObj" | "onValueChange" | "fieldErrors"> & {
+type EditorProps = Omit<SpelEditorProps, "expressionObj" | "onValueChange" | "fieldErrors"> & {
     value: string;
-    onChange: (value: string) => void;
+    onChange: (value: ExpressionObj) => void;
 };
 
 export const Editor = forwardRef<ReactAce, EditorProps>(function Editor(props, ref) {
     const { value, onChange, ...passProps } = props;
     return (
-        <RawEditor
+        <SpelEditor
             ref={ref}
             {...passProps}
             fieldErrors={[]}

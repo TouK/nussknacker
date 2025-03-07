@@ -53,7 +53,7 @@ export default function ValidationFields({
                     fieldLabel({ label: t("fragment.validation.validationExpression", "Validation expression:"), required: true })
                 }
                 expressionObj={validationExpression}
-                onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value)}
+                onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value.expression)}
                 variableTypes={extendedVariableType}
                 readOnly={readOnly}
                 fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}

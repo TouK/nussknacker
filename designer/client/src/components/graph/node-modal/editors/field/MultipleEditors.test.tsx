@@ -66,8 +66,8 @@ describe("MultipleEditors", () => {
         const onValueChangeMock = jest.fn();
 
         const editors: ParamType["editors"] = [
-            { type: EditorType.DICT_PARAMETER_EDITOR, language: ExpressionLang.DictKeyWithLabel },
-            { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR, language: ExpressionLang.SpELTemplate },
+            { type: EditorType.DICT_PARAMETER_EDITOR },
+            { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
         ];
 
         const expressionObj = { language: ExpressionLang.SpELTemplate, expression: "works" };
@@ -89,10 +89,7 @@ describe("MultipleEditors", () => {
     it("Should set selected editor as first available when expression exists and each editors have the same language", () => {
         const onValueChangeMock = jest.fn();
 
-        const editors: ParamType["editors"] = [
-            { type: EditorType.RAW_PARAMETER_EDITOR, language: ExpressionLang.SpEL },
-            { type: EditorType.DURATION_EDITOR, language: ExpressionLang.SpEL },
-        ];
+        const editors: ParamType["editors"] = [{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.DURATION_EDITOR }];
 
         const expressionObj = { language: ExpressionLang.SpEL, expression: "works" };
 

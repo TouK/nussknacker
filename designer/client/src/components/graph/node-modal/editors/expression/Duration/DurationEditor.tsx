@@ -1,12 +1,14 @@
 import React, { useCallback, useMemo } from "react";
-import { ExpressionObj } from "../types";
+import { ExpressionLang, ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { isEmpty } from "lodash";
-import { ExtendedEditor } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
+
+const language = ExpressionLang.SpEL;
 
 export type Duration = {
     days: number;
@@ -17,7 +19,7 @@ export type Duration = {
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
@@ -76,6 +78,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
+            language={language}
         />
     );
 };
@@ -90,6 +93,7 @@ DurationEditor.notSwitchableToHint = () =>
         "editors.duration.noSwitchableToHint",
         "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode",
     );
+DurationEditor.language = language;
 
 export function duration(decodeExecResult) {
     const duration = decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);

@@ -9,7 +9,7 @@ import { css, cx } from "@emotion/css";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import NodeUtils from "../NodeUtils";
 import { uniq } from "lodash";
-import { ExpressionLang } from "./editors/expression/types";
+import { ExpressionLang, ExpressionObj } from "./editors/expression/types";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "./editors/Validators";
@@ -73,7 +73,7 @@ export function EdgeFields(props: Props): JSX.Element {
     );
 
     const onValueChange = useCallback(
-        (expression) =>
+        ({ expression }: ExpressionObj) =>
             setEdge((e) => ({
                 ...e,
                 edgeType: {

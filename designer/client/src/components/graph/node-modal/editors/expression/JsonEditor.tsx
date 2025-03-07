@@ -7,12 +7,14 @@ import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsCo
 import { FieldError } from "../Validators";
 import AceEditor from "./ace";
 import { DEFAULT_OPTIONS } from "./AceWrapper";
-import { SimpleEditor } from "./Editor";
-import { ExpressionObj } from "./types";
+import { OnValueChange, SimpleEditor } from "./Editor";
+import { ExpressionLang, ExpressionObj } from "./types";
+
+const language = ExpressionLang.JSON;
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     className: string;
     showValidation?: boolean;
     fieldErrors: FieldError[];
@@ -35,7 +37,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     const onChange = (newValue: string) => {
         setValue(newValue);
 
-        onValueChange(newValue);
+        onValueChange({ expression: newValue, language });
     };
 
     const THEME = "nussknacker";
@@ -79,3 +81,5 @@ export const JsonEditor: SimpleEditor<Props> = ({
 };
 
 export default JsonEditor;
+
+JsonEditor.language = language;

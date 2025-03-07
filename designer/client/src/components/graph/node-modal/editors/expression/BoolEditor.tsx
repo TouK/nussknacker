@@ -3,12 +3,12 @@ import { isEmpty } from "lodash";
 import React from "react";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
-import { ExtendedEditor } from "./Editor";
+import { ExtendedEditor, OnValueChange } from "./Editor";
 import { FieldError } from "../Validators";
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     readOnly: boolean;
     className: string;
     fieldErrors: FieldError[];
@@ -54,3 +54,4 @@ BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmp
 BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");
 BoolEditor.notSwitchableToHint = () =>
     i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to basic mode");
+BoolEditor.language = ExpressionLang.SpEL;

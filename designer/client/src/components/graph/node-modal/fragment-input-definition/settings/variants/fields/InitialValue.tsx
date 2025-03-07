@@ -8,7 +8,7 @@ import { VariableTypes } from "../../../../../../../types";
 import { FieldError } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor";
-import { RawEditor } from "../../../../editors/expression/RawEditor";
+import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 
 interface InitialValue {
     item: FragmentInputParameter;
@@ -49,14 +49,16 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                     fieldErrors={fieldErrors}
                     showValidation={validationEnabled}
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.expression }}
-                    onValueChange={(value) => onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value })}
+                    onValueChange={(value) =>
+                        onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value.expression })
+                    }
                     editorConfig={{ dictId: item.valueEditor.dictId }}
                     readOnly={!item.valueEditor.dictId}
                 />
             ) : (
-                <RawEditor
+                <SpelEditor
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.label }}
-                    onValueChange={(value) => onChange(`${path}.initialValue`, { label: value, expression: value })}
+                    onValueChange={({ expression }) => onChange(`${path}.initialValue`, { label: expression, expression })}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                     showValidation={validationEnabled}

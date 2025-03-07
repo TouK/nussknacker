@@ -1,9 +1,9 @@
 import { BoolEditor } from "./BoolEditor";
-import { RawEditor } from "./RawEditor";
+import { SpelEditor } from "./SpelEditor";
 import { SqlEditor } from "./SqlEditor";
 import { StringEditor } from "./StringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
-import { ExpressionObj } from "./types";
+import { ExpressionLang, ExpressionObj } from "./types";
 import React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
@@ -37,8 +37,8 @@ export type EditorProps = {
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> =
-    | React.ComponentType<P & EditorProps>
-    | ForwardRefExoticComponent<P & EditorProps>;
+    | (React.ComponentType<P & EditorProps> & { language: ExpressionLang })
+    | (ForwardRefExoticComponent<P & EditorProps> & { language: ExpressionLang });
 
 export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
@@ -58,7 +58,7 @@ export enum DualEditorMode {
 }
 
 export enum EditorType {
-    RAW_PARAMETER_EDITOR = "RawParameterEditor",
+    SPEL_PARAMETER_EDITOR = "SpelParameterEditor",
     BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
     STRING_PARAMETER_EDITOR = "StringParameterEditor",
     FIXED_VALUES_PARAMETER_EDITOR = "FixedValuesParameterEditor",
@@ -89,7 +89,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR]: FixedValuesEditor,
     [EditorType.JSON_PARAMETER_EDITOR]: JsonEditor,
     [EditorType.PERIOD_EDITOR]: PeriodEditor,
-    [EditorType.RAW_PARAMETER_EDITOR]: RawEditor,
+    [EditorType.SPEL_PARAMETER_EDITOR]: SpelEditor,
     [EditorType.STRING_PARAMETER_EDITOR]: StringEditor,
     [EditorType.TEXTAREA_PARAMETER_EDITOR]: TextareaEditor,
     [EditorType.TIME]: TimeEditor,
@@ -109,7 +109,7 @@ export const editorNames: Record<EditorType, { displayName: string; icon?: strin
     [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: { displayName: "Fixed Values" },
     [EditorType.JSON_PARAMETER_EDITOR]: { displayName: "Json" },
     [EditorType.PERIOD_EDITOR]: { displayName: "Period" },
-    [EditorType.RAW_PARAMETER_EDITOR]: { displayName: "SpEL" },
+    [EditorType.SPEL_PARAMETER_EDITOR]: { displayName: "SpEL" },
     [EditorType.STRING_PARAMETER_EDITOR]: { displayName: "String" },
     [EditorType.TEXTAREA_PARAMETER_EDITOR]: { displayName: "Textarea" },
     [EditorType.TIME]: { displayName: "Time" },
@@ -117,8 +117,9 @@ export const editorNames: Record<EditorType, { displayName: string; icon?: strin
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: { displayName: "SpEL Template" },
     [EditorType.DICT_PARAMETER_EDITOR]: { displayName: "Dictionary" },
     [EditorType.TABLE_EDITOR]: { displayName: "Table" },
+    [EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR]: { displayName: "Radio" },
 };
 
 export type OnValueChange = {
-    (expression: ExpressionObj | string): void;
+    (expression: ExpressionObj): void;
 };

@@ -116,8 +116,8 @@ export function AggregatorFieldsStack({
     );
 
     const onChangeExpression = useCallback(
-        (value: string) => {
-            onChange(uuid, { expression: value });
+        ({ expression }: ExpressionObj) => {
+            onChange(uuid, { expression });
         },
         [onChange, uuid],
     );

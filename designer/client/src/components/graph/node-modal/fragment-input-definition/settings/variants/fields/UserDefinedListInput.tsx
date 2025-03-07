@@ -1,5 +1,4 @@
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { EditableEditor } from "../../../../editors/EditableEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import AceEditor from "react-ace";
 import { ListItems } from "./ListItems";
@@ -17,7 +16,7 @@ import { useSettings } from "../../SettingsProvider";
 import { Box, Button, CircularProgress, FormControl, Stack } from "@mui/material";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { IAceEditor } from "react-ace/lib/types";
-import { RawEditor } from "../../../../editors/expression/RawEditor";
+import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 
 const ENTER_VALUE_COMMAND = "addValueOnEnter";
 
@@ -184,16 +183,16 @@ export const UserDefinedListInput = ({
             <SettingLabelStyled>{inputLabel}</SettingLabelStyled>
             <Box width={"80%"} flex={1}>
                 <Stack direction="row" paddingY={1} spacing={1} justifyContent={"space-between"} alignItems={"start"}>
-                    <RawEditor
+                    <SpelEditor
                         validationLabelInfo={
                             temporaryValuesTyping && <CircularProgress size={"1rem"} sx={(theme) => ({ marginTop: theme.spacing(0.5) })} />
                         }
                         expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
                         onValueChange={(value) => {
-                            setTemporaryListItem(value);
+                            setTemporaryListItem(value.expression);
                             setTemporaryValuesTyping(true);
                             setTemporaryValueErrors([]);
-                            validateTemporaryListItem(value);
+                            validateTemporaryListItem(value.expression);
                             setIsEnterPressed(false);
                         }}
                         variableTypes={variableTypes}

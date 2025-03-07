@@ -1,5 +1,5 @@
 import i18next from "i18next";
-import { ExpressionObj } from "../types";
+import { ExpressionLang, ExpressionObj } from "../types";
 import React from "react";
 import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
 import { isEmpty } from "lodash";
@@ -7,6 +7,7 @@ import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { ExtendedEditor } from "../Editor";
 
+const language = ExpressionLang.SpEL;
 const dateFormat = "YYYY-MM-DD";
 const timeFormat = "HH:mm";
 const dateTimeFormat = `${dateFormat} ${timeFormat}`;
@@ -28,6 +29,7 @@ export const DateTimeEditor: ExtendedEditor<DateTimeEditorProps> = (props: DateT
             dateFormat={dateFormat}
             timeFormat={timeFormat}
             formatter={dateFormatter}
+            language={language}
         />
     );
 };
@@ -36,3 +38,4 @@ DateTimeEditor.switchableToHint = () => i18next.t("editors.LocalDateTime.switcha
 DateTimeEditor.notSwitchableToHint = () =>
     i18next.t("editors.LocalDateTime.notSwitchableToHint", "Expression must be valid dateTime to switch to basic mode");
 DateTimeEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);
+DateTimeEditor.language = language;

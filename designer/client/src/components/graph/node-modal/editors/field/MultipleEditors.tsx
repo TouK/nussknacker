@@ -27,7 +27,10 @@ export const MultipleEditors = (props: Props) => {
     const { param, onValueChange } = props;
 
     const [selectedEditor, setSelectedEditor] = useState(
-        param.editors.filter((editor) => editor.language === props.expressionObj.language)?.[0] ?? param.editors[0],
+        param.editors.find((editor) => {
+            const selectedEditor = editors[editor.type];
+            return selectedEditor.language === props.expressionObj.language;
+        }) ?? param.editors[0],
     );
     const Editor = editors[selectedEditor.type];
     const availableEditorsOptions: Option[] = param.editors.map((editor) => ({
@@ -49,10 +52,11 @@ export const MultipleEditors = (props: Props) => {
             <Box>
                 <Box
                     component={TypeSelect}
-                    sx={{ width: "170px !important" }}
+                    sx={{ width: "160px !important" }}
                     onChange={(value) => {
                         const selectedEditor = param.editors.find((editor) => editor.type === value);
-                        onValueChange({ ...props.expressionObj, language: selectedEditor.language });
+                        const editor = editors[selectedEditor.type];
+                        onValueChange({ ...props.expressionObj, language: editor.language });
                         setSelectedEditor(selectedEditor);
                     }}
                     value={availableEditorsOption}

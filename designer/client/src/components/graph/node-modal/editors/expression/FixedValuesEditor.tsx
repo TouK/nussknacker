@@ -1,20 +1,22 @@
 import React from "react";
 import Creatable from "react-select/creatable";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { ExpressionObj } from "./types";
+import { ExpressionLang, ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
-import { EditorType, ExtendedEditor } from "./Editor";
+import { EditorType, ExtendedEditor, OnValueChange } from "./Editor";
 import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 
+const language = ExpressionLang.SpELTemplate;
+
 type Props = {
     editorConfig: $TodoType;
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     readOnly: boolean;
     className: string;
     param?: $TodoType;
@@ -60,7 +62,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
         selectStyled(theme);
     return editorConfig.type === EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR ? (
         <div className={cx(className)}>
-            <RadioGroup value={currentOption.value} onChange={(event) => onValueChange(event.target.value)}>
+            <RadioGroup value={currentOption.value} onChange={(event) => onValueChange({ expression: event.target.value, language })}>
                 {options.map((option: Option) => {
                     const label = option.value === props.param?.defaultValue ? `${option.label} (default)` : option.label;
                     return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
@@ -72,7 +74,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
             <Creatable
                 value={currentOption}
                 classNamePrefix={"test"}
-                onChange={(newValue) => onValueChange(newValue.value)}
+                onChange={(newValue) => onValueChange({ expression: newValue.value, language })}
                 options={options}
                 formatOptionLabel={(option) =>
                     option.icon ? (
@@ -111,7 +113,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                     option: (base, props) => ({
                         ...menuOption(base, props.isSelected, props.isDisabled),
                     }),
-                    valueContainer: (base, props) => ({
+                    valueContainer: (base) => ({
                         ...valueContainer(base),
                     }),
                     singleValue: (base) => ({ ...singleValue(base, props.readOnly) }),
@@ -127,3 +129,4 @@ FixedValuesEditor.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) 
     editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
 FixedValuesEditor.switchableToHint = () => "Switch to basic mode";
 FixedValuesEditor.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
+FixedValuesEditor.language = language;

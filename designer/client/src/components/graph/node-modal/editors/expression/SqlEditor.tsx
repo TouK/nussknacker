@@ -5,10 +5,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactAce from "react-ace/lib/ace";
 import { ExtendedEditor } from "./Editor";
 import { Formatter } from "./Formatter";
-import { RawEditor, RawEditorProps } from "./RawEditor";
+import { SpelEditor, SpelEditorProps } from "./SpelEditor";
 import { isSwitchableTo } from "./StringEditor";
-import { EditorMode } from "./types";
+import { EditorMode, ExpressionLang } from "./types";
 import { Ace } from "ace-builds";
+
+const language = ExpressionLang.SQL;
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -26,7 +28,7 @@ interface EditSession extends Ace.EditSession {
     getMode(): SyntaxMode;
 }
 
-export interface Props extends RawEditorProps {
+export interface Props extends Omit<SpelEditorProps, "language"> {
     formatter: Formatter;
 }
 
@@ -100,7 +102,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
     const ref = useAliasUsageHighlight();
 
     return (
-        <RawEditor
+        <SpelEditor
             {...passProps}
             ref={ref}
             onValueChange={onValueChange}
@@ -108,6 +110,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             className={className}
             rows={6}
             editorMode={EditorMode.SQL}
+            language={language}
         />
     );
 };
@@ -119,3 +122,4 @@ SqlEditor.notSwitchableToHint = () =>
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
+SqlEditor.language = language;

@@ -8,7 +8,6 @@ import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
 import { FieldError } from "../Validators";
 import { ExpressionObj } from "./types";
-import { determineLangaugeBasedOnEditor } from "./EditorBasedLanguageDeterminer";
 
 type Props = {
     fieldName: string;
@@ -50,18 +49,11 @@ function ExpressionField(props: Props): JSX.Element {
     const editors = parameterDefinition?.editors || [];
 
     const onValueChange: OnValueChange = useCallback(
-        (value: ExpressionObj | string) => {
-            const adjustedExpressionLanguage = determineLangaugeBasedOnEditor(editors);
-            if (typeof value === "string") {
-                if (adjustedExpressionLanguage) {
-                    setNodeDataAt(exprLanguagePath, adjustedExpressionLanguage);
-                }
-                return setNodeDataAt(exprTextPath, value);
-            }
+        (value: ExpressionObj) => {
             setNodeDataAt(exprTextPath, value.expression);
-            setNodeDataAt(exprLanguagePath, adjustedExpressionLanguage ?? value.language);
+            setNodeDataAt(exprLanguagePath, value.language);
         },
-        [exprLanguagePath, exprTextPath, setNodeDataAt, editors],
+        [exprLanguagePath, exprTextPath, setNodeDataAt],
     );
 
     if (

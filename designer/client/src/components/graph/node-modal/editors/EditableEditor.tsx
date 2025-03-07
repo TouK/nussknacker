@@ -2,7 +2,7 @@ import { isEmpty } from "lodash";
 import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
-import { editors, EditorType } from "./expression/Editor";
+import { editors, EditorType, OnValueChange } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
@@ -22,7 +22,7 @@ interface Props {
     values?: Array<PossibleValue>;
     isMarked?: boolean;
     showValidation?: boolean;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors?: FieldError[];
     variableTypes: VariableTypes;
     validationLabelInfo?: ReactNode;
@@ -32,13 +32,8 @@ interface Props {
 export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, param, fieldErrors = [], validationLabelInfo } = props;
 
-    if (param?.editor?.type === "DualParameterEditor" && !param?.editors) {
-        param.editors = [];
-        param.editors.push({ type: EditorType.RAW_PARAMETER_EDITOR, language: ExpressionLang.SpEL });
-        param.editors.push({ type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR, language: ExpressionLang.SpELTemplate });
-    }
     const availableEditors = useMemo(
-        (): ParamType["editors"] => (isEmpty(param) ? [{ type: EditorType.RAW_PARAMETER_EDITOR }] : param.editors || [param.editor]),
+        (): ParamType["editors"] => (isEmpty(param) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : param.editors),
         [param],
     );
 

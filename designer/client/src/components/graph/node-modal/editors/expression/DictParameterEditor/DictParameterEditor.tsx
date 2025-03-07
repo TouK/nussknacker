@@ -4,10 +4,9 @@ import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
-import { ExtendedEditor } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
 import { ExpressionLang, ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
-import { ParamType } from "../../types";
 import { NodeInput } from "../../../../../FormElements";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import i18next from "i18next";
@@ -17,9 +16,11 @@ import { isEmpty } from "lodash";
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
 
+const language = ExpressionLang.DictKeyWithLabel;
+
 interface Props {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     editorConfig: $TodoType;
     showValidation: boolean;
@@ -34,7 +35,6 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     showValidation,
     readOnly,
 }: Props) => {
-    console.log("editorConfig", editorConfig);
     const scenario = useSelector(getScenario);
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
@@ -119,7 +119,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange(value ? JSON.stringify(value) : "");
+                    onValueChange({ expression: value ? JSON.stringify(value) : "", language });
                     setValue(value);
                     setOpen(false);
                 }}
@@ -172,3 +172,4 @@ DictParameterEditor.getBasicMode = (expressionObj) => ({
     language: ExpressionLang.DictKeyWithLabel,
     expression: isParseable(expressionObj) ? expressionObj.expression : "",
 });
+DictParameterEditor.language = language;

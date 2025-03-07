@@ -115,7 +115,13 @@ export function CollectionField({ value, onChange, variableTypes, disabled }: Co
             }}
         >
             <Collapse in={editorVisible} unmountOnExit={false} mountOnEnter={false}>
-                <Editor ref={ref} variableTypes={variableTypes} value={expression} onChange={setExpression} readOnly={!disabled} />
+                <Editor
+                    ref={ref}
+                    variableTypes={variableTypes}
+                    value={expression}
+                    onChange={({ expression }) => setExpression(expression)}
+                    readOnly={!disabled}
+                />
             </Collapse>
             <Collapse in={itemsVisible}>
                 <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} />

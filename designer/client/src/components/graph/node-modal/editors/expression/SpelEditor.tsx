@@ -1,17 +1,20 @@
-import React, { ForwardedRef, forwardRef, ReactNode, useMemo } from "react";
+import React, { ForwardedRef, forwardRef, ReactNode, useCallback, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
 import { ExpressionSuggest, ExpressionSuggestProps } from "./ExpressionSuggest";
-import { EditorMode, ExpressionObj } from "./types";
+import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
+import { OnValueChange, SimpleEditor } from "./Editor";
 
-export type RawEditorProps = {
+const defaultlanguage = ExpressionLang.SpEL;
+
+export type SpelEditorProps = {
     expressionObj: ExpressionObj;
     fieldErrors: FieldError[];
     isMarked?: boolean;
     showValidation?: boolean;
     readOnly?: boolean;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     rows?: number;
     cols?: number;
     className?: string;
@@ -19,9 +22,10 @@ export type RawEditorProps = {
     validationLabelInfo?: ReactNode;
     editorMode?: EditorMode;
     placeholder?: string;
+    language?: ExpressionLang;
 };
 
-const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
+const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
     const {
         expressionObj,
         fieldErrors,
@@ -36,24 +40,31 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         validationLabelInfo,
         editorMode,
         placeholder,
+        language = defaultlanguage,
     } = props;
 
+    const handleChange = useCallback(
+        (expression: string) => {
+            onValueChange({ expression, language });
+        },
+        [language, onValueChange],
+    );
+
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
-    const language = useMemo(() => expressionObj.language, [expressionObj.language]);
 
     const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(
         () => ({
-            rows: rows,
-            cols: cols,
-            value: value,
-            language: language,
-            onValueChange: onValueChange,
-            readOnly: readOnly,
+            rows,
+            cols,
+            value,
+            language,
+            onValueChange: handleChange,
+            readOnly,
             ref: forwardedRef,
-            editorMode: editorMode,
-            placeholder: placeholder,
+            editorMode,
+            placeholder,
         }),
-        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode, placeholder],
+        [rows, cols, value, language, handleChange, readOnly, forwardedRef, editorMode, placeholder],
     );
 
     return (
@@ -69,4 +80,5 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
     );
 };
 
-export const RawEditor = forwardRef(RawEditorComponent);
+export const SpelEditor: SimpleEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as SimpleEditor<SpelEditorProps>;
+SpelEditor.language = defaultlanguage;
