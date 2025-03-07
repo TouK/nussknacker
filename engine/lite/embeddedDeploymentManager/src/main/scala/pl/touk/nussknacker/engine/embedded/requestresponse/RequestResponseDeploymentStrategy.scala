@@ -11,6 +11,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -85,16 +86,21 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
     Await.result(server.terminate(akkaHttpSetupTimeout), akkaHttpSetupTimeout)
   }
 
-  override def onScenarioAdded(jobData: JobData, parsedResolvedScenario: CanonicalProcess)(
+  override def onScenarioAdded(
+      jobData: JobData,
+      nodesDeploymentData: NodesDeploymentData,
+      parsedResolvedScenario: CanonicalProcess
+  )(
       implicit ec: ExecutionContext
   ): Try[RequestResponseDeployment] = synchronized {
     // RequestResponseScenarioInterpreter is 'opened' in constructor of RequestResponseRunnableScenarioInterpreter
     lazy val interpreterTry = Try(
       new RequestResponseRunnableScenarioInterpreter(
-        jobData,
-        parsedResolvedScenario,
         modelData,
         contextPreparer,
+        parsedResolvedScenario,
+        jobData,
+        nodesDeploymentData,
         config
       )
     )

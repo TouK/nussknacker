@@ -2,10 +2,17 @@ package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ParamName, Service}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentProvider,
+  NussknackerVersion,
+  ParameterConfig
+}
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ProcessObjectDependencies}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class TestComponentProvider extends ComponentProvider {
   override def providerName: String                               = "test"
@@ -14,7 +21,8 @@ class TestComponentProvider extends ComponentProvider {
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-    ComponentDefinition("env", new EnvService)
+    ComponentDefinition("env", new EnvService),
+    ComponentDefinition("deploy-param-service", new DeployParamService),
   )
 
 }
@@ -22,7 +30,24 @@ class TestComponentProvider extends ComponentProvider {
 class EnvService extends Service {
 
   @MethodToInvoke
-  def invoke(@ParamName("name") name: String)(implicit nodeId: NodeId): Future[String] =
-    Future.successful(System.getenv(name))
+  def invoke(@ParamName("name") name: String)(implicit ec: ExecutionContext): Future[String] =
+    Future {
+      System.getenv(name)
+    }
+
+}
+
+class DeployParamService extends Service with WithActionParametersSupport {
+
+  @MethodToInvoke
+  def invoke(implicit useContext: ComponentUseContext, ec: ExecutionContext): Future[String] =
+    Future {
+      val deploymentData = useContext.deploymentData.getOrElse(Map.empty)
+      deploymentData.get("deployParam").orNull
+    }
+
+  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = Map(
+    ScenarioActionName.Deploy -> Map(ParameterName("deployParam") -> ParameterConfig.empty)
+  )
 
 }

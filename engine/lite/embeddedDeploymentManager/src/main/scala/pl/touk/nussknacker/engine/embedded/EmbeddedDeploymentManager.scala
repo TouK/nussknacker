@@ -113,7 +113,7 @@ class EmbeddedDeploymentManager(
       throwInterpreterRunExceptionsImmediately: Boolean
   ) = {
 
-    val interpreterTry = runInterpreter(processVersion, parsedResolvedScenario)
+    val interpreterTry = runInterpreter(processVersion, deploymentData, parsedResolvedScenario)
     interpreterTry match {
       case Failure(ex) if throwInterpreterRunExceptionsImmediately =>
         throw ex
@@ -129,9 +129,13 @@ class EmbeddedDeploymentManager(
     )
   }
 
-  private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess) = {
+  private def runInterpreter(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      parsedResolvedScenario: CanonicalProcess
+  ) = {
     val jobData = JobData(parsedResolvedScenario.metaData, processVersion)
-    deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
+    deploymentStrategy.onScenarioAdded(jobData, deploymentData.nodesData, parsedResolvedScenario)
   }
 
   private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {

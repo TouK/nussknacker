@@ -108,10 +108,7 @@ class FlinkTestScenarioRunnerSpec
         .runWithData[String, String](
           scenario,
           List("data"),
-          processVersion = ProcessVersion.empty.copy(
-            processName = scenario.name,
-            labels = List("abc", "def")
-          )
+          labels = List("abc", "def")
         )
 
     runResults.validValue.successes shouldBe List(List("abc", "def").asJava)

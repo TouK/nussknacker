@@ -10,6 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -120,12 +121,16 @@ class BaseK8sDeploymentManagerTest
       with Matchers
       with LazyLogging {
 
-    def withRunningScenario(action: => Unit): Unit = {
+    final def withRunningScenario(action: => Unit): Unit = {
+      withRunningScenarioWithDeployParams(nodesData = NodesDeploymentData.empty)(action)
+    }
+
+    def withRunningScenarioWithDeployParams(nodesData: NodesDeploymentData)(action: => Unit): Unit = {
       manager
         .processCommand(
           DMRunDeploymentCommand(
             version,
-            DeploymentData.empty,
+            DeploymentData.empty.copy(nodesData = nodesData),
             scenario,
             DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
