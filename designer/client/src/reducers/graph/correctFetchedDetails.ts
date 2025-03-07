@@ -1,6 +1,6 @@
-import { Edge, ScenarioGraph, ProcessDefinitionData } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { Scenario } from "../../components/Process/types";
+import { Edge, ProcessDefinitionData, ScenarioGraph } from "../../types";
 
 function getEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData?: ProcessDefinitionData) {
     return ({ from }: Edge): boolean => {
@@ -12,7 +12,7 @@ function getEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData?: 
 
 // TODO: This should be one on the BE side
 export function correctFetchedDetails(data: Scenario, definitionData?: ProcessDefinitionData): Scenario {
-    const { scenarioGraph: scenarioGraph } = data;
+    const { scenarioGraph } = data;
     const { edges } = scenarioGraph;
     const isValidEdge = getEdgeValidator(scenarioGraph, definitionData);
     return {

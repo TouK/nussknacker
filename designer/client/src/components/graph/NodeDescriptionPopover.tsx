@@ -2,10 +2,12 @@ import { Grow, Paper, PopoverProps, Popper } from "@mui/material";
 import { dia } from "jointjs";
 import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Graph } from "./Graph";
+import { useSelector } from "react-redux";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
+import { getNodeData, Graph } from "./Graph";
+import { isStickyNoteElement } from "./GraphPartialsInTS";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 import { Events } from "./types";
-import { isStickyNoteElement } from "./GraphPartialsInTS";
 
 const useTimeout = <A extends Array<unknown>>(
     callback: (...args: A) => void,
@@ -114,7 +116,7 @@ type NodeDescriptionPopoverProps = {
 export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
     const { t } = useTranslation();
     const { graphRef, enterTimeout = 800, leaveTimeout = 200 } = props;
-
+    const scenarioGraph = useSelector(getScenarioGraph);
     const [open, setOpen] = useState(false);
     const [[description, anchorEl], setData] = useState<[string, PopoverProps["anchorEl"]]>([null, null]);
     const lastTarget = useRef<Element | null>(null);
@@ -124,7 +126,7 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
         setData(
             el
                 ? [t("graph.node.counts.title", "number of messages that passed downstream"), el]
-                : [view.model.get("nodeData")?.additionalFields?.description, view.el],
+                : [getNodeData(view.model, scenarioGraph)?.additionalFields?.description, view.el],
         );
         setOpen(true);
         lastTarget.current = el || view.el;

@@ -1,6 +1,6 @@
-import { CSSProperties } from "react";
 import { alpha, css, styled, Theme } from "@mui/material";
 import { blend } from "@mui/system";
+import { CSSProperties } from "react";
 import { blendLighten } from "../../containers/theme/helpers";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
@@ -67,6 +67,10 @@ const nodeStyles = (theme: Theme) => {
             blend(theme.palette.background.paper, theme.palette.success.main, 0.4),
         ),
     });
+};
+
+const getShadow = (size = 2, size2 = 2 * size, color = `rgba(0, 255, 255, .25)`) => {
+    return `drop-shadow(${size}px ${size}px ${size2}px ${color}) drop-shadow(${size}px -${size}px ${size2}px ${color}) drop-shadow(-${size}px ${size}px ${size2}px ${color}) drop-shadow(-${size}px -${size}px ${size2}px ${color})`;
 };
 
 export const GraphStyledWrapper = styled("div")(({ theme }) =>
@@ -143,6 +147,7 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                     },
                 },
                 [`&.${dragHovered}`]: {
+                    filter: getShadow(),
                     ".connection": {
                         strokeWidth: "3",
                         strokeDasharray: "3 0 3",
@@ -179,6 +184,9 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
             ".joint-type-esp-model": {
                 ".body .joint-port-body .background": {
                     transition: "all 0.25s ease-in-out",
+                },
+                [`&.${dragHovered}`]: {
+                    filter: getShadow(),
                 },
             },
             ".sticky-note-markdown": {
