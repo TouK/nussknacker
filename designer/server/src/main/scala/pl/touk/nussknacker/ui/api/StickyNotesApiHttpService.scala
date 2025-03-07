@@ -165,11 +165,15 @@ class StickyNotesApiHttpService(
       stickyNotesConfig: StickyNotesSettings
   ): EitherT[Future, StickyNotesError, Unit] =
     EitherT.fromEither(
-      Either.cond(
-        stickyNotesCount < stickyNotesConfig.maxNotesCount,
-        (),
-        StickyNoteCountLimitReached(stickyNotesConfig.maxNotesCount)
-      )
+      stickyNotesConfig.maxNotesCount match {
+        case Some(maxNotesCount) =>
+          Either.cond(
+            stickyNotesCount < maxNotesCount,
+            (),
+            StickyNoteCountLimitReached(maxNotesCount)
+          )
+        case None => Right(())
+      }
     )
 
   private def addStickyNote(scenarioId: ProcessId, requestBody: StickyNoteAddRequest)(
