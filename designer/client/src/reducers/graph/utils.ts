@@ -1,4 +1,4 @@
-import { cloneDeep, Dictionary, reject, zipObject } from "lodash";
+import { cloneDeep, Dictionary, mapValues, reject, snakeCase, zipObject } from "lodash";
 import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { StickyNote } from "../../common/StickyNote";
@@ -64,14 +64,25 @@ export function prepareNewNodesWithLayout(
         isCopy,
     );
     return {
-        nodes: newNodesWithPositions.map(({ node }) => ({
-            ...node,
-            id: idMapping[node.id],
-            branchParameters: node.branchParameters?.map((parameter) => ({
-                ...parameter,
-                branchId: idMapping[parameter.branchId],
-            })),
-        })),
+        nodes: newNodesWithPositions.map(({ node }) =>
+            mapValues(node, (value, key) => {
+                switch (key) {
+                    case "id":
+                        return idMapping[value];
+                    case "branchParameters":
+                        return value?.map((parameter) => ({
+                            ...parameter,
+                            branchId: idMapping[parameter.branchId],
+                        }));
+                    case "output":
+                    case "varName":
+                    case "outputVar":
+                        return snakeCase(`${idMapping[node.id]} ${value}`);
+                    default:
+                        return value;
+                }
+            }),
+        ),
         layout: newNodesWithPositions.map(({ position, node }) => ({
             id: idMapping[node.id],
             position,
