@@ -2,7 +2,12 @@ import { css, cx } from "@emotion/css";
 import { alpha, styled, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
 import React from "react";
+import { useSelector } from "react-redux";
+import { usePreviousDifferent } from "rooks";
 import { blendLighten, getBorderColor } from "../containers/theme/helpers";
+import { RootState } from "../reducers";
+import { getIdMapping } from "../reducers/graph/utils";
+import { getNodes } from "../reducers/selectors/graph";
 import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
@@ -81,13 +86,23 @@ export function ComponentPreview({ node, isActive, isOver }: ComponentPreviewPro
 
     const colors = isOver ? nodeColorsHover : nodeColors;
 
+    const getId = useSelector((s: RootState) => {
+        const nodes = getNodes(s);
+        return (id: string) => {
+            const idMapping = getIdMapping(nodes, [{ id }]);
+            return idMapping[id];
+        };
+    });
+
+    const id = usePreviousDifferent(getId(node?.id));
+
     return (
         <div className={cx(colors, nodeStyles)}>
             <div className={cx(imageStyles, imageColors)}>
                 <ComponentIcon node={node} />
             </div>
             <ContentStyled>
-                <span>{node?.id}</span>
+                <span>{isActive ? getId(node?.id) : id}</span>
                 {NodeUtils.hasInputs(node) && <Port className={cx(css({ top: 0, transform: "translateY(-50%)" }), colors)} />}
                 {NodeUtils.hasOutputs(node) && <Port className={cx(css({ bottom: 0, transform: "translateY(50%)" }), colors)} />}
             </ContentStyled>
