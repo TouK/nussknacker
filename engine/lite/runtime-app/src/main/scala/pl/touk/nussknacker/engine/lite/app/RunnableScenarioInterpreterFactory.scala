@@ -22,7 +22,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
   def prepareScenarioInterpreter(
       scenario: CanonicalProcess,
       runtimeConfig: Config,
-      deploymentConfig: Config,
+      deploymentData: LiteDeploymentData,
       system: ActorSystem
   ): Resource[IO, RunnableScenarioInterpreter] = {
     for {
@@ -39,10 +39,16 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
             )
             val metricRegistry = prepareMetricRegistry(runtimeConfig, modelData.namingStrategy.namespace)
             val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
-            // TODO Pass correct ProcessVersion and DeploymentData
-            val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+            val jobData  = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
-            prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
+            prepareScenarioInterpreter(
+              scenario,
+              runtimeConfig,
+              jobData,
+              deploymentData,
+              modelData,
+              preparer
+            )(system)
           }
         )(
           release = scenarioInterpreter => IO.delay(scenarioInterpreter.close())
@@ -54,7 +60,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
       scenario: CanonicalProcess,
       runtimeConfig: Config,
       jobData: JobData,
-      deploymentConfig: Config,
+      deploymentData: LiteDeploymentData,
       modelData: ModelData,
       preparer: LiteEngineRuntimeContextPreparer
   )(implicit system: ActorSystem) = {
@@ -62,15 +68,23 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
     scenario.metaData.typeSpecificData match {
       case _: LiteStreamMetaData =>
         KafkaTransactionalScenarioInterpreter(
+          modelData,
+          preparer,
           scenario,
           jobData,
-          deploymentConfig.as[LiteKafkaJobData],
-          modelData,
-          preparer
+          deploymentData.nodesData,
+          LiteKafkaJobData(deploymentData.tasksCountUnsafe),
         )
       case _: RequestResponseMetaData =>
         val requestResponseConfig = runtimeConfig.as[RequestResponseConfig]("request-response")
-        new RequestResponseRunnableScenarioInterpreter(jobData, scenario, modelData, preparer, requestResponseConfig)
+        new RequestResponseRunnableScenarioInterpreter(
+          modelData,
+          preparer,
+          scenario,
+          jobData,
+          deploymentData.nodesData,
+          requestResponseConfig
+        )
       case other =>
         throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
     }

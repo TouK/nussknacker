@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
@@ -71,14 +72,15 @@ object KafkaTransactionalScenarioInterpreter {
   def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
   def apply(
+      modelData: ModelData,
+      engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer,
       scenario: CanonicalProcess,
       jobData: JobData,
+      nodesDeploymentData: NodesDeploymentData,
       liteKafkaJobData: LiteKafkaJobData,
-      modelData: ModelData,
-      engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
   )(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, jobData, modelData)
+      .createInterpreter[Future, Input, Output](scenario, jobData, nodesDeploymentData, modelData)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     new KafkaTransactionalScenarioInterpreter(
       interpreter,

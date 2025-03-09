@@ -60,11 +60,11 @@ object ScenarioInterpreterFactory {
   def createInterpreter[F[_]: Monad, Input, Res <: AnyRef](
       process: CanonicalProcess,
       jobData: JobData,
+      nodesDeploymentData: NodesDeploymentData,
       modelData: ModelData,
       additionalListeners: List[ProcessListener] = Nil,
       resultCollector: ResultCollector = ProductionServiceInvocationCollector,
       runtimeMode: RuntimeMode = RuntimeMode.Live,
-      nodesDeploymentData: NodesDeploymentData = NodesDeploymentData.empty
   )(
       implicit ec: ExecutionContext,
       shape: InterpreterShape[F],

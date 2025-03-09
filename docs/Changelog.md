@@ -114,7 +114,8 @@
   * Added a list of editors to the UIParameter.
 * [#7616](https://github.com/TouK/nussknacker/pull/7616) (K8s DM) Fix for: k8s object name sanitizing strategy sometimes generated invalid object names, in other cases, 
   it generated names with unnecessary characters appended
-  
+* [#7615](https://github.com/TouK/nussknacker/pull/7615) Updated Flink dependency to 1.19.2
+
 ## 1.18
 
 #### Highlights

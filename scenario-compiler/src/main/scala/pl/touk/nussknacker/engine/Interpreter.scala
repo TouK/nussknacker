@@ -34,7 +34,7 @@ private class InterpreterInternal[F[_]: Monad](
     nodesDeploymentData: NodesDeploymentData,
 )(implicit jobData: JobData) {
 
-  type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
+  type Result[T] = Either[T, NuExceptionInfo]
 
   private val expressionName = "expression"
 
@@ -49,7 +49,7 @@ private class InterpreterInternal[F[_]: Monad](
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = {
+  private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo = {
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
@@ -282,7 +282,7 @@ class Interpreter(
   )(
       implicit monad: Monad[F],
       shape: InterpreterShape[F],
-  ): F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+  ): F[List[Either[InterpretationResult, NuExceptionInfo]]] = {
     implicit val jobDataImplicit: JobData = jobData
     new InterpreterInternal[F](
       listeners,
