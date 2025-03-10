@@ -54,27 +54,28 @@ object SchemaInSqlDetector {
     sql.split("\\s+").toList
   }
 
+  // match "name", "schema"."name" or schema.name() (without ", with ", with ' or `)
+  private val dbObjectPattern = (
+    "^(" +
+      // 1) Unquoted identifier(s)
+      "[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*" +
+      "|" +
+      // 2) Double-quoted identifier(s)
+      "\"[a-zA-Z_][a-zA-Z0-9_]*\"(?:\\.\"[a-zA-Z_][a-zA-Z0-9_]*\")*" +
+      "|" +
+      // 3) Single-quoted identifier(s)
+      "'[a-zA-Z_][a-zA-Z0-9_]*'(?:\\.'[a-zA-Z_][a-zA-Z0-9_]*')*" +
+      "|" +
+      // 4) Backtick-quoted identifier(s)
+      "`[a-zA-Z_][a-zA-Z0-9_]*`(?:\\.`[a-zA-Z_][a-zA-Z0-9_]*`)*" +
+      ")" +
+      // Optionally allow empty parentheses "()"
+      "(?:\\(\\))?" +
+      "$"
+  ).r
+
   private def isLikelyDbObject(token: String): Boolean = {
-    // match "name", "schema"."name" or schema.name() (without ", with ", with ' or `)
-    val pattern = (
-      "^(" +
-        // 1) Unquoted identifier(s)
-        "[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*" +
-        "|" +
-        // 2) Double-quoted identifier(s)
-        "\"[a-zA-Z_][a-zA-Z0-9_]*\"(?:\\.\"[a-zA-Z_][a-zA-Z0-9_]*\")*" +
-        "|" +
-        // 3) Single-quoted identifier(s)
-        "'[a-zA-Z_][a-zA-Z0-9_]*'(?:\\.'[a-zA-Z_][a-zA-Z0-9_]*')*" +
-        "|" +
-        // 4) Backtick-quoted identifier(s)
-        "`[a-zA-Z_][a-zA-Z0-9_]*`(?:\\.`[a-zA-Z_][a-zA-Z0-9_]*`)*" +
-        ")" +
-        // Optionally allow empty parentheses "()"
-        "(?:\\(\\))?" +
-        "$"
-    ).r
-    pattern.matches(token)
+    dbObjectPattern.pattern.matcher(token).matches()
   }
 
   private def hasExplicitSchema(token: String): Boolean = {
