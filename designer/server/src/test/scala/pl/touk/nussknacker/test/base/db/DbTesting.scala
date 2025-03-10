@@ -26,6 +26,7 @@ trait WithTestDb extends BeforeAndAfterAll {
     super.afterAll()
   }
 
+  protected def getSchemaName(): String = testDbConfig.getString("db.schema")
 }
 
 trait WithTestHsqlDb extends WithTestDb {
@@ -70,7 +71,7 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    DatabaseInitializer.initDatabase("db", testDbConfig, "testschema") // todo: fixme
+    DatabaseInitializer.initDatabase("db", testDbConfig)
   }
 
   override protected def afterEach(): Unit = {
@@ -83,19 +84,18 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     }
   }
 
-  // todo: schema?
   def cleanDB(): Try[Unit] = Using(testDbRef.db.createSession()) { session =>
-    session.prepareStatement("""delete from "process_attachments"""").execute()
-    session.prepareStatement("""delete from "process_actions"""").execute()
-    session.prepareStatement("""delete from "process_comments"""").execute()
-    session.prepareStatement("""delete from "scenario_activities"""").execute()
-    session.prepareStatement("""delete from "process_versions"""").execute()
-    session.prepareStatement("""delete from "scenario_labels"""").execute()
-    session.prepareStatement("""delete from "environments"""").execute()
-    session.prepareStatement("""delete from "processes"""").execute()
-    session.prepareStatement("""delete from "fingerprints"""").execute()
-    session.prepareStatement("""delete from "scheduled_scenarios"""").execute()
-    session.prepareStatement("""delete from "scheduled_scenario_deployments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_attachments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_actions"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_comments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scenario_activities"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_versions"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scenario_labels"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."environments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."processes"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."fingerprints"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenarios"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenario_deployments"""").execute()
   }
 
 }

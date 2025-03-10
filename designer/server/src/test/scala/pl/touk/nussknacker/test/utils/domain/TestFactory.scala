@@ -61,7 +61,7 @@ object TestFactory {
           "password" -> "",
           "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
           "driver"   -> "org.hsqldb.jdbc.JDBCDriver",
-          "schema"   -> "testschema" // todo: fixme
+          "schema"   -> "testschema"
         ).asJava
       ).asJava
     )

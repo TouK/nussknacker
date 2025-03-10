@@ -19,7 +19,7 @@ object DbRef {
       schemaName <- Resource.eval(IO(schemaNameFrom(config)))
       _ <- Resource.eval(IO {
         SlickMigration.setConfiguredAppSchema(schemaName)
-        DatabaseInitializer.initDatabase("db", config, schemaName)
+        DatabaseInitializer.initDatabase("db", config)
       })
       db <- Resource
         .make(
