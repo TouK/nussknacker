@@ -106,7 +106,8 @@ class PeriodicProcessServiceIntegrationTest
       Map(
         "url"      -> s"jdbc:hsqldb:mem:periodic-${UUID.randomUUID().toString};sql.syntax_ora=true",
         "user"     -> "SA",
-        "password" -> ""
+        "password" -> "",
+        "schema"   -> UUID.randomUUID().toString
       ).asJava
     )
 

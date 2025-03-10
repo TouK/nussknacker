@@ -14,7 +14,7 @@ object LegacyDbInitializer extends LazyLogging {
   def init(configDb: Config): (JdbcBackend.DatabaseDef, NuJdbcProfile) = {
     import net.ceedubs.ficus.Ficus._
     val url        = configDb.as[String]("url")
-    val schemaName = Option(configDb.as[String]("schema")).getOrElse(DbRef.defaultSchemaName)
+    val schemaName = configDb.getAs[String]("schema").getOrElse(DbRef.defaultSchemaName)
     val profile    = chooseDbProfile(url, schemaName)
     logger.info("Applying db migrations")
 
