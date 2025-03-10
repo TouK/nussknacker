@@ -36,7 +36,7 @@ object TablesDefinitionValidation {
           .apply(createTableStatements, None)
           .andThen { definition =>
             TablesDefinitionDiscovery
-              .prepareDiscovery(definition, minicluster, classLoader)
+              .prepareDiscovery(definition, minicluster)
               .andThen(_.listTables.sequence)
           }
           .void
