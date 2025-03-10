@@ -85,6 +85,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Fields: `externalDeploymentId`, `externalDeploymentId`, `attributes`, `attributes` were removed from `StatusDetails`
 * [#7598](https://github.com/TouK/nussknacker/pull/7598) Classes from `pl.touk.nussknacker.engine.sttp` package
   were moved to `pl.touk.nussknacker.http.backend`
+* [#7586](https://github.com/TouK/nussknacker/pull/7586) Renamed ComponentUseCase to ComponentUseContext.
+    * Moved NodeDeploymentData from FlinkCustomNodeContext to ComponentUseContext.LiveRuntime.
+    * Introduced ComponentUseContextProvider in ScenarioCompiler, which retains ComponentUseCase functionality but is 
+      now intended for internal use only.  
+* [#7618](https://github.com/TouK/nussknacker/pull/7618) `NonTransientException` is a normal class instead of case class.
+  We recommend to create explicit classes extending this class, but still it can be created directly but with `new NonTransientException(...)` 
 
 ### Other changes
 

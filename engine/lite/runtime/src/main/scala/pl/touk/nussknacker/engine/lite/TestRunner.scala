@@ -3,12 +3,14 @@ package pl.touk.nussknacker.engine.lite
 import cats.{~>, Id, Monad}
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
@@ -47,18 +49,19 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     ResultsCollectingListenerHolder.withTestEngineListener { collectingListener =>
       // in tests we don't send metrics anywhere
-      val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(jobData)
-      val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
-      val testServiceInvocationCollector     = new TestServiceInvocationCollector(collectingListener)
+      val testContext                              = LiteEngineRuntimeContextPreparer.noOp.prepare(jobData)
+      val componentUseContextProvider: RuntimeMode = RuntimeMode.Test
+      val testServiceInvocationCollector           = new TestServiceInvocationCollector(collectingListener)
 
       // FIXME: validation??
       val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](
         process,
         jobData,
+        NodesDeploymentData.empty,
         modelData,
         additionalListeners = List(collectingListener),
         testServiceInvocationCollector,
-        componentUseCase
+        componentUseContextProvider
       )(
         implicitly[Monad[F]],
         SynchronousExecutionContextAndIORuntime.syncEc,

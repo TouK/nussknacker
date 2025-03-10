@@ -271,7 +271,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     definitions.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
       TestAdditionalUIConfigProvider.componentGroupName,
-      "enricher"
+      "Enricher"
     )
   }
 

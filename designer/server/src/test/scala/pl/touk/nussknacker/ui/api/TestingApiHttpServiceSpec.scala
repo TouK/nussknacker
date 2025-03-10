@@ -144,6 +144,9 @@ class TestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generate/100")
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
+        .equalsPlainBody(
+          "Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+        )
     }
   }
 
@@ -184,6 +187,9 @@ class TestingApiHttpServiceSpec
              |                "editor": {
              |                    "type": "RawParameterEditor"
              |                },
+             |                "editors": [{
+             |                    "type": "SpelParameterEditor"
+             |                }],
              |                "defaultValue": {
              |                    "language": "spel",
              |                    "expression": ""
@@ -249,6 +255,23 @@ class TestingApiHttpServiceSpec
              |                    ],
              |                    "type": "FixedValuesParameterEditor"
              |                },
+             |                "editors": [{
+             |                    "possibleValues": [
+             |                        {
+             |                            "expression": "",
+             |                            "label": ""
+             |                        },
+             |                        {
+             |                            "expression": "'uno'",
+             |                            "label": "uno"
+             |                        },
+             |                        {
+             |                            "expression": "'due'",
+             |                            "label": "due"
+             |                        }
+             |                    ],
+             |                    "type": "FixedValuesParameterEditor"
+             |                }],
              |                "defaultValue": {
              |                    "language": "spel",
              |                    "expression": "'uno'"
@@ -300,6 +323,14 @@ class TestingApiHttpServiceSpec
              |                "editor": {
              |                    "type": "StringParameterEditor"
              |                },
+             |                "editors": [
+             |                    {
+             |                        "type": "SpelParameterEditor"
+             |                    },
+             |                    {
+             |                        "type": "SpelTemplateParameterEditor"
+             |                    }
+             |                ],
              |                "defaultValue": {
              |                    "language": "spel",
              |                    "expression": ""

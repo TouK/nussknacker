@@ -6,10 +6,10 @@ import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -272,15 +272,15 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val contextId = firstIdForFirstSource(scenario)
     val result    = runScenario(scenario, Request1("a", "b"), creator, contextId = Some(contextId))
 
-    result shouldBe Invalid(
-      NonEmptyList.of(
-        NuExceptionInfo(
-          Some(NodeComponentInfo("sinkId", ComponentType.Sink, "unknown")),
-          SinkException("FailingSink failed"),
-          Context(contextId, Map("input" -> Request1("a", "b")), None)
-        )
-      )
-    )
+    result.invalidValue.toList should matchPattern {
+      case NuExceptionInfo(
+            Some(NodeComponentInfo("sinkId", Some(ComponentId(ComponentType.Sink, "unknown")))),
+            SinkException("FailingSink failed"),
+            Context(`contextId`, variables, None),
+            _,
+            _
+          ) :: Nil if variables == Map("input" -> Request1("a", "b")) =>
+    }
   }
 
   test("ignore filter and continue scenario execution") {
@@ -412,11 +412,12 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val maybeinterpreter = RequestResponseInterpreter[Future](
       scenario,
       ProcessVersion.empty,
+      NodesDeploymentData.empty,
       engineRuntimeContextPreparer,
       simpleModelData,
       Nil,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime
+      RuntimeMode.Live
     )
 
     maybeinterpreter shouldBe Symbol("valid")

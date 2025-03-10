@@ -111,10 +111,11 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   }
 
   override def close(): Unit = {
-    try
-      dataSource.close()
-    finally
+    try {
+      Option(dataSource).foreach(_.close())
+    } finally {
       super.close()
+    }
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(

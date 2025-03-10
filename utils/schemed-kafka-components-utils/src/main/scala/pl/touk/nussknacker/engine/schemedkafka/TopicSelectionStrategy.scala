@@ -4,10 +4,10 @@ import cats.data.Validated
 import org.apache.kafka.clients.admin.ListTopicsOptions
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
+import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
-import java.util.concurrent.ExecutionException
 import java.util.regex.Pattern
 import scala.jdk.CollectionConverters._
 
@@ -53,11 +53,8 @@ class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy {
         }
       } catch {
         // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
-        case err: ExecutionException =>
-          err.getCause match {
-            case _: TimeoutException => List.empty
-            case _                   => throw err
-          }
+        case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
+          List.empty
         case _: KafkaException =>
           List.empty
       }

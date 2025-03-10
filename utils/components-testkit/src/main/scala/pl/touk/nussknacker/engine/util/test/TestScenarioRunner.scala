@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.RuntimeMode
+import pl.touk.nussknacker.engine.RuntimeMode.{Live, Test}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.testmode.{
@@ -39,7 +39,8 @@ object TestScenarioRunner {
   val noopSource     = "noopSource"
   val testResultSink = "sink"
 
-  def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
+  def runtimeMode(testRuntimeMode: Boolean): RuntimeMode =
+    if (testRuntimeMode) Test else Live
 }
 
 /**
@@ -64,9 +65,11 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
 object TestScenarioCollectorHandler {
 
-  def withHandler[T](componentUseCase: ComponentUseCase)(action: TestScenarioCollectorHandler => T): T = {
+  def withHandler[T](
+      runtimeMode: RuntimeMode
+  )(action: TestScenarioCollectorHandler => T): T = {
     ResultsCollectingListenerHolder.withListener { resultsCollectingListener =>
-      val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
+      val resultCollector = if (RuntimeMode.Test == runtimeMode) {
         new TestServiceInvocationCollector(resultsCollectingListener)
       } else {
         ProductionServiceInvocationCollector
@@ -84,8 +87,13 @@ object TestScenarioCollectorHandler {
 }
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
+
   // TODO: add generate test data support
-  def runWithData[T: ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
+  def runWithData[T: ClassTag, R](
+      scenario: CanonicalProcess,
+      data: List[T]
+  ): RunnerListResult[R]
+
 }
 
 object RunResult {

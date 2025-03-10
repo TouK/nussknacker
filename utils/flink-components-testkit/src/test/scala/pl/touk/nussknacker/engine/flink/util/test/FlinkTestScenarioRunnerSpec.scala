@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -108,10 +108,7 @@ class FlinkTestScenarioRunnerSpec
         .runWithData[String, String](
           scenario,
           List("data"),
-          processVersion = ProcessVersion.empty.copy(
-            processName = scenario.name,
-            labels = List("abc", "def")
-          )
+          labels = List("abc", "def")
         )
 
     runResults.validValue.successes shouldBe List(List("abc", "def").asJava)
@@ -167,7 +164,7 @@ class FlinkTestScenarioRunnerSpec
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[String] = {
         collector.collect(s"test-service-$value", Option(MockedValued)) {
           Future.successful(value.evaluate(context))

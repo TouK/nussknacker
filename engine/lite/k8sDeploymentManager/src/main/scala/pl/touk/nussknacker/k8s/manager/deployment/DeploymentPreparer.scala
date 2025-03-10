@@ -6,6 +6,7 @@ import monocle.Iso
 import monocle.macros.GenLens
 import monocle.std.option._
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
+import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManagerConfig, OptionalNussknackerInstanceName}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
   labelsForScenario,
   objectNameForScenario,
@@ -13,7 +14,6 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{
   scenarioVersionAnnotation,
   versionAnnotationForScenario
 }
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
@@ -58,7 +58,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       typeSpecificData: TypeSpecificData,
       resourcesToMount: MountableResources,
       determinedReplicasCount: Int,
-      nussknackerInstanceName: Option[String]
+      nussknackerInstanceName: OptionalNussknackerInstanceName
   ) = {
     val objectName  = objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
     val annotations = versionAnnotationForScenario(processVersion)
@@ -130,7 +130,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       env = List(
         EnvVar("SCENARIO_FILE", s"$CommonConfigMountPath/scenario.json"),
         EnvVar("CONFIG_FILE", s"/opt/nussknacker/conf/application.conf,$RuntimeConfigMountPath/runtimeConfig.conf"),
-        EnvVar("DEPLOYMENT_CONFIG_FILE", s"$CommonConfigMountPath/deploymentConfig.conf"),
+        EnvVar("DEPLOYMENT_DATA_FILE", s"$CommonConfigMountPath/deploymentData.json"),
         EnvVar("LOGBACK_FILE", s"$LoggingConfigMountPath/logback.xml"),
         // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
         // Hash will be extracted on entrypoint side.

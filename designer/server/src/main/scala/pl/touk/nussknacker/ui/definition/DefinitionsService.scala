@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.FragmentSpecificData
@@ -137,7 +138,8 @@ class DefinitionsService(
       docsUrl = componentDefinition.component.docsUrl,
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
-      }
+      },
+      label = componentDefinition.component.label
     )
   }
 
@@ -168,6 +170,21 @@ object DefinitionsService {
       name = parameter.name.value,
       typ = toUIType(parameter.typ),
       editor = parameter.finalEditor,
+      editors = parameter.editor match {
+        case Some(RawParameterEditor)    => List(SpelParameterEditor)
+        case Some(StringParameterEditor) => List(SpelTemplateParameterEditor, SpelParameterEditor)
+        case Some(DualParameterEditor(simpleEditor, defaultMode)) =>
+          val mappedSimpleEditor = simpleEditor match {
+            case StringParameterEditor => SpelTemplateParameterEditor
+            case e                     => e
+          }
+          defaultMode match {
+            case DualEditorMode.RAW    => List(SpelParameterEditor, mappedSimpleEditor)
+            case DualEditorMode.SIMPLE => List(mappedSimpleEditor, SpelParameterEditor)
+          }
+        case Some(editor) => List(editor)
+        case None         => List(SpelParameterEditor)
+      },
       defaultValue = parameter.finalDefaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,

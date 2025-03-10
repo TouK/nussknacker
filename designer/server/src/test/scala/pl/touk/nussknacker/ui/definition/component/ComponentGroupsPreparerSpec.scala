@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
@@ -61,8 +62,8 @@ class ComponentGroupsPreparerSpec
   test("return components sorted by label case insensitive") {
     val groups = prepareGroupForServices(List("foo", "alaMaKota", "BarFilter"))
     groups.map(_.components.map(n => n.label)) shouldBe List(
-      List("choice", "filter", "record-variable", "split", "variable"),
-      List("alaMaKota", "BarFilter", "foo")
+      List("Choice", "Filter", "Record Variable", "Split", "Variable"),
+      List("Alamakota", "Barfilter", "Foo")
     )
   }
 
@@ -86,7 +87,9 @@ class ComponentGroupsPreparerSpec
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     baseComponents
       .filter(n => n.componentId.`type` == ComponentType.BuiltIn)
-      .map(_.label) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario.map(_.name)
+      .map(_.label) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario
+      .map(_.name)
+      .map(IdToTitleConverter.toTitle)
     baseComponents.filter(n => n.componentId.`type` == ComponentType.CustomComponent) should have size 5
   }
 
@@ -142,8 +145,8 @@ class ComponentGroupsPreparerSpec
     val fragmentDefinitionComponentLabels =
       groups.find(_.name == DefaultsComponentGroupName.FragmentsDefinitionGroupName).value.components.map(_.label)
     fragmentDefinitionComponentLabels shouldEqual List(
-      BuiltInComponentId.FragmentInputDefinition.name,
-      BuiltInComponentId.FragmentOutputDefinition.name
+      BuiltInComponentId.FragmentInputDefinition.name.capitalize,
+      BuiltInComponentId.FragmentOutputDefinition.name.capitalize
     )
   }
 

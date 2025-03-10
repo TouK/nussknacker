@@ -38,7 +38,8 @@ object ComponentDefinitionExtractor {
       .copy(
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
-        componentId = inputComponentDefinition.designerWideId
+        componentId = inputComponentDefinition.designerWideId,
+        label = Option(inputComponentDefinition.label)
       )
     ComponentDefinitionExtractor
       .extract(
@@ -225,6 +226,7 @@ object ComponentDefinitionExtractor {
         getDefinedProperty("icon", _.icon),
         finalCombinedConfig.docsUrl,
         getDefinedProperty("componentId", _.componentId),
+        finalCombinedConfig.label
       )
       (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }

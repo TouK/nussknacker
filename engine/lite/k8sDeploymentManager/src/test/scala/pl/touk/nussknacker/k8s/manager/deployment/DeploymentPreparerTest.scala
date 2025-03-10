@@ -14,7 +14,11 @@ import pl.touk.nussknacker.engine.api.{
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
+import pl.touk.nussknacker.k8s.manager.{
+  K8sDeploymentManager,
+  K8sDeploymentManagerConfig,
+  OptionalNussknackerInstanceName
+}
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 import skuber.EnvVar.{FieldRef, SecretKeyRef}
 import skuber.Resource.Quantity
@@ -80,7 +84,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                         "CONFIG_FILE",
                         "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
                       ),
-                      EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                      EnvVar("DEPLOYMENT_DATA_FILE", "/config/deploymentData.json"),
                       EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                       // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                       // Hash will be extracted on entrypoint side.
@@ -181,7 +185,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             ).asJava
           )
         ),
-      nussknackerInstanceName = Some(nussknackerInstanceName)
+      nussknackerInstanceName = OptionalNussknackerInstanceName.forInstanceName(nussknackerInstanceName)
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
@@ -223,7 +227,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                         "CONFIG_FILE",
                         "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
                       ),
-                      EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                      EnvVar("DEPLOYMENT_DATA_FILE", "/config/deploymentData.json"),
                       EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                       // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                       // Hash will be extracted on entrypoint side.
@@ -351,7 +355,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                         "CONFIG_FILE",
                         "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
                       ),
-                      EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                      EnvVar("DEPLOYMENT_DATA_FILE", "/config/deploymentData.json"),
                       EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                       // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                       // Hash will be extracted on entrypoint side.

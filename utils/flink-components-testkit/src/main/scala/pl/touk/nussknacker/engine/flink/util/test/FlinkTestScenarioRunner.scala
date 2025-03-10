@@ -5,9 +5,10 @@ import org.apache.flink.api.connector.source.Boundedness
 import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -75,7 +76,7 @@ class FlinkTestScenarioRunner(
     val globalVariables: Map[String, AnyRef],
     val config: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
-    componentUseCase: ComponentUseCase,
+    runtimeMode: RuntimeMode,
 ) extends ClassBasedTestScenarioRunner {
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
@@ -86,11 +87,14 @@ class FlinkTestScenarioRunner(
     WaitForJobStatusPatience.interval * 2
   )
 
-  override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
+  override def runWithData[I: ClassTag, R](
+      scenario: CanonicalProcess,
+      data: List[I]
+  ): RunnerListResult[R] = {
     runWithTestSourceComponent(
       scenario,
       NodesDeploymentData.empty,
-      ProcessVersion.empty.copy(processName = scenario.metaData.name),
+      labels = List.empty,
       testDataSourceComponent(data, Typed.typedClass[I], None)
     )
   }
@@ -101,12 +105,12 @@ class FlinkTestScenarioRunner(
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
       timestampAssigner: Option[TimestampWatermarkHandler[I]] = None,
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
-      processVersion: ProcessVersion = ProcessVersion.empty,
+      labels: List[String] = List.empty,
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
       scenario,
       nodesData,
-      processVersion,
+      labels,
       testDataSourceComponent(data, Typed.typedClass[I], timestampAssigner, boundedness)
     )
   }
@@ -118,20 +122,20 @@ class FlinkTestScenarioRunner(
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
       timestampAssigner: Option[TimestampWatermarkHandler[I]] = None,
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
-      processVersion: ProcessVersion = ProcessVersion.empty,
+      labels: List[String] = List.empty,
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
       scenario,
       nodesData,
-      processVersion,
+      labels,
       testDataSourceComponent(data, inputType, timestampAssigner, boundedness)
     )
   }
 
   private def runWithTestSourceComponent[I: ClassTag, R](
       scenario: CanonicalProcess,
-      nodesData: NodesDeploymentData = NodesDeploymentData.empty,
-      processVersion: ProcessVersion = ProcessVersion.empty,
+      nodesData: NodesDeploymentData,
+      labels: List[String],
       testDataSourceComponent: ComponentDefinition
   ): RunnerListResult[R] = {
     val testComponents = testDataSourceComponent :: noopSourceComponent :: Nil
@@ -139,7 +143,7 @@ class FlinkTestScenarioRunner(
       TestExtensionsHolder
         .registerTestExtensions(components ++ testComponents, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testComponentHolder =>
-      run[R](scenario, nodesData, processVersion, testComponentHolder)
+      run[R](scenario, nodesData, labels, testComponentHolder)
     }
   }
 
@@ -149,14 +153,14 @@ class FlinkTestScenarioRunner(
   def runWithoutData[R](
       scenario: CanonicalProcess,
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
-      processVersion: ProcessVersion = ProcessVersion.empty,
+      labels: List[String] = List.empty,
   ): RunnerListResult[R] = {
     val testComponents = noopSourceComponent :: Nil
     Using.resource(
       TestExtensionsHolder
         .registerTestExtensions(components ++ testComponents, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testComponentHolder =>
-      run[R](scenario, nodesData, processVersion, testComponentHolder)
+      run[R](scenario, nodesData, labels, testComponentHolder)
     }
   }
 
@@ -167,13 +171,13 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       data: List[I],
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
-      processVersion: ProcessVersion = ProcessVersion.empty,
+      labels: List[String] = List.empty,
   ): RunnerResultUnit = {
     val testComponents = testDataSourceComponent(data, Typed.typedClass[I], None) :: noopSourceComponent :: Nil
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components ++ testComponents, List.empty, globalVariables)
     ) { testComponentHolder =>
-      run[AnyRef](scenario, nodesData, processVersion, testComponentHolder).map { case RunListResult(errors, _) =>
+      run[AnyRef](scenario, nodesData, labels, testComponentHolder).map { case RunListResult(errors, _) =>
         RunUnitResult(errors)
       }
     }
@@ -182,7 +186,7 @@ class FlinkTestScenarioRunner(
   private def run[OUTPUT](
       scenario: CanonicalProcess,
       nodesData: NodesDeploymentData,
-      processVersion: ProcessVersion,
+      labels: List[String],
       testExtensionsHolder: TestExtensionsHolder
   ): RunnerListResult[OUTPUT] = {
     val modelData = LocalModelData(
@@ -194,22 +198,27 @@ class FlinkTestScenarioRunner(
     )
 
     flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
-      TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
+      TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
         val compilerFactory =
           FlinkProcessCompilerDataFactoryWithTestComponents(
             testExtensionsHolder,
             testScenarioCollectorHandler.resultsCollectingListener,
             modelData,
-            componentUseCase
+            runtimeMode,
+            nodesData
           )
 
+        val processVersion = ProcessVersion.empty.copy(
+          processName = scenario.metaData.name,
+          labels = labels
+        )
         // We directly use Compiler even if registrar already do this to return compilation errors
         // TODO: figure how to get compilation result on highest level - registrar.register?
         val compileProcessData = compilerFactory.prepareCompilerData(
           scenario.metaData,
           processVersion,
           testScenarioCollectorHandler.resultCollector,
-          getClass.getClassLoader
+          getClass.getClassLoader,
         )
 
         compileProcessData.compileProcess(scenario).map { _ =>
@@ -321,7 +330,7 @@ case class FlinkTestScenarioRunnerBuilder(
       globalVariables,
       config,
       flinkMiniClusterWithServices,
-      componentUseCase(testRuntimeMode)
+      runtimeMode(testRuntimeMode)
     )
 
 }

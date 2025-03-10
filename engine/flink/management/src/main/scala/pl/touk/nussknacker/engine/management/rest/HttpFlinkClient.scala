@@ -4,8 +4,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.api.exception.DeeplyCheckingExceptionExtractor
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import pl.touk.nussknacker.http.backend.SttpJson
 import pl.touk.nussknacker.http.backend.SttpJson.asOptionalJson
 import sttp.client3._

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -167,9 +168,13 @@ class DeploymentService(
       additionalDeploymentData: Map[String, String] = Map.empty
   )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
     for {
-      resolvedCanonicalProcess <- Future.fromTry(
-        scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
-      )
+      resolvedCanonicalProcess <- scenarioResolver
+        .forProcessingTypeUnsafe(processDetails.processingType)
+        .resolveScenario(processDetails.json)
+        .flatMap {
+          case Validated.Valid(scenario) => Future.successful(scenario)
+          case Validated.Invalid(e)      => Future.failed(new RuntimeException(e.head.toString))
+        }
       deploymentData = DeploymentData(
         DeploymentId.fromActionId(actionId),
         user.toManagerUser,

@@ -34,6 +34,7 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
+      editors: List[ParameterEditor],
       // It is used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
@@ -70,7 +71,8 @@ package object definition {
       icon: String,
       docsUrl: Option[String],
       // This field is defined only for fragments
-      outputParameters: Option[List[String]]
+      outputParameters: Option[List[String]],
+      label: String
   )
 
   @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
@@ -93,11 +95,12 @@ package object definition {
     def create(
         componentId: ComponentId,
         nodeTemplate: NodeData,
-        branchParametersTemplate: List[NodeParameter]
+        branchParametersTemplate: List[NodeParameter],
+        label: String
     ): UIComponentNodeTemplate =
       UIComponentNodeTemplate(
         componentId,
-        componentId.name,
+        label,
         nodeTemplate,
         branchParametersTemplate
       )

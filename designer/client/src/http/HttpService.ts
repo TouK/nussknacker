@@ -90,6 +90,7 @@ export type ComponentType = {
         icon: string;
         url: string;
     }>;
+    label: string;
 };
 
 export type SourceWithParametersTest = {

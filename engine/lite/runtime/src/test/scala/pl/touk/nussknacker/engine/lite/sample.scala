@@ -4,13 +4,14 @@ import cats.Monad
 import cats.data.{State, StateT, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
+import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   ComponentType,
   NodeComponentInfo,
+  NodesDeploymentData,
   UnboundedStreamComponent
 }
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -98,10 +99,11 @@ object sample {
       .createInterpreter[StateType, SampleInput, AnyRef](
         scenario,
         jobData,
+        NodesDeploymentData.empty,
         modelData,
-        Nil,
-        ProductionServiceInvocationCollector,
-        ComponentUseCase.EngineRuntime
+        additionalListeners = Nil,
+        resultCollector = ProductionServiceInvocationCollector,
+        runtimeMode = RuntimeMode.Live,
       )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(jobData))

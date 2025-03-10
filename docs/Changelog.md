@@ -94,6 +94,27 @@
   * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
 * [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7586](https://github.com/TouK/nussknacker/pull/7586) Extended the configuration for action parameters, allowing
+  DEPLOY parameters to be configured for services.
+  * Instead of having separate entries for each node, action parameters are now grouped into a single entry per
+    component in the UI. The configured parameters are then applied to all nodes for that component.  
+* [#7591](https://github.com/TouK/nussknacker/pull/7591) Improve scenario testing error messages
+  - Error messages should point to the appropriate `testDataSettings` where possible
+  - `testDataSettings.testDataMaxLength` is validated also for received test data
+  - Change `testDataSettings.resultsMaxBytes` to long to allow higher limit than 2 GiB
+* [#7600](https://github.com/TouK/nussknacker/pull/7600) Added 'Custom HTTP Service' SPI
+    * it can be used to run custom services and expose custom endpoints alongside Nu Designer API
+    * it can be used by providing implementation of `class CustomHttpServiceProviderFactory`
+    * this SPI can be provided only on compile-time, not as a plugin on a later time
+    * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
+    * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
+* [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels are now independent of component Id. Labels can be set during the component defining or can be set in ui configuration in application config 
+* [#7614](https://github.com/TouK/nussknacker/pull/7614) SpelTemplate as a main text editor
+  * Added a new parameter editor type: SpelParameterEditor which works the same as RawParameterEditor.
+  * Added a list of editors to the UIParameter.
+* [#7616](https://github.com/TouK/nussknacker/pull/7616) (K8s DM) Fix for: k8s object name sanitizing strategy sometimes generated invalid object names, in other cases, 
+  it generated names with unnecessary characters appended
+* [#7615](https://github.com/TouK/nussknacker/pull/7615) Updated Flink dependency to 1.19.2
 
 ## 1.18
 

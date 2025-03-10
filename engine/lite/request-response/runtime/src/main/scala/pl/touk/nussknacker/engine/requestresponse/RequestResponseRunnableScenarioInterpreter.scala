@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.requestresponse
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.{RunnableScenarioInterpreter, TaskStatus}
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
@@ -16,10 +16,11 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import scala.concurrent.{ExecutionContext, Future}
 
 class RequestResponseRunnableScenarioInterpreter(
-    jobData: JobData,
-    parsedResolvedScenario: CanonicalProcess,
     modelData: ModelData,
     contextPreparer: LiteEngineRuntimeContextPreparer,
+    parsedResolvedScenario: CanonicalProcess,
+    jobData: JobData,
+    nodesDeploymentData: NodesDeploymentData,
     requestResponseConfig: RequestResponseConfig
 )(implicit ec: ExecutionContext)
     extends RunnableScenarioInterpreter
@@ -33,11 +34,12 @@ class RequestResponseRunnableScenarioInterpreter(
   private val interpreter: RequestResponseScenarioInterpreter[Future] = RequestResponseInterpreter[Future](
     parsedResolvedScenario,
     jobData.processVersion,
+    nodesDeploymentData,
     contextPreparer,
     modelData,
-    Nil,
+    additionalListeners = Nil,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.EngineRuntime
+    RuntimeMode.Live,
   )
     .map { i =>
       i.open()

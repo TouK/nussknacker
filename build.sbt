@@ -284,7 +284,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                = "1.19.1"
+val flinkV                = "1.19.2"
 val flinkConnectorKafkaV  = "3.2.0-1.19"
 val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
@@ -323,7 +323,7 @@ val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.12.0"
 val testContainersScalaV    = "0.41.4"
 val testContainersJavaV     = "1.20.1"
-val nettyV                  = "4.1.115.Final"
+val nettyV                  = "4.1.119.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
 val akkaV                     = "2.6.20"
@@ -1897,6 +1897,18 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   )
   .dependsOn(extensionsApi)
 
+lazy val customHttpServiceApi = (project in file("designer/custom-http-service-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-custom-http-service-api",
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+      )
+    }
+  )
+  .dependsOn(extensionsApi, security)
+
 lazy val configLoaderApi = (project in file("designer/config-loader-api"))
   .settings(commonSettings)
   .settings(
@@ -2068,6 +2080,7 @@ lazy val designer = (project in file("designer/server"))
     componentsApi,
     restmodel,
     listenerApi,
+    customHttpServiceApi,
     configLoaderApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
@@ -2210,6 +2223,7 @@ lazy val modules = List[ProjectReference](
   httpUtils,
   restmodel,
   listenerApi,
+  customHttpServiceApi,
   configLoaderApi,
   deploymentManagerApi,
   designer,

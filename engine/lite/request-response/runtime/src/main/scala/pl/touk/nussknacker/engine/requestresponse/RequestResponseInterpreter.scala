@@ -6,11 +6,12 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toFunctorOps
 import io.circe.Json
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
@@ -45,11 +46,12 @@ object RequestResponseInterpreter {
   def apply[Effect[_]: Monad: InterpreterShape: CapabilityTransformer](
       process: CanonicalProcess,
       processVersion: ProcessVersion,
+      nodesDeploymentData: NodesDeploymentData,
       context: LiteEngineRuntimeContextPreparer,
       modelData: ModelData,
       additionalListeners: List[ProcessListener],
       resultCollector: ResultCollector,
-      componentUseCase: ComponentUseCase
+      runtimeMode: RuntimeMode
   )(
       implicit ec: ExecutionContext
   ): Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
@@ -57,10 +59,11 @@ object RequestResponseInterpreter {
       .createInterpreter[Effect, Any, AnyRef](
         process,
         JobData(process.metaData, processVersion),
+        nodesDeploymentData,
         modelData,
         additionalListeners,
         resultCollector,
-        componentUseCase
+        runtimeMode
       )
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion)), _))
   }

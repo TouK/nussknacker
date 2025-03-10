@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import cats.Id
 import cats.data.{NonEmptyList, Validated}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -44,24 +45,25 @@ object SynchronousLiteInterpreter {
   def run(
       modelData: ModelData,
       jobData: JobData,
+      nodesData: NodesDeploymentData,
       scenario: CanonicalProcess,
       data: ScenarioInputBatch[Any],
-      componentUseCase: ComponentUseCase,
-      runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
+      runtimeMode: RuntimeMode,
   ): SynchronousResult = {
-    TestScenarioCollectorHandler.withHandler(componentUseCase) { testScenarioCollectorHandler =>
+    TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
       ScenarioInterpreterFactory
         .createInterpreter[Id, Any, AnyRef](
           scenario,
           jobData,
+          nodesData,
           modelData,
-          Nil,
+          additionalListeners = Nil,
           testScenarioCollectorHandler.resultCollector,
-          componentUseCase
+          runtimeMode
         )
         .map { interpreter =>
-          interpreter.open(runtimeContextPreparer.prepare(jobData))
           try {
+            interpreter.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
             val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
             value.run
           } finally {

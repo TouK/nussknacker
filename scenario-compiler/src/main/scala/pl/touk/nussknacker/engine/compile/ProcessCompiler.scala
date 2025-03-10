@@ -5,11 +5,11 @@ import cats.data.Validated._
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
@@ -51,6 +51,7 @@ class ProcessCompiler(
       customProcessValidator
     )
 
+  // ProcessCompiler does not compile fragment, you must resolve it with ScenarioResolver before!
   override def compile(
       process: CanonicalProcess
   )(implicit jobData: JobData): CompilationResult[CompiledProcessParts] = {
@@ -357,8 +358,9 @@ object ProcessValidator {
       classLoader,
       Seq.empty,
       PreventInvocationCollector,
-      ComponentUseCase.Validation,
-      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
+      RuntimeMode.Live,
+      NodesDeploymentData.empty,
+      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default,
     )
     val sub = new PartSubGraphCompiler(nodeCompiler)
     new ProcessCompiler(

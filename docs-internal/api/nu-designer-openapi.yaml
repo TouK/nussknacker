@@ -166,6 +166,7 @@ paths:
                     usageCount: 2
                     allowedProcessingModes:
                     - Request-Response
+                    label: collect
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: query parameter skipUsages, Invalid value for: query parameter
@@ -244,11 +245,15 @@ paths:
                     actionNameToParameters:
                       DEPLOY: []
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Cannot compile scenario
+                  value: Cannot compile scenario
         '401':
           description: ''
           content:
@@ -2214,10 +2219,14 @@ paths:
                   value: 'Expected Filter but got: Source'
                 Example3:
                   summary: Too many samples requested
-                  value: Too many samples requested, limit is 100
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (100)
                 Example4:
-                  summary: Serialization error
-                  value: 'Error during serialization: Failed to serialize test data'
+                  summary: Too many characters generated
+                  value: Too many characters were found in the generated test data
+                    (1000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (500)
         '401':
           description: ''
           content:
@@ -2253,7 +2262,8 @@ paths:
                   value: No scenario 'example scenario' found
                 Example1:
                   summary: No test data generated
-                  value: No test data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live sample data available'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3222,17 +3232,12 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: ''
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: Malformed TypingResult sent in request
-                  value: |-
-                    The request content was malformed:
-                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
         '401':
           description: ''
           content:
@@ -3446,10 +3451,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: There was a problem with parsing test data
-                  value: "Error during generation of test data: \nParsing of data\
-                    \ failed"
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
         '401':
           description: ''
           content:
@@ -3480,9 +3491,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live sample data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3557,6 +3575,8 @@ paths:
                         params: []
                       editor:
                         type: RawParameterEditor
+                      editors:
+                      - type: SpelParameterEditor
                       defaultValue:
                         language: spel
                         expression: ''
@@ -5535,6 +5555,7 @@ components:
       - componentGroupName
       - usageCount
       - allowedProcessingModes
+      - label
       properties:
         id:
           type: string
@@ -5561,6 +5582,8 @@ components:
           type: array
           items:
             type: string
+        label:
+          type: string
     ComponentType:
       title: ComponentType
       type: string
@@ -6776,6 +6799,7 @@ components:
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
+      - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
       - $ref: '#/components/schemas/StringParameterEditor'
@@ -7226,6 +7250,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SpelParameterEditor:
+      title: SpelParameterEditor
+      type: object
     SpelTemplateParameterEditor:
       title: SpelTemplateParameterEditor
       type: object
@@ -7671,6 +7698,10 @@ components:
           - $ref: '#/components/schemas/Unknown'
         editor:
           $ref: '#/components/schemas/ParameterEditor'
+        editors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterEditor'
         defaultValue:
           $ref: '#/components/schemas/Expression'
         additionalVariables:
@@ -7719,9 +7750,12 @@ components:
       type: object
       required:
       - nodeId
+      - componentId
       - parameters
       properties:
         nodeId:
+          type: string
+        componentId:
           type: string
         parameters:
           $ref: '#/components/schemas/Map_UiActionParameterConfigDto'

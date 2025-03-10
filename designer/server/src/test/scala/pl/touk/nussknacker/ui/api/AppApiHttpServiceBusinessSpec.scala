@@ -410,7 +410,7 @@ class AppApiHttpServiceBusinessSpec
       .Then()
       .statusCode(200)
     body
-      .extractList("componentGroupName")
+      .extractList[String]("componentGroupName")
       .groupBy(identity)
       .view
       .map { case (name, occurences) => name -> occurences.length }
