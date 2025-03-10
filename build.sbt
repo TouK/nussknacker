@@ -188,7 +188,7 @@ lazy val commonSettings =
       },
       scalacOptions                    := Seq(
         "-unchecked",
-        "-deprecation:false",
+        "-deprecation",
         "-encoding",
         "utf8",
         "-Xfatal-warnings",

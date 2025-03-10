@@ -1,5 +1,24 @@
 package utils
 
+/**
+ * Utility to detect SQL statements that may be missing explicit schema qualifiers.
+ * 
+ * This detector uses heuristic pattern matching to identify SQL statements where
+ * database objects (tables, views, etc.) appear to be referenced without schema
+ * qualification. It analyzes SQL tokens to find object references that follow 
+ * certain keywords (like SELECT, FROM, JOIN etc.) and checks if they include
+ * an explicit schema prefix.
+ * 
+ * Note: This is a best-effort detection mechanism and may produce:
+ * - False positives: Some valid SQL constructs may be incorrectly flagged as
+ *   missing schema qualifiers
+ * - False negatives: Some unqualified object references may not be detected
+ *   due to SQL complexity or edge cases
+ * 
+ * The detection logic may need periodic updates and tweaks as new SQL patterns
+ * and edge cases are discovered in production use.
+ */
+
 object SchemaInSqlDetector {
 
   def isMissingRequiredSchema(sqlStatement: String): Boolean = {
