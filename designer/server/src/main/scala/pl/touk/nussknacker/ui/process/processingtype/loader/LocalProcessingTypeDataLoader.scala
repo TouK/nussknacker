@@ -29,7 +29,7 @@ class LocalProcessingTypeDataLoader(
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
-  ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = IO {
+  ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     val processingTypes = modelData.map { case (processingType, (category, model)) =>
       val deploymentManagerDependencies = getDeploymentManagerDependencies(processingType)
       val data = ProcessingTypeData.createProcessingTypeData(
@@ -46,8 +46,9 @@ class LocalProcessingTypeDataLoader(
       processingType -> data
     }
 
-    val combinedData = CombinedProcessingTypeData.create(processingTypes)
-    new ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), Success(combinedData))
+    IO.fromEither(CombinedProcessingTypeData.create(processingTypes).toEither).map { combinedData =>
+      new ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), Success(combinedData))
+    }
   }
 
 }

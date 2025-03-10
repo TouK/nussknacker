@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.Scheduli
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
-import scala.util.Success
+import scala.util.{Success, Try}
 
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(
     processingTypeConfigsLoader: ProcessingTypeConfigsLoader
@@ -29,7 +29,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
-      .map(
+      .flatMap(
         createProcessingTypeData(
           _,
           getModelDependencies,
@@ -48,7 +48,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
-  ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+  ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
     // See DeploymentManagerProvider.engineSetupIdentity
@@ -103,13 +103,15 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    val combinedData = CombinedProcessingTypeData.create(processingTypesData)
-
-    new ProcessingTypeDataState(
-      processingTypesData.mapValuesNow(toValueWithRestriction),
-      // We want to fail fast - because of that we don't return Try in CombinedProcessingTypeData.create
-      Success(combinedData)
-    )
+    IO.fromEither(CombinedProcessingTypeData.create(processingTypesData).toEither.map { combinedData =>
+      new ProcessingTypeDataState(
+        processingTypesData.mapValuesNow(toValueWithRestriction),
+        // We return Success instead of passing here Try result of CombinedProcessingTypeData.create because
+        // we want to break reloading logic instead of creating a new state with failing combined date
+        // Try in ProcessingTypeDataState.combinedDataTry is only for initial state purpose when this data are not initialized yet
+        Success(combinedData)
+      )
+    })
   }
 
   private def createDeploymentManagerProvider(

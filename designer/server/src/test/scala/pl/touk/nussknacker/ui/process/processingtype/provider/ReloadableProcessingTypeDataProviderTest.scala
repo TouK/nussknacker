@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import cats.effect.unsafe.implicits.global
 
 import scala.util.Success
 
@@ -82,7 +82,7 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
     allDataAfterFailedLoad shouldBe empty
   }
 
-  class AutoClosableWithValue(val value: String) extends AutoCloseable {
+  private class AutoClosableWithValue(val value: String) extends AutoCloseable {
     @volatile
     var closeWasInvoked = false
 
