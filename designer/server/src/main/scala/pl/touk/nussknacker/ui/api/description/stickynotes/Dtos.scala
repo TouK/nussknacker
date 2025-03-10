@@ -76,12 +76,12 @@ object Dtos {
 
   @JsonCodec case class StickyNotesSettings(
       maxContentLength: Int,
-      maxNotesCount: Int,
+      maxNotesCount: Option[Int] = None,
       enabled: Boolean
   )
 
   object StickyNotesSettings {
-    val default: StickyNotesSettings = StickyNotesSettings(maxContentLength = 5000, maxNotesCount = 5, enabled = true)
+    val default: StickyNotesSettings = StickyNotesSettings(maxContentLength = 5000, enabled = true)
   }
 
   sealed trait StickyNotesError
