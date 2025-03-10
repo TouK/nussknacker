@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
-import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 object ComponentsFromProvidersExtractor {

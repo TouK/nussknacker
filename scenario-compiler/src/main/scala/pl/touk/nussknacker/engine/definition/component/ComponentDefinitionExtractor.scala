@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
   MethodDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
@@ -106,7 +107,8 @@ object ComponentDefinitionExtractor {
           customCanBeEnding
         )
 
-      filterOutDisabledAndComputeFinalUiDefinition(configFor(defaultConfig), additionalConfigs.groupName).map(f.tupled)
+      filterOutDisabledAndComputeFinalUiDefinition(configFor(defaultConfig), additionalConfigs.groupName, componentName)
+        .map(f.tupled)
     }
 
     (component match {
@@ -208,7 +210,8 @@ object ComponentDefinitionExtractor {
 
   def filterOutDisabledAndComputeFinalUiDefinition(
       finalCombinedConfig: ComponentConfig,
-      translateGroupName: ComponentGroupName => Option[ComponentGroupName]
+      translateGroupName: ComponentGroupName => Option[ComponentGroupName],
+      name: String
   ): Option[(ComponentUiDefinition, Map[ParameterName, ParameterConfig])] = {
     // At this stage, after combining all properties with default config, we are sure that some properties are defined
     def getDefinedProperty[T](propertyName: String, getProperty: ComponentConfig => Option[T]) =
@@ -226,7 +229,7 @@ object ComponentDefinitionExtractor {
         getDefinedProperty("icon", _.icon),
         finalCombinedConfig.docsUrl,
         getDefinedProperty("componentId", _.componentId),
-        finalCombinedConfig.label
+        finalCombinedConfig.label.getOrElse(IdToTitleConverter.toTitle(name)),
       )
       (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }
