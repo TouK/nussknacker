@@ -205,10 +205,12 @@ lazy val commonSettings =
             // -release option has no influence on class version so we at least setup target to 8 and check java version
             // at the begining of our Apps
             "-target:jvm-1.8",
+            "-P:silencer:globalFilters=deprecated"
           )
         case (2, 13) =>
           Seq(
-            "-Ymacro-annotations"
+            "-Ymacro-annotations",
+            "-Wconf:cat=deprecation:silent"
           )
       },
       Compile / compile / javacOptions := Seq(
