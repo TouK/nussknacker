@@ -57,7 +57,8 @@ class FlinkMiniClusterScenarioStateVerifier(
             env
           )
         val scenarioName = processVersion.processName
-        miniClusterWithServices.createDetachedStreamExecutionEnvironment
+        miniClusterWithServices
+          .createDetachedStreamExecutionEnvironment[IO]
           .use { env =>
             logger.info(s"Starting to verify $scenarioName")
             (for {

@@ -60,7 +60,7 @@ class FlinkMiniClusterScenarioTestRunner(
         )
       }
       (for {
-        env                <- miniClusterWithServices.createDetachedStreamExecutionEnvironment
+        env                <- miniClusterWithServices.createDetachedStreamExecutionEnvironment[IO]
         collectingListener <- ResultsCollectingListenerHolder.registerTestEngineListener
       } yield (env, collectingListener))
         .use { case (env, collectingListener) =>
