@@ -2,7 +2,7 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -22,7 +22,7 @@ trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with Laz
     for {
       _ <- definitions.scenarioActivitiesTable.schema.create
       _ <-
-        sqlu"""ALTER TABLE "${profile.schemaName}"."scenario_activities" ADD CONSTRAINT scenario_id_fk FOREIGN KEY ("scenario_id") REFERENCES "${profile.schemaName}"."processes" ("id") ON DELETE CASCADE;"""
+        sqlu"""ALTER TABLE "#${profile.schemaName}"."scenario_activities" ADD CONSTRAINT scenario_id_fk FOREIGN KEY ("scenario_id") REFERENCES "#${profile.schemaName}"."processes" ("id") ON DELETE CASCADE;"""
     } yield logger.info("Execution finished for migration V1_056__CreateScenarioActivitiesDefinition")
   }
 

@@ -6,8 +6,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration
 import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
-import pl.touk.nussknacker.ui.db.{NuExPostgresProfile, NuHsqldbProfile}
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.{DbRef, NuExPostgresProfile, NuHsqldbProfile, NuJdbcProfile}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 object LegacyDbInitializer extends LazyLogging {
@@ -15,7 +14,7 @@ object LegacyDbInitializer extends LazyLogging {
   def init(configDb: Config): (JdbcBackend.DatabaseDef, NuJdbcProfile) = {
     import net.ceedubs.ficus.Ficus._
     val url        = configDb.as[String]("url")
-    val schemaName = Option(configDb.as[String]("schema")).getOrElse("public")
+    val schemaName = Option(configDb.as[String]("schema")).getOrElse(DbRef.defaultSchemaName)
     val profile    = chooseDbProfile(url, schemaName)
     logger.info("Applying db migrations")
 

@@ -10,7 +10,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
   import profile.apiWithEnforcedSchema._
 
   override protected def createGenerateRandomUuidFunction(): DBIOAction[Int, NoStream, Effect.All] = {
-    sqlu"""CREATE FUNCTION "${profile.schemaName}".generate_random_uuid() RETURNS UUID DETERMINISTIC RETURN UUID();"""
+    sqlu"""CREATE FUNCTION "#${profile.schemaName}".generate_random_uuid() RETURNS UUID DETERMINISTIC RETURN UUID();"""
   }
 
 }

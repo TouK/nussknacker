@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.db
 
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory
 

@@ -71,7 +71,7 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    DatabaseInitializer.initDatabase("db", testDbConfig)
+//    DatabaseInitializer.initDatabase("db", testDbConfig)
   }
 
   override protected def afterEach(): Unit = {

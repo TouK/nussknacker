@@ -2,7 +2,7 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_060__CreateStickyNotesDefinition.StickyNotesDefinitions
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -22,7 +22,7 @@ trait V1_060__CreateStickyNotesDefinition extends SlickMigration with LazyLoggin
     for {
       _ <- definitions.stickyNotesEntityTable.schema.create
       _ <-
-        sqlu"""ALTER TABLE "${profile.schemaName}"."sticky_notes" ADD CONSTRAINT "sticky_notes_scenario_version_fk" FOREIGN KEY ("scenario_id", "scenario_version_id") REFERENCES "${profile.schemaName}"."process_versions" ("process_id", "id") ON DELETE CASCADE;"""
+        sqlu"""ALTER TABLE "#${profile.schemaName}"."sticky_notes" ADD CONSTRAINT "sticky_notes_scenario_version_fk" FOREIGN KEY ("scenario_id", "scenario_version_id") REFERENCES "#${profile.schemaName}"."process_versions" ("process_id", "id") ON DELETE CASCADE;"""
     } yield logger.info("Execution finished for migration V1_060__CreateStickyNotesDefinition")
   }
 

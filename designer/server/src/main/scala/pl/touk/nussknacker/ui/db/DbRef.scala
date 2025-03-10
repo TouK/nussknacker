@@ -4,7 +4,6 @@ import cats.effect.{IO, Resource}
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc._
 
@@ -12,7 +11,7 @@ class DbRef private (val db: JdbcBackend.Database, val profile: NuJdbcProfile)
 
 object DbRef {
 
-  type NuJdbcProfile = NuProfile
+  val defaultSchemaName = "public"
 
   def create(config: Config): Resource[IO, DbRef] = {
     for {
@@ -46,7 +45,7 @@ object DbRef {
 
 }
 
-trait NuProfile extends JdbcProfile {
+trait NuJdbcProfile extends JdbcProfile {
   this: JdbcProfile =>
 
   def schemaName: String
@@ -60,6 +59,6 @@ trait NuProfile extends JdbcProfile {
 
 }
 
-class NuPostgresProfile(override val schemaName: String)   extends PostgresProfile with NuProfile
+class NuPostgresProfile(override val schemaName: String)   extends PostgresProfile with NuJdbcProfile
 class NuExPostgresProfile(override val schemaName: String) extends NuPostgresProfile(schemaName) with ExPostgresProfile
-class NuHsqldbProfile(override val schemaName: String)     extends PostgresProfile with NuProfile
+class NuHsqldbProfile(override val schemaName: String)     extends HsqldbProfile with NuJdbcProfile

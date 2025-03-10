@@ -3,7 +3,7 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import db.migration.V1_058__UpdateAndAddMissingScenarioActivitiesDefinition.Migration
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.ast.Library.JdbcFunction

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.legacy.db
 
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.process.periodic.model.{
   PeriodicProcessDeploymentId,
   PeriodicProcessDeploymentStatus,

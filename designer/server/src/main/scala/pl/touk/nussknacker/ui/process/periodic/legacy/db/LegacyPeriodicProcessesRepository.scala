@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.LegacyPeriodicProcessesRepository.createPeriodicProcess
 import pl.touk.nussknacker.ui.process.periodic.model._

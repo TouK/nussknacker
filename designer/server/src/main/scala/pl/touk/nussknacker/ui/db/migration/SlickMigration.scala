@@ -5,9 +5,7 @@ import io.circe.Json
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.{NuHsqldbProfile, NuPostgresProfile}
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
-import pl.touk.nussknacker.ui.db.NuTables
+import pl.touk.nussknacker.ui.db.{DbRef, NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile, NuTables}
 import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
 
 import java.util.concurrent.atomic.AtomicReference
@@ -46,7 +44,7 @@ trait SlickMigration extends BaseJavaMigration {
 
 object SlickMigration {
 
-  private val configuredAppSchema = new AtomicReference[String]("public")
+  private val configuredAppSchema = new AtomicReference[String](DbRef.defaultSchemaName)
 
   def getConfiguredAppSchema: String                               = configuredAppSchema.get()
   private[db] def setConfiguredAppSchema(schemaName: String): Unit = configuredAppSchema.set(schemaName)

@@ -2,8 +2,7 @@ package pl.touk.nussknacker.ui.process.version
 
 import db.util.DBIOActionInstances.{toEffectAll, DB}
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.{DbRef, NuJdbcProfile, NuTables}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 
 import scala.concurrent.ExecutionContext

@@ -2,7 +2,7 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_061__PeriodicDeploymentManagerTablesDefinition.Definitions
-import pl.touk.nussknacker.ui.db.DbRef.NuJdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
