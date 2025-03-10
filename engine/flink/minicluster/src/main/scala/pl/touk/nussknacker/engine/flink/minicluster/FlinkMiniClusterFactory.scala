@@ -109,11 +109,19 @@ class FlinkMiniClusterWithServices(
 ) extends AutoCloseable {
 
   def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
-    createDetachedStreamExecutionEnvironment.use(env => IO(action(env))).unsafeRunSync()
+    createDetachedStreamExecutionEnvironment.use(env => IO.pure(action(env))).unsafeRunSync()
   }
 
   def createDetachedStreamExecutionEnvironment: Resource[IO, StreamExecutionEnvironment] = {
-    Resource.fromAutoCloseable(IO(streamExecutionEnvironmentFactory(false)))
+    Resource.fromAutoCloseable(IO.pure(streamExecutionEnvironmentFactory(false)))
+  }
+
+  def withAttachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
+    createAttachedStreamExecutionEnvironment.use(env => IO.pure(action(env))).unsafeRunSync()
+  }
+
+  def createAttachedStreamExecutionEnvironment: Resource[IO, StreamExecutionEnvironment] = {
+    Resource.fromAutoCloseable(IO.pure(streamExecutionEnvironmentFactory(true)))
   }
 
   override def close(): Unit = miniCluster.close()
