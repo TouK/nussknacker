@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 
 // This is only for purpose of using an empty URLClassLoader as contextClassLoader in tests ran from Intellij Idea
 trait ModelClassLoaderSimulationSuite extends BeforeAndAfterAll { this: Suite =>

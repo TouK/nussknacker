@@ -137,23 +137,22 @@ object TablesDefinitionDiscovery extends LazyLogging {
 
   def prepareDiscovery(
       flinkDataDefinition: FlinkDataDefinition,
-      miniCluster: FlinkMiniClusterWithServices,
-      classLoader: URLClassLoader
+      miniCluster: FlinkMiniClusterWithServices
   ): ValidatedNel[FlinkDataDefinitionRegistrationError, TablesDefinitionDiscovery] = {
-    ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      miniCluster.withDetachedStreamExecutionEnvironment { env =>
-        val streamTableEnv = StreamTableEnvironment.create(
-          env,
-          EnvironmentSettings
-            .newInstance()
-            .withClassLoader(classLoader)
-            .withConfiguration(Configuration.fromMap(env.getConfiguration.toMap))
-            .build()
-        )
-        flinkDataDefinition
-          .registerIn(streamTableEnv)
-          .map(_ => new TablesDefinitionDiscovery(streamTableEnv))
-      }
+    // TODO: Check if this works without:
+    //  1. Setting ModelClassLoader as context classloader
+    //  2. Setting ModelClassLoader on EnvironmnentSettings for StreamTableEnv (this may be redundant anyways)
+    miniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val streamTableEnv = StreamTableEnvironment.create(
+        env,
+        EnvironmentSettings
+          .newInstance()
+          .withConfiguration(Configuration.fromMap(env.getConfiguration.toMap))
+          .build()
+      )
+      flinkDataDefinition
+        .registerIn(streamTableEnv)
+        .map(_ => new TablesDefinitionDiscovery(streamTableEnv))
     }
   }
 

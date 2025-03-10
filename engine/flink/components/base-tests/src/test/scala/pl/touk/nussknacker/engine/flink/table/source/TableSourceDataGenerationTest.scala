@@ -33,8 +33,7 @@ class TableSourceDataGenerationTest
     val discovery = TablesDefinitionDiscovery
       .prepareDiscovery(
         flinkDataDefinition,
-        FlinkMiniClusterFactory.createMiniClusterWithServices(simulatedModelClassloader, new Configuration()),
-        simulatedModelClassloader
+        FlinkMiniClusterFactory.createMiniClusterWithServices(simulatedModelClassloader, new Configuration())
       )
       .validValue
     new TableSource(

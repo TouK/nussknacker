@@ -40,7 +40,7 @@ class TablesDefinitionDiscoveryTest
     val parsedSql      = FlinkDdlParser.parseUnsafe(sql)
     val dataDefinition = FlinkDataDefinition.applyUnsafe(parsedSql, None)
     TablesDefinitionDiscovery
-      .prepareDiscovery(dataDefinition, minicluster, simulatedModelClassloader)
+      .prepareDiscovery(dataDefinition, minicluster)
       .andThen(_.listTables.sequence)
   }
 
@@ -86,7 +86,7 @@ class TablesDefinitionDiscoveryTest
     val catalogConfiguration = Configuration.fromMap(Map("type" -> StubbedCatalogFactory.catalogName).asJava)
     val flinkDataDefinition  = FlinkDataDefinition.applyUnsafe(List.empty, Some(catalogConfiguration))
     val discovery =
-      TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition, minicluster, simulatedModelClassloader).validValue
+      TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition, minicluster).validValue
     val tableDefinition = discovery.listTables.sequence.validValue.loneElement
 
     tableDefinition.tableId.toString shouldBe s"`_nu_catalog`." +

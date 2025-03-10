@@ -1903,6 +1903,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     flinkComponentsUtils   % Provided,
     jsonUtils              % Provided,
     flinkMiniCluster       % Provided,
+    extensionsApi          % Provided,
     testUtils              % Test,
     flinkComponentsTestkit % Test,
   )
