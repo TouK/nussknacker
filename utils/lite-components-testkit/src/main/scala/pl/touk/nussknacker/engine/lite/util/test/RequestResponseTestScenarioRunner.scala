@@ -8,7 +8,7 @@ import io.circe.Json
 import org.everit.json.schema.TrueSchema
 import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -57,7 +57,8 @@ class RequestResponseTestScenarioRunner(
 ) extends TestScenarioRunner {
 
   def runWithRequests[T](
-      scenario: CanonicalProcess
+      scenario: CanonicalProcess,
+      nodesDeploymentData: NodesDeploymentData = NodesDeploymentData.empty
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
     TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
       val modelData = ModelWithTestExtensions(
@@ -70,6 +71,7 @@ class RequestResponseTestScenarioRunner(
       RequestResponseInterpreter[Id](
         scenario,
         ProcessVersion.empty,
+        nodesDeploymentData,
         LiteEngineRuntimeContextPreparer.noOp,
         modelData,
         additionalListeners = Nil,

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId, User}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
@@ -41,32 +43,39 @@ class DefaultProcessingTypeDeployedScenariosProvider(
           )
         )
       }
-      dataList <- Future.sequence(deployedProcesses.flatMap { details =>
-        val lastDeployAction = details.lastDeployedAction.get
-        // TODO: what should be in name?
-        val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
-        val deploymentData = DeploymentData(
-          DeploymentId.fromActionId(lastDeployAction.id),
-          deployingUser,
-          Map.empty,
-          NodesDeploymentData.empty,
-          AdditionalModelConfigs.empty
-        )
-        val deployedScenarioDataTry =
-          scenarioResolver.resolveScenario(details.json).map { resolvedScenario =>
-            DeployedScenarioData(
-              details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
-              deploymentData,
-              resolvedScenario
-            )
-          }
-        deployedScenarioDataTry match {
-          case Failure(exception) =>
-            logger.error(s"Exception during resolving deployed scenario ${details.name}", exception)
-            None
-          case Success(value) => Some(Future.successful(value))
-        }
-      })
+      dataList <- Future
+        .sequence(deployedProcesses.map { details =>
+          val lastDeployAction = details.lastDeployedAction.get
+          // TODO: what should be in name?
+          val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
+          val deploymentData = DeploymentData(
+            DeploymentId.fromActionId(lastDeployAction.id),
+            deployingUser,
+            // TODO: Store this data and use them during jobs recovery. Currently after restart some jobs will work differently
+            nodesData = NodesDeploymentData.empty,
+            additionalDeploymentData = Map.empty,
+            additionalModelConfigs = AdditionalModelConfigs.empty
+          )
+          scenarioResolver
+            .resolveScenario(details.json)
+            .map {
+              case Validated.Valid(resolvedScenario) =>
+                Some(
+                  DeployedScenarioData(
+                    details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
+                    deploymentData,
+                    resolvedScenario
+                  )
+                )
+              case Validated.Invalid(errors) =>
+                logger.error(
+                  s"Cannot resolve deployed scenario ${details.name} with errors: " +
+                    s"${errors.map(PrettyValidationErrors.formatErrorMessage)}"
+                )
+                None
+            }
+        })
+        .map(_.flatten)
     } yield dataList
   }
 

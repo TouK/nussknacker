@@ -6,9 +6,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Configuration changes
 
-* [#7181](https://github.com/TouK/nussknacker/pull/7181) Added designer configuration: stickyNotesSettings 
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) [#7620](https://github.com/TouK/nussknacker/pull/7620) Added designer configuration: stickyNotesSettings 
   * maxContentLength - max length of a sticky notes content (characters)
-  * maxNotesCount - max count of sticky notes inside one scenario/fragment
+  * maxNotesCount - optional, max count of sticky notes inside one scenario/fragment (if not set the amount of sticky notes in scenario is not limited)
   * enabled - if set to false stickyNotes feature is disabled, stickyNotes cant be created, they are also not loaded to graph
 * [#7534](https://github.com/TouK/nussknacker/pull/7534) `shouldVerifyBeforeDeploy` configuration entry available for Flink deployment
   was renamed to `scenarioStateVerification.enabled`
@@ -89,6 +89,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Moved NodeDeploymentData from FlinkCustomNodeContext to ComponentUseContext.LiveRuntime.
     * Introduced ComponentUseContextProvider in ScenarioCompiler, which retains ComponentUseCase functionality but is 
       now intended for internal use only.  
+* [#7618](https://github.com/TouK/nussknacker/pull/7618) `NonTransientException` is a normal class instead of case class.
+  We recommend to create explicit classes extending this class, but still it can be created directly but with `new NonTransientException(...)` 
 
 ### Other changes
 

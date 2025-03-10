@@ -34,7 +34,7 @@ class InterpreterSetup[T: ClassTag] {
   def sourceInterpretation[F[_]: Monad: InterpreterShape](
       process: CanonicalProcess,
       additionalComponents: List[ComponentDefinition]
-  ): (Context, ServiceExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+  ): (Context, ServiceExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo]]] = {
     val jobData      = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     val compilerData = prepareCompilerData(jobData, additionalComponents)
     val interpreter  = compilerData.interpreter

@@ -45,8 +45,8 @@
                 "value": "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
               },
               {
-                "name": "DEPLOYMENT_CONFIG_FILE",
-                "value": "/data/deploymentConfig.conf"
+                "name": "DEPLOYMENT_DATA_FILE",
+                "value": "/data/deploymentData.json"
               },
               {
                 "name": "POD_NAME",
@@ -265,8 +265,8 @@
                 "value": "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
               },
               {
-                "name": "DEPLOYMENT_CONFIG_FILE",
-                "value": "/data/deploymentConfig.conf"
+                "name": "DEPLOYMENT_DATA_FILE",
+                "value": "/data/deploymentData.json"
               },
               {
                 "name": "POD_NAME",

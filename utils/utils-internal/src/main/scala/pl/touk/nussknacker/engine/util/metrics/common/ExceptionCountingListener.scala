@@ -15,7 +15,7 @@ private[engine] class ExceptionCountingListener extends EmptyProcessListener wit
     exceptionRateMeter = new ExceptionRateMeter(metricsProvider)
   }
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit = {
     exceptionRateMeter.markException(exceptionInfo)
   }
 

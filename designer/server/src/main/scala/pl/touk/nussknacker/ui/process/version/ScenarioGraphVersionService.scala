@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process.version
 
-import cats.data.EitherT
+import cats.data.{EitherT, Validated}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.ScenarioMetadata
@@ -47,12 +48,23 @@ class ScenarioGraphVersionService(
         Either.cond(!validationResult.hasErrors, (), ScenarioGraphValidationError(validationResult.errors))
       }
       // TODO: scenario was already resolved during validation - use it here
-      resolvedCanonicalProcess <- EitherT.right[ScenarioGraphValidationError](
-        Future.fromTry(
-          scenarioResolver
-            .forProcessingTypeUnsafe(scenarioMetadata.processingType)(user)
-            .resolveScenario(scenarioGraphVersion.jsonUnsafe)(user)
-        )
+      resolvedCanonicalProcess <- EitherT(
+        scenarioResolver
+          .forProcessingTypeUnsafe(scenarioMetadata.processingType)(user)
+          .resolveScenario(scenarioGraphVersion.jsonUnsafe)(user, ec)
+          .map {
+            case Validated.Valid(scenario) => Right(scenario)
+            case Validated.Invalid(e) =>
+              Left(
+                ScenarioGraphValidationError(
+                  ValidationErrors(
+                    invalidNodes = Map.empty,
+                    processPropertiesErrors = e.map(PrettyValidationErrors.formatErrorMessage).toList,
+                    globalErrors = Nil
+                  )
+                )
+              )
+          }
       )
       entityWithUpdateScenarioGraph = scenarioGraphVersion.copy(json = Some(resolvedCanonicalProcess))
     } yield entityWithUpdateScenarioGraph).value

@@ -45,7 +45,7 @@ object TestProcess {
     }
 
     def updateExceptionResult(
-        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        exceptionInfo: NuExceptionInfo,
         variableEncoder: Any => T
     ): TestResults[T] =
       copy(exceptions = exceptions :+ ExceptionResult.fromNuExceptionInfo(exceptionInfo, variableEncoder))
@@ -68,7 +68,7 @@ object TestProcess {
   object ExceptionResult {
 
     def fromNuExceptionInfo[T](
-        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        exceptionInfo: NuExceptionInfo,
         variableEncoder: Any => T
     ): ExceptionResult[T] =
       ExceptionResult(

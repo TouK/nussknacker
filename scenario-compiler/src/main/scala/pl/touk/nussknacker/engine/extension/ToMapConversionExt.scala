@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}

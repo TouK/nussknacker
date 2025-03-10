@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.data.Validated
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, DMTestScenarioCommand}
@@ -29,9 +30,13 @@ class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, deploy
       scenarioTestData: ScenarioTestData,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]] = {
     for {
-      resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
+      resolvedScenarioWithErrors <- scenarioResolver.resolveScenario(canonicalProcess)
+      resolvedScenario <- resolvedScenarioWithErrors match {
+        case Validated.Valid(scenario) => Future.successful(scenario)
+        case Validated.Invalid(e)      => Future.failed(new RuntimeException(e.head.toString))
+      }
       testResult <- deploymentManager.processCommand(
-        DMTestScenarioCommand(processVersion, resolvedProcess, scenarioTestData)
+        DMTestScenarioCommand(processVersion, resolvedScenario, scenarioTestData)
       )
     } yield testResult
   }

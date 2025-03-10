@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets
 
 object NuRuntimeTestUtils {
 
-  val deploymentDataFile: File = new File(getClass.getResource("/sampleDeploymentData.conf").getFile)
+  val deploymentDataFile: File = new File(getClass.getResource("/sampleDeploymentData.json").getFile)
 
   def testCaseId(suiteName: String, scenario: CanonicalProcess): String = testCaseId(suiteName, scenario.name)
 

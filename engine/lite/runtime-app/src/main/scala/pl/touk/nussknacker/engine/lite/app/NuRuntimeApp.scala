@@ -7,6 +7,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.{parser, Decoder}
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
@@ -29,7 +30,7 @@ object NuRuntimeApp extends IOApp with LazyLogging {
         case AppStartingError.MissingArgument(argumentName) =>
           logger.error(s"Missing $argumentName argument!")
           logger.error("")
-          logger.error("Usage: ./run.sh scenario_file_location.json deployment_config_location.conf")
+          logger.error("Usage: ./run.sh scenario_file_location.json deployment_data_location.json")
           ExitCode(1)
         case AppStartingError.CannotParseScenario(errors) =>
           logger.error("Scenario file is not a valid json")
@@ -46,11 +47,11 @@ object NuRuntimeApp extends IOApp with LazyLogging {
     parsedArgs <- parseArgs(args)
     (scenarioFileLocation, deploymentConfigLocation) = parsedArgs
     runtimeConfig       <- loadRuntimeConfig()
-    deploymentConfig    <- loadDeploymentConfig(deploymentConfigLocation)
+    deploymentData      <- loadDeploymentData(deploymentConfigLocation)
     _                   <- doPrerequisites()
     system              <- createActorSystem(runtimeConfig)
     scenario            <- parseScenario(scenarioFileLocation)
-    scenarioInterpreter <- createScenarioInterpreter(system, runtimeConfig, deploymentConfig, scenario)
+    scenarioInterpreter <- createScenarioInterpreter(system, runtimeConfig, deploymentData, scenario)
     routes = createRoutes(system, scenarioInterpreter)
     _ <- createAndRunServer(runtimeConfig, routes)(system)
   } yield ()
@@ -88,12 +89,12 @@ object NuRuntimeApp extends IOApp with LazyLogging {
   private def createScenarioInterpreter(
       system: ActorSystem,
       runtimeConfig: Config,
-      deploymentConfig: Config,
+      deploymentData: LiteDeploymentData,
       scenario: CanonicalProcess
   ) = {
     for {
       _                   <- Resource.eval(IO.delay(logger.info("Preparing RunnableScenarioInterpreter")))
-      scenarioInterpreter <- prepareScenarioInterpreter(scenario, runtimeConfig, deploymentConfig, system)
+      scenarioInterpreter <- prepareScenarioInterpreter(scenario, runtimeConfig, deploymentData, system)
       _ <- Resource
         .make(
           acquire = for {
@@ -141,7 +142,7 @@ object NuRuntimeApp extends IOApp with LazyLogging {
     if (args.length < 1) {
       throw MissingArgument("scenario_file_location")
     } else if (args.length < 2) {
-      throw MissingArgument("deployment_config_location")
+      throw MissingArgument("deployment_data_location")
     }
     (Path.of(args(0)), Path.of(args(1)))
   })
@@ -157,9 +158,10 @@ object NuRuntimeApp extends IOApp with LazyLogging {
     }
   }
 
-  private def loadDeploymentConfig(path: Path) = Resource.eval {
+  private def loadDeploymentData(path: Path) = Resource.eval {
     IO.delay {
-      ConfigFactory.parseFile(path.toFile)
+      val deploymentDataString = ResourceLoader.load(path)
+      parser.parse(deploymentDataString).flatMap(Decoder[LiteDeploymentData].decodeJson(_)).toTry.get
     }
   }
 

@@ -7,7 +7,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.record.DefaultRecordBatch
 import org.apache.kafka.common.utils.Utils
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
@@ -139,12 +139,12 @@ object KafkaJsonExceptionSerializationSchema {
 }
 
 class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig)
-    extends KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] {
+    extends KafkaSerializationSchema[NuExceptionInfo] {
 
   import KafkaJsonExceptionSerializationSchema._
 
   override def serialize(
-      exceptionInfo: NuExceptionInfo[NonTransientException],
+      exceptionInfo: NuExceptionInfo,
       timestamp: lang.Long
   ): ProducerRecord[Array[Byte], Array[Byte]] = {
     val key =
@@ -180,17 +180,17 @@ object KafkaExceptionInfo {
 
   def apply(
       metaData: MetaData,
-      exceptionInfo: NuExceptionInfo[NonTransientException],
+      exceptionInfo: NuExceptionInfo,
       config: KafkaExceptionConsumerConfig
   ): KafkaExceptionInfo = {
     new KafkaExceptionInfo(
       metaData.name,
       exceptionInfo.nodeComponentInfo.map(_.nodeId),
-      Option(exceptionInfo.throwable.message),
-      Option(exceptionInfo.throwable.input),
+      Option(exceptionInfo.throwable.getMessage),
+      Option(exceptionInfo.input),
       optional(exceptionInfo.context.allVariables, config.includeInputEvent).map(encoder.encode),
       serializeStackTrace(config.stackTraceLengthLimit, exceptionInfo.throwable),
-      exceptionInfo.throwable.timestamp.toEpochMilli,
+      exceptionInfo.timestamp.toEpochMilli,
       optional(hostName, config.includeHost),
       config.additionalParams
     )

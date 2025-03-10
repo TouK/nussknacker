@@ -130,7 +130,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       env = List(
         EnvVar("SCENARIO_FILE", s"$CommonConfigMountPath/scenario.json"),
         EnvVar("CONFIG_FILE", s"/opt/nussknacker/conf/application.conf,$RuntimeConfigMountPath/runtimeConfig.conf"),
-        EnvVar("DEPLOYMENT_CONFIG_FILE", s"$CommonConfigMountPath/deploymentConfig.conf"),
+        EnvVar("DEPLOYMENT_DATA_FILE", s"$CommonConfigMountPath/deploymentData.json"),
         EnvVar("LOGBACK_FILE", s"$LoggingConfigMountPath/logback.xml"),
         // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
         // Hash will be extracted on entrypoint side.

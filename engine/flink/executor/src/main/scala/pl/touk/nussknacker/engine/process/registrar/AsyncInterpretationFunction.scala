@@ -70,7 +70,7 @@ private[registrar] class AsyncInterpretationFunction(
 
   private def invokeInterpreter(
       input: Context
-  )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
+  )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo]]] => Unit): Unit = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
@@ -93,7 +93,7 @@ private[registrar] class AsyncInterpretationFunction(
   private def handleResults(
       collector: ResultFuture[InterpretationResult],
       results: List[InterpretationResult],
-      exceptions: List[NuExceptionInfo[_ <: Throwable]]
+      exceptions: List[NuExceptionInfo]
   ): Unit = {
     try {
       exceptions.foreach(exceptionHandler.handle)

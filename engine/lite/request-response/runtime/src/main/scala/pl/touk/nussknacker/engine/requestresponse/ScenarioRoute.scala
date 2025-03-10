@@ -109,7 +109,7 @@ private[requestresponse] class ScenarioRoute(
   protected def logDirective: Directive0 =
     DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
-  private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
+  private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo]): Unit = {
     logger.info(s"Failed to invoke: $scenarioName with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
       logger.debug(

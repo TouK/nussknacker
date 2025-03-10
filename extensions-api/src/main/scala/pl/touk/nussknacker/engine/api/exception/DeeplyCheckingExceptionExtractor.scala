@@ -1,6 +1,4 @@
-package pl.touk.nussknacker.engine.util.exception
-
-import pl.touk.nussknacker.engine.api.exception.ExceptionExtractor
+package pl.touk.nussknacker.engine.api.exception
 
 import scala.reflect.ClassTag
 
