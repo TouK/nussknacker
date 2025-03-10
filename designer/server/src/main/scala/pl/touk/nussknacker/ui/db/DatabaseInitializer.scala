@@ -8,11 +8,11 @@ import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
 
 object DatabaseInitializer {
 
-  def initDatabase(path: String, config: Config): Unit = {
-    configureFlyway(path, config).load().migrate()
+  def initDatabase(path: String, config: Config, schema: String): Unit = {
+    configureFlyway(path, config, schema).load().migrate()
   }
 
-  private[db] def configureFlyway(path: String, config: Config): FluentConfiguration = {
+  private[db] def configureFlyway(path: String, config: Config, schema: String): FluentConfiguration = {
     import net.ceedubs.ficus.Ficus._
 
     val configDb = config.getConfig(path)
@@ -20,7 +20,7 @@ object DatabaseInitializer {
       configDb.as[String]("url"),
       configDb.as[String]("user"),
       configDb.as[String]("password"),
-      configDb.getAs[String]("schema")
+      Some(schema)
     )
   }
 

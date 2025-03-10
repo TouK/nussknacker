@@ -46,10 +46,22 @@ trait SlickMigration extends BaseJavaMigration {
 
 object SlickMigration {
 
-  private def configuredAppSchema = new AtomicReference[String]("public")
+  private val configuredAppSchema = new AtomicReference[String]("public")
 
-  def getConfiguredAppSchema: String                               = configuredAppSchema.get()
-  private[db] def setConfiguredAppSchema(schemaName: String): Unit = configuredAppSchema.set(schemaName)
+  // todo: cleanup
+  def getConfiguredAppSchema: String = {
+    println("CL " + this.getClass.getClassLoader.hashCode() + " IN: " + configuredAppSchema.hashCode())
+    val ll = configuredAppSchema.get()
+    println("GETS " + ll)
+    ll
+  }
+
+  private[db] def setConfiguredAppSchema(schemaName: String): Unit = {
+    println("CL " + this.getClass.getClassLoader.hashCode() + " IN: " + configuredAppSchema.hashCode())
+    println("SETS " + schemaName)
+    configuredAppSchema.set(schemaName)
+  }
+
 }
 
 trait ProcessJsonMigration extends SlickMigration with NuTables with LazyLogging {

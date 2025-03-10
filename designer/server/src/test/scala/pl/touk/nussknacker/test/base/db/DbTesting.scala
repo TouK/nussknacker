@@ -9,7 +9,6 @@ import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
 
-import java.time.Clock
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
 
@@ -38,7 +37,8 @@ trait WithTestHsqlDb extends WithTestDb {
         "user"     -> "SA",
         "password" -> "",
         "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
-        "driver"   -> "org.hsqldb.jdbc.JDBCDriver"
+        "driver"   -> "org.hsqldb.jdbc.JDBCDriver",
+        "schema"   -> "testschema"
       ).asJava
     ).asJava
   )
@@ -70,7 +70,7 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    DatabaseInitializer.initDatabase("db", testDbConfig)
+    DatabaseInitializer.initDatabase("db", testDbConfig, "testschema") // todo: fixme
   }
 
   override protected def afterEach(): Unit = {
@@ -83,6 +83,7 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     }
   }
 
+  // todo: schema?
   def cleanDB(): Try[Unit] = Using(testDbRef.db.createSession()) { session =>
     session.prepareStatement("""delete from "process_attachments"""").execute()
     session.prepareStatement("""delete from "process_actions"""").execute()

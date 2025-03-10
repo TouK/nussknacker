@@ -1931,8 +1931,7 @@ lazy val prepareDesignerSlowTests =
 
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
-  .enablePlugins(GenerateDesignerOpenApiPlugin)
-  .enablePlugins(LintStagedScalaFilesPlugin)
+  .enablePlugins(GenerateDesignerOpenApiPlugin, CheckSqlSchemasInStagedScalaFilesPlugin)
   .dependsOn(scalafixRules % ScalafixConfig)
   .settings(slowTestsSettings)
   .settings(commonSettings)

@@ -5,7 +5,7 @@ import java.nio.file.{Path, Paths}
 import scala.meta._
 import scala.meta.inputs.Input
 
-class NoSlickTableWithoutSchema extends SemanticRule("NoSlickTableWithoutSchema") {
+class NoSlickTableOrPlainSqlWithoutSchema extends SemanticRule("NoSlickTableOrPlainSqlWithoutSchema") {
 
   private val slickTableSymbol = "slick/relational/RelationalProfile#API#Table#"
 
