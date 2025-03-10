@@ -14,7 +14,13 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDependency, Parameter, ParameterDeclaration}
+import pl.touk.nussknacker.engine.api.definition.{
+  BoolParameterEditor,
+  NodeDependency,
+  Parameter,
+  ParameterDeclaration,
+  TypedNodeDependency
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
@@ -39,9 +45,7 @@ import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
 class TableSinkFactory(
-    flinkDataDefinition: FlinkDataDefinition,
-    miniCluster: FlinkMiniClusterWithServices,
-    classLoader: URLClassLoader
+    flinkDataDefinition: FlinkDataDefinition
 ) extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     with LazyLogging {
@@ -49,39 +53,42 @@ class TableSinkFactory(
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
-  @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery
-    .prepareDiscovery(
-      flinkDataDefinition,
-      miniCluster,
-      classLoader
-    )
-    .orFail
-
   override type State = TableSinkFactoryState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
-    prepareInitialParameters orElse
+    prepareInitialParameters(dependencies) orElse
       rawModePrepareValueParameter orElse
       rawModeFinalStep(context) orElse
       nonRawModePrepareValueParameters(context) orElse
       nonRawModeValidateValueParametersFinalStep(context)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List.empty
+  private val miniclusterDependency                   = TypedNodeDependency[FlinkMiniClusterWithServices]
+  override def nodeDependencies: List[NodeDependency] = List(miniclusterDependency)
 
-  private lazy val prepareInitialParameters: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    val (errors, tableDefinitions) = tablesDiscovery.listTables.map(_.toEither).partitionMap(identity)
-    errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
+  private def prepareInitialParameters(dependencies: List[NodeDependencyValue]): ContextTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      val minicluster = miniclusterDependency.extract(dependencies)
+      val (errors, tableDefinitions) = TablesDefinitionDiscovery
+        .prepareDiscovery(
+          flinkDataDefinition,
+          minicluster
+        )
+        .orFail
+        .listTables
+        .map(_.toEither)
+        .partitionMap(identity)
+      errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
 
-    val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
-    NextParameters(
-      parameters = tableNameParamDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
-      errors = List.empty,
-      state = Some(AvailableTables(tableDefinitions))
-    )
+      val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
+      NextParameters(
+        parameters =
+          tableNameParamDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
+        errors = List.empty,
+        state = Some(AvailableTables(tableDefinitions))
+      )
   }
 
   private lazy val rawModePrepareValueParameter: ContextTransformationDefinition = {

@@ -31,22 +31,17 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
     val parsedSqlStatements             = sqlStatements.map(FlinkDdlParser.parseUnsafe).toList.flatten
     val flinkDataDefinition             = FlinkDataDefinition.applyUnsafe(parsedSqlStatements, catalogConfigurationOpt)
 
-    val modelClassLoader = castModelClassloader()
-    val miniCluster      = FlinkMiniClusterFactory.createMiniClusterWithServices(modelClassLoader, new Configuration())
-
     List(
       ComponentDefinition(
         tableComponentName,
         new TableSourceFactory(
           flinkDataDefinition,
-          testDataGenerationModeOrDefault,
-          miniCluster,
-          modelClassLoader
+          testDataGenerationModeOrDefault
         )
       ),
       ComponentDefinition(
         tableComponentName,
-        new TableSinkFactory(flinkDataDefinition, miniCluster, modelClassLoader)
+        new TableSinkFactory(flinkDataDefinition)
       )
     )
   }
