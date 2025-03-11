@@ -4,6 +4,7 @@ import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState.UninitializedCombinedDataException
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.util.Success
@@ -63,6 +64,17 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
 
     provider.setStateValueAndNotifyObservers(createState("newValue", -1)).unsafeRunSync()
     transformed.all.head._2 shouldEqual "newValue"
+  }
+
+  test("should close dependant observers") {
+    val provider = new MutableProcessingTypeDataProvider(createState("initial", -1))
+
+    val transformed = provider.mapValues(identity).mapValues(identity)
+
+    provider.close().unsafeRunSync()
+
+    an[UninitializedCombinedDataException.type] shouldBe thrownBy(provider.combined)
+    an[UninitializedCombinedDataException.type] shouldBe thrownBy(transformed.combined)
   }
 
   private def createState(value: String, combined: Int) = {

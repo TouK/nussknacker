@@ -25,7 +25,7 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     with LazyLogging {
 
   def reloadAll(): IO[Unit] = {
-    stateMutex.lock.surround {
+    accessStateInCriticalSection { stateRef =>
       for {
         beforeReload <- stateRef.get
         _ <- IO(
@@ -33,7 +33,7 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
             s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}]"
           )
         )
-        _ <- close(beforeReload)
+        _ <- closeState(beforeReload)
         _ <- IO(
           logger.info("Reloading processing type data...")
         )
@@ -54,18 +54,7 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     }
   }
 
-  def close(): IO[Unit] = {
-    stateMutex.lock.surround {
-      for {
-        beforeSetToEmpty <- stateRef.get
-        // It is better to return empty state than closed state
-        _ <- stateRef.set(ProcessingTypeDataState.uninitialized)
-        _ <- close(beforeSetToEmpty)
-      } yield ()
-    }
-  }
-
-  private def close(state: ProcessingTypeDataState[Data, CombinedData]) = IO {
+  override protected def closeState(state: ProcessingTypeDataState[Data, CombinedData]): IO[Unit] = IO {
     state.all.values.foreach(
       _.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance)
         .getOrElse(

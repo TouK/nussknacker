@@ -40,10 +40,10 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: Proc
 
   // We use unsafeRunSync because IO-based solution would complicate a lot our application initialization logic where
   // we pass to every service, various views for our ProcessingTypeData
-  protected val stateRef: Ref[IO, ProcessingTypeDataState[Data, CombinedData]] =
+  private val stateRef: Ref[IO, ProcessingTypeDataState[Data, CombinedData]] =
     Ref.of[IO, ProcessingTypeDataState[Data, CombinedData]](initialState).unsafeRunSync()(IORuntime.global)
 
-  protected val stateMutex: Mutex[IO] = Mutex[IO].unsafeRunSync()(IORuntime.global)
+  private val stateMutex: Mutex[IO] = Mutex[IO].unsafeRunSync()(IORuntime.global)
 
   private val observers = new CopyOnWriteArrayList[Observer[ProcessingTypeDataState[Data, CombinedData]]]()
 
@@ -105,10 +105,7 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: Proc
   }
 
   private def state: ProcessingTypeDataState[Data, CombinedData] = {
-    stateMutex.lock
-      .surround {
-        stateRef.get
-      }
+    accessStateInCriticalSection(_.get)
       .unsafeRunSync()(IORuntime.global) // TODO: get rid of unsafeRunSync
   }
 
@@ -126,10 +123,41 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: Proc
     childProvider
   }
 
+  def close(): IO[Unit] = {
+    closeObservers.flatMap { _ =>
+      accessStateInCriticalSection { stateRefValue =>
+        for {
+          beforeSetToEmpty <- stateRefValue.get
+          // It is better to return uninitialized state than closed state
+          _ <- stateRefValue.set(ProcessingTypeDataState.uninitialized)
+          _ <- closeState(beforeSetToEmpty)
+        } yield ()
+      }
+    }
+  }
+
+  protected def accessStateInCriticalSection[T](
+      doWithStateRef: Ref[IO, ProcessingTypeDataState[Data, CombinedData]] => IO[T]
+  ): IO[T] = {
+    stateMutex.lock.surround {
+      doWithStateRef(stateRef)
+    }
+  }
+
+  private def closeObservers: IO[Unit] = {
+    observers.asScala.toList.map(_.close()).sequence.map(_ => observers.clear())
+  }
+
+  protected def closeState(state: ProcessingTypeDataState[Data, CombinedData]): IO[Unit] = {
+    IO.pure(())
+  }
+
 }
 
 trait Observer[V] {
   def notifyChange(newValue: V): IO[Unit]
+
+  def close(): IO[Unit]
 }
 
 private[provider] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
@@ -139,7 +167,7 @@ private[provider] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     with Observer[ProcessingTypeDataState[T, C]] {
 
   override def notifyChange(newValue: ProcessingTypeDataState[T, C]): IO[Unit] = {
-    stateMutex.lock.surround {
+    accessStateInCriticalSection { _ =>
       setStateValueAndNotifyObservers(transformState(newValue))
     }
   }
@@ -166,7 +194,10 @@ object ProcessingTypeDataState {
 
   val uninitialized = new ProcessingTypeDataState(
     all = Map.empty,
-    combinedDataTry = Failure(new IllegalAccessException("ProcessingTypeData is not initialized"))
+    combinedDataTry = Failure(UninitializedCombinedDataException)
   )
+
+  private[provider] object UninitializedCombinedDataException
+      extends IllegalAccessException("ProcessingTypeData is not initialized")
 
 }
