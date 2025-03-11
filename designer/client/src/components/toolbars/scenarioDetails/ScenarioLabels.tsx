@@ -16,7 +16,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import i18next from "i18next";
 import { editScenarioLabels } from "../../../actions/nk";
@@ -28,6 +28,16 @@ import { useDelayedEnterAction } from "./useDelayedEnterAction";
 interface AddLabelProps {
     onClick: () => void;
 }
+
+const findThresholdIndex = (numbers: number[], threshold: number): number => {
+    console.log(threshold);
+    let sum = 0;
+    for (let i = 0; i < numbers.length; i++) {
+        sum += numbers[i];
+        if (sum > threshold) return i;
+    }
+    return -1;
+};
 
 const labelUniqueValidation = (label: string) => ({
     label,
@@ -111,7 +121,7 @@ interface Props {
 
 export const ScenarioLabels = ({ readOnly }: Props) => {
     const { t } = useTranslation();
-    const autocompleteRef = useRef(null);
+    const autocompleteRef = useRef<HTMLInputElement | null>(null);
     const scenarioLabels = useSelector(getScenarioLabels);
     const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
     const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
@@ -131,6 +141,10 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
 
     const [inputTyping, setInputTyping] = useState(false);
     const [inputErrors, setInputErrors] = useState<ScenarioLabelValidationError[]>([]);
+
+    const labelsRefs: React.RefObject<HTMLDivElement>[] = Array.from({ length: scenarioLabels.length }, () => createRef<HTMLDivElement>());
+    const [labelsInputWidth, setLabelsInputWidth] = useState<number>(200);
+    const [dynamicTagsLimit, setDynamicTagsLimit] = useState(999);
 
     const handleAddLabelClick = (): void => {
         setShowEditor(true);
@@ -203,6 +217,16 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
         },
         [dispatch],
     );
+
+    useEffect(() => {
+        const widths = labelsRefs.map((ref) =>
+            !autocompleteRef.current.classList.contains("Mui-focused") ? ref.current?.offsetWidth : -1,
+        );
+
+        if (!widths.some((w) => w < 0 || !w)) {
+            setDynamicTagsLimit(findThresholdIndex(widths, labelsInputWidth));
+        }
+    }, [labelsRefs, labelsInputWidth]);
 
     useEffect(() => {
         validateSelectedOptions(scenarioLabelOptions);
@@ -290,6 +314,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                     clearOnBlur
                     loadingText={<CircularProgress size={"1rem"} />}
                     multiple
+                    limitTags={dynamicTagsLimit}
                     noOptionsText={i18next.t("panels.scenarioDetails.labels.noAvailableLabels", "No labels")}
                     onBlur={() => {
                         setIsEdited(false);
@@ -326,6 +351,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                     }}
                     onOpen={async () => {
                         const fetchedOptions = await fetchAvailableLabelOptions();
+                        setLabelsInputWidth(autocompleteRef.current.offsetWidth * 0.7);
                         setOptions(fetchedOptions);
                         setIsOpen(true);
                     }}
@@ -375,6 +401,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 return (
                                     <StyledLabelChip
                                         title={t("panels.scenarioDetails.tooltip.label", "Label")}
+                                        ref={labelsRefs[index]}
                                         key={key}
                                         data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}
