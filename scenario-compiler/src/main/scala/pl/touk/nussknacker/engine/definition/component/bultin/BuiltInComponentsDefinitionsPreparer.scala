@@ -25,7 +25,7 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
       val defaultConfig  = DefaultComponentConfigDeterminer.forBuiltInComponent(id)
       val combinedConfig = componentsUiConfig.getConfig(id) |+| defaultConfig
       ComponentDefinitionExtractor
-        .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName)
+        .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName, id.name)
         .map { case (uiDefinition, _) =>
           // Currently built-in components are represented as method-based component, probably we should change it to some dedicated type
           MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
