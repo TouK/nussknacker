@@ -305,7 +305,10 @@ class DefinitionResourcesSpec
           "builtin-filter",
           "builtin-split",
           "custom-enrichWithAdditionalData",
-          "custom-unionWithEditors",
+          "custom-full-outer-join",
+          "custom-single-side-join",
+          "custom-union-memo",
+          "custom-unionWithEditors"
         )
     }
   }
