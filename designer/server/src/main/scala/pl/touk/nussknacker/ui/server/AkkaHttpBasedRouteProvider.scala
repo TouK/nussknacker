@@ -82,14 +82,14 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
-import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
   ModelClassLoaderProvider,
   ProcessingTypeData
 }
+import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
@@ -819,7 +819,7 @@ class AkkaHttpBasedRouteProvider(
               globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state
             }
-          new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
+          ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(
         release = _.close()

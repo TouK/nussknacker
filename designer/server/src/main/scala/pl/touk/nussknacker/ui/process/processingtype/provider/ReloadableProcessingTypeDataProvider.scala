@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
@@ -21,7 +22,8 @@ import scala.util.control.NonFatal
  */
 class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
-) extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
+)(implicit ioRuntime: IORuntime)
+    extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
     with LazyLogging {
 
   def reloadAll(): IO[Unit] = {
@@ -54,6 +56,11 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     }
   }
 
+  override def close(): IO[Unit] = {
+    // We have to shut down IORuntime in one place, after closing all observers to ensure that nobody will use closed IORuntime
+    super.close().map { _ => ioRuntime.shutdown() }
+  }
+
   override protected def closeState(state: ProcessingTypeDataState[Data, CombinedData]): IO[Unit] = IO {
     state.all.values.foreach(
       _.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance)
@@ -62,6 +69,19 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
         )
         .close()
     )
+  }
+
+}
+
+object ReloadableProcessingTypeDataProvider {
+
+  def apply[Data <: AutoCloseable, CombinedData](
+      loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
+  ): ReloadableProcessingTypeDataProvider[Data, CombinedData] = {
+    // We create separate ioRuntime to ensure that we don't have some deadlocks during reading state where is used unsafeRunSync()
+    // See ProcessingTypeDataProvider.state method
+    implicit val ioRuntime: IORuntime = IORuntime.builder().build()
+    new ReloadableProcessingTypeDataProvider[Data, CombinedData](loadMethod)
   }
 
 }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.test.utils.domain
 
+import cats.effect.unsafe.IORuntime
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
@@ -34,6 +35,6 @@ object TestProcessingTypeDataProviderFactory {
     )
 
   def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
-    new ProcessingTypeDataProvider[T, C](stateValue) {}
+    new ProcessingTypeDataProvider[T, C](stateValue)(IORuntime.global) {}
 
 }

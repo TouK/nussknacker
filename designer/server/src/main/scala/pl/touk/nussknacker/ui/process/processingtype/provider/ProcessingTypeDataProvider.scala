@@ -35,15 +35,17 @@ import scala.util.{Failure, Try}
   * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if they
   * have access to category.
   */
-abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: ProcessingTypeDataState[Data, CombinedData])
+abstract class ProcessingTypeDataProvider[Data, CombinedData](
+    initialState: ProcessingTypeDataState[Data, CombinedData]
+)(implicit ioRuntime: IORuntime)
     extends LazyLogging {
 
   // We use unsafeRunSync because IO-based solution would complicate a lot our application initialization logic where
   // we pass to every service, various views for our ProcessingTypeData
   private val stateRef: Ref[IO, ProcessingTypeDataState[Data, CombinedData]] =
-    Ref.of[IO, ProcessingTypeDataState[Data, CombinedData]](initialState).unsafeRunSync()(IORuntime.global)
+    Ref.of[IO, ProcessingTypeDataState[Data, CombinedData]](initialState).unsafeRunSync()
 
-  private val stateMutex: Mutex[IO] = Mutex[IO].unsafeRunSync()(IORuntime.global)
+  private val stateMutex: Mutex[IO] = Mutex[IO].unsafeRunSync()
 
   private val observers = new CopyOnWriteArrayList[Observer[ProcessingTypeDataState[Data, CombinedData]]]()
 
@@ -104,9 +106,11 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](initialState: Proc
     } yield ()
   }
 
+  // Currently the whole application use this state synchronously, inside Future, because of that we unsafeRunSync()
+  // It is not so risky because we use separate IORuntime in ProcessingTypeDataProviders
+  // TODO: migrate application to IO
   private def state: ProcessingTypeDataState[Data, CombinedData] = {
-    accessStateInCriticalSection(_.get)
-      .unsafeRunSync()(IORuntime.global) // TODO: get rid of unsafeRunSync
+    accessStateInCriticalSection(_.get).unsafeRunSync()
   }
 
   final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] = {
@@ -163,7 +167,8 @@ trait Observer[V] {
 private[provider] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     initialValue: ProcessingTypeDataState[T, C],
     transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
-) extends ProcessingTypeDataProvider[TT, CC](transformState(initialValue))
+)(implicit ioRuntime: IORuntime)
+    extends ProcessingTypeDataProvider[TT, CC](transformState(initialValue))
     with Observer[ProcessingTypeDataState[T, C]] {
 
   override def notifyChange(newValue: ProcessingTypeDataState[T, C]): IO[Unit] = {
