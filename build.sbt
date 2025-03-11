@@ -655,6 +655,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
   .dependsOn(
     extensionsApi,
     commonComponents,
+    flinkBaseUnboundedComponents,
     flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
@@ -666,7 +667,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     scenarioCompiler     % Provided,
     flinkExecutor        % Test,
     flinkTestUtils       % Test,
-    kafkaTestUtils       % Test
+    kafkaTestUtils       % Test,
   )
 
 lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
