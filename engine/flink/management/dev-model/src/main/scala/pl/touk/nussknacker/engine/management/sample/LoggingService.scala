@@ -60,7 +60,7 @@ object LoggingService extends EagerService {
         ScenarioActionName.Deploy -> Map(
           ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> ParameterConfig(
             defaultValue = "false".some,
-            editor = BoolParameterEditor.some,
+            editors = List(BoolParameterEditor).some,
             validators = None,
             label = "Enable debugging with logging components".some,
             hintText = None

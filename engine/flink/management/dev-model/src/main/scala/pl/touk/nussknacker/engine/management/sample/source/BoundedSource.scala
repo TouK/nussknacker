@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.definition.RawParameterEditor
+import pl.touk.nussknacker.engine.api.definition.SpelParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.SourceFactory
@@ -59,7 +59,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
     Map(
       OFFSET_PARAMETER_NAME -> ParameterConfig(
         defaultValue = None,
-        editor = Some(RawParameterEditor),
+        editors = Some(List(SpelParameterEditor)),
         validators = None,
         label = Some("Offset"),
         hintText = Some(

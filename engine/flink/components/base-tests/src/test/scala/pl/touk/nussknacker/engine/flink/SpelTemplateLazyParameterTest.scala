@@ -94,7 +94,7 @@ object SpelTemplatePartsCustomTransformer
     .optional[String](spelTemplateParameterName)
     .copy(
       isLazyParameter = true,
-      editor = Some(SpelTemplateParameterEditor)
+      editors = List(SpelTemplateParameterEditor)
     )
 
   override type State = Unit

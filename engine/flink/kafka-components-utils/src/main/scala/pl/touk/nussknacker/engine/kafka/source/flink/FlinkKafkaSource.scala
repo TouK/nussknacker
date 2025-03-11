@@ -84,21 +84,23 @@ class FlinkKafkaSource[T](
       ScenarioActionName.Deploy -> Map(
         OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
           defaultValue = Some(defaultOffsetResetStrategy.toString),
-          editor = Some(
-            FixedValuesWithRadioParameterEditor(
-              List(
-                FixedExpressionValue(
-                  OffsetResetStrategy.None.toString,
-                  s"Resume reading where it previously stopped"
-                ),
-                FixedExpressionValue(
-                  OffsetResetStrategy.ToLatest.toString,
-                  "Read new messages only"
-                ),
-                FixedExpressionValue(
-                  OffsetResetStrategy.ToEarliest.toString,
-                  "Read all messages from the topic"
-                ),
+          editors = Some(
+            List(
+              FixedValuesWithRadioParameterEditor(
+                List(
+                  FixedExpressionValue(
+                    OffsetResetStrategy.None.toString,
+                    s"Resume reading where it previously stopped"
+                  ),
+                  FixedExpressionValue(
+                    OffsetResetStrategy.ToLatest.toString,
+                    "Read new messages only"
+                  ),
+                  FixedExpressionValue(
+                    OffsetResetStrategy.ToEarliest.toString,
+                    "Read all messages from the topic"
+                  ),
+                )
               )
             )
           ),

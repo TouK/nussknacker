@@ -37,7 +37,7 @@ object TableAggregationFactory {
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
       .withCreator(
-        modify = _.copy(editor = Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: aggregators)))
+        modify = _.copy(editors = List(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: aggregators)))
       )
   }
 

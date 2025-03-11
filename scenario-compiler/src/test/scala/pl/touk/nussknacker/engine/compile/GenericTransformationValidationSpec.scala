@@ -13,8 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   WrongParameters
 }
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.definition.{Parameter, SpelParameterEditor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -22,7 +21,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementVal
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
+import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
@@ -32,6 +31,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 import scala.jdk.CollectionConverters._
 
+// TODO: LBG maybe this tests should have spelTemplate as default?
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -81,7 +81,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val expectedGenericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
-        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+        editors = List(
+          SpelParameterEditor,
+          SpelTemplateParameterEditor,
+        ),
         defaultValue = Some("''".spel)
       ),
     Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
@@ -231,7 +234,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
         .copy(
-          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+          editors = List(
+            SpelParameterEditor,
+            SpelTemplateParameterEditor,
+          ),
           defaultValue = Some("''".spel)
         ),
       Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
@@ -301,7 +307,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
         .copy(
-          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+          editors = List(
+            SpelParameterEditor,
+            SpelTemplateParameterEditor,
+          ),
           defaultValue = Some("''".spel)
         ),
       Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
@@ -383,7 +392,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
-        .copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some("".spel))
+        .copy(
+          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(),
+          defaultValue = Some("".spel)
+        )
     )
   }
 

@@ -61,7 +61,7 @@ object ComponentConfig {
 
 case class ParameterConfig(
     defaultValue: Option[String],
-    editor: Option[ParameterEditor],
+    editors: Option[List[ParameterEditor]],
     validators: Option[List[ParameterValidator]],
     label: Option[String],
     hintText: Option[String]

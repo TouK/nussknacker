@@ -80,7 +80,7 @@ class FragmentParametersDefinitionExtractor(
   ): Writer[List[PartSubGraphCompilationError], Parameter] = {
     val parameterData = ParameterData(typ, Nil)
 
-    val (extractedEditor, validationErrors) = fragmentParameter.valueEditor
+    val (extractedEditors, validationErrors) = fragmentParameter.valueEditor
       .map(editor =>
         FragmentParameterValidator(classDefinitions).validateAgainstClazzRefAndGetEditor(
           valueEditor = editor,
@@ -89,8 +89,8 @@ class FragmentParametersDefinitionExtractor(
           paramName = fragmentParameter.name,
           nodeIds = Set(nodeId.id)
         ) match {
-          case Valid(editor) => (Some(editor), List.empty)
-          case Invalid(e)    => (None, e.toList)
+          case Valid(editors) => (editors, List.empty)
+          case Invalid(e)     => (Nil, e.toList)
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
@@ -105,14 +105,14 @@ class FragmentParametersDefinitionExtractor(
           ParameterData(typ, Nil),
           !fragmentParameter.required,
           ParameterConfig.empty,
-          extractedEditor
+          extractedEditors
         )
       )
 
     val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
-        editor = extractedEditor,
+        editors = extractedEditors,
         validators = validators.toList,
         defaultValue = fragmentParameter.initialValue
           .map(initialValue =>
@@ -128,7 +128,7 @@ class FragmentParametersDefinitionExtractor(
                 parameterData,
                 !fragmentParameter.required,
                 ParameterConfig.empty,
-                extractedEditor
+                extractedEditors
               )
             )
           ),

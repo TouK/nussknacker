@@ -26,4 +26,9 @@ public @interface SimpleEditor {
      * This field should be used only with {@link SimpleEditorType#DICT_EDITOR}
      */
     String dictId() default "";
+
+    /**
+     * This field could be used if this editor is used together with {@link SpelEditor} and means the editor will be displayed at first on the UI.
+     */
+    boolean isDefaultEditor() default true;
 }

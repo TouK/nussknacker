@@ -13,7 +13,7 @@ object CampaignService extends Service with Serializable {
   @MethodToInvoke
   def invoke(
       @ParamName("CampaignName")
-      @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
       @NotBlank
       campaignName: String,
       @ParamName("Registered")
@@ -22,14 +22,12 @@ object CampaignService extends Service with Serializable {
       )
       registered: Boolean,
       @ParamName("BusinessConfig")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-        defaultMode = DualEditorMode.SIMPLE
-      )
+      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
+      @SpelEditor
       @Nullable
       businessConfig: String,
       @ParamName("Product Counts")
-      @RawEditor
+      @SpelEditor
       @CompileTimeEvaluableValue
       productCounts: Int,
       @ParamName("CampaignType")

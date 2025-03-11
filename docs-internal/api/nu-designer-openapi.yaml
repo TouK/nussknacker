@@ -3573,8 +3573,6 @@ paths:
                         type: TypedClass
                         refClazzName: java.lang.String
                         params: []
-                      editor:
-                        type: RawParameterEditor
                       editors:
                       - type: SpelParameterEditor
                       defaultValue:
@@ -6798,11 +6796,9 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
-      - $ref: '#/components/schemas/RawParameterEditor'
       - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
-      - $ref: '#/components/schemas/StringParameterEditor'
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
@@ -6912,9 +6908,6 @@ components:
           $ref: '#/components/schemas/ProcessAdditionalFields'
         name:
           type: string
-    RawParameterEditor:
-      title: RawParameterEditor
-      type: object
     RecordsRequestDto:
       title: RecordsRequestDto
       type: object
@@ -7214,7 +7207,6 @@ components:
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
-      - $ref: '#/components/schemas/StringParameterEditor'
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
@@ -7456,9 +7448,6 @@ components:
           type:
           - string
           - 'null'
-    StringParameterEditor:
-      title: StringParameterEditor
-      type: object
     SwitchDefault:
       title: SwitchDefault
       type: object

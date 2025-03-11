@@ -184,9 +184,6 @@ class TestingApiHttpServiceSpec
              |                        }
              |                    ]
              |                },
-             |                "editor": {
-             |                    "type": "RawParameterEditor"
-             |                },
              |                "editors": [{
              |                    "type": "SpelParameterEditor"
              |                }],
@@ -237,23 +234,6 @@ class TestingApiHttpServiceSpec
              |                    "params": [
              |
              |                    ]
-             |                },
-             |                "editor": {
-             |                    "possibleValues": [
-             |                        {
-             |                            "expression": "",
-             |                            "label": ""
-             |                        },
-             |                        {
-             |                            "expression": "'uno'",
-             |                            "label": "uno"
-             |                        },
-             |                        {
-             |                            "expression": "'due'",
-             |                            "label": "due"
-             |                        }
-             |                    ],
-             |                    "type": "FixedValuesParameterEditor"
              |                },
              |                "editors": [{
              |                    "possibleValues": [
@@ -320,15 +300,9 @@ class TestingApiHttpServiceSpec
              |
              |                    ]
              |                },
-             |                "editor": {
-             |                    "type": "StringParameterEditor"
-             |                },
              |                "editors": [
              |                    {
              |                        "type": "SpelParameterEditor"
-             |                    },
-             |                    {
-             |                        "type": "SpelTemplateParameterEditor"
              |                    }
              |                ],
              |                "defaultValue": {

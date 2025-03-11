@@ -30,29 +30,29 @@ object sampleTransformers {
         @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
-        @DualEditor(
-          simpleEditor = new SimpleEditor(
-            `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-            possibleValues = Array(
-              new LabeledExpression(label = "First", expression = "#AGG.first"),
-              new LabeledExpression(label = "Last", expression = "#AGG.last"),
-              new LabeledExpression(label = "Min", expression = "#AGG.min"),
-              new LabeledExpression(label = "Max", expression = "#AGG.max"),
-              new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
-              new LabeledExpression(label = "Average", expression = "#AGG.average"),
-              new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
-              new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
-              new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
-              new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
-              new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
-              new LabeledExpression(label = "Median", expression = "#AGG.median"),
-              new LabeledExpression(label = "List", expression = "#AGG.list"),
-              new LabeledExpression(label = "Set", expression = "#AGG.set"),
-              new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
-            )
+        @SimpleEditor(
+          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(
+            new LabeledExpression(label = "First", expression = "#AGG.first"),
+            new LabeledExpression(label = "Last", expression = "#AGG.last"),
+            new LabeledExpression(label = "Min", expression = "#AGG.min"),
+            new LabeledExpression(label = "Max", expression = "#AGG.max"),
+            new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+            new LabeledExpression(label = "Average", expression = "#AGG.average"),
+            new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
+            new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
+            new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
+            new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
+            new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+            new LabeledExpression(label = "Median", expression = "#AGG.median"),
+            new LabeledExpression(label = "List", expression = "#AGG.list"),
+            new LabeledExpression(label = "Set", expression = "#AGG.set"),
+            new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
           ),
-          defaultMode = DualEditorMode.SIMPLE
-        ) aggregator: Aggregator,
+          isDefaultEditor = true
+        )
+        @SpelEditor
+        aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
         @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
@@ -88,29 +88,29 @@ object sampleTransformers {
         @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
-        @DualEditor(
-          simpleEditor = new SimpleEditor(
-            `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-            possibleValues = Array(
-              new LabeledExpression(label = "First", expression = "#AGG.first"),
-              new LabeledExpression(label = "Last", expression = "#AGG.last"),
-              new LabeledExpression(label = "Min", expression = "#AGG.min"),
-              new LabeledExpression(label = "Max", expression = "#AGG.max"),
-              new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
-              new LabeledExpression(label = "Average", expression = "#AGG.average"),
-              new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
-              new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
-              new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
-              new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
-              new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
-              new LabeledExpression(label = "Median", expression = "#AGG.median"),
-              new LabeledExpression(label = "List", expression = "#AGG.list"),
-              new LabeledExpression(label = "Set", expression = "#AGG.set"),
-              new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
-            )
+        @SimpleEditor(
+          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(
+            new LabeledExpression(label = "First", expression = "#AGG.first"),
+            new LabeledExpression(label = "Last", expression = "#AGG.last"),
+            new LabeledExpression(label = "Min", expression = "#AGG.min"),
+            new LabeledExpression(label = "Max", expression = "#AGG.max"),
+            new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+            new LabeledExpression(label = "Average", expression = "#AGG.average"),
+            new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
+            new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
+            new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
+            new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
+            new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+            new LabeledExpression(label = "Median", expression = "#AGG.median"),
+            new LabeledExpression(label = "List", expression = "#AGG.list"),
+            new LabeledExpression(label = "Set", expression = "#AGG.set"),
+            new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
           ),
-          defaultMode = DualEditorMode.SIMPLE
-        ) aggregator: Aggregator,
+          isDefaultEditor = true
+        )
+        @SpelEditor
+        aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
         @ParamName("emitWhen") trigger: TumblingWindowTrigger,
@@ -150,29 +150,29 @@ object sampleTransformers {
         @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
-        @DualEditor(
-          simpleEditor = new SimpleEditor(
-            `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-            possibleValues = Array(
-              new LabeledExpression(label = "First", expression = "#AGG.first"),
-              new LabeledExpression(label = "Last", expression = "#AGG.last"),
-              new LabeledExpression(label = "Min", expression = "#AGG.min"),
-              new LabeledExpression(label = "Max", expression = "#AGG.max"),
-              new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
-              new LabeledExpression(label = "Average", expression = "#AGG.average"),
-              new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
-              new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
-              new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
-              new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
-              new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
-              new LabeledExpression(label = "Median", expression = "#AGG.median"),
-              new LabeledExpression(label = "List", expression = "#AGG.list"),
-              new LabeledExpression(label = "Set", expression = "#AGG.set"),
-              new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
-            )
+        @SimpleEditor(
+          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(
+            new LabeledExpression(label = "First", expression = "#AGG.first"),
+            new LabeledExpression(label = "Last", expression = "#AGG.last"),
+            new LabeledExpression(label = "Min", expression = "#AGG.min"),
+            new LabeledExpression(label = "Max", expression = "#AGG.max"),
+            new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+            new LabeledExpression(label = "Average", expression = "#AGG.average"),
+            new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
+            new LabeledExpression(label = "StddevPop", expression = "#AGG.stddevPop"),
+            new LabeledExpression(label = "StddevSamp", expression = "#AGG.stddevSamp"),
+            new LabeledExpression(label = "VarPop", expression = "#AGG.varPop"),
+            new LabeledExpression(label = "VarSamp", expression = "#AGG.varSamp"),
+            new LabeledExpression(label = "Median", expression = "#AGG.median"),
+            new LabeledExpression(label = "List", expression = "#AGG.list"),
+            new LabeledExpression(label = "Set", expression = "#AGG.set"),
+            new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
           ),
-          defaultMode = DualEditorMode.SIMPLE
-        ) aggregator: Aggregator,
+          isDefaultEditor = true
+        )
+        @SpelEditor
+        aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("endSessionCondition") @DefaultValue("false") endSessionCondition: LazyParameter[java.lang.Boolean],
         @ParamName("sessionTimeout") @DefaultValue(
