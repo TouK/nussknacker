@@ -74,12 +74,11 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       with TestWithParametersSupport[AnyRef]
       with LazyLogging {
 
-      private val count = Option(nullableCount).map(_.toInt).getOrElse(1)
-
       override protected def sourceStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[AnyRef] = {
+        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
         // Parameter evaluation requires context, so here we create an empty context just to evaluate the `value` param.
         // Later the evaluated value is extracted from this temporary context and proper context is initialized.
         env
@@ -113,8 +112,10 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override def testParametersDefinition: List[Parameter] =
         List.empty
 
-      override def parametersToTestData(params: Map[ParameterName, AnyRef]): AnyRef =
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): AnyRef = {
+        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
         List.fill(count)(generateSample())
+      }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
 
