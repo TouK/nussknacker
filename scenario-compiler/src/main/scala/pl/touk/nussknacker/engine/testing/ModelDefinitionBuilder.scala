@@ -179,7 +179,8 @@ final case class ModelDefinitionBuilder(
     ComponentDefinitionExtractor
       .filterOutDisabledAndComputeFinalUiDefinition(
         configWithDesignerWideComponentId,
-        groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
+        groupName => groupNameMapping.getOrElse(groupName, Some(groupName)),
+        name
       )
       .map { case (uiDefinition, _) =>
         MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
