@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.definition.action
 
-import cats.data.Validated
+import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, ParameterConfig}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -16,15 +17,15 @@ class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvid
   override def getActionParameters(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Either[ActionInfoError, Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]]] = {
+  ): ValidatedNel[
+    ProcessCompilationError,
+    Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, ParameterConfig]]]
+  ] = {
     val jobData = JobData(scenario.metaData, processVersion)
     modelData.withThisAsContextClassLoader {
-      commonModelDataInfoProvider.compileAllCustomNodes(scenario)(jobData) match {
-        case Validated.Valid(compiledCustomNodes) => Right(extractParametersFromCustomNodes(compiledCustomNodes))
-        case Validated.Invalid(e) =>
-          logger.warn(s"Scenario compilation failed with error: $e while getting action parameters")
-          Left(CannotCompileScenario)
-      }
+      commonModelDataInfoProvider
+        .compileAllCustomNodes(scenario)(jobData)
+        .map(nodes => extractParametersFromCustomNodes(nodes))
     }
   }
 

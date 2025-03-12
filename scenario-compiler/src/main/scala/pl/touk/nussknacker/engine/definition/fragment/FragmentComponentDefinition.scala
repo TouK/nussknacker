@@ -34,7 +34,8 @@ object FragmentComponentDefinition {
         componentGroupName,
         icon,
         translateGroupName,
-        designerWideId
+        designerWideId,
+        name
       )
     // Currently fragments are represented as method-based component, probably we should change it to some dedicated type
     MethodBasedComponentDefinitionWithImplementation(

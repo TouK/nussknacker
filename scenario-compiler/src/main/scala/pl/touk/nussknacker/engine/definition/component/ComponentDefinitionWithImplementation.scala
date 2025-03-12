@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
-import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 // This class represents component's definition and implementation. It is used on the designer side for definitions
 // served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
@@ -33,15 +32,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   protected def uiDefinition: ComponentUiDefinition
 
-  final def label: String = {
-    uiDefinition.label.getOrElse {
-      if (componentType != ComponentType.Fragment) {
-        IdToTitleConverter.toTitle(name)
-      } else {
-        IdToTitleConverter.toTitle(id.name)
-      }
-    }
-  }
+  final def label: String = uiDefinition.label
 
   final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
@@ -79,7 +70,7 @@ final case class ComponentUiDefinition(
     icon: String,
     docsUrl: Option[String],
     designerWideId: DesignerWideComponentId,
-    label: Option[String]
+    label: String
 )
 
 object ComponentDefinitionWithImplementation {

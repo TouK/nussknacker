@@ -7,6 +7,7 @@ import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   DeploymentUpdateStrategy,
@@ -469,10 +470,10 @@ class K8sDeploymentManagerKafkaTest
       version: ProcessVersion
   ) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
 
-    override def withRunningScenario(action: => Unit): Unit = {
+    override def withRunningScenarioWithDeployParams(nodesData: NodesDeploymentData)(action: => Unit): Unit = {
       kafka.createTopic(inputTopic)
       kafka.createTopic(outputTopic)
-      super.withRunningScenario(action)
+      super.withRunningScenarioWithDeployParams(nodesData)(action)
       // should not fail
       assertNoGarbageLeft()
     }

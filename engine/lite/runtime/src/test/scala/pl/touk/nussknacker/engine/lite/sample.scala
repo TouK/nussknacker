@@ -99,11 +99,11 @@ object sample {
       .createInterpreter[StateType, SampleInput, AnyRef](
         scenario,
         jobData,
+        NodesDeploymentData.empty,
         modelData,
-        Nil,
-        ProductionServiceInvocationCollector,
-        RuntimeMode.Live,
-        nodesDeploymentData = NodesDeploymentData.empty
+        additionalListeners = Nil,
+        resultCollector = ProductionServiceInvocationCollector,
+        runtimeMode = RuntimeMode.Live,
       )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(jobData))

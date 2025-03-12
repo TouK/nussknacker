@@ -13,7 +13,7 @@ class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
   // This meter will not be eagerly initialized
   private val nodeErrorsMeterMap = collection.concurrent.TrieMap[String, RateMeter]()
 
-  def markException(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
+  def markException(exceptionInfo: NuExceptionInfo): Unit = {
     allErrorsMeter.mark()
     getMeterForNode(exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("unknown")).mark()
   }

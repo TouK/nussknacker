@@ -87,8 +87,13 @@ object TestScenarioCollectorHandler {
 }
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
+
   // TODO: add generate test data support
-  def runWithData[T: ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
+  def runWithData[T: ClassTag, R](
+      scenario: CanonicalProcess,
+      data: List[T]
+  ): RunnerListResult[R]
+
 }
 
 object RunResult {

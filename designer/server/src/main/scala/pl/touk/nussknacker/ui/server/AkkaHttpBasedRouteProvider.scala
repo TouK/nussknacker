@@ -82,6 +82,11 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ModelClassLoaderProvider,
+  ProcessingTypeData
+}
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
@@ -319,11 +324,13 @@ class AkkaHttpBasedRouteProvider(
             new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
           )
       }
-      actionInfoService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
-        new ActionInfoService(
-          new ModelDataActionInfoProvider(modelData),
-          processResolver
-        )
+      actionInfoService = scenarioTestServiceDeps.mapValues {
+        case (_, processResolver, scenarioResolver, modelData, _) =>
+          new ActionInfoService(
+            new ModelDataActionInfoProvider(modelData),
+            processResolver,
+            scenarioResolver
+          )
       }
 
       processValidator = scenarioTestServiceDeps.mapValues(_._1)
@@ -785,7 +792,7 @@ class AkkaHttpBasedRouteProvider(
       modelClassLoaderProvider: ModelClassLoaderProvider
   )(
       implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
-  ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
+  ): Resource[IO, ReloadableProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
     Resource
       .make(
         acquire = IO {
@@ -812,7 +819,7 @@ class AkkaHttpBasedRouteProvider(
               globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state
             }
-          new ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
+          ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
         }
       )(
         release = _.close()

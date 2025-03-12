@@ -22,7 +22,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.security.api.AuthManager
 import sttp.tapir.{Codec, CodecFormat}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class ActionInfoHttpService(
     authManager: AuthManager,
@@ -54,7 +54,7 @@ class ActionInfoHttpService(
           actionInfoService = processingTypeToActionInfoService.forProcessingTypeUnsafe(
             scenarioWithDetails.processingType
           )
-          actionNodeParameters <- EitherT.fromEither[Future](
+          actionNodeParameters <- EitherT(
             actionInfoService.getActionParameters(
               scenarioWithDetails.scenarioGraphUnsafe,
               scenarioWithDetails.processVersionUnsafe,

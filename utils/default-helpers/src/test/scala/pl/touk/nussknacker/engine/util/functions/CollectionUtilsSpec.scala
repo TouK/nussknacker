@@ -442,7 +442,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       val caught = intercept[SpelExpressionEvaluationException] {
         evaluateAny(expression, variables)
       }
-      caught.message should include("cannot be cast to class")
+      caught.getMessage should include("cannot be cast to class")
     }
   }
 

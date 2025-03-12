@@ -3,8 +3,22 @@ import ReactAce from "react-ace/lib/ace";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
 import { ExpressionSuggest, ExpressionSuggestProps } from "./ExpressionSuggest";
+import { InfoTooltip } from "./InfoTooltip";
 import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
+import { useTranslation } from "react-i18next";
 import { editors, OnValueChange, SimpleEditor } from "./Editor";
+
+const spelEditorInfoText =
+    `You are using an expression-based approach, allowing calculations and conditions. Access variables with **#**, e.g., **#input.someField == 'value'**. \n 
+Use **#input['dynamicField'].toTargetType** for dynamic fields. Helpers (e.g., **#UTILS**) provide additional functionality.  \n
+Strings need to be quoted; use ` +
+    ` to concatenate strings. \n
+Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel).`;
+
+const spelTemplateEditorInfoText = `You are using a string-template-based approach, allowing text with embedded expressions. Text should not be quoted. \n 
+Embed expression with **#{ }**, e.g., Hello **#{ #input.name }**. For dynamic fields, use **#input['dynamicField'].toTargetType**. \n
+You can also use built-in helpers like **#UTILS** for additional functionality. \n
+Use autocompletion for available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`;
 
 export type SpelEditorProps = {
     expressionObj: ExpressionObj;
@@ -25,6 +39,7 @@ export type SpelEditorProps = {
 };
 
 const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
+    const { t } = useTranslation();
     const {
         expressionObj,
         fieldErrors,
@@ -51,8 +66,8 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
 
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
 
-    const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(
-        () => ({
+    const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(() => {
+        const properties: ExpressionSuggestProps["inputProps"] = {
             rows,
             cols,
             value,
@@ -60,11 +75,21 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
             onValueChange: handleChange,
             readOnly,
             ref: forwardedRef,
-            editorMode,
-            placeholder,
-        }),
-        [rows, cols, value, language, handleChange, readOnly, forwardedRef, editorMode, placeholder],
-    );
+            editorMode: editorMode,
+        };
+
+        if (expressionObj.language === ExpressionLang.SpEL) {
+            properties.placeholder = placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField");
+            properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelEditor.infoText", spelEditorInfoText)} />;
+        }
+
+        if (editorMode === EditorMode.SpELTemplate) {
+            properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
+            properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelTemplateEditor.infoText", spelTemplateEditorInfoText)} />;
+        }
+
+        return properties;
+    }, [rows, cols, value, language, handleChange, readOnly, forwardedRef, editorMode, expressionObj.language, placeholder, t]);
 
     return (
         <ExpressionSuggest

@@ -151,6 +151,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-configuratorservice",
     "streaming-service-customvalidatedservice",
     "streaming-service-datestypesservice",
+    "streaming-service-deploy-param-service",
     "streaming-service-dynamicmultipleparamsservice",
     "streaming-service-dynamicservice",
     "streaming-service-echoenumservice",

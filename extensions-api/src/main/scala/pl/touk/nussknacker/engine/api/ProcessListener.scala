@@ -29,7 +29,7 @@ trait ProcessListener extends Lifecycle {
       result: Try[Any]
   ): Unit
 
-  def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit
+  def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit
 
 }
 
@@ -66,5 +66,5 @@ trait EmptyProcessListener extends ProcessListener {
       result: Try[Any]
   ): Unit = {}
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {}
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit = {}
 }

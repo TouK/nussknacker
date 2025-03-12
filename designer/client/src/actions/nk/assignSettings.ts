@@ -44,7 +44,7 @@ export type FeaturesSettings = {
 
 export type StickyNotesSettings = {
     maxContentLength: number;
-    maxNotesCount: number;
+    maxNotesCount?: number;
     enabled: boolean;
 };
 

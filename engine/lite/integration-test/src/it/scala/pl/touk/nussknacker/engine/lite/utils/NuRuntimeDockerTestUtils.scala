@@ -41,7 +41,7 @@ object NuRuntimeDockerTestUtils {
     )
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(
       NuRuntimeTestUtils.deploymentDataFile.toString,
-      "/opt/nussknacker/conf/deploymentConfig.conf",
+      "/opt/nussknacker/conf/deploymentData.json",
       BindMode.READ_ONLY
     )
     val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeApiPort) else DumbWaitStrategy
