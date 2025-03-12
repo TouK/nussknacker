@@ -33,7 +33,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, param, fieldErrors = [], validationLabelInfo } = props;
 
     const availableEditors = useMemo(
-        (): ParamType["editors"] => (isEmpty(param) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : param.editors),
+        (): ParamType["editors"] => (isEmpty(param) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : param.editors || [param.editor]),
         [param],
     );
 

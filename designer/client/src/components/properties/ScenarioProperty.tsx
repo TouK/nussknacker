@@ -1,7 +1,7 @@
 import { get } from "lodash";
 import EditableEditor from "../graph/node-modal/editors/EditableEditor";
 import React, { useCallback } from "react";
-import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
+import { ExpressionLang, ExpressionObj } from "../graph/node-modal/editors/expression/types";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { NodeValidationError, PropertiesType } from "../../types";
 import { ParamType } from "../graph/node-modal/editors/types";
@@ -29,7 +29,7 @@ export default function ScenarioProperty(props: Props) {
     const current = get(editedNode, propertyPath) || "";
     const expressionObj = { expression: current, value: current, language: ExpressionLang.String };
 
-    const onValueChange = useCallback((newValue) => onChange(propertyPath, newValue), [onChange, propertyPath]);
+    const onValueChange = useCallback((newValue: ExpressionObj) => onChange(propertyPath, newValue.expression), [onChange, propertyPath]);
 
     return (
         <EditableEditor
