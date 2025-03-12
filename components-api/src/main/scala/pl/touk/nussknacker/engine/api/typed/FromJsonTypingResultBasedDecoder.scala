@@ -10,7 +10,7 @@ import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
 import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters._
 
-object ValueDecoder {
+object FromJsonTypingResultBasedDecoder {
   private val intClass           = Typed.typedClass[Int]
   private val shortClass         = Typed.typedClass[Short]
   private val longClass          = Typed.typedClass[Long]

@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.flink.util.source.{
   ReturningClassInstanceSource,
   ReturningTestCaseClass
 }
-import pl.touk.nussknacker.engine.flink.util.transformer.EventGeneratorSourceFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{
   ConsumerRecordToJsonFormatterFactory,
   FixedValueDeserializationSchemaFactory
@@ -101,7 +100,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "csv-source"              -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
       "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
-      "eventGeneratorSource"             -> WithCategories.anyCategory(EventGeneratorSourceFactory),
       "sql-source"                       -> categories(SqlSource),
       "classInstanceSource"              -> all(new ReturningClassInstanceSource)
     )

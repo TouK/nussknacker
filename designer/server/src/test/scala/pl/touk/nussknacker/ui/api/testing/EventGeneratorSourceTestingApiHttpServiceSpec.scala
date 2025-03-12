@@ -18,7 +18,7 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
       .streaming("scenario_2")
       .source(
         exampleScenarioSourceId,
-        "eventGeneratorSource",
+        "event-generator",
         "count"    -> "1".spel,
         "value"    -> eventGeneratorValue,
         "schedule" -> "T(java.time.Duration).parse('PT1M')".spel,
