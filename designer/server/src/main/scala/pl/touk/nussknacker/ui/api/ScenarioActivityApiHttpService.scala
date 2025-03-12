@@ -462,7 +462,6 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
-          scheduleName = scheduleName,
           scheduledExecutionStatus = scheduledExecutionStatus,
           createdAt = createdAt,
           retriesLeft = retriesLeft,

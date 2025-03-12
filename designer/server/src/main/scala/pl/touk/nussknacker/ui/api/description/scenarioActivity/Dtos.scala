@@ -224,10 +224,10 @@ object Dtos {
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
-      private val displayableName: String             = "Processing data"
+      private val displayableName: String             = "Run now scheduling"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
-      override def icon: String                       = "/assets/activities/processingData.svg"
+      override def icon: String                       = "/assets/activities/deploy.svg"
       override def supportedActions: List[String]     = commentRelatedActions
     }
 
@@ -675,7 +675,6 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         dateFinished: Instant,
-        scheduleName: String,
         scheduledExecutionStatus: ScheduledExecutionStatus,
         createdAt: Instant,
         nextRetryAt: Option[Instant],
@@ -700,7 +699,6 @@ object Dtos {
           Some(AdditionalField("created", format(createdAt))),
           Some(AdditionalField("started", format(date))),
           Some(AdditionalField("finished", format(dateFinished))),
-          Some(AdditionalField("scheduleName", scheduleName)),
           retriesLeft.map(rl => AdditionalField("retriesLeft", rl.toString)),
           nextRetryAt.map(nra => AdditionalField("nextRetryAt", format(nra))),
         ).flatten
