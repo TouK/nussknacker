@@ -1,8 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import { SerializedStyles } from "@emotion/react";
+import { Box } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
-import React, { ForwardedRef, forwardRef, useMemo } from "react";
+import React, { ForwardedRef, forwardRef, ReactNode, useMemo } from "react";
 import ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
 import { ICommand } from "react-ace/lib/types";
 import { IAceOptions, IEditorProps } from "react-ace/src/types";
@@ -18,6 +19,7 @@ export type AceWrapperInputProps = {
     rows?: number;
     cols?: number;
     placeholder?: string;
+    InputAdornmentEnd?: ReactNode;
 };
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
@@ -144,7 +146,7 @@ export default forwardRef(function AceWrapper(
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
-    const { language, readOnly, rows = 1, editorMode } = inputProps;
+    const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd } = inputProps;
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [
@@ -177,29 +179,47 @@ export default forwardRef(function AceWrapper(
     );
 
     return (
-        <AceEditor
-            {...props}
-            ref={ref}
-            mode={editorLangToMode(language, editorMode)}
-            width={"100%"}
-            minLines={rows}
-            maxLines={512}
-            theme={"nussknacker"}
-            showPrintMargin={false}
-            cursorStart={-1} //line start
-            readOnly={readOnly}
-            className={readOnly ? " read-only" : ""}
-            wrapEnabled={!!wrapEnabled}
-            showGutter={!!showLineNumbers}
-            editorProps={DEFAULT_EDITOR_PROPS}
-            setOptions={{
-                ...DEFAULT_OPTIONS,
-                enableLiveAutocompletion,
-                showLineNumbers,
+        <Box
+            position={"relative"}
+            sx={{
+                paddingRight: InputAdornmentEnd && `20px`,
             }}
-            enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
-            commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
-            placeholder={inputProps.placeholder}
-        />
+        >
+            <AceEditor
+                {...props}
+                ref={ref}
+                mode={editorLangToMode(language, editorMode)}
+                width={"100%"}
+                minLines={rows}
+                maxLines={512}
+                theme={"nussknacker"}
+                showPrintMargin={false}
+                cursorStart={-1} //line start
+                readOnly={readOnly}
+                className={readOnly ? " read-only" : ""}
+                wrapEnabled={!!wrapEnabled}
+                showGutter={!!showLineNumbers}
+                editorProps={DEFAULT_EDITOR_PROPS}
+                setOptions={{
+                    ...DEFAULT_OPTIONS,
+                    enableLiveAutocompletion,
+                    showLineNumbers,
+                }}
+                enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
+                commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
+                placeholder={inputProps.placeholder}
+            />
+            {InputAdornmentEnd && (
+                <Box
+                    sx={{
+                        position: "absolute",
+                        right: 8,
+                        top: "1px",
+                    }}
+                >
+                    {InputAdornmentEnd}
+                </Box>
+            )}
+        </Box>
     );
 });
