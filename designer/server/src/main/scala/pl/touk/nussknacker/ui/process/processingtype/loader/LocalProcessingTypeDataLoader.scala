@@ -16,6 +16,8 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.Scheduli
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
+import scala.util.Success
+
 class LocalProcessingTypeDataLoader(
     modelData: Map[ProcessingType, (String, ModelData)],
     deploymentManagerProvider: DeploymentManagerProvider
@@ -27,7 +29,7 @@ class LocalProcessingTypeDataLoader(
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       dbRef: Option[DbRef],
-  ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = IO {
+  ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     val processingTypes = modelData.map { case (processingType, (category, model)) =>
       val deploymentManagerDependencies = getDeploymentManagerDependencies(processingType)
       val data = ProcessingTypeData.createProcessingTypeData(
@@ -44,8 +46,9 @@ class LocalProcessingTypeDataLoader(
       processingType -> data
     }
 
-    val combinedData = CombinedProcessingTypeData.create(processingTypes)
-    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), () => combinedData, new Object)
+    IO.fromEither(CombinedProcessingTypeData.create(processingTypes).toEither).map { combinedData =>
+      new ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), Success(combinedData))
+    }
   }
 
 }
