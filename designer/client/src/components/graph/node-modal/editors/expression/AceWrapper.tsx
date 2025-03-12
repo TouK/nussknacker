@@ -179,12 +179,7 @@ export default forwardRef(function AceWrapper(
     );
 
     return (
-        <Box
-            position={"relative"}
-            sx={{
-                paddingRight: InputAdornmentEnd && `20px`,
-            }}
-        >
+        <>
             <AceEditor
                 {...props}
                 ref={ref}
@@ -211,15 +206,16 @@ export default forwardRef(function AceWrapper(
             />
             {InputAdornmentEnd && (
                 <Box
+                    aria-label={"InputAdornmentEnd"}
                     sx={{
                         position: "absolute",
-                        right: 8,
-                        top: "1px",
+                        right: "8px",
+                        top: "9px",
                     }}
                 >
                     {InputAdornmentEnd}
                 </Box>
             )}
-        </Box>
+        </>
     );
 });

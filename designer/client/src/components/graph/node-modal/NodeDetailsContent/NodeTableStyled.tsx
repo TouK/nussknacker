@@ -102,6 +102,9 @@ export const NodeTableStyled = styled("div")(({ theme }) => ({
         ".ace-nussknacker": {
             outline: "none",
         },
+        '&:has([aria-label="InputAdornmentEnd"])': {
+            padding: theme.spacing(1, 2.5, 1, 0.625),
+        },
     },
 
     [`textarea.${nodeInput}`]: {
