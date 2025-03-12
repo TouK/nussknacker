@@ -29,6 +29,8 @@ interface AddLabelProps {
     onClick: () => void;
 }
 
+const isValidWidthsArray = (widths: number[]): boolean => widths.every((w) => w >= 0 && w !== undefined);
+
 const findThresholdIndex = (numbers: number[], threshold: number): number => {
     console.log(threshold);
     let sum = 0;
@@ -223,7 +225,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
             !autocompleteRef.current.classList.contains("Mui-focused") ? ref.current?.offsetWidth : -1,
         );
 
-        if (!widths.some((w) => w < 0 || !w)) {
+        if (isValidWidthsArray(widths)) {
             setDynamicTagsLimit(findThresholdIndex(widths, labelsInputWidth));
         }
     }, [labelsRefs, labelsInputWidth]);
