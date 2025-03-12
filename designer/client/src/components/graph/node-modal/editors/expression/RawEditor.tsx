@@ -4,15 +4,20 @@ import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
 import { ExpressionSuggest, ExpressionSuggestProps } from "./ExpressionSuggest";
 import { InfoTooltip } from "./InfoTooltip";
-import { EditorMode, ExpressionObj } from "./types";
+import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
 import { useTranslation } from "react-i18next";
 
 const spelEditorInfoText =
-    `You are using an expression-based approach, allowing calculations and conditions. Access variables with \`#\`, e.g., \`#input.someField == 'value'\`. \n 
-Use \`#input['dynamicField'].toTargetType\` for dynamic fields. Helpers (e.g., \`#UTILS\`) provide additional functionality.  \n
+    `You are using an expression-based approach, allowing calculations and conditions. Access variables with **#**, e.g., **#input.someField == 'value'**. \n 
+Use **#input['dynamicField'].toTargetType** for dynamic fields. Helpers (e.g., **#UTILS**) provide additional functionality.  \n
 Strings need to be quoted; use ` +
     ` to concatenate strings. \n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel).`;
+
+const spelTemplateEditorInfoText = `You are using a string-template-based approach, allowing text with embedded expressions. Text should not be quoted. \n 
+Embed expression with **#{ }**, e.g., Hello **#{ #input.name }**. For dynamic fields, use **#input['dynamicField'].toTargetType**. \n
+You can also use built-in helpers like **#UTILS** for additional functionality. \n
+Use autocompletion for available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`;
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -28,7 +33,6 @@ export type RawEditorProps = {
     validationLabelInfo?: string;
     editorMode?: EditorMode;
     placeholder?: string;
-    infoText?: string;
 };
 
 const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
@@ -47,14 +51,13 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         validationLabelInfo,
         editorMode,
         placeholder,
-        infoText,
     } = props;
 
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
 
-    const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(
-        () => ({
+    const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(() => {
+        const properties: ExpressionSuggestProps["inputProps"] = {
             rows: rows,
             cols: cols,
             value: value,
@@ -63,11 +66,20 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             readOnly: readOnly,
             ref: forwardedRef,
             editorMode: editorMode,
-            placeholder: placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField"),
-            InputAdornmentEnd: <InfoTooltip text={infoText || t("editors.spelEditor.infoText", spelEditorInfoText)} />,
-        }),
-        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode, placeholder, t, infoText],
-    );
+        };
+
+        if (expressionObj.language === ExpressionLang.SpEL) {
+            properties.placeholder = placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField");
+            properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelEditor.infoText", spelEditorInfoText)} />;
+        }
+
+        if (editorMode === EditorMode.SpELTemplate) {
+            properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
+            properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelTemplateEditor.infoText", spelTemplateEditorInfoText)} />;
+        }
+
+        return properties;
+    }, [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode, expressionObj.language, placeholder, t]);
 
     return (
         <ExpressionSuggest
