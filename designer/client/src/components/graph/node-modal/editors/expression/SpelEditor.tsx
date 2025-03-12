@@ -1,4 +1,4 @@
-import React, { ForwardedRef, forwardRef, ReactNode, useCallback, useMemo } from "react";
+import React, { ForwardedRef, forwardRef, ReactNode, useCallback, useMemo, useState } from "react";
 import ReactAce from "react-ace/lib/ace";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
@@ -6,7 +6,7 @@ import { ExpressionSuggest, ExpressionSuggestProps } from "./ExpressionSuggest";
 import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
 import { OnValueChange, SimpleEditor } from "./Editor";
 
-const defaultlanguage = ExpressionLang.SpEL;
+const defaultLanguage = ExpressionLang.SpEL;
 
 export type SpelEditorProps = {
     expressionObj: ExpressionObj;
@@ -23,6 +23,7 @@ export type SpelEditorProps = {
     editorMode?: EditorMode;
     placeholder?: string;
     language?: ExpressionLang;
+    infoText?: string;
 };
 
 const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
@@ -40,7 +41,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         validationLabelInfo,
         editorMode,
         placeholder,
-        language = defaultlanguage,
+        language = defaultLanguage,
     } = props;
 
     const handleChange = useCallback(
@@ -81,4 +82,4 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
 };
 
 export const SpelEditor: SimpleEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as SimpleEditor<SpelEditorProps>;
-SpelEditor.language = defaultlanguage;
+SpelEditor.language = defaultLanguage;

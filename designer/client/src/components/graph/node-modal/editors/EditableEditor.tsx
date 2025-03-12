@@ -10,7 +10,7 @@ import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
-import { MultipleEditors } from "./field/MultipleEditors";
+import { FieldSwitch } from "./field/FieldSwitch";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -32,7 +32,7 @@ interface Props {
 export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, param, fieldErrors = [], validationLabelInfo } = props;
 
-    const availableEditors = useMemo(
+    const availableEditors: ParamType["editors"] = useMemo(
         (): ParamType["editors"] => (isEmpty(param) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : param.editors || [param.editor]),
         [param],
     );
@@ -42,25 +42,25 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
         [expressionObj.language, param?.typ?.refClazzName],
     );
 
-    if (availableEditors.length === 1) {
-        const singleEditor = availableEditors[0];
-        const Editor = editors[singleEditor.type];
-        return (
-            <Editor
-                {...props}
-                ref={ref}
-                editorConfig={singleEditor}
-                className={`${valueClassName ? valueClassName : nodeValue}`}
-                fieldErrors={fieldErrors}
-                formatter={formatter}
-                expressionInfo={validationLabelInfo}
-            />
-        );
-    }
+    return (
+        <FieldSwitch availableEditors={availableEditors} expressionObj={expressionObj} onValueChange={props.onValueChange}>
+            {(selectedEditor) => {
+                const Editor = editors[selectedEditor.type];
 
-    if (availableEditors.length > 1) {
-        return <MultipleEditors {...props} fieldErrors={fieldErrors} />;
-    }
+                return (
+                    <Editor
+                        {...props}
+                        ref={ref}
+                        editorConfig={selectedEditor}
+                        className={`${valueClassName ? valueClassName : nodeValue}`}
+                        fieldErrors={fieldErrors}
+                        formatter={formatter}
+                        expressionInfo={validationLabelInfo}
+                    />
+                );
+            }}
+        </FieldSwitch>
+    );
 });
 
 EditableEditor.displayName = "EditableEditor";
@@ -75,9 +75,12 @@ function EditableEditorRow({
     renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
     return (
-        <FormControl className={cx(rowClassName && rowClassName)} style={{ width: "100%", margin: rowClassName && 0 }}>
+        <FormControl
+            className={cx(rowClassName && rowClassName)}
+            sx={{ width: "100%", margin: rowClassName && 0, "& .MuiFormLabel-root": { marginTop: "20px" } }}
+        >
             <>
-                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
+                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel sx={{ marginTop: "20px" }} />}
                 <EditableEditor {...props} />
             </>
         </FormControl>
