@@ -227,7 +227,7 @@ object Dtos {
       private val displayableName: String             = "Run now scheduling"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
-      override def icon: String                       = "/assets/activities/deploy.svg"
+      override def icon: String                       = "/assets/activities/deployed.svg"
       override def supportedActions: List[String]     = commentRelatedActions
     }
 
