@@ -27,7 +27,7 @@ object SpelToSpelTemplateNodeMigration extends NodeMigration {
   }
 
   private def isStringSpelParameter(param: Parameter): Boolean =
-    param.expression.language == Language.Spel && spelStringPattern.matches(param.expression.expression)
+    param.expression.language == Language.Spel && spelStringPattern.findFirstIn(param.expression.expression).isDefined
 
   private def mapStringParameters(param: Parameter): Parameter = {
     param.expression.expression match {
