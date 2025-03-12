@@ -21,13 +21,13 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     extends DelayedUniversalKafkaSourceIntegrationMixinSpec
     with LoneElement {
 
-  test("timestampField editor should be set to simple if schema does not contain eligible fields") {
+  test("timestampField editor should be set to text editor if schema does not contain eligible fields") {
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-without-timestamp-fields", FullNameV1.schema)
 
     timestampFieldParameter.editors shouldBe List(
-      SpelParameterEditor,
       SpelTemplateParameterEditor,
+      SpelParameterEditor,
     )
   }
 
@@ -57,7 +57,8 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
           FixedExpressionValue("'dateTime'", "dateTime"),
           FixedExpressionValue("'vat'", "vat")
         )
-      )
+      ),
+      SpelParameterEditor,
     )
   }
 

@@ -41,8 +41,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
         "name",
         Typed[String],
         List(
-          SpelParameterEditor,
           SpelTemplateParameterEditor,
+          SpelParameterEditor,
         )
       ),
       SimplifiedParam("age", Typed[Long], Nil)
@@ -76,8 +76,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
         "address.street",
         Typed[String],
         List(
-          SpelParameterEditor,
           SpelTemplateParameterEditor,
+          SpelParameterEditor,
         )
       ),
       SimplifiedParam("address.number", Typed[Long], Nil),
