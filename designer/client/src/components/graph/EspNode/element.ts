@@ -71,20 +71,11 @@ export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
     return toString(str).length * pxPerChar + 2 * padding;
 }
 
-function getTestCounts(hasCounts: boolean, shortCounts: boolean, count: NodeCounts): string {
-    if (!hasCounts) {
-        return "";
-    }
-
-    if (shortCounts) {
-        if (count && millify(count?.all)) {
-            return count?.all?.toLocaleString();
-        }
-    } else if (count?.all?.toLocaleString()) {
-        return count.all.toLocaleString() || "0";
-    }
-
-    return "?";
+export function getTestCounts(count: NodeCounts, shortCounts?: boolean): string {
+    if (!count) return "";
+    if (typeof count.all !== "number") return "?";
+    if (shortCounts) return millify(count.all);
+    return count.all.toLocaleString() || "0";
 }
 
 export const updateNodeCounts =
@@ -93,8 +84,8 @@ export const updateNodeCounts =
         const shortCounts = userSettings["node.shortCounts"];
         const count = processCounts[node.id];
         const hasCounts = !isEmpty(count);
-        const hasErrors = hasCounts && count?.errors > 0;
-        const testCounts = getTestCounts(hasCounts, shortCounts, count);
+        const hasErrors = count?.errors > 0;
+        const testCounts = getTestCounts(count, shortCounts);
         const testResultsWidth = getStringWidth(testCounts);
 
         const testResultsSummary: attributes.SVGTextAttributes = {
