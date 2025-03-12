@@ -1,12 +1,10 @@
 import React from "react";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { EditorType, ExtendedEditor, OnValueChange } from "./Editor";
+import { editors, EditorType, ExtendedEditor, OnValueChange } from "./Editor";
 import i18next from "i18next";
 import { Textarea } from "../field/Textarea";
 import { ExpressionLang } from "./types";
 import { FieldError } from "../Validators";
-
-const language = ExpressionLang.SpEL;
 
 type Props = {
     expressionObj: $TodoType;
@@ -46,7 +44,12 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
             isMarked={isMarked}
             fieldErrors={fieldErrors}
             showValidation={showValidation}
-            onChange={(event) => onValueChange({ expression: stringFormatter.encode(event.target.value), language })}
+            onChange={(event) =>
+                onValueChange({
+                    expression: stringFormatter.encode(event.target.value),
+                    language: editors.TextareaParameterEditor.language,
+                })
+            }
             value={stringFormatter.decode(expressionObj.expression) as string}
             formattedValue={expressionObj.expression}
             className={className}
@@ -76,4 +79,3 @@ TextareaEditor.notSwitchableToHint = () =>
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
-TextareaEditor.language = ExpressionLang.SpEL;

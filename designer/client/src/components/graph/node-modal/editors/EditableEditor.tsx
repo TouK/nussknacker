@@ -45,7 +45,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     return (
         <FieldSwitch availableEditors={availableEditors} expressionObj={expressionObj} onValueChange={props.onValueChange}>
             {(selectedEditor) => {
-                const Editor = editors[selectedEditor.type];
+                const Editor = editors[selectedEditor.type].component;
 
                 return (
                     <Editor

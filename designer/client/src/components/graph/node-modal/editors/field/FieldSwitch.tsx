@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from "react";
-import { editorParameters, editors } from "../expression/Editor";
+import { editors } from "../expression/Editor";
 import { ExpressionObj } from "../expression/types";
 import { Option } from "../../fragment-input-definition/TypeSelect";
 import { Box, Tabs, Tab } from "@mui/material";
@@ -16,12 +16,12 @@ interface Props {
 export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children }: Props) => {
     const [selectedEditor, setSelectedEditor] = useState(
         availableEditors.find((editor) => {
-            const selectedEditor = editors[editor.type];
+            const selectedEditor = editors[editor.type].component;
             return selectedEditor.language === expressionObj.language;
         }) ?? availableEditors[0],
     );
     const availableEditorsOptions: Option[] = availableEditors.map((editor) => ({
-        label: editorParameters[editor.type].displayName,
+        label: editors[editor.type].displayName,
         value: editor.type,
         isDisabled: false,
     }));
@@ -40,7 +40,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     TabIndicatorProps={{ sx: { display: "none" } }}
                     onChange={(_, value: string) => {
                         const selectedEditor = availableEditors.find((editor) => editor.type === value);
-                        const editor = editors[selectedEditor.type];
+                        const editor = editors[selectedEditor.type].component;
                         onValueChange({ ...expressionObj, language: editor.language });
                         setSelectedEditor(availableEditors.find((availableEditorsOption) => availableEditorsOption.type === value));
                     }}

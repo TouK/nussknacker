@@ -1,4 +1,4 @@
-import { ExpressionLang, ExpressionObj } from "../types";
+import { ExpressionObj } from "../types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Cron from "react-cron-generator";
 import "react-cron-generator/dist/cron-builder.css";
@@ -6,11 +6,9 @@ import Input from "../../field/Input";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import { CronEditorStyled } from "./CronEditorStyled";
-import { ExtendedEditor, OnValueChange } from "../Editor";
+import { editors, ExtendedEditor, OnValueChange } from "../Editor";
 import { FieldError } from "../../Validators";
 import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
-
-const language = ExpressionLang.SpEL;
 
 export type CronExpression = string;
 
@@ -69,7 +67,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     }, [open]);
 
     useEffect(() => {
-        onValueChange({ expression: encode(value), language });
+        onValueChange({ expression: encode(value), language: editors["CronParameterEditor"].language });
     }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {
@@ -113,4 +111,3 @@ CronEditor.notSwitchableToHint = () =>
         "editors.cron.notSwitchableToHint",
         "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to basic mode",
     );
-CronEditor.language = language;

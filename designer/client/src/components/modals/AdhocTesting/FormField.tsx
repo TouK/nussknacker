@@ -38,7 +38,7 @@ export function FormField({ name }: { name: string }) {
     }
 
     const { defaultValue, editor, typ } = parameter;
-    const Editor: SimpleEditor | ExtendedEditor = editors[editor.type];
+    const Editor: SimpleEditor | ExtendedEditor = editors[editor.type].component;
     const formatter = defaultValue.language === ExpressionLang.SpEL ? spelFormatters[typ?.refClazzName] : null;
     return (
         <NodeTable sx={{ m: 0 }}>

@@ -3,14 +3,12 @@ import i18next from "i18next";
 import { debounce, flatMap, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactAce from "react-ace/lib/ace";
-import { ExtendedEditor } from "./Editor";
+import { editors, ExtendedEditor } from "./Editor";
 import { Formatter } from "./Formatter";
 import { SpelEditor, SpelEditorProps } from "./SpelEditor";
 import { isSwitchableTo } from "./StringEditor";
 import { EditorMode, ExpressionLang } from "./types";
 import { Ace } from "ace-builds";
-
-const language = ExpressionLang.SQL;
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -110,7 +108,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             className={className}
             rows={6}
             editorMode={EditorMode.SQL}
-            language={language}
+            language={editors.SqlParameterEditor.language}
         />
     );
 };
@@ -122,4 +120,3 @@ SqlEditor.notSwitchableToHint = () =>
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
-SqlEditor.language = language;

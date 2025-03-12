@@ -5,10 +5,8 @@ import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
-import { ExtendedEditor, OnValueChange } from "../Editor";
+import { editors, ExtendedEditor, OnValueChange } from "../Editor";
 import { FieldError } from "../../Validators";
-
-const language = ExpressionLang.SpEL;
 
 export type Period = {
     years: number;
@@ -76,7 +74,7 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
-            language={language}
+            language={editors.PeriodParameterEditor.language}
         />
     );
 };
@@ -91,4 +89,3 @@ PeriodEditor.notSwitchableToHint = () =>
         "editors.period.notSwitchableToHint",
         "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to basic mode",
     );
-PeriodEditor.language = language;

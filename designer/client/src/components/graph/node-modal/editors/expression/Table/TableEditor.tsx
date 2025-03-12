@@ -17,7 +17,7 @@ import { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import { EditorProps, ExtendedEditor } from "../Editor";
+import { EditorProps, editors, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
 import { useErrorHighlights } from "./errorHighlights";
@@ -34,9 +34,7 @@ import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { find, head, orderBy } from "lodash";
-import { ExpressionLang } from "../types";
 
-const language = ExpressionLang.TabularDataDefinition;
 const SUPPORTED_TYPES = [
     "java.lang.String",
     "java.lang.Boolean",
@@ -119,7 +117,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
 
     useEffect(() => {
         if (rawExpression !== expressionObj.expression) {
-            onValueChange({ expression: rawExpression, language });
+            onValueChange({ expression: rawExpression, language: editors.TabularTypedDataEditor.language });
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
@@ -556,4 +554,3 @@ TableEditor.isSwitchableTo = () => true; // TODO: implement
 TableEditor.switchableToHint = () => i18next.t("editors.table.switchableToHint", "Switch to table mode");
 TableEditor.notSwitchableToHint = () =>
     i18next.t("editors.table.notSwitchableToHint", "Expression must match schema to switch to table mode");
-TableEditor.language = language;

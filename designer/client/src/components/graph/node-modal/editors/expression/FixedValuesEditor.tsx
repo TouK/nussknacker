@@ -1,17 +1,15 @@
 import React from "react";
 import Creatable from "react-select/creatable";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { ExpressionLang, ExpressionObj } from "./types";
+import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
-import { EditorType, ExtendedEditor, OnValueChange } from "./Editor";
+import { editors, EditorType, ExtendedEditor, OnValueChange } from "./Editor";
 import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
-
-const language = ExpressionLang.SpELTemplate;
 
 type Props = {
     editorConfig: $TodoType;
@@ -62,7 +60,12 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
         selectStyled(theme);
     return editorConfig.type === EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR ? (
         <div className={cx(className)}>
-            <RadioGroup value={currentOption.value} onChange={(event) => onValueChange({ expression: event.target.value, language })}>
+            <RadioGroup
+                value={currentOption.value}
+                onChange={(event) =>
+                    onValueChange({ expression: event.target.value, language: editors.FixedValuesWithRadioParameterEditor.language })
+                }
+            >
                 {options.map((option: Option) => {
                     const label = option.value === props.param?.defaultValue ? `${option.label} (default)` : option.label;
                     return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
@@ -74,7 +77,9 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
             <Creatable
                 value={currentOption}
                 classNamePrefix={"test"}
-                onChange={(newValue) => onValueChange({ expression: newValue.value, language })}
+                onChange={(newValue) =>
+                    onValueChange({ expression: newValue.value, language: editors.FixedValuesParameterEditor.language })
+                }
                 options={options}
                 formatOptionLabel={(option) =>
                     option.icon ? (
@@ -129,4 +134,3 @@ FixedValuesEditor.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) 
     editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
 FixedValuesEditor.switchableToHint = () => "Switch to basic mode";
 FixedValuesEditor.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
-FixedValuesEditor.language = language;

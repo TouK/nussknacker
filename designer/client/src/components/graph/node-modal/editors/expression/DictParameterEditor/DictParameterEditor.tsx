@@ -4,7 +4,7 @@ import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
-import { ExtendedEditor, OnValueChange } from "../Editor";
+import { editors, ExtendedEditor, OnValueChange } from "../Editor";
 import { ExpressionLang, ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { NodeInput } from "../../../../../FormElements";
@@ -15,8 +15,6 @@ import { cx } from "@emotion/css";
 import { isEmpty } from "lodash";
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
-
-const language = ExpressionLang.DictKeyWithLabel;
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -119,7 +117,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange({ expression: value ? JSON.stringify(value) : "", language });
+                    onValueChange({ expression: value ? JSON.stringify(value) : "", language: editors.DictParameterEditor.language });
                     setValue(value);
                     setOpen(false);
                 }}
@@ -172,4 +170,3 @@ DictParameterEditor.getBasicMode = (expressionObj) => ({
     language: ExpressionLang.DictKeyWithLabel,
     expression: isParseable(expressionObj) ? expressionObj.expression : "",
 });
-DictParameterEditor.language = language;

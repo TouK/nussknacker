@@ -54,4 +54,3 @@ BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmp
 BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");
 BoolEditor.notSwitchableToHint = () =>
     i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to basic mode");
-BoolEditor.language = ExpressionLang.SpEL;
