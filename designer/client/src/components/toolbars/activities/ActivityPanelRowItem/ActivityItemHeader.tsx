@@ -227,6 +227,7 @@ const WithOpenVersion = ({
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
+            title={"Change to " + scenarioVersion + " version"}
             {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesOpenVersion })}
         >
             {children}
@@ -258,7 +259,6 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
                 <Typography
                     variant={"caption"}
                     component={SearchHighlighter}
-                    title={text}
                     highlights={[searchQuery]}
                     sx={(theme) => ({
                         color: theme.palette.text.primary,
