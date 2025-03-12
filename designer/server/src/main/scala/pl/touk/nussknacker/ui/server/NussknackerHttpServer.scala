@@ -19,18 +19,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem) extends LazyLogging {
+class NussknackerHttpServer(system: ActorSystem) extends LazyLogging {
 
   private implicit val systemImplicit: ActorSystem                = system
   private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
 
-  def start(designerConfig: DesignerConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
-    for {
-      route <- routeProvider.createRoute(designerConfig)
-      _     <- createAkkaHttpBinding(designerConfig.rawConfig, route, metricRegistry)
-    } yield {
-      RouteInterceptor.set(route)
-    }
+  def start(route: Route, designerConfig: DesignerConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
+    createAkkaHttpBinding(designerConfig.rawConfig, route, metricRegistry).map(_ => RouteInterceptor.set(route))
   }
 
   private def createAkkaHttpBinding(

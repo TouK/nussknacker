@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.Directives._
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.test.utils.scalas.CatsTestExtensions._
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig
-import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, RouteProvider}
+import pl.touk.nussknacker.ui.server.NussknackerHttpServer
 import sttp.client3.{basicRequest, UriContext}
 import sttp.model.StatusCode
 
@@ -31,7 +32,9 @@ class NussknackerHttpServerSpec
       for {
         server <- createHttpServer()
         client <- createHttpClient(Some(prepareSSLContext(keyStoreConfig)))
+        route = createRoute()
         _ <- server.start(
+          route,
           DesignerConfig.from(
             ConfigFactory
               .empty()
@@ -58,22 +61,18 @@ class NussknackerHttpServerSpec
         release = system => IO(system.terminate())
       )
       .map { system =>
-        new NussknackerHttpServer(DummyRouteProvider, system)
+        new NussknackerHttpServer(system)
       }
   }
 
-  private object DummyRouteProvider extends RouteProvider[Route] with Directives {
-
-    override def createRoute(config: DesignerConfig): Resource[IO, Route] = Resource.pure[IO, Route] {
-      path("test") {
-        get {
-          complete {
-            "ok"
-          }
+  private def createRoute(): Route = {
+    path("test") {
+      get {
+        complete {
+          "ok"
         }
       }
     }
-
   }
 
 }

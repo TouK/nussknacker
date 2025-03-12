@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.effect.IO
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
@@ -14,10 +15,7 @@ import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtype.provider.{
-  ProcessingTypeDataProvider,
-  ReloadableProcessingTypeDataProvider
-}
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.Future
@@ -26,7 +24,7 @@ import scala.util.control.NonFatal
 class AppApiHttpService(
     config: Config,
     authManager: AuthManager,
-    processingTypeDataReloader: ReloadableProcessingTypeDataProvider[_, _],
+    reloadProcessingTypes: () => IO[Unit],
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
@@ -161,7 +159,7 @@ class AppApiHttpService(
     appApiEndpoints.processingTypeDataReloadEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogicSuccess { _ => _ =>
-        processingTypeDataReloader.reloadAll().unsafeToFuture()
+        reloadProcessingTypes().unsafeToFuture()
       }
   }
 
