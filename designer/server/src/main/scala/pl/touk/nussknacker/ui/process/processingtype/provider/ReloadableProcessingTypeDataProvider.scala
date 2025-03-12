@@ -20,7 +20,7 @@ import scala.util.control.NonFatal
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
+class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] private (
     loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
 )(implicit ioRuntime: IORuntime)
     extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)

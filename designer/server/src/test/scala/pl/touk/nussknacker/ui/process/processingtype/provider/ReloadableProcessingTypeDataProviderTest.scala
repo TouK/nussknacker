@@ -21,7 +21,7 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
 
     var valueHolder   = new AutoClosableWithValue(givenInitialValue)
     var combinedValue = givenInitialCombinedData
-    val reloadableProvider = new ReloadableProcessingTypeDataProvider(IO {
+    val reloadableProvider = ReloadableProcessingTypeDataProvider(IO {
       new ProcessingTypeDataState(
         Map(givenProcessingType -> ValueWithRestriction.anyUser(valueHolder)),
         Success(combinedValue),
@@ -61,7 +61,7 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
 
     val valueHolder   = new AutoClosableWithValue(givenInitialValue)
     val combinedValue = givenInitialCombinedData
-    val reloadableProvider = new ReloadableProcessingTypeDataProvider(IO {
+    val reloadableProvider = ReloadableProcessingTypeDataProvider(IO {
       new ProcessingTypeDataState(
         Map(givenProcessingType -> ValueWithRestriction.anyUser(valueHolder)),
         Success(combinedValue),
