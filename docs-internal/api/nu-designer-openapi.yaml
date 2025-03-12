@@ -4898,8 +4898,6 @@ paths:
                         value: '2024-01-17 14:21:17'
                       - name: finished
                         value: '2024-01-17 14:21:17'
-                      - name: scheduleName
-                        value: main-schedule
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4914,8 +4912,6 @@ paths:
                         value: '2024-01-17 14:21:17'
                       - name: finished
                         value: '2024-01-17 14:21:17'
-                      - name: scheduleName
-                        value: main-schedule
                       - name: retriesLeft
                         value: '1'
                       - name: nextRetryAt
@@ -5103,8 +5099,8 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Processing data
-                      icon: /assets/activities/processingData.svg
+                      displayableName: Run now scheduling
+                      icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
@@ -5216,8 +5212,8 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Processing data
-                      icon: /assets/activities/processingData.svg
+                      displayableName: Run now scheduling
+                      icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
