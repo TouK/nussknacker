@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component.defaultconfig
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.definition.component._
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 object DefaultComponentConfigDeterminer {
 
@@ -68,6 +69,7 @@ object DefaultComponentConfigDeterminer {
       icon: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
+      name: String
   ): ComponentUiDefinition = {
     val beforeTranslationGroupName = componentGroupName.getOrElse(DefaultsComponentGroupName.FragmentsGroupName)
 
@@ -78,7 +80,7 @@ object DefaultComponentConfigDeterminer {
       icon = icon.getOrElse(DefaultsComponentIcon.FragmentIcon),
       docsUrl = docsUrl,
       designerWideId = designerWideId,
-      label = None
+      label = IdToTitleConverter.toTitle(name)
     )
   }
 
