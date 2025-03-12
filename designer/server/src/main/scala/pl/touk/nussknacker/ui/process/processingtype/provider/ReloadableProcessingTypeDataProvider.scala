@@ -27,9 +27,9 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     with LazyLogging {
 
   def reloadAll(): IO[Unit] = {
-    accessStateInCriticalSection { stateRef =>
+    accessStateInCriticalSection { stateOps =>
       for {
-        beforeReload <- stateRef.get
+        beforeReload <- stateOps.value
         _ <- IO(
           logger.info(
             s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}]"
@@ -40,7 +40,8 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
           logger.info("Reloading processing type data...")
         )
         newState <- loadMethod
-        _ <- setStateValueAndNotifyObservers(newState)
+        _ <- stateOps
+          .setValue(newState)
           .map { _ =>
             logger.info(
               s"New state with processing types [${newState.all.keys.toList.sorted.mkString(", ")}] reload finished"
@@ -48,7 +49,7 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
           }
           .recoverWith { case NonFatal(ex) =>
             logger.error("Error occurred during reloading state. Rolling back previous state value", ex)
-            setStateValueAndNotifyObservers(beforeReload).map { _ =>
+            stateOps.setValue(beforeReload).map { _ =>
               throw ex
             }
           }
@@ -56,9 +57,9 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData](
     }
   }
 
-  override def close(): IO[Unit] = {
-    // We have to shut down IORuntime in one place, after closing all observers to ensure that nobody will use closed IORuntime
-    super.close().map { _ => ioRuntime.shutdown() }
+  // We have to shut down IORuntime in one place, after closing all observers to ensure that nobody will use closed IORuntime
+  override protected def finalizeAfterClosingObserversAndState: IO[Unit] = {
+    IO(ioRuntime.shutdown())
   }
 
   override protected def closeState(state: ProcessingTypeDataState[Data, CombinedData]): IO[Unit] = IO {

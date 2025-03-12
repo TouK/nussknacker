@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -14,7 +15,13 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   class MutableProcessingTypeDataProvider(state: ProcessingTypeDataState[String, Int])
-      extends ProcessingTypeDataProvider[String, Int](state)
+      extends ProcessingTypeDataProvider[String, Int](state) {
+
+    def setValue(stateValue: State): IO[Unit] = accessStateInCriticalSection(
+      _.setValue(stateValue)
+    )
+
+  }
 
   test("should cache computed values until source state is change") {
     val provider     = new MutableProcessingTypeDataProvider(createState("initial", -1))
@@ -30,7 +37,7 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
     transformed.all.head._2 shouldEqual "initial"
     invoked shouldEqual 1
 
-    provider.setStateValueAndNotifyObservers(createState("newValue", -1)).unsafeRunSync()
+    provider.setValue(createState("newValue", -1)).unsafeRunSync()
     transformed.all.head._2 shouldEqual "newValue"
     transformed.all.head._2 shouldEqual "newValue"
     invoked shouldEqual 2
@@ -50,7 +57,7 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
     transformed.combined shouldEqual 123
     invoked shouldEqual 1
 
-    provider.setStateValueAndNotifyObservers(createState("", 234)).unsafeRunSync()
+    provider.setValue(createState("", 234)).unsafeRunSync()
     transformed.combined shouldEqual 234
     transformed.combined shouldEqual 234
     invoked shouldEqual 2
@@ -62,7 +69,7 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
     val transformed = provider.mapValues(identity).mapValues(identity)
     transformed.all.head._2 shouldEqual "initial"
 
-    provider.setStateValueAndNotifyObservers(createState("newValue", -1)).unsafeRunSync()
+    provider.setValue(createState("newValue", -1)).unsafeRunSync()
     transformed.all.head._2 shouldEqual "newValue"
   }
 
