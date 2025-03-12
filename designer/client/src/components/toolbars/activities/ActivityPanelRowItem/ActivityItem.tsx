@@ -1,4 +1,5 @@
 import React, { ForwardedRef, forwardRef } from "react";
+import humanizeString from "humanize-string";
 import { Box, styled, Typography } from "@mui/material";
 import { formatDateTime } from "../../../../common/DateUtils";
 import { ItemActivity } from "../ActivitiesPanel";
@@ -95,7 +96,7 @@ export const ActivityItem = forwardRef(
 
                         {activity.additionalFields.map((additionalField, index) => {
                             const additionalFieldText = additionalField.name
-                                ? `${additionalField.name}: ${additionalField.value}`
+                                ? `${humanizeString(additionalField.name)}: ${additionalField.value}`
                                 : additionalField.value;
 
                             return (
