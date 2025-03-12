@@ -1,13 +1,22 @@
 package pl.touk.nussknacker.ui.api.testing
 
+import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 
 trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
+
+  // We need to add flinkBaseUnbounded components to the classpath in order to test EventGenerator
+  override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
+    ConfigFactory.parseResources(
+      "config/business-cases/simple-streaming-use-case-with-flink-unbounded-components-designer.conf"
+    )
+  )
 
   protected def eventGeneratorValue: Expression
 

@@ -12,15 +12,24 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFi
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.test.{
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLoggingIfValidationFails,
+  WithTestHttpClient
+}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithMockableDeploymentManager,
+  WithSimplifiedDesignerConfig
+}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import sttp.client3.{UriContext, quickRequest}
+import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
 trait TestingApiHttpServiceSpec
@@ -330,8 +339,6 @@ trait TestingApiHttpServiceSpec
   "The endpoint for running tests from file should" - {
     "properly parse file and run tests" in {
       createSavedScenario(exampleScenario)
-
-      println(expectedTestDataJson)
 
       val response = httpClient.send(
         quickRequest

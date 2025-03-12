@@ -666,7 +666,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     scenarioCompiler     % Provided,
     flinkExecutor        % Test,
     flinkTestUtils       % Test,
-    kafkaTestUtils       % Test,
+    kafkaTestUtils       % Test
   )
 
 lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
