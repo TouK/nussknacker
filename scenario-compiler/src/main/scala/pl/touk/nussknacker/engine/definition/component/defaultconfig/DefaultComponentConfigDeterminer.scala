@@ -80,7 +80,7 @@ object DefaultComponentConfigDeterminer {
       icon = icon.getOrElse(DefaultsComponentIcon.FragmentIcon),
       docsUrl = docsUrl,
       designerWideId = designerWideId,
-      label = IdToTitleConverter.toTitle(name)
+      label = name
     )
   }
 
