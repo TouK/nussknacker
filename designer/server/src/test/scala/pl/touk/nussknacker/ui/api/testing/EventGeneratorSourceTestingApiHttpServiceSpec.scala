@@ -32,7 +32,7 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
         "value"    -> eventGeneratorValue,
         "schedule" -> "T(java.time.Duration).parse('PT1M')".spel,
       )
-      .emptySink("end", "monitor")
+      .emptySink("end", "dead-end")
 
   override protected def expectedSourceTestingParametersJson: String =
     "[]"

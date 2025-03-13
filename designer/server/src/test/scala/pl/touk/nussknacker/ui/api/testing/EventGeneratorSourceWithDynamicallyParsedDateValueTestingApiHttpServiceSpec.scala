@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 class EventGeneratorSourceWithDynamicallyParsedDateValueTestingApiHttpServiceSpec
     extends EventGeneratorSourceTestingApiHttpServiceSpec {
 
-  override protected def eventGeneratorValue: Expression = "#DATE.parseDate('2025-01-31T10:11:12')".spel
+  override protected def eventGeneratorValue: Expression = "#DATE_FORMAT.parseLocalDateTime('2025-01-31T10:11:12')".spel
 
   override protected def expectedTestDataJson: String =
     s"""{"sourceId":"eventGeneratorSourceId","record":"2025-01-31T10:11:12"}
