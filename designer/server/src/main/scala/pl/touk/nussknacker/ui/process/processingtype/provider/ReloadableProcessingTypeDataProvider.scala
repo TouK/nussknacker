@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.process.processingtype.{CombinedProcessingTypeData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
+
+import scala.util.control.NonFatal
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -18,56 +20,49 @@ import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class ReloadableProcessingTypeDataProvider(
-    loadMethod: IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]]
-) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
+class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] private (
+    loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
+)(implicit ioRuntime: IORuntime)
+    extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
     with LazyLogging {
 
-  // We initiate state with dumb value instead of calling loadMethod() to avoid problems with dependency injection
-  // cycle - see NusskanckerDefaultAppRouter.create
-  private var stateValue: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = emptyState
-
-  override private[processingtype] def state
-      : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
-    synchronized {
-      stateValue
+  def reloadAll(): IO[Unit] = {
+    accessStateInCriticalSection { stateOps =>
+      for {
+        beforeReload <- stateOps.value
+        _ <- IO(
+          logger.info(
+            s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}]"
+          )
+        )
+        _ <- closeState(beforeReload)
+        _ <- IO(
+          logger.info("Reloading processing type data...")
+        )
+        newState <- loadMethod
+        _ <- stateOps
+          .setValue(newState)
+          .map { _ =>
+            logger.info(
+              s"New state with processing types [${newState.all.keys.toList.sorted.mkString(", ")}] reload finished"
+            )
+          }
+          .recoverWith { case NonFatal(ex) =>
+            logger.error("Error occurred during reloading state. Rolling back previous state value", ex)
+            stateOps.setValue(beforeReload).map { _ =>
+              throw ex
+            }
+          }
+      } yield ()
     }
   }
 
-  def reloadAll(): IO[Unit] = synchronized {
-    for {
-      beforeReload <- IO.pure(stateValue)
-      _ <- IO(
-        logger.info(
-          s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted
-              .mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
-        )
-      )
-      _ <- close(beforeReload)
-      _ <- IO(
-        logger.info("Reloading processing type data...")
-      )
-      newState <- loadMethod
-      _ <- IO(
-        logger.info(
-          s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
-        )
-      )
-    } yield {
-      stateValue = newState
-    }
+  // We have to shut down IORuntime in one place, after closing all observers to ensure that nobody will use closed IORuntime
+  override protected def finalizeAfterClosingObserversAndState: IO[Unit] = {
+    IO(ioRuntime.shutdown())
   }
 
-  def close(): IO[Unit] = synchronized {
-    for {
-      _ <- IO {
-        stateValue = emptyState
-      }
-      _ <- close(stateValue)
-    } yield ()
-  }
-
-  private def close(state: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]) = IO {
+  override protected def closeState(state: ProcessingTypeDataState[Data, CombinedData]): IO[Unit] = IO {
     state.all.values.foreach(
       _.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance)
         .getOrElse(
@@ -77,10 +72,17 @@ class ReloadableProcessingTypeDataProvider(
     )
   }
 
-  private def emptyState = ProcessingTypeDataState(
-    allValues = Map.empty,
-    getCombinedValue = () => CombinedProcessingTypeData.create(Map.empty),
-    stateIdentityValue = new Object
-  )
+}
+
+object ReloadableProcessingTypeDataProvider {
+
+  def apply[Data <: AutoCloseable, CombinedData](
+      loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
+  ): ReloadableProcessingTypeDataProvider[Data, CombinedData] = {
+    // We create separate ioRuntime to ensure that we don't have some deadlocks during reading state where is used unsafeRunSync()
+    // See ProcessingTypeDataProvider.state method
+    implicit val ioRuntime: IORuntime = IORuntime.builder().build()
+    new ReloadableProcessingTypeDataProvider[Data, CombinedData](loadMethod)
+  }
 
 }

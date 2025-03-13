@@ -26,7 +26,7 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData,
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
@@ -49,7 +49,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.Scheduli
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 
 import java.net.URI
@@ -882,15 +882,17 @@ class DefaultComponentServiceSpec
         )
     }
 
-    ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
-      ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
-    ).mapValues { processingTypeData =>
-      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
-        processingTypeData.designerModelData
+    TestProcessingTypeDataProviderFactory
+      .create(
+        processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
+        ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
       )
-      ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
-    }
+      .mapValues { processingTypeData =>
+        val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
+          processingTypeData.designerModelData
+        )
+        ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
+      }
   }
 
   private def createDbProcessService(
