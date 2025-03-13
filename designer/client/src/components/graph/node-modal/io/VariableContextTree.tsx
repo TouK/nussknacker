@@ -1,14 +1,14 @@
 import { Box, Stack, Typography } from "@mui/material";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Context } from "../../../common/TestResultUtils";
-import { getProcessCounts } from "../../../reducers/selectors/graph";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
+import { Context } from "../../../../common/TestResultUtils";
+import { getProcessCounts } from "../../../../reducers/selectors/graph";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTitle } from "./ContextTitle";
 import { useInputOutputContext } from "./InputOutputContext";
 import { NextNodesCounts } from "./NextNodesCounts";
-import { ContextTree } from "./tests/ContextTree";
+import { ContextTree } from "./ContextTree";
 
 type ValuesContextTreeProps = {
     direction?: "input" | "output";
