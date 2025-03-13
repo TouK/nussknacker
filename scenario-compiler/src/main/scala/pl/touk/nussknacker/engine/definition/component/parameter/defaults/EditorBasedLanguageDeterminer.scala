@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object EditorBasedLanguageDeterminer {
 
-  def determineLanguageOf(editor: Option[ParameterEditor]): Expression.Language = editor match {
+  def determineLanguageOf(editor: Option[ParameterEditors]): Expression.Language = editor.map(_.mainEditor) match {
     case Some(SpelParameterEditor)                 => Expression.Language.Spel
     case Some(simpleEditor: SimpleParameterEditor) => determineLanguageOf(simpleEditor)
     case None                                      => Expression.Language.Spel

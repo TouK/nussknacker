@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   WrongParameters
 }
-import pl.touk.nussknacker.engine.api.definition.{Parameter, SpelParameterEditor, SpelTemplateParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  Parameter,
+  ParameterEditors,
+  SpelParameterEditor,
+  SpelTemplateParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -81,9 +86,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val expectedGenericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
-        editors = List(
-          SpelParameterEditor,
-          SpelTemplateParameterEditor,
+        editors = Some(
+          ParameterEditors(
+            SpelParameterEditor,
+            SpelTemplateParameterEditor,
+          )
         ),
         defaultValue = Some("''".spel)
       ),
@@ -234,9 +241,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
         .copy(
-          editors = List(
-            SpelParameterEditor,
-            SpelTemplateParameterEditor,
+          editors = Some(
+            ParameterEditors(
+              SpelParameterEditor,
+              SpelTemplateParameterEditor,
+            )
           ),
           defaultValue = Some("''".spel)
         ),
@@ -307,9 +316,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
         .copy(
-          editors = List(
-            SpelParameterEditor,
-            SpelTemplateParameterEditor,
+          editors = Some(
+            ParameterEditors(
+              SpelParameterEditor,
+              SpelTemplateParameterEditor,
+            )
           ),
           defaultValue = Some("''".spel)
         ),

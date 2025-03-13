@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.api.component
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  ParameterEditor,
+  ParameterEditors,
+  ParameterValidator,
+  SimpleParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 case class ComponentConfig(
@@ -61,11 +66,13 @@ object ComponentConfig {
 
 case class ParameterConfig(
     defaultValue: Option[String],
-    editors: Option[List[ParameterEditor]],
+    private val editors: Option[List[ParameterEditor]],
     validators: Option[List[ParameterValidator]],
     label: Option[String],
     hintText: Option[String]
-)
+) {
+  val parsedEditors = editors.map(ParameterEditors.unsafeFromList)
+}
 
 object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None, None)

@@ -10,7 +10,6 @@ import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait ParameterEditor
 
-// TODO: lbg should add flag isDefault? For now is resolved as first element of the list
 case object SpelParameterEditor extends ParameterEditor
 
 @ConfiguredJsonCodec sealed trait SimpleParameterEditor extends ParameterEditor

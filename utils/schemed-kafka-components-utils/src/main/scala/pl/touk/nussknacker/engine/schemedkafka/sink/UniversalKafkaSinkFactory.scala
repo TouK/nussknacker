@@ -44,7 +44,7 @@ object UniversalKafkaSinkFactory {
     Parameter.optional[CharSequence](sinkKeyParamName).copy(isLazyParameter = true),
     Parameter[Boolean](sinkRawEditorParamName).copy(
       defaultValue = Some(Expression.spel("false")),
-      editors = List(BoolParameterEditor),
+      editors = Some(ParameterEditors(BoolParameterEditor)),
       validators = List(MandatoryParameterValidator)
     )
   )
@@ -71,8 +71,12 @@ class UniversalKafkaSinkFactory(
       .mandatory[String](sinkValidationModeParamName)
       .withCreator(
         modify = _.copy(editors =
-          List(
-            FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
+          Some(
+            ParameterEditors(
+              FixedValuesParameterEditor(
+                ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))
+              )
+            )
           )
         )
       )

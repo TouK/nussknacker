@@ -248,7 +248,11 @@ object validationHelpers {
         NextParameters(
           List(
             Parameter(ParameterName("paramWithFixedValues"), Typed[Int]).copy(editors =
-              List(FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two"))))
+              Some(
+                ParameterEditors(
+                  FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two")))
+                )
+              )
             )
           )
         )

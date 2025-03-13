@@ -8,7 +8,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   UnsupportedDictParameterEditorType,
   UnsupportedFixedValuesType
 }
-import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, FixedExpressionValue, FixedValuesParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  DictParameterEditor,
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  ParameterEditors
+}
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
   ValueInputWithDictEditor,
@@ -31,7 +36,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
           paramName = ParameterName("someParamName"),
           nodeIds = Set("someNodeId")
         )
-        result shouldBe Valid(List(DictParameterEditor(dictId)))
+        result shouldBe Valid(ParameterEditors(DictParameterEditor("someDictId")))
       }
     }
   }
@@ -48,7 +53,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
           nodeIds = Set("someNodeId")
         )
         result shouldBe Valid(
-          List(
+          ParameterEditors(
             FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
           )
         )

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.json.swagger
 
+import cats.implicits.catsSyntaxOptionId
 import pl.touk.nussknacker.engine.api.definition.{
   BoolParameterEditor,
   DateParameterEditor,
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
   ParameterEditor,
+  ParameterEditors,
   SpelParameterEditor,
   SpelTemplateParameterEditor,
   TimeParameterEditor
@@ -16,41 +18,41 @@ object implicits {
 
   implicit class RichSwaggerTyped(st: SwaggerTyped) {
 
-    def editorList: List[ParameterEditor] =
+    def editorList: Option[ParameterEditors] =
       st match {
         case SwaggerString =>
-          List(
+          ParameterEditors(
             SpelTemplateParameterEditor,
             SpelParameterEditor
-          )
+          ).some
         case SwaggerBool =>
-          List(
+          ParameterEditors(
             BoolParameterEditor,
             SpelParameterEditor
-          )
+          ).some
         case SwaggerTime =>
-          List(
+          ParameterEditors(
             TimeParameterEditor,
             SpelParameterEditor
-          )
+          ).some
         case SwaggerDate =>
-          List(
+          ParameterEditors(
             DateParameterEditor,
             SpelParameterEditor
-          )
+          ).some
         case SwaggerDateTime =>
-          List(
+          ParameterEditors(
             DateTimeParameterEditor,
             SpelParameterEditor
-          )
+          ).some
         // TODO: FixedValuesParameterEditor for other types e.g. numbers
         case SwaggerEnum(values) if values.forall(v => v.isInstanceOf[String]) =>
-          List(
+          ParameterEditors(
             FixedValuesParameterEditor(
               values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String]))
             )
-          )
-        case _ => Nil
+          ).some
+        case _ => None
       }
 
   }

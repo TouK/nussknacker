@@ -1499,9 +1499,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   private def genericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
-        editors = List(
-          SpelParameterEditor,
-          SpelTemplateParameterEditor,
+        editors = Some(
+          ParameterEditors(
+            SpelParameterEditor,
+            SpelTemplateParameterEditor,
+          )
         ),
         defaultValue = Some("'realDefault'".spel),
         labelOpt = Some("Parameter 1")

@@ -26,9 +26,11 @@ object DelayedKafkaSourceFactory {
       .optional[String](timestampFieldParamName)
       .withCreator(modify =
         _.copy(editors =
-          List(
-            SpelTemplateParameterEditor,
-            SpelParameterEditor,
+          Some(
+            ParameterEditors(
+              SpelTemplateParameterEditor,
+              SpelParameterEditor,
+            )
           )
         )
       )
@@ -50,15 +52,19 @@ object DelayedKafkaSourceFactory {
       .map(FixedExpressionValue("", "") :: _)
       .map(FixedValuesParameterEditor.apply)
       .map(editor =>
-        List(
-          editor,
-          SpelParameterEditor
+        Some(
+          ParameterEditors(
+            editor,
+            SpelParameterEditor
+          )
         )
       )
       .getOrElse(
-        List(
-          SpelTemplateParameterEditor,
-          SpelParameterEditor,
+        Some(
+          ParameterEditors(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
+          )
         )
       )
 

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.ParameterEditors
 import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -14,11 +14,11 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
       case _ =>
         None
     }
-    klass.flatMap(determineTypeRelatedDefaultParamValue(parameters.determinedEditors.headOption, _))
+    klass.flatMap(determineTypeRelatedDefaultParamValue(parameters.determinedEditors, _))
   }
 
   private[defaults] def determineTypeRelatedDefaultParamValue(
-      editor: Option[ParameterEditor],
+      editor: Option[ParameterEditors],
       className: Class[_]
   ): Option[Expression] = {
     // TODO: use classes instead of class names
@@ -35,7 +35,7 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
     }
   }
 
-  private def defaultStringExpression(editor: Option[ParameterEditor]): Expression =
+  private def defaultStringExpression(editor: Option[ParameterEditors]): Expression =
     EditorBasedLanguageDeterminer.determineLanguageOf(editor) match {
       case Language.Spel => Expression.spel("''")
       case language @ (Language.SpelTemplate | Language.DictKeyWithLabel | Language.TabularDataDefinition) =>

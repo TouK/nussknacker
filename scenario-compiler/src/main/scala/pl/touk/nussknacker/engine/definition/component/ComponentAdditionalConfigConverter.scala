@@ -50,6 +50,7 @@ object ComponentAdditionalConfigConverter {
             nodeIds = Set.empty
           )
           .toOption
+          .map(_.value)
       ),
       validators = if (validators.nonEmpty) Some(validators) else None,
       label = None,

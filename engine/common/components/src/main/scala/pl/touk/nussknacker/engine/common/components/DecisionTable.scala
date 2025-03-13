@@ -30,7 +30,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     val declaration: ParameterExtractor[TabularTypedData] with ParameterCreatorWithNoDependency =
       ParameterDeclaration
         .mandatory[TabularTypedData](name)
-        .withCreator(_.copy(editors = List(TabularTypedDataEditor)))
+        .withCreator(_.copy(editors = Some(ParameterEditors(TabularTypedDataEditor))))
 
   }
 

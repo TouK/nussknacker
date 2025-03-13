@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.definition.BoolParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, ParameterEditors}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName

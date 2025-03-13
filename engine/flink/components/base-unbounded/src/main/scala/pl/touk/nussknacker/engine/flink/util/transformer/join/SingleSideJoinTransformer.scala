@@ -228,7 +228,7 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) wi
       .mandatory[Aggregator](AggregatorParamName)
       .withCreator(
         modify = _.copy(
-          editors = AggregateHelper.DUAL_EDITOR,
+          editors = Some(AggregateHelper.DUAL_EDITOR),
           additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
         )
       )

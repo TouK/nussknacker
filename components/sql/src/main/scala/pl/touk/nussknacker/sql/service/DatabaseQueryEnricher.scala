@@ -35,13 +35,14 @@ object DatabaseQueryEnricher {
     ParameterDeclaration
       .optional[Duration](cacheTTLParamName)
       .withCreator(
-        modify =
-          _.copy(editors = List(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
+        modify = _.copy(editors =
+          Some(ParameterEditors(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
+        )
       )
 
   final val queryParamName: ParameterName = ParameterName("Query")
 
-  final val queryParam = Parameter[String](queryParamName).copy(editors = List(SqlParameterEditor))
+  final val queryParam = Parameter[String](queryParamName).copy(editors = Some(ParameterEditors(SqlParameterEditor)))
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
@@ -50,10 +51,12 @@ object DatabaseQueryEnricher {
       .mandatory[String](resultStrategyParamName)
       .withCreator(
         modify = _.copy(editors =
-          List(
-            FixedValuesParameterEditor(
-              List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name)
-                .map { strategyName => FixedExpressionValue(s"'$strategyName'", strategyName) }
+          Some(
+            ParameterEditors(
+              FixedValuesParameterEditor(
+                List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name)
+                  .map { strategyName => FixedExpressionValue(s"'$strategyName'", strategyName) }
+              )
             )
           )
         )

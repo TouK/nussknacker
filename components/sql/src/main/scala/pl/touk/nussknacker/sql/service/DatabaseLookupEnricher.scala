@@ -5,7 +5,12 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  Parameter,
+  ParameterEditors
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
@@ -31,7 +36,7 @@ object DatabaseLookupEnricher {
   private def keyColumnParam(tableDef: TableDefinition): Parameter = {
     val columnNameValues = tableDef.columnDefs.map(column => FixedExpressionValue(s"'${column.name}'", column.name))
     Parameter(KeyColumnParamName, Typed[String])
-      .copy(editors = List(FixedValuesParameterEditor(columnNameValues)))
+      .copy(editors = Some(ParameterEditors(FixedValuesParameterEditor(columnNameValues))))
   }
 
   private def keyValueParam(keyColumnName: String, tableDef: TableDefinition): Parameter = {
@@ -62,7 +67,8 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
     val possibleTables: List[FixedExpressionValue] =
       schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
-    Parameter(TableParamName, Typed[String]).copy(editors = List(FixedValuesParameterEditor(possibleTables)))
+    Parameter(TableParamName, Typed[String])
+      .copy(editors = Some(ParameterEditors(FixedValuesParameterEditor(possibleTables))))
   }
 
   import DatabaseLookupEnricher._

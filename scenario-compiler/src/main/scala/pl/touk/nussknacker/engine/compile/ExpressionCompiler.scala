@@ -237,7 +237,7 @@ class ExpressionCompiler(
 
   private def substituteDictKeyExpression(
       expression: Expression,
-      editors: List[ParameterEditor],
+      editors: Option[ParameterEditors],
       paramName: ParameterName
   )(
       implicit nodeId: NodeId
@@ -271,13 +271,11 @@ class ExpressionCompiler(
 
     def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       editors match {
-        case DictParameterEditor(dictId) :: Nil if isDictKeyWithLabel(expression) =>
+        case Some(ParameterEditors(DictParameterEditor(dictId), _)) if isDictKeyWithLabel(expression) =>
           if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
-        case DictParameterEditor(dictId) :: _ :: Nil if isDictKeyWithLabel(expression) =>
+        case Some(ParameterEditors(_, Some(DictParameterEditor(dictId)))) if isDictKeyWithLabel(expression) =>
           if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
-        case _ :: DictParameterEditor(dictId) :: Nil if isDictKeyWithLabel(expression) =>
-          if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
-        case DictParameterEditor(_) :: Nil if !isDictKeyWithLabel(expression) =>
+        case Some(ParameterEditors(DictParameterEditor(_), None)) if !isDictKeyWithLabel(expression) =>
           incompatibleChangeToParameterDefinitionDetected
         case _ if isDictKeyWithLabel(expression) => incompatibleChangeToParameterDefinitionDetected
         case _                                   => Valid(expression)

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import cats.implicits.catsSyntaxOptionId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
@@ -9,11 +10,10 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
-import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 object EditorExtractor {
 
-  def extract(valueInput: ParameterValueInput): List[ParameterEditor] = {
+  def extract(valueInput: ParameterValueInput): ParameterEditors = {
     val innerEditor = valueInput match {
       case ValueInputWithFixedValuesProvided(fixedValuesList, _) =>
         FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
@@ -22,34 +22,33 @@ object EditorExtractor {
     }
 
     if (valueInput.allowOtherValue)
-      List(
+      ParameterEditors(
         innerEditor,
         SpelParameterEditor,
       )
     else
-      List(innerEditor)
+      ParameterEditors(innerEditor)
   }
 
-  def extract(param: ParameterData, parameterConfig: ParameterConfig): List[ParameterEditor] = {
-    parameterConfig.editors
-      .getOrElse(Nil)
-      .orElseIfEmpty(extractFromAnnotations(param))
-      .orElseIfEmpty(new ParameterTypeEditorDeterminer(param.typing).determine())
+  def extract(param: ParameterData, parameterConfig: ParameterConfig): Option[ParameterEditors] = {
+    parameterConfig.parsedEditors
+      .orElse(extractFromAnnotations(param))
+      .orElse(new ParameterTypeEditorDeterminer(param.typing).determine())
   }
 
-  private def extractFromAnnotations(param: ParameterData): List[ParameterEditor] = {
+  private def extractFromAnnotations(param: ParameterData): Option[ParameterEditors] = {
     val simpleEditorAnnotation: Option[SimpleEditor] = param.getAnnotation[SimpleEditor]
     val rawEditorAnnotation: Option[SpelEditor]      = param.getAnnotation[SpelEditor]
 
     (simpleEditorAnnotation, rawEditorAnnotation) match {
       case (Some(simpleEditorAnnotation: SimpleEditor), Some(_: SpelEditor)) =>
         if (simpleEditorAnnotation.isDefaultEditor)
-          List(simpleParameterEditor(simpleEditorAnnotation), SpelParameterEditor)
-        else List(SpelParameterEditor, simpleParameterEditor(simpleEditorAnnotation))
+          ParameterEditors(simpleParameterEditor(simpleEditorAnnotation), SpelParameterEditor).some
+        else ParameterEditors(SpelParameterEditor, simpleParameterEditor(simpleEditorAnnotation)).some
       case (Some(simpleEditorAnnotation: SimpleEditor), None) =>
-        List(simpleParameterEditor(simpleEditorAnnotation))
-      case (None, Some(_: SpelEditor)) => List(SpelParameterEditor)
-      case _                           => Nil
+        ParameterEditors(simpleParameterEditor(simpleEditorAnnotation)).some
+      case (None, Some(_: SpelEditor)) => ParameterEditors(SpelParameterEditor).some
+      case _                           => None
     }
   }
 

@@ -4,11 +4,10 @@ import pl.touk.nussknacker.engine.api.Hidden;
 import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
 import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.ParameterEditors;
 import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.SpelParameterEditor$;
 import scala.collection.JavaConverters;
-import scala.collection.immutable.List;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -42,12 +41,12 @@ public class AggregateHelper implements Serializable {
             new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality"))).asScala().toList());
 
     @Hidden
-    public static final List<ParameterEditor> DUAL_EDITOR = JavaConverters.collectionAsScalaIterableConverter(
-        Arrays.asList(
-            SIMPLE_EDITOR,
-            SpelParameterEditor$.MODULE$
-        )
-    ).asScala().toList();
+    public static final ParameterEditors DUAL_EDITOR =
+        ParameterEditors
+            .apply(
+                SIMPLE_EDITOR,
+                SpelParameterEditor$.MODULE$
+            );
 
     private static final Aggregator SUM = aggregates.SumAggregator$.MODULE$;
     private static final Aggregator MAX = aggregates.MaxAggregator$.MODULE$;

@@ -5,16 +5,15 @@ import cats.data.{Writer, WriterT}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -29,8 +28,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
-
-import scala.util.Try
 
 /*
  * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler, ValidationContext and declared dictionaries.
@@ -89,8 +86,8 @@ class FragmentParametersDefinitionExtractor(
           paramName = fragmentParameter.name,
           nodeIds = Set(nodeId.id)
         ) match {
-          case Valid(editors) => (editors, List.empty)
-          case Invalid(e)     => (Nil, e.toList)
+          case Valid(editors) => (Some(editors), List.empty)
+          case Invalid(e)     => (None, e.toList)
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))

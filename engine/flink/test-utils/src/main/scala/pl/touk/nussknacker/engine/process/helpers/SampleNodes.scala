@@ -755,9 +755,11 @@ object SampleNodes {
       .mandatory[String](aTypeParamName)
       .withCreator(modify =
         _.copy(editors =
-          List(
-            FixedValuesParameterEditor(
-              List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
+          Some(
+            ParameterEditors(
+              FixedValuesParameterEditor(
+                List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
+              )
             )
           )
         )
@@ -770,7 +772,11 @@ object SampleNodes {
       .withAdvancedCreator[List[Int]](
         create = versions =>
           _.copy(editors =
-            List(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+            Some(
+              ParameterEditors(
+                FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString)))
+              )
+            )
           )
       )
 
@@ -925,9 +931,11 @@ object SampleNodes {
       .mandatory[String](aTypeParamName)
       .withCreator(
         modify = _.copy(editors =
-          List(
-            FixedValuesParameterEditor(
-              List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
+          Some(
+            ParameterEditors(
+              FixedValuesParameterEditor(
+                List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
+              )
             )
           )
         )
@@ -940,7 +948,11 @@ object SampleNodes {
       .withAdvancedCreator[List[Int]](
         create = versions =>
           _.copy(editors =
-            List(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+            Some(
+              ParameterEditors(
+                FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString)))
+              )
+            )
           )
       )
 

@@ -83,11 +83,6 @@ object Implicits {
       accumulator(list, f, Nil)
     }
 
-    def orElseIfEmpty(default: => List[T]): List[T] = list match {
-      case Nil => default
-      case _   => list
-    }
-
   }
 
 }
