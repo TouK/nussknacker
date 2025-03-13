@@ -3,8 +3,8 @@ import { alpha, Stack, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { getProcessName } from "../../../reducers/selectors/graph";
-import { getShadow } from "../graphStyledWrapper";
+import { getProcessName } from "../../../../reducers/selectors/graph";
+import { getShadow } from "../../graphStyledWrapper";
 import { NextNodes } from "./NextNodesCounts";
 import { VariableContextType } from "./VariableContextTree";
 

@@ -1,8 +1,8 @@
 import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useReducer } from "react";
 import { useSelector } from "react-redux";
-import TestResultUtils from "../../../common/TestResultUtils";
-import { getProcessName, getScenarioGraph, getTestResults } from "../../../reducers/selectors/graph";
-import NodeUtils from "../NodeUtils";
+import TestResultUtils from "../../../../common/TestResultUtils";
+import { getProcessName, getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
+import NodeUtils from "../../NodeUtils";
 import { VariableContextType } from "./VariableContextTree";
 
 export type InputOutputState = {
