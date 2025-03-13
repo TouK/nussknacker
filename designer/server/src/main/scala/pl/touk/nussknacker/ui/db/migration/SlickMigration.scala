@@ -5,17 +5,18 @@ import io.circe.Json
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.NuTables
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.db.{DbRef, NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile, NuTables}
+import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 trait SlickMigration extends BaseJavaMigration {
 
-  protected val profile: JdbcProfile
+  protected val profile: NuJdbcProfile
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   protected def migrateActions: DBIOAction[Any, NoStream, _ <: Effect]
 
@@ -29,11 +30,33 @@ trait SlickMigration extends BaseJavaMigration {
     Await.result(database.run(migrateActions), Duration.Inf)
   }
 
+  protected def createNuJdbcProfileFrom(jdbcProfile: JdbcProfile): NuJdbcProfile = {
+    val schema = SlickMigration.getConfiguredAppSchema
+    jdbcProfile match {
+      case PostgresProfile => new NuPostgresProfile(schema)
+      case HsqldbProfile   => new NuHsqldbProfile(schema)
+      case other =>
+        throw new IllegalArgumentException(s"NuJdbcProfile doesn't support ${other.getClass} underlying profile")
+    }
+  }
+
+}
+
+object SlickMigration {
+
+  private val configuredAppSchema = new AtomicReference[Option[String]](None)
+
+  def getConfiguredAppSchema: String =
+    configuredAppSchema
+      .get()
+      .getOrElse(throw new IllegalStateException("Uninitilized schema name!"))
+
+  private[db] def setConfiguredAppSchema(schemaName: String): Unit = configuredAppSchema.set(Some(schemaName))
 }
 
 trait ProcessJsonMigration extends SlickMigration with NuTables with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
   import slick.dbio.DBIOAction
 
   import scala.concurrent.ExecutionContext.Implicits.global

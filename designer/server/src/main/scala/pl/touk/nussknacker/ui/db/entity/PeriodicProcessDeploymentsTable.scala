@@ -6,7 +6,7 @@ import pl.touk.nussknacker.ui.process.periodic.model.{
   PeriodicProcessId
 }
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import slick.jdbc.{JdbcProfile, JdbcType}
+import slick.jdbc.JdbcType
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 
 trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFactory {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   implicit val periodicProcessDeploymentIdMapping: BaseColumnType[PeriodicProcessDeploymentId] =
     MappedColumnType.base[PeriodicProcessDeploymentId, Long](_.value, PeriodicProcessDeploymentId.apply)
@@ -23,7 +23,7 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
     MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
 
   class PeriodicProcessDeploymentsTable(tag: Tag)
-      extends Table[PeriodicProcessDeploymentEntity](tag, "scheduled_scenario_deployments") {
+      extends TableWithSchema[PeriodicProcessDeploymentEntity](tag, "scheduled_scenario_deployments") {
 
     def id: Rep[PeriodicProcessDeploymentId] = column[PeriodicProcessDeploymentId]("id", O.PrimaryKey, O.AutoInc)
 

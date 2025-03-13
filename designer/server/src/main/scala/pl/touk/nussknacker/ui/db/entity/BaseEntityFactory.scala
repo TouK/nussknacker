@@ -10,13 +10,14 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 
 import java.util.UUID
 
 trait BaseEntityFactory extends LazyLogging {
-  protected val profile: JdbcProfile
-  import profile.api._
+
+  protected val profile: NuJdbcProfile
+  import profile.apiWithEnforcedSchema._
 
   implicit def processIdMapping: BaseColumnType[ProcessId] =
     MappedColumnType.base[ProcessId, Long](_.value, ProcessId.apply)
