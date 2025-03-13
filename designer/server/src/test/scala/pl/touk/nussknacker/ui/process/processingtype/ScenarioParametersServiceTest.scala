@@ -18,9 +18,8 @@ import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.nio.file.Path
@@ -302,22 +301,20 @@ class ScenarioParametersServiceTest
             ComponentDefinitionExtractionMode.FinalDefinition
           )
           val processingTypeData =
-            new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
-              .loadProcessingTypeData(
-                _ => modelDependencies,
-                _ => TestFactory.deploymentManagerDependencies,
-                deploymentManagersClassLoader,
-                ModelClassLoaderProvider(
-                  designerConfig
-                    .processingTypeConfigs()
-                    .configByProcessingType
-                    .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
-                  deploymentManagersClassLoader
-                ),
-                dbRef = None,
-              )
-              .unsafeRunSync()
-          val parametersService = processingTypeData.combinedDataTry.get.parametersService
+            TestProcessingTypeDataProviderFactory.create(
+              designerConfig.processingTypeConfigs,
+              ModelClassLoaderProvider(
+                designerConfig.processingTypeConfigs.configByProcessingType
+                  .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
+                deploymentManagersClassLoader
+              ),
+              modelDependencies,
+              deploymentManagersClassLoader,
+              TestFactory.deploymentManagerDependencies,
+              None
+            )
+
+          val parametersService = processingTypeData.combined.parametersService
 
           parametersService.scenarioParametersCombinationsWithWritePermission(
             TestFactory.adminUser()

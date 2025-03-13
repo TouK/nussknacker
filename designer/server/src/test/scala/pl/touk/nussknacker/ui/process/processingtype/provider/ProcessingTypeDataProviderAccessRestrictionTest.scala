@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
-import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,7 +12,6 @@ import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDat
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 
 class ProcessingTypeDataProviderAccessRestrictionTest
@@ -29,7 +27,7 @@ class ProcessingTypeDataProviderAccessRestrictionTest
   }
 
   test("allow to access to processing type data only users that has read access to associated category") {
-    val provider = TestProcessingTypeDataProviderFactory.fromState(mockProcessingTypeData("foo", "bar"))
+    val provider = mockProcessingTypeDataProvider("foo", "bar")
 
     val fooCategoryUser =
       RealLoggedUser("fooCategoryUser", "fooCategoryUser", Map("fooCategory" -> Set(Permission.Read)))
@@ -48,35 +46,31 @@ class ProcessingTypeDataProviderAccessRestrictionTest
     mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
   }
 
-  private def mockProcessingTypeData(processingTypeName: String, processingTypeNames: String*) = {
+  private def mockProcessingTypeDataProvider(processingTypeName: String, processingTypeNames: String*) = {
     val allProcessingTypes = (processingTypeName :: processingTypeNames.toList).toSet
     val modelDependencies  = TestFactory.modelDependencies
 
-    val loader = new ProcessingTypeDataLoader({ () =>
-      val processingTypeConfigs = ProcessingTypeConfigs(allProcessingTypes.toList.map { processingType =>
-        processingType -> ProcessingTypeConfig(
-          deploymentManagerType = "stub",
-          engineSetupName = None,
-          classPath = modelClasspath,
-          deploymentConfig = ConfigFactory.empty(),
-          modelConfig = ConfigWithUnresolvedVersion(ConfigFactory.empty()),
-          category = s"${processingType}Category"
-        )
-      }.toMap)
-      IO.pure(processingTypeConfigs)
-    })
-    loader
-      .loadProcessingTypeData(
-        _ => modelDependencies,
-        _ => TestFactory.deploymentManagerDependencies,
-        deploymentManagersClassLoader,
-        ModelClassLoaderProvider(
-          allProcessingTypes.map(_ -> ModelClassLoaderDependencies(modelClasspath, workingDirectoryOpt = None)).toMap,
-          deploymentManagersClassLoader
-        ),
-        dbRef = None,
+    val processingTypeConfigs = ProcessingTypeConfigs(allProcessingTypes.toList.map { processingType =>
+      processingType -> ProcessingTypeConfig(
+        deploymentManagerType = "stub",
+        engineSetupName = None,
+        classPath = modelClasspath,
+        deploymentConfig = ConfigFactory.empty(),
+        modelConfig = ConfigWithUnresolvedVersion(ConfigFactory.empty()),
+        category = s"${processingType}Category"
       )
-      .unsafeRunSync()
+    }.toMap)
+    TestProcessingTypeDataProviderFactory.create(
+      processingTypeConfigs = processingTypeConfigs,
+      modelClassLoaderProvider = ModelClassLoaderProvider(
+        allProcessingTypes.map(_ -> ModelClassLoaderDependencies(modelClasspath, workingDirectoryOpt = None)).toMap,
+        deploymentManagersClassLoader
+      ),
+      modelDependencies = modelDependencies,
+      deploymentManagersClassLoader = deploymentManagersClassLoader,
+      deploymentManagerDependencies = TestFactory.deploymentManagerDependencies,
+      dbRef = None
+    )
   }
 
 }

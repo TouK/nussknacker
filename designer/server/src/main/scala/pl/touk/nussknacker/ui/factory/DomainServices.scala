@@ -39,6 +39,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
 }
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.ModelDataWithProcessingTypeDataInput
 import pl.touk.nussknacker.ui.process.processingtype.provider.{
   ProcessingTypeDataProvider,
   ReloadableProcessingTypeDataProvider
@@ -77,7 +78,7 @@ final class DomainServices(
     val scenarioStatusPresenter: ScenarioStatusPresenter,
     val dmDispatcher: DeploymentManagerDispatcher,
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
-    val reloadProcessingTypes: IO[Unit],
+    val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
 )
 
@@ -103,16 +104,30 @@ object DomainServices {
       )
       // 1 hour is the delay to propagate all global notifications for all users
       globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
-      processingTypeDataProvider <- prepareProcessingTypeDataReload(
+      modelDataProvider <- prepareModelDataReload(
         designerConfigLoader,
         alreadyLoadedConfig,
-        infrastructureServices,
-        deploymentManagersClassLoader,
-        modelClassLoaderProvider,
         additionalUIConfigProvider,
-        actionServiceSupplier,
         globalNotificationRepository,
+        modelClassLoaderProvider
       )
+      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
+        ProcessingTypeDataLoader
+          .toFinalProcessingTypeData(
+            modelDataWithInputs,
+            getDeploymentManagerDependencies(
+              infrastructureServices,
+              additionalUIConfigProvider,
+              actionServiceSupplier,
+              _
+            )(executionContextWithIORuntime),
+            deploymentManagersClassLoader,
+            Some(dbRef)
+          )
+          .toEither
+          .toTry
+          .get
+      }
 
       feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
         actorSystem,
@@ -186,11 +201,11 @@ object DomainServices {
       )
 
       _ = {
-        // we need to reload processing type data after deployment service creation to make sure that it will be done using
+        // we need to reload model data after deployment service creation to make sure that it will be done using
         // correct classloader and that won't cause further delays during handling requests
         actionService.invalidateInProgressActions()
         actionServiceSupplier.set(actionService)
-        processingTypeDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
+        modelDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
       }
 
       reconciler = new ScenarioDeploymentReconciler(
@@ -280,7 +295,7 @@ object DomainServices {
       scenarioStatusPresenter = scenarioStatusPresenter,
       dmDispatcher = dmDispatcher,
       processingTypeServicesProvider = processingTypeServicesProvider,
-      reloadProcessingTypes = processingTypeDataProvider.reloadAll,
+      reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
     )
   }
@@ -296,44 +311,31 @@ object DomainServices {
     )
   }
 
-  private def prepareProcessingTypeDataReload(
+  private def prepareModelDataReload(
       designerConfigLoader: DesignerConfigLoader,
       alreadyLoadedConfig: DesignerConfig,
-      infrastructureServices: InfrastructureServices,
-      deploymentManagersClassLoader: DeploymentManagersClassLoader,
-      modelClassLoaderProvider: ModelClassLoaderProvider,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      actionServiceProvider: Supplier[ActionService],
       globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
-  )(
-      implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
-  ): Resource[IO, ReloadableProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
+      modelClassLoaderProvider: ModelClassLoaderProvider
+  ): Resource[IO, ReloadableProcessingTypeDataProvider[ModelDataWithProcessingTypeDataInput, _]] = {
     Resource
       .make(
         acquire = IO {
-          val processingTypeConfigsLoader = ProcessingTypeConfigsLoaderLoader.createProcessingTypeConfigsLoader(
-            designerConfigLoader,
-            alreadyLoadedConfig,
-            infrastructureServices.ioSttpBackend
-          )(executionContextWithIORuntime.ioRuntime)
-          val processingTypeDataLoader = new ProcessingTypeDataLoader(processingTypeConfigsLoader)
-          val loadProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
-            getModelDependencies(
-              additionalUIConfigProvider,
-              _,
-              alreadyLoadedConfig.componentDefinitionExtractionMode
-            ),
-            getDeploymentManagerDependencies(
-              infrastructureServices,
-              additionalUIConfigProvider,
-              actionServiceProvider,
-              _
-            ),
-            deploymentManagersClassLoader,
-            modelClassLoaderProvider,
-            Some(infrastructureServices.dbRef),
-          )
-          val loadAndNotifyIO = loadProcessingTypeDataIO
+          val loadModelDataIO = designerConfigLoader
+            .loadDesignerConfig()
+            .map(_.processingTypeConfigs())
+            .map(
+              ProcessingTypeDataLoader.loadModelData(
+                _,
+                getModelDependencies(
+                  additionalUIConfigProvider,
+                  _,
+                  alreadyLoadedConfig.componentDefinitionExtractionMode
+                ),
+                modelClassLoaderProvider,
+              )
+            )
+          val loadAndNotifyIO = loadModelDataIO
             .map { state =>
               globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state

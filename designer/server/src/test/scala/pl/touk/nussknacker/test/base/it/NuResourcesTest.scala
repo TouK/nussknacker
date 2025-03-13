@@ -55,7 +55,6 @@ import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -185,16 +184,14 @@ trait NuResourcesTest
   protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    TestProcessingTypeDataProviderFactory.fromState(
-      new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
-        .loadProcessingTypeData(
-          _ => modelDependencies,
-          _ => deploymentManagerDependencies,
-          deploymentManagersClassLoader,
-          modelClassLoaderProvider,
-          Some(testDbRef),
-        )
-        .unsafeRunSync()
+    val designerConfig = DesignerConfig.from(testConfig)
+    TestProcessingTypeDataProviderFactory.create(
+      processingTypeConfigs = designerConfig.processingTypeConfigs,
+      modelClassLoaderProvider = modelClassLoaderProvider,
+      modelDependencies = modelDependencies,
+      deploymentManagersClassLoader = deploymentManagersClassLoader,
+      deploymentManagerDependencies = deploymentManagerDependencies,
+      dbRef = Some(testDbRef)
     )
   }
 

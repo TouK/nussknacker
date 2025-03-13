@@ -118,6 +118,15 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](
     childProvider
   }
 
+  final def transform[TT, CC](
+      fun: (Map[ProcessingType, ValueWithRestriction[Data]], Try[CombinedData]) => ProcessingTypeDataState[TT, CC]
+  ): TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CC] = {
+    val childProvider =
+      new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CC](this.state, _.transform(fun))
+    observers.add(childProvider)
+    childProvider
+  }
+
   final def close(): IO[Unit] = {
     for {
       _ <- closeObservers
@@ -206,14 +215,20 @@ final class ProcessingTypeDataState[+Data, +CombinedData](
     new ProcessingTypeDataState[Data, CC](all, newCombined)
   }
 
+  def transform[TT, CC](
+      fun: (Map[ProcessingType, ValueWithRestriction[Data]], Try[CombinedData]) => ProcessingTypeDataState[TT, CC]
+  ): ProcessingTypeDataState[TT, CC] = {
+    fun(all, combinedDataTry)
+  }
+
 }
 
 object ProcessingTypeDataState {
 
-  val uninitialized = new ProcessingTypeDataState(
-    all = Map.empty,
-    combinedDataTry = Failure(UninitializedCombinedDataException)
-  )
+  val uninitialized: ProcessingTypeDataState[Nothing, Nothing] = withUninitializedCombinedData(Map.empty)
+
+  def withUninitializedCombinedData[Data](all: Map[ProcessingType, ValueWithRestriction[Data]]) =
+    new ProcessingTypeDataState(all, Failure(UninitializedCombinedDataException))
 
   private[provider] object UninitializedCombinedDataException
       extends IllegalAccessException("ProcessingTypeData is not initialized")

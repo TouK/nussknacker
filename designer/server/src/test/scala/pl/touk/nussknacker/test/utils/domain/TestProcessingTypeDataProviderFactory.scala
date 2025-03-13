@@ -1,8 +1,18 @@
 package pl.touk.nussknacker.test.utils.domain
 
 import cats.effect.unsafe.IORuntime
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
+import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ModelClassLoaderProvider,
+  ProcessingTypeData,
+  ValueWithRestriction
+}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 
 import scala.util.{Failure, Success}
@@ -33,6 +43,37 @@ object TestProcessingTypeDataProviderFactory {
         ),
       )
     )
+
+  def create(
+      processingTypeConfigs: ProcessingTypeConfigs,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
+      modelDependencies: ModelDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
+      dbRef: Option[DbRef]
+  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+    val finalProcessingTypeData =
+      ProcessingTypeDataLoader
+        .loadModelData(
+          processingTypeConfigs,
+          _ => modelDependencies,
+          modelClassLoaderProvider
+        )
+        .transform { case (modelDataWithInputs, _) =>
+          ProcessingTypeDataLoader
+            .toFinalProcessingTypeData(
+              modelDataWithInputs,
+              _ => deploymentManagerDependencies,
+              deploymentManagersClassLoader,
+              dbRef
+            )
+            .toEither
+            .toTry
+            .get
+        }
+
+    fromState(finalProcessingTypeData)
+  }
 
   def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C](stateValue)(IORuntime.global) {}

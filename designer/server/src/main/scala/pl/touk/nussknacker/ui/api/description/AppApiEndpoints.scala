@@ -201,12 +201,13 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
         )
       )
 
-  lazy val processingTypeDataReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
+  lazy val modelDataReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Processing type data reload service")
+      .summary("Model data reload service")
       .tag("App")
       .withSecurity(auth)
       .post
+      // TODO: rename: to modeldata / reload
       .in("app" / "processingtype" / "reload")
       .out(
         statusCode(NoContent).and(

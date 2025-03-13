@@ -25,7 +25,7 @@ final case class ProcessingTypeData private (
     designerModelData: DesignerModelData,
     deploymentData: DeploymentData,
     category: String,
-) extends AutoCloseable {
+) {
 
   // TODO: We should allow to have >1 processing mode configured inside one model and return a List here
   //       But for now, we throw an error when there is >1 processing mode and use have to split such a configuration
@@ -39,11 +39,6 @@ final case class ProcessingTypeData private (
       ),
       deploymentData.engineSetupErrors
     )
-
-  override def close(): Unit = {
-    designerModelData.close()
-    deploymentData.close()
-  }
 
 }
 
