@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
@@ -74,6 +75,13 @@ class EngineSideDeploymentStatusesProvider(
     prefetchedDeploymentStatuses
       .flatMap(_.getDeploymentStatuses(scenarioIdData))
       .map { prefetchedStatusDetails =>
+        logger.whenWarnEnabled(prefetchedStatusDetails.value.foreach {
+          case DeploymentStatusDetails(ProblemStateStatus(description, _, _), deploymentId, version) =>
+            logger.warn(
+              s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. $description"
+            )
+          case _ => ()
+        })
         Future.successful(Right(prefetchedStatusDetails))
       }
       .getOrElse {
@@ -92,7 +100,20 @@ class EngineSideDeploymentStatusesProvider(
   ): Future[Option[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]]] = {
     manager
       .getAllScenariosDeploymentsStatuses()
-      .map(Some(_))
+      .map { withDataFreshnessStatus =>
+        logger.whenWarnEnabled(
+          withDataFreshnessStatus.value.values.foreach { deploymentStatusDetails =>
+            deploymentStatusDetails.foreach {
+              case DeploymentStatusDetails(ProblemStateStatus(description, _, _), deploymentId, version) =>
+                logger.warn(
+                  s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. $description"
+                )
+              case _ => ()
+            }
+          }
+        )
+        Some(withDataFreshnessStatus)
+      }
       .recover { case NonFatal(e) =>
         logger.warn(
           s"Failed to get statuses of all scenarios in deployment manager for $processingType: ${e.getMessage}",

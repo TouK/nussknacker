@@ -40,7 +40,7 @@ import pl.touk.nussknacker.test.mock.{
   TestProcessChangeListener,
   WithTestDeploymentManagerClassLoader
 }
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
@@ -185,7 +185,7 @@ trait NuResourcesTest
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val designerConfig = DesignerConfig.from(testConfig)
-    ProcessingTypeDataProvider(
+    TestProcessingTypeDataProviderFactory.fromState(
       new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
         .loadProcessingTypeData(
           _ => modelDependencies,
