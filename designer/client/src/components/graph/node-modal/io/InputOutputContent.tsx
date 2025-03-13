@@ -4,8 +4,8 @@ import React, { forwardRef } from "react";
 import { ButtonsVariant, ToolbarButtons } from "../../../toolbarComponents/toolbarButtons";
 import AdhocTestingButton from "../../../toolbars/test/buttons/AdhocTestingButton";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons";
-import { InputOutputLayout } from "../InputOutputLayout";
-import { StyledContent } from "./StyledHeader";
+import { InputOutputLayout } from "./InputOutputLayout";
+import { StyledContent } from "../node/StyledHeader";
 
 export const InputOutputContent = forwardRef<HTMLDivElement, PropsOf<typeof StyledContent>>(function ExtendedContent(props, forwardedRef) {
     return (
