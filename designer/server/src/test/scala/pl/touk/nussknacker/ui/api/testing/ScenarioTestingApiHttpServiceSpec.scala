@@ -26,16 +26,25 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+========
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
 trait ScenarioTestingApiHttpServiceSpec
+========
+trait TestingApiHttpServiceSpec
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
     extends AnyFreeSpecLike
     with NuItTest
     with WithTestHttpClient
@@ -50,9 +59,25 @@ trait ScenarioTestingApiHttpServiceSpec
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
   protected def expectedSourceTestingParametersJson: String
 
   protected def expectedTestDataJson: String
+========
+  protected def exampleScenarioSourceId: String
+
+  protected def exampleScenario: CanonicalProcess
+
+  protected def validParameters: TestSourceParameters
+
+  protected def invalidParameters: TestSourceParameters
+
+  protected def expectedSourceTestingParametersJson: String
+
+  protected def expectedTestDataJson: String
+
+  protected def expectedValidationErrorsOnInvalidParametersJson: String
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
 
   private val fragmentFixedParameter = FragmentParameter(
     ParameterName("paramFixedString"),
@@ -196,7 +221,11 @@ trait ScenarioTestingApiHttpServiceSpec
             s"""[
              |    {
              |        "sourceId": "$exampleScenarioSourceId",
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
              |        "parameters": [$expectedSourceTestingParametersJson]
+========
+             |        "parameters": $expectedSourceTestingParametersJson
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
              |    }
              |]
              |""".stripMargin
@@ -370,21 +399,33 @@ trait ScenarioTestingApiHttpServiceSpec
   }
 
   "The endpoint for running tests from file should" - {
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
 
     def runTestsFromFile(testDataJson: String) = {
       httpClient.send(
+========
+    "properly parse file and run tests" in {
+      createSavedScenario(exampleScenario)
+
+      val response = httpClient.send(
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
         quickRequest
           .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
           .contentType(MediaType.MultipartFormData)
           .multipartBody(
             sttpPrepareMultiParts(
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
               "testData"      -> testDataJson,
+========
+              "testData"      -> expectedTestDataJson,
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
               "scenarioGraph" -> toJson(exampleScenario).noSpaces
             )()
           )
           .auth
           .basic("allpermuser", "allpermuser")
       )
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
     }
 
     "properly parse file and run tests" in {
@@ -403,10 +444,15 @@ trait ScenarioTestingApiHttpServiceSpec
       response.code shouldEqual StatusCode.BadRequest
       response.body shouldEqual "Test data is empty"
     }
+========
+      response.code shouldEqual StatusCode.Ok
+    }
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
   }
 
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
       shouldValidateParametersProperly()
     }
 
@@ -417,6 +463,35 @@ trait ScenarioTestingApiHttpServiceSpec
           .streaming("scenario with missing source")
           .source(missingSourceId, "missing source", "a parameter" -> "{'test'}".spel)
           .emptySink("end", "monitor")
+========
+      val request = AdhocTestParametersRequest(
+        validParameters,
+        exampleScenarioGraph
+      ).asJson.toString()
+
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(request)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |    "validationErrors": [],
+             |    "validationPerformed": true
+             |}""".stripMargin
+        )
+    }
+    "return errors if passed parameter is not valid" in {
+      val request = AdhocTestParametersRequest(
+        invalidParameters,
+        exampleScenarioGraph
+      ).asJson.toString()
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
 
       given()
         .applicationState {
@@ -434,13 +509,24 @@ trait ScenarioTestingApiHttpServiceSpec
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenarioWithMissingSource.name}/validate")
         .Then()
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
         .statusCode(400)
         .equalsPlainBody(
           "Requested test parameters from source [missing source] that is not valid. Errors: MissingSourceFactory(missing source,missing source)"
+========
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |    "validationErrors": $expectedValidationErrorsOnInvalidParametersJson,
+             |    "validationPerformed": true
+             |}
+             |""".stripMargin
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
         )
     }
   }
 
+<<<<<<<< HEAD:designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/ScenarioTestingApiHttpServiceSpec.scala
   "The endpoint for adhoc test run should" - {
     "run scenario and return result" in {
       shouldProperlyRunAdHocTest()
@@ -484,6 +570,10 @@ trait ScenarioTestingApiHttpServiceSpec
        |  "scenarioGraph": $scenarioGraphStr,
        |  "numberOfSamples": $numberOfSamples
        |}""".stripMargin
+========
+  private def exampleScenarioGraph    = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
+>>>>>>>> 726a56ce3c ([NU-2071] Add test capabilities for event generator source (#7626)):designer/server/src/test/scala/pl/touk/nussknacker/ui/api/testing/TestingApiHttpServiceSpec.scala
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
     Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(canonical)).toString()
