@@ -117,6 +117,7 @@
 * [#7615](https://github.com/TouK/nussknacker/pull/7615) Updated Flink dependency to 1.19.2
 * [#7648](https://github.com/TouK/nussknacker/pull/7648) Strip namespace from topic name in `inputMeta` context variable
 * [#7649](https://github.com/TouK/nussknacker/pull/7649) Renamed 'sticky note' component label to 'Sticky Note' and assigned it to the 'Misc' component group
+* [#7626](https://github.com/TouK/nussknacker/pull/7626) Added test capabilities (tests from file and ad-hoc) for Event Generator source
 
 ## 1.18
 

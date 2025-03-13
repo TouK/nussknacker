@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.testing
 
 import akka.http.scaladsl.model.StatusCodes
 import io.circe.Encoder
@@ -11,21 +11,31 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
+import pl.touk.nussknacker.test.{
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLoggingIfValidationFails,
+  WithTestHttpClient
+}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
+import sttp.client3.{quickRequest, UriContext}
+import sttp.model.{MediaType, StatusCode}
 
-class TestingApiHttpServiceSpec
+trait TestingApiHttpServiceSpec
     extends AnyFreeSpecLike
     with NuItTest
+    with WithTestHttpClient
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
@@ -36,18 +46,19 @@ class TestingApiHttpServiceSpec
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val exampleScenarioSourceId = "sourceId"
+  protected def exampleScenarioSourceId: String
 
-  private val exampleScenario = ScenarioBuilder
-    .streaming("scenario_1")
-    .source(exampleScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
-    .emptySink(
-      "sinkId",
-      "table",
-      "Table"      -> Expression.spel("'`default_catalog`.`default_database`.`transactions_summary`'"),
-      "Raw editor" -> Expression.spel("true"),
-      "Value"      -> Expression.spel("#input")
-    )
+  protected def exampleScenario: CanonicalProcess
+
+  protected def validParameters: TestSourceParameters
+
+  protected def invalidParameters: TestSourceParameters
+
+  protected def expectedSourceTestingParametersJson: String
+
+  protected def expectedTestDataJson: String
+
+  protected def expectedValidationErrorsOnInvalidParametersJson: String
 
   private val fragmentFixedParameter = FragmentParameter(
     ParameterName("paramFixedString"),
@@ -127,11 +138,7 @@ class TestingApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generate/3")
         .Then()
         .statusCode(200)
-        .equalsPlainBody(
-          s"""{"sourceId":"sourceId","record":"test-0"}
-             |{"sourceId":"sourceId","record":"test-1"}
-             |{"sourceId":"sourceId","record":"test-2"}""".stripMargin
-        )
+        .equalsPlainBody(expectedTestDataJson)
     }
     "refuses to generate too much data" in {
       given()
@@ -165,47 +172,8 @@ class TestingApiHttpServiceSpec
         .equalsJsonBody(
           s"""[
              |    {
-             |        "sourceId": "sourceId",
-             |        "parameters": [
-             |            {
-             |                "name": "elements",
-             |                "typ": {
-             |                    "display": "List[String]",
-             |                    "type": "TypedClass",
-             |                    "refClazzName": "java.util.List",
-             |                    "params": [
-             |                        {
-             |                            "display": "String",
-             |                            "type": "TypedClass",
-             |                            "refClazzName": "java.lang.String",
-             |                            "params": [
-             |
-             |                            ]
-             |                        }
-             |                    ]
-             |                },
-             |                "editor": {
-             |                    "type": "RawParameterEditor"
-             |                },
-             |                "editors": [{
-             |                    "type": "SpelParameterEditor"
-             |                }],
-             |                "defaultValue": {
-             |                    "language": "spel",
-             |                    "expression": ""
-             |                },
-             |                "additionalVariables": {
-             |
-             |                },
-             |                "variablesToHide": [
-             |
-             |                ],
-             |                "branchParam": false,
-             |                "requiredParam": true,
-             |                "hintText": null,
-             |                "label": "elements"
-             |            }
-             |        ]
+             |        "sourceId": "$exampleScenarioSourceId",
+             |        "parameters": $expectedSourceTestingParametersJson
              |    }
              |]
              |""".stripMargin
@@ -368,10 +336,31 @@ class TestingApiHttpServiceSpec
     }
   }
 
+  "The endpoint for running tests from file should" - {
+    "properly parse file and run tests" in {
+      createSavedScenario(exampleScenario)
+
+      val response = httpClient.send(
+        quickRequest
+          .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
+          .contentType(MediaType.MultipartFormData)
+          .multipartBody(
+            sttpPrepareMultiParts(
+              "testData"      -> expectedTestDataJson,
+              "scenarioGraph" -> toJson(exampleScenario).noSpaces
+            )()
+          )
+          .auth
+          .basic("allpermuser", "allpermuser")
+      )
+      response.code shouldEqual StatusCode.Ok
+    }
+  }
+
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
       val request = AdhocTestParametersRequest(
-        TestSourceParameters(exampleScenarioSourceId, Map(ParameterName("elements") -> "{'123'}".spel)),
+        validParameters,
         exampleScenarioGraph
       ).asJson.toString()
 
@@ -394,7 +383,7 @@ class TestingApiHttpServiceSpec
     }
     "return errors if passed parameter is not valid" in {
       val request = AdhocTestParametersRequest(
-        TestSourceParameters(exampleScenarioSourceId, Map(ParameterName("elements") -> "0L".spel)),
+        invalidParameters,
         exampleScenarioGraph
       ).asJson.toString()
 
@@ -410,16 +399,7 @@ class TestingApiHttpServiceSpec
         .statusCode(200)
         .equalsJsonBody(
           s"""{
-             |    "validationErrors": [
-             |        {
-             |            "typ": "ExpressionParserCompilationError",
-             |            "message": "Failed to parse expression: Bad expression type, expected: List[String], found: Long(0)",
-             |            "description": "There is problem with expression in field Some(elements) - it could not be parsed.",
-             |            "fieldName": "elements",
-             |            "errorType": "SaveAllowed",
-             |            "details": null
-             |        }
-             |    ],
+             |    "validationErrors": $expectedValidationErrorsOnInvalidParametersJson,
              |    "validationPerformed": true
              |}
              |""".stripMargin
@@ -427,8 +407,8 @@ class TestingApiHttpServiceSpec
     }
   }
 
-  private val exampleScenarioGraph    = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
-  private val exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
+  private def exampleScenarioGraph    = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
     Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(canonical)).toString()
