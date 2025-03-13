@@ -191,7 +191,7 @@ describe("Components list", () => {
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
         cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
         cy.layoutScenario();
-        cy.contains(`${seed.charAt(0).toUpperCase() + seed.slice(1)}_xxx`)
+        cy.contains(`${seed}_xxx`)
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {
