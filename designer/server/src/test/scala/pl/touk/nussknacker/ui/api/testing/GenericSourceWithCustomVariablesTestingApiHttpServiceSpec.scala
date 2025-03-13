@@ -15,7 +15,7 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
     ScenarioBuilder
       .streaming("scenario_1")
       .source(exampleScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
-      .emptySink("end", "dead-end")
+      .emptySink("end", "monitor")
 
   override protected def expectedSourceTestingParametersJson: String =
     """
