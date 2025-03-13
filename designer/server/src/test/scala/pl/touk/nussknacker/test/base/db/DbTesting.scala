@@ -7,7 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.scalatest.time.{Second, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
+import pl.touk.nussknacker.ui.db.DbRef
 
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
@@ -68,11 +68,6 @@ trait WithTestPostgresDb extends WithTestDb {
 
 trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
   self: Suite with WithTestDb =>
-
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-//    DatabaseInitializer.initDatabase("db", testDbConfig)
-  }
 
   override protected def afterEach(): Unit = {
     super.afterEach()
