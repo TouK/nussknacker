@@ -10,7 +10,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
-class FromJsonTypingResultBasedDecoderSpec extends AnyFunSuite with EitherValuesDetailedMessage with Matchers with LazyLogging {
+class ValueDecoderSpec extends AnyFunSuite with EitherValuesDetailedMessage with Matchers with LazyLogging {
 
   test("decodeValue should decode Record fields correctly when all fields are present") {
     val typedRecord = Typed.record(
@@ -25,7 +25,7 @@ class FromJsonTypingResultBasedDecoderSpec extends AnyFunSuite with EitherValues
       "age"  -> 30.asJson
     )
 
-    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
+    ValueDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
       Map(
         "name" -> "Alice",
         "age"  -> 30
@@ -45,7 +45,7 @@ class FromJsonTypingResultBasedDecoderSpec extends AnyFunSuite with EitherValues
       "name" -> "Alice".asJson
     )
 
-    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor).rightValue shouldBe Map("name" -> "Alice").asJava
+    ValueDecoder.decodeValue(typedRecord, json.hcursor).rightValue shouldBe Map("name" -> "Alice").asJava
   }
 
   test("decodeValue should decode extra fields using generic json decoding strategy") {
@@ -62,7 +62,7 @@ class FromJsonTypingResultBasedDecoderSpec extends AnyFunSuite with EitherValues
       "occupation" -> "nurse".asJson,
     )
 
-    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
+    ValueDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
       Map(
         "name"       -> "Alice",
         "age"        -> 30,
@@ -92,7 +92,7 @@ class FromJsonTypingResultBasedDecoderSpec extends AnyFunSuite with EitherValues
       )
     )
 
-    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
+    ValueDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
       Map(
         "name" -> "Alice",
         "address" -> Map(

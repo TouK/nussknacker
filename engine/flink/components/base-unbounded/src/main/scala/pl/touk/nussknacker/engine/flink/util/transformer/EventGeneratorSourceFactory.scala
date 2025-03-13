@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, Simple
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.{typing, FromJsonTypingResultBasedDecoder, ReturningType, ValueEncoder}
+import pl.touk.nussknacker.engine.api.typed.{typing, ValueDecoder, ReturningType, ValueEncoder}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
@@ -127,7 +127,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           .getOrElse(throw new IllegalArgumentException(s"Failed to encode value: $value"))
 
       private def decodeValueUnsafe(json: Json) =
-        FromJsonTypingResultBasedDecoder
+        ValueDecoder
           .decodeValue(returnType, HCursor.fromJson(json))
           .getOrElse(throw new IllegalArgumentException(s"Failed to decode value from json: $json"))
           .asInstanceOf[AnyRef]
