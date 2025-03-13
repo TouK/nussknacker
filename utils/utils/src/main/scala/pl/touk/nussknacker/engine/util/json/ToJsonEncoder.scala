@@ -30,7 +30,7 @@ case class ToJsonEncoder(
   def encode(obj: Any): Json =
     customEncoding(obj)
       .getOrElse(
-        ToJsonEncoderWithFallback.encodeValue(obj, customEncoding) match {
+        ToJsonEncoderWithFallback.encodeValue(obj, withFallbackToString(customEncoding)) match {
           case Validated.Valid(json: Json) =>
             json
           case Validated.Invalid(_) =>
@@ -50,6 +50,17 @@ case class ToJsonEncoder(
       Try(customEncodingPF.apply(obj)).toOption
     } else {
       None
+    }
+  }
+
+  private def withFallbackToString(encoding: Any => Option[Json]): Any => Option[Json] = (any: Any) => {
+    encoding(any) match {
+      case Some(value) =>
+        Some(value)
+      case None if !failOnUnknown =>
+        Some(fromString(any.toString))
+      case None =>
+        None
     }
   }
 
