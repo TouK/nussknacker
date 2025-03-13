@@ -75,7 +75,7 @@ import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, NussknackerInternalUser}
@@ -135,8 +135,7 @@ class NussknackerAppFactory(
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedDesignerConfig, futureSttpBackend)(
         executionContextWithIORuntime
       )
-      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)(executionContextWithIORuntime)
-      dbioRunner                 = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
+      dbioRunner = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
       // 1 hour is the delay to propagate all global notifications for all users
       globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
@@ -147,7 +146,6 @@ class NussknackerAppFactory(
         ioSttpBackend,
         additionalUIConfigProvider,
         actionServiceSupplier,
-        scenarioActivityRepository,
         dbioRunner,
         futureSttpBackend,
         featureTogglesConfig,
@@ -477,7 +475,6 @@ class NussknackerAppFactory(
       ioSttpBackend: SttpBackend[IO, Any],
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig,
@@ -505,7 +502,6 @@ class NussknackerAppFactory(
               system,
               additionalUIConfigProvider,
               actionServiceProvider,
-              scenarioActivityRepository,
               dbioActionRunner,
               sttpBackend,
               _
@@ -531,7 +527,6 @@ class NussknackerAppFactory(
       system: ActorSystem,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
@@ -542,10 +537,6 @@ class NussknackerAppFactory(
       new DefaultProcessingTypeActionService(
         processingType,
         actionServiceProvider.get(),
-      ),
-      new RepositoryBasedScenarioActivityManager(
-        scenarioActivityRepository,
-        dbioActionRunner,
       ),
       executionContextWithIORuntime,
       executionContextWithIORuntime.ioRuntime,

@@ -12,7 +12,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
-  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -73,7 +72,6 @@ class K8sDeploymentManagerOnMocksTest
       DeploymentManagerDependencies(
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
         new ProcessingTypeActionServiceStub,
-        NoOpScenarioActivityManager,
         system.dispatcher,
         IORuntime.global,
         system,

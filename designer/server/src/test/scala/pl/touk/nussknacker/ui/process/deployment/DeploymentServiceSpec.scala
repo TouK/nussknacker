@@ -68,7 +68,6 @@ class DeploymentServiceSpec
 
   private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
     defaultProcessStateStatus = SimpleStateStatus.Running,
-    scenarioActivityManager = deploymentServiceFactory.deploymentManagerDependencies.scenarioActivityManager,
   )
 
   val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
