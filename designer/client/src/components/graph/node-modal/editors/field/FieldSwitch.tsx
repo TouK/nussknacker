@@ -5,6 +5,7 @@ import { Box, Tabs, Tab } from "@mui/material";
 import { css } from "@emotion/css";
 import { ParamType } from "../types";
 import { editorsParameters } from "../expression/editorsParameters";
+import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -36,7 +37,11 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     }
                     variant="standard"
                     scrollButtons="auto"
-                    sx={{ minHeight: "20px", minWidth: "45px" }}
+                    sx={{
+                        minHeight: "20px",
+                        minWidth: "45px",
+                        marginRight: "-1px", // fix for border, to keep it align to the input right outline
+                    }}
                     TabIndicatorProps={{ sx: { display: "none" } }}
                     onChange={(_, value: string) => {
                         const selectedEditor = availableEditors.find((editor) => editor.type === value);
@@ -55,7 +60,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             value={option.value}
                             classes={{
                                 selected: css({ outline: "none" }),
-                                root: css({ outline: "none", "&:focus": { outline: "none" } }),
+                                root: css({ "&:focus": { outline: "none" } }),
                             }}
                             sx={(theme) => ({
                                 fontSize: "0.65rem",
@@ -63,6 +68,11 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                                 textTransform: "none",
                                 minHeight: "20px",
                                 minWidth: "45px",
+                                border: `1px solid ${getBorderColor(theme)}`,
+                                "&.Mui-selected": {
+                                    color: theme.palette.text.primary,
+                                    background: blendDarken(theme.palette.primary.main, 0.3),
+                                },
                             })}
                         />
                     ))}
