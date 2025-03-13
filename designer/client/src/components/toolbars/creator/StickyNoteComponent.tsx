@@ -8,12 +8,12 @@ export const stickyNoteComponentGroup = (pristine: boolean) => {
             components: [
                 {
                     node: noteModel,
-                    label: "sticky note",
+                    label: "Sticky Note",
                     componentId: StickyNoteType + "_" + pristine,
                     disabled: () => !pristine,
                 },
             ],
-            name: "sticky notes",
+            name: "Misc",
         } as ComponentGroup,
     ];
 };
