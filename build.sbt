@@ -1983,6 +1983,7 @@ lazy val designer = (project in file("designer/server"))
       (liteK8sDeploymentManager / assembly).value
       (defaultModel / assembly).value
       (flinkTableApiComponents / assembly).value
+      (flinkBaseUnboundedComponents / assembly).value
       (flinkDevModel / assembly).value
       (flinkExecutor / assembly).value
       (flinkExecutor / prepareItLibs).value
