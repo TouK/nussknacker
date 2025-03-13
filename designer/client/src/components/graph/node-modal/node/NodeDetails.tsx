@@ -18,12 +18,12 @@ import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
-import { InputOutputContextProvider } from "../InputOutputContext";
+import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
-import { InputOutputContent } from "./InputOutputContent";
+import { InputOutputContent } from "../io/InputOutputContent";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import { usePortal } from "./UsePortal";
+import { usePortal } from "../io/usePortal";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
