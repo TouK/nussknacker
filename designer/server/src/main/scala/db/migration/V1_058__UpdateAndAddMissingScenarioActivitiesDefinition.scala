@@ -3,10 +3,10 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import db.migration.V1_058__UpdateAndAddMissingScenarioActivitiesDefinition.Migration
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.ast.Library.JdbcFunction
-import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_058__UpdateAndAddMissingScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   override def migrateActions: DBIOAction[Any, NoStream, Effect.All] =
     new Migration(profile).migrate
@@ -26,9 +26,9 @@ trait V1_058__UpdateAndAddMissingScenarioActivitiesDefinition extends SlickMigra
 
 object V1_058__UpdateAndAddMissingScenarioActivitiesDefinition extends LazyLogging {
 
-  class Migration(val profile: JdbcProfile) extends ScenarioActivityEntityFactory {
+  class Migration(val profile: NuJdbcProfile) extends ScenarioActivityEntityFactory {
 
-    import profile.api._
+    import profile.apiWithEnforcedSchema._
 
     private val scenarioActivitiesDefinitions = new ScenarioActivitiesDefinitions(profile)
     private val processVersionsDefinitions    = new ProcessVersionsDefinitions(profile)
@@ -243,14 +243,14 @@ object V1_058__UpdateAndAddMissingScenarioActivitiesDefinition extends LazyLoggi
 
   }
 
-  class ProcessVersionsDefinitions(val profile: JdbcProfile) {
+  class ProcessVersionsDefinitions(val profile: NuJdbcProfile) {
 
-    import profile.api._
+    import profile.apiWithEnforcedSchema._
 
     val table: TableQuery[ProcessVersionEntity] =
       LTableQuery(new ProcessVersionEntity(_))
 
-    class ProcessVersionEntity(tag: Tag) extends Table[ProcessVersionEntityData](tag, "process_versions") {
+    class ProcessVersionEntity(tag: Tag) extends TableWithSchema[ProcessVersionEntityData](tag, "process_versions") {
 
       def id: Rep[Long] = column[Long]("id", NotNull)
 

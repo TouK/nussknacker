@@ -20,7 +20,7 @@ object DatabaseInitializer {
       configDb.as[String]("url"),
       configDb.as[String]("user"),
       configDb.as[String]("password"),
-      configDb.getAs[String]("schema")
+      Some(configDb.getAs[String]("schema").getOrElse(DbRef.defaultSchemaName))
     )
   }
 

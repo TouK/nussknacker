@@ -544,7 +544,7 @@ jobs:
     with:
       nussknacker_version: ${{ needs.setup.outputs.nk_snapshot_version }}
       git_source_branch: ${{ needs.setup.outputs.git_source_branch }}
-      should_run: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') }}
+      should_run: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.head_ref, 'preview') }}
     secrets:
       sonatype_user: ${{ secrets.SONATYPE_USER }}
       sonatype_password: ${{ secrets.SONATYPE_PASSWORD }}

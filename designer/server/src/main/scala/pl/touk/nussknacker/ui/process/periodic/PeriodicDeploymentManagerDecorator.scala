@@ -20,8 +20,6 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioLabelsRepository,
   SlickPeriodicProcessesRepository
 }
-import slick.jdbc
-import slick.jdbc.JdbcProfile
 
 import java.time.Clock
 
@@ -78,11 +76,11 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
           fetchingProcessRepository
         )
       case Some(customDbConfig) =>
-        val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = LegacyDbInitializer.init(customDbConfig)
+        val (db, profile) = LegacyDbInitializer.init(customDbConfig)
         new SlickLegacyPeriodicProcessesRepository(
           schedulingConfig.processingType,
           db,
-          dbProfile,
+          profile,
           clock,
           fetchingProcessRepository
         )

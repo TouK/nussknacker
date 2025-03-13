@@ -33,6 +33,8 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 lazy val silencerV      = "1.7.19"
 lazy val silencerV_2_12 = "1.6.0"
 
+lazy val scalaFixV = "0.14.2"
+
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
 def propOrEnv(name: String, default: String): String = propOrEnv(name).getOrElse(default)
@@ -179,6 +181,11 @@ lazy val commonSettings =
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
       },
+      semanticdbEnabled                := true,
+      semanticdbVersion                := forScalaVersion(scalaVersion.value) {
+        case (2, 12) => "4.8.4"
+        case _       => "4.13.2"
+      },
       scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
@@ -198,10 +205,12 @@ lazy val commonSettings =
             // -release option has no influence on class version so we at least setup target to 8 and check java version
             // at the begining of our Apps
             "-target:jvm-1.8",
+            "-P:silencer:globalFilters=deprecated"
           )
         case (2, 13) =>
           Seq(
-            "-Ymacro-annotations"
+            "-Ymacro-annotations",
+            "-Wconf:cat=deprecation:silent"
           )
       },
       Compile / compile / javacOptions := Seq(
@@ -1936,7 +1945,8 @@ lazy val prepareDesignerSlowTests =
 
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
-  .enablePlugins(GenerateDesignerOpenApiPlugin)
+  .enablePlugins(GenerateDesignerOpenApiPlugin, CheckSqlSchemasInStagedScalaFilesPlugin)
+  .dependsOn(scalafixRules % ScalafixConfig)
   .settings(slowTestsSettings)
   .settings(commonSettings)
   .settings(
@@ -2124,6 +2134,17 @@ lazy val doNotTest = Seq(
     )
   }
 )
+
+lazy val scalafixRules = (project in file("scalafix-rules"))
+  .settings(
+    name := "scalafix-rules",
+    libraryDependencies ++= Seq(
+      "ch.epfl.scala" %% "scalafix-core" % scalaFixV,
+      "org.scalameta" %% "scalameta"     % "4.13.2",
+      "org.scalatest" %% "scalatest"     % scalaTestV % Test
+    )
+  )
+  .settings(commonSettings)
 
 /*
   We want to simplify dependency management in downstream projects using BOM pattern

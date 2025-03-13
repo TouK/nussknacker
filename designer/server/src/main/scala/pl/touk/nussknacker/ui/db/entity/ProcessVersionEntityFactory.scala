@@ -17,7 +17,7 @@ import java.sql.Timestamp
 
 trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   import ScenarioComponentsUsagesJsonCodec._
 
@@ -131,7 +131,8 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  abstract class BaseProcessVersionEntity(tag: Tag) extends Table[ProcessVersionEntityData](tag, "process_versions") {
+  abstract class BaseProcessVersionEntity(tag: Tag)
+      extends TableWithSchema[ProcessVersionEntityData](tag, "process_versions") {
 
     def id: Rep[VersionId] = column[VersionId]("id", NotNull)
 

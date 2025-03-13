@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api
 
-import com.github.ghik.silencer.silent
 import io.circe
 import io.circe._
 import io.circe.generic.extras.Configuration
@@ -72,20 +71,19 @@ object CirceUtil {
 
   implicit class HCursorExt(val cursor: HCursor) extends AnyVal {
 
-    @silent("deprecated")
     def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
       val keysSet = keys.toSet
       cursor
         .as[Map[String, String]]
         .map {
-          _.filterKeys(k => !keysSet.contains(k)).toMap
+          _.filter { case (k, _) => !keysSet.contains(k) }
         }
     }
 
   }
 
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit
-  // that some value is null, but for people it generates a lot of unnecessary noice
+  // that some value is null, but for people it generates a lot of unnecessary noise
   val humanReadablePrinter: Printer = Printer.spaces2.copy(dropNullValues = true)
 
 }

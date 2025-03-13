@@ -116,7 +116,7 @@ class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
     with ScenarioActionRepository
     with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   override type ENTITY = ScenarioActivityEntityFactory#ScenarioActivityEntity
 
@@ -356,7 +356,7 @@ class DbScenarioActionReadOnlyRepository(
     with ScenarioActionReadOnlyRepository
     with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   override type ENTITY = ScenarioActivityEntityFactory#ScenarioActivityEntity
 

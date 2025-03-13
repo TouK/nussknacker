@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.model._
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentSt
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository.createPeriodicProcess
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import slick.dbio.{DBIOAction, Effect, NoStream}
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.{Clock, LocalDateTime}
@@ -173,7 +174,7 @@ trait PeriodicProcessesRepository {
 class SlickPeriodicProcessesRepository(
     processingType: String,
     db: JdbcBackend.DatabaseDef,
-    override val profile: JdbcProfile,
+    override val profile: NuJdbcProfile,
     clock: Clock,
     fetchingProcessRepository: FetchingProcessRepository[Future],
 )(implicit ec: ExecutionContext)
