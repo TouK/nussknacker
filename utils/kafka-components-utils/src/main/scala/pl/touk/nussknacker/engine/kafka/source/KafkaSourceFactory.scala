@@ -136,7 +136,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     new KafkaContextInitializer[K, V](
       OutputVariableNameDependency.extract(dependencies),
       keyTypingResult,
-      valueTypingResult
+      valueTypingResult,
+      modelDependencies.namingStrategy
     )
 
   /**

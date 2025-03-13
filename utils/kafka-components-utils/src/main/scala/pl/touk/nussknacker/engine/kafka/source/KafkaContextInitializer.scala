@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
   BasicContextInitializingFunction,
@@ -31,7 +32,8 @@ import java.util
 class KafkaContextInitializer[K, V](
     outputVariableName: String,
     keyTypingResult: TypingResult,
-    valueTypingResult: TypingResult
+    valueTypingResult: TypingResult,
+    namingStrategy: NamingStrategy
 ) extends BasicContextInitializer[ConsumerRecord[K, V]](valueTypingResult, outputVariableName) {
 
   import scala.jdk.CollectionConverters._
@@ -54,7 +56,7 @@ class KafkaContextInitializer[K, V](
         val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
         val inputMeta = InputMeta(
           input.key,
-          input.topic,
+          namingStrategy.decodeName(input.topic).getOrElse(input.topic),
           input.partition,
           input.offset,
           input.timestamp,
