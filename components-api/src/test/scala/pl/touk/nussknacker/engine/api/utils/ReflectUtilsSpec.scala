@@ -22,6 +22,10 @@ class ReflectUtilsSpec extends AnyFunSuite with Matchers {
     ReflectUtils.simpleNameWithoutSuffix((new TestCompanionObject).getClass) should equal("TestCompanionObject")
   }
 
+  test("simpleNameWithoutSuffix on anonymous class") {
+    ReflectUtils.simpleNameWithoutSuffix(new TestClass {}.getClass) should equal("(anonymous class)")
+  }
+
 }
 
 class TestClass {}
