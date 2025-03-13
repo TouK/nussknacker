@@ -27,24 +27,30 @@ case class ToJsonEncoder(
 
   private val additionalEncoders: PartialFunction[Any, Json] = { case value: DisplayJson => value.asJson }
 
-  def encode(obj: Any): Json = optionalCustomisations
-    .foldLeft(highPriority.orElse(additionalEncoders))(_.orElse(_))
-    .applyOrElse(
-      obj,
-      (any: Any) =>
-        ToJsonEncoderWithFallback.encodeValue(any, encodeOpt) match {
-          case Validated.Valid(json) =>
+  def encode(obj: Any): Json =
+    customEncoding(obj)
+      .getOrElse(
+        ToJsonEncoderWithFallback.encodeValue(obj, customEncoding) match {
+          case Validated.Valid(json: Json) =>
             json
           case Validated.Invalid(_) =>
             if (failOnUnknown) {
               throw new IllegalArgumentException(s"Invalid type: ${obj.getClass}")
             } else {
-              fromString(any.toString)
+              fromString(obj.toString)
             }
         }
-    )
+      )
 
-  private def encodeOpt(obj: Any): Option[Json] =
-    Try(encode(obj)).toOption
+  private def customEncoding(obj: Any): Option[Json] = {
+    val customEncodingPF =
+      optionalCustomisations
+        .foldLeft(highPriority.orElse(additionalEncoders))(_.orElse(_))
+    if (customEncodingPF.isDefinedAt(obj)) {
+      Try(customEncodingPF.apply(obj)).toOption
+    } else {
+      None
+    }
+  }
 
 }
