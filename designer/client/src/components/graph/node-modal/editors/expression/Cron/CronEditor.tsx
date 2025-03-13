@@ -6,9 +6,10 @@ import Input from "../../field/Input";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import { CronEditorStyled } from "./CronEditorStyled";
-import { editors, ExtendedEditor, OnValueChange } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
 import { FieldError } from "../../Validators";
 import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import { editorsParameters } from "../editorsParameters";
 
 export type CronExpression = string;
 
@@ -67,7 +68,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     }, [open]);
 
     useEffect(() => {
-        onValueChange({ expression: encode(value), language: editors["CronParameterEditor"].language });
+        onValueChange({ expression: encode(value), language: editorsParameters["CronParameterEditor"].language });
     }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {

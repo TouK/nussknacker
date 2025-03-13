@@ -1,12 +1,13 @@
-import { ExpressionLang, ExpressionObj } from "../types";
+import { ExpressionObj } from "../types";
 import React, { useCallback, useMemo } from "react";
 import moment from "moment";
 import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
-import { editors, ExtendedEditor, OnValueChange } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
 import { FieldError } from "../../Validators";
+import { editorsParameters } from "../editorsParameters";
 
 export type Period = {
     years: number;
@@ -74,7 +75,7 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
-            language={editors.PeriodParameterEditor.language}
+            language={editorsParameters.PeriodParameterEditor.language}
         />
     );
 };

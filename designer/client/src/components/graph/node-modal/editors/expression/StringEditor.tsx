@@ -6,8 +6,7 @@ import i18next from "i18next";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { isQuoted } from "./SpelQuotesUtils";
 import { FieldError } from "../Validators";
-
-const language = ExpressionLang.SpEL;
+import { editorsParameters } from "./editorsParameters";
 
 type Props = {
     expressionObj: ExpressionObj;
@@ -27,7 +26,12 @@ export const StringEditor: ExtendedEditor<Props> = (props: Props) => {
     return (
         <Input
             {...passProps}
-            onChange={(event) => onValueChange({ expression: stringFormatter.encode(event.target.value), language })}
+            onChange={(event) =>
+                onValueChange({
+                    expression: stringFormatter.encode(event.target.value),
+                    language: editorsParameters.StringParameterEditor.language,
+                })
+            }
             value={stringFormatter.decode(expressionObj.expression) as string}
         />
     );
@@ -44,4 +48,3 @@ StringEditor.notSwitchableToHint = () =>
         "editors.string.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
-StringEditor.language = language;

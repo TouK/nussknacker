@@ -5,7 +5,8 @@ import { isEmpty } from "lodash";
 import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
-import { editors, ExtendedEditor } from "../Editor";
+import { ExtendedEditor } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
 
 const timeFormat = "HH:mm:ss";
 const isParseable = (expression: ExpressionObj): boolean => {
@@ -25,7 +26,7 @@ export const TimeEditor: ExtendedEditor<TimeEditorProps> = (props: TimeEditorPro
             dateFormat={null}
             timeFormat={timeFormat}
             formatter={dateFormatter}
-            language={editors.TimeParameterEditor.language}
+            language={editorsParameters.TimeParameterEditor.language}
         />
     );
 };

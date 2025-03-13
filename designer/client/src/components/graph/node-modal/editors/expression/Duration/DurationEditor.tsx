@@ -6,7 +6,8 @@ import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { isEmpty } from "lodash";
-import { editors, ExtendedEditor, OnValueChange } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
 
 export type Duration = {
     days: number;
@@ -76,7 +77,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
-            language={editors["DurationParameterEditor"].language}
+            language={editorsParameters["DurationParameterEditor"].language}
         />
     );
 };

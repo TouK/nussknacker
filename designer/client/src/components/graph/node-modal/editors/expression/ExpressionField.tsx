@@ -2,12 +2,12 @@ import React, { ReactNode, useCallback } from "react";
 import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
-import { EditorType, OnValueChange } from "./Editor";
+import { OnValueChange } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
 import { FieldError } from "../Validators";
-import { ExpressionObj } from "./types";
+import { EditorType, ExpressionObj } from "./types";
 
 type Props = {
     fieldName: string;

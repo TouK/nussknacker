@@ -2,9 +2,9 @@ import { isEmpty } from "lodash";
 import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
-import { editors, EditorType, OnValueChange } from "./expression/Editor";
+import { editors, OnValueChange } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
-import { ExpressionLang, ExpressionObj } from "./expression/types";
+import { EditorType, ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
@@ -45,7 +45,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     return (
         <FieldSwitch availableEditors={availableEditors} expressionObj={expressionObj} onValueChange={props.onValueChange}>
             {(selectedEditor) => {
-                const Editor = editors[selectedEditor.type].component;
+                const Editor = editors[selectedEditor.type];
 
                 return (
                     <Editor

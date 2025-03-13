@@ -1,15 +1,16 @@
 import React from "react";
 import Creatable from "react-select/creatable";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { ExpressionObj } from "./types";
+import { EditorType, ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
-import { editors, EditorType, ExtendedEditor, OnValueChange } from "./Editor";
+import { ExtendedEditor, OnValueChange } from "./Editor";
 import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
+import { editorsParameters } from "./editorsParameters";
 
 type Props = {
     editorConfig: $TodoType;
@@ -63,7 +64,10 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
             <RadioGroup
                 value={currentOption.value}
                 onChange={(event) =>
-                    onValueChange({ expression: event.target.value, language: editors.FixedValuesWithRadioParameterEditor.language })
+                    onValueChange({
+                        expression: event.target.value,
+                        language: editorsParameters.FixedValuesWithRadioParameterEditor.language,
+                    })
                 }
             >
                 {options.map((option: Option) => {
@@ -78,7 +82,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 value={currentOption}
                 classNamePrefix={"test"}
                 onChange={(newValue) =>
-                    onValueChange({ expression: newValue.value, language: editors.FixedValuesParameterEditor.language })
+                    onValueChange({ expression: newValue.value, language: editorsParameters.FixedValuesParameterEditor.language })
                 }
                 options={options}
                 formatOptionLabel={(option) =>

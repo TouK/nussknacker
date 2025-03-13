@@ -1,10 +1,10 @@
 import React, { useState, ReactNode } from "react";
-import { editors } from "../expression/Editor";
 import { ExpressionObj } from "../expression/types";
 import { Option } from "../../fragment-input-definition/TypeSelect";
 import { Box, Tabs, Tab } from "@mui/material";
 import { css } from "@emotion/css";
 import { ParamType } from "../types";
+import { editorsParameters } from "../expression/editorsParameters";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -16,12 +16,12 @@ interface Props {
 export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children }: Props) => {
     const [selectedEditor, setSelectedEditor] = useState(
         availableEditors.find((editor) => {
-            const selectedEditor = editors[editor.type].component;
-            return selectedEditor.language === expressionObj.language;
+            const editorParameters = editorsParameters[editor.type];
+            return editorParameters.language === expressionObj.language;
         }) ?? availableEditors[0],
     );
     const availableEditorsOptions: Option[] = availableEditors.map((editor) => ({
-        label: editors[editor.type].displayName,
+        label: editorsParameters[editor.type].displayName,
         value: editor.type,
         isDisabled: false,
     }));
@@ -40,8 +40,8 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     TabIndicatorProps={{ sx: { display: "none" } }}
                     onChange={(_, value: string) => {
                         const selectedEditor = availableEditors.find((editor) => editor.type === value);
-                        const editor = editors[selectedEditor.type].component;
-                        onValueChange({ ...expressionObj, language: editor.language });
+                        const editorParameters = editorsParameters[selectedEditor.type];
+                        onValueChange({ ...expressionObj, language: editorParameters.language });
                         setSelectedEditor(availableEditors.find((availableEditorsOption) => availableEditorsOption.type === value));
                     }}
                 >

@@ -1,6 +1,5 @@
 import { TypingResult } from "../../../../types";
-import { EditorType } from "./expression/Editor";
-import { EditorMode } from "./expression/types";
+import { EditorMode, EditorType } from "./expression/types";
 import { PossibleValue } from "../aggregate/aggregatorFieldsStack";
 
 type Editor = {

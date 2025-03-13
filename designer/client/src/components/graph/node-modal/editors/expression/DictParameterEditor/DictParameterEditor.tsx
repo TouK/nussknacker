@@ -4,8 +4,8 @@ import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
-import { editors, ExtendedEditor, OnValueChange } from "../Editor";
-import { ExpressionLang, ExpressionObj } from "../types";
+import { ExtendedEditor, OnValueChange } from "../Editor";
+import { ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { NodeInput } from "../../../../../FormElements";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
@@ -117,7 +117,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange({ expression: value ? JSON.stringify(value) : "", language: editors.DictParameterEditor.language });
+                    onValueChange({ expression: value ? JSON.stringify(value) : "", language: "dictKeyWithLabel" });
                     setValue(value);
                     setOpen(false);
                 }}
@@ -140,7 +140,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 renderOption={(props, option) => {
                     const isSelected = option.key === value?.key;
                     return (
-                        // aira-selected is set to false as it overrides styles defined in our menuOption
+                        // aria-selected is set to false as it overrides styles defined in our menuOption
                         <Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
                         </Box>
@@ -162,11 +162,3 @@ const isParseable = (expressionObj: ExpressionObj) =>
 DictParameterEditor.switchableToHint = () => i18next.t("editors.dictParameter.switchableToHint", "Switch to basic mode");
 DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
 DictParameterEditor.isSwitchableTo = () => true;
-DictParameterEditor.getExpressionMode = (expressionObj) => ({
-    language: ExpressionLang.SpEL,
-    expression: isParseable(expressionObj) ? "" : expressionObj.expression,
-});
-DictParameterEditor.getBasicMode = (expressionObj) => ({
-    language: ExpressionLang.DictKeyWithLabel,
-    expression: isParseable(expressionObj) ? expressionObj.expression : "",
-});

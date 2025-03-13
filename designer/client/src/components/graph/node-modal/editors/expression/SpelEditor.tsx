@@ -6,7 +6,8 @@ import { ExpressionSuggest, ExpressionSuggestProps } from "./ExpressionSuggest";
 import { InfoTooltip } from "./InfoTooltip";
 import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
 import { useTranslation } from "react-i18next";
-import { editors, OnValueChange, SimpleEditor } from "./Editor";
+import { OnValueChange, SimpleEditor } from "./Editor";
+import { editorsParameters } from "./editorsParameters";
 
 const spelEditorInfoText =
     `You are using an expression-based approach, allowing calculations and conditions. Access variables with **#**, e.g., **#input.someField == 'value'**. \n 
@@ -54,7 +55,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         validationLabelInfo,
         editorMode,
         placeholder,
-        language = editors.SpelParameterEditor.language,
+        language = editorsParameters.SpelParameterEditor.language,
     } = props;
 
     const handleChange = useCallback(

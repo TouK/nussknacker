@@ -1,11 +1,12 @@
 import i18next from "i18next";
-import { ExpressionLang, ExpressionObj } from "../types";
+import { ExpressionObj } from "../types";
 import React from "react";
 import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
 import { isEmpty } from "lodash";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
-import { editors, ExtendedEditor } from "../Editor";
+import { ExtendedEditor } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
 
 const dateFormat = "YYYY-MM-DD";
 const timeFormat = "HH:mm";
@@ -28,7 +29,7 @@ export const DateTimeEditor: ExtendedEditor<DateTimeEditorProps> = (props: DateT
             dateFormat={dateFormat}
             timeFormat={timeFormat}
             formatter={dateFormatter}
-            language={editors["DateTimeParameterEditor"].language}
+            language={editorsParameters["DateTimeParameterEditor"].language}
         />
     );
 };

@@ -3,12 +3,13 @@ import i18next from "i18next";
 import { debounce, flatMap, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactAce from "react-ace/lib/ace";
-import { editors, ExtendedEditor } from "./Editor";
+import { ExtendedEditor } from "./Editor";
 import { Formatter } from "./Formatter";
 import { SpelEditor, SpelEditorProps } from "./SpelEditor";
 import { isSwitchableTo } from "./StringEditor";
-import { EditorMode, ExpressionLang } from "./types";
+import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
+import { editorsParameters } from "./editorsParameters";
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -108,7 +109,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             className={className}
             rows={6}
             editorMode={EditorMode.SQL}
-            language={editors.SqlParameterEditor.language}
+            language={editorsParameters.SqlParameterEditor.language}
         />
     );
 };

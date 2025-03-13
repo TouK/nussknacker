@@ -6,8 +6,8 @@ import { nodeInputCss } from "../NodeInput";
 
 const DTPickerStyled = styled(DateTimePicker)(nodeInputCss, { padding: 0 });
 const style = {
-    background: "none",
-    border: "none",
+    background: "red",
+    border: "1px solid red",
     height: "100%",
     justifyContent: "center",
     width: "100%",

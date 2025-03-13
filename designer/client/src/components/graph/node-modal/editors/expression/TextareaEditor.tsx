@@ -1,10 +1,11 @@
 import React from "react";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { editors, EditorType, ExtendedEditor, OnValueChange } from "./Editor";
+import { ExtendedEditor, OnValueChange } from "./Editor";
 import i18next from "i18next";
 import { Textarea } from "../field/Textarea";
-import { ExpressionLang } from "./types";
+import { EditorType, ExpressionLang } from "./types";
 import { FieldError } from "../Validators";
+import { editorsParameters } from "./editorsParameters";
 
 type Props = {
     expressionObj: $TodoType;
@@ -47,7 +48,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
             onChange={(event) =>
                 onValueChange({
                     expression: stringFormatter.encode(event.target.value),
-                    language: editors.TextareaParameterEditor.language,
+                    language: editorsParameters.TextareaParameterEditor.language,
                 })
             }
             value={stringFormatter.decode(expressionObj.expression) as string}
