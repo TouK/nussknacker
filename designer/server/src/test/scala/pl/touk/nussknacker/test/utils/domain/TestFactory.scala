@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependenc
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.{
-  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -135,7 +134,6 @@ object TestFactory {
     DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
-      NoOpScenarioActivityManager,
       actorSystem.dispatcher,
       IORuntime.global,
       actorSystem,
