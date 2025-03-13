@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTo
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import shapeless.record
-import sttp.tapir.derevo.schema
 
 abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
 
