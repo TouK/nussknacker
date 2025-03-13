@@ -53,7 +53,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @SimpleEditor(
         `type` = SimpleEditorType.DURATION_EDITOR,
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS),
-        isDefaultEditor = true
+        isMainEditor = true
       )
       @SpelEditor
       schedule: Duration,

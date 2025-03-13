@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.migrations.SpelToSpelTemplateNodeMigration
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.node.{
   CustomNode,
   Enricher,
@@ -52,11 +52,24 @@ class SpelToSpelTemplateNodeMigrationSpec extends AnyFunSuite with Matchers {
   }
 
   test("should migrate join") {
-    val node = Join("id", Some("out1"), "typ1", paramsBeforeMigration, Nil, additionalFields)
+    val branchParameters = List(BranchParameters("branchId", paramsBeforeMigration))
+    val node             = Join("id", Some("out1"), "typ1", paramsBeforeMigration, branchParameters, additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
-    migrated shouldBe Join("id", Some("out1"), "typ1", paramsAfterMigration, Nil, additionalFields)
+    migrated shouldBe Join(
+      id = "id",
+      outputVar = Some("out1"),
+      nodeType = "typ1",
+      parameters = paramsAfterMigration,
+      branchParameters = List(
+        BranchParameters(
+          branchId = "branchId",
+          parameters = paramsAfterMigration
+        )
+      ),
+      additionalFields = additionalFields
+    )
   }
 
   test("should migrate processor") {

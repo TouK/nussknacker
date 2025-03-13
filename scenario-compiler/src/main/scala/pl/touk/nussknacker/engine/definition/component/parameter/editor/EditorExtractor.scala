@@ -42,7 +42,7 @@ object EditorExtractor {
 
     (simpleEditorAnnotation, rawEditorAnnotation) match {
       case (Some(simpleEditorAnnotation: SimpleEditor), Some(_: SpelEditor)) =>
-        if (simpleEditorAnnotation.isDefaultEditor)
+        if (simpleEditorAnnotation.isMainEditor)
           ParameterEditors(simpleParameterEditor(simpleEditorAnnotation), SpelParameterEditor).some
         else ParameterEditors(SpelParameterEditor, simpleParameterEditor(simpleEditorAnnotation)).some
       case (Some(simpleEditorAnnotation: SimpleEditor), None) =>

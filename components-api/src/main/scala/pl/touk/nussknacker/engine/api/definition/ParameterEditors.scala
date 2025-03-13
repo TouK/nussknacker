@@ -13,20 +13,23 @@ object ParameterEditors {
   def apply(editor: ParameterEditor): ParameterEditors =
     new ParameterEditors(editor, None)
 
-  def apply(mainEditor: SimpleParameterEditor, additionalEditor: ParameterEditor): ParameterEditors =
+  def apply(mainEditor: SimpleParameterEditor, additionalEditor: SpelParameterEditor.type): ParameterEditors =
     new ParameterEditors(mainEditor, Some(additionalEditor))
 
-  def apply(mainEditor: ParameterEditor, additionalEditor: SimpleParameterEditor): ParameterEditors =
+  def apply(mainEditor: SpelParameterEditor.type, additionalEditor: SimpleParameterEditor): ParameterEditors =
     new ParameterEditors(mainEditor, Some(additionalEditor))
 
   def unsafeFromList(editors: List[ParameterEditor]): ParameterEditors = editors match {
-    case main :: Nil                                                           => ParameterEditors(main)
-    case (main: SimpleParameterEditor) :: (additional: ParameterEditor) :: Nil => ParameterEditors(main, additional)
-    case (main: ParameterEditor) :: (additional: SimpleParameterEditor) :: Nil => ParameterEditors(main, additional)
+    case main :: Nil =>
+      ParameterEditors(main)
+    case (main: SimpleParameterEditor) :: (additional: SpelParameterEditor.type) :: Nil =>
+      ParameterEditors(main, additional)
+    case (main: SpelParameterEditor.type) :: (additional: SimpleParameterEditor) :: Nil =>
+      ParameterEditors(main, additional)
     case _ =>
       throw new IllegalArgumentException(
-        s"Incorrect configuration of editors: $editors. " +
-          s"There are allowed maximum 2 editors"
+        s"Incorrect configuration of editors: $editors. A maximum of 2 editors is allowed and if there are 2 editors," +
+          s" at least one must be SpelParameterEditor"
       )
   }
 

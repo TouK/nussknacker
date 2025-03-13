@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
+import cats.implicits.catsSyntaxOptionId
 import org.apache.avro.Schema
 import org.scalatest.LoneElement
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
+  ParameterEditors,
   SpelParameterEditor,
   SpelTemplateParameterEditor
 }
@@ -25,17 +27,17 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-without-timestamp-fields", FullNameV1.schema)
 
-    timestampFieldParameter.editors shouldBe List(
+    timestampFieldParameter.editors shouldBe ParameterEditors(
       SpelTemplateParameterEditor,
       SpelParameterEditor,
-    )
+    ).some
   }
 
   test("timestampField editor should contain long field") {
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-with-single-timestamp-fields", LongFieldV1.schema)
 
-    timestampFieldParameter.editors shouldBe List(
+    timestampFieldParameter.editors shouldBe ParameterEditors(
       FixedValuesParameterEditor(
         List(
           FixedExpressionValue("", ""),
@@ -43,14 +45,14 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
         )
       ),
       SpelParameterEditor,
-    )
+    ).some
   }
 
   test("timestampField editor should contain all eligible fields") {
     val timestampFieldParameter =
       prepareTestForTimestampField("simple-topic-with-multiple-timestamp-fields", PaymentDate.schema)
 
-    timestampFieldParameter.editors shouldBe List(
+    timestampFieldParameter.editors shouldBe ParameterEditors(
       FixedValuesParameterEditor(
         List(
           FixedExpressionValue("", ""),
@@ -59,7 +61,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
         )
       ),
       SpelParameterEditor,
-    )
+    ).some
   }
 
   test("properly process data using kafka-generic-delayed source") {

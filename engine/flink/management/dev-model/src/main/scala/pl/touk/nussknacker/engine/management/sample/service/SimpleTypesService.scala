@@ -25,7 +25,7 @@ class SimpleTypesService extends Service with Serializable {
       @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
       simpleParam: String,
       @ParamName("RawParam")
-      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR, isDefaultEditor = false)
+      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = false)
       @SpelEditor
       rawParam: String,
       @ParamName("intParam")
