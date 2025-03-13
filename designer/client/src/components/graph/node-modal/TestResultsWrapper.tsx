@@ -4,7 +4,7 @@ import TestResultUtils, { StateForSelectTestResults } from "../../../common/Test
 import { useUserSettings } from "../../../common/userSettings";
 import { getTestResults } from "../../../reducers/selectors/graph";
 import { NodeId } from "../../../types";
-import { useInputOutputContext } from "./InputOutputContext";
+import { useInputOutputContext } from "./io/InputOutputContext";
 import TestErrors from "./tests/TestErrors";
 import TestResultsComponent from "./tests/TestResults";
 import TestResultsSelect from "./tests/TestResultsSelect";
