@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
-import { createUniqueNodeId } from "../../../reducers/graph/utils";
+import { createUniqueName } from "../../../reducers/graph/utils";
 import { getNodes } from "../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { Component } from "../../../types";
@@ -49,7 +49,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
                 editedNode,
                 {
                     ...component.node,
-                    id: createUniqueNodeId(
+                    id: createUniqueName(
                         component.label,
                         nodes.map((n) => n.id).filter((i) => i !== editedNode.id),
                     ),
