@@ -307,7 +307,7 @@ class DeploymentServiceSpec
 
     val activities = dbioRunner.run(activityRepository.findActivities(processIdWithName.id)).futureValue
 
-    activities.size shouldBe 3
+    activities.size shouldBe 2
     activities(0) match {
       case _: ScenarioActivity.ScenarioCreated => ()
       case _                                   => fail("First activity should be ScenarioCreated")
@@ -315,22 +315,6 @@ class DeploymentServiceSpec
     activities(1) match {
       case _: ScenarioActivity.ScenarioDeployed => ()
       case _                                    => fail("Second activity should be ScenarioDeployed")
-    }
-    activities(2) match {
-      case ScenarioActivity.CustomAction(
-            _,
-            _,
-            _,
-            _,
-            _,
-            actionName,
-            ScenarioComment.WithContent(comment, _, _),
-            result,
-          ) =>
-        actionName shouldBe "Custom action of MockDeploymentManager just before deployment"
-        comment.content shouldBe "With comment from DeploymentManager"
-        result shouldBe DeploymentResult.Success(result.dateFinished)
-      case _ => fail("Third activity should be CustomAction with comment")
     }
   }
 

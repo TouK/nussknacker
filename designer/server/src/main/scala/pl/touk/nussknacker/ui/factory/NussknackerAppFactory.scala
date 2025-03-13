@@ -135,7 +135,6 @@ class NussknackerAppFactory(
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedDesignerConfig, futureSttpBackend)(
         executionContextWithIORuntime
       )
-      dbioRunner = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
       // 1 hour is the delay to propagate all global notifications for all users
       globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
@@ -144,10 +143,9 @@ class NussknackerAppFactory(
         dbRef,
         system,
         ioSttpBackend,
+        futureSttpBackend,
         additionalUIConfigProvider,
         actionServiceSupplier,
-        dbioRunner,
-        futureSttpBackend,
         featureTogglesConfig,
         globalNotificationRepository,
         modelClassLoaderProvider
@@ -161,6 +159,7 @@ class NussknackerAppFactory(
       )
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, futureSttpBackend)
       deploymentRepository = new DeploymentRepository(dbRef, clock)(executionContextWithIORuntime)
+      dbioRunner           = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
         deploymentRepository,
         processingTypeDataProvider.mapValues(
@@ -473,10 +472,9 @@ class NussknackerAppFactory(
       dbRef: DbRef,
       system: ActorSystem,
       ioSttpBackend: SttpBackend[IO, Any],
+      futureSttpBackend: SttpBackend[Future, Any],
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      dbioActionRunner: DBIOActionRunner,
-      sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig,
       globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
       modelClassLoaderProvider: ModelClassLoaderProvider
@@ -502,8 +500,7 @@ class NussknackerAppFactory(
               system,
               additionalUIConfigProvider,
               actionServiceProvider,
-              dbioActionRunner,
-              sttpBackend,
+              futureSttpBackend,
               _
             ),
             deploymentManagersClassLoader,
@@ -527,7 +524,6 @@ class NussknackerAppFactory(
       system: ActorSystem,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
   )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
