@@ -36,7 +36,7 @@ object ToJsonEncoderWithFallback {
     case value: Long                 => fromLong(value).validNel
     case value: Boolean              => fromBoolean(value).validNel
     case value: String               => fromString(value).validNel
-    case a: UUID                     => fromString(a.toString).validNel
+    case value: UUID                 => fromString(value.toString).validNel
     case value: Byte                 => fromInt(value).validNel
     case value: BigInteger           => fromBigInt(value).validNel
     case value: BigInt               => fromBigInt(value.underlying()).validNel
