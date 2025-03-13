@@ -35,7 +35,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
     // To reduce footprint we decrease off-heap memory buffers size and managed memory
     config.set(TaskManagerOptions.NETWORK_MEMORY_MIN, MemorySize.parse("16m"))
     config.set(TaskManagerOptions.NETWORK_MEMORY_MAX, MemorySize.parse("16m"))
-    config.set(TaskManagerOptions.MANAGED_MEMORY_SIZE, MemorySize.parse("100m"))
+    config.set(TaskManagerOptions.MANAGED_MEMORY_SIZE, MemorySize.parse("150m"))
     // Reasonable number of available parallel slots
     config.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, DefaultTaskSlots)
     config
