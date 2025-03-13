@@ -7,7 +7,7 @@ import type { AllotmentHandle } from "allotment/dist/types/src/allotment";
 import { sum } from "lodash";
 import React, { PropsWithChildren, useCallback, useRef, useState } from "react";
 import "allotment/dist/style.css";
-import { getScrollStyle } from "./node/StyledHeader";
+import { getScrollStyle } from "../node/StyledHeader";
 import { VariableContextTree } from "./VariableContextTree";
 import { ErrorBoundary } from "react-error-boundary";
 
