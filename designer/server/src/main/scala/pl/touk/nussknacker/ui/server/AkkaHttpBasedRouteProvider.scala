@@ -87,7 +87,6 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ModelClassLoaderProvider,
   ProcessingTypeData
 }
-import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderProvider, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -98,7 +97,6 @@ import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, Sc
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.statistics.{
   FingerprintService,
   PublicEncryptionKey,
