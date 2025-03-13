@@ -14,7 +14,7 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
   // We need to add flinkBaseUnbounded components to the classpath in order to test EventGenerator
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
     ConfigFactory.parseResources(
-      "config/business-cases/simple-streaming-use-case-with-flink-unbounded-components-designer.conf"
+      "config/business-cases/simple-streaming-use-case-designer.conf"
     )
   )
 
