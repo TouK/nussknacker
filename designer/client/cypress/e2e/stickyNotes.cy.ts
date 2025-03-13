@@ -15,10 +15,10 @@ describe("Sticky notes", () => {
 
     it("should allow to drag sticky note", () => {
         cy.layoutScenario();
-        cy.contains(/^sticky notes$/i)
+        cy.contains(/^Misc$/i)
             .should("exist")
             .scrollIntoView();
-        cy.get("[data-testid='component:sticky note']")
+        cy.get("[data-testid='component:Sticky Note']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
@@ -33,10 +33,10 @@ describe("Sticky notes", () => {
 
     it("should add text to note and display it as markdown", () => {
         cy.layoutScenario();
-        cy.contains(/^sticky notes$/i)
+        cy.contains(/^Misc$/i)
             .should("exist")
             .scrollIntoView();
-        cy.get("[data-testid='component:sticky note']")
+        cy.get("[data-testid='component:Sticky Note']")
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
@@ -53,13 +53,13 @@ describe("Sticky notes", () => {
 
     it("should disable sticky note when scenario is not saved", () => {
         cy.layoutScenario();
-        cy.contains(/^sticky notes$/i)
+        cy.contains(/^Misc$/i)
             .should("exist")
             .scrollIntoView();
 
         cy.dragNode("request", { x: 600, y: 300 });
 
-        cy.get("[data-testid='component:sticky note']").should("have.class", "tool disabled");
+        cy.get("[data-testid='component:Sticky Note']").should("have.class", "tool disabled");
         cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
     });
 });
