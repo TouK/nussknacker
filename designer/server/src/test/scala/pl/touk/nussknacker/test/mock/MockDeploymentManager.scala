@@ -42,7 +42,6 @@ class MockDeploymentManager private (
     modelData: ModelData,
     deploymentManagerDependencies: DeploymentManagerDependencies,
     defaultDeploymentStatus: StateStatus,
-    scenarioActivityManager: ScenarioActivityManager,
     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     closeCreatedDeps: () => Unit,
 ) extends FlinkDeploymentManager(
@@ -160,7 +159,6 @@ object MockDeploymentManager {
       deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
-      scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
   ): MockDeploymentManager = {
     val actorSystem = ActorSystem("MockDeploymentManager")
@@ -178,7 +176,6 @@ object MockDeploymentManager {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       deployedScenariosProvider,
       actionService,
-      scenarioActivityManager,
       ExecutionContext.global,
       IORuntime.global,
       actorSystem,
@@ -192,7 +189,6 @@ object MockDeploymentManager {
       modelData,
       deploymentManagerDependencies,
       defaultProcessStateStatus,
-      scenarioActivityManager,
       customProcessStateDefinitionManager,
       closeCreatedDeps,
     )
