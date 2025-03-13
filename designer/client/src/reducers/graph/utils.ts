@@ -25,19 +25,19 @@ export function updateAfterNodeDelete({ layout, scenario, ...state }: GraphState
     };
 }
 
-function generateUniqueNodeId(initialId: NodeId, usedIds: NodeId[], nodeCounter: number, isCopy: boolean): NodeId {
-    const newId = isCopy ? `${initialId} (copy ${nodeCounter})` : `${initialId} ${nodeCounter}`;
-    return usedIds.includes(newId) ? generateUniqueNodeId(initialId, usedIds, nodeCounter + 1, isCopy) : newId;
+function generateUniqueName(name: string, usedNames: string[], counter: number, isCopy: boolean): string {
+    const newName = isCopy ? `${name} (copy ${counter})` : `${name} ${counter}`;
+    return usedNames.includes(newName) ? generateUniqueName(name, usedNames, counter + 1, isCopy) : newName;
 }
 
-export function createUniqueNodeId(initialId: NodeId, usedIds: NodeId[], isCopy = false): NodeId {
-    return initialId && !usedIds.includes(initialId) ? initialId : generateUniqueNodeId(initialId, usedIds, 1, isCopy);
+export function createUniqueName(name: string, usedNames: string[], isCopy = false): string {
+    return name && !usedNames.includes(name) ? name : generateUniqueName(name, usedNames, 1, isCopy);
 }
 
 function getUniqueIds(initialIds: NodeId[], alreadyUsedIds: NodeId[], isCopy: boolean): NodeId[] {
     return initialIds.reduce((uniqueIds, initialId) => {
         const reservedIds = alreadyUsedIds.concat(uniqueIds);
-        const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy);
+        const uniqueId = createUniqueName(initialId, reservedIds, isCopy);
         return uniqueIds.concat(uniqueId);
     }, []);
 }
