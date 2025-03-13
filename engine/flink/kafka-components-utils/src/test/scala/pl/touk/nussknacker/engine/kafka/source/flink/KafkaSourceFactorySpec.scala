@@ -46,7 +46,12 @@ class KafkaSourceFactorySpec
       topic: String
   ): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
     val finalState = KafkaSourceFactoryState(
-      new KafkaContextInitializer[K, V](VariableConstants.InputVariableName, Typed[Any], Typed[Any])
+      new KafkaContextInitializer[K, V](
+        VariableConstants.InputVariableName,
+        Typed[Any],
+        Typed[Any],
+        modelDependencies.namingStrategy
+      )
     )
     val source = sourceFactory
       .implementation(

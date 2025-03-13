@@ -191,7 +191,8 @@ class UniversalKafkaSourceFactory(
     new KafkaContextInitializer[Any, Any](
       OutputVariableNameDependency.extract(dependencies),
       keyTypingResult,
-      valueTypingResult
+      valueTypingResult,
+      modelDependencies.namingStrategy
     )
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil

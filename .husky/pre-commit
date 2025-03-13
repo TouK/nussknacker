@@ -2,9 +2,9 @@
 set -eu
 
 if git diff --cached --name-only --diff-filter=ACM | grep --max-count=1 -E "^designer/(client|submodules)/" > /dev/null; then
-  (cd designer/ && ./formatStagedFrontendFiles.sh)
+  (cd designer/ && ./checkStagedFrontendFiles.sh)
 fi
 
 if git diff --cached --name-only --diff-filter=ACM | grep -E --max-count=1 '\.scala$|\.sbt$' > /dev/null; then
-  ./formatStagedBackendFiles.sh
+  ./checkStagedBackendFiles.sh
 fi

@@ -7,9 +7,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.scalatest.time.{Second, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
+import pl.touk.nussknacker.ui.db.DbRef
 
-import java.time.Clock
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
 
@@ -27,6 +26,7 @@ trait WithTestDb extends BeforeAndAfterAll {
     super.afterAll()
   }
 
+  protected def getSchemaName(): String = testDbConfig.getString("db.schema")
 }
 
 trait WithTestHsqlDb extends WithTestDb {
@@ -38,7 +38,8 @@ trait WithTestHsqlDb extends WithTestDb {
         "user"     -> "SA",
         "password" -> "",
         "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
-        "driver"   -> "org.hsqldb.jdbc.JDBCDriver"
+        "driver"   -> "org.hsqldb.jdbc.JDBCDriver",
+        "schema"   -> "testschema"
       ).asJava
     ).asJava
   )
@@ -68,11 +69,6 @@ trait WithTestPostgresDb extends WithTestDb {
 trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
   self: Suite with WithTestDb =>
 
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    DatabaseInitializer.initDatabase("db", testDbConfig)
-  }
-
   override protected def afterEach(): Unit = {
     super.afterEach()
     cleanDB().failed.foreach { e =>
@@ -84,17 +80,17 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
   }
 
   def cleanDB(): Try[Unit] = Using(testDbRef.db.createSession()) { session =>
-    session.prepareStatement("""delete from "process_attachments"""").execute()
-    session.prepareStatement("""delete from "process_actions"""").execute()
-    session.prepareStatement("""delete from "process_comments"""").execute()
-    session.prepareStatement("""delete from "scenario_activities"""").execute()
-    session.prepareStatement("""delete from "process_versions"""").execute()
-    session.prepareStatement("""delete from "scenario_labels"""").execute()
-    session.prepareStatement("""delete from "environments"""").execute()
-    session.prepareStatement("""delete from "processes"""").execute()
-    session.prepareStatement("""delete from "fingerprints"""").execute()
-    session.prepareStatement("""delete from "scheduled_scenarios"""").execute()
-    session.prepareStatement("""delete from "scheduled_scenario_deployments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_attachments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_actions"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_comments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scenario_activities"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."process_versions"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scenario_labels"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."environments"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."processes"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."fingerprints"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenarios"""").execute()
+    session.prepareStatement(s"""delete from "${getSchemaName()}"."scheduled_scenario_deployments"""").execute()
   }
 
 }

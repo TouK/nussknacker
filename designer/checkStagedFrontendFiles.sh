@@ -2,7 +2,7 @@
 set -eu
 
 echo $PATH
-echo "Formatting frontend files..."
+echo "Checking frontend files..."
 
 npm run commit --if-present --prefix client
 npm run commit --if-present --prefix submodules
