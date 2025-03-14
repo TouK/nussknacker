@@ -82,7 +82,7 @@ object ProcessingTypeServices {
       ProcessValidator.default(processingTypeData.designerModelData.modelData),
       processingTypeData.deploymentData.scenarioPropertiesConfig,
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
-      new ScenarioLabelsValidator(designerConfig.featureTogglesConfig.scenarioLabelConfig),
+      new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
       processingTypeData.deploymentData.additionalValidators,
       fragmentResolver
     )
@@ -94,8 +94,8 @@ object ProcessingTypeServices {
     val scenarioTestService = new ScenarioTestService(
       new ModelDataTestInfoProvider(processingTypeData.designerModelData.modelData),
       processResolver,
-      designerConfig.featureTogglesConfig.testDataSettings,
-      new PreliminaryScenarioTestDataSerDe(designerConfig.featureTogglesConfig.testDataSettings),
+      designerConfig.testDataSettings,
+      new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
       counter,
       new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
     )

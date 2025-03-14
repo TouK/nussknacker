@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.WithTestHttpClient
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
-import sttp.client3.{UriContext, quickRequest}
+import sttp.client3.{quickRequest, UriContext}
 import sttp.model.StatusCode
 
 class CustomHttpServiceTest
@@ -18,7 +18,7 @@ class CustomHttpServiceTest
     with Matchers
     with OptionValues {
 
-  override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
+  override def designerRawConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   test("send request to the http endpoint exposed by CustomHttpService SPI with authentication data") {
     val response1 = httpClient.send(

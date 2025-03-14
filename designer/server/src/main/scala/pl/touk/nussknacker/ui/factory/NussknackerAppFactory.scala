@@ -15,12 +15,10 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteFactory, NussknackerHttpServer}
-import pl.touk.nussknacker.ui.statistics.{PublicEncryptionKey, StatisticUrlConfig}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 import java.time.Clock
 import scala.concurrent.Future
-import scala.io.Source
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
@@ -32,15 +30,7 @@ class NussknackerAppFactory(
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
 
       alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      _ = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: ${alreadyLoadedConfig.featureTogglesConfig}")
-      statisticsPublicKey <- Resource.fromAutoCloseable(
-        IO {
-          Source.fromURL(getClass.getResource("/encryption.key"))
-        }
-      )
-      statisticsUrlConfig = StatisticUrlConfig(publicEncryptionKey =
-        PublicEncryptionKey(statisticsPublicKey.mkString.trim)
-      )
+
       actorSystem                   <- createActorSystem(alreadyLoadedConfig)
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(actorSystem.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
@@ -64,7 +54,6 @@ class NussknackerAppFactory(
 
       route <- AkkaHttpBasedRouteFactory.createRoute(
         designerConfig = alreadyLoadedConfig,
-        statisticUrlConfig = statisticsUrlConfig,
         infrastructureServices = infrastructureServices,
         domainServices = domainServices
       )

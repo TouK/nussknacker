@@ -44,7 +44,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, Test
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{DesignerConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
@@ -181,10 +181,9 @@ trait NuResourcesTest
       )
     )
 
-  protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
+  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val designerConfig = DesignerConfig.from(testConfig)
     TestProcessingTypeDataProviderFactory.fromState(
       new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
         .loadProcessingTypeData(
@@ -252,8 +251,8 @@ trait NuResourcesTest
     new ScenarioTestService(
       testInfoProvider,
       processResolver,
-      featureTogglesConfig.testDataSettings,
-      new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+      designerConfig.testDataSettings,
+      new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
       new ScenarioTestExecutorServiceImpl(
         new ScenarioResolver(sampleResolver, Streaming.stringify),

@@ -8,12 +8,12 @@ import pl.touk.nussknacker.ui.api.EmptyDeploymentCommentSettingsError
 
 import scala.jdk.CollectionConverters._
 
-class FeatureTogglesConfigTest extends AnyFunSuite with Matchers {
+class DesignerConfigTest extends AnyFunSuite with Matchers {
 
   test("should be ok with no deploymentCommentSettings") {
     val config = ConfigFactory
       .parseResources("config/business-cases/category-used-more-than-once-designer.conf")
-    val parsedFeatures = FeatureTogglesConfig.create(config)
+    val parsedFeatures = DesignerConfig.from(config)
     parsedFeatures.deploymentCommentSettings shouldBe None
   }
 
@@ -29,7 +29,7 @@ class FeatureTogglesConfigTest extends AnyFunSuite with Matchers {
         )
       )
     intercept[EmptyDeploymentCommentSettingsError] {
-      FeatureTogglesConfig.create(config)
+      DesignerConfig.from(config)
     }
   }
 

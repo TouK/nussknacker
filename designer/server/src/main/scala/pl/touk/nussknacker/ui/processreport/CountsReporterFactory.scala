@@ -20,7 +20,7 @@ object CountsReporterFactory extends LazyLogging {
       designerConfig: DesignerConfig,
       backend: SttpBackend[Future, Any]
   ): Resource[IO, Option[CountsReporter[Future]]] = {
-    designerConfig.featureTogglesConfig.counts match {
+    designerConfig.counts match {
       case Some(config) => prepareCountsReporter(designerConfig.environment, config, backend)
       case None         => Resource.pure[IO, None.type](None)
     }

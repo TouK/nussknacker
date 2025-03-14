@@ -150,7 +150,7 @@ object AkkaRoutesFactory {
     )
 
     val optionalRoutes = List(
-      designerConfig.featureTogglesConfig.remoteEnvironment
+      designerConfig.remoteEnvironment
         .map { migrationConfig =>
           val remoteEnvironment = new HttpRemoteEnvironment(
             migrationConfig,
@@ -199,7 +199,7 @@ object AkkaRoutesFactory {
 
     // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val settingsResources = new SettingsResources(
-      designerConfig.featureTogglesConfig,
+      designerConfig,
       authenticationResources.name,
       designerConfig.usageStatisticsReportsConfig,
       fingerprintService

@@ -36,7 +36,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
   }
 
   private def adjustNuTestConfig(): Config = {
-    designerConfig
+    designerRawConfig
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
   }

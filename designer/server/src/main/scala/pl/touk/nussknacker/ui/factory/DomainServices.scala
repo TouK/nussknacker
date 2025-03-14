@@ -169,7 +169,7 @@ object DomainServices {
       deploymentsStatusesProvider =
         new EngineSideDeploymentStatusesProvider(
           dmDispatcher,
-          alreadyLoadedConfig.featureTogglesConfig.scenarioStateTimeout
+          alreadyLoadedConfig.scenarioStateTimeout
         )(actorSystem)
       scenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
@@ -184,7 +184,7 @@ object DomainServices {
         dbioRunner,
         processChangeListener,
         scenarioStatusProvider,
-        alreadyLoadedConfig.featureTogglesConfig.deploymentCommentSettings,
+        alreadyLoadedConfig.deploymentCommentSettings,
         clock
       )
 
@@ -324,7 +324,7 @@ object DomainServices {
             getModelDependencies(
               additionalUIConfigProvider,
               _,
-              alreadyLoadedConfig.featureTogglesConfig.componentDefinitionExtractionMode
+              alreadyLoadedConfig.componentDefinitionExtractionMode
             ),
             getDeploymentManagerDependencies(
               infrastructureServices,

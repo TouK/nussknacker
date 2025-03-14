@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.actor.ActorSystem
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.{AttachmentsConfig, DesignerConfig}
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
@@ -15,7 +14,11 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioMetadataRepository
 import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.{StatisticUrlConfig, UsageStatisticsReportsSettingsService}
+import pl.touk.nussknacker.ui.statistics.{
+  PublicEncryptionKey,
+  StatisticUrlConfig,
+  UsageStatisticsReportsSettingsService
+}
 import pl.touk.nussknacker.ui.validation.ScenarioLabelsValidator
 
 import java.time.Clock
@@ -27,7 +30,6 @@ object TapirHttpServiceFactory {
 
   def createHttpService(
       designerConfig: DesignerConfig,
-      statisticUrlConfig: StatisticUrlConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
       authManager: AuthManager
@@ -42,7 +44,7 @@ object TapirHttpServiceFactory {
       modelInfos = processingTypeServicesProvider.mapValues(_.designerModelData.modelData.info),
       categories = processingTypeServicesProvider.mapValues(_.category),
       processService = processService,
-      shouldExposeConfig = designerConfig.featureTogglesConfig.enableConfigEndpoint,
+      shouldExposeConfig = designerConfig.enableConfigEndpoint,
     )
 
     val migrationApiHttpService = {
@@ -78,7 +80,7 @@ object TapirHttpServiceFactory {
       authManager = authManager,
       service = new ScenarioLabelsService(
         scenarioLabelsRepository,
-        new ScenarioLabelsValidator(designerConfig.featureTogglesConfig.scenarioLabelConfig),
+        new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
         dbioRunner
       )
     )
@@ -130,7 +132,7 @@ object TapirHttpServiceFactory {
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,
         dbioRunner,
-        stickyNotesSettings = designerConfig.featureTogglesConfig.stickyNotesSettings
+        stickyNotesSettings = designerConfig.stickyNotesSettings
       )
     }
 
@@ -145,7 +147,7 @@ object TapirHttpServiceFactory {
         scenarioActivityRepository,
         dbioRunner,
       ),
-      designerConfig.featureTogglesConfig.deploymentCommentSettings,
+      designerConfig.deploymentCommentSettings,
       new AkkaHttpBasedTapirStreamEndpointProvider(),
       dbioRunner,
     )
@@ -180,12 +182,12 @@ object TapirHttpServiceFactory {
           deploymentRepository,
           dmDispatcher,
           dbioRunner,
-          Clock.systemDefaultZone(),
+          clock,
           processingTypeServicesProvider.mapValues(_.additionalComponentConfigs)
         )
       val activityService =
         new ActivityService(
-          designerConfig.featureTogglesConfig.deploymentCommentSettings,
+          designerConfig.deploymentCommentSettings,
           scenarioActivityRepository,
           deploymentService,
           dbioRunner,
@@ -216,11 +218,15 @@ object TapirHttpServiceFactory {
         dbioRunner,
       )
 
+      val statisticsPublicKey = ResourceLoader.load("/encryption.key", TapirHttpServiceFactory.getClass.getClassLoader)
+      val statisticsUrlConfig =
+        StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(statisticsPublicKey.mkString.trim))
+
       new StatisticsApiHttpService(
         authManager,
         usageStatisticsReportsSettingsService,
         feStatisticsRepository,
-        statisticUrlConfig
+        statisticsUrlConfig
       )
     }
 

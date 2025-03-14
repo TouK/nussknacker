@@ -9,14 +9,12 @@ import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager}
 import pl.touk.nussknacker.ui.server.AkkaRoutesFactory.AkkaRoutes
-import pl.touk.nussknacker.ui.statistics.StatisticUrlConfig
 import pl.touk.nussknacker.ui.util._
 
 object AkkaHttpBasedRouteFactory {
 
   def createRoute(
       designerConfig: DesignerConfig,
-      statisticUrlConfig: StatisticUrlConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices
   ): Resource[IO, Route] = {
@@ -38,7 +36,6 @@ object AkkaHttpBasedRouteFactory {
       )
       nuDesignerApi = TapirHttpServiceFactory.createHttpService(
         designerConfig,
-        statisticUrlConfig,
         infrastructureServices,
         domainServices,
         authManager
@@ -51,7 +48,7 @@ object AkkaHttpBasedRouteFactory {
         authManager = authManager,
         tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         akkaRoutes = akkaRoutes,
-        developmentMode = designerConfig.featureTogglesConfig.development
+        developmentMode = designerConfig.development
       )
     } yield appRoute
   }

@@ -38,8 +38,8 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
 
   private val configuredPhrase = "foo"
 
-  override def designerConfig: Config = {
-    super.designerConfig
+  override def designerRawConfig: Config = {
+    super.designerRawConfig
       .withValue("deploymentCommentSettings.validationPattern", ConfigValueFactory.fromAnyRef(s".*$configuredPhrase.*"))
   }
 
