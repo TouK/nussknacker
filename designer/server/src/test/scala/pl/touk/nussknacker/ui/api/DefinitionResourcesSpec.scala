@@ -310,6 +310,61 @@ class DefinitionResourcesSpec
     }
   }
 
+  describe("if label not set for") {
+    it("component, should default with name converted to Title Case as label") {
+      getProcessDefinitionData() ~> check {
+        val label = responseAs[Json].hcursor
+          .downField("components")
+          .downField("custom-sendCommunication")
+          .downField("label")
+          .focus
+          .value
+          .asString
+          .value
+
+        label shouldBe "Sendcommunication"
+      }
+    }
+
+    it("fragment, should default with unchanged name as label") {
+      val fragmentName = "fragment1"
+
+      val fragmentWithFixedValuesEditor = {
+        CanonicalProcess(
+          MetaData(fragmentName, FragmentSpecificData()),
+          List(
+            FlatNode(FragmentInputDefinition("in", List(), None)),
+            FlatNode(FragmentOutputDefinition("out", "output", List.empty, None))
+          ),
+          List.empty
+        )
+      }
+
+      val processName         = ProcessTestData.sampleScenario.name
+      val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
+      val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+      saveFragment(fragmentGraph)(succeed)
+      saveCanonicalProcess(processWithFragment.process)(succeed)
+
+      getProcessDefinitionData() ~> check {
+        status shouldBe StatusCodes.OK
+
+        val response = responseAs[Json].hcursor
+
+        val label = response
+          .downField("components")
+          .downField("fragment-fragment1")
+          .downField("label")
+          .focus
+          .value
+          .asString
+          .value
+
+        label shouldBe fragmentName
+      }
+    }
+  }
+
   private def getProcessDefinitionData(
       processingType: String = "streaming",
       enrichedWithUiConfig: Option[Boolean] = None
