@@ -17,7 +17,8 @@ final class DesignerConfig private (
     val configLoaderConfig: Config,
     val environment: String,
     // TODO: inline all FeatureTogglesConfig as fields
-    val featureTogglesConfig: FeatureTogglesConfig
+    val featureTogglesConfig: FeatureTogglesConfig,
+    val usageStatisticsReportsConfig: UsageStatisticsReportsConfig
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -40,18 +41,27 @@ final class DesignerConfig private (
 object DesignerConfig {
 
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 
   def from(config: Config): DesignerConfig = {
     DesignerConfig(ConfigWithUnresolvedVersion(config))
   }
 
   def apply(rawConfig: ConfigWithUnresolvedVersion): DesignerConfig = {
-    val resolvedConfig       = rawConfig.resolved
-    val managersDir          = parseManagersDirs(resolvedConfig)
-    val configLoaderConfig   = resolvedConfig.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
-    val environment          = resolvedConfig.getString("environment")
-    val featureTogglesConfig = FeatureTogglesConfig.create(resolvedConfig)
-    new DesignerConfig(rawConfig, managersDir, configLoaderConfig, environment, featureTogglesConfig)
+    val resolvedConfig               = rawConfig.resolved
+    val managersDir                  = parseManagersDirs(resolvedConfig)
+    val configLoaderConfig           = resolvedConfig.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
+    val environment                  = resolvedConfig.getString("environment")
+    val featureTogglesConfig         = FeatureTogglesConfig.create(resolvedConfig)
+    val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+    new DesignerConfig(
+      rawConfig,
+      managersDir,
+      configLoaderConfig,
+      environment,
+      featureTogglesConfig,
+      usageStatisticsReportsConfig
+    )
   }
 
   private def parseManagersDirs(rawConfig: Config): List[Path] = {

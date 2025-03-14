@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.factory
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import cats.effect.unsafe.IORuntime
-import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
@@ -36,12 +35,6 @@ import pl.touk.nussknacker.ui.config.{
   FeatureTogglesConfig
 }
 import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
-import pl.touk.nussknacker.ui.customhttpservice.{
-  CustomHttpServiceProvider,
-  CustomHttpServiceProviderFactory,
-  ProcessServiceBasedScenarioServiceAdapter
-}
-import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService
@@ -50,7 +43,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.Notification
-import pl.touk.nussknacker.ui.process.{DBProcessService, ProcessService}
+import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
@@ -75,7 +68,7 @@ import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityServ
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteFactory, NussknackerHttpServer}
-import pl.touk.nussknacker.ui.statistics.FingerprintService
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, PublicEncryptionKey, StatisticUrlConfig}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.util.{InMemoryTimeseriesRepository, IOToFutureSttpBackendConverter}
 import sttp.client3.SttpBackend
@@ -167,6 +160,9 @@ class NussknackerAppFactory(
         IO {
           Source.fromURL(getClass.getResource("/encryption.key"))
         }
+      )
+      statisticsUrlConfig = StatisticUrlConfig(publicEncryptionKey =
+        PublicEncryptionKey(statisticsPublicKey.mkString.trim)
       )
       migrations                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)(executionContextWithIORuntime)
@@ -288,13 +284,6 @@ class NussknackerAppFactory(
         writeProcessRepository,
       )(executionContextWithIORuntime)
 
-      customHttpServiceProviders <- createCustomHttpServiceProvider(
-        alreadyLoadedConfig.rawConfig,
-        processService
-      )(
-        executionContextWithIORuntime
-      )
-
       fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef)(executionContextWithIORuntime))(
         executionContextWithIORuntime,
         dbioRunner
@@ -309,13 +298,13 @@ class NussknackerAppFactory(
         )(executionContextWithIORuntime)
       }
       processAuthorizer = new AuthorizeProcess(futureProcessRepository)(executionContextWithIORuntime)
-      route = new AkkaHttpBasedRouteFactory(
+      infrastructureServices = InfrastructureServices(
         clock = clock,
         dbRef = dbRef,
         dbioRunner = dbioRunner,
         metricsRegistry = metricsRegistry,
-        designerConfig = alreadyLoadedConfig,
-        statisticsPublicKey = statisticsPublicKey.mkString,
+      )
+      domainServices = DomainServices(
         futureProcessRepository = futureProcessRepository,
         scenarioActivityRepository = scenarioActivityRepository,
         scenarioLabelsRepository = scenarioLabelsRepository,
@@ -337,13 +326,18 @@ class NussknackerAppFactory(
         processingTypeServicesProvider = processingTypeServicesProvider,
         reloadProcessingTypes = processingTypeDataProvider.reloadAll,
         processAuthorizer = processAuthorizer,
+      )
+      route <- AkkaHttpBasedRouteFactory.createRoute(
+        designerConfig = alreadyLoadedConfig,
+        statisticUrlConfig = statisticsUrlConfig,
+        infrastructureServices = infrastructureServices,
+        domainServices = domainServices,
         authenticationResources = authenticationResources,
         authManager = authManager,
-        customHttpServiceProviders = customHttpServiceProviders
       )(
         system,
         executionContextWithIORuntime
-      ).createRoute
+      )
       _ <- new NussknackerHttpServer(system).start(route, alreadyLoadedConfig, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
@@ -575,37 +569,6 @@ class NussknackerAppFactory(
     }
 
     additionalUIConfigProviderFactory.create(designerConfig.rawConfig, sttpBackend)
-  }
-
-  private def createCustomHttpServiceProvider(
-      config: Config,
-      processService: ProcessService
-  )(implicit ec: ExecutionContext): Resource[IO, Map[String, CustomHttpServiceProvider]] = {
-    lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
-      new ProcessServiceBasedScenarioServiceAdapter(processService)
-    )
-
-    loadCustomHttpServiceProviderFactories()
-      .map { factory => factory.create(config, nussknackerServices).map(factory.name -> _) }
-      .sequence
-      .map(_.toMap)
-  }
-
-  private def loadCustomHttpServiceProviderFactories(): List[CustomHttpServiceProviderFactory] = {
-    Multiplicity(
-      ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
-    ) match {
-      case Empty() =>
-        List.empty[CustomHttpServiceProviderFactory]
-      case One(providerFactory) =>
-        List(providerFactory)
-      case Many(moreThanOne) if moreThanOne.map(_.name).distinct.size == moreThanOne.size =>
-        moreThanOne
-      case Many(moreThanOne) =>
-        throw new IllegalArgumentException(
-          s"CustomHttpServiceProviderFactory instances with conflicting names found: $moreThanOne"
-        )
-    }
   }
 
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
