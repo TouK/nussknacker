@@ -20,10 +20,7 @@ import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, Process
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
-import pl.touk.nussknacker.ui.process.processingtype.loader.{
-  ProcessingTypeDataLoader,
-  ProcessingTypesConfigBasedProcessingTypeDataLoader
-}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
@@ -34,17 +31,13 @@ import java.time.Clock
 object NussknackerAppFactory {
 
   def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
-    new NussknackerAppFactory(
-      designerConfigLoader,
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_),
-    )
+    new NussknackerAppFactory(designerConfigLoader)
   }
 
 }
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
-    createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader,
 ) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
@@ -55,15 +48,15 @@ class NussknackerAppFactory(
       system                        <- createActorSystem(alreadyLoadedConfig.rawConfig)
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
-      processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
-        alreadyLoadedConfig,
-        ioSttpBackend
-      )(executionContextWithIORuntime.ioRuntime)
       modelClassLoaderProvider = createModelClassLoaderProvider(
         alreadyLoadedConfig.processingTypeConfigs.configByProcessingType,
         deploymentManagersClassLoader
       )
-      processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
+      processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
+        alreadyLoadedConfig,
+        ioSttpBackend
+      )(executionContextWithIORuntime.ioRuntime)
+      processingTypeDataLoader = new ProcessingTypeDataLoader(processingTypeConfigsLoader)
       materializer             = Materializer(system)
       _               <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _               <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
