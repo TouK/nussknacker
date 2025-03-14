@@ -76,7 +76,7 @@ class AkkaHttpBasedRouteFactory(
     scenarioStatusPresenter: ScenarioStatusPresenter,
     dmDispatcher: DeploymentManagerDispatcher,
     processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
-    reloadProcessingTypes: () => IO[Unit],
+    reloadProcessingTypes: IO[Unit],
     processAuthorizer: AuthorizeProcess,
     authenticationResources: AuthenticationResources,
     authManager: AuthManager,

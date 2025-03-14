@@ -227,7 +227,7 @@ class NussknackerAppFactory(
         // correct classloader and that won't cause further delays during handling requests
         actionService.invalidateInProgressActions()
         actionServiceSupplier.set(actionService)
-        processingTypeDataProvider.reloadAll().unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
+        processingTypeDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
       }
 
       reconciler = new ScenarioDeploymentReconciler(
@@ -335,7 +335,7 @@ class NussknackerAppFactory(
         scenarioStatusPresenter = scenarioStatusPresenter,
         dmDispatcher = dmDispatcher,
         processingTypeServicesProvider = processingTypeServicesProvider,
-        reloadProcessingTypes = () => processingTypeDataProvider.reloadAll(),
+        reloadProcessingTypes = processingTypeDataProvider.reloadAll,
         processAuthorizer = processAuthorizer,
         authenticationResources = authenticationResources,
         authManager = authManager,
