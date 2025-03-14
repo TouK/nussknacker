@@ -40,11 +40,15 @@ final class DesignerConfig private (
 
 object DesignerConfig {
 
+  private[config] val defaultConfigResource = "defaultDesignerConfig.conf"
+
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 
   def from(config: Config): DesignerConfig = {
-    DesignerConfig(ConfigWithUnresolvedVersion(config))
+    val defaultConfig = ConfigFactory.parseResources(getClass.getClassLoader, DesignerConfig.defaultConfigResource)
+    val configWithFallbackToDefault = config.withFallback(defaultConfig)
+    DesignerConfig(ConfigWithUnresolvedVersion(configWithFallbackToDefault))
   }
 
   def apply(rawConfig: ConfigWithUnresolvedVersion): DesignerConfig = {
@@ -68,17 +72,7 @@ object DesignerConfig {
     val managersPath = "managersDirs"
     if (rawConfig.hasPath(managersPath)) {
       val managersDirs = rawConfig.getStringList(managersPath).asScala.toList
-      val paths        = managersDirs.map(_.convertToURL().toURI).map(Paths.get)
-      val invalidPaths = paths
-        .map(p => (p, !Files.isDirectory(p)))
-        .collect { case (p, true) => p }
-
-      if (invalidPaths.isEmpty)
-        paths
-      else
-        throw ConfigurationMalformedException(
-          s"Cannot find the following directories: ${invalidPaths.mkString(", ")}"
-        )
+      managersDirs.map(_.convertToURL().toURI).map(Paths.get)
     } else {
       throw ConfigurationMalformedException(s"No '$managersPath' configuration path found")
     }
