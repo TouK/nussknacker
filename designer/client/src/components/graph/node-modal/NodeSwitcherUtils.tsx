@@ -15,6 +15,7 @@ function mergeWithCustomizer<T>(object: T, source: T, path: string[] = []) {
                 return val;
             case "type":
             case "service.id":
+            case "ref.typ":
             case "nodeType":
                 return val || null;
             case "fields":
@@ -113,9 +114,8 @@ function compareNames(base: string, name: string): boolean {
 function isCustomName(editedNode: NodeType, componentGroups: ComponentGroup[]) {
     const nodeCreatorType = fakeNodeCreatorType(editedNode);
     const componentId = nodeCreatorType ? `${fakeComponentType}-${nodeCreatorType}` : ProcessUtils.determineComponentId(editedNode);
-    const components = componentGroups.flatMap((g) => g.components);
-    const component = components.find((c) => componentId === c.componentId);
-    return !compareNames(component.label, editedNode.$id || editedNode.id);
+    const component = componentGroups.flatMap((g) => g.components).find((c) => componentId === c.componentId);
+    return !component || !compareNames(component.label, editedNode.$id || editedNode.id);
 }
 
 export function replaceNodeData(
