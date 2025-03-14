@@ -37,9 +37,16 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
 
         if (!content) return "";
 
-        switch (paramName) {
-            case "groupBy":
-                return `${content}`;
+        if (entries.length > 1) {
+            switch (paramName) {
+                case "groupBy":
+                    return `{ ${content} }`;
+            }
+        } else {
+            switch (paramName) {
+                case "groupBy":
+                    return `${content}`;
+            }
         }
     }, []);
 
