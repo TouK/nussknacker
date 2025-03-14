@@ -48,6 +48,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
             expressionObj={expressionObj}
             onValueChange={props.onValueChange}
             readOnly={props.readOnly}
+            showSwitch={props.showSwitch}
         >
             {(selectedEditor) => {
                 const Editor = editors[selectedEditor.type];

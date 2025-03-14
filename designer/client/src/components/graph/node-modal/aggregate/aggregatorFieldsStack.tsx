@@ -152,6 +152,7 @@ export function AggregatorFieldsStack({
                         readOnly={readOnly}
                         showValidation
                         fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
+                        showSwitch={false}
                     />
                 )}
             </DynamicLabel>

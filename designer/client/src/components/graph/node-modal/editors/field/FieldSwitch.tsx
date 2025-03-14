@@ -15,10 +15,11 @@ interface Props {
     availableEditors: ParamType["editors"];
     onValueChange: (value: ExpressionObj) => void;
     children: ReactNode | ((selectedEditor: ParamType["editors"][number]) => ReactNode);
-    readOnly: boolean;
+    readOnly?: boolean;
+    showSwitch?: boolean;
 }
 
-export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children, readOnly }: Props) => {
+export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children, readOnly, showSwitch = true }: Props) => {
     const { t } = useTranslation();
     const allowsSwitch = useCallback(
         (checkedEditor: ParamType["editors"][number]) => {
@@ -68,7 +69,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         [allowsSwitch, availableEditors, getHint, readOnly, selectedEditor.type],
     );
 
-    if (readOnly) {
+    if (readOnly || !showSwitch) {
         return <>{typeof children === "function" ? children(selectedEditor) : children}</>;
     }
     return (
