@@ -49,25 +49,29 @@ export const NodeDetailsContent = ({
 
     return (
         <NodeTable sx={userSettings["node.showInputsAndOutputs"] ? { margin: "0 16px" } : undefined}>
-            <NodeSwitcher
-                node={node}
-                edges={edges}
-                onChange={onChange}
-                creatorType={creatorType}
-                componentsNamesToSelect={
-                    creatorType === "aggregate"
-                        ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
-                        : configuredAdditionalComponents.filter((c) => c.type === creatorType)?.map((c) => c.componentId) || []
-                }
-                onCreate={
-                    creatorType === "aggregate"
-                        ? null
-                        : () => {
-                              const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
-                              window.open(`https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`);
-                          }
-                }
-            />
+            {userSettings["node.showSwitcher"] ? (
+                <NodeSwitcher
+                    node={node}
+                    edges={edges}
+                    onChange={onChange}
+                    creatorType={creatorType}
+                    componentsNamesToSelect={
+                        creatorType === "aggregate"
+                            ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
+                            : configuredAdditionalComponents.filter((c) => c.type === creatorType)?.map((c) => c.componentId) || []
+                    }
+                    onCreate={
+                        creatorType === "aggregate"
+                            ? null
+                            : () => {
+                                  const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
+                                  window.open(
+                                      `https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`,
+                                  );
+                              }
+                    }
+                />
+            ) : null}
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
             <TestResultsWrapper nodeId={node.id} showTestResults={showTestResults}>
                 <NodeTypeDetailsContent
