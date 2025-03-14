@@ -5,7 +5,7 @@ import { editorsParameters } from "./editorsParameters";
 
 //TODO add highlighting for opening and closing braces ('#{' and '}') in brace/mode/spelTemplate.js file
 export const SpelTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
-    const { expressionObj, rows = 6, ...passProps } = props;
+    const { expressionObj, rows = 1, ...passProps } = props;
 
     const value = useMemo(
         () => ({
