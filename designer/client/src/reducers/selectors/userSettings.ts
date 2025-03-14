@@ -5,4 +5,4 @@ import { createSelector } from "reselect";
 
 const userSettings = (state: RootState): UserSettings => state.userSettings;
 
-export const getUserSettings = createSelector(userSettings, (s) => omitBy(s, (v, k) => k.startsWith("_")));
+export const getUserSettings = createSelector(userSettings, (s): UserSettings => omitBy(s, (v, k) => k.startsWith("_")));
