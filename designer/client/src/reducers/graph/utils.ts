@@ -69,6 +69,12 @@ export function prepareNewNodesWithLayout(
                 switch (key) {
                     case "id":
                         return idMapping[value];
+                    case "ref":
+                        if (!value.outputVariableNames) return value;
+                        return {
+                            ...value,
+                            outputVariableNames: mapValues(value.outputVariableNames, (v, k) => snakeCase(`${idMapping[node.id]} ${k}`)),
+                        };
                     case "branchParameters":
                         return value?.map((parameter) => ({
                             ...parameter,
