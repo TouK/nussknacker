@@ -34,8 +34,8 @@ import pl.touk.nussknacker.ui.validation.{
 
 import scala.concurrent.ExecutionContext
 
-case class ProcessingTypeServices(
-    processingTypeData: ProcessingTypeData,
+final case class ProcessingTypeServices(
+    private val processingTypeData: ProcessingTypeData,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     definitionService: DefinitionsService,
     nodeValidator: NodeValidator,
