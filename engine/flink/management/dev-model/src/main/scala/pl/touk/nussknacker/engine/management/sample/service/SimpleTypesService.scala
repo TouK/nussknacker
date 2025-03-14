@@ -13,32 +13,32 @@ class SimpleTypesService extends Service with Serializable {
   @MethodToInvoke
   def invoke(
       @ParamName("booleanParam")
-      @SimpleEditor(
-        `type` = SimpleEditorType.BOOL_EDITOR
+      @ParameterEditor(
+        `type` = ParameterEditorType.BOOL_EDITOR
       ) booleanParam: Boolean,
       @ParamName("DualParam")
-      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_TEMPLATE_EDITOR)
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       @NotBlank
       dualParam: String,
       @ParamName("SimpleParam")
-      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_TEMPLATE_EDITOR)
       simpleParam: String,
       @ParamName("RawParam")
-      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = false)
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = false)
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       rawParam: String,
       @ParamName("intParam")
-      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_TEMPLATE_EDITOR)
       @CompileTimeEvaluableValue
       intParam: Int,
       @ParamName("rawIntParam")
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       @CompileTimeEvaluableValue
       rawIntParam: Int,
       @ParamName("fixedValuesStringParam")
-      @SimpleEditor(
-        `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+      @ParameterEditor(
+        `type` = ParameterEditorType.FIXED_VALUES_EDITOR,
         possibleValues = Array(
           new LabeledExpression(expression = "'Max'", label = "Max"),
           new LabeledExpression(expression = "'Min'", label = "Min")

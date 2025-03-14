@@ -11,11 +11,11 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
+import pl.touk.nussknacker.engine.api.editor.{ParameterEditor, ParameterEditorType, SpelEditor}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.{typing, ValueDecoder, ReturningType, ValueEncoder}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, ValueDecoder, ValueEncoder}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
@@ -55,12 +55,12 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
   @MethodToInvoke
   def create(
       @ParamName("schedule")
-      @SimpleEditor(
-        `type` = SimpleEditorType.DURATION_EDITOR,
+      @ParameterEditor(
+        `type` = ParameterEditorType.DURATION_EDITOR,
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS),
         isMainEditor = true
       )
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       schedule: Duration,
       // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,

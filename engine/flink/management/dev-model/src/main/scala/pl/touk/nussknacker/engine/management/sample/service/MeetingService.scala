@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 
 import com.cronutils.model.Cron
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
+import pl.touk.nussknacker.engine.api.editor.{ParameterEditor, ParameterEditorType, SpelEditor}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 
 import java.time._
@@ -19,25 +19,25 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
       @ParamName("Date") date: LocalDateTime,
       @ParamName("EndTime") endTime: LocalTime,
       @ParamName("Duration")
-      @SimpleEditor(
-        `type` = SimpleEditorType.DURATION_EDITOR,
+      @ParameterEditor(
+        `type` = ParameterEditorType.DURATION_EDITOR,
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
       )
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       duration: Duration,
       @ParamName("Period")
-      @SimpleEditor(
-        `type` = SimpleEditorType.PERIOD_EDITOR,
+      @ParameterEditor(
+        `type` = ParameterEditorType.PERIOD_EDITOR,
         timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
       )
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       period: Period,
       @ParamName("NextMeeting")
       @Nullable
       nextMeeting: LocalDate,
       @ParamName("Scheduler")
-      @SimpleEditor(`type` = SimpleEditorType.CRON_EDITOR)
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.CRON_EDITOR)
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       @Nullable
       cronScheduler: Cron
   )(implicit ec: ExecutionContext): Future[Unit] = measuring {

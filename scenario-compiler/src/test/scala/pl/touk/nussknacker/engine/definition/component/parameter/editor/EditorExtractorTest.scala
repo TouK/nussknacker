@@ -21,29 +21,31 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private def notAnnotated(param: String) = ()
 
   private def dualEditorAnnotated(
-      @SimpleEditor(
-        `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+      @ParameterEditor(
+        `type` = ParameterEditorType.FIXED_VALUES_EDITOR,
         possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2")),
       )
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       param: String
   ) = ()
 
   private def dualEditorAnnotatedLazy(
-      @SimpleEditor(`type` = SimpleEditorType.DATE_EDITOR)
-      @SpelEditor
+      @ParameterEditor(`type` = ParameterEditorType.DATE_EDITOR)
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR)
       param: LazyParameter[String]
   ) = ()
 
-  private def simpleEditorAnnotated(@SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: String) = ()
+  private def simpleEditorAnnotated(@ParameterEditor(`type` = ParameterEditorType.BOOL_EDITOR) param: String) = ()
 
   private def simpleEditorAnnotatedLazy(
-      @SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: LazyParameter[String]
+      @ParameterEditor(`type` = ParameterEditorType.BOOL_EDITOR) param: LazyParameter[String]
   ) = ()
 
-  private def rawEditorAnnotated(@SpelEditor param: String) = ()
+  private def rawEditorAnnotated(@ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR) param: String) = ()
 
-  private def rawEditorAnnotatedLazy(@SpelEditor param: LazyParameter[String]) = ()
+  private def rawEditorAnnotatedLazy(
+      @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR) param: LazyParameter[String]
+  ) = ()
 
   private def simpleParams(
       javaEnum: JavaSampleEnum,
@@ -76,7 +78,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
     ).some
   }
 
-  test("detect either @SimpleEditor and @SpelEditor annotations") {
+  test("detect either @SimpleEditor and @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR) annotations") {
 
     EditorExtractor.extract(paramDualEditorAnnotated, ParameterConfig.empty) shouldBe
       ParameterEditors(
@@ -102,7 +104,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       ParameterEditors(BoolParameterEditor).some
   }
 
-  test("detect @SpelEditor annotation") {
+  test("detect @ParameterEditor(`type` = ParameterEditorType.SPEL_EDITOR) annotation") {
     EditorExtractor.extract(paramRawEditorAnnotated, ParameterConfig.empty) shouldBe ParameterEditors(
       SpelParameterEditor
     ).some

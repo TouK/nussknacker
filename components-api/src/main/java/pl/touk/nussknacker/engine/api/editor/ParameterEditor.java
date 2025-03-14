@@ -8,27 +8,25 @@ import java.time.temporal.ChronoUnit;
 
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SimpleEditor {
+public @interface ParameterEditor {
 
-    SimpleEditorType type();
+    ParameterEditorType type();
 
     /**
-     * This field should be used only with {@link SimpleEditorType#FIXED_VALUES_EDITOR}
+     * This field should be used only with {@link ParameterEditorType#FIXED_VALUES_EDITOR}
      */
     LabeledExpression[] possibleValues() default {};
 
     /**
-     * This field should be used only with {@link SimpleEditorType#DURATION_EDITOR} or {@link SimpleEditorType#PERIOD_EDITOR}
+     * This field should be used only with {@link ParameterEditorType#DURATION_EDITOR} or {@link ParameterEditorType#PERIOD_EDITOR}
      */
     ChronoUnit[] timeRangeComponents() default {};
 
     /**
-     * This field should be used only with {@link SimpleEditorType#DICT_EDITOR}
+     * This field should be used only with {@link ParameterEditorType#DICT_EDITOR}
      */
     String dictId() default "";
 
-    /**
-     * This field could be used if this editor is used together with {@link SpelEditor} and means the editor will be displayed at first on the UI.
-     */
+    // FIXME lbg remove
     boolean isMainEditor() default true;
 }

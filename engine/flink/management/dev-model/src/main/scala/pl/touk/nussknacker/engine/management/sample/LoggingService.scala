@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, ParameterEditors}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{ParameterEditor, ParameterEditorType}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -23,7 +23,7 @@ object LoggingService extends EagerService {
   def prepare(
       @ParamName("logger") @Nullable loggerName: String,
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[
+      @ParamName("message") @ParameterEditor(`type` = ParameterEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[
         TemplateEvaluationResult
       ]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
