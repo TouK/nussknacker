@@ -4,7 +4,7 @@ import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { EditNodeAction, EditScenarioLabels } from "./editNode";

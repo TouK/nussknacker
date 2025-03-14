@@ -5,7 +5,8 @@ import { ComponentGroup } from "../../types";
 import { RootState } from "../index";
 import { getCreator } from "./getCreator";
 import { isFragment, isPristine } from "./graph";
-import { getProcessDefinitionData, getStickyNotesSettings } from "./settings";
+import { getProcessDefinitionData } from "./processDefinitionData";
+import { getStickyNotesSettings } from "./settings";
 
 function addUniqueElement<T extends { name: string }>(array: T[], newElement: T): T[] {
     let found;
