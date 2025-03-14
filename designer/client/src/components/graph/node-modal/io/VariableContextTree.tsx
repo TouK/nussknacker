@@ -9,6 +9,7 @@ import { ContextTitle } from "./ContextTitle";
 import { useInputOutputContext } from "./InputOutputContext";
 import { NextNodesCounts } from "./NextNodesCounts";
 import { ContextTree } from "./ContextTree";
+import { startCase } from "lodash";
 
 type ValuesContextTreeProps = {
     direction?: "input" | "output";
@@ -78,25 +79,24 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
     }, [availableContexts, direction, setContext, value]);
 
     const processCounts = useSelector(getProcessCounts);
-    const userSettings = useSelector(getUserSettings);
-    const shortCounts = userSettings["node.shortCounts"];
 
     return (
         <Box
             sx={{
                 width: "100%",
-                minWidth: 300,
+                minWidth: 280,
             }}
         >
             <Stack
-                padding={1}
+                spacing={1}
                 sx={{
                     position: "sticky",
                     top: 0,
                     zIndex: -1,
+                    padding: 1,
                 }}
             >
-                <Typography variant="subtitle1">{direction}</Typography>
+                <Typography variant="subtitle1">{direction === "input" ? "Input context" : "Output context"}</Typography>
                 <NextNodesCounts
                     nodes={(direction === "input" ? prevNodes : nodeIds).map((id) => ({
                         id,
