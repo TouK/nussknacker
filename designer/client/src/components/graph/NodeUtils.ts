@@ -226,7 +226,7 @@ class NodeUtils {
         if (this.isFragmentNodeReference(nodeId, scenarioGraph)) {
             const fragment = scenarioGraph.nodes.find((n) => nodeId.startsWith(n.id));
             return {
-                fragmentId: fragment.ref.id,
+                fragmentId: fragment.ref?.id,
                 fragmentNodeId: nodeId.replace(`${fragment.id}-`, ""),
             };
         }
