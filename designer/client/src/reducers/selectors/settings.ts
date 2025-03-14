@@ -2,7 +2,6 @@ import { isEqual, uniqBy } from "lodash";
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
 import { MetricsType } from "../../actions/nk";
 import { DynamicTabData } from "../../containers/DynamicTab";
-import { ProcessDefinitionData } from "../../types";
 import { RootState } from "../index";
 import { AuthenticationSettings, SettingsState } from "../settings";
 
@@ -22,10 +21,6 @@ export const getSurveySettings = createSelector(getFeatureSettings, (s) => s?.su
 export const getStickyNotesSettings = createSelector(getFeatureSettings, (s) => s?.stickyNotesSettings);
 export const getLoggedUser = createSelector(getSettings, (s) => s.loggedUser);
 export const getLoggedUserId = createSelector(getLoggedUser, (s) => s.id);
-export const getProcessDefinitionData = createDeepEqualSelector(
-    getSettings,
-    (s) => s.processDefinitionData || ({} as ProcessDefinitionData),
-);
 export const getCategories = createSelector(getLoggedUser, (u) => u.categories || []);
 export const getWritableCategories = createSelector(getLoggedUser, getCategories, (user, categories) =>
     categories.filter((c) => user.canWrite(c)),

@@ -1,6 +1,6 @@
 import { cleanupNodeInputEdges, mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
 import { Scenario } from "../../components/Process/types";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import { Edge, NodeType, ScenarioGraphWithName } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 
