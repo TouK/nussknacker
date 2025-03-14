@@ -5,8 +5,10 @@ import { ComponentGroup } from "../../types";
 import { RootState } from "../index";
 import { getCreator } from "./getCreator";
 import { isFragment, isPristine } from "./graph";
+import { getAdditionalComponents } from "./isCloudInstance";
 import { getProcessDefinitionData } from "./processDefinitionData";
 import { getStickyNotesSettings } from "./settings";
+import { getUserSettings } from "./userSettings";
 
 function addUniqueElement<T extends { name: string }>(array: T[], newElement: T): T[] {
     let found;
@@ -41,7 +43,7 @@ function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, 
 
 function appendFragmentCreator(groups: ComponentGroup[], isFragment?: boolean) {
     if (isFragment) return groups;
-    const groupName = "fragments";
+    const groupName = "Fragments";
 
     const fragmentCreator = {
         label: "new fragment",
@@ -80,13 +82,19 @@ function appendFragmentCreator(groups: ComponentGroup[], isFragment?: boolean) {
 }
 
 export const getComponentGroups = createSelector(
-    getProcessDefinitionData,
+    (_: RootState, groups: ComponentGroup[] = []) => groups,
     getStickyNotesSettings,
     isPristine,
     isFragment,
-    ({ componentGroups }, stickyNotesSettings, pristine, isFragment) => {
-        const withStickyNotes = appendStickyNotes(componentGroups, stickyNotesSettings, pristine);
-        const groups = appendFragmentCreator(withStickyNotes, isFragment);
+    getUserSettings,
+    getAdditionalComponents,
+    (componentGroups, stickyNotesSettings, pristine, isFragment, userSettings, additionalComponents) => {
+        let groups: ComponentGroup[] = componentGroups;
+        groups = appendStickyNotes(groups, stickyNotesSettings, pristine);
+        if (userSettings["cloud.componentCreators"]) {
+            groups = appendFragmentCreator(groups, isFragment);
+            groups = appendAdditionalCreators(groups, additionalComponents);
+        }
         return groups;
     },
 );
