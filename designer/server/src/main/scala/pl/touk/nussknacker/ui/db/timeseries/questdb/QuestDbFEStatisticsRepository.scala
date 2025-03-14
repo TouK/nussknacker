@@ -3,13 +3,13 @@ package pl.touk.nussknacker.ui.db.timeseries.questdb
 import akka.actor.{ActorSystem, Cancellable}
 import better.files.File
 import cats.effect.{IO, Resource}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.security.AllowAllSecurityContext
 import io.questdb.cairo.sql.RecordCursorFactory
 import io.questdb.cairo.wal.WalWriter
 import io.questdb.griffin.{SqlExecutionContext, SqlExecutionContextImpl}
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
   BuildCairoEngineExtension,
@@ -155,9 +155,13 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
        |    WHERE timestamp_floor('d', ts) = timestamp_floor('d', now())
        | GROUP BY name""".stripMargin
 
-  def create(system: ActorSystem, clock: Clock, config: Config): Resource[IO, FEStatisticsRepository[Future]] =
+  def create(
+      system: ActorSystem,
+      clock: Clock,
+      designerConfig: DesignerConfig
+  ): Resource[IO, FEStatisticsRepository[Future]] =
     for {
-      questDbConfig <- Resource.eval(IO(QuestDbConfig.apply(config)))
+      questDbConfig <- Resource.eval(IO(QuestDbConfig(designerConfig.rawConfig)))
       repository <- questDbConfig match {
         case enabledCfg: QuestDbConfig.Enabled =>
           createRepositoryResource(system, clock, enabledCfg)

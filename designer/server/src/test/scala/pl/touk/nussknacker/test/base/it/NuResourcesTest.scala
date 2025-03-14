@@ -186,7 +186,7 @@ trait NuResourcesTest
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val designerConfig = DesignerConfig.from(testConfig)
     TestProcessingTypeDataProviderFactory.fromState(
-      new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+      new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,

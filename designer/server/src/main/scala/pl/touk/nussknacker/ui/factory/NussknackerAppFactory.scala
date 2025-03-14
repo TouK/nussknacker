@@ -8,12 +8,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
-import pl.touk.nussknacker.engine.{
-  ConfigWithUnresolvedVersion,
-  DeploymentManagerDependencies,
-  ModelDependencies,
-  ProcessingTypeConfig
-}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   AdditionalUIConfigProviderFactory,
@@ -112,27 +107,23 @@ class NussknackerAppFactory(
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
 
       alreadyLoadedConfig           <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      system                        <- createActorSystem(alreadyLoadedConfig.rawConfig)
+      system                        <- createActorSystem(alreadyLoadedConfig)
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
       futureSttpBackend = IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime)
 
-      managersDirs                  <- Resource.eval(IO.delay(alreadyLoadedConfig.managersDirs()))
-      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
+      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(alreadyLoadedConfig.managersDir)
       modelClassLoaderProvider = createModelClassLoaderProvider(
-        alreadyLoadedConfig.processingTypeConfigs.configByProcessingType,
+        alreadyLoadedConfig.processingTypeConfigs().configByProcessingType,
         deploymentManagersClassLoader
       )
 
-      dbRef <- DbRef.create(alreadyLoadedConfig.rawConfig.resolved)
+      dbRef <- DbRef.create(alreadyLoadedConfig.rawConfig)
 
-      resolvedDesignerConfig = alreadyLoadedConfig.rawConfig.resolved
-      environment            = resolvedDesignerConfig.getString("environment")
-      featureTogglesConfig   = FeatureTogglesConfig.create(resolvedDesignerConfig)
-      _                      = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
+      _ = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: ${alreadyLoadedConfig.featureTogglesConfig}")
 
       actionServiceSupplier = new DelayedInitActionServiceSupplier
-      additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedDesignerConfig, futureSttpBackend)(
+      additionalUIConfigProvider = createAdditionalUIConfigProvider(alreadyLoadedConfig, futureSttpBackend)(
         executionContextWithIORuntime
       )
       // 1 hour is the delay to propagate all global notifications for all users
@@ -146,18 +137,18 @@ class NussknackerAppFactory(
         futureSttpBackend,
         additionalUIConfigProvider,
         actionServiceSupplier,
-        featureTogglesConfig,
+        alreadyLoadedConfig.featureTogglesConfig,
         globalNotificationRepository,
         modelClassLoaderProvider
       )(executionContextWithIORuntime)
 
-      metricsRegistry <- createGeneralPurposeMetricsRegistry()
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
-        system,
-        clock,
-        alreadyLoadedConfig.rawConfig.resolved
+      metricsRegistry        <- createGeneralPurposeMetricsRegistry()
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, alreadyLoadedConfig)
+      countsReporter <- createCountsReporter(
+        alreadyLoadedConfig.featureTogglesConfig,
+        alreadyLoadedConfig.environment,
+        futureSttpBackend
       )
-      countsReporter <- createCountsReporter(featureTogglesConfig, environment, futureSttpBackend)
       deploymentRepository = new DeploymentRepository(dbRef, clock)(executionContextWithIORuntime)
       dbioRunner           = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -170,7 +161,7 @@ class NussknackerAppFactory(
       _ <- DeploymentsStatusesSynchronizationScheduler.resource(
         system,
         deploymentsStatusesSynchronizer,
-        DeploymentsStatusesSynchronizationConfig.parse(resolvedDesignerConfig)
+        DeploymentsStatusesSynchronizationConfig.parse(alreadyLoadedConfig.rawConfig)
       )
       statisticsPublicKey <- Resource.fromAutoCloseable(
         IO {
@@ -189,7 +180,7 @@ class NussknackerAppFactory(
         DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)(
           executionContextWithIORuntime
         )
-      _ = initMetrics(metricsRegistry, resolvedDesignerConfig, futureProcessRepository)
+      _ = initMetrics(metricsRegistry, alreadyLoadedConfig, futureProcessRepository)
 
       writeProcessRepository =
         ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
@@ -206,11 +197,14 @@ class NussknackerAppFactory(
       )(executionContextWithIORuntime)
       processChangeListener = ProcessChangeListenerLoader.loadListeners(
         getClass.getClassLoader,
-        resolvedDesignerConfig,
+        alreadyLoadedConfig,
         NussknackerServices(new PullProcessRepository(futureProcessRepository, fetchScenarioActivityService))
       )
       deploymentsStatusesProvider =
-        new EngineSideDeploymentStatusesProvider(dmDispatcher, featureTogglesConfig.scenarioStateTimeout)(system)
+        new EngineSideDeploymentStatusesProvider(
+          dmDispatcher,
+          alreadyLoadedConfig.featureTogglesConfig.scenarioStateTimeout
+        )(system)
       scenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
@@ -224,7 +218,7 @@ class NussknackerAppFactory(
         dbioRunner,
         processChangeListener,
         scenarioStatusProvider,
-        featureTogglesConfig.deploymentCommentSettings,
+        alreadyLoadedConfig.featureTogglesConfig.deploymentCommentSettings,
         clock
       )(executionContextWithIORuntime)
 
@@ -245,11 +239,11 @@ class NussknackerAppFactory(
       _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
         system,
         reconciler,
-        FinishedDeploymentsStatusesSynchronizationConfig.parse(resolvedDesignerConfig)
+        FinishedDeploymentsStatusesSynchronizationConfig.parse(alreadyLoadedConfig.rawConfig)
       )
 
       authenticationResources =
-        AuthenticationResources(resolvedDesignerConfig, getClass.getClassLoader, futureSttpBackend)(
+        AuthenticationResources(alreadyLoadedConfig.rawConfig, getClass.getClassLoader, futureSttpBackend)(
           executionContextWithIORuntime
         )
       authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
@@ -261,7 +255,7 @@ class NussknackerAppFactory(
         processRepository,
         scenarioActivityRepository,
         scenarioLabelsRepository,
-        environment
+        alreadyLoadedConfig.environment
       )(executionContextWithIORuntime)
 
       scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
@@ -273,8 +267,7 @@ class NussknackerAppFactory(
 
       processingTypeServicesProvider = processingTypeDataProvider.mapValues(
         ProcessingTypeServices.create(
-          resolvedDesignerConfig,
-          featureTogglesConfig,
+          alreadyLoadedConfig,
           additionalUIConfigProvider,
           fragmentRepository,
           fragmentResolver,
@@ -295,7 +288,10 @@ class NussknackerAppFactory(
         writeProcessRepository,
       )(executionContextWithIORuntime)
 
-      customHttpServiceProviders <- createCustomHttpServiceProvider(resolvedDesignerConfig, processService)(
+      customHttpServiceProviders <- createCustomHttpServiceProvider(
+        alreadyLoadedConfig.rawConfig,
+        processService
+      )(
         executionContextWithIORuntime
       )
 
@@ -306,7 +302,7 @@ class NussknackerAppFactory(
 
       componentService = {
         new DefaultComponentService(
-          ComponentLinksConfigExtractor.extract(resolvedDesignerConfig),
+          ComponentLinksConfigExtractor.extract(alreadyLoadedConfig.rawConfig),
           processingTypeServicesProvider.mapValues(_.componentServiceProcessingTypeData),
           processService,
           fragmentRepository
@@ -318,9 +314,7 @@ class NussknackerAppFactory(
         dbRef = dbRef,
         dbioRunner = dbioRunner,
         metricsRegistry = metricsRegistry,
-        resolvedDesignerConfig = resolvedDesignerConfig,
-        featureTogglesConfig = featureTogglesConfig,
-        environment = environment,
+        designerConfig = alreadyLoadedConfig,
         statisticsPublicKey = statisticsPublicKey.mkString,
         futureProcessRepository = futureProcessRepository,
         scenarioActivityRepository = scenarioActivityRepository,
@@ -366,20 +360,24 @@ class NussknackerAppFactory(
         logger.debug(
           s"Found custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName}: ${factory.getClass.getName}. Using it for configuration loading"
         )
-        factory.create(designerConfig.configLoaderConfig, designerConfig.processingTypeConfigsRaw.resolved, sttpBackend)
+        factory.create(
+          designerConfig.configLoaderConfig,
+          designerConfig.processingTypeConfigsRaw().resolved,
+          sttpBackend
+        )
       }
       .getOrElse {
         logger.debug(
           s"No custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName} found. Using the default implementation of loader"
         )
-        () => designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigs)
+        () => designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigs())
       }
   }
 
-  private def createActorSystem(config: ConfigWithUnresolvedVersion) = {
+  private def createActorSystem(designerConfig: DesignerConfig) = {
     Resource
       .make(
-        acquire = IO(ActorSystem("nussknacker-designer", config.resolved))
+        acquire = IO(ActorSystem("nussknacker-designer", designerConfig.rawConfig))
       )(
         release = system => {
           IO.fromFuture(IO(system.terminate())).map(_ => ())
@@ -417,10 +415,14 @@ class NussknackerAppFactory(
 
   private def initMetrics(
       metricsRegistry: MetricRegistry,
-      config: Config,
+      designerConfig: DesignerConfig,
       processRepository: DBFetchingProcessRepository[Future] with BasicRepository
   ): Unit = {
-    new RepositoryGauges(metricsRegistry, config.getDuration("repositoryGaugesCacheDuration"), processRepository)
+    new RepositoryGauges(
+      metricsRegistry,
+      designerConfig.rawConfig.getDuration("repositoryGaugesCacheDuration"),
+      processRepository
+    )
       .prepareGauges()
   }
 
@@ -556,7 +558,7 @@ class NussknackerAppFactory(
     )
   }
 
-  private def createAdditionalUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
+  private def createAdditionalUIConfigProvider(designerConfig: DesignerConfig, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext
   ) = {
     val additionalUIConfigProviderFactory: AdditionalUIConfigProviderFactory = {
@@ -572,7 +574,7 @@ class NussknackerAppFactory(
       }
     }
 
-    additionalUIConfigProviderFactory.create(config, sttpBackend)
+    additionalUIConfigProviderFactory.create(designerConfig.rawConfig, sttpBackend)
   }
 
   private def createCustomHttpServiceProvider(

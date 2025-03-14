@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioStatusNameWrapperDto}
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -22,7 +23,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class AppApiHttpService(
-    config: Config,
+    designerConfig: DesignerConfig,
     authManager: AuthManager,
     reloadProcessingTypes: () => IO[Unit],
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
@@ -102,7 +103,7 @@ class AppApiHttpService(
       .serverLogicSuccess { _ =>
         Future {
           import net.ceedubs.ficus.Ficus._
-          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
+          val configuredBuildInfo = designerConfig.rawConfig.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
           val modelInfo: Map[ProcessingType, ModelInfo] =
@@ -124,7 +125,8 @@ class AppApiHttpService(
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogic { _ => _ =>
         Future {
-          val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+          val configJson =
+            parser.parse(designerConfig.rawConfig.root().render(ConfigRenderOptions.concise())).left.map(_.message)
           configJson match {
             case Right(json) =>
               success(ServerConfigInfoDto(json))

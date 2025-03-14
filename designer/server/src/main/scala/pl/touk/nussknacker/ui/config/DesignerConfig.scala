@@ -10,30 +10,54 @@ import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters._
 
-// TODO: We should extract a class for all configuration options that should be available to designer instead of returning raw hocon config.
-//       Thanks to that it will be easier to split processing type config from rest of configs and use this interface programmatically
-final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion) {
+final class DesignerConfig private (
+    // unresolved version is only needed for deployment where we want to pass to engine unresolved version and resolve it on the engine side
+    rawConfigWithUnresolvedVersion: ConfigWithUnresolvedVersion,
+    val managersDir: List[Path],
+    val configLoaderConfig: Config,
+    val environment: String,
+    // TODO: inline all FeatureTogglesConfig as fields
+    val featureTogglesConfig: FeatureTogglesConfig
+) {
 
-  import net.ceedubs.ficus.Ficus._
+  // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
+  //       - we will get errors faster if there is some problem in configuration
+  //       - structure of the config will be visible in classes
+  val rawConfig: Config = rawConfigWithUnresolvedVersion.resolved
 
-  import DesignerConfig._
+  def processingTypeConfigs(): ProcessingTypeConfigs =
+    ProcessingTypeConfigs(processingTypeConfigsRaw().asMap.mapValuesNow(ProcessingTypeConfig.read))
 
-  def processingTypeConfigs: ProcessingTypeConfigs =
-    ProcessingTypeConfigs(processingTypeConfigsRaw.asMap.mapValuesNow(ProcessingTypeConfig.read))
-
-  def processingTypeConfigsRaw: ConfigWithUnresolvedVersion =
-    rawConfig
+  def processingTypeConfigsRaw(): ConfigWithUnresolvedVersion =
+    rawConfigWithUnresolvedVersion
       .getConfigOpt("scenarioTypes")
       .getOrElse {
         throw ConfigurationMalformedException("No scenario types configuration provided")
       }
 
-  def configLoaderConfig: Config = rawConfig.resolved.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
+}
 
-  def managersDirs(): List[Path] = {
+object DesignerConfig {
+
+  import net.ceedubs.ficus.Ficus._
+
+  def from(config: Config): DesignerConfig = {
+    DesignerConfig(ConfigWithUnresolvedVersion(config))
+  }
+
+  def apply(rawConfig: ConfigWithUnresolvedVersion): DesignerConfig = {
+    val resolvedConfig       = rawConfig.resolved
+    val managersDir          = parseManagersDirs(resolvedConfig)
+    val configLoaderConfig   = resolvedConfig.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
+    val environment          = resolvedConfig.getString("environment")
+    val featureTogglesConfig = FeatureTogglesConfig.create(resolvedConfig)
+    new DesignerConfig(rawConfig, managersDir, configLoaderConfig, environment, featureTogglesConfig)
+  }
+
+  private def parseManagersDirs(rawConfig: Config): List[Path] = {
     val managersPath = "managersDirs"
-    if (rawConfig.resolved.hasPath(managersPath)) {
-      val managersDirs = rawConfig.resolved.getStringList(managersPath).asScala.toList
+    if (rawConfig.hasPath(managersPath)) {
+      val managersDirs = rawConfig.getStringList(managersPath).asScala.toList
       val paths        = managersDirs.map(_.convertToURL().toURI).map(Paths.get)
       val invalidPaths = paths
         .map(p => (p, !Files.isDirectory(p)))
@@ -48,14 +72,6 @@ final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion)
     } else {
       throw ConfigurationMalformedException(s"No '$managersPath' configuration path found")
     }
-  }
-
-}
-
-object DesignerConfig {
-
-  def from(config: Config): DesignerConfig = {
-    DesignerConfig(ConfigWithUnresolvedVersion(config))
   }
 
   final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)

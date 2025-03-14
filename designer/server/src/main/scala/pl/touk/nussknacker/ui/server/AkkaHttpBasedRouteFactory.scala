@@ -4,13 +4,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import cats.effect.IO
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AttachmentsConfig, FeatureTogglesConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.{AttachmentsConfig, DesignerConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.customhttpservice.CustomHttpServiceProvider
 import pl.touk.nussknacker.ui.db.DbRef
@@ -56,10 +55,7 @@ class AkkaHttpBasedRouteFactory(
     dbRef: DbRef,
     dbioRunner: DBIOActionRunner,
     metricsRegistry: MetricRegistry,
-    resolvedDesignerConfig: Config,
-    // TODO: class wrapping all configs instead of raw hocon Config
-    featureTogglesConfig: FeatureTogglesConfig,
-    environment: String,
+    designerConfig: DesignerConfig,
     statisticsPublicKey: String,
     futureProcessRepository: FetchingProcessRepository[Future],
     scenarioActivityRepository: ScenarioActivityRepository,
@@ -94,12 +90,13 @@ class AkkaHttpBasedRouteFactory(
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def createRoute: Route = {
-    val usageStatisticsReportsConfig = resolvedDesignerConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+    val usageStatisticsReportsConfig =
+      designerConfig.rawConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val processResources = {
         val configProcessToolbarService = new ConfigScenarioToolbarService(
-          CategoriesScenarioToolbarsConfigParser.parse(resolvedDesignerConfig)
+          CategoriesScenarioToolbarsConfigParser.parse(designerConfig.rawConfig)
         )
         new ProcessesResources(
           processService = processService,
@@ -157,7 +154,7 @@ class AkkaHttpBasedRouteFactory(
       )
 
       val optionalRoutes = List(
-        featureTogglesConfig.remoteEnvironment
+        designerConfig.featureTogglesConfig.remoteEnvironment
           .map { migrationConfig =>
             val remoteEnvironment = new HttpRemoteEnvironment(
               migrationConfig,
@@ -167,7 +164,7 @@ class AkkaHttpBasedRouteFactory(
                   .mapValues(new ProcessModelMigrator(_)),
                 processingTypeServicesProvider.mapValues(_.scenarioValidator)
               ),
-              environment
+              designerConfig.environment
             )
             new RemoteEnvironmentResources(
               remoteEnvironment,
@@ -198,7 +195,7 @@ class AkkaHttpBasedRouteFactory(
     val apiResourcesWithoutAuthentication: List[Route] = {
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
       val settingsResources = new SettingsResources(
-        featureTogglesConfig,
+        designerConfig.featureTogglesConfig,
         authenticationResources.name,
         usageStatisticsReportsConfig,
         fingerprintService
@@ -211,20 +208,20 @@ class AkkaHttpBasedRouteFactory(
 
     val nuDesignerApi = {
       val appApiHttpService = new AppApiHttpService(
-        config = resolvedDesignerConfig,
+        designerConfig = designerConfig,
         authManager = authManager,
         reloadProcessingTypes = reloadProcessingTypes,
         modelInfos = processingTypeServicesProvider.mapValues(_.designerModelData.modelData.info),
         categories = processingTypeServicesProvider.mapValues(_.category),
         processService = processService,
-        shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
+        shouldExposeConfig = designerConfig.featureTogglesConfig.enableConfigEndpoint,
       )
 
       val migrationApiHttpService = {
         val migrationApiAdapterService = new MigrationApiAdapterService()
 
         val migrationService = new MigrationService(
-          config = resolvedDesignerConfig,
+          designerConfig = designerConfig,
           processService = processService,
           processResolver = processingTypeServicesProvider.mapValues(_.processResolver),
           processAuthorizer = processAuthorizer,
@@ -253,13 +250,13 @@ class AkkaHttpBasedRouteFactory(
         authManager = authManager,
         service = new ScenarioLabelsService(
           scenarioLabelsRepository,
-          new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
+          new ScenarioLabelsValidator(designerConfig.featureTogglesConfig.scenarioLabelConfig),
           dbioRunner
         )
       )
 
       val notificationApiHttpService = {
-        val notificationsConfig = resolvedDesignerConfig.as[NotificationConfig]("notifications")
+        val notificationsConfig = designerConfig.rawConfig.as[NotificationConfig]("notifications")
         val notificationService = new NotificationServiceImpl(
           fetchScenarioActivityService,
           actionRepository,
@@ -305,7 +302,7 @@ class AkkaHttpBasedRouteFactory(
           scenarioService = processService,
           scenarioAuthorizer = processAuthorizer,
           dbioRunner,
-          stickyNotesSettings = featureTogglesConfig.stickyNotesSettings
+          stickyNotesSettings = designerConfig.featureTogglesConfig.stickyNotesSettings
         )
       }
 
@@ -316,11 +313,11 @@ class AkkaHttpBasedRouteFactory(
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,
         new ScenarioAttachmentService(
-          AttachmentsConfig.create(resolvedDesignerConfig),
+          AttachmentsConfig.create(designerConfig.rawConfig),
           scenarioActivityRepository,
           dbioRunner,
         ),
-        featureTogglesConfig.deploymentCommentSettings,
+        designerConfig.featureTogglesConfig.deploymentCommentSettings,
         new AkkaHttpBasedTapirStreamEndpointProvider(),
         dbioRunner,
       )
@@ -360,7 +357,7 @@ class AkkaHttpBasedRouteFactory(
           )
         val activityService =
           new ActivityService(
-            featureTogglesConfig.deploymentCommentSettings,
+            designerConfig.featureTogglesConfig.deploymentCommentSettings,
             scenarioActivityRepository,
             deploymentService,
             dbioRunner,
@@ -424,17 +421,17 @@ class AkkaHttpBasedRouteFactory(
     val akkaHttpServerInterpreter = new NuAkkaHttpServerInterpreterForTapirPurposes()
 
     createAppRoute(
-      resolvedConfig = resolvedDesignerConfig,
+      designerConfig = designerConfig,
       authManager = authManager,
       tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
       apiResourcesWithAuthentication = apiResourcesWithAuthentication,
       apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
-      developmentMode = featureTogglesConfig.development
+      developmentMode = designerConfig.featureTogglesConfig.development
     )
   }
 
   private def createAppRoute(
-      resolvedConfig: Config,
+      designerConfig: DesignerConfig,
       authManager: AuthManager,
       tapirRelatedRoutes: List[Route],
       apiResourcesWithAuthentication: List[RouteWithUser],
@@ -442,7 +439,7 @@ class AkkaHttpBasedRouteFactory(
       developmentMode: Boolean
   ): Route = {
     // TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))
+    val webResources = new WebResources(designerConfig.rawConfig.getString("http.publicPath"))
     WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
       tapirRelatedRoutes.reduce(_ ~ _) ~
         pathPrefixTest(!"api") {

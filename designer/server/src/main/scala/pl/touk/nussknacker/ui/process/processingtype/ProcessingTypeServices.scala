@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   ComponentAdditionalConfig,
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.action.ModelDataActionInfoProvider
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
@@ -70,8 +69,7 @@ object ProcessingTypeServices {
   import net.ceedubs.ficus.Ficus._
 
   def create(
-      resolvedDesignerConfig: Config,
-      featureTogglesConfig: FeatureTogglesConfig,
+      designerConfig: DesignerConfig,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       fragmentRepository: FragmentRepository,
       fragmentResolver: FragmentResolver,
@@ -84,7 +82,7 @@ object ProcessingTypeServices {
       ProcessValidator.default(processingTypeData.designerModelData.modelData),
       processingTypeData.deploymentData.scenarioPropertiesConfig,
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
-      new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
+      new ScenarioLabelsValidator(designerConfig.featureTogglesConfig.scenarioLabelConfig),
       processingTypeData.deploymentData.additionalValidators,
       fragmentResolver
     )
@@ -96,8 +94,8 @@ object ProcessingTypeServices {
     val scenarioTestService = new ScenarioTestService(
       new ModelDataTestInfoProvider(processingTypeData.designerModelData.modelData),
       processResolver,
-      featureTogglesConfig.testDataSettings,
-      new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+      designerConfig.featureTogglesConfig.testDataSettings,
+      new PreliminaryScenarioTestDataSerDe(designerConfig.featureTogglesConfig.testDataSettings),
       counter,
       new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
     )
@@ -117,7 +115,7 @@ object ProcessingTypeServices {
       alignedComponentsDefinitionProvider,
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
       fragmentRepository,
-      resolvedDesignerConfig.getAs[String]("fragmentPropertiesDocsUrl")
+      designerConfig.rawConfig.getAs[String]("fragmentPropertiesDocsUrl")
     )
     val parameterValidator =
       new ParametersValidator(

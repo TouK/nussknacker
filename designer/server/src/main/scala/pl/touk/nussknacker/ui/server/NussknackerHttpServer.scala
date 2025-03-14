@@ -25,20 +25,20 @@ class NussknackerHttpServer(system: ActorSystem) extends LazyLogging {
   private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
 
   def start(route: Route, designerConfig: DesignerConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
-    createAkkaHttpBinding(designerConfig.rawConfig, route, metricRegistry).map(_ => RouteInterceptor.set(route))
+    createAkkaHttpBinding(designerConfig, route, metricRegistry).map(_ => RouteInterceptor.set(route))
   }
 
   private def createAkkaHttpBinding(
-      config: ConfigWithUnresolvedVersion,
+      designerConfig: DesignerConfig,
       route: Route,
       metricsRegistry: MetricRegistry
   ) = {
     def createServer() = IO.fromFuture {
       IO {
-        val interface: String = config.resolved.getString("http.interface")
-        val port: Int         = config.resolved.getInt("http.port")
+        val interface: String = designerConfig.rawConfig.getString("http.interface")
+        val port: Int         = designerConfig.rawConfig.getInt("http.port")
 
-        val bindingResultF = SslConfigParser.sslEnabled(config.resolved) match {
+        val bindingResultF = SslConfigParser.sslEnabled(designerConfig.rawConfig) match {
           case Some(keyStoreConfig) =>
             bindHttps(
               interface,
