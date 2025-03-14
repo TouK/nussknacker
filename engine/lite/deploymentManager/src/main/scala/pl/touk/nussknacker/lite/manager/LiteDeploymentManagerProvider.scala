@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitialize
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
+  ConstStringParameterEditor,
   LiteralIntegerValidator,
   MinimalNumberValidator,
   SpelTemplateParameterEditor
@@ -48,7 +49,7 @@ object LitePropertiesConfig {
   private val parallelismConfig: (String, ScenarioPropertyConfig) = LiteStreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(SpelTemplateParameterEditor),
+      editor = Some(ConstStringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
@@ -57,7 +58,7 @@ object LitePropertiesConfig {
   private val slugConfig: (String, ScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(SpelTemplateParameterEditor),
+      editor = Some(ConstStringParameterEditor),
       validators = None,
       label = Some("Slug"),
       hintText = None

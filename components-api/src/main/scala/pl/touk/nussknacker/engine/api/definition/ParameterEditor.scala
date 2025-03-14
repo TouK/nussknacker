@@ -14,17 +14,17 @@ case object SpelParameterEditor extends ParameterEditor
 
 @ConfiguredJsonCodec sealed trait SimpleParameterEditor extends ParameterEditor
 
-case object BoolParameterEditor extends SimpleParameterEditor
+case object BoolParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
-case object DateParameterEditor extends SimpleParameterEditor
+case object DateParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
-case object TimeParameterEditor extends SimpleParameterEditor
+case object TimeParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
-case object DateTimeParameterEditor extends SimpleParameterEditor
+case object DateTimeParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
-case object TextareaParameterEditor extends SimpleParameterEditor
+case object TextareaParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
-case object JsonParameterEditor extends SimpleParameterEditor
+case object JsonParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
 case object SqlParameterEditor extends SimpleParameterEditor
 
@@ -32,7 +32,9 @@ case object SpelTemplateParameterEditor extends SimpleParameterEditor
 
 case object TabularTypedDataEditor extends SimpleParameterEditor
 
-@JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
+@JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit])
+    extends SimpleParameterEditor
+    with StaticParameterEditor
 
 object DurationParameterEditor {
 
@@ -48,7 +50,9 @@ object DurationParameterEditor {
 
 }
 
-@JsonCodec case class PeriodParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
+@JsonCodec case class PeriodParameterEditor(timeRangeComponents: List[ChronoUnit])
+    extends SimpleParameterEditor
+    with StaticParameterEditor
 
 object PeriodParameterEditor {
 
@@ -68,18 +72,26 @@ object PeriodParameterEditor {
   - add https://github.com/jmrozanec/cron-utils to model classpath
   - add CronDefinitionBuilder, CronParser and CronType to additional classes in ExpressionConfig
  */
-case object CronParameterEditor extends SimpleParameterEditor
+case object CronParameterEditor extends SimpleParameterEditor with StaticParameterEditor
 
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
+    with StaticParameterEditor
 
 @JsonCodec case class FixedValuesWithIconParameterEditor(possibleValues: List[FixedExpressionValueWithIcon])
     extends SimpleParameterEditor
+    with StaticParameterEditor
 
 @JsonCodec case class FixedValuesWithRadioParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
+    with StaticParameterEditor
 
 // TODO: currently only supports String/Boolean/Long dictionaries (same set of supported types as AdditionalDataValue)
 @JsonCodec case class DictParameterEditor(
     dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
 ) extends SimpleParameterEditor
+
+// Editor with static values (without SpEL)
+@ConfiguredJsonCodec sealed trait StaticParameterEditor
+
+case object ConstStringParameterEditor extends StaticParameterEditor

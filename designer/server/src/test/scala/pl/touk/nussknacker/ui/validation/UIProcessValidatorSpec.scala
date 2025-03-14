@@ -46,7 +46,6 @@ import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -2466,7 +2465,7 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map(
       "requiredStringProperty" -> ScenarioPropertyConfig(
         defaultValue = None,
-        editor = Some(SpelTemplateParameterEditor),
+        editor = Some(ConstStringParameterEditor),
         validators = Some(List(MandatoryParameterValidator)),
         label = Some("label"),
         hintText = None

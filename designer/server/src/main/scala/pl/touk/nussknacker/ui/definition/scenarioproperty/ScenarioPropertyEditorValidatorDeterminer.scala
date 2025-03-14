@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.api.definition.{
   JsonParameterEditor,
   JsonValidator,
   ParameterValidator,
-  SimpleParameterEditor
+  StaticParameterEditor
 }
 
-protected class ScenarioPropertyEditorValidatorDeterminer(editor: Option[SimpleParameterEditor])
+protected class ScenarioPropertyEditorValidatorDeterminer(editor: Option[StaticParameterEditor])
     extends ScenarioPropertyValidatorDeterminer {
 
   override def determine(): Option[List[ParameterValidator]] = {
