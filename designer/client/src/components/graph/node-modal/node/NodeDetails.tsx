@@ -1,4 +1,3 @@
-import { css } from "@emotion/css";
 import { DefaultComponents as Window, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { createContext, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,12 +17,12 @@ import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
-import { InputOutputContextProvider } from "../io/InputOutputContext";
-import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { InputOutputContent } from "../io/InputOutputContent";
+import { InputOutputContextProvider } from "../io/InputOutputContext";
+import { usePortal } from "../io/usePortal";
+import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import { usePortal } from "../io/usePortal";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -173,11 +172,10 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
 
     const [settings] = useUserSettings();
-    const showInputsAndOutputs = useMemo(() => settings["node.showInputsAndOutputs"], [settings]);
     const [PortalWrapper, portalRef] = usePortal();
     const components = useMemo(
         () =>
-            showInputsAndOutputs
+            settings["node.showInputsAndOutputs"]
                 ? {
                       Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
                       Footer: (props) => (
@@ -187,7 +185,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       ),
                   }
                 : undefined,
-        [showInputsAndOutputs, portalRef, PortalWrapper],
+        [settings, portalRef, PortalWrapper],
     );
 
     //no process? no nodes? no window contents! no errors for whole tree!
