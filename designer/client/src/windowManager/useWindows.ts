@@ -56,7 +56,7 @@ export function useWindows(parent?: WindowId) {
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
-            const margin = 50;
+            const margin = 30;
             return open({
                 id: node.id,
                 title: node.id,
