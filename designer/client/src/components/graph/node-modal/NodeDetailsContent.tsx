@@ -48,7 +48,7 @@ export const NodeDetailsContent = ({
     }, [configuredAdditionalComponents, node]);
 
     return (
-        <NodeTable>
+        <NodeTable sx={userSettings["node.showInputsAndOutputs"] ? { margin: "0 16px" } : undefined}>
             <NodeSwitcher
                 node={node}
                 edges={edges}

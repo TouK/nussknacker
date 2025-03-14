@@ -54,7 +54,6 @@ export function useWindows(parent?: WindowId) {
         [forceDisableModals, _open],
     );
 
-    const showInputsAndOutputs = useMemo(() => settings["node.showInputsAndOutputs"], [settings]);
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
             const margin = 50;
@@ -65,7 +64,7 @@ export function useWindows(parent?: WindowId) {
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, scenario },
                 shouldCloseOnEsc: false,
-                layoutData: showInputsAndOutputs
+                layoutData: settings["node.showInputsAndOutputs"]
                     ? {
                           width: window.innerWidth - 2 * margin,
                           height: window.innerHeight - 2 * margin,
@@ -75,7 +74,7 @@ export function useWindows(parent?: WindowId) {
                     : undefined,
             });
         },
-        [open, showInputsAndOutputs],
+        [open, settings],
     );
 
     const inform = useCallback(
