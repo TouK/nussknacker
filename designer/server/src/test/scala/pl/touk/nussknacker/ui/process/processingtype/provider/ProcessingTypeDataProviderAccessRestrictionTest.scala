@@ -1,21 +1,32 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
-import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalModelData}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 
-class ProcessingTypeDataProviderAccessRestrictionTest extends AnyFunSuite with WithTestDeploymentManagerClassLoader with Matchers {
+class ProcessingTypeDataProviderAccessRestrictionTest
+    extends AnyFunSuite
+    with WithTestDeploymentManagerClassLoader
+    with Matchers {
+
+  private val modelClasspath: List[String] = {
+    List(
+      s"./defaultModel/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/defaultModel.jar",
+      s"./engine/flink/components/base-unbounded/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkBaseUnbounded.jar",
+    )
+  }
 
   test("allow to access to processing type data only users that has read access to associated category") {
     val provider = TestProcessingTypeDataProviderFactory.fromState(mockProcessingTypeData("foo", "bar"))
@@ -40,28 +51,27 @@ class ProcessingTypeDataProviderAccessRestrictionTest extends AnyFunSuite with W
   private def mockProcessingTypeData(processingTypeName: String, processingTypeNames: String*) = {
     val allProcessingTypes = (processingTypeName :: processingTypeNames.toList).toSet
     val modelDependencies  = TestFactory.modelDependencies
-    val loader = new LocalProcessingTypeDataLoader(
-      modelData = allProcessingTypes.map { name =>
-        name -> (
-          s"${name}Category",
-          LocalModelData(
-            ConfigFactory.empty(),
-            List(
-              ComponentDefinition(s"${name}Component", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {}))
-            ),
-            componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
-          )
+
+    val loader = new ProcessingTypeDataLoader({ () =>
+      val processingTypeConfigs = ProcessingTypeConfigs(allProcessingTypes.toList.map { processingType =>
+        processingType -> ProcessingTypeConfig(
+          deploymentManagerType = "stub",
+          engineSetupName = None,
+          classPath = modelClasspath,
+          deploymentConfig = ConfigFactory.empty(),
+          modelConfig = ConfigWithUnresolvedVersion(ConfigFactory.empty()),
+          category = s"${processingType}Category"
         )
-      }.toMap,
-      deploymentManagerProvider = new DeploymentManagerProviderStub
-    )
+      }.toMap)
+      IO.pure(processingTypeConfigs)
+    })
     loader
       .loadProcessingTypeData(
         _ => modelDependencies,
         _ => TestFactory.deploymentManagerDependencies,
         deploymentManagersClassLoader,
         ModelClassLoaderProvider(
-          allProcessingTypes.map(_ -> ModelClassLoaderDependencies(List.empty, None)).toMap,
+          allProcessingTypes.map(_ -> ModelClassLoaderDependencies(modelClasspath, workingDirectoryOpt = None)).toMap,
           deploymentManagersClassLoader
         ),
         dbRef = None,
