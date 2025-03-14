@@ -3,7 +3,7 @@ import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";

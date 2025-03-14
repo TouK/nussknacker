@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { Edge, EdgeKind, VariableTypes } from "../../../types";
 import NodeUtils from "../NodeUtils";
 import { EdgeTypeOption, EdgeTypeSelect } from "./EdgeTypeSelect";
