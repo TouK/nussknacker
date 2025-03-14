@@ -2,6 +2,7 @@ import { createSelector } from "reselect";
 import { RootState } from "../index";
 import { AuthStrategy } from "../settings";
 import { getAuthenticationSettings } from "./settings";
+import { getUserSettings } from "./userSettings";
 
 export const getRemoteUrl = createSelector(getAuthenticationSettings, (auth) => {
     if (auth?.strategy !== AuthStrategy.REMOTE) return null;
@@ -14,6 +15,7 @@ export const isCloudInstance = createSelector(getRemoteUrl, (url) => url !== nul
 
 export const getAdditionalComponents = createSelector(
     isCloudInstance,
+    getUserSettings,
     (state: RootState) => state.cloudData.additionalComponents,
-    (isCloud, additionalComponents) => (isCloud ? additionalComponents : []),
+    (isCloud, userSettings, additionalComponents) => (isCloud && userSettings["cloud.componentCreators"] ? additionalComponents : []),
 );

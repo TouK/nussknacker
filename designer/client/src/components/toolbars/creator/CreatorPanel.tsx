@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
@@ -38,9 +39,12 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const clearFilter = useCallback(() => setFilter(""), []);
 
     const dispatch = useDispatch();
+    const [settings] = useUserSettings();
     useEffect(() => {
-        dispatch(getAdditionalComponents());
-    }, [dispatch]);
+        if (settings["cloud.componentCreators"]) {
+            dispatch(getAdditionalComponents());
+        }
+    }, [dispatch, settings]);
 
     const { componentGroups } = useSelector(getProcessDefinitionData);
 
