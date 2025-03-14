@@ -33,7 +33,15 @@ export function useAggParamsSerializer(): [
 export function useGroupByParamsSerializer(): [(text: string) => string[], (paramName: string, arr: string[]) => string] {
     const parser = useMemo(() => new AggMapLikeParser(), []);
 
-    const deserialize = useCallback((input: string) => parser.parseList(input), [parser]);
+    const deserialize = useCallback(
+        (input: string) => {
+            // if already a list we only need to add 'toString' so it's nicely displayed in editor
+            // if only one element we need to wrap it in '{}' and add 'toString'
+            const list = input.startsWith("{") && input.endsWith("}") ? input + ".toString" : "{" + input + "}.toString";
+            return parser.parseList(list);
+        },
+        [parser],
+    );
 
     const serialize = useCallback((paramName: string, arr: string[]): string => {
         const entries = arr.map((value) => {
@@ -44,9 +52,16 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
 
         if (!content) return "";
 
-        switch (paramName) {
-            case "groupBy":
-                return `${content}`;
+        if (entries.length > 1) {
+            switch (paramName) {
+                case "groupBy":
+                    return `{ ${content} }`;
+            }
+        } else {
+            switch (paramName) {
+                case "groupBy":
+                    return `${content}`;
+            }
         }
     }, []);
 
