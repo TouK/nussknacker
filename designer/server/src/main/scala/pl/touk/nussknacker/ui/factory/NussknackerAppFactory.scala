@@ -14,7 +14,6 @@ import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteFactory, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.statistics.{PublicEncryptionKey, StatisticUrlConfig}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
@@ -22,14 +21,6 @@ import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import java.time.Clock
 import scala.concurrent.Future
 import scala.io.Source
-
-object NussknackerAppFactory {
-
-  def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
-    new NussknackerAppFactory(designerConfigLoader)
-  }
-
-}
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
@@ -71,21 +62,11 @@ class NussknackerAppFactory(
       domainServices <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
       _ = initMetrics(metricsRegistry, alreadyLoadedConfig, domainServices.futureProcessRepository)
 
-      authenticationResources =
-        AuthenticationResources(
-          alreadyLoadedConfig.rawConfig,
-          getClass.getClassLoader,
-          infrastructureServices.futureSttpBackend
-        )(executionContextWithIORuntime)
-      authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
-
       route <- AkkaHttpBasedRouteFactory.createRoute(
         designerConfig = alreadyLoadedConfig,
         statisticUrlConfig = statisticsUrlConfig,
         infrastructureServices = infrastructureServices,
-        domainServices = domainServices,
-        authenticationResources = authenticationResources,
-        authManager = authManager,
+        domainServices = domainServices
       )
       _ <- new NussknackerHttpServer(actorSystem).start(route, alreadyLoadedConfig, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)

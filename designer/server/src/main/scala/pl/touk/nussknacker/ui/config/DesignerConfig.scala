@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.ui.config.DesignerConfig.ConfigurationMalformedException
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Path, Paths}
 import scala.jdk.CollectionConverters._
 
 final class DesignerConfig private (

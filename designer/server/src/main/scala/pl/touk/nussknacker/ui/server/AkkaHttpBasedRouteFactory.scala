@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
@@ -20,11 +18,17 @@ object AkkaHttpBasedRouteFactory {
       designerConfig: DesignerConfig,
       statisticUrlConfig: StatisticUrlConfig,
       infrastructureServices: InfrastructureServices,
-      domainServices: DomainServices,
-      authenticationResources: AuthenticationResources,
-      authManager: AuthManager
+      domainServices: DomainServices
   ): Resource[IO, Route] = {
     import infrastructureServices._
+    val authenticationResources =
+      AuthenticationResources(
+        designerConfig.rawConfig,
+        AkkaHttpBasedRouteFactory.getClass.getClassLoader,
+        infrastructureServices.futureSttpBackend
+      )(executionContextWithIORuntime)
+    val authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
+
     for {
       akkaRoutes <- AkkaRoutesFactory.createRoutes(
         designerConfig,
