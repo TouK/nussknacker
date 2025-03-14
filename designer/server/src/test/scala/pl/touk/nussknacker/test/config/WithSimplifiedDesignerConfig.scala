@@ -16,7 +16,7 @@ trait WithSimplifiedDesignerConfig extends WithDesignerConfig with BeforeAndAfte
   }
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
+    ConfigFactory.parseResources("config/business-cases/dev-streaming-use-case-designer.conf")
   )
 
   private def validateConsistency(): Unit = {

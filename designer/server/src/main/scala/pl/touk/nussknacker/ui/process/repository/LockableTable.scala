@@ -15,7 +15,7 @@ trait LockableTable {
 
 trait DbLockableTable { this: DbioRepository =>
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   type ENTITY <: AbstractTable[_]
 

@@ -20,7 +20,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.nio.file.Path
@@ -302,7 +302,7 @@ class ScenarioParametersServiceTest
             ComponentDefinitionExtractionMode.FinalDefinition
           )
           val processingTypeData =
-            new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+            new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
               .loadProcessingTypeData(
                 _ => modelDependencies,
                 _ => TestFactory.deploymentManagerDependencies,

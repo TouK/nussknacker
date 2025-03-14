@@ -19,7 +19,7 @@ class FeatureTogglesConfigTest extends AnyFunSuite with Matchers {
 
   test("should raise exception when invalid deploymentCommentSettings config") {
     val config = ConfigFactory
-      .parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
+      .parseResources("config/business-cases/dev-streaming-use-case-designer.conf")
       .withValue(
         "deploymentCommentSettings",
         fromMap(

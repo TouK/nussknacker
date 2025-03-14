@@ -56,4 +56,19 @@ object utils {
 
   }
 
+  def getStagedScalaFiles() = Step.deferredTask {
+    os
+      .proc("git", "diff", "--cached", "--name-only", "--diff-filter=ACM")
+      .call()
+      .out
+      .lines()
+      .filter(f => f.endsWith(".scala") || f.endsWith(".sbt"))
+      .toList
+  }
+
+  def quoteSbtArgument(filePath: String): String = {
+    // use quoting for StringEscapable parser
+    "\"" + filePath.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+  }
+
 }

@@ -9,11 +9,9 @@ import { useTranslation } from "react-i18next";
 import { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 
-const spelEditorInfoText =
-    `You are using an expression-based approach, allowing calculations and conditions. Access variables with **#**, e.g., **#input.someField == 'value'**. \n 
+const spelEditorInfoText = `You are using an expression-based approach, allowing calculations and conditions. Access variables with **#**, e.g., **#input.someField == 'value'**. \n 
 Use **#input['dynamicField'].toTargetType** for dynamic fields. Helpers (e.g., **#UTILS**) provide additional functionality.  \n
-Strings need to be quoted; use ` +
-    ` to concatenate strings. \n
+Strings need to be quoted; use **+** to concatenate strings. \n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel).`;
 
 const spelTemplateEditorInfoText = `You are using a string-template-based approach, allowing text with embedded expressions. Text should not be quoted. \n 

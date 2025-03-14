@@ -1,8 +1,8 @@
 package db.migration.hsql
 
 import db.migration.{V1_030__SpillStateToDisk => V1_030__SpillStateToDiskDefinition}
-import slick.jdbc.{HsqldbProfile, JdbcProfile}
+import slick.jdbc.HsqldbProfile
 
 class V1_030__SpillStateToDisk extends V1_030__SpillStateToDiskDefinition {
-  override protected lazy val profile: JdbcProfile = HsqldbProfile
+  override protected lazy val profile = createNuJdbcProfileFrom(HsqldbProfile)
 }

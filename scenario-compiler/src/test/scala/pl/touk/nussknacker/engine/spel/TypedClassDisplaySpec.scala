@@ -27,7 +27,7 @@ class TypedClassDisplaySpec extends AnyFunSuite with Matchers {
   }
 
   test("parsing anonymous class display") {
-    Typed.typedClass(new java.io.Serializable {}.getClass).display should equal("")
+    Typed.typedClass(new java.io.Serializable {}.getClass).display should equal("(anonymous class)")
   }
 
 }

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.ui.db.{DbRef, SqlStates}
+import pl.touk.nussknacker.ui.db.{DbRef, NuJdbcProfile, SqlStates}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner.TransactionsRunAttemptsExceedException
-import slick.jdbc.{JdbcProfile, TransactionIsolation}
+import slick.jdbc.TransactionIsolation
 
 import java.sql.SQLException
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,8 +13,8 @@ import scala.util.{Failure, Success, Try}
 
 class DBIOActionRunner(dbRef: DbRef)(implicit ec: ExecutionContext) {
 
-  protected lazy val profile: JdbcProfile = dbRef.profile
-  protected lazy val api: profile.API     = profile.api
+  protected lazy val profile: NuJdbcProfile             = dbRef.profile
+  protected lazy val api: profile.ApiWithEnforcedSchema = profile.apiWithEnforcedSchema
   import api._
 
   def runInTransaction[T](action: DB[T]): Future[T] =

@@ -5,7 +5,6 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.{FingerprintEntityData, FingerprintEntityFactory}
 import pl.touk.nussknacker.ui.statistics.Fingerprint
 import pl.touk.nussknacker.ui.statistics.repository.Error.SaveError
-import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -19,8 +18,8 @@ class FingerprintRepositoryImpl(protected val dbRef: DbRef)(implicit ec: Executi
     extends FingerprintRepository[DB]
     with FingerprintEntityFactory {
 
-  protected val profile: JdbcProfile = dbRef.profile
-  import profile.api._
+  protected val profile = dbRef.profile
+  import profile.apiWithEnforcedSchema._
 
   override def read(): DB[Option[Fingerprint]] = fingerprintsTable
     .take(1)

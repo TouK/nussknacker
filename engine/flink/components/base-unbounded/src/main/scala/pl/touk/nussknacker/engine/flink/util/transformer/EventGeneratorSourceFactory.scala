@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.github.ghik.silencer.silent
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.{HCursor, Json}
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -8,12 +10,15 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.{typing, ValueDecoder, ReturningType, ValueEncoder}
 import pl.touk.nussknacker.engine.flink.api.process.{
-  CustomizableTimestampWatermarkHandlerSource,
   FlinkCustomNodeContext,
+  FlinkSourceTestSupport,
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -62,7 +67,12 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
       @ParamName("value") value: LazyParameter[AnyRef]
   ): Source = {
-    new StandardFlinkSource[AnyRef] with ReturningType with CustomizableTimestampWatermarkHandlerSource[AnyRef] {
+    new StandardFlinkSource[AnyRef]
+      with ReturningType
+      with FlinkSourceTestSupport[AnyRef]
+      with TestDataGenerator
+      with TestWithParametersSupport[AnyRef]
+      with LazyLogging {
 
       override protected def sourceStream(
           env: StreamExecutionEnvironment,
@@ -90,6 +100,37 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override def timestampAssigner: Option[TimestampWatermarkHandler[AnyRef]] = Some(customTimestampAssigner)
 
       override val returnType: typing.TypingResult = value.returnType
+
+      override def generateTestData(size: Int): TestData = {
+        val samples = List.fill(size)(encodeValueUnsafe(generateSample()))
+        TestData(samples.map(TestRecord(_, None)))
+      }
+
+      override def testRecordParser: TestRecordParser[AnyRef] =
+        _.map(_.json).map(decodeValueUnsafe)
+
+      override def testParametersDefinition: List[Parameter] =
+        List.empty
+
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): AnyRef = {
+        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        List.fill(count)(generateSample())
+      }
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
+
+      private def generateSample(): AnyRef = value.evaluate(Context("dummy_context"))
+
+      private def encodeValueUnsafe(value: AnyRef) =
+        ValueEncoder
+          .encodeValue(value)
+          .getOrElse(throw new IllegalArgumentException(s"Failed to encode value: $value"))
+
+      private def decodeValueUnsafe(json: Json) =
+        ValueDecoder
+          .decodeValue(returnType, HCursor.fromJson(json))
+          .getOrElse(throw new IllegalArgumentException(s"Failed to decode value from json: $json"))
+          .asInstanceOf[AnyRef]
     }
   }
 
