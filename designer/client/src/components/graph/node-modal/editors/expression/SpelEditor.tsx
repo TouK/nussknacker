@@ -82,7 +82,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
             properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelEditor.infoText", spelEditorInfoText)} />;
         }
 
-        if (editorMode === EditorMode.SpELTemplate && !readOnly) {
+        if (expressionObj.language === ExpressionLang.SpELTemplate && !readOnly) {
             properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
             properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelTemplateEditor.infoText", spelTemplateEditorInfoText)} />;
         }
