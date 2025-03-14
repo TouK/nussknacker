@@ -45,11 +45,9 @@ export function TestResultsWrapper({
     }, [nodeResults, state.inputDataSetId]);
 
     const [settings] = useUserSettings();
-    const showInputsAndOutputs = useMemo(() => settings["node.showInputsAndOutputs"], [settings]);
-
     return (
         <Context.Provider value={testResultsState}>
-            {showInputsAndOutputs ? (
+            {settings["node.showInputsAndOutputs"] ? (
                 <>
                     <TestErrors />
                     {children}
