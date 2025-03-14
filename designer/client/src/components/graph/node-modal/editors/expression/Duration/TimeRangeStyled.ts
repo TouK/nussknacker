@@ -22,6 +22,7 @@ export const TimeRangeStyled = styled("div")(({ theme }) => ({
         backgroundColor: theme.palette.background.paper,
         textAlign: "center",
         padding: 0,
+        border: 0,
         borderBottom: `1px solid ${theme.palette.common.white}`,
         "&:focus, &:focus-within": {
             borderBottom: `1px solid ${theme.palette.primary.main}`,
@@ -30,6 +31,9 @@ export const TimeRangeStyled = styled("div")(({ theme }) => ({
             borderBottom: `1px solid ${theme.palette.error.light} !important`,
             borderOffset: "initial !important",
             borderRadius: 2,
+        },
+        "&.read-only": {
+            borderBottom: 0,
         },
     },
     "& .time-range-components": {

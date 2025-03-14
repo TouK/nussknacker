@@ -79,12 +79,12 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
             editorMode: editorMode,
         };
 
-        if (expressionObj.language === ExpressionLang.SpEL) {
+        if (expressionObj.language === ExpressionLang.SpEL && !readOnly) {
             properties.placeholder = placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField");
             properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelEditor.infoText", spelEditorInfoText)} />;
         }
 
-        if (editorMode === EditorMode.SpELTemplate) {
+        if (editorMode === EditorMode.SpELTemplate && !readOnly) {
             properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
             properties.InputAdornmentEnd = <InfoTooltip text={t("editors.spelTemplateEditor.infoText", spelTemplateEditorInfoText)} />;
         }
