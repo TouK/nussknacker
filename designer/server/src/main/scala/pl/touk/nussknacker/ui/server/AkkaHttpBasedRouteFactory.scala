@@ -23,10 +23,8 @@ object AkkaHttpBasedRouteFactory {
       domainServices: DomainServices,
       authenticationResources: AuthenticationResources,
       authManager: AuthManager
-  )(
-      implicit system: ActorSystem,
-      executionContextWithIORuntime: ExecutionContextWithIORuntime,
   ): Resource[IO, Route] = {
+    import infrastructureServices._
     for {
       akkaRoutes <- AkkaRoutesFactory.createRoutes(
         designerConfig,

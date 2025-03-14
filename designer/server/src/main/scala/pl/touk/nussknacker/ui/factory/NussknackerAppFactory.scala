@@ -2,73 +2,24 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
-import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.{
-  ExecutionContextWithIORuntime,
   ExecutionContextWithIORuntimeAdapter,
   JavaClassVersionChecker,
   SLF4JBridgeHandlerRegistrar
 }
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
-import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
-import pl.touk.nussknacker.ui.config.{
-  AdditionalUIConfigProviderLoader,
-  ComponentLinksConfigExtractor,
-  DesignerConfig,
-  DesignerConfigLoader,
-  FeatureTogglesConfig
-}
-import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
+import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
-import pl.touk.nussknacker.ui.definition.component.DefaultComponentService
-import pl.touk.nussknacker.ui.initialization.Initialization
-import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
-import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.notifications.Notification
-import pl.touk.nussknacker.ui.process.DBProcessService
-import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
-  FinishedDeploymentsStatusesSynchronizationConfig,
-  FinishedDeploymentsStatusesSynchronizationScheduler,
-  ScenarioDeploymentReconciler
-}
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
-import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
-import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
-  DeploymentsStatusesSynchronizationConfig,
-  DeploymentsStatusesSynchronizationScheduler,
-  DeploymentsStatusesSynchronizer
-}
-import pl.touk.nussknacker.ui.process.processingtype._
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
-import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
-import pl.touk.nussknacker.ui.processreport.{CountsReporterFactory, ProcessCounter}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteFactory, NussknackerHttpServer}
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, PublicEncryptionKey, StatisticUrlConfig}
-import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
-import pl.touk.nussknacker.ui.util.{InMemoryTimeseriesRepository, IOToFutureSttpBackendConverter}
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.ui.statistics.{PublicEncryptionKey, StatisticUrlConfig}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
-import java.time.{Clock, Duration}
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Supplier
+import java.time.Clock
 import scala.concurrent.Future
 import scala.io.Source
 
@@ -91,62 +42,6 @@ class NussknackerAppFactory(
 
       alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
       _ = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: ${alreadyLoadedConfig.featureTogglesConfig}")
-      system                        <- createActorSystem(alreadyLoadedConfig)
-      executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
-      ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
-      futureSttpBackend = IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime)
-
-      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(alreadyLoadedConfig.managersDir)
-      modelClassLoaderProvider = createModelClassLoaderProvider(
-        alreadyLoadedConfig.processingTypeConfigs().configByProcessingType,
-        deploymentManagersClassLoader
-      )
-
-      dbRef <- DbRef.create(alreadyLoadedConfig.rawConfig)
-
-      actionServiceSupplier = new DelayedInitActionServiceSupplier
-      additionalUIConfigProvider = AdditionalUIConfigProviderLoader.loadAdditionalUIConfigProvider(
-        alreadyLoadedConfig,
-        futureSttpBackend
-      )(
-        executionContextWithIORuntime
-      )
-      // 1 hour is the delay to propagate all global notifications for all users
-      globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
-      processingTypeDataProvider <- prepareProcessingTypeDataReload(
-        alreadyLoadedConfig,
-        deploymentManagersClassLoader,
-        dbRef,
-        system,
-        ioSttpBackend,
-        futureSttpBackend,
-        additionalUIConfigProvider,
-        actionServiceSupplier,
-        alreadyLoadedConfig.featureTogglesConfig,
-        globalNotificationRepository,
-        modelClassLoaderProvider
-      )(executionContextWithIORuntime)
-
-      metricsRegistry        <- createGeneralPurposeMetricsRegistry()
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, alreadyLoadedConfig)
-      countsReporter <- CountsReporterFactory.createCountsReporter(
-        alreadyLoadedConfig,
-        futureSttpBackend
-      )
-      deploymentRepository = new DeploymentRepository(dbRef, clock)(executionContextWithIORuntime)
-      dbioRunner           = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
-      deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
-        deploymentRepository,
-        processingTypeDataProvider.mapValues(
-          _.deploymentData.validDeploymentManagerOrStub.deploymentSynchronisationSupport
-        ),
-        dbioRunner
-      )(executionContextWithIORuntime)
-      _ <- DeploymentsStatusesSynchronizationScheduler.resource(
-        system,
-        deploymentsStatusesSynchronizer,
-        DeploymentsStatusesSynchronizationConfig.parse(alreadyLoadedConfig.rawConfig)
-      )
       statisticsPublicKey <- Resource.fromAutoCloseable(
         IO {
           Source.fromURL(getClass.getResource("/encryption.key"))
@@ -155,169 +50,35 @@ class NussknackerAppFactory(
       statisticsUrlConfig = StatisticUrlConfig(publicEncryptionKey =
         PublicEncryptionKey(statisticsPublicKey.mkString.trim)
       )
-      migrations                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
-      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)(executionContextWithIORuntime)
-      actionRepository           = DbScenarioActionRepository.create(dbRef)(executionContextWithIORuntime)
-      scenarioLabelsRepository   = new ScenarioLabelsRepository(dbRef)(executionContextWithIORuntime)
-      processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)(
-        executionContextWithIORuntime
-      )
-      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      futureProcessRepository =
-        DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)(
-          executionContextWithIORuntime
-        )
-      _ = initMetrics(metricsRegistry, alreadyLoadedConfig, futureProcessRepository)
+      actorSystem                   <- createActorSystem(alreadyLoadedConfig)
+      executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(actorSystem.dispatcher)
+      ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
 
-      writeProcessRepository =
-        ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
-      dmDispatcher =
-        new DeploymentManagerDispatcher(
-          processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
-          futureProcessRepository
-        )
-      fetchScenarioActivityService = new FetchScenarioActivityService(
-        dmDispatcher,
-        scenarioActivityRepository,
-        futureProcessRepository,
-        dbioRunner,
-      )(executionContextWithIORuntime)
-      processChangeListener = ProcessChangeListenerLoader.loadListeners(
-        getClass.getClassLoader,
-        alreadyLoadedConfig,
-        NussknackerServices(new PullProcessRepository(futureProcessRepository, fetchScenarioActivityService))
-      )
-      deploymentsStatusesProvider =
-        new EngineSideDeploymentStatusesProvider(
-          dmDispatcher,
-          alreadyLoadedConfig.featureTogglesConfig.scenarioStateTimeout
-        )(system)
-      scenarioStatusProvider = new ScenarioStatusProvider(
-        deploymentsStatusesProvider,
-        dmDispatcher,
-        processRepository,
-        actionRepository,
-        dbioRunner,
-      )(executionContextWithIORuntime)
-      actionService = new ActionService(
-        processRepository,
-        actionRepository,
-        dbioRunner,
-        processChangeListener,
-        scenarioStatusProvider,
-        alreadyLoadedConfig.featureTogglesConfig.deploymentCommentSettings,
-        clock
-      )(executionContextWithIORuntime)
+      dbRef           <- DbRef.create(alreadyLoadedConfig.rawConfig)
+      metricsRegistry <- createGeneralPurposeMetricsRegistry()
+      dbioRunner = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
 
-      _ = {
-        // we need to reload processing type data after deployment service creation to make sure that it will be done using
-        // correct classloader and that won't cause further delays during handling requests
-        actionService.invalidateInProgressActions()
-        actionServiceSupplier.set(actionService)
-        processingTypeDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
-      }
-
-      reconciler = new ScenarioDeploymentReconciler(
-        processingTypeDataProvider.all(NussknackerInternalUser.instance).keys,
-        deploymentsStatusesProvider,
-        actionRepository,
-        dbioRunner
-      )(executionContextWithIORuntime)
-      _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
-        system,
-        reconciler,
-        FinishedDeploymentsStatusesSynchronizationConfig.parse(alreadyLoadedConfig.rawConfig)
-      )
-
-      authenticationResources =
-        AuthenticationResources(alreadyLoadedConfig.rawConfig, getClass.getClassLoader, futureSttpBackend)(
-          executionContextWithIORuntime
-        )
-      authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
-
-      _ = Initialization.init(
-        migrations,
-        dbRef,
-        clock,
-        processRepository,
-        scenarioActivityRepository,
-        scenarioLabelsRepository,
-        alreadyLoadedConfig.environment
-      )(executionContextWithIORuntime)
-
-      scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
-
-      fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)(executionContextWithIORuntime)
-      fragmentResolver   = new FragmentResolver(fragmentRepository)
-
-      counter = new ProcessCounter(fragmentRepository)
-
-      processingTypeServicesProvider = processingTypeDataProvider.mapValues(
-        ProcessingTypeServices.create(
-          alreadyLoadedConfig,
-          additionalUIConfigProvider,
-          fragmentRepository,
-          fragmentResolver,
-          counter,
-          _
-        )(executionContextWithIORuntime)
-      )
-
-      processService = new DBProcessService(
-        scenarioStatusProvider,
-        scenarioStatusPresenter,
-        processingTypeServicesProvider.mapValues(_.newProcessPreparer),
-        processingTypeDataProvider.mapCombined(_.parametersService),
-        processingTypeServicesProvider.mapValues(_.processResolver),
-        dbioRunner,
-        futureProcessRepository,
-        actionRepository,
-        writeProcessRepository,
-      )(executionContextWithIORuntime)
-
-      fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef)(executionContextWithIORuntime))(
-        executionContextWithIORuntime,
-        dbioRunner
-      )
-
-      componentService = {
-        new DefaultComponentService(
-          ComponentLinksConfigExtractor.extract(alreadyLoadedConfig.rawConfig),
-          processingTypeServicesProvider.mapValues(_.componentServiceProcessingTypeData),
-          processService,
-          fragmentRepository
-        )(executionContextWithIORuntime)
-      }
-      processAuthorizer = new AuthorizeProcess(futureProcessRepository)(executionContextWithIORuntime)
       infrastructureServices = InfrastructureServices(
         clock = clock,
         dbRef = dbRef,
         dbioRunner = dbioRunner,
         metricsRegistry = metricsRegistry,
+        ioSttpBackend = ioSttpBackend
+      )(
+        executionContextWithIORuntime = executionContextWithIORuntime,
+        actorSystem = actorSystem
       )
-      domainServices = DomainServices(
-        futureProcessRepository = futureProcessRepository,
-        scenarioActivityRepository = scenarioActivityRepository,
-        scenarioLabelsRepository = scenarioLabelsRepository,
-        globalNotificationRepository = globalNotificationRepository,
-        feStatisticsRepository = feStatisticsRepository,
-        componentService = componentService,
-        processService = processService,
-        fetchScenarioActivityService = fetchScenarioActivityService,
-        actionRepository = actionRepository,
-        deploymentRepository = deploymentRepository,
-        processChangeListener = processChangeListener,
-        actionService = actionService,
-        countsReporter = countsReporter,
-        counter = counter,
-        fingerprintService = fingerprintService,
-        scenarioStatusProvider = scenarioStatusProvider,
-        scenarioStatusPresenter = scenarioStatusPresenter,
-        dmDispatcher = dmDispatcher,
-        processingTypeServicesProvider = processingTypeServicesProvider,
-        reloadProcessingTypes = processingTypeDataProvider.reloadAll,
-        processAuthorizer = processAuthorizer,
-      )
+      domainServices <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      _ = initMetrics(metricsRegistry, alreadyLoadedConfig, domainServices.futureProcessRepository)
+
+      authenticationResources =
+        AuthenticationResources(
+          alreadyLoadedConfig.rawConfig,
+          getClass.getClassLoader,
+          infrastructureServices.futureSttpBackend
+        )(executionContextWithIORuntime)
+      authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
+
       route <- AkkaHttpBasedRouteFactory.createRoute(
         designerConfig = alreadyLoadedConfig,
         statisticUrlConfig = statisticsUrlConfig,
@@ -325,38 +86,11 @@ class NussknackerAppFactory(
         domainServices = domainServices,
         authenticationResources = authenticationResources,
         authManager = authManager,
-      )(
-        system,
-        executionContextWithIORuntime
       )
-      _ <- new NussknackerHttpServer(system).start(route, alreadyLoadedConfig, metricsRegistry)
+      _ <- new NussknackerHttpServer(actorSystem).start(route, alreadyLoadedConfig, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
-  }
-
-  private def createProcessingTypeConfigsLoader(
-      designerConfig: DesignerConfig,
-      sttpBackend: SttpBackend[IO, Any]
-  )(implicit ioRuntime: IORuntime): ProcessingTypeConfigsLoader = {
-    ScalaServiceLoader
-      .loadOne[ProcessingTypeConfigsLoaderFactory](getClass.getClassLoader)
-      .map { factory =>
-        logger.debug(
-          s"Found custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName}: ${factory.getClass.getName}. Using it for configuration loading"
-        )
-        factory.create(
-          designerConfig.configLoaderConfig,
-          designerConfig.processingTypeConfigsRaw().resolved,
-          sttpBackend
-        )
-      }
-      .getOrElse {
-        logger.debug(
-          s"No custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName} found. Using the default implementation of loader"
-        )
-        () => designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigs())
-      }
   }
 
   private def createActorSystem(designerConfig: DesignerConfig) = {
@@ -387,21 +121,10 @@ class NussknackerAppFactory(
       )
   }
 
-  private def createModelClassLoaderProvider(
-      processingTypeConfigs: Map[String, ProcessingTypeConfig],
-      deploymentManagersClassLoader: DeploymentManagersClassLoader
-  ): ModelClassLoaderProvider = {
-    val defaultWorkingDirOpt = None
-    ModelClassLoaderProvider(
-      processingTypeConfigs.mapValuesNow(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt)),
-      deploymentManagersClassLoader
-    )
-  }
-
   private def initMetrics(
       metricsRegistry: MetricRegistry,
       designerConfig: DesignerConfig,
-      processRepository: DBFetchingProcessRepository[Future] with BasicRepository
+      processRepository: FetchingProcessRepository[Future]
   ): Unit = {
     new RepositoryGauges(
       metricsRegistry,
@@ -409,111 +132,6 @@ class NussknackerAppFactory(
       processRepository
     )
       .prepareGauges()
-  }
-
-  private def prepareProcessingTypeDataReload(
-      alreadyLoadedConfig: DesignerConfig,
-      deploymentManagersClassLoader: DeploymentManagersClassLoader,
-      dbRef: DbRef,
-      system: ActorSystem,
-      ioSttpBackend: SttpBackend[IO, Any],
-      futureSttpBackend: SttpBackend[Future, Any],
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      actionServiceProvider: Supplier[ActionService],
-      featureTogglesConfig: FeatureTogglesConfig,
-      globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
-      modelClassLoaderProvider: ModelClassLoaderProvider
-  )(
-      implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
-  ): Resource[IO, ReloadableProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
-    Resource
-      .make(
-        acquire = IO {
-          val processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
-            alreadyLoadedConfig,
-            ioSttpBackend
-          )(executionContextWithIORuntime.ioRuntime)
-          val processingTypeDataLoader = new ProcessingTypeDataLoader(processingTypeConfigsLoader)
-          val loadProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
-            getModelDependencies(
-              additionalUIConfigProvider,
-              _,
-              featureTogglesConfig.componentDefinitionExtractionMode
-            ),
-            getDeploymentManagerDependencies(
-              dbRef,
-              system,
-              additionalUIConfigProvider,
-              actionServiceProvider,
-              futureSttpBackend,
-              _
-            ),
-            deploymentManagersClassLoader,
-            modelClassLoaderProvider,
-            Some(dbRef),
-          )
-          val loadAndNotifyIO = loadProcessingTypeDataIO
-            .map { state =>
-              globalNotificationRepository.saveEntry(Notification.configurationReloaded)
-              state
-            }
-          ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
-        }
-      )(
-        release = _.close()
-      )
-  }
-
-  private def getDeploymentManagerDependencies(
-      dbRef: DbRef,
-      system: ActorSystem,
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      actionServiceProvider: Supplier[ActionService],
-      sttpBackend: SttpBackend[Future, Any],
-      processingType: ProcessingType
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
-    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
-    DeploymentManagerDependencies(
-      DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
-      new DefaultProcessingTypeActionService(
-        processingType,
-        actionServiceProvider.get(),
-      ),
-      executionContextWithIORuntime,
-      executionContextWithIORuntime.ioRuntime,
-      system,
-      sttpBackend,
-      additionalConfigsFromProvider
-    )
-  }
-
-  private def getModelDependencies(
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      processingType: ProcessingType,
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
-  ) = {
-    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
-    ModelDependencies(
-      additionalConfigsFromProvider,
-      DesignerWideComponentId.default(processingType, _),
-      workingDirectoryOpt = None, // we use the default working directory
-      componentDefinitionExtractionMode,
-    )
-  }
-
-  private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
-    private val actionServiceRef = new AtomicReference[Option[ActionService]](None)
-
-    override def get(): ActionService = {
-      val actionService = actionServiceRef.get()
-      actionService.getOrElse(
-        throw new IllegalStateException(
-          "Illegal initialization: ActionService should be initialized before ProcessingTypeData"
-        )
-      )
-    }
-
-    def set(actionService: ActionService): Unit = actionServiceRef.set(Some(actionService))
   }
 
 }

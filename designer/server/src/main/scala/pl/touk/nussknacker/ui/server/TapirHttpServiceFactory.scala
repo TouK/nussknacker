@@ -31,7 +31,7 @@ object TapirHttpServiceFactory {
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
       authManager: AuthManager
-  )(implicit ec: ExecutionContextWithIORuntime, system: ActorSystem): NuDesignerExposedApiHttpService = {
+  ): NuDesignerExposedApiHttpService = {
     import domainServices._
     import infrastructureServices._
 

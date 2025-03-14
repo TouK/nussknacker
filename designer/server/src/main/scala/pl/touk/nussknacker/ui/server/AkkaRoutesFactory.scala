@@ -31,10 +31,9 @@ object AkkaRoutesFactory {
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
       authenticationResources: AuthenticationResources
-  )(
-      implicit system: ActorSystem,
-      executionContext: ExecutionContext
-  ): Resource[IO, AkkaRoutes] =
+  ): Resource[IO, AkkaRoutes] = {
+    import infrastructureServices._
+
     for {
       customHttpServiceProviders <- createCustomHttpServiceProvider(designerConfig, domainServices)
 
@@ -49,6 +48,7 @@ object AkkaRoutesFactory {
         createRoutesWithoutAuthentication(designerConfig, domainServices, authenticationResources)
 
     } yield AkkaRoutes(routesWithAuthentication, routesWithoutAuthentication)
+  }
 
   private def createCustomHttpServiceProvider(
       designerConfig: DesignerConfig,
@@ -86,9 +86,6 @@ object AkkaRoutesFactory {
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
       customHttpServiceProviders: Map[String, CustomHttpServiceProvider]
-  )(
-      implicit system: ActorSystem,
-      executionContext: ExecutionContext,
   ): List[RouteWithUser] = {
     import domainServices._
     import infrastructureServices._
