@@ -3,17 +3,11 @@ package pl.touk.nussknacker.ui.factory
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import cats.effect.unsafe.IORuntime
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  AdditionalUIConfigProviderFactory,
-  DesignerWideComponentId,
-  EmptyAdditionalUIConfigProviderFactory
-}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.{
@@ -24,11 +18,9 @@ import pl.touk.nussknacker.engine.util.{
 }
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
-import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
 import pl.touk.nussknacker.ui.config.{
+  AdditionalUIConfigProviderLoader,
   ComponentLinksConfigExtractor,
   DesignerConfig,
   DesignerConfigLoader,
@@ -65,7 +57,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessi
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
-import pl.touk.nussknacker.ui.processreport.ProcessCounter
+import pl.touk.nussknacker.ui.processreport.{CountsReporterFactory, ProcessCounter}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteFactory, NussknackerHttpServer}
 import pl.touk.nussknacker.ui.statistics.{FingerprintService, PublicEncryptionKey, StatisticUrlConfig}
@@ -77,10 +69,8 @@ import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.io.Source
-import scala.util.Try
-import scala.util.control.NonFatal
 
 object NussknackerAppFactory {
 
@@ -99,7 +89,8 @@ class NussknackerAppFactory(
       _ <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
 
-      alreadyLoadedConfig           <- Resource.eval(designerConfigLoader.loadDesignerConfig())
+      alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
+      _ = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: ${alreadyLoadedConfig.featureTogglesConfig}")
       system                        <- createActorSystem(alreadyLoadedConfig)
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(system.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
@@ -113,10 +104,11 @@ class NussknackerAppFactory(
 
       dbRef <- DbRef.create(alreadyLoadedConfig.rawConfig)
 
-      _ = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: ${alreadyLoadedConfig.featureTogglesConfig}")
-
       actionServiceSupplier = new DelayedInitActionServiceSupplier
-      additionalUIConfigProvider = createAdditionalUIConfigProvider(alreadyLoadedConfig, futureSttpBackend)(
+      additionalUIConfigProvider = AdditionalUIConfigProviderLoader.loadAdditionalUIConfigProvider(
+        alreadyLoadedConfig,
+        futureSttpBackend
+      )(
         executionContextWithIORuntime
       )
       // 1 hour is the delay to propagate all global notifications for all users
@@ -137,9 +129,8 @@ class NussknackerAppFactory(
 
       metricsRegistry        <- createGeneralPurposeMetricsRegistry()
       feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, alreadyLoadedConfig)
-      countsReporter <- createCountsReporter(
-        alreadyLoadedConfig.featureTogglesConfig,
-        alreadyLoadedConfig.environment,
+      countsReporter <- CountsReporterFactory.createCountsReporter(
+        alreadyLoadedConfig,
         futureSttpBackend
       )
       deploymentRepository = new DeploymentRepository(dbRef, clock)(executionContextWithIORuntime)
@@ -420,48 +411,6 @@ class NussknackerAppFactory(
       .prepareGauges()
   }
 
-  private def createCountsReporter(
-      featureTogglesConfig: FeatureTogglesConfig,
-      environment: String,
-      backend: SttpBackend[Future, Any]
-  ) = {
-    featureTogglesConfig.counts match {
-      case Some(config) => prepareCountsReporter(environment, config, backend)
-      case None         => Resource.pure[IO, None.type](None)
-    }
-  }
-
-  // by default, we use InfluxCountsReporterCreator
-  private def prepareCountsReporter(
-      env: String,
-      config: Config,
-      backend: SttpBackend[Future, Any]
-  ): Resource[IO, Option[CountsReporter[Future]]] = {
-    Resource
-      .make(
-        acquire = IO {
-          val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
-          val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
-            case One(cr) =>
-              cr
-            case Empty() =>
-              new InfluxCountsReporterCreator
-            case Many(many) =>
-              throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
-          }
-
-          Try(Option(creator.createReporter(env, configAtKey)(backend))).recover { case NonFatal(ex) =>
-            logger.warn(
-              s"Error while setting up counts mechanism: ${ex.getMessage}. Counts mechanism will be disabled."
-            )
-            None
-          }.get
-        }
-      )(
-        release = counter => IO(counter.foreach(_.close()))
-      )
-  }
-
   private def prepareProcessingTypeDataReload(
       alreadyLoadedConfig: DesignerConfig,
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
@@ -550,25 +499,6 @@ class NussknackerAppFactory(
       workingDirectoryOpt = None, // we use the default working directory
       componentDefinitionExtractionMode,
     )
-  }
-
-  private def createAdditionalUIConfigProvider(designerConfig: DesignerConfig, sttpBackend: SttpBackend[Future, Any])(
-      implicit ec: ExecutionContext
-  ) = {
-    val additionalUIConfigProviderFactory: AdditionalUIConfigProviderFactory = {
-      Multiplicity(
-        ScalaServiceLoader.load[AdditionalUIConfigProviderFactory](getClass.getClassLoader)
-      ) match {
-        case Empty()              => new EmptyAdditionalUIConfigProviderFactory
-        case One(providerFactory) => providerFactory
-        case Many(moreThanOne) =>
-          throw new IllegalArgumentException(
-            s"More than one AdditionalUIConfigProviderFactory instance found: $moreThanOne"
-          )
-      }
-    }
-
-    additionalUIConfigProviderFactory.create(designerConfig.rawConfig, sttpBackend)
   }
 
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
