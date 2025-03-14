@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { SpelEditor, SpelEditorProps } from "./SpelEditor";
 import { SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { EditorMode } from "./types";
 
 //TODO add highlighting for opening and closing braces ('#{' and '}') in brace/mode/spelTemplate.js file
 export const SpelTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
@@ -16,6 +17,12 @@ export const SpelTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEdi
     );
 
     return (
-        <SpelEditor {...passProps} expressionObj={value} rows={rows} language={editorsParameters.SpelTemplateParameterEditor.language} />
+        <SpelEditor
+            {...passProps}
+            expressionObj={value}
+            rows={rows}
+            editorMode={EditorMode.SpELTemplate}
+            language={editorsParameters.SpelTemplateParameterEditor.language}
+        />
     );
 };
