@@ -32,7 +32,6 @@ interface AddLabelProps {
 const isValidWidthsArray = (widths: number[]): boolean => widths.every((w) => w >= 0 && w !== undefined);
 
 const findThresholdIndex = (numbers: number[], threshold: number): number => {
-    console.log(threshold);
     let sum = 0;
     for (let i = 0; i < numbers.length; i++) {
         sum += numbers[i];

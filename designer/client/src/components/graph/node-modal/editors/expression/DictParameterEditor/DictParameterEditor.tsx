@@ -5,7 +5,7 @@ import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
 import { ExtendedEditor, OnValueChange } from "../Editor";
-import { ExpressionObj } from "../types";
+import { ExpressionLang, ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { NodeInput } from "../../../../../FormElements";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
@@ -156,6 +156,25 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     );
 };
 
-DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
-DictParameterEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
+const isParseable = (expressionObj: ExpressionObj) =>
     tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
+
+DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
+DictParameterEditor.isSwitchableTo = () => true;
+DictParameterEditor.parseValueOnEditorChange = (expressionObj: ExpressionObj, newLanguage: ExpressionLang) => {
+    if (newLanguage === ExpressionLang.DictKeyWithLabel) {
+        return {
+            language: newLanguage,
+            expression: isParseable(expressionObj) ? expressionObj.expression : "",
+        };
+    }
+
+    if (newLanguage === ExpressionLang.SpEL) {
+        return {
+            language: newLanguage,
+            expression: isParseable(expressionObj) ? "" : expressionObj.expression,
+        };
+    }
+
+    return expressionObj;
+};

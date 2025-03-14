@@ -3,7 +3,7 @@ import { SpelEditor } from "./SpelEditor";
 import { SqlEditor } from "./SqlEditor";
 import { StringEditor } from "./StringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
-import { EditorType, ExpressionObj } from "./types";
+import { EditorType, ExpressionLang, ExpressionObj } from "./types";
 import React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
@@ -42,6 +42,7 @@ export type SimpleEditor<P extends EditorProps = EditorProps> =
 
 export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
+    parseValueOnEditorChange?: (expressionObject: ExpressionObj, newLanguage: ExpressionLang) => ExpressionObj;
     notSwitchableToHint: () => string;
 };
 
