@@ -16,6 +16,7 @@ import { Box } from "@mui/material";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getProcessDefinitionData } from "../../../../../../reducers/selectors/processDefinitionData";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
@@ -31,7 +32,6 @@ import { customRenderers } from "./customRenderers";
 import { isDatePickerCell } from "./customCells";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { find, head, orderBy } from "lodash";
 
