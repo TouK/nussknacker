@@ -16,7 +16,7 @@ export const TimeRangeStyled = styled("div")(({ theme }) => ({
         clear: "both",
     },
     "& .time-range-input": {
-        width: "30px !important",
+        width: "4em !important",
         height: "100%",
         outline: "none !important",
         backgroundColor: theme.palette.background.paper,
