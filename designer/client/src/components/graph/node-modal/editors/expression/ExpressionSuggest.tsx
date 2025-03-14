@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import HttpService from "../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../../../reducers/selectors/processDefinitionData";
 import { VariableTypes } from "../../../../../types";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { CustomCompleterAceEditor, CustomCompleterAceEditorProps } from "./CustomCompleterAceEditor";

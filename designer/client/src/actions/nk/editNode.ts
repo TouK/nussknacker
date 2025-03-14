@@ -5,7 +5,7 @@ import { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { getGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";

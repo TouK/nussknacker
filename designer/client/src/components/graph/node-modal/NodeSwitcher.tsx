@@ -5,7 +5,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { createUniqueName } from "../../../reducers/graph/utils";
 import { getNodes } from "../../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { Component } from "../../../types";
 import { editors, EditorType } from "./editors/expression/Editor";
 import { ExpressionLang, ExpressionObj } from "./editors/expression/types";
