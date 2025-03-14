@@ -26,7 +26,7 @@ export function AdvancedSearchFilters({
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
     const { t } = useTranslation();
-    const componentsGroups = useSelector(getComponentGroups);
+    const componentGroups = useSelector(getComponentGroups);
     const { scenarioGraph } = useSelector(getScenario);
     const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
 
@@ -45,9 +45,9 @@ export function AdvancedSearchFilters({
 
     const componentLabels = useMemo(() => {
         return new Set(
-            componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
+            componentGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
         );
-    }, [componentsGroups]);
+    }, [componentGroups]);
 
     const nodeTypes = useMemo(() => {
         const availableTypes = allNodes
