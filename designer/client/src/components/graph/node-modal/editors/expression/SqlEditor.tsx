@@ -115,9 +115,9 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
 };
 
 SqlEditor.isSwitchableTo = isSwitchableTo;
-SqlEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 SqlEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.SqlParameterEditor.displayName },
     );

@@ -85,12 +85,11 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
 DurationEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
-DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint", "Switch to basic mode");
-
 DurationEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.duration.noSwitchableToHint",
-        "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode",
+        "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.DurationParameterEditor.displayName },
     );
 
 export function duration(decodeExecResult) {

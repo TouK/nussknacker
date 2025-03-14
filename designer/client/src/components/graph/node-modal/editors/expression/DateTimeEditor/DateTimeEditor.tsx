@@ -34,7 +34,8 @@ export const DateTimeEditor: ExtendedEditor<DateTimeEditorProps> = (props: DateT
     );
 };
 
-DateTimeEditor.switchableToHint = () => i18next.t("editors.LocalDateTime.switchableToHint", "Switch to basic mode");
 DateTimeEditor.notSwitchableToHint = () =>
-    i18next.t("editors.LocalDateTime.notSwitchableToHint", "Expression must be valid dateTime to switch to basic mode");
+    i18next.t("editors.LocalDateTime.notSwitchableToHint", "Expression must be valid dateTime to switch to {{editorName}} mode", {
+        editorName: editorsParameters.DateTimeParameterEditor.displayName,
+    });
 DateTimeEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);

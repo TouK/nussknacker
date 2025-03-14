@@ -5,6 +5,7 @@ import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { ExtendedEditor, OnValueChange } from "./Editor";
 import { FieldError } from "../Validators";
+import { editorsParameters } from "./editorsParameters";
 
 type Props = {
     expressionObj: ExpressionObj;
@@ -51,6 +52,7 @@ export const BoolEditor: ExtendedEditor<Props> = ({
 };
 
 BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
-BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");
 BoolEditor.notSwitchableToHint = () =>
-    i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to basic mode");
+    i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to {{displayName}} mode", {
+        displayName: editorsParameters.BoolParameterEditor.displayName,
+    });

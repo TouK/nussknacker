@@ -105,10 +105,9 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
 CronEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     spelFormatters[FormatterType.Cron].decode(expressionObj.expression) != null || expressionObj.expression === "";
 
-CronEditor.switchableToHint = () => i18next.t("editors.cron.switchableToHint", "Switch to basic mode");
-
 CronEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.cron.notSwitchableToHint",
-        "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to basic mode",
+        "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.CronParameterEditor.displayName },
     );

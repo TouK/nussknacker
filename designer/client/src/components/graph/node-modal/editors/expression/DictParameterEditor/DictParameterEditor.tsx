@@ -156,9 +156,6 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     );
 };
 
-const isParseable = (expressionObj: ExpressionObj) =>
-    tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
-
-DictParameterEditor.switchableToHint = () => i18next.t("editors.dictParameter.switchableToHint", "Switch to basic mode");
 DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
-DictParameterEditor.isSwitchableTo = () => true;
+DictParameterEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
+    tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";

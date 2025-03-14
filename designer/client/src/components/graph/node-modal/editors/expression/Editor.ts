@@ -42,7 +42,6 @@ export type SimpleEditor<P extends EditorProps = EditorProps> =
 
 export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
-    switchableToHint: () => string;
     notSwitchableToHint: () => string;
 };
 

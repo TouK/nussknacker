@@ -552,6 +552,7 @@ export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps
 };
 
 TableEditor.isSwitchableTo = () => true; // TODO: implement
-TableEditor.switchableToHint = () => i18next.t("editors.table.switchableToHint", "Switch to table mode");
 TableEditor.notSwitchableToHint = () =>
-    i18next.t("editors.table.notSwitchableToHint", "Expression must match schema to switch to table mode");
+    i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
+        editorName: editorsParameters.TabularTypedDataEditor.displayName,
+    });

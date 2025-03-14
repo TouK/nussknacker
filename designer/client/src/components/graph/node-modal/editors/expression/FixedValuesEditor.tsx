@@ -11,6 +11,7 @@ import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 import { editorsParameters } from "./editorsParameters";
+import i18next from "i18next";
 
 type Props = {
     editorConfig: $TodoType;
@@ -136,5 +137,9 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
 
 FixedValuesEditor.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
     editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
-FixedValuesEditor.switchableToHint = () => "Switch to basic mode";
-FixedValuesEditor.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
+FixedValuesEditor.notSwitchableToHint = () =>
+    i18next.t(
+        "editors.fixedValues.notSwitchableToHint",
+        "Expression must be one of the predefined values to switch to {{editorName}} mode",
+        { editorName: editorsParameters.FixedValuesParameterEditor.displayName },
+    );

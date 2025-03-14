@@ -83,10 +83,9 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
 PeriodEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
-PeriodEditor.switchableToHint = () => i18next.t("editors.period.switchableToHint", "Switch to basic mode");
-
 PeriodEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.period.notSwitchableToHint",
-        "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to basic mode",
+        "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.PeriodParameterEditor.displayName },
     );

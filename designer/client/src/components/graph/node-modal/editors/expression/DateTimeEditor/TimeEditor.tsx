@@ -31,7 +31,8 @@ export const TimeEditor: ExtendedEditor<TimeEditorProps> = (props: TimeEditorPro
     );
 };
 
-TimeEditor.switchableToHint = () => i18next.t("editors.LocalTime.switchableToHint", "Switch to basic mode");
 TimeEditor.notSwitchableToHint = () =>
-    i18next.t("editors.LocalTime.notSwitchableToHint", "Expression must be valid time to switch to basic mode");
+    i18next.t("editors.LocalTime.notSwitchableToHint", "Expression must be valid time to switch to {{editorName}} mode", {
+        editorName: editorsParameters.TimeParameterEditor.displayName,
+    });
 TimeEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);

@@ -43,7 +43,12 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     );
 
     return (
-        <FieldSwitch availableEditors={availableEditors} expressionObj={expressionObj} onValueChange={props.onValueChange}>
+        <FieldSwitch
+            availableEditors={availableEditors}
+            expressionObj={expressionObj}
+            onValueChange={props.onValueChange}
+            readOnly={props.readOnly}
+        >
             {(selectedEditor) => {
                 const Editor = editors[selectedEditor.type];
 
@@ -77,10 +82,10 @@ function EditableEditorRow({
     return (
         <FormControl
             className={cx(rowClassName && rowClassName)}
-            sx={{ width: "100%", margin: rowClassName && 0, "& .MuiFormLabel-root": { marginTop: "20px" } }}
+            sx={{ width: "100%", margin: rowClassName && 0, "& .MuiFormLabel-root": { marginTop: !props.readOnly && "20px" } }}
         >
             <>
-                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel sx={{ marginTop: "20px" }} />}
+                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel sx={{ marginTop: !props.readOnly && "20px" }} />}
                 <EditableEditor {...props} />
             </>
         </FormControl>

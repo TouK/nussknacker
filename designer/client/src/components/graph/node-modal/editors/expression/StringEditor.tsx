@@ -42,9 +42,9 @@ export const isSwitchableTo = ({ expression, language }: ExpressionObj): boolean
 };
 
 StringEditor.isSwitchableTo = isSwitchableTo;
-StringEditor.switchableToHint = () => i18next.t("editors.string.switchableToHint", "Switch to basic mode");
 StringEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.string.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.StringParameterEditor.displayName },
     );

@@ -7,6 +7,8 @@ import { ParamType } from "../types";
 import { editorsParameters } from "../expression/editorsParameters";
 import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
 import { editors, isExtendedEditor } from "../expression/Editor";
+import { useTranslation } from "react-i18next";
+import { InfoTooltip } from "../expression/InfoTooltip";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -17,13 +19,34 @@ interface Props {
 }
 
 export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children, readOnly }: Props) => {
+    const { t } = useTranslation();
     const allowsSwitch = useCallback(
-        (verifiedEditor: ParamType["editors"][number]) => {
-            const editor = editors[verifiedEditor.type];
+        (checkedEditor: ParamType["editors"][number]) => {
+            const editor = editors[checkedEditor.type];
 
-            return isExtendedEditor(editor) ? editor.isSwitchableTo(expressionObj, verifiedEditor) : true;
+            return isExtendedEditor(editor) ? editor.isSwitchableTo(expressionObj, checkedEditor) : true;
         },
         [expressionObj],
+    );
+
+    const getHint = useCallback(
+        (checkedEditor: ParamType["editors"][number]) => {
+            const editor = editors[checkedEditor.type];
+            if (readOnly) {
+                return t("editors.default.hint", "Switching is disabled. You are in read-only mode");
+            }
+
+            if (allowsSwitch(checkedEditor)) {
+                return;
+            }
+
+            if (!isExtendedEditor(editor)) {
+                return;
+            }
+
+            return editor?.notSwitchableToHint();
+        },
+        [readOnly, allowsSwitch, t],
     );
 
     const [selectedEditor, setSelectedEditor] = useState(
@@ -34,16 +57,20 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         }) ?? availableEditors[0],
     );
 
-    const availableEditorsOptions: Option[] = useMemo(
+    const availableEditorsOptions: (Option & { hint: string | undefined })[] = useMemo(
         () =>
             availableEditors.map((editor) => ({
                 label: editorsParameters[editor.type].displayName,
                 value: editor.type,
-                isDisabled: readOnly || !allowsSwitch(editor),
+                isDisabled: readOnly || (!allowsSwitch(editor) && editor.type !== selectedEditor.type),
+                hint: editor.type !== selectedEditor.type ? getHint(editor) : undefined,
             })),
-        [allowsSwitch, availableEditors, readOnly],
+        [allowsSwitch, availableEditors, getHint, readOnly, selectedEditor.type],
     );
 
+    if (readOnly) {
+        return <>{typeof children === "function" ? children(selectedEditor) : children}</>;
+    }
     return (
         <Box display="block" flexBasis={"80%"} width={"100%"}>
             <Box display="flex" justifyContent="flex-end">
@@ -69,7 +96,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                 >
                     {availableEditorsOptions.map((option, index) => (
                         <Tab
-                            disabled={option.isDisabled}
+                            aria-disabled={option.isDisabled}
                             disableFocusRipple
                             disableRipple
                             disableTouchRipple
@@ -79,6 +106,12 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             classes={{
                                 selected: css({ outline: "none" }),
                                 root: css({ "&:focus": { outline: "none" } }),
+                                iconWrapper: css({
+                                    marginLeft: "2px !important",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    pointerEvents: "auto",
+                                }),
                             }}
                             sx={(theme) => ({
                                 fontSize: "0.65rem",
@@ -91,7 +124,26 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                                     color: theme.palette.text.primary,
                                     background: blendDarken(theme.palette.primary.main, 0.3),
                                 },
+                                "&[aria-disabled='true']": {
+                                    pointerEvents: "none",
+                                    cursor: "default",
+                                    background: theme.palette.action.disabledBackground,
+                                    "&:hover": {
+                                        background: theme.palette.action.disabledBackground,
+                                    },
+                                },
+                                ".MuiSvgIcon-root": {
+                                    backgroundColor: "inherit",
+                                },
                             })}
+                            iconPosition="end"
+                            icon={
+                                option.hint && (
+                                    <div>
+                                        <InfoTooltip text={option.hint} />
+                                    </div>
+                                )
+                            }
                         />
                     ))}
                 </Tabs>
@@ -100,105 +152,3 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         </Box>
     );
 };
-
-// export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
-//     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
-//     const { t } = useTranslation();
-//
-//     const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
-//
-//     const showSwitch = useMemo(() => props.showSwitch && Editor, [Editor, props.showSwitch]);
-//
-//     const simpleEditorAllowsSwitch = useMemo(
-//         () => isExtendedEditor(Editor) && Editor.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
-//         [Editor, editorConfig.simpleEditor, expressionObj],
-//     );
-//
-//     const isExpressionEditorVisible = isExtendedEditor(Editor)
-//         ? Editor?.getExpressionMode?.(expressionObj).language === expressionObj.language
-//         : false;
-//
-//     const initialDisplaySimple = useMemo(
-//         () => editorConfig.defaultMode === DualEditorMode.SIMPLE && simpleEditorAllowsSwitch && !isExpressionEditorVisible,
-//         [editorConfig.defaultMode, isExpressionEditorVisible, simpleEditorAllowsSwitch],
-//     );
-//
-//     const [displayRawEditor, setDisplayRawEditor] = useState(!initialDisplaySimple);
-//     const toggleRawEditor = useCallback(() => setDisplayRawEditor((v) => !v), []);
-//
-//     const disabled = useMemo(
-//         () => readOnly || (displayRawEditor && !simpleEditorAllowsSwitch),
-//         [displayRawEditor, readOnly, simpleEditorAllowsSwitch],
-//     );
-//
-//     const hint = useMemo(() => {
-//         if (!displayRawEditor) {
-//             return t("editors.raw.switchableToHint", "Switch to expression mode");
-//         }
-//
-//         if (readOnly) {
-//             return t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode");
-//         }
-//
-//         if (!isExtendedEditor(Editor)) {
-//             return;
-//         }
-//
-//         if (simpleEditorAllowsSwitch) {
-//             return Editor?.switchableToHint();
-//         }
-//
-//         return Editor?.notSwitchableToHint();
-//     }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, Editor, t]);
-//
-//     const editorProps = useMemo(
-//         () => ({
-//             ...props,
-//             className: `${valueClassName ? valueClassName : nodeValue} ${showSwitch ? "switchable" : ""}`,
-//         }),
-//         [props, showSwitch, valueClassName],
-//     );
-//
-//     const editorExpressionObj = useMemo(() => {
-//         if (isExtendedEditor(Editor) && Editor?.getExpressionMode) {
-//             if (displayRawEditor) {
-//                 return Editor?.getExpressionMode?.(props.expressionObj);
-//             } else {
-//                 return Editor?.getBasicMode?.(props.expressionObj);
-//             }
-//         }
-//
-//         return props.expressionObj;
-//     }, [Editor, displayRawEditor, props.expressionObj]);
-//
-//     const onValueChangeWithExpressionValue = useCallback(
-//         (expression: string) => props.onValueChange({ expression, language: editorExpressionObj.language }),
-//         [editorExpressionObj.language, props],
-//     );
-//
-//     return (
-//         <div
-//             className={css({
-//                 display: "flex",
-//                 flex: 1,
-//                 gap: 5,
-//             })}
-//         >
-//             {displayRawEditor ? (
-//                 <RawEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
-//             ) : (
-//                 <Editor
-//                     {...editorProps}
-//                     editorConfig={editorConfig.simpleEditor}
-//                     expressionObj={editorExpressionObj}
-//                     onValueChange={onValueChangeWithExpressionValue}
-//                 />
-//             )}
-//             {showSwitch ? (
-//                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
-//                     {displayRawEditor ? <SimpleEditorIcon type={editorConfig.simpleEditor.type} /> : <RawEditorIcon />}
-//                 </SwitchButton>
-//             ) : null}
-//         </div>
-//     );
-// };
