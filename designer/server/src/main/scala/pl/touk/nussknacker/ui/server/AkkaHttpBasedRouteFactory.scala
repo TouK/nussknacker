@@ -61,7 +61,7 @@ object AkkaHttpBasedRouteFactory {
       developmentMode: Boolean
   ): Route = {
     // TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(designerConfig.rawConfig.getString("http.publicPath"))
+    val webResources = new WebResources(designerConfig.http.publicPath)
     WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
       tapirRelatedRoutes.reduce(_ ~ _) ~
         pathPrefixTest(!"api") {

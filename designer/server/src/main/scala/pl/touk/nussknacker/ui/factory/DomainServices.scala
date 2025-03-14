@@ -10,12 +10,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
-import pl.touk.nussknacker.ui.config.{
-  AdditionalUIConfigProviderLoader,
-  ComponentLinksConfigExtractor,
-  DesignerConfig,
-  DesignerConfigLoader
-}
+import pl.touk.nussknacker.ui.config.{AdditionalUIConfigProviderLoader, DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
@@ -32,7 +27,6 @@ import pl.touk.nussknacker.ui.process.deployment.{
 }
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
-  FinishedDeploymentsStatusesSynchronizationConfig,
   FinishedDeploymentsStatusesSynchronizationScheduler,
   ScenarioDeploymentReconciler
 }
@@ -40,7 +34,6 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusPr
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
-  DeploymentsStatusesSynchronizationConfig,
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
@@ -121,7 +114,11 @@ object DomainServices {
         globalNotificationRepository,
       )
 
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(actorSystem, clock, alreadyLoadedConfig)
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
+        actorSystem,
+        clock,
+        alreadyLoadedConfig.questDbSettings
+      )
       countsReporter <- CountsReporterFactory.createCountsReporter(
         alreadyLoadedConfig,
         futureSttpBackend
@@ -137,7 +134,7 @@ object DomainServices {
       _ <- DeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         deploymentsStatusesSynchronizer,
-        DeploymentsStatusesSynchronizationConfig.parse(alreadyLoadedConfig.rawConfig)
+        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
       )
       migrations                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
@@ -205,7 +202,7 @@ object DomainServices {
       _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         reconciler,
-        FinishedDeploymentsStatusesSynchronizationConfig.parse(alreadyLoadedConfig.rawConfig)
+        alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
       )
 
       scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
@@ -245,7 +242,7 @@ object DomainServices {
 
       componentService = {
         new DefaultComponentService(
-          ComponentLinksConfigExtractor.extract(alreadyLoadedConfig.rawConfig),
+          alreadyLoadedConfig.componentLinks,
           processingTypeServicesProvider.mapValues(_.componentServiceProcessingTypeData),
           processService,
           fragmentRepository

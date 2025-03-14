@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.server
 
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AttachmentsConfig, DesignerConfig}
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
-import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
+import pl.touk.nussknacker.ui.notifications.NotificationServiceImpl
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
@@ -21,12 +21,7 @@ import pl.touk.nussknacker.ui.statistics.{
 }
 import pl.touk.nussknacker.ui.validation.ScenarioLabelsValidator
 
-import java.time.Clock
-
 object TapirHttpServiceFactory {
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def createHttpService(
       designerConfig: DesignerConfig,
@@ -86,13 +81,12 @@ object TapirHttpServiceFactory {
     )
 
     val notificationApiHttpService = {
-      val notificationsConfig = designerConfig.rawConfig.as[NotificationConfig]("notifications")
       val notificationService = new NotificationServiceImpl(
         fetchScenarioActivityService,
         actionRepository,
         globalNotificationRepository,
         dbioRunner,
-        notificationsConfig
+        designerConfig.notifications
       )
       new NotificationApiHttpService(
         authManager = authManager,
@@ -143,7 +137,7 @@ object TapirHttpServiceFactory {
       scenarioService = processService,
       scenarioAuthorizer = processAuthorizer,
       new ScenarioAttachmentService(
-        AttachmentsConfig.create(designerConfig.rawConfig),
+        designerConfig.attachments,
         scenarioActivityRepository,
         dbioRunner,
       ),
@@ -218,7 +212,7 @@ object TapirHttpServiceFactory {
         dbioRunner,
       )
 
-      val statisticsPublicKey = ResourceLoader.load("/encryption.key", TapirHttpServiceFactory.getClass.getClassLoader)
+      val statisticsPublicKey = ResourceLoader.load("/encryption.key")
       val statisticsUrlConfig =
         StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(statisticsPublicKey.mkString.trim))
 

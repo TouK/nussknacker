@@ -158,10 +158,9 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   def create(
       system: ActorSystem,
       clock: Clock,
-      designerConfig: DesignerConfig
+      questDbConfig: QuestDbConfig
   ): Resource[IO, FEStatisticsRepository[Future]] =
     for {
-      questDbConfig <- Resource.eval(IO(QuestDbConfig(designerConfig.rawConfig)))
       repository <- questDbConfig match {
         case enabledCfg: QuestDbConfig.Enabled =>
           createRepositoryResource(system, clock, enabledCfg)

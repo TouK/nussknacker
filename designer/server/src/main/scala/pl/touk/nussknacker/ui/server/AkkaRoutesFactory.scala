@@ -92,7 +92,7 @@ object AkkaRoutesFactory {
 
     val processResources = {
       val configProcessToolbarService = new ConfigScenarioToolbarService(
-        CategoriesScenarioToolbarsConfigParser.parse(designerConfig.rawConfig)
+        designerConfig.processToolbarConfig
       )
       new ProcessesResources(
         processService = processService,

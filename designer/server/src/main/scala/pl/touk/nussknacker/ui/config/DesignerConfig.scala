@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.config
 
 import cats.data.Validated.{Invalid, Valid}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -10,12 +10,22 @@ import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesSettings
-import pl.touk.nussknacker.ui.config.DesignerConfig.ConfigurationMalformedException
+import pl.touk.nussknacker.ui.config.DesignerConfig.{ConfigurationMalformedException, HttpConfig}
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
+import pl.touk.nussknacker.ui.config.scenariotoolbar.{
+  CategoriesScenarioToolbarsConfig,
+  CategoriesScenarioToolbarsConfigParser
+}
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
+import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbConfig
+import pl.touk.nussknacker.ui.notifications.NotificationConfig
+import pl.touk.nussknacker.ui.process.deployment.reconciliation.FinishedDeploymentsStatusesSynchronizationConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
+import pl.touk.nussknacker.ui.process.newdeployment.synchronize.DeploymentsStatusesSynchronizationConfig
+import pl.touk.nussknacker.ui.security.ssl.{KeyStoreConfig, SslConfigParser}
 
 import java.nio.file.{Path, Paths}
+import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
@@ -42,7 +52,19 @@ final class DesignerConfig private (
     val enableConfigEndpoint: Boolean,
     val redirectAfterArchive: Boolean,
     val componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
-    val stickyNotesSettings: StickyNotesSettings
+    val stickyNotesSettings: StickyNotesSettings,
+    val deploymentsStatusesSynchronizationConfig: DeploymentsStatusesSynchronizationConfig,
+    val finishedDeploymentStatusesSynchronization: FinishedDeploymentsStatusesSynchronizationConfig,
+    val componentLinks: List[ComponentLinkConfig],
+    val processToolbarConfig: CategoriesScenarioToolbarsConfig,
+    val questDbSettings: QuestDbConfig,
+    val notifications: NotificationConfig,
+    val fragmentPropertiesDocsUrl: Option[String],
+    val repositoryGaugesCacheDuration: Duration,
+    val globalBuildInfo: Option[Map[String, String]],
+    val ssl: Option[KeyStoreConfig],
+    val http: HttpConfig,
+    val attachments: AttachmentsConfig,
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -60,14 +82,17 @@ final class DesignerConfig private (
         throw ConfigurationMalformedException("No scenario types configuration provided")
       }
 
+  def render(): String = rawConfig.root().render(ConfigRenderOptions.concise())
+
 }
 
 object DesignerConfig {
 
   private[config] val defaultConfigResource = "defaultDesignerConfig.conf"
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   def from(config: Config): DesignerConfig = {
     val defaultConfig = ConfigFactory.parseResources(getClass.getClassLoader, DesignerConfig.defaultConfigResource)
@@ -106,6 +131,29 @@ object DesignerConfig {
     val redirectAfterArchive              = resolvedConfig.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
     val componentDefinitionExtractionMode = parseComponentDefinitionExtractionMode(resolvedConfig)
 
+    val deploymentsStatusesSynchronizationConfig = resolvedConfig
+      .getAs[DeploymentsStatusesSynchronizationConfig]("deploymentStatusesSynchronization")
+      .getOrElse(DeploymentsStatusesSynchronizationConfig())
+
+    val finishedDeploymentStatusesSynchronization = resolvedConfig
+      .getAs[FinishedDeploymentsStatusesSynchronizationConfig]("finishedDeploymentStatusesSynchronization")
+      .getOrElse(FinishedDeploymentsStatusesSynchronizationConfig())
+
+    val componentLinks = parseComponentLinksConfig(resolvedConfig)
+
+    val processToolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(resolvedConfig)
+
+    val questDbSettings = QuestDbConfig.parse(resolvedConfig)
+
+    val notifications = resolvedConfig.as[NotificationConfig]("notifications")
+
+    val fragmentPropertiesDocsUrl     = resolvedConfig.getAs[String]("fragmentPropertiesDocsUrl")
+    val repositoryGaugesCacheDuration = resolvedConfig.getDuration("repositoryGaugesCacheDuration")
+    val globalBuildInfo               = resolvedConfig.getAs[Map[String, String]]("globalBuildInfo")
+    val ssl                           = SslConfigParser.parseSslConfig(resolvedConfig)
+    val http                          = resolvedConfig.as[HttpConfig]("http")
+    val attachments                   = AttachmentsConfig.parse(resolvedConfig)
+
     new DesignerConfig(
       rawConfigWithUnresolvedVersion = rawConfig,
       managersDir = managersDir,
@@ -128,8 +176,29 @@ object DesignerConfig {
       enableConfigEndpoint = enableConfigEndpoint,
       redirectAfterArchive = redirectAfterArchive,
       componentDefinitionExtractionMode = componentDefinitionExtractionMode,
-      stickyNotesSettings = stickyNotesSettings
+      stickyNotesSettings = stickyNotesSettings,
+      deploymentsStatusesSynchronizationConfig = deploymentsStatusesSynchronizationConfig,
+      finishedDeploymentStatusesSynchronization = finishedDeploymentStatusesSynchronization,
+      componentLinks = componentLinks,
+      processToolbarConfig = processToolbarConfig,
+      questDbSettings = questDbSettings,
+      notifications = notifications,
+      fragmentPropertiesDocsUrl = fragmentPropertiesDocsUrl,
+      repositoryGaugesCacheDuration = repositoryGaugesCacheDuration,
+      globalBuildInfo = globalBuildInfo,
+      ssl = ssl,
+      http = http,
+      attachments = attachments,
     )
+  }
+
+  private[ui] def parseComponentLinksConfig(resolvedConfig: Config) = {
+    implicit val optionListReader: ValueReader[List[ComponentLinkConfig]] = (config: Config, path: String) =>
+      ValueReader[List[Config]]
+        .read(config, path)
+        .map(_.as[ComponentLinkConfig])
+
+    resolvedConfig.getAs[List[ComponentLinkConfig]]("componentLinks").getOrElse(List.empty)
   }
 
   private def parseManagersDirs(rawConfig: Config): List[Path] = {
@@ -165,6 +234,8 @@ object DesignerConfig {
       ComponentDefinitionExtractionMode.FinalDefinition
     }
   }
+
+  final case class HttpConfig(interface: String, port: Int, publicPath: String)
 
   final case class ConfigurationMalformedException(msg: String) extends RuntimeException(msg)
 

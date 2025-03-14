@@ -9,9 +9,8 @@ import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings
 import fr.davit.akka.http.metrics.core.HttpMetrics._
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
+import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
@@ -35,25 +34,24 @@ class NussknackerHttpServer(system: ActorSystem) extends LazyLogging {
   ) = {
     def createServer() = IO.fromFuture {
       IO {
-        val interface: String = designerConfig.rawConfig.getString("http.interface")
-        val port: Int         = designerConfig.rawConfig.getInt("http.port")
-
-        val bindingResultF = SslConfigParser.sslEnabled(designerConfig.rawConfig) match {
+        val bindingResultF = designerConfig.ssl match {
           case Some(keyStoreConfig) =>
             bindHttps(
-              interface,
-              port,
+              designerConfig.http.interface,
+              designerConfig.http.port,
               HttpsConnectionContextFactory.createServerContext(keyStoreConfig),
               route,
               metricsRegistry
             )
           case None =>
-            bindHttp(interface, port, route, metricsRegistry)
+            bindHttp(designerConfig.http.interface, designerConfig.http.port, route, metricsRegistry)
         }
         bindingResultF
           .onComplete {
             case Success(bindingResult) =>
-              logger.info(s"Nussknacker designer started on ${interface}:${bindingResult.localAddress.getPort}")
+              logger.info(
+                s"Nussknacker designer started on ${designerConfig.http.interface}:${bindingResult.localAddress.getPort}"
+              )
             case Failure(exception) =>
               logger.error(s"Nussknacker designer cannot start", exception)
           }

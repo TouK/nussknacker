@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.effect.IO
-import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -102,8 +101,6 @@ class AppApiHttpService(
     appApiEndpoints.buildInfoEndpoint
       .serverLogicSuccess { _ =>
         Future {
-          import net.ceedubs.ficus.Ficus._
-          val configuredBuildInfo = designerConfig.rawConfig.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
           val modelInfo: Map[ProcessingType, ModelInfo] =
@@ -114,7 +111,7 @@ class AppApiHttpService(
             BuildInfo.buildTime,
             BuildInfo.version,
             modelInfo,
-            configuredBuildInfo
+            designerConfig.globalBuildInfo
           )
         }
       }
@@ -126,7 +123,7 @@ class AppApiHttpService(
       .serverLogic { _ => _ =>
         Future {
           val configJson =
-            parser.parse(designerConfig.rawConfig.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+            parser.parse(designerConfig.render()).left.map(_.message)
           configJson match {
             case Right(json) =>
               success(ServerConfigInfoDto(json))

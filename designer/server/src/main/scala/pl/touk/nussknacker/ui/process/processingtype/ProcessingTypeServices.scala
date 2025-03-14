@@ -115,7 +115,7 @@ object ProcessingTypeServices {
       alignedComponentsDefinitionProvider,
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
       fragmentRepository,
-      designerConfig.rawConfig.getAs[String]("fragmentPropertiesDocsUrl")
+      designerConfig.fragmentPropertiesDocsUrl
     )
     val parameterValidator =
       new ParametersValidator(

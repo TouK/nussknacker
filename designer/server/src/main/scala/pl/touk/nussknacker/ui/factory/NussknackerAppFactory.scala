@@ -98,7 +98,7 @@ class NussknackerAppFactory(
   ): Unit = {
     new RepositoryGauges(
       metricsRegistry,
-      designerConfig.rawConfig.getDuration("repositoryGaugesCacheDuration"),
+      designerConfig.repositoryGaugesCacheDuration,
       processRepository
     )
       .prepareGauges()

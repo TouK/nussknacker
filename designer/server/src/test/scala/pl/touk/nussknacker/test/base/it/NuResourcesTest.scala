@@ -45,7 +45,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
@@ -205,7 +204,7 @@ trait NuResourcesTest
     )
 
   protected val configProcessToolbarService =
-    new ConfigScenarioToolbarService(CategoriesScenarioToolbarsConfigParser.parse(testConfig))
+    new ConfigScenarioToolbarService(designerConfig.processToolbarConfig)
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
