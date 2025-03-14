@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
-import { getComponentGroups } from "../../../reducers/selectors/getComponentGroups";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
@@ -42,7 +42,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
         dispatch(getAdditionalComponents());
     }, [dispatch]);
 
-    const componentGroups = useSelector(getComponentGroups);
+    const { componentGroups } = useSelector(getProcessDefinitionData);
 
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
