@@ -5,6 +5,7 @@ import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
@@ -53,6 +55,8 @@ trait TestingApiHttpServiceSpec
   protected def validParameters: TestSourceParameters
 
   protected def invalidParameters: TestSourceParameters
+
+  protected def parametersProvidedForDryRun: String
 
   protected def expectedSourceTestingParametersJson: String
 
@@ -173,7 +177,7 @@ trait TestingApiHttpServiceSpec
           s"""[
              |    {
              |        "sourceId": "$exampleScenarioSourceId",
-             |        "parameters": $expectedSourceTestingParametersJson
+             |        "parameters": [$expectedSourceTestingParametersJson]
              |    }
              |]
              |""".stripMargin
@@ -403,6 +407,33 @@ trait TestingApiHttpServiceSpec
              |    "validationPerformed": true
              |}
              |""".stripMargin
+        )
+    }
+  }
+
+  "The endpoint for adhoc test run should" - {
+    "run scenario and return result" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(s"""{
+                     |  "sourceParameters": {
+                     |    "sourceId": "$exampleScenarioSourceId",
+                     |    "parameterExpressions": { $parametersProvidedForDryRun }
+                     |  },
+                     |  "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
+                     |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+        .Then()
+        .statusCode(200)
+        .body(
+          s"counts.$exampleScenarioSourceId.all",
+          equalTo(1),
+          "counts.end.all",
+          equalTo(1)
         )
     }
   }
