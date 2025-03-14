@@ -102,6 +102,7 @@ export function EdgeFields(props: Props): JSX.Element {
                     onValueChange={onValueChange}
                     fieldErrors={fieldErrors}
                     showValidation
+                    showSwitch={false}
                 />
             );
         }
