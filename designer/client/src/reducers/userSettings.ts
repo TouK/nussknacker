@@ -9,6 +9,7 @@ type SettingsNames =
     | "node.shortCounts"
     | "node.showInputsAndOutputs"
     | `survey-panel(${string}).closed`
+    | "cloud.componentCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals";
 

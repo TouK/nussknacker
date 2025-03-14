@@ -3,7 +3,6 @@ import { uniq } from "lodash";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getComponentGroups } from "../../../reducers/selectors/getComponentGroups";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import NodeUtils from "../../graph/NodeUtils";
@@ -27,7 +26,7 @@ export function AdvancedSearchFilters({
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
     const { t } = useTranslation();
-    const componentGroups = useSelector(getComponentGroups);
+    const { componentGroups } = useSelector(getProcessDefinitionData);
     const { scenarioGraph } = useSelector(getScenario);
     const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
 
