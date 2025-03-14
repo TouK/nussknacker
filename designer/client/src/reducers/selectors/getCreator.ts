@@ -17,7 +17,7 @@ export const fakeNodeCreatorType = (node: NodeType): string | null => {
     return null;
 };
 
-export function getCreatorTypeFromFakeVar(varName: string) {
+function getCreatorTypeFromFakeVar(varName: string) {
     const regExp = new RegExp(`${prefix}(.*)${suffix}`);
     return regExp.exec(varName)?.[1];
 }
