@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ToEvaluateFunctionConverter, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
@@ -47,6 +47,26 @@ trait TestWithParametersSupport[+T] { self: Source =>
   // TODO add support for dynamic parameters
   def testParametersDefinition: List[Parameter]
   def parametersToTestData(params: Map[ParameterName, AnyRef]): T
+}
+
+/**
+ * Optional functionality which should provide field definitions based on input schema
+ * Based on those fields UI creates a window allowing user to test scenario based on schema.
+ */
+// This trait extends TestWithParametersSupport in order to preserve binary compatibility.
+// It should eventually fully replace TestWithParametersSupport.
+trait DryRunTestSupport[+T] extends TestWithParametersSupport[T] { self: Source =>
+
+  def testParametersDefinition: List[Parameter]
+
+  def parametersToTestData(
+      params: Map[ParameterName, AnyRef],
+      converter: ToEvaluateFunctionConverter,
+  ): List[T]
+
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): T =
+    throw new IllegalArgumentException(s"This method should never be called")
+
 }
 
 /**

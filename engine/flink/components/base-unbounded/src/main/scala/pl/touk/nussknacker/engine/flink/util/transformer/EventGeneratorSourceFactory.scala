@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, Simple
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.{typing, ValueDecoder, ReturningType, ValueEncoder}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, ValueDecoder, ValueEncoder}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
@@ -71,7 +71,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       with ReturningType
       with FlinkSourceTestSupport[AnyRef]
       with TestDataGenerator
-      with TestWithParametersSupport[AnyRef]
+      with DryRunTestSupport[AnyRef]
       with LazyLogging {
 
       override protected def sourceStream(
@@ -102,7 +102,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override val returnType: typing.TypingResult = value.returnType
 
       override def generateTestData(size: Int): TestData = {
-        val samples = List.fill(size)(encodeValueUnsafe(generateSample()))
+        val samples = List.fill(size)(encodeValueUnsafe(value.evaluate(Context("dummy_context"))))
         TestData(samples.map(TestRecord(_, None)))
       }
 
@@ -112,14 +112,15 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override def testParametersDefinition: List[Parameter] =
         List.empty
 
-      override def parametersToTestData(params: Map[ParameterName, AnyRef]): AnyRef = {
+      override def parametersToTestData(
+          params: Map[ParameterName, AnyRef],
+          converter: ToEvaluateFunctionConverter,
+      ): List[AnyRef] = {
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
-        List.fill(count)(generateSample())
+        List.fill(count)(converter.toEvaluateFunction(value)(Context("dummy_context")))
       }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
-
-      private def generateSample(): AnyRef = value.evaluate(Context("dummy_context"))
 
       private def encodeValueUnsafe(value: AnyRef) =
         ValueEncoder

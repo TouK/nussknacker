@@ -9,9 +9,13 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.process.{DryRunTestSupport, Source, SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, ScenarioTestParametersRecord, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  DefaultToEvaluateFunctionConverter,
+  EvaluableLazyParameterCreatorDeps
+}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -34,6 +38,9 @@ class TestDataPreparer(
   private lazy val evaluator: ExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private lazy val expressionCompiler: ExpressionCompiler =
     ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet, evaluator)
+
+  private val lazyParameterDeps = new EvaluableLazyParameterCreatorDeps(expressionCompiler, evaluator, jobData)
+  private val delegate          = new DefaultToEvaluateFunctionConverter(lazyParameterDeps)
 
   def prepareRecordsForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {
     val (jsonRecordList, parametersRecordList) = records.partition {
@@ -65,6 +72,20 @@ class TestDataPreparer(
       case Nil => List.empty
       case _ =>
         source match {
+          case s: DryRunTestSupport[T @unchecked] =>
+            parametersRecordList.flatMap { record =>
+              implicit val implicitNodeId: NodeId = record.sourceId
+              val parameterTypingResults = s.testParametersDefinition.collect { param =>
+                record.parameterExpressions.get(param.name) match {
+                  case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
+                  case None if !param.isOptional => UnknownProperty(param.name).invalidNel
+                }
+              }
+              parameterTypingResults.sequence match {
+                case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap, delegate)
+                case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
+              }
+            }
           case s: TestWithParametersSupport[T @unchecked] => {
             parametersRecordList.map { record =>
               implicit val implicitNodeId: NodeId = record.sourceId
