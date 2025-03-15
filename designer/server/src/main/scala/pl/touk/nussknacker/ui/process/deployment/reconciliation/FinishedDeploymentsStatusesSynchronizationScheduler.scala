@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
-import akka.actor.{ActorSystem, Cancellable}
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

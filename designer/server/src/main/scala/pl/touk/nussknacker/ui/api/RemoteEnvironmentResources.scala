@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails

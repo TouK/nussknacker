@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.TcpIdleTimeoutException
 import cats.effect.unsafe.IORuntime
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.TcpIdleTimeoutException
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
