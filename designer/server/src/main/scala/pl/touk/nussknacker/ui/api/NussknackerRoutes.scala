@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait RouteWithUser {

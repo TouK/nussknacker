@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
-import akka.http.scaladsl.server.directives.Credentials.Provided
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import org.apache.pekko.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
+import org.apache.pekko.http.scaladsl.server.directives.Credentials.Provided
 import pl.touk.nussknacker.engine.util.SensitiveDataMasker
 import pl.touk.nussknacker.engine.util.SensitiveDataMasker.JsonMasker
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser

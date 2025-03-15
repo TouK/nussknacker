@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

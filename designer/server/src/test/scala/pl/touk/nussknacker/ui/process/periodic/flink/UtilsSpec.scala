@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
-import akka.actor.{Actor, ActorSystem, Props}
-import akka.testkit.TestKit
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.testkit.TestKit
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -99,7 +99,7 @@ class UtilsSpec
 
       (the[IllegalStateException] thrownBy {
         createActorWithRetry(actorName, Props(new TestActor), system)
-      }).getMessage shouldEqual s"Failed to create actor '$actorName' within allowed retries: akka.actor.InvalidActorNameException: actor name [$actorName] is not unique!"
+      }).getMessage shouldEqual s"Failed to create actor '$actorName' within allowed retries: org.apache.pekko.actor.InvalidActorNameException: actor name [$actorName] is not unique!"
 
     }
 
