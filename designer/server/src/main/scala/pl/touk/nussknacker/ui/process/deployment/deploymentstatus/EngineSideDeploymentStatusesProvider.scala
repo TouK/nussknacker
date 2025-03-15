@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
