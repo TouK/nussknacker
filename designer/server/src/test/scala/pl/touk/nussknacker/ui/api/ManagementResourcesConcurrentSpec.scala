@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{StatusCode, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.model.{StatusCode, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

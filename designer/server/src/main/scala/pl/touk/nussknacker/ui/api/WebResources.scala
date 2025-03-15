@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.ui.extrajs.ExtraScriptsListingPreparer
 

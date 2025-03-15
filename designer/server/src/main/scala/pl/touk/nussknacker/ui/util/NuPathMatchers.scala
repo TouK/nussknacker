@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.util
 
-import akka.http.scaladsl.server.{PathMatcher1, PathMatchers}
+import org.apache.pekko.http.scaladsl.server.{PathMatcher1, PathMatchers}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 
 import scala.util.Try

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 
-import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps

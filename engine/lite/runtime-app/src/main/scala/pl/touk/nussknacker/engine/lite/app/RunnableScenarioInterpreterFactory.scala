@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.lite.app
 
-import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.namespaces.Namespace

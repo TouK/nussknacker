@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server._
-import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import org.apache.pekko.http.scaladsl.marshalling.ToResponseMarshallable
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.server._
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.processCounts._

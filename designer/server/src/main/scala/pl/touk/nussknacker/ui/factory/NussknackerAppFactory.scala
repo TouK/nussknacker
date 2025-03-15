@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.factory
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
 import cats.effect.{IO, Resource}
 import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.util.{
   ExecutionContextWithIORuntimeAdapter,
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.process.processingtype.{ModelClassLoaderDependencies, ModelClassLoaderProvider}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
-import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
+import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteProvider}
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
@@ -68,7 +68,7 @@ class NussknackerAppFactory(
         alreadyLoadedConfig.rawConfig.resolved
       )
       server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(
+        new PekkoHttpBasedRouteProvider(
           db,
           metricsRegistry,
           IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime),
