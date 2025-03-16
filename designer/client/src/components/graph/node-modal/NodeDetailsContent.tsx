@@ -1,5 +1,5 @@
 import { partition } from "lodash";
-import React, { SetStateAction, useMemo } from "react";
+import React, { SetStateAction, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
@@ -7,6 +7,7 @@ import HttpService from "../../../http/HttpService";
 import { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
+import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
 import { Edge, NodeType, NodeValidationError } from "../../../types";
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
@@ -50,6 +51,15 @@ export const NodeDetailsContent = ({
     const nodeSwitcherVisible =
         creatorType && (creatorType === "aggregate" ? userSettings["node.showAggregateSwitcher"] : userSettings["cloud.componentCreators"]);
 
+    const tenantId = useSelector(getRemoteTenantId);
+    const cloudHost = useSelector(getRemoteWebHost);
+    const goToCreator = useCallback(
+        (creatorType: string) => () => window.open(`${cloudHost}/instance/${tenantId}/integrations/createIntegration/${creatorType}`),
+        [cloudHost, tenantId],
+    );
+
+    const onCreate = useMemo(() => (creatorType === "aggregate" ? null : goToCreator(creatorType)), [creatorType, goToCreator]);
+
     return (
         <NodeTable sx={userSettings["node.showInputsAndOutputs"] ? { margin: "0 16px" } : undefined}>
             {nodeSwitcherVisible ? (
@@ -63,16 +73,7 @@ export const NodeDetailsContent = ({
                             ? ["custom-aggregate-tumbling", "custom-aggregate-session", "custom-aggregate-sliding"]
                             : configuredAdditionalComponents.filter((c) => c.type === creatorType)?.map((c) => c.componentId) || []
                     }
-                    onCreate={
-                        creatorType === "aggregate"
-                            ? null
-                            : () => {
-                                  const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
-                                  window.open(
-                                      `https://manage.staging-cloud.nussknacker.io/instance/${tenantId}/createEnricher/${creatorType}`,
-                                  );
-                              }
-                    }
+                    onCreate={onCreate}
                 />
             ) : null}
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
