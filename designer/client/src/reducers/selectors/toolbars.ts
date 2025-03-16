@@ -4,13 +4,16 @@ import { RootState } from "../index";
 import { ToolbarsSide, ToolbarsState, ToolbarsStates } from "../toolbars";
 import { isArchived, isFragment } from "./graph";
 import { getSettings } from "./settings";
+import { getUserSettings } from "./userSettings";
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {};
 export const getToolbarsConfig = createSelector(
     getSettings,
     isFragment,
     isArchived,
-    (settings, fragment, archived) => settings?.processToolbarsConfiguration || defaultToolbarsConfig(fragment, archived),
+    getUserSettings,
+    (settings, fragment, archived, userSettings) =>
+        settings?.processToolbarsConfiguration || defaultToolbarsConfig(fragment, archived, userSettings["debug.userSettingsVisible"]),
 );
 export const getToolbarsConfigId = createSelector(getToolbarsConfig, getToolbarsState, (c, t) => c?.id || t?.currentConfigId);
 export const getToolbars = createSelector(getToolbarsState, getToolbarsConfigId, (t, id) => t?.[`#${id}`] || ({} as ToolbarsState));

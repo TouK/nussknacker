@@ -11,7 +11,8 @@ type SettingsNames =
     | `survey-panel(${string}).closed`
     | "cloud.componentCreators"
     | "debug.nodesAsJson"
-    | "debug.forceDisableModals";
+    | "debug.forceDisableModals"
+    | "debug.userSettingsVisible";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
