@@ -5,7 +5,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import HttpService from "../../../http/HttpService";
 import { RootState } from "../../../reducers";
-import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/getComponentGroups";
+import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { Edge, NodeType, NodeValidationError } from "../../../types";
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
@@ -47,9 +47,12 @@ export const NodeDetailsContent = ({
         );
     }, [configuredAdditionalComponents, node]);
 
+    const nodeSwitcherVisible =
+        creatorType && (creatorType === "aggregate" ? userSettings["node.showAggregateSwitcher"] : userSettings["cloud.componentCreators"]);
+
     return (
         <NodeTable sx={userSettings["node.showInputsAndOutputs"] ? { margin: "0 16px" } : undefined}>
-            {userSettings["node.showSwitcher"] ? (
+            {nodeSwitcherVisible ? (
                 <NodeSwitcher
                     node={node}
                     edges={edges}

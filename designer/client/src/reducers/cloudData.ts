@@ -1,5 +1,6 @@
 import { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
 import api from "../api";
+import { getRemoteAppId, getRemoteHost, getRemoteTenantId } from "./selectors/isCloudInstance";
 
 export type CloudDataType = NonNullable<{
     additionalComponents: string[];
@@ -33,15 +34,15 @@ export type CloudDataActions =
           data: { name: string; type: string }[];
       };
 
-const host = `nu.test.localhost:4000`;
-const appId = `staging-tenants-gitlab-adapter`;
-const tenantId = `55cf1666-e91e-42cb-80cd-f34f8b08e2b1`;
-
 export function getAdditionalComponents(): ThunkAction {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
+        const state = getState();
         dispatch({ type: "GET_ADDITIONAL_COMPONENTS" });
 
-        const { data } = await api.get(`http://tenant-manager-api.staging-cloud.${host}/api/applications/${appId}`);
+        const cloudHost = getRemoteHost(state);
+        const appId = getRemoteAppId(state);
+
+        const { data } = await api.get(`//tenant-manager-api.${cloudHost}/api/applications/${appId}`);
 
         dispatch({
             type: "ADDITIONAL_COMPONENTS_FETCHED",
@@ -51,12 +52,15 @@ export function getAdditionalComponents(): ThunkAction {
 }
 
 export function getConfiguredAdditionalComponents(): ThunkAction {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
+        const state = getState();
         dispatch({ type: "GET_CONFIGURED_ADDITIONAL_COMPONENTS" });
 
-        const { data } = await api.get(
-            `http://tenant-manager-api.staging-cloud.${host}/api/applications/${appId}/tenants/${tenantId}/enrichers`,
-        );
+        const cloudHost = getRemoteHost(state);
+        const appId = getRemoteAppId(state);
+        const tenantId = getRemoteTenantId(state);
+
+        const { data } = await api.get(`//tenant-manager-api.${cloudHost}/api/applications/${appId}/tenants/${tenantId}/enrichers`);
 
         dispatch({
             type: "CONFIGURED_ADDITIONAL_COMPONENTS_FETCHED",
