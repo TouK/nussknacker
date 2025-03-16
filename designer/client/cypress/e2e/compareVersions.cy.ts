@@ -28,7 +28,7 @@ describe("Compare versions", () => {
         cy.contains(/^fragments$/)
             .should("exist")
             .scrollIntoView();
-        cy.contains("Fragment_xxx Test Process")
+        cy.contains("fragment_xxx-test-process")
             .last()
             .should("be.visible")
             .move({ x, y, position: "right", force: true })
@@ -45,7 +45,7 @@ describe("Compare versions", () => {
             .trigger("mouseup", { force: true });
 
         // Change fragment param and save changes
-        cy.get('[model-id^=E2e][model-id$="001 Fragment_xxx Test Process"]').should("be.visible").trigger("dblclick");
+        cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
         cy.contains(/^apply/i)
             .should("be.enabled")
@@ -55,7 +55,7 @@ describe("Compare versions", () => {
         cy.get("[data-testid=window]").should("not.exist");
 
         // Change fragment param again and save changes
-        cy.get('[model-id^=E2e][model-id$="001 Fragment_xxx Test Process"]').should("be.visible").trigger("dblclick");
+        cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
         cy.contains(/^apply/i)
             .should("be.enabled")

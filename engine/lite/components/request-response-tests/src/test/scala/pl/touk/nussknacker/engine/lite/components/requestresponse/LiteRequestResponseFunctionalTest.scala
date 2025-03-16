@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse
 
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import io.circe.Json.{arr, fromInt, fromString, obj, Null}
 import io.circe.syntax.EncoderOps
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import org.everit.json.schema.{NumberSchema, Schema, StringSchema}
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite

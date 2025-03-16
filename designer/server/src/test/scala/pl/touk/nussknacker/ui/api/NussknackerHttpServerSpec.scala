@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.{Directives, Route}
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.dropwizard.metrics5.MetricRegistry
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}

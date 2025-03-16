@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.ExceptionHandler
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
+import org.apache.pekko.http.scaladsl.marshalling.ToResponseMarshallable
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.server.ExceptionHandler
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.ui._
 
@@ -15,7 +15,7 @@ import scala.util.control.NonFatal
 object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
   def nuDesignerErrorHandler: ExceptionHandler = {
-    import akka.http.scaladsl.server.Directives._
+    import org.apache.pekko.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
       complete(errorToHttpResponse(ExceptionUtils.unwrapCommonWrappingExceptions(e)))
     }
