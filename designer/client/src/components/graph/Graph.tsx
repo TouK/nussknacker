@@ -16,6 +16,7 @@ import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { NotificationActions } from "../../http/HttpService";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
+import { FRAGMENT_TEMPLATE_ID } from "../../reducers/selectors/componentGroups";
 import { UserSettings } from "../../reducers/userSettings";
 import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { StickyNoteType } from "../../types/stickyNote";
@@ -399,12 +400,12 @@ export class Graph extends React.Component<Props> {
         }
 
         if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) {
-            if (node.ref.id === ".template") {
-                const { nodeAdded, createFragment } = this.props;
-                createFragment?.((n) => nodeAdded(n, position));
-                return;
-            }
-            return;
+            if (node.ref.id !== FRAGMENT_TEMPLATE_ID) return;
+            const { nodeAdded, createFragment } = this.props;
+            return createFragment?.((node) => {
+                if (!node) return;
+                return nodeAdded(node, position);
+            });
         }
 
         const cellBelow = this.getCellBelowCell();
