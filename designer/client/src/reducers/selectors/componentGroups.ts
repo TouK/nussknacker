@@ -40,17 +40,18 @@ function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, 
     return [...collection.slice(0, index), replaceOrAddFn(currentItem), ...collection.slice(index + 1)];
 }
 
+export const FRAGMENT_TEMPLATE_ID = `.template`;
 const appendFragmentCreator = curryRight((groups: ComponentGroup[], isFragment: boolean) => {
     if (isFragment) return groups;
     const groupName = "Fragments";
 
     const fragmentCreator = {
         label: "new fragment",
-        componentId: "fragment-.template",
+        componentId: `fragment-${FRAGMENT_TEMPLATE_ID}`,
         node: {
             id: "",
             ref: {
-                id: ".template",
+                id: FRAGMENT_TEMPLATE_ID,
                 parameters: [],
                 outputVariableNames: {
                     output: "output",
@@ -67,7 +68,7 @@ const appendFragmentCreator = curryRight((groups: ComponentGroup[], isFragment: 
 
     return replaceOrAdd<ComponentGroup>(
         groups,
-        ({ name }) => name === groupName,
+        ({ name }) => name.toLowerCase() === groupName.toLowerCase(),
         (
             { components, ...group } = {
                 name: groupName,
@@ -90,7 +91,7 @@ export const getComponentGroupsExtender = createSelector(
     getAdditionalComponents,
     (stickyNotesSettings, pristine, isFragment, userSettings, additionalComponents): ((c: ComponentGroup[]) => ComponentGroup[]) =>
         compactFlow(
-            userSettings["cloud.componentCreators"] && appendFragmentCreator(isFragment),
+            userSettings["node.fragmentCreator"] && appendFragmentCreator(isFragment),
             userSettings["cloud.componentCreators"] && appendAdditionalCreators(additionalComponents),
             appendStickyNotes(stickyNotesSettings, pristine),
         ),
