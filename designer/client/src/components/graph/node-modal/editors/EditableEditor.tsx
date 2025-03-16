@@ -71,6 +71,8 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
 
 EditableEditor.displayName = "EditableEditor";
 
+const LABEL_MARGIN_WHEN_FIELD_SWITCH_VISIBLE = "27px";
+
 function EditableEditorRow({
     rowClassName,
     renderFieldLabel,
@@ -83,10 +85,16 @@ function EditableEditorRow({
     return (
         <FormControl
             className={cx(rowClassName && rowClassName)}
-            sx={{ width: "100%", margin: rowClassName && 0, "& .MuiFormLabel-root": { marginTop: !props.readOnly && "20px" } }}
+            sx={{
+                width: "100%",
+                margin: rowClassName && 0,
+                "& .MuiFormLabel-root": {
+                    marginTop: !props.readOnly && props.showSwitch ? LABEL_MARGIN_WHEN_FIELD_SWITCH_VISIBLE : undefined,
+                },
+            }}
         >
             <>
-                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel sx={{ marginTop: !props.readOnly && "20px" }} />}
+                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
                 <EditableEditor {...props} />
             </>
         </FormControl>
