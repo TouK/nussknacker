@@ -27,7 +27,7 @@ export const getCreatorType = (node: NodeType): string | null => {
         return "aggregate";
     }
     if (node.additionalFields?.creatorType) {
-        return node.additionalFields?.creatorType;
+        return node.additionalFields.creatorType;
     }
     if (node.type === "VariableBuilder") {
         return getCreatorTypeFromFakeVar(node.varName);
