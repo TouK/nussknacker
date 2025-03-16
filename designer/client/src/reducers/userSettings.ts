@@ -8,8 +8,9 @@ type SettingsNames =
     | "node.showAggregateSwitcher"
     | "node.shortCounts"
     | "node.showInputsAndOutputs"
-    | `survey-panel(${string}).closed`
+    | "node.fragmentCreator"
     | "cloud.componentCreators"
+    | `survey-panel(${string}).closed`
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
     | "debug.userSettingsVisible";

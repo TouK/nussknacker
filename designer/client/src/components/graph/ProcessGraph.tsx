@@ -165,7 +165,7 @@ const FRAGMENT_TEMPLATE = {
     additionalBranches: [],
 };
 
-function createFragmentAction(scenario: Scenario, callback: (node: NodeType) => void): ThunkAction {
+function createFragmentAction(scenario: Scenario, callback: (node: NodeType | null) => void): ThunkAction {
     return async (dispatch, getState) => {
         await dispatch(fetchScenarios());
         const scenarios = getScenariosNames(getState());
@@ -182,10 +182,16 @@ function createFragmentAction(scenario: Scenario, callback: (node: NodeType) => 
         const { data } = await HttpService.importProcess(uniqueName, jsonToFileInFormData(FRAGMENT_TEMPLATE));
         await HttpService.saveProcess(uniqueName, data.scenarioGraph, "import placeholder data", []);
         const { componentGroups } = await dispatch(fetchProcessDefinition(processingType, false));
-        const component = componentGroups.find((g) => g.name === "fragments")?.components.find((c) => c.label === uniqueName);
-        callback({
-            ...component.node,
-            id: component.label,
-        });
+        const component = componentGroups
+            .find((g) => g.name.toLowerCase() === "fragments")
+            ?.components.find((c) => c.componentId === `fragment-${uniqueName}`);
+        callback(
+            component
+                ? {
+                      ...component.node,
+                      id: component.label,
+                  }
+                : null,
+        );
     };
 }
