@@ -1,6 +1,6 @@
 import { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
 import api from "../api";
-import { getRemoteAppId, getRemoteHost, getRemoteTenantId } from "./selectors/isCloudInstance";
+import { getRemoteAppId, getRemoteApiHost, getRemoteTenantId } from "./selectors/isCloudInstance";
 
 export type CloudDataType = NonNullable<{
     additionalComponents: string[];
@@ -39,7 +39,7 @@ export function getAdditionalComponents(): ThunkAction {
         const state = getState();
         dispatch({ type: "GET_ADDITIONAL_COMPONENTS" });
 
-        const cloudHost = getRemoteHost(state);
+        const cloudHost = getRemoteApiHost(state);
         const appId = getRemoteAppId(state);
 
         const { data } = await api.get(`//tenant-manager-api.${cloudHost}/api/applications/${appId}`);
@@ -56,7 +56,7 @@ export function getConfiguredAdditionalComponents(): ThunkAction {
         const state = getState();
         dispatch({ type: "GET_CONFIGURED_ADDITIONAL_COMPONENTS" });
 
-        const cloudHost = getRemoteHost(state);
+        const cloudHost = getRemoteApiHost(state);
         const appId = getRemoteAppId(state);
         const tenantId = getRemoteTenantId(state);
 
