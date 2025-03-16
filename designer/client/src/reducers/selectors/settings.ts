@@ -1,11 +1,9 @@
-import { isEqual, uniqBy } from "lodash";
-import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
+import { uniqBy } from "lodash";
+import { createSelector } from "reselect";
 import { MetricsType } from "../../actions/nk";
 import { DynamicTabData } from "../../containers/DynamicTab";
 import { RootState } from "../index";
 import { AuthenticationSettings, SettingsState } from "../settings";
-
-const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
 export const getSettings = (state: RootState): SettingsState => state.settings;
 

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
+import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
@@ -40,11 +41,12 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const dispatch = useDispatch();
     const [settings] = useUserSettings();
+    const isCloud = useSelector(isCloudInstance);
     useEffect(() => {
-        if (settings["cloud.componentCreators"]) {
+        if (isCloud && settings["cloud.componentCreators"]) {
             dispatch(getAdditionalComponents());
         }
-    }, [dispatch, settings]);
+    }, [dispatch, isCloud, settings]);
 
     const { componentGroups } = useSelector(getProcessDefinitionData);
 
