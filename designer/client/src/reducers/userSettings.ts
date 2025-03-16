@@ -5,7 +5,7 @@ import { Reducer } from "../actions/reduxTypes";
 type SettingsNames =
     | `${string}.showLines`
     | `${string}.noWrap`
-    | "node.showSwitcher"
+    | "node.showAggregateSwitcher"
     | "node.shortCounts"
     | "node.showInputsAndOutputs"
     | `survey-panel(${string}).closed`
