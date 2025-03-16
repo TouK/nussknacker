@@ -1,12 +1,19 @@
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { assignSettings, SettingsData } from "../actions/nk";
+import { useUserSettings } from "../common/userSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService";
+import { UserSettings } from "../reducers/userSettings";
 
 export function SettingsProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
     const [data, setData] = useState<SettingsData>(null);
     const dispatch = useDispatch();
+
+    const [, toggleUserSettings] = useUserSettings();
+    useEffect(() => {
+        window["$setUserFlag"] = (flag: keyof UserSettings) => toggleUserSettings([flag]);
+    }, [toggleUserSettings]);
 
     useEffect(() => {
         HttpService.fetchSettingsWithAuth()
