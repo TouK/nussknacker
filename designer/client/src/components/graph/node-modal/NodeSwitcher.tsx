@@ -5,6 +5,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { createUniqueName } from "../../../reducers/graph/utils";
 import { getNodes } from "../../../reducers/selectors/graph";
+import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { Component } from "../../../types";
 import { editors, EditorType } from "./editors/expression/Editor";
@@ -32,11 +33,12 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     }, [componentsNamesToSelect, processDefinitionData.componentGroups]);
 
     const dispatch = useDispatch();
+    const isCloud = useSelector(isCloudInstance);
     useEffect(() => {
-        if (processDefinitionData) {
+        if (isCloud && processDefinitionData) {
             dispatch(getConfiguredAdditionalComponents());
         }
-    }, [dispatch, processDefinitionData]);
+    }, [dispatch, isCloud, processDefinitionData]);
 
     const Editor = editors[EditorType.FIXED_VALUES_PARAMETER_EDITOR];
 
