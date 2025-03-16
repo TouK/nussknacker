@@ -73,7 +73,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         return <>{typeof children === "function" ? children(selectedEditor) : children}</>;
     }
     return (
-        <Box display="block" flexBasis={"80%"} width={"100%"}>
+        <Box display="block" flexBasis={"60%"} flex={1} width={"100%"}>
             <Box display="flex" justifyContent="flex-end">
                 <Tabs
                     value={
