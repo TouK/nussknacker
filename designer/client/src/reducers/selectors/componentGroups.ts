@@ -1,12 +1,11 @@
+import { compact, curryRight, flow, Many } from "lodash";
 import { createSelector } from "reselect";
 import { StickyNotesSettings } from "../../actions/nk";
 import { stickyNoteComponentGroup } from "../../components/toolbars/creator/StickyNoteComponent";
 import { ComponentGroup } from "../../types";
-import { RootState } from "../index";
 import { getCreator } from "./getCreator";
 import { isFragment, isPristine } from "./graph";
 import { getAdditionalComponents } from "./isCloudInstance";
-import { getProcessDefinitionData } from "./processDefinitionData";
 import { getStickyNotesSettings } from "./settings";
 import { getUserSettings } from "./userSettings";
 
@@ -19,19 +18,19 @@ function addUniqueElement<T extends { name: string }>(array: T[], newElement: T)
     return updatedArray;
 }
 
-export const appendAdditionalCreators = (groups: ComponentGroup[], additionalCreators: string[]) => {
+const appendAdditionalCreators = curryRight((groups: ComponentGroup[], additionalCreators: string[]) => {
     if (!additionalCreators.length) return groups;
     const newElement = {
-        name: "cloud addons",
+        name: "Cloud addons",
         components: additionalCreators.map(getCreator),
     };
     return addUniqueElement(groups, newElement);
-};
+});
 
-function appendStickyNotes(groups: ComponentGroup[], stickyNotesSettings: StickyNotesSettings, pristine: boolean) {
+const appendStickyNotes = curryRight((groups: ComponentGroup[], stickyNotesSettings: StickyNotesSettings, pristine: boolean) => {
     if (!stickyNotesSettings.enabled) return groups;
     return groups.concat(stickyNoteComponentGroup(pristine));
-}
+});
 
 function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, replaceOrAddFn: (item?: T) => T): T[] {
     const index = collection.findIndex(predicate);
@@ -41,7 +40,7 @@ function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, 
     return [...collection.slice(0, index), replaceOrAddFn(currentItem), ...collection.slice(index + 1)];
 }
 
-function appendFragmentCreator(groups: ComponentGroup[], isFragment?: boolean) {
+const appendFragmentCreator = curryRight((groups: ComponentGroup[], isFragment: boolean) => {
     if (isFragment) return groups;
     const groupName = "Fragments";
 
@@ -79,36 +78,20 @@ function appendFragmentCreator(groups: ComponentGroup[], isFragment?: boolean) {
             components: [...components, fragmentCreator as any],
         }),
     );
-}
+});
 
-export const getComponentGroups = createSelector(
-    (_: RootState, groups: ComponentGroup[] = []) => groups,
+const compactFlow = (...func: Array<Many<(...args: any[]) => any>>) => flow(...compact(func));
+
+export const getComponentGroupsExtender = createSelector(
     getStickyNotesSettings,
     isPristine,
     isFragment,
     getUserSettings,
     getAdditionalComponents,
-    (componentGroups, stickyNotesSettings, pristine, isFragment, userSettings, additionalComponents) => {
-        let groups: ComponentGroup[] = componentGroups;
-        groups = appendStickyNotes(groups, stickyNotesSettings, pristine);
-        if (userSettings["cloud.componentCreators"]) {
-            groups = appendFragmentCreator(groups, isFragment);
-            groups = appendAdditionalCreators(groups, additionalComponents);
-        }
-        return groups;
-    },
-);
-
-const cloudConfiguredComponents = (state: RootState) => state.cloudData?.configuredComponents;
-
-export const getConfiguredAdditionalComponents = createSelector(
-    getProcessDefinitionData,
-    cloudConfiguredComponents,
-    ({ componentGroups }, configured) => {
-        return componentGroups
-            .flatMap((g) => g.components)
-            .flatMap(({ componentId }) =>
-                configured.map(({ name, type }) => (componentId.includes(name) ? { componentId, type } : null)).filter(Boolean),
-            );
-    },
+    (stickyNotesSettings, pristine, isFragment, userSettings, additionalComponents): ((c: ComponentGroup[]) => ComponentGroup[]) =>
+        compactFlow(
+            userSettings["cloud.componentCreators"] && appendFragmentCreator(isFragment),
+            userSettings["cloud.componentCreators"] && appendAdditionalCreators(additionalComponents),
+            appendStickyNotes(stickyNotesSettings, pristine),
+        ),
 );
