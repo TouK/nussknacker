@@ -7,20 +7,25 @@ import NodeUtils from "../NodeUtils";
 import { isEdgeConnected } from "./EdgeUtils";
 import { updateChangedCells } from "./updateChangedCells";
 import { Theme } from "@mui/material";
-import { StickyNote } from "../../../common/StickyNote";
+import { partition } from "lodash";
 import { makeStickyNoteElement, ModelWithTool } from "../EspNode/stickyNoteElements";
+import { StickyNoteType } from "../../../types/stickyNote";
 
 export function applyCellChanges(
     paper: dia.Paper,
     scenarioGraph: ScenarioGraph,
-    stickyNotes: StickyNote[],
     processDefinitionData: ProcessDefinitionData,
     theme: Theme,
 ): void {
     const graph = paper.model;
 
-    const nodeElements = NodeUtils.nodesFromScenarioGraph(scenarioGraph).map(makeElement(processDefinitionData, theme));
-    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNotes.map(makeStickyNoteElement(processDefinitionData, theme));
+    const [stickyNoteElements, scenarioNodeElements] = partition(
+        NodeUtils.nodesFromScenarioGraph(scenarioGraph),
+        (n) => n.type == StickyNoteType,
+    );
+
+    const nodeElements = scenarioNodeElements.map(makeElement(processDefinitionData, theme));
+    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements.map(makeStickyNoteElement(processDefinitionData, theme));
     const stickyNotesModels = stickyNotesModelsWithTools.map((a) => a.model);
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
@@ -32,18 +37,21 @@ export function applyCellChanges(
     const currentCells = graph.getCells();
     const currentIds = currentCells.map((c) => c.id);
     const newCells = cells.filter((cell) => !currentIds.includes(cell.id));
-    const newStickyNotesModelsWithTools = stickyNotesModelsWithTools.filter((s) => !currentIds.includes(s.model.id));
     const deletedCells = currentCells.filter((oldCell) => !cells.find((cell) => cell.id === oldCell.id));
     const changedCells = cells.filter((cell) => {
         const old = graph.getCell(cell.id);
         return old && !isEqual(old.get("definitionToCompare"), cell.get("definitionToCompare"));
     });
 
+    const stickyNotesToolsToAdd = stickyNotesModelsWithTools.filter(
+        (s) => !currentIds.includes(s.model.id) || changedCells.find((a) => a.id == s.model.id),
+    );
+
     graph.removeCells(deletedCells);
     updateChangedCells(graph, changedCells);
     graph.addCells(newCells);
 
-    newStickyNotesModelsWithTools.forEach((m) => {
+    stickyNotesToolsToAdd.forEach((m) => {
         try {
             const view = m.model.findView(paper);
             if (!view) {

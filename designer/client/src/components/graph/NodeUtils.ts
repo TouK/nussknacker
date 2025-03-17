@@ -1,7 +1,17 @@
 /* eslint-disable i18next/no-literal-string */
 import { isEqual, uniqBy } from "lodash";
 import ProcessUtils from "../../common/ProcessUtils";
-import { Edge, EdgeKind, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import {
+    Edge,
+    EdgeKind,
+    EdgeType,
+    FragmentNodeType,
+    NodeId,
+    NodeType,
+    ProcessDefinitionData,
+    ScenarioGraph,
+    StickyNoteNodeType,
+} from "../../types";
 import { createEdge } from "../../reducers/graph/utils";
 import { Scenario } from "../Process/types";
 

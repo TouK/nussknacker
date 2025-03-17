@@ -3,7 +3,7 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { extractStickyNotesFromNodes, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import { UserData } from "../common/models/User";
@@ -28,8 +28,6 @@ import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitio
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
-import { Dimensions, StickyNote } from "../common/StickyNote";
-import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
 import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 
 type HealthCheckProcessDeploymentType = {
@@ -720,57 +718,6 @@ class HttpService {
         return promise;
     }
 
-    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions) {
-        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
-            scenarioVersionId,
-            content: "",
-            layoutData: position,
-            color: STICKY_NOTE_DEFAULT_COLOR, //TODO add config for default sticky note color? For now this is default.
-            dimensions: dimensions,
-        });
-        promise.catch((error) => {
-            const errorMsg: string = error?.response?.data;
-            this.#addError("Failed to add sticky note" + (errorMsg ? ": " + errorMsg : ""), error, true);
-        });
-        return promise;
-    }
-
-    deleteStickyNote(scenarioName: string, stickyNoteId: number) {
-        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNoteId}`);
-        promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNoteId}`),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
-    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
-        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
-            noteId: stickyNote.noteId,
-            scenarioVersionId,
-            content: stickyNote.content,
-            layoutData: stickyNote.layoutData,
-            color: stickyNote.color,
-            dimensions: stickyNote.dimensions,
-        });
-        promise.catch((error) => {
-            const errorMsg = error?.response?.data;
-            this.#addError("Failed to update sticky note" + errorMsg ? ": " + errorMsg : "", error, true);
-        });
-        return promise;
-    }
-
-    getStickyNotes(scenarioName: string, scenarioVersionId: number): Promise<AxiosResponse<StickyNote[]>> {
-        const promise = api.get(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes?scenarioVersionId=${scenarioVersionId}`);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetStickyNotes", "Failed to get sticky notes"), error, true),
-        );
-        return promise;
-    }
-
     fetchProcessCounts(processName: string, dateFrom: Moment, dateTo: Moment): Promise<AxiosResponse<ProcessCounts>> {
         //we use offset date time instead of timestamp to pass info about user time zone to BE
         const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ");
@@ -1040,7 +987,8 @@ class HttpService {
     }
 
     #sanitizeScenarioGraph(scenarioGraph: ScenarioGraph) {
-        return withoutHackOfEmptyEdges(scenarioGraph);
+        const nodeStickyNoteSortedGraph = extractStickyNotesFromNodes(scenarioGraph);
+        return withoutHackOfEmptyEdges(nodeStickyNoteSortedGraph);
     }
 
     #requestCanceled(error: AxiosError<unknown>) {

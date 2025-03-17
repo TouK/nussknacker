@@ -5,7 +5,7 @@ import { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import * as GraphUtils from "../../components/graph/utils/graphUtils";
-import { ValidationResult } from "../../types";
+import { Dimensions, ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
@@ -16,12 +16,9 @@ import { selectionState } from "./selectionState";
 import { GraphState } from "./types";
 import {
     addNodesWithLayout,
-    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
-    prepareNewStickyNotesWithLayout,
-    removeStickyNoteFromLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -239,16 +236,27 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: action.layout,
             });
         }
-        case "STICKY_NOTES_UPDATED": {
-            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+
+        case "STICKY_NOTE_UPDATED": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const updatedNodes = nodes.map((node) =>
+                node.id === action.element.id
+                    ? {
+                          ...node,
+                          dimensions: action.element.attributes.size as Dimensions,
+                          content: action.content ? action.content : node.content,
+                      }
+                    : node,
+            );
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
-            };
-        }
-        case "STICKY_NOTE_DELETED": {
-            const { stickyNotes, layout } = removeStickyNoteFromLayout(state, action.stickyNoteId);
-            return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: updatedNodes,
+                    },
+                },
             };
         }
         case "NODES_WITH_EDGES_ADDED": {

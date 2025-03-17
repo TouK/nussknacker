@@ -1,11 +1,11 @@
 import { Theme } from "@mui/material";
 import { dia, shapes, util, V } from "jointjs";
 import { getBorderColor } from "../../../containers/theme/helpers";
-import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
 import { StickyNoteElement } from "../StickyNoteElement";
 import MarkupNodeJSON = dia.MarkupNodeJSON;
 import DOMPurify from "dompurify";
+import { StickyNoteNodeType } from "../../../types";
 
 export const STICKY_NOTE_CONSTRAINTS = {
     MIN_WIDTH: 100,
@@ -79,7 +79,7 @@ const prepareSvgObject = (content: string) =>
 const escapeHtmlContent = (content: string) =>
     content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 
-const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
+const foreignObject = (stickyNote: StickyNoteNodeType): MarkupNodeJSON => {
     try {
         const contentWithHtmlTagsSanitized = escapeHtmlContent(stickyNote.content);
         let parsed = DOMPurify.sanitize(marked.parse(contentWithHtmlTagsSanitized, { renderer }), { ADD_ATTR: ["target"] });
@@ -130,11 +130,11 @@ const defaults = (theme: Theme) =>
         shapes.devs.Model.prototype.defaults,
     );
 
-const protoProps = (theme: Theme, stickyNote: StickyNote) => {
+const protoProps = (theme: Theme, stickyNote: StickyNoteNodeType) => {
     return {
         markup: [body, border, foreignObject(stickyNote), icon],
     };
 };
 
-export const StickyNoteShape = (theme: Theme, stickyNote: StickyNote) =>
+export const StickyNoteShape = (theme: Theme, stickyNote: StickyNoteNodeType) =>
     StickyNoteElement(defaults(theme), protoProps(theme, stickyNote)) as typeof shapes.devs.Model;

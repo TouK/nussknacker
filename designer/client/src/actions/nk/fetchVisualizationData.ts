@@ -1,5 +1,5 @@
 import { ThunkAction } from "../reduxTypes";
-import { displayTestCapabilities, fetchStickyNotesForScenario } from "./process";
+import { displayTestCapabilities } from "./process";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
 import { ProcessName } from "../../components/Process/types";
@@ -30,7 +30,6 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
             });
             dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayTestCapabilities(name, scenario.scenarioGraph));
-            dispatch(fetchStickyNotesForScenario(name, scenario.processVersionId));
             HttpService.validateProcess(name, name, scenario.scenarioGraph).then(({ data }) =>
                 dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
             );
