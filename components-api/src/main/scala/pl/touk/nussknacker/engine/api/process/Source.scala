@@ -50,26 +50,6 @@ trait TestWithParametersSupport[+T] { self: Source =>
 }
 
 /**
- * Optional functionality which should provide field definitions based on input schema
- * Based on those fields UI creates a window allowing user to test scenario based on schema.
- */
-// This trait extends TestWithParametersSupport in order to preserve binary compatibility.
-// It should eventually fully replace TestWithParametersSupport.
-trait DryRunTestSupport[+T] extends TestWithParametersSupport[T] { self: Source =>
-
-  def testParametersDefinition: List[Parameter]
-
-  def parametersToTestData(
-      params: Map[ParameterName, AnyRef],
-      converter: ToEvaluateFunctionConverter,
-  ): List[T]
-
-  override def parametersToTestData(params: Map[ParameterName, AnyRef]): T =
-    throw new IllegalArgumentException(s"This method should never be called")
-
-}
-
-/**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
   * IMPORTANT lifecycle notice:
