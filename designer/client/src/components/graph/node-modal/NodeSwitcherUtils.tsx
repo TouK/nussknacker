@@ -1,6 +1,7 @@
 import { cloneDeep, defaultsDeep, isArray, isPlainObject, mergeWith } from "lodash";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { fakeComponentType, fakeNodeCreatorType } from "../../../reducers/selectors/getCreator";
+import { fakeComponentType } from "../../../reducers/selectors/appendAdditionalCreators";
+import { fakeNodeCreatorType } from "../../../reducers/selectors/getCreator";
 import { ComponentGroup, Edge, EdgeKind, NodeType, ProcessDefinitionData } from "../../../types";
 import NodeUtils from "../NodeUtils";
 import { ExpressionLang } from "./editors/expression/types";

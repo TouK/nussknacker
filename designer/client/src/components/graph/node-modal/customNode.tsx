@@ -5,6 +5,7 @@ import { AggregateParametersList } from "./aggregateParametersList";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
+import { isAggregate } from "./isAggregate";
 import { NodeField } from "./NodeField";
 import { ParametersList } from "./parametersList";
 
@@ -20,10 +21,6 @@ export type CustomNodeProps = {
     showSwitch?: boolean;
     showValidation?: boolean;
 };
-
-export function isAggregate(node: NodeType) {
-    return ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
-}
 
 export function CustomNode({
     children,
