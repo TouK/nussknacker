@@ -269,7 +269,7 @@
         "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io npm run start:backend-remote",
         "start:backend-demo": "BACKEND_DOMAIN=https://demo.nussknacker.io npm run start:backend-remote",
         "start:backend-cloud": "BACKEND_DOMAIN=https://light-pink-silkworm-nussknacker.staging-cloud.nussknacker.io npm run start:backend-remote",
-        "backend:docker": "docker compose kill && docker compose rm -f -v && COMPOSE_MENU=false docker compose up --no-recreate > /dev/null",
+        "backend:docker": "docker-compose kill && docker-compose rm -f -v && docker-compose up --no-recreate > /dev/null",
         "pretest": "npm run check",
         "test:unit": "jest --reporters=default --reporters=jest-junit",
         "test:e2e": "cypress run",
