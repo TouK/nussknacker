@@ -14,7 +14,7 @@ export const Subtype = styled(IconModalTitle)(({ theme }) => {
         backgroundColor,
         padding: theme.spacing(0, 1.6),
         columnGap: theme.spacing(1),
-
+        height: "100%",
         "a > &": {
             color: color,
             ":hover": {
