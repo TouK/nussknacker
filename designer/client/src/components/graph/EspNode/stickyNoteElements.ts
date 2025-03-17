@@ -1,4 +1,4 @@
-import { ProcessDefinitionData, StickyNoteNodeType } from "../../../types";
+import { StickyNoteNodeType } from "../../../types";
 import { Theme } from "@mui/material";
 import { dia, elementTools, shapes } from "jointjs";
 import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
@@ -11,10 +11,7 @@ export type ModelWithTool = {
     tools: dia.ToolsView;
 };
 
-export function makeStickyNoteElement(
-    processDefinitionData: ProcessDefinitionData,
-    theme: Theme,
-): (stickyNote: StickyNoteNodeType) => ModelWithTool {
+export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNodeType) => ModelWithTool {
     return (stickyNote: StickyNoteNodeType) => {
         const attributes: shapes.devs.ModelAttributes = {
             id: stickyNote.id,
@@ -53,18 +50,6 @@ export function makeStickyNoteElement(
 
         const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote);
         const stickyNoteModel = new ThemedStickyNoteShape(attributes);
-
-        const removeButtonTool = new elementTools.Remove({
-            focusOpacity: 0.5,
-            rotate: true,
-            x: stickyNote.dimensions.width - 20,
-            y: "0%",
-            offset: { x: 0, y: 20 },
-            className: "sticky-note-remove-tool",
-            action: function () {
-                stickyNoteModel.trigger(Events.CELL_DELETED, stickyNoteModel);
-            },
-        });
 
         const ResizeTool = elementTools.Control.extend({
             children: [
@@ -127,7 +112,6 @@ export function makeStickyNoteElement(
                     selector: "body",
                     scale: 2,
                 }),
-                removeButtonTool,
             ],
         });
         stickyNoteModel.resize(

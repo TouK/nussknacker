@@ -1,5 +1,5 @@
 import { ThunkAction } from "../reduxTypes";
-import { displayTestCapabilities } from "./process";
+import { addStickyNotesToNodes, displayTestCapabilities } from "./process";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
 import { ProcessName } from "../../components/Process/types";
@@ -22,7 +22,7 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
         try {
             dispatch({ type: "PROCESS_FETCH" });
             const response = await HttpService.fetchLatestProcessDetailsWithoutValidation(processName);
-            const scenario = response.data;
+            const scenario = addStickyNotesToNodes(response.data);
             const { name, isFragment, processingType } = scenario;
             await dispatch(fetchProcessDefinition(processingType, isFragment)).then((processDefinitionData) => {
                 dispatch({ type: "DISPLAY_PROCESS", scenario: scenario });
