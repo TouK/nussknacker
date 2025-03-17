@@ -10,7 +10,6 @@ import { useTranslation } from "react-i18next";
 import { lighten, styled } from "@mui/material";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
-import { isPristine } from "../../../reducers/selectors/graph";
 import { concat } from "lodash";
 import { stickyNoteComponentGroup } from "./StickyNoteComponent";
 
