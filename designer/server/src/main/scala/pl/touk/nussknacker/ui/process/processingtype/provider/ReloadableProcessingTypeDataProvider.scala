@@ -26,7 +26,7 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] 
     extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
     with LazyLogging {
 
-  def reloadAll(): IO[Unit] = {
+  def reloadAll: IO[Unit] = {
     accessStateInCriticalSection { stateOps =>
       for {
         beforeReload <- stateOps.value

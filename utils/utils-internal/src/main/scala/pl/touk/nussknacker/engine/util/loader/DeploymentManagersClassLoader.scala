@@ -5,12 +5,21 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.UrlUtils.ExpandFiles
 
 import java.net.URL
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 object DeploymentManagersClassLoader extends LazyLogging {
 
   def create(managersDirs: List[Path]): Resource[IO, DeploymentManagersClassLoader] = {
+    val invalidPaths = managersDirs
+      .map(p => (p, !Files.isDirectory(p)))
+      .collect { case (p, true) => p }
+
+    if (invalidPaths.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Cannot find the following directories: ${invalidPaths.mkString(", ")}"
+      )
+
     Resource.make(
       acquire = IO.delay {
         logger.debug(

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
+import pl.touk.nussknacker.ui.config.ComponentLinkConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
   FetchAllWithoutUsages,
@@ -69,7 +69,7 @@ object DefaultComponentService {
 }
 
 class DefaultComponentService(
-    componentLinksConfig: ComponentLinksConfig,
+    componentLinksConfig: List[ComponentLinkConfig],
     processingTypeDataProvider: ProcessingTypeDataProvider[ComponentServiceProcessingTypeData, _],
     processService: ProcessService,
     fragmentsRepository: FragmentRepository

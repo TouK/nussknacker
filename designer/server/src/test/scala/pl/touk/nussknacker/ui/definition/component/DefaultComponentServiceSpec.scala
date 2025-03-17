@@ -29,7 +29,7 @@ import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManager
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
-import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
+import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, DesignerConfig}
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
@@ -118,7 +118,7 @@ class DefaultComponentServiceSpec
 
   private val filterDocsLink = ComponentLink.createDocumentationLink(filterDocsUrl)
 
-  private val componentLinksConfig = ComponentLinksConfigExtractor.extract(
+  private val componentLinksConfig = DesignerConfig.parseComponentLinksConfig(
     ConfigFactory.parseString(
       s"""
       componentLinks: [

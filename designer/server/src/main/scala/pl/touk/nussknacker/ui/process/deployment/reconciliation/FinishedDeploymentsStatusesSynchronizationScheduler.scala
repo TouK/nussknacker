@@ -49,14 +49,3 @@ final case class FinishedDeploymentsStatusesSynchronizationConfig(
     delayBetweenSynchronizations: FiniteDuration = 5 minutes,
     synchronizationTimeout: FiniteDuration = 30 seconds
 )
-
-object FinishedDeploymentsStatusesSynchronizationConfig {
-
-  val ConfigPath = "finishedDeploymentStatusesSynchronization"
-
-  def parse(config: Config): FinishedDeploymentsStatusesSynchronizationConfig =
-    config
-      .getAs[FinishedDeploymentsStatusesSynchronizationConfig](ConfigPath)
-      .getOrElse(FinishedDeploymentsStatusesSynchronizationConfig())
-
-}

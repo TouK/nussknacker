@@ -45,7 +45,6 @@ class RequestResponseEmbeddedDeploymentManagerTest
     val dependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
       new ProcessingTypeActionServiceStub,
-      NoOpScenarioActivityManager,
       as.dispatcher,
       IORuntime.global,
       as,

@@ -110,7 +110,7 @@ class ProcessesResourcesSpec
 
   private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
-  override def designerConfig: Config = super.designerConfig
+  override def designerRawConfig: Config = super.designerRawConfig
     .withValue(
       "scenarioTypes.streaming1.modelConfig.kafka.topicsExistenceValidationConfig.enabled",
       ConfigValueFactory.fromAnyRef("false")
@@ -1302,7 +1302,7 @@ class ProcessesResourcesSpec
   }
 
   test("fetching scenario toolbar definitions") {
-    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(designerConfig).getConfig(Category1.stringify)
+    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(designerRawConfig).getConfig(Category1.stringify)
     val id            = createEmptyScenario(processName, category = Category1)
 
     withProcessToolbars(processName) { toolbar =>

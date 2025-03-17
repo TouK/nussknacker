@@ -12,7 +12,7 @@ class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
          }
       """.stripMargin)
 
-    SslConfigParser.sslEnabled(config) shouldBe empty
+    SslConfigParser.parseSslConfig(config) shouldBe empty
   }
 
   it should "parse enabled ssl configuration" in {
@@ -25,7 +25,7 @@ class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
          }
       """.stripMargin)
 
-    val keyStoreConfig = SslConfigParser.sslEnabled(config).value
+    val keyStoreConfig = SslConfigParser.parseSslConfig(config).value
     new String(keyStoreConfig.password) shouldEqual "foobar"
   }
 
@@ -39,7 +39,7 @@ class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
          }
       """.stripMargin)
 
-    SslConfigParser.sslEnabled(config) shouldBe empty
+    SslConfigParser.parseSslConfig(config) shouldBe empty
   }
 
 }

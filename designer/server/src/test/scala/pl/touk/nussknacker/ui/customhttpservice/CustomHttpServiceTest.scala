@@ -18,7 +18,7 @@ class CustomHttpServiceTest
     with Matchers
     with OptionValues {
 
-  override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
+  override def designerRawConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   test("send request to the http endpoint exposed by CustomHttpService SPI with authentication data") {
     val response1 = httpClient.send(
