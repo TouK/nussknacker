@@ -104,7 +104,25 @@ class FlinkKafkaSource[T](
           label = Some("Offset reset strategy"),
           hintText = None
         ),
-      )
+      ),
+      ScenarioActionName("REDEPLOY") -> Map(
+        OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
+          defaultValue = Some(OffsetResetStrategy.None.toString),
+          editor = Some(
+            FixedValuesWithRadioParameterEditor(
+              List(
+                FixedExpressionValue(
+                  OffsetResetStrategy.None.toString,
+                  s"Resume reading where it previously stopped"
+                ),
+              )
+            )
+          ),
+          validators = None,
+          label = Some("Offset reset strategy"),
+          hintText = None
+        ),
+      ),
     )
   }
 
