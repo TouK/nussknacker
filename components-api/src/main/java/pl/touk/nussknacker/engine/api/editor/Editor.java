@@ -30,7 +30,7 @@ public @interface Editor {
     String dictId() default "";
 
     /**
-     * This field could be used if this editor is used together with {@link SpelEditor} and means the editor will be displayed at first on the UI.
+     * Whether the editor will be displayed at first on the UI.
      */
     boolean isMainEditor() default false;
 }

@@ -36,7 +36,6 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 import scala.jdk.CollectionConverters._
 
-// TODO: LBG maybe this tests should have spelTemplate as default?
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
