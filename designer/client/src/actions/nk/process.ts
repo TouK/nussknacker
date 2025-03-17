@@ -13,7 +13,7 @@ export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
     | { type: "DISPLAY_PROCESS"; scenario: Scenario };
 
-function addStickyNotesToNodes(data: Scenario): Scenario {
+export function addStickyNotesToNodes(data: Scenario): Scenario {
     const stickyNotesWithType = data.scenarioGraph.stickyNotes.map((name) => ({
         ...name,
         type: StickyNoteType,

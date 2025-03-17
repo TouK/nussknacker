@@ -25,7 +25,7 @@ export function applyCellChanges(
     );
 
     const nodeElements = scenarioNodeElements.map(makeElement(processDefinitionData, theme));
-    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements.map(makeStickyNoteElement(processDefinitionData, theme));
+    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements.map(makeStickyNoteElement(theme));
     const stickyNotesModels = stickyNotesModelsWithTools.map((a) => a.model);
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
