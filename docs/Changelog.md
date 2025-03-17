@@ -119,7 +119,7 @@
 * [#7649](https://github.com/TouK/nussknacker/pull/7649) Renamed 'sticky note' component label to 'Sticky Note' and assigned it to the 'Misc' component group
 * [#7626](https://github.com/TouK/nussknacker/pull/7626) Added test capabilities (tests from file and ad-hoc) for Event Generator source
 * [#7590](https://github.com/TouK/nussknacker/pull/7590) Replaced Akka and Akka HTTP libraries with Apache Pekko (1.0.3) and Apache Pekko HTTP (1.0.1)
-* [#7643](https://github.com/TouK/nussknacker/pull/7643) Provide support for displaying multiple editors on frontend
+* [#7673](https://github.com/TouK/nussknacker/pull/7673) Improve the node documentation link in the node header
 
 ## 1.18
 

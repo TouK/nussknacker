@@ -1,4 +1,4 @@
-import { get, has, isEmpty } from "lodash";
+import { isEmpty } from "lodash";
 import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { useSelector } from "react-redux";
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
@@ -10,14 +10,6 @@ import { NodeDocs } from "./SubHeader";
 import { IconModalTitle } from "./IconModalTitle";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 import { styled } from "@mui/material";
-
-const nodeClassProperties = [`service.id`, `ref.typ`, `nodeType`, `ref.id`];
-
-const findNodeClass = (node: NodeType) =>
-    get(
-        node,
-        nodeClassProperties.find((property) => has(node, property)),
-    );
 
 const getNodeAttributes = (node: NodeType) => nodeAttributes[node.type];
 
