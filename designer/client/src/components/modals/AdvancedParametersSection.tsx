@@ -7,11 +7,20 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 
 interface Props {
     componentId: string;
+    onChange?: (isExpanded: boolean) => void;
+    expanded?: boolean;
 }
 
-export function AdvancedParametersSection({ children, componentId }: PropsWithChildren<Props>): JSX.Element {
+export function AdvancedParametersSection({ children, componentId, onChange, expanded }: PropsWithChildren<Props>): JSX.Element {
     return (
-        <Accordion disableGutters elevation={0} sx={{ border: 0, "&::before": { display: "none" } }}>
+        <Accordion
+            disableGutters
+            elevation={0}
+            sx={{ border: 0, "&::before": { display: "none" } }}
+            onChange={onChange != null ? (_, isExpanded) => onChange(isExpanded) : null}
+            expanded={expanded}
+            defaultExpanded={false}
+        >
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon sx={{ color: "inherit" }} />}
                 aria-controls={`${componentId}-content`}
