@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.embedded
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies}
-import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.{BaseModelDataProvider, CustomProcessValidator, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
@@ -20,7 +19,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   override val name: String = "lite-embedded"
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       engineConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
@@ -32,12 +31,12 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     )
 
     val metricRegistry = LiteMetricRegistryFactory
-      .usingHostnameAsDefaultInstanceId(modelData.namingStrategy.namespace)
+      .usingHostnameAsDefaultInstanceId(modelDataProvider.getCurrentModelData().namingStrategy.namespace)
       .prepareRegistry(engineConfig)
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
-    strategy.open(modelData.asInvokableModelData, contextPreparer)
-    valid(new EmbeddedDeploymentManager(modelData.asInvokableModelData, deployedScenariosProvider, strategy))
+    strategy.open(modelDataProvider, contextPreparer)
+    valid(new EmbeddedDeploymentManager(modelDataProvider, deployedScenariosProvider, strategy))
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =

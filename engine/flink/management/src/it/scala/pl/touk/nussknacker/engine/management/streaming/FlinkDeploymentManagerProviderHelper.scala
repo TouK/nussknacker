@@ -7,6 +7,7 @@ import cats.effect.unsafe.IORuntime
 import org.apache.pekko.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
@@ -47,7 +48,7 @@ object FlinkDeploymentManagerProviderHelper {
     )
     new FlinkDeploymentManagerProvider()
       .createDeploymentManager(
-        modelData,
+        modelData.toModelDataProvider,
         deploymentManagerDependencies,
         typeConfig.deploymentConfig,
         None

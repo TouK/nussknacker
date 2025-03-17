@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   ProcessingTypeActionServiceStub,
@@ -66,7 +67,7 @@ class K8sDeploymentManagerOnMocksTest
     val clientIdleTimeout = 1.second
     val k8sConfig         = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
     val manager = new K8sDeploymentManager(
-      LocalModelData(ConfigFactory.empty, List.empty),
+      LocalModelData(ConfigFactory.empty, List.empty).toModelDataProvider,
       k8sConfig,
       ConfigFactory.empty(),
       DeploymentManagerDependencies(

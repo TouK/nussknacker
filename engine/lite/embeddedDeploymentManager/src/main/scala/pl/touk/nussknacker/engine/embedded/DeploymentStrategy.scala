@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.embedded
 
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
@@ -14,10 +14,10 @@ import scala.util.Try
 trait DeploymentStrategy {
 
   protected var contextPreparer: LiteEngineRuntimeContextPreparer = _
-  protected var modelData: ModelData                              = _
+  protected var modelDataProvider: BaseModelDataProvider          = _
 
-  def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
-    this.modelData = modelData
+  def open(modelDataProvider: BaseModelDataProvider, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
+    this.modelDataProvider = modelDataProvider
     this.contextPreparer = contextPreparer
   }
 

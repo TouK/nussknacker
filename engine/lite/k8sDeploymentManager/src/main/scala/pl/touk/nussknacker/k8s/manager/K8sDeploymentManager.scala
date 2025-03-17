@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelDataProvider, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
@@ -44,7 +43,7 @@ import scala.language.reflectiveCalls
 import scala.util.Using
 
 class K8sDeploymentManager(
-    override protected val modelData: BaseModelData,
+    override protected val modelDataProvider: BaseModelDataProvider,
     config: K8sDeploymentManagerConfig,
     rawConfig: Config,
     dependencies: DeploymentManagerDependencies
@@ -92,8 +91,8 @@ class K8sDeploymentManager(
   private val ingressPreparerOpt          = config.ingress.map(new IngressPreparer(_, config.nussknackerInstanceName))
 
   // runtime config is combined from scenarioType.modelConfig and deploymentConfig.configExecutionOverrides
-  private val serializedRuntimeConfig = {
-    val inputConfig     = modelData.inputConfigDuringExecution
+  private def serializedRuntimeConfig() = {
+    val inputConfig     = modelDataProvider.getCurrentModelData().inputConfigDuringExecution
     val modelConfigPart = inputConfig.config.withoutPath("classPath").atPath("modelConfig")
     // TODO: should overrides apply only to model or to whole config??
     val withOverrides = config.configExecutionOverrides.withFallback(modelConfigPart)
@@ -188,7 +187,7 @@ class K8sDeploymentManager(
       // runtimeConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
       secret <- k8sUtils.createOrUpdate(
         secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
-          Map("runtimeConfig.conf" -> serializedRuntimeConfig)
+          Map("runtimeConfig.conf" -> serializedRuntimeConfig())
         )
       )
       mountableResources = MountableResources(

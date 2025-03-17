@@ -12,6 +12,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -464,7 +465,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     )
     FlinkDeploymentManagerProvider
       .createDeploymentManager(
-        LocalModelData(ConfigFactory.empty, List.empty),
+        LocalModelData(ConfigFactory.empty, List.empty).toModelDataProvider,
         deploymentManagerDependencies,
         config,
         scenarioStateCacheTTL = None

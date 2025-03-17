@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{NoSchedulingSupport, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
@@ -102,7 +103,7 @@ object ProcessingTypeData {
     val validDeploymentManager = for {
       deploymentManager <-
         deploymentManagerProvider.createDeploymentManager(
-          modelData,
+          modelData.toModelDataProvider,
           deploymentManagerDependencies,
           deploymentConfig,
           scenarioStateCacheTTL

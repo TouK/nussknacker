@@ -8,6 +8,7 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -41,7 +42,7 @@ class MockDeploymentManager private (
     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     closeCreatedDeps: () => Unit,
 ) extends FlinkDeploymentManager(
-      modelData,
+      modelData.toModelDataProvider,
       deploymentManagerDependencies,
       FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
       Some(
@@ -306,7 +307,7 @@ class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentM
     extends FlinkDeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]

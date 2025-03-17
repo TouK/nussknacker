@@ -7,6 +7,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
+import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -53,7 +54,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
     val port = AvailablePortFinder.findAvailablePorts(1).head
     val manager = new EmbeddedDeploymentManagerProvider()
       .createDeploymentManager(
-        modelData,
+        modelData.toModelDataProvider,
         dependencies,
         ConfigFactory
           .empty()

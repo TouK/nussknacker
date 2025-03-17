@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCr
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.nio.file.Path
+import scala.reflect.internal.util.ScalaClassLoader
 
 object ModelData extends LazyLogging {
 
@@ -252,7 +253,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     }
   }
 
-  override def modelClassLoader: ModelClassLoader
+  def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 
@@ -263,6 +264,20 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   final def close(): Unit = {
     designerDictServices.close()
+  }
+
+}
+
+// FIXME abr move to test code or to LocalModelData
+object ModelDataConversionOps {
+
+  implicit class Ops(modelData: ModelData) {
+
+    def toModelDataProvider: BaseModelDataProvider = new BaseModelDataProvider {
+      override def modelClassLoader: ScalaClassLoader.URLClassLoader = modelData.modelClassLoader
+      override def getCurrentModelData(): BaseModelData              = modelData
+    }
+
   }
 
 }
