@@ -36,7 +36,7 @@ object transformers {
       explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
-      .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy))
+      .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy, groupBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -105,7 +105,8 @@ object transformers {
         aggregator.toContextTransformation(
           variableName,
           emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent,
-          aggregateBy
+          aggregateBy,
+          groupBy
         )
       )
       .implementedBy(
@@ -169,7 +170,8 @@ object transformers {
         aggregator.toContextTransformation(
           variableName,
           emitContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent,
-          aggregateBy
+          aggregateBy,
+          groupBy
         )
       )
       .implementedBy(
