@@ -43,8 +43,9 @@ describe("Editors", () => {
             .find("[data-testid='InfoIcon']")
             .click();
 
-        // Wait for a tooltip positioning
-        cy.wait(500);
+        // Wait for a tooltip rendering and positioning
+        cy.contains("You are using an expression-based approach");
+        cy.wait(200);
         cy.get("[data-testid=window]").matchImage();
 
         cy.get("[role=tab]").contains("string template").click();
@@ -56,8 +57,9 @@ describe("Editors", () => {
             .find("[data-testid='InfoIcon']")
             .click();
 
-        // Wait for a tooltip positioning
-        cy.wait(500);
+        // Wait for a tooltip rendering and positioning
+        cy.contains("You are using a string-template-based approach");
+        cy.wait(200);
         cy.get("[data-testid=window]").matchImage();
     });
 });
