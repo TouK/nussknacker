@@ -10,7 +10,7 @@ import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { DescriptionField } from "./DescriptionField";
-import React from "react";
+import React, { memo, useEffect, useMemo } from "react";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 
 interface Props {
@@ -42,16 +42,47 @@ export function Switch({
     showValidation,
     variableTypes,
 }: Props): JSX.Element {
-    const definition = processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node;
-    const currentExpression = node["expression"];
-    const currentExprVal = node["exprVal"];
-    const fieldErrors = getValidationErrorsForField(errors, "exprVal");
-    const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression;
-    const showExprVal = !isEmpty(fieldErrors) || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal;
+    const definition = useMemo(
+        () => processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node,
+        [node.type, processDefinitionData.componentGroups],
+    );
+    const currentExpression = useMemo(() => node.expression, [node.expression]);
+    const currentExprVal = useMemo(() => node.exprVal, [node.exprVal]);
+    const fieldErrors = useMemo(() => getValidationErrorsForField(errors, "exprVal"), [errors]);
+    const showExpression = useMemo(
+        () => (definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression),
+        [currentExpression, definition],
+    );
+    const showExprVal = useMemo(
+        () => (!isEmpty(fieldErrors) || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal),
+        [currentExprVal, definition, fieldErrors],
+    );
     const [, isCompareView] = useDiffMark();
 
-    const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
-
+    const getExpressionType = useSelector(getNodeExpressionType);
+    const nodeExpressionType = useMemo(() => getExpressionType(node.id), [getExpressionType, node.id]);
+    const edgeTypes = useMemo(() => {
+        return [
+            {
+                value: EdgeKind.switchNext,
+            },
+            {
+                value: EdgeKind.switchDefault,
+                onlyOne: true,
+                disabled: true,
+            },
+        ];
+    }, []);
+    const types = useMemo(
+        () =>
+            node.exprVal
+                ? {
+                      ...variableTypes,
+                      [node.exprVal]: nodeExpressionType,
+                  }
+                : variableTypes,
+        [node.exprVal, nodeExpressionType, variableTypes],
+    );
     return (
         <>
             <IdField
@@ -95,17 +126,10 @@ export function Switch({
                     nodeId={node.id}
                     value={edges}
                     onChange={setEditedEdges}
-                    edgeTypes={[{ value: EdgeKind.switchNext }, { value: EdgeKind.switchDefault, onlyOne: true, disabled: true }]}
+                    edgeTypes={edgeTypes}
                     ordered
                     readOnly={!isEditMode}
-                    variableTypes={
-                        node["exprVal"]
-                            ? {
-                                  ...variableTypes,
-                                  [node["exprVal"]]: nodeExpressionType,
-                              }
-                            : variableTypes
-                    }
+                    variableTypes={types}
                     errors={errors}
                 />
             ) : null}

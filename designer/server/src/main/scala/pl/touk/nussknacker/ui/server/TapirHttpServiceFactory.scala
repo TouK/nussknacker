@@ -142,7 +142,7 @@ object TapirHttpServiceFactory {
         dbioRunner,
       ),
       designerConfig.deploymentCommentSettings,
-      new AkkaHttpBasedTapirStreamEndpointProvider(),
+      new PekkoHttpBasedTapirStreamEndpointProvider(),
       dbioRunner,
     )
     val scenarioParametersHttpService = new ScenarioParametersApiHttpService(

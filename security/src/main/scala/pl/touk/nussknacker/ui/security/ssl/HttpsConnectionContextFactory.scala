@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.ssl
 
-import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
+import org.apache.pekko.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
 
 import java.security.{KeyStore, SecureRandom}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}

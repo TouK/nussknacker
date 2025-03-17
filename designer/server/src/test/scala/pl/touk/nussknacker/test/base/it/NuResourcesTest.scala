@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.test.base.it
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{parser, Decoder, Encoder, Json}
 import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -42,7 +43,7 @@ import pl.touk.nussknacker.test.mock.{
 }
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
-import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process._
@@ -68,6 +69,7 @@ import slick.dbio.DBIOAction
 import java.net.URI
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -434,6 +436,8 @@ trait NuResourcesTest
     )
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
+    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
+
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
     val multiPart = MultipartUtils.prepareMultiParts(
       "testData"      -> testDataContent,
@@ -734,7 +738,7 @@ object ProcessesQueryEnrichments {
 object TestResource {
 
   // TODO One test from ManagementResourcesSpec and one test from ProcessesResourcesSpec use this route.
-  //  The tests are still using akka based testing and it is not easy to integrate tapir route with this kind of tests.
+  //  The tests are still using pekko based testing and it is not easy to integrate tapir route with this kind of tests.
   // should be replaced with rest call: GET /api/process/{scenarioName}/activity
   class ProcessActivityResource(
       scenarioActivityRepository: ScenarioActivityRepository,

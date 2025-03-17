@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.factory
 
-import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import io.dropwizard.metrics5.MetricRegistry
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.util.{ExecutionContextWithIORuntime, ExecutionContextWithIORuntimeAdapter}
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.db.DbRef

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
 import cats.effect.{IO, Resource}
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.customhttpservice.CustomHttpServiceProvider
@@ -14,14 +14,14 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import scala.concurrent.ExecutionContext
 
-object AkkaRoutesFactory {
+object PekkoRoutesFactory {
 
   def createRoutes(
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
       authenticationResources: AuthenticationResources
-  ): Resource[IO, AkkaRoutes] = {
+  ): Resource[IO, PekkoRoutes] = {
     import infrastructureServices._
 
     for {
@@ -40,7 +40,7 @@ object AkkaRoutesFactory {
       routesWithoutAuthentication =
         createRoutesWithoutAuthentication(designerConfig, domainServices, authenticationResources)
 
-    } yield AkkaRoutes(routesWithAuthentication, routesWithoutAuthentication)
+    } yield PekkoRoutes(routesWithAuthentication, routesWithoutAuthentication)
   }
 
   private def createRoutesWithAuthentication(
@@ -172,6 +172,6 @@ object AkkaRoutesFactory {
     )
   }
 
-  case class AkkaRoutes(routesWithAuthentication: List[RouteWithUser], routesWithoutAuthentication: List[Route])
+  case class PekkoRoutes(routesWithAuthentication: List[RouteWithUser], routesWithoutAuthentication: List[Route])
 
 }

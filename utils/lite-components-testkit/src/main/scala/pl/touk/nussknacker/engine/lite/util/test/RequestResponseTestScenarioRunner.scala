@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
 import cats.Id
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
+import org.apache.pekko.http.scaladsl.model.{HttpEntity, HttpRequest}
 import org.everit.json.schema.TrueSchema
 import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.ProcessVersion

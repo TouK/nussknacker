@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
-import akka.actor.{ActorSystem, Cancellable}
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

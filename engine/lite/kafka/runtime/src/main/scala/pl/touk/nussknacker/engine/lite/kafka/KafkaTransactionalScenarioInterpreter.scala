@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import akka.http.scaladsl.server.Route
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData

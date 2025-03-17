@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHand
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteFactory, NussknackerHttpServer}
+import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
 
 import java.time.Clock
 import scala.concurrent.Future
@@ -32,7 +32,7 @@ class NussknackerAppFactory(
         domainServices.futureProcessRepository
       )
 
-      route <- AkkaHttpBasedRouteFactory.createRoute(
+      route <- PekkoHttpBasedRouteFactory.createRoute(
         designerConfig = alreadyLoadedConfig,
         infrastructureServices = infrastructureServices,
         domainServices = domainServices

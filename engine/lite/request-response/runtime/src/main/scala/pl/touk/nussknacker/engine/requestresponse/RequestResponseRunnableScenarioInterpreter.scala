@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.server.{Directives, Route}
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData

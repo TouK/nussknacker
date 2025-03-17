@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue

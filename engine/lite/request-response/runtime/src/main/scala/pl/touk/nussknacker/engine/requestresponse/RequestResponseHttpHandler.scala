@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import cats.Monad
 import cats.data.{EitherT, NonEmptyList}
 import cats.implicits.toFunctorOps
 import io.circe.Json
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo

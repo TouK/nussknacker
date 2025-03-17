@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager}
-import pl.touk.nussknacker.ui.server.AkkaRoutesFactory.AkkaRoutes
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources}
+import pl.touk.nussknacker.ui.server.PekkoRoutesFactory.PekkoRoutes
 import pl.touk.nussknacker.ui.util._
 
-object AkkaHttpBasedRouteFactory {
+object PekkoHttpBasedRouteFactory {
 
   def createRoute(
       designerConfig: DesignerConfig,
@@ -22,13 +22,13 @@ object AkkaHttpBasedRouteFactory {
     val authenticationResources =
       AuthenticationResources(
         designerConfig.rawConfig,
-        AkkaHttpBasedRouteFactory.getClass.getClassLoader,
+        PekkoHttpBasedRouteFactory.getClass.getClassLoader,
         infrastructureServices.futureSttpBackend
       )(executionContextWithIORuntime)
     val authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
 
     for {
-      akkaRoutes <- AkkaRoutesFactory.createRoutes(
+      pekkoRoutes <- PekkoRoutesFactory.createRoutes(
         designerConfig,
         infrastructureServices,
         domainServices,
@@ -41,24 +41,24 @@ object AkkaHttpBasedRouteFactory {
         authManager
       )
 
-      akkaHttpServerInterpreter = new NuAkkaHttpServerInterpreterForTapirPurposes()
+      pekkoHttpServerInterpreter = new NuPekkoHttpServerInterpreterForTapirPurposes()
 
       appRoute = createAppRoute(
         designerConfig = designerConfig,
         authManager = authManager,
-        tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
-        akkaRoutes = akkaRoutes,
+        tapirRelatedRoutes = pekkoHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
+        pekkoRoutes = pekkoRoutes,
         developmentMode = designerConfig.development
       )
     } yield appRoute
   }
 
   private def createAppRoute(
-      designerConfig: DesignerConfig,
-      authManager: AuthManager,
-      tapirRelatedRoutes: List[Route],
-      akkaRoutes: AkkaRoutes,
-      developmentMode: Boolean
+                              designerConfig: DesignerConfig,
+                              authManager: AuthManager,
+                              tapirRelatedRoutes: List[Route],
+                              pekkoRoutes: PekkoRoutes,
+                              developmentMode: Boolean
   ): Route = {
     // TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(designerConfig.http.publicPath)
@@ -67,11 +67,11 @@ object AkkaHttpBasedRouteFactory {
         pathPrefixTest(!"api") {
           webResources.route
         } ~ pathPrefix("api") {
-          akkaRoutes.routesWithoutAuthentication.reduce(_ ~ _)
+          pekkoRoutes.routesWithoutAuthentication.reduce(_ ~ _)
         } ~ pathPrefix("api") {
           authManager.authenticate() { authenticatedUser =>
             authManager.authorizeRoute(authenticatedUser) { loggedUser =>
-              akkaRoutes.routesWithAuthentication
+              pekkoRoutes.routesWithAuthentication
                 .map(_.securedRouteWithErrorHandling(loggedUser))
                 .reduce(_ ~ _)
             }

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import _root_.sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import akka.actor.ActorSystem
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.IORuntime
+import org.apache.pekko.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
