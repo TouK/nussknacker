@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ToEvaluateFunctionConverter, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
