@@ -97,10 +97,10 @@ object DesignerConfig {
   def from(config: Config): DesignerConfig = {
     val defaultConfig = ConfigFactory.parseResources(getClass.getClassLoader, DesignerConfig.defaultConfigResource)
     val configWithFallbackToDefault = config.withFallback(defaultConfig)
-    DesignerConfig(ConfigWithUnresolvedVersion(configWithFallbackToDefault))
+    DesignerConfig.from(ConfigWithUnresolvedVersion(configWithFallbackToDefault))
   }
 
-  def apply(rawConfig: ConfigWithUnresolvedVersion): DesignerConfig = {
+  def from(rawConfig: ConfigWithUnresolvedVersion): DesignerConfig = {
     val resolvedConfig               = rawConfig.resolved
     val managersDir                  = parseManagersDirs(resolvedConfig)
     val configLoaderConfig           = resolvedConfig.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())

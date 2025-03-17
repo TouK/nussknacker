@@ -34,7 +34,7 @@ class AlwaysLoadingFileBasedDesignerConfigLoader private (classLoader: ClassLoad
         ConfigFactory.parseResources(classLoader, DesignerConfig.defaultConfigResource)
       )
       unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
-    } yield DesignerConfig(ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults))
+    } yield DesignerConfig.from(ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults))
   }
 
 }
