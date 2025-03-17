@@ -3,7 +3,7 @@ import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
+import { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { ParamFieldLabel } from "./FieldLabel";
@@ -29,6 +29,7 @@ import { Split } from "./split";
 import { Switch } from "./switch";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
+import { StickyNote } from "./stickyNote";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -356,6 +357,17 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
         case "Split":
             return (
                 <Split
+                    errors={errors}
+                    isEditMode={isEditMode}
+                    node={node}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    showValidation={showValidation}
+                />
+            );
+        case "StickyNoteNode":
+            return (
+                <StickyNote
                     errors={errors}
                     isEditMode={isEditMode}
                     node={node}

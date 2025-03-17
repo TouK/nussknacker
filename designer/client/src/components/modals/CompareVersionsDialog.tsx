@@ -14,7 +14,7 @@ import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
-import { NodeType } from "../../types";
+import { NodeType, StickyNoteNodeType } from "../../types";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 import { FormControl, FormLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,7 @@ import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDeta
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import i18next from "i18next";
 import { PropertiesForm } from "../properties";
+import { StickyNoteType } from "../../types/stickyNote";
 
 const initState: State = {
     otherVersion: null,
@@ -72,7 +73,12 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         (versionId: string) => {
             if (versionId) {
                 HttpService.compareProcesses(processName, version, versionToPass(versionId), isRemote(versionId)).then((response) =>
-                    setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
+                    setState((prevState) => ({
+                        ...prevState,
+                        difference: response.data,
+                        otherVersion: versionId,
+                        currentDiffId: null,
+                    })),
                 );
             } else {
                 setState(initState);
@@ -114,10 +120,21 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [versionDisplayString],
     );
 
+    const enrichStickyNoteNode = (node: NodeType): StickyNoteNodeType => {
+        return {
+            ...node,
+            type: StickyNoteType,
+        } as StickyNoteNodeType;
+    };
+
     const printDiff = (diffId: string) => {
         const diff = state.difference[diffId];
 
         switch (diff.type) {
+            case "StickyNotePresentInOther":
+            case "StickyNotePresentInCurrent":
+            case "StickyNoteDifferent":
+                return renderDiff(enrichStickyNoteNode(diff.currentStickyNote), enrichStickyNoteNode(diff.otherStickyNote), printNode);
             case "NodeNotPresentInOther":
             case "NodeNotPresentInCurrent":
             case "NodeDifferent":

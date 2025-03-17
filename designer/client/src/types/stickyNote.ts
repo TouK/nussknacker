@@ -1,12 +1,11 @@
 import { ComponentDefinition } from "./scenarioGraph";
-import { stickyNoteIconSrc } from "../components/toolbars/creator/ComponentIcon";
 
 export const StickyNoteType = "StickyNoteNode";
 
 export const StickyNoteDefinition: ComponentDefinition = {
     parameters: [],
     returnType: null,
-    icon: stickyNoteIconSrc,
+    icon: `/assets/components/${StickyNoteType}.svg`,
     docsUrl: null,
     outputParameters: null,
     label: "",
