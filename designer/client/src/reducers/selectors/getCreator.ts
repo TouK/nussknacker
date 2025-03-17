@@ -1,26 +1,27 @@
-import { isAggregate } from "../../components/graph/node-modal/customNode";
-import { Component, NodeType } from "../../types";
+import { isAggregate } from "../../components/graph/node-modal/isAggregate";
+import type { NodeType } from "../../types";
 
 const prefix = `㊙️㊙️`;
 const suffix = `㊙️㊙️`;
+const fakeVarRegExp = new RegExp(`${prefix}(.*)${suffix}`);
 
-const getFakeVarName = (type: string) => `${prefix}${type}${suffix}`;
+export function getFakeVarName(type: string) {
+    return `${prefix}${type}${suffix}`;
+}
+
+function getCreatorTypeFromFakeVar(varName: string) {
+    return fakeVarRegExp.exec(varName)?.[1];
+}
 
 export const fakeNodeCreatorType = (node: NodeType): string | null => {
     if (node.type === "VariableBuilder") {
         if (node.additionalFields?.creatorType) {
             return node.additionalFields?.creatorType;
         }
-        const regExp = new RegExp(`${prefix}(.*)${suffix}`);
-        return regExp.exec(node.varName)?.[1];
+        return getCreatorTypeFromFakeVar(node.varName);
     }
     return null;
 };
-
-function getCreatorTypeFromFakeVar(varName: string) {
-    const regExp = new RegExp(`${prefix}(.*)${suffix}`);
-    return regExp.exec(varName)?.[1];
-}
 
 export const getCreatorType = (node: NodeType): string | null => {
     if (isAggregate(node)) {
@@ -34,19 +35,3 @@ export const getCreatorType = (node: NodeType): string | null => {
     }
     return null;
 };
-
-export const fakeComponentType = `componentsCreator`;
-
-export const getCreator = (type: string): Component => ({
-    componentId: `${fakeComponentType}-${type}`,
-    label: type,
-    node: {
-        id: type,
-        type: "VariableBuilder",
-        varName: getFakeVarName(type),
-        additionalFields: {
-            creatorType: type,
-        },
-        fields: [],
-    },
-});

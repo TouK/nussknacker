@@ -34,6 +34,6 @@ export const getRemoteTenantId = createSelector(isCloudInstance, getFeatureSetti
 export const getAdditionalComponents = createSelector(
     isCloudInstance,
     getUserSettings,
-    (state: RootState) => state.cloudData.additionalComponents,
+    (state: RootState) => state.cloudData?.additionalComponents,
     (isCloud, userSettings, additionalComponents) => (isCloud && userSettings["cloud.componentCreators"] ? additionalComponents : []),
 );

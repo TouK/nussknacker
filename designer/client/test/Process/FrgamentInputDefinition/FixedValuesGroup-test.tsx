@@ -20,7 +20,7 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-describe(FixedValuesGroup.name, () => {
+describe("FixedValuesGroup", () => {
     it("should clear initialValue on Preset type change", async () => {
         const mockOnChange = jest.fn();
 
