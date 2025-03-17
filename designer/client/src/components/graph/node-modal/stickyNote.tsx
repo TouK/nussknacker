@@ -29,7 +29,7 @@ export function StickyNote({
             autoFocus={false}
             className={value}
             fieldErrors={[]}
-            onChange={{}}
+            onChange={undefined}
         >
             {renderFieldLabel(desc)}
         </Field>
