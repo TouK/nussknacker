@@ -94,7 +94,6 @@ object FlinkStreamingPropertiesConfig {
   private val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      // TODO: LBG IS ok here and below?
       editor = Some(SpelTemplateParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),

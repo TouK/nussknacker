@@ -13,10 +13,6 @@ case class ParameterData(typing: TypingResult, annotations: List[_ <: Annotation
     e
   }
 
-  def getAnnotations[T <: Annotation: ClassTag]: List[T] = annotations.collect { case e: T =>
-    e
-  }
-
 }
 
 object ParameterData {
