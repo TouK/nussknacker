@@ -48,7 +48,7 @@
     </root>
 
     <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
-    <logger name="akka.management" level="${AKKA_MANAGEMENT_LOG_LEVEL:-INFO}"/>
+    <logger name="org.apache.pekko.management" level="${PEKKO_MANAGEMENT_LOG_LEVEL:-INFO}"/>
     <logger name="ch.qos.logback" level="WARN"/>
 
 </configuration>

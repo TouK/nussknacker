@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
 
   // We need to add flinkBaseUnbounded components to the classpath in order to test EventGenerator
-  override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
+  override def designerRawConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
     ConfigFactory.parseResources(
       "config/business-cases/simple-streaming-use-case-designer.conf"
     )

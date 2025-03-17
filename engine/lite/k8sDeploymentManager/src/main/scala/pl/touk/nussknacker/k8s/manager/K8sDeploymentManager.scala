@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._

@@ -39,7 +39,6 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
       .loadDesignerConfig()
       .unsafeRunSync()
       .rawConfig
-      .resolved
       .getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
   }
 
@@ -50,7 +49,7 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
         .loadDesignerConfig()
         .unsafeRunSync()
 
-      loadedConfig.rawConfig.resolved.getString("foo") shouldEqual "./storage"
+      loadedConfig.rawConfig.getString("foo") shouldEqual "./storage"
     }
   }
 
@@ -97,7 +96,7 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
           System.getProperties.remove(randomPropertyName)
         }
 
-      result.rawConfig.resolved.getString(randomPropertyName) shouldBe "I win!"
+      result.rawConfig.getString(randomPropertyName) shouldBe "I win!"
     }
   }
 

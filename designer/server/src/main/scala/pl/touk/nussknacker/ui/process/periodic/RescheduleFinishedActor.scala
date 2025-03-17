@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.periodic
 
-import akka.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.{Actor, Props, Timers}
 import pl.touk.nussknacker.ui.process.periodic.RescheduleFinishedActor.{CheckStates, CheckStatesCompleted}
 
 import scala.concurrent.Future

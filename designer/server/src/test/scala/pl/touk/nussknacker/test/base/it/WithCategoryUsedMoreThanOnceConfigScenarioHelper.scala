@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait WithCategoryUsedMoreThanOnceConfigScenarioHelper {
   this: WithTestDb with WithClock with WithCategoryUsedMoreThanOnceDesignerConfig =>
 
-  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerConfig)
+  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerRawConfig)
   private val usedCategory           = TestCategory.Category1
 
   def createSavedScenario(scenario: CanonicalProcess): ProcessId = {

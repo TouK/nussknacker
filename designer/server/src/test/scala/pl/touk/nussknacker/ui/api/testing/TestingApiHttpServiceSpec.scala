@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import akka.http.scaladsl.model.StatusCodes
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue

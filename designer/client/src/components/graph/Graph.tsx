@@ -614,8 +614,8 @@ export class Graph extends React.Component<Props> {
     }
 
     componentDidUpdate(prevProps: Props): void {
-        const { processCounts } = this.props;
-        if (!isEqual(processCounts, prevProps.processCounts)) {
+        const { processCounts, userSettings } = this.props;
+        if (!isEqual(processCounts, prevProps.processCounts) || !isEqual(userSettings, prevProps.userSettings)) {
             this.updateNodesCounts();
         }
         if (this.props.isFragment !== true && prevProps.isFragment !== true) {

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
@@ -107,7 +107,7 @@ class ProcessesExportResources(
   private def fileResponse(canonicalProcess: CanonicalProcess) = {
     val canonicalJson = canonicalProcess.asJson.spaces2
     val entity        = HttpEntity(ContentTypes.`application/json`, canonicalJson)
-    AkkaHttpResponse.asFile(entity, s"${canonicalProcess.name}.json")
+    PekkoHttpResponse.asFile(entity, s"${canonicalProcess.name}.json")
   }
 
   private def exportProcessToPdf(

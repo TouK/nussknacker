@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import akka.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
@@ -42,7 +42,6 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   val deploymentManagerDependencies: DeploymentManagerDependencies = DeploymentManagerDependencies(
     new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     new ProcessingTypeActionServiceStub,
-    new RepositoryBasedScenarioActivityManager(activityRepository, dbioRunner),
     ec,
     IORuntime.global,
     actorSystem,

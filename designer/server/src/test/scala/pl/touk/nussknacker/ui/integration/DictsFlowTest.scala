@@ -45,7 +45,7 @@ class DictsFlowTest
   private val Key            = "foo"
   private val Label          = "Foo"
 
-  override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
+  override def designerRawConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   test("create scenario with DictParameterEditor, save it and test it") {
     val DictId = "rgb"

@@ -41,7 +41,7 @@ class UserApiHttpServiceOAuth2Spec
     )
   }
 
-  override def designerConfig: Config = super.designerConfig.withValue(
+  override def designerRawConfig: Config = super.designerRawConfig.withValue(
     "authentication",
     ConfigFactory
       .parseString(

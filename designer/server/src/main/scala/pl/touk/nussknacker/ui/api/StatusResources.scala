@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

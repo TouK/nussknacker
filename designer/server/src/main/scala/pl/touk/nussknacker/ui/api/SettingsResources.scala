@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.Validated
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesSettings
-import pl.touk.nussknacker.ui.config.{FeatureTogglesConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.{DesignerConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(
-    config: FeatureTogglesConfig,
+    config: DesignerConfig,
     authenticationMethod: String,
     usageStatisticsReportsConfig: UsageStatisticsReportsConfig,
     fingerprintService: FingerprintService
