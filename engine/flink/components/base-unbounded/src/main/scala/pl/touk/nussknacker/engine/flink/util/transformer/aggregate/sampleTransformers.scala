@@ -30,8 +30,8 @@ object sampleTransformers {
         @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
-        @SimpleEditor(
-          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
           possibleValues = Array(
             new LabeledExpression(label = "First", expression = "#AGG.first"),
             new LabeledExpression(label = "Last", expression = "#AGG.last"),
@@ -51,7 +51,7 @@ object sampleTransformers {
           ),
           isMainEditor = true
         )
-        @SpelEditor
+        @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
@@ -88,8 +88,8 @@ object sampleTransformers {
         @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
-        @SimpleEditor(
-          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
           possibleValues = Array(
             new LabeledExpression(label = "First", expression = "#AGG.first"),
             new LabeledExpression(label = "Last", expression = "#AGG.last"),
@@ -109,7 +109,7 @@ object sampleTransformers {
           ),
           isMainEditor = true
         )
-        @SpelEditor
+        @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
@@ -150,8 +150,8 @@ object sampleTransformers {
         @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
-        @SimpleEditor(
-          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
           possibleValues = Array(
             new LabeledExpression(label = "First", expression = "#AGG.first"),
             new LabeledExpression(label = "Last", expression = "#AGG.last"),
@@ -171,7 +171,7 @@ object sampleTransformers {
           ),
           isMainEditor = true
         )
-        @SpelEditor
+        @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
         @ParamName("endSessionCondition") @DefaultValue("false") endSessionCondition: LazyParameter[java.lang.Boolean],

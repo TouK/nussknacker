@@ -21,29 +21,30 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private def notAnnotated(param: String) = ()
 
   private def dualEditorAnnotated(
-      @SimpleEditor(
-        `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+      @Editor(
+        `type` = EditorType.FIXED_VALUES_EDITOR,
         possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2")),
+        isMainEditor = true
       )
-      @SpelEditor
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       param: String
   ) = ()
 
   private def dualEditorAnnotatedLazy(
-      @SimpleEditor(`type` = SimpleEditorType.DATE_EDITOR)
-      @SpelEditor
+      @Editor(`type` = EditorType.DATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       param: LazyParameter[String]
   ) = ()
 
-  private def simpleEditorAnnotated(@SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: String) = ()
+  private def simpleEditorAnnotated(@Editor(`type` = EditorType.BOOL_EDITOR) param: String) = ()
 
   private def simpleEditorAnnotatedLazy(
-      @SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: LazyParameter[String]
+      @Editor(`type` = EditorType.BOOL_EDITOR) param: LazyParameter[String]
   ) = ()
 
-  private def rawEditorAnnotated(@SpelEditor param: String) = ()
+  private def rawEditorAnnotated(@Editor(`type` = EditorType.SPEL_EDITOR) param: String) = ()
 
-  private def rawEditorAnnotatedLazy(@SpelEditor param: LazyParameter[String]) = ()
+  private def rawEditorAnnotatedLazy(@Editor(`type` = EditorType.SPEL_EDITOR) param: LazyParameter[String]) = ()
 
   private def simpleParams(
       javaEnum: JavaSampleEnum,
@@ -76,7 +77,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
     ).some
   }
 
-  test("detect either @SimpleEditor and @SpelEditor annotations") {
+  test("detect @Editor annotations") {
 
     EditorExtractor.extract(paramDualEditorAnnotated, ParameterConfig.empty) shouldBe
       ParameterEditors(
@@ -102,7 +103,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       ParameterEditors(BoolParameterEditor).some
   }
 
-  test("detect @SpelEditor annotation") {
+  test("detect Spel @Editor annotation") {
     EditorExtractor.extract(paramRawEditorAnnotated, ParameterConfig.empty) shouldBe ParameterEditors(
       SpelParameterEditor
     ).some

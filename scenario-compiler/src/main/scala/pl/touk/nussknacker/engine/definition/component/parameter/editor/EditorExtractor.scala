@@ -32,48 +32,63 @@ object EditorExtractor {
 
   def extract(param: ParameterData, parameterConfig: ParameterConfig): Option[ParameterEditors] = {
     parameterConfig.parsedEditors
+      .orElse(extractFromAnnotation(param))
       .orElse(extractFromAnnotations(param))
       .orElse(new ParameterTypeEditorDeterminer(param.typing).determine())
   }
 
-  private def extractFromAnnotations(param: ParameterData): Option[ParameterEditors] = {
-    val simpleEditorAnnotation: Option[SimpleEditor] = param.getAnnotation[SimpleEditor]
-    val rawEditorAnnotation: Option[SpelEditor]      = param.getAnnotation[SpelEditor]
+  private def extractFromAnnotation(param: ParameterData): Option[ParameterEditors] =
+    param
+      .getAnnotation[Editor]
+      .map(editor => ParameterEditors(parameterEditor(editor)))
 
-    (simpleEditorAnnotation, rawEditorAnnotation) match {
-      case (Some(simpleEditorAnnotation: SimpleEditor), Some(_: SpelEditor)) =>
-        if (simpleEditorAnnotation.isMainEditor)
-          ParameterEditors(simpleParameterEditor(simpleEditorAnnotation), SpelParameterEditor).some
-        else ParameterEditors(SpelParameterEditor, simpleParameterEditor(simpleEditorAnnotation)).some
-      case (Some(simpleEditorAnnotation: SimpleEditor), None) =>
-        ParameterEditors(simpleParameterEditor(simpleEditorAnnotation)).some
-      case (None, Some(_: SpelEditor)) => ParameterEditors(SpelParameterEditor).some
-      case _                           => None
-    }
-  }
+  private def extractFromAnnotations(param: ParameterData): Option[ParameterEditors] =
+    param
+      .getAnnotation[Editors]
+      .flatMap(editors =>
+        editors.value().toList match {
+          case first :: Nil =>
+            ParameterEditors(parameterEditor(first)).some
+          case first :: second :: Nil =>
+            (parameterEditor(first), parameterEditor(second)) match {
+              case (simple: SimpleParameterEditor, spel: SpelParameterEditor.type) =>
+                if (first.isMainEditor) ParameterEditors(simple, spel).some
+                else ParameterEditors(spel, simple).some
+              case (spel: SpelParameterEditor.type, simple: SimpleParameterEditor) =>
+                if (first.isMainEditor) ParameterEditors(spel, simple).some
+                else ParameterEditors(simple, spel).some
+              case _ =>
+                throw new IllegalStateException(
+                  s"Configuration of ${first.`type`()} and ${second.`type`()} is not allowed"
+                )
+            }
+          case _ => None
+        }
+      )
 
-  private def simpleParameterEditor(simpleEditor: SimpleEditor): SimpleParameterEditor = {
+  private def parameterEditor(simpleEditor: Editor): ParameterEditor = {
     simpleEditor.`type`() match {
-      case SimpleEditorType.BOOL_EDITOR => BoolParameterEditor
-      case SimpleEditorType.FIXED_VALUES_EDITOR =>
+      case EditorType.BOOL_EDITOR => BoolParameterEditor
+      case EditorType.FIXED_VALUES_EDITOR =>
         FixedValuesParameterEditor(
           simpleEditor
             .possibleValues()
             .map(value => FixedExpressionValue(value.expression(), value.label()))
             .toList
         )
-      case SimpleEditorType.DATE_EDITOR          => DateParameterEditor
-      case SimpleEditorType.TIME_EDITOR          => TimeParameterEditor
-      case SimpleEditorType.DATE_TIME_EDITOR     => DateTimeParameterEditor
-      case SimpleEditorType.DURATION_EDITOR      => DurationParameterEditor(simpleEditor.timeRangeComponents().toList)
-      case SimpleEditorType.PERIOD_EDITOR        => PeriodParameterEditor(simpleEditor.timeRangeComponents().toList)
-      case SimpleEditorType.CRON_EDITOR          => CronParameterEditor
-      case SimpleEditorType.TEXTAREA_EDITOR      => TextareaParameterEditor
-      case SimpleEditorType.JSON_EDITOR          => JsonParameterEditor
-      case SimpleEditorType.SQL_EDITOR           => SqlParameterEditor
-      case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
-      case SimpleEditorType.DICT_EDITOR          => DictParameterEditor(simpleEditor.dictId())
-      case SimpleEditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
+      case EditorType.DATE_EDITOR               => DateParameterEditor
+      case EditorType.TIME_EDITOR               => TimeParameterEditor
+      case EditorType.DATE_TIME_EDITOR          => DateTimeParameterEditor
+      case EditorType.DURATION_EDITOR           => DurationParameterEditor(simpleEditor.timeRangeComponents().toList)
+      case EditorType.PERIOD_EDITOR             => PeriodParameterEditor(simpleEditor.timeRangeComponents().toList)
+      case EditorType.CRON_EDITOR               => CronParameterEditor
+      case EditorType.TEXTAREA_EDITOR           => TextareaParameterEditor
+      case EditorType.JSON_EDITOR               => JsonParameterEditor
+      case EditorType.SQL_EDITOR                => SqlParameterEditor
+      case EditorType.SPEL_TEMPLATE_EDITOR      => SpelTemplateParameterEditor
+      case EditorType.DICT_EDITOR               => DictParameterEditor(simpleEditor.dictId())
+      case EditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
+      case EditorType.SPEL_EDITOR               => SpelParameterEditor
     }
   }
 
