@@ -98,17 +98,9 @@ class FlinkProcessRegistrar(
 
   protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.isInstanceOf[RemoteStreamEnvironment]
 
-  // In remote env we assume FlinkProcessRegistrar is loaded via userClassloader
   protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: ClassLoader => Unit): Unit = {
-    if (!isRemoteEnv(env)) {
-      val flinkLoaderSimulation = streamExecutionEnvPreparer.flinkClassLoaderSimulation
-      ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation) {
-        action(flinkLoaderSimulation)
-      }
-    } else {
-      val userLoader = getClass.getClassLoader
-      action(userLoader)
-    }
+    val userLoader = getClass.getClassLoader
+    action(userLoader)
   }
 
   protected def createInterpreter(
