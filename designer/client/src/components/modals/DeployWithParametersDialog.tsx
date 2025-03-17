@@ -21,6 +21,7 @@ import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ToggleProcessActionModalData } from "./DeployProcessDialog";
 import LoaderSpinner from "../spinner/Spinner";
 import { useErrorBoundary } from "react-error-boundary";
+import { useLocalstorageState } from "rooks";
 
 function initialNodesData(params: ActionNodeParameters[]): NodesDeploymentData {
     return params.reduce(
@@ -54,6 +55,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 setParametersValues(initialValues);
             })
             .catch((error) => {
+                console.log("error lbg: " + error);
                 showBoundary(error);
             })
             .finally(() => {
@@ -95,6 +97,8 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
         [confirmAction, props, t],
     );
 
+    const [expandedState, setExpandedState] = useLocalstorageState("actionParametersExpandedState", {});
+
     if (isLoading) {
         return <LoaderSpinner show={true} />;
     }
@@ -132,7 +136,17 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                             {t("dialog.advancedParameters.title", "Advanced parameters")}
                         </Typography>
                         {Object.entries(groupBy(parametersDefinition, (def) => def.componentId)).map(([componentId, nodeParameters]) => (
-                            <AdvancedParametersSection key={componentId} componentId={componentId}>
+                            <AdvancedParametersSection
+                                key={componentId}
+                                componentId={componentId}
+                                expanded={expandedState[componentId]}
+                                onChange={(isExpanded) =>
+                                    setExpandedState({
+                                        ...expandedState,
+                                        [componentId]: isExpanded,
+                                    })
+                                }
+                            >
                                 <NodeTable>
                                     {Object.entries(nodeParameters[0].parameters).map(([paramName, paramConfig]) => {
                                         return (
