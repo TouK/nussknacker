@@ -196,7 +196,7 @@ describe("Components list", () => {
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
-                    x: 800,
+                    x: 900,
                     y: 600,
                 },
                 force: true,

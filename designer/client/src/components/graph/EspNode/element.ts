@@ -2,7 +2,7 @@
 import { Theme } from "@mui/material";
 import { blend } from "@mui/system";
 import { attributes, dia, shapes } from "jointjs";
-import { cloneDeepWith, isEmpty, toString } from "lodash";
+import { after, cloneDeepWith, isEmpty, toString } from "lodash";
 import millify from "millify";
 import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
 import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
@@ -171,11 +171,15 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
         element.once(Events.ADD, (e: dia.Element) => {
             // add event listeners after element setup
             setTimeout(() => {
-                e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
-                    if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
-                        setLinksHovered(el.graph, el.getBBox(), el);
-                    }
-                });
+                e.on(
+                    Events.CHANGE_POSITION,
+                    // avoid calling on init
+                    after(2, (el: dia.Element) => {
+                        if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
+                            setLinksHovered(el.graph, el.getBBox(), el);
+                        }
+                    }),
+                );
             });
         });
 
