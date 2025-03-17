@@ -46,6 +46,9 @@ export function getIdMapping(currentNodes: Pick<NodeType, "id">[], newNodes: Pic
     const alreadyUsedIds = currentNodes.map((node) => node.id);
     const initialIds = newNodes.map(({ id }) => id);
     const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
+    if (initialIds.length !== uniqueIds.length) {
+        console.warn("Duplicated ids for node id mapping");
+    }
     return zipObject(initialIds, uniqueIds);
 }
 

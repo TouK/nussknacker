@@ -8,9 +8,8 @@ exports[`Nodes added should add multiple nodes with unique id 1`] = `
       "y": 20,
     },
   },
-  "branchParameters": undefined,
   "id": "kafka-transaction (copy 1)",
-  "output": "output",
+  "output": "kafka_transaction_copy_1_output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -35,9 +34,34 @@ exports[`Nodes added should add multiple nodes with unique id 2`] = `
       "y": 20,
     },
   },
-  "branchParameters": undefined,
   "id": "kafka-transaction (copy 2)",
-  "output": "output",
+  "output": "kafka_transaction_copy_2_output",
+  "service": {
+    "id": "paramService",
+    "parameters": [
+      {
+        "expression": {
+          "expression": "'3434'",
+          "language": "spel",
+        },
+        "name": "param",
+      },
+    ],
+  },
+  "type": "Enricher",
+}
+`;
+
+exports[`Nodes added should add multiple nodes with unique id 3`] = `
+{
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
+  "id": "filter (copy 2)",
+  "output": "filter_copy_2_output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -62,9 +86,8 @@ exports[`Nodes added should add nodes with edges 1`] = `
       "y": 20,
     },
   },
-  "branchParameters": undefined,
   "id": "newNode",
-  "output": "output",
+  "output": "new_node_output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -89,9 +112,8 @@ exports[`Nodes added should add nodes with edges 2`] = `
       "y": 20,
     },
   },
-  "branchParameters": undefined,
   "id": "kafka-transaction (copy 1)",
-  "output": "output",
+  "output": "kafka_transaction_copy_1_output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -116,9 +138,8 @@ exports[`Nodes added should add single node 1`] = `
       "y": 20,
     },
   },
-  "branchParameters": undefined,
   "id": "Enricher ID",
-  "output": "output",
+  "output": "enricher_id_output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -143,9 +164,8 @@ exports[`Nodes added should add single node with unique id 1`] = `
       "y": 20,
     },
   },
-  "branchParameters": undefined,
   "id": "kafka-transaction 1",
-  "output": "output",
+  "output": "kafka_transaction_1_output",
   "service": {
     "id": "paramService",
     "parameters": [
