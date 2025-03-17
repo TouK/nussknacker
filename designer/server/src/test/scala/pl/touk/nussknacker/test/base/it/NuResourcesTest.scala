@@ -45,8 +45,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, Test
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{DesignerConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
@@ -183,12 +182,11 @@ trait NuResourcesTest
       )
     )
 
-  protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
+  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val designerConfig = DesignerConfig.from(testConfig)
     TestProcessingTypeDataProviderFactory.fromState(
-      new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+      new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
         .loadProcessingTypeData(
           _ => modelDependencies,
           _ => deploymentManagerDependencies,
@@ -208,7 +206,7 @@ trait NuResourcesTest
     )
 
   protected val configProcessToolbarService =
-    new ConfigScenarioToolbarService(CategoriesScenarioToolbarsConfigParser.parse(testConfig))
+    new ConfigScenarioToolbarService(designerConfig.processToolbarConfig)
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
@@ -254,8 +252,8 @@ trait NuResourcesTest
     new ScenarioTestService(
       testInfoProvider,
       processResolver,
-      featureTogglesConfig.testDataSettings,
-      new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+      designerConfig.testDataSettings,
+      new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
       new ScenarioTestExecutorServiceImpl(
         new ScenarioResolver(sampleResolver, Streaming.stringify),

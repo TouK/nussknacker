@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.config.{Config, ConfigRenderOptions}
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -12,21 +12,19 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioStatusNameWrapperDto}
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtype.provider.{
-  ProcessingTypeDataProvider,
-  ReloadableProcessingTypeDataProvider
-}
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class AppApiHttpService(
-    config: Config,
+    designerConfig: DesignerConfig,
     authManager: AuthManager,
-    processingTypeDataReloader: ReloadableProcessingTypeDataProvider[_, _],
+    reloadProcessingTypes: IO[Unit],
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
@@ -103,8 +101,6 @@ class AppApiHttpService(
     appApiEndpoints.buildInfoEndpoint
       .serverLogicSuccess { _ =>
         Future {
-          import net.ceedubs.ficus.Ficus._
-          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
           val modelInfo: Map[ProcessingType, ModelInfo] =
@@ -115,7 +111,7 @@ class AppApiHttpService(
             BuildInfo.buildTime,
             BuildInfo.version,
             modelInfo,
-            configuredBuildInfo
+            designerConfig.globalBuildInfo
           )
         }
       }
@@ -126,7 +122,8 @@ class AppApiHttpService(
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogic { _ => _ =>
         Future {
-          val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+          val configJson =
+            parser.parse(designerConfig.render()).left.map(_.message)
           configJson match {
             case Right(json) =>
               success(ServerConfigInfoDto(json))
@@ -161,7 +158,7 @@ class AppApiHttpService(
     appApiEndpoints.processingTypeDataReloadEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogicSuccess { _ => _ =>
-        processingTypeDataReloader.reloadAll().unsafeToFuture()
+        reloadProcessingTypes.unsafeToFuture()
       }
   }
 

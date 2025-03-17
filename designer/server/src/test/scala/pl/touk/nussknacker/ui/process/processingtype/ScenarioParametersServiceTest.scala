@@ -302,13 +302,15 @@ class ScenarioParametersServiceTest
             ComponentDefinitionExtractionMode.FinalDefinition
           )
           val processingTypeData =
-            new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+            new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
               .loadProcessingTypeData(
                 _ => modelDependencies,
                 _ => TestFactory.deploymentManagerDependencies,
                 deploymentManagersClassLoader,
                 ModelClassLoaderProvider(
-                  designerConfig.processingTypeConfigs.configByProcessingType
+                  designerConfig
+                    .processingTypeConfigs()
+                    .configByProcessingType
                     .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
                   deploymentManagersClassLoader
                 ),

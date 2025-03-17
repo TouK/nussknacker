@@ -24,8 +24,8 @@ trait WithFlinkContainersDeploymentManager
     super.afterAll()
   }
 
-  abstract override def designerConfig: Config = {
-    val config                   = super.designerConfig
+  abstract override def designerRawConfig: Config = {
+    val config                   = super.designerRawConfig
     val scenarioTypeConfigObject = config.getObject("scenarioTypes")
     val processingTypes          = scenarioTypeConfigObject.keySet().asScala.toSet
     processingTypes.foldLeft(config) { case (acc, processingType) =>

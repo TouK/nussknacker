@@ -55,21 +55,6 @@ class ActionService(
     })
   }
 
-  def getLastStateAction(
-      expectedProcessingType: ProcessingType,
-      processId: ProcessId
-  ): Future[Option[ProcessAction]] = {
-    dbioRunner.run {
-      for {
-        _ <- validateExpectedProcessingType(expectedProcessingType, processId)
-        lastStateAction <- actionRepository.getFinishedProcessActions(
-          processId,
-          Some(ScenarioActionName.ScenarioStatusActions)
-        )
-      } yield lastStateAction.headOption
-    }
-  }
-
   // It is very naive implementation for situation when designer was restarted after spawning some long running action
   // like deploy but before marking it as finished. Without this, user will always see "during deploy" status - even
   // if scenario was finished.
