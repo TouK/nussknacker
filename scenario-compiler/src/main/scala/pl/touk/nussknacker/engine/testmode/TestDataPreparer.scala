@@ -5,7 +5,6 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{Context, JobData, LazyParameter, NodeId}
-import pl.touk.nussknacker.engine.api.LazyParameter.FixedLazyParameter
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -14,7 +13,6 @@ import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestWi
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, ScenarioTestParametersRecord, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  DefaultToEvaluateFunctionConverter,
   EvaluableLazyParameterCreator,
   EvaluableLazyParameterCreatorDeps
 }
@@ -42,13 +40,9 @@ class TestDataPreparer(
     ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet, evaluator)
 
   private val lazyParameterDeps = new EvaluableLazyParameterCreatorDeps(expressionCompiler, evaluator, jobData)
-  private val delegate          = new DefaultToEvaluateFunctionConverter(lazyParameterDeps)
 
   def resolveParam[T <: AnyRef](lazyParameterCreator: EvaluableLazyParameterCreator[T]): LazyParameter[T] = {
-    new FixedLazyParameter(
-      delegate.toEvaluateFunction(lazyParameterCreator)(dumbContext),
-      lazyParameterCreator.returnType
-    )
+    lazyParameterCreator.create(lazyParameterDeps)
   }
 
   def prepareRecordsForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {

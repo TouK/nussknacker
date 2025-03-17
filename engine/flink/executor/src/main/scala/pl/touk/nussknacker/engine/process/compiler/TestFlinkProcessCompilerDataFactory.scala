@@ -73,14 +73,9 @@ object TestFlinkProcessCompilerDataFactory {
               outputVariableNameOpt: Option[String],
               additional: Seq[AnyRef]
           ): Any = {
-            val resolvedParams = Params(params.nameToValueMap.map { case (name, value) =>
-              name -> (value match {
-                case lazyParameterCreator: EvaluableLazyParameterCreator[_] =>
-                  sourcePreparer.resolveParam(lazyParameterCreator)
-                case other =>
-                  other
-              })
-            })
+            // Transform EvaluableLazyParameterCreator's into EvaluableLazyParameter's
+            // in order to have them available for resolving when executing tests
+            val resolvedParams = Params(params.nameToValueMap.map { case (name, value) => name -> resolveParam(value) })
             original.invokeMethod(resolvedParams, outputVariableNameOpt, additional)
           }
 
@@ -96,6 +91,13 @@ object TestFlinkProcessCompilerDataFactory {
 //              TODO: Why not throw exception here? Maybe we need to remodel FlinkSourceWithParameters interface?
                 EmptySource(typingResult)
             }
+          }
+
+          private def resolveParam(param: Any): Any = param match {
+            case lazyParameterCreator: EvaluableLazyParameterCreator[_] =>
+              sourcePreparer.resolveParam(lazyParameterCreator)
+            case other =>
+              other
           }
         })
       }
