@@ -1,7 +1,7 @@
 import { useTheme } from "@mui/material";
 import React, { forwardRef, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useForkRef } from "rooks";
 import { useEventTracking } from "../../containers/event-tracking";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
@@ -12,13 +12,10 @@ import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";
 import { NodeDescriptionPopover } from "./NodeDescriptionPopover";
 import { GraphProps } from "./types";
-import { bindActionCreators } from "redux";
-import * as NotificationActions from "../../actions/notificationActions";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
-    const { openNodeWindow, confirm } = useWindows();
-    const dispatch = useDispatch();
+    const { openNodeWindow } = useWindows();
     const userSettings = useSelector(getUserSettings);
     const pristine = useSelector(isPristine);
     const processCategory = useSelector(getProcessCategory);
@@ -28,7 +25,6 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const theme = useTheme();
     const translation = useTranslation();
     const { trackEvent } = useEventTracking();
-    const notifications = bindActionCreators(NotificationActions, dispatch);
     const graphRef = useRef<Graph>();
     const ref = useForkRef(graphRef, forwardedRef);
 
@@ -40,7 +36,6 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     ref={ref}
                     userSettings={userSettings}
                     showModalNodeDetails={openNodeWindow}
-                    showConfirmationWindow={confirm}
                     isPristine={pristine}
                     processCategory={processCategory}
                     loggedUser={loggedUser}
@@ -49,7 +44,6 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     theme={theme}
                     translation={translation}
                     handleStatisticsEvent={trackEvent}
-                    notifications={notifications}
                 />
             </GraphStyledWrapper>
             <NodeDescriptionPopover graphRef={graphRef} />

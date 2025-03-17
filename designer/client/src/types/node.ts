@@ -43,7 +43,17 @@ export type NodeType<F extends Field = Field> = {
     [key: string]: any;
 };
 
+export type Dimensions = { width: number; height: number };
+
 export type FragmentNodeType = NodeType;
+
+export type ColorValueHex = `#${string}`;
+
+export type StickyNoteNodeType = NodeType & {
+    content: string;
+    dimensions: Dimensions;
+    color: ColorValueHex;
+};
 
 export type Field = Parameter | FragmentInputParameter;
 

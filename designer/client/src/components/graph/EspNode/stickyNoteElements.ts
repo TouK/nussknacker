@@ -1,9 +1,7 @@
-import { ProcessDefinitionData } from "../../../types";
+import { ProcessDefinitionData, StickyNoteNodeType } from "../../../types";
 import { Theme } from "@mui/material";
-import { StickyNote } from "../../../common/StickyNote";
 import { dia, elementTools, shapes } from "jointjs";
 import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
-import { createStickyNoteId } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
 import { Events } from "../types";
@@ -16,11 +14,10 @@ export type ModelWithTool = {
 export function makeStickyNoteElement(
     processDefinitionData: ProcessDefinitionData,
     theme: Theme,
-): (stickyNote: StickyNote) => ModelWithTool {
-    return (stickyNote: StickyNote) => {
+): (stickyNote: StickyNoteNodeType) => ModelWithTool {
+    return (stickyNote: StickyNoteNodeType) => {
         const attributes: shapes.devs.ModelAttributes = {
-            id: createStickyNoteId(stickyNote.noteId),
-            noteId: stickyNote.noteId,
+            id: stickyNote.id,
             attrs: {
                 size: {
                     width: stickyNote.dimensions.width,
@@ -44,6 +41,12 @@ export function makeStickyNoteElement(
                     stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).dark,
                     strokeWidth: 1,
                 },
+            },
+            definitionToCompare: {
+                width: stickyNote.dimensions.width,
+                height: stickyNote.dimensions.height,
+                color: stickyNote.color,
+                content: stickyNote.content,
             },
             rankDir: "R",
         };

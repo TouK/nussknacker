@@ -6,26 +6,48 @@ import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
-import { layoutChanged, Position } from "./ui/layout";
-import { flushSync } from "react-dom";
-import { Dimensions, StickyNote } from "../../common/StickyNote";
+import { partition } from "lodash";
+import { StickyNoteType } from "../../types/stickyNote";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
     | { type: "DISPLAY_PROCESS"; scenario: Scenario };
+
+function addStickyNotesToNodes(data: Scenario): Scenario {
+    const stickyNotesWithType = data.scenarioGraph.stickyNotes.map((name) => ({
+        ...name,
+        type: StickyNoteType,
+    }));
+    return {
+        ...data,
+        scenarioGraph: {
+            ...data.scenarioGraph,
+            nodes: [...data.scenarioGraph.nodes, ...stickyNotesWithType],
+        },
+    };
+}
+
+export function extractStickyNotesFromNodes(graph: ScenarioGraph): ScenarioGraph {
+    const [stickyNotes, nodes] = partition(graph.nodes, (node) => node.type === StickyNoteType);
+    return {
+        ...graph,
+        nodes: nodes,
+        stickyNotes: stickyNotes,
+    };
+}
 
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
-            dispatch(fetchStickyNotesForScenario(processName, response.data.processVersionId));
+            const scenario = addStickyNotesToNodes(response.data);
+            dispatch(displayTestCapabilities(processName, scenario.scenarioGraph));
             dispatch({
                 type: "DISPLAY_PROCESS",
-                scenario: response.data,
+                scenario: scenario,
             });
-            return response.data;
+            return scenario;
         });
     };
 }
@@ -58,45 +80,6 @@ export function displayTestCapabilities(processName: ProcessName, scenarioGraph:
                 capabilities: data,
             }),
         );
-}
-
-const refreshStickyNotes = (dispatch, scenarioName: string, scenarioVersionId: number) => {
-    return HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
-        flushSync(() => {
-            dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
-            dispatch(layoutChanged());
-        });
-    });
-};
-
-export function fetchStickyNotesForScenario(scenarioName: string, scenarioVersionId: number): ThunkAction {
-    return (dispatch) => refreshStickyNotes(dispatch, scenarioName, scenarioVersionId);
-}
-
-export function stickyNoteUpdated(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote): ThunkAction {
-    return (dispatch) => {
-        HttpService.updateStickyNote(scenarioName, scenarioVersionId, stickyNote).then((_) => {
-            refreshStickyNotes(dispatch, scenarioName, scenarioVersionId);
-        });
-    };
-}
-
-export function stickyNoteDeleted(scenarioName: string, stickyNoteId: number): ThunkAction {
-    return (dispatch) => {
-        HttpService.deleteStickyNote(scenarioName, stickyNoteId).then(() => {
-            flushSync(() => {
-                dispatch({ type: "STICKY_NOTE_DELETED", stickyNoteId });
-            });
-        });
-    };
-}
-
-export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions): ThunkAction {
-    return (dispatch) => {
-        HttpService.addStickyNote(scenarioName, scenarioVersionId, position, dimensions).then((_) => {
-            refreshStickyNotes(dispatch, scenarioName, scenarioVersionId);
-        });
-    };
 }
 
 export function displayCurrentProcessVersion(processName: ProcessName) {

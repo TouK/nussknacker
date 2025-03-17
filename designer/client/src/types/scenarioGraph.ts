@@ -1,6 +1,6 @@
 import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
-import { NodeType, PropertiesType } from "./node";
+import { NodeType, PropertiesType, StickyNoteNodeType } from "./node";
 import { ComponentGroup } from "./component";
 import { ParamType } from "../components/graph/node-modal/editors/types";
 
@@ -13,6 +13,7 @@ export type ScenarioGraph = {
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
+    stickyNotes: NodeType[];
 };
 
 export type Category = string;
