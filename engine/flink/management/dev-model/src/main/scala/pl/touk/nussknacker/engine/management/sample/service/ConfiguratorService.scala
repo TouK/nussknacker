@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
 
 import javax.annotation.Nullable
@@ -13,8 +13,8 @@ object ConfiguratorService extends Service with Serializable {
   @MethodToInvoke
   def invoke(
       @ParamName("Template ID")
-      @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR)
-      @SpelEditor
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       @NotBlank
       template: String,
       @ParamName("Version")

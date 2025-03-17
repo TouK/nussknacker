@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 
 import com.cronutils.model.Cron
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period, ZonedDateTime}
 import java.time.temporal.ChronoUnit
@@ -17,21 +17,23 @@ class DatesTypesService extends Service with Serializable {
       @ParamName("timeParam") timeParam: LocalTime,
       @ParamName("zonedDataTimeParam") zonedDataTimeParam: ZonedDateTime,
       @ParamName("durationParam")
-      @SimpleEditor(
-        `type` = SimpleEditorType.DURATION_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
+      @Editor(
+        `type` = EditorType.DURATION_EDITOR,
+        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS),
+        isMainEditor = true
       )
-      @SpelEditor
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       duration: Duration,
       @ParamName("periodParam")
-      @SimpleEditor(
-        `type` = SimpleEditorType.PERIOD_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
+      @Editor(
+        `type` = EditorType.PERIOD_EDITOR,
+        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS),
+        isMainEditor = true
       )
-      @SpelEditor
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       period: Period,
       @ParamName("cronScheduleParam")
-      @SimpleEditor(`type` = SimpleEditorType.CRON_EDITOR)
+      @Editor(`type` = EditorType.CRON_EDITOR)
       cronScheduleParam: Cron
   ): Future[Unit] = {
     ???

@@ -11,7 +11,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType, SpelEditor}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
@@ -55,12 +55,12 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
   @MethodToInvoke
   def create(
       @ParamName("schedule")
-      @SimpleEditor(
-        `type` = SimpleEditorType.DURATION_EDITOR,
+      @Editor(
+        `type` = EditorType.DURATION_EDITOR,
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS),
         isMainEditor = true
       )
-      @SpelEditor
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       schedule: Duration,
       // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
