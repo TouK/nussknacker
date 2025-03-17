@@ -7,6 +7,7 @@ import { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import { Scenario } from "../components/Process/types";
 import { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
+import { StickyNoteType } from "../types/stickyNote";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
     useEffect(() => {
@@ -56,6 +57,7 @@ export function useWindows(parent?: WindowId) {
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
+            if (node.type === StickyNoteType) return;
             return open({
                 id: node.id,
                 title: node.id,
