@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicCo
 import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
-    name: ProcessingType,
+    processingType: ProcessingType,
     designerModelData: DesignerModelData,
     deploymentData: DeploymentData,
     category: String,
@@ -53,7 +53,7 @@ object ProcessingTypeData {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def createProcessingTypeData(
-      name: ProcessingType,
+      processingType: ProcessingType,
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
       schedulingForProcessingType: SchedulingForProcessingType,
@@ -77,9 +77,9 @@ object ProcessingTypeData {
         )
 
       val designerModelData =
-        createDesignerModelData(modelData, metaDataInitializer, name, componentDefinitionExtractionMode)
+        createDesignerModelData(modelData, metaDataInitializer, processingType, componentDefinitionExtractionMode)
       ProcessingTypeData(
-        name,
+        processingType,
         designerModelData,
         deploymentData,
         category
@@ -87,7 +87,7 @@ object ProcessingTypeData {
     } catch {
       case NonFatal(ex) =>
         throw new IllegalArgumentException(
-          s"Error during creation of processing type data for processing type [$name]",
+          s"Error during creation of processing type data for processing type [$processingType]",
           ex
         )
     }

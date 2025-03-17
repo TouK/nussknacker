@@ -12,7 +12,7 @@ object SslConfigParser {
   private val LocationKey  = "location"
   private val PasswordKey  = "password"
 
-  def sslEnabled(config: Config): Option[KeyStoreConfig] = {
+  def parseSslConfig(config: Config): Option[KeyStoreConfig] = {
     for {
       _ <- Some(())
       if config.hasPath(SslPath)

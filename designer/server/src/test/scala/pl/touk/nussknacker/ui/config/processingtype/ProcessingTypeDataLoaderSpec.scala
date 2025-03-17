@@ -118,7 +118,7 @@ class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
   }
 
   private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = { () =>
-    new SimpleConfigLoadingDesignerConfigLoader(config).loadDesignerConfig().map(_.processingTypeConfigs)
+    new SimpleConfigLoadingDesignerConfigLoader(config).loadDesignerConfig().map(_.processingTypeConfigs())
   }
 
   private def loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(
@@ -134,7 +134,7 @@ class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
         case None         => IO.raiseError(throw new IllegalStateException(s"Cannot load the config more than [$idx]"))
       }
     }
-    () => loadDesignerConfig.map(_.processingTypeConfigs)
+    () => loadDesignerConfig.map(_.processingTypeConfigs())
   }
 
 }

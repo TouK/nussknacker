@@ -79,7 +79,7 @@ class StatisticsApiHttpServiceBusinessSpec
 
   override def clock: Clock = mockedClock
 
-  override def designerConfig: Config = super.designerConfig
+  override def designerRawConfig: Config = super.designerRawConfig
     .withValue("questDbSettings.instanceId", fromAnyRef(questDbRelativePathString))
     .withValue("questDbSettings.tasksExecutionDelay", fromAnyRef("2 seconds"))
     .withValue("questDbSettings.retentionDelay", fromAnyRef("2 seconds"))

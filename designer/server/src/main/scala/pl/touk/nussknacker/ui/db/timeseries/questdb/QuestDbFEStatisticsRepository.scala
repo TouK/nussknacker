@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.db.timeseries.questdb
 
 import better.files.File
 import cats.effect.{IO, Resource}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.security.AllowAllSecurityContext
@@ -155,9 +154,12 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
        |    WHERE timestamp_floor('d', ts) = timestamp_floor('d', now())
        | GROUP BY name""".stripMargin
 
-  def create(system: ActorSystem, clock: Clock, config: Config): Resource[IO, FEStatisticsRepository[Future]] =
+  def create(
+      system: ActorSystem,
+      clock: Clock,
+      questDbConfig: QuestDbConfig
+  ): Resource[IO, FEStatisticsRepository[Future]] =
     for {
-      questDbConfig <- Resource.eval(IO(QuestDbConfig.apply(config)))
       repository <- questDbConfig match {
         case enabledCfg: QuestDbConfig.Enabled =>
           createRepositoryResource(system, clock, enabledCfg)

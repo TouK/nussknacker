@@ -23,7 +23,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val designerConfigLoader = new SimpleConfigLoadingDesignerConfigLoader(adjustNuTestConfig())
-    releaseAppResources = NussknackerAppFactory(designerConfigLoader)
+    releaseAppResources = new NussknackerAppFactory(designerConfigLoader)
       .createApp(clock = clock)
       .allocated
       .unsafeRunSync()
@@ -36,7 +36,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
   }
 
   private def adjustNuTestConfig(): Config = {
-    designerConfig
+    designerRawConfig
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
   }

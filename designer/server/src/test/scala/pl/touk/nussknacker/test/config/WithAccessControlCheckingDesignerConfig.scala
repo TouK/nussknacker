@@ -18,12 +18,12 @@ trait WithAccessControlCheckingDesignerConfig extends WithDesignerConfig with Be
     validateConsistency()
   }
 
-  override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
+  override def designerRawConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
     ConfigFactory.parseResources("config/access-control-checking/multiple-category-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
-    val configValidator = new DesignerTestConfigValidator(designerConfig)
+    val configValidator = new DesignerTestConfigValidator(designerRawConfig)
     val processingTypeWithCategories =
       TestCategory.categoryByProcessingType.map { case (k, v) => (k.stringify, v.stringify) }
     configValidator.validateTestDataWithDesignerConfFile(processingTypeWithCategories)

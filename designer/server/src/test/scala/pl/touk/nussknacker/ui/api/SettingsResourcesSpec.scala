@@ -42,7 +42,7 @@ class SettingsResourcesSpec
   )
 
   private val settingsRoute = new SettingsResources(
-    featureTogglesConfig,
+    designerConfig,
     authenticationConfig.name,
     usageStatisticsReportsConfig,
     mockedFingerprintService

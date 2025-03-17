@@ -11,6 +11,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErro
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
@@ -36,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class MigrationService(
-    config: Config,
+    designerConfig: DesignerConfig,
     processService: ProcessService,
     processResolver: ProcessingTypeDataProvider[UIProcessResolver, _],
     processAuthorizer: AuthorizeProcess,
@@ -78,7 +79,7 @@ class MigrationService(
       migrateScenarioData: CurrentMigrateScenarioData
   )(implicit loggedUser: LoggedUser): Future[Either[MigrationError, Unit]] = {
     val sourceEnvironmentId = migrateScenarioData.sourceEnvironmentId
-    val targetEnvironmentId = config.getString("environment")
+    val targetEnvironmentId = designerConfig.environment
     val parameters = ScenarioParameters(
       migrateScenarioData.processingMode,
       migrateScenarioData.processCategory,
