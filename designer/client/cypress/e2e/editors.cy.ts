@@ -44,7 +44,7 @@ describe("Editors", () => {
             .click();
 
         // Wait for a tooltip positioning
-        cy.wait(200);
+        cy.wait(500);
         cy.get("[data-testid=window]").matchImage();
 
         cy.get("[role=tab]").contains("string template").click();
@@ -57,7 +57,7 @@ describe("Editors", () => {
             .click();
 
         // Wait for a tooltip positioning
-        cy.wait(200);
+        cy.wait(500);
         cy.get("[data-testid=window]").matchImage();
     });
 });
