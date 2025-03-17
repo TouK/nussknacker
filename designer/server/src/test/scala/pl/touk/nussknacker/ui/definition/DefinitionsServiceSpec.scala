@@ -39,19 +39,20 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     @MethodToInvoke
     def method(
         @ParamName("paramDualEditor")
-        @SimpleEditor(
-          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-          possibleValues = Array(new LabeledExpression(expression = "expression", label = "label"))
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(new LabeledExpression(expression = "expression", label = "label")),
+          isMainEditor = true
         )
-        @SpelEditor
+        @Editor(`type` = EditorType.SPEL_EDITOR)
         input: String,
-        @SimpleEditor(
-          `type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR
+        @Editor(
+          `type` = EditorType.SPEL_TEMPLATE_EDITOR
         )
         @ParamName("paramStringEditor")
         param2: String,
         @ParamName("paramRawEditor")
-        @SpelEditor
+        @Editor(`type` = EditorType.SPEL_EDITOR)
         param3: String
     ): Future[String] = ???
 

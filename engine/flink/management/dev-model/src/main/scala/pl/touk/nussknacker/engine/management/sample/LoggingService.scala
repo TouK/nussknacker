@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, ParameterEditors}
+import pl.touk.nussknacker.engine.api.definition.BoolParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -23,9 +23,7 @@ object LoggingService extends EagerService {
   def prepare(
       @ParamName("logger") @Nullable loggerName: String,
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[
-        String
-      ]
+      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
       private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
