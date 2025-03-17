@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper,
@@ -149,10 +149,10 @@ object keyed {
     def enrichWithKey[K, V](ctx: Context, key: K): Context =
       ctx.withVariable(VariableConstants.KeyVariableName, key)
 
-    def contextTransformation(ctx: ValidationContext)(
+    def contextTransformation(ctx: ValidationContext, groupByReturnType: TypingResult)(
         implicit nodeId: NodeId
     ): ValidatedNel[ProcessCompilationError, ValidationContext] =
-      ctx.withVariableOverriden(VariableConstants.KeyVariableName, Unknown, None)
+      ctx.withVariableOverriden(VariableConstants.KeyVariableName, groupByReturnType, None)
 
   }
 
