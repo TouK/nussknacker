@@ -57,28 +57,28 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.Future
 
-final case class DomainServices(
-    futureProcessRepository: FetchingProcessRepository[Future],
-    scenarioActivityRepository: ScenarioActivityRepository,
-    scenarioLabelsRepository: ScenarioLabelsRepository,
-    globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
-    feStatisticsRepository: FEStatisticsRepository[Future],
-    componentService: ComponentService,
-    processService: ProcessService,
-    fetchScenarioActivityService: FetchScenarioActivityService,
-    actionRepository: ScenarioActionRepository,
-    deploymentRepository: DeploymentRepository,
-    processChangeListener: ProcessChangeListener,
-    actionService: ActionService,
-    countsReporter: Option[CountsReporter[Future]],
-    counter: ProcessCounter,
-    fingerprintService: FingerprintService,
-    scenarioStatusProvider: ScenarioStatusProvider,
-    scenarioStatusPresenter: ScenarioStatusPresenter,
-    dmDispatcher: DeploymentManagerDispatcher,
-    processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
-    reloadProcessingTypes: IO[Unit],
-    processAuthorizer: AuthorizeProcess,
+final class DomainServices(
+    val futureProcessRepository: FetchingProcessRepository[Future],
+    val scenarioActivityRepository: ScenarioActivityRepository,
+    val scenarioLabelsRepository: ScenarioLabelsRepository,
+    val globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
+    val feStatisticsRepository: FEStatisticsRepository[Future],
+    val componentService: ComponentService,
+    val processService: ProcessService,
+    val fetchScenarioActivityService: FetchScenarioActivityService,
+    val actionRepository: ScenarioActionRepository,
+    val deploymentRepository: DeploymentRepository,
+    val processChangeListener: ProcessChangeListener,
+    val actionService: ActionService,
+    val countsReporter: Option[CountsReporter[Future]],
+    val counter: ProcessCounter,
+    val fingerprintService: FingerprintService,
+    val scenarioStatusProvider: ScenarioStatusProvider,
+    val scenarioStatusPresenter: ScenarioStatusPresenter,
+    val dmDispatcher: DeploymentManagerDispatcher,
+    val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
+    val reloadProcessingTypes: IO[Unit],
+    val processAuthorizer: AuthorizeProcess,
 )
 
 object DomainServices {
@@ -260,7 +260,7 @@ object DomainServices {
         scenarioLabelsRepository,
         alreadyLoadedConfig.environment
       )
-    } yield DomainServices(
+    } yield new DomainServices(
       futureProcessRepository = futureProcessRepository,
       scenarioActivityRepository = scenarioActivityRepository,
       scenarioLabelsRepository = scenarioLabelsRepository,

@@ -33,19 +33,19 @@ import pl.touk.nussknacker.ui.validation.{
 
 import scala.concurrent.ExecutionContext
 
-final case class ProcessingTypeServices private (
+final class ProcessingTypeServices private (
     private val processingTypeData: ProcessingTypeData,
-    alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
-    definitionService: DefinitionsService,
-    nodeValidator: NodeValidator,
-    scenarioValidator: UIProcessValidator,
-    parametersValidator: ParametersValidator,
-    expressionSuggester: ExpressionSuggester,
-    scenarioResolver: ScenarioResolver,
-    processResolver: UIProcessResolver,
-    scenarioTestService: ScenarioTestService,
-    actionInfoService: ActionInfoService,
-    newProcessPreparer: NewProcessPreparer,
+    val alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
+    val definitionService: DefinitionsService,
+    val nodeValidator: NodeValidator,
+    val scenarioValidator: UIProcessValidator,
+    val parametersValidator: ParametersValidator,
+    val expressionSuggester: ExpressionSuggester,
+    val scenarioResolver: ScenarioResolver,
+    val processResolver: UIProcessResolver,
+    val scenarioTestService: ScenarioTestService,
+    val actionInfoService: ActionInfoService,
+    val newProcessPreparer: NewProcessPreparer,
 ) {
 
   def processingType: ProcessingType = processingTypeData.processingType
@@ -126,7 +126,7 @@ object ProcessingTypeServices {
       processingTypeData.designerModelData.modelData,
       processingTypeData.deploymentData.scenarioPropertiesConfig.keys
     )
-    ProcessingTypeServices(
+    new ProcessingTypeServices(
       processingTypeData,
       alignedComponentsDefinitionProvider,
       definitionService,

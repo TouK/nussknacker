@@ -1,21 +1,11 @@
 package pl.touk.nussknacker.ui.server
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import cats.effect.{IO, Resource}
-import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.customhttpservice.{
-  CustomHttpServiceProvider,
-  CustomHttpServiceProviderFactory,
-  ProcessServiceBasedScenarioServiceAdapter
-}
-import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
+import pl.touk.nussknacker.ui.customhttpservice.CustomHttpServiceProvider
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.process.{ConfigScenarioToolbarService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService => LegacyDeploymentService}
@@ -35,7 +25,10 @@ object AkkaRoutesFactory {
     import infrastructureServices._
 
     for {
-      customHttpServiceProviders <- createCustomHttpServiceProvider(designerConfig, domainServices)
+      customHttpServiceProviders <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
+        designerConfig,
+        domainServices
+      )
 
       routesWithAuthentication = createRoutesWithAuthentication(
         designerConfig,
@@ -48,37 +41,6 @@ object AkkaRoutesFactory {
         createRoutesWithoutAuthentication(designerConfig, domainServices, authenticationResources)
 
     } yield AkkaRoutes(routesWithAuthentication, routesWithoutAuthentication)
-  }
-
-  private def createCustomHttpServiceProvider(
-      designerConfig: DesignerConfig,
-      domainServices: DomainServices
-  )(implicit ec: ExecutionContext): Resource[IO, Map[String, CustomHttpServiceProvider]] = {
-    lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
-      new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService)
-    )
-
-    loadCustomHttpServiceProviderFactories()
-      .map { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
-      .sequence
-      .map(_.toMap)
-  }
-
-  private def loadCustomHttpServiceProviderFactories(): List[CustomHttpServiceProviderFactory] = {
-    Multiplicity(
-      ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
-    ) match {
-      case Empty() =>
-        List.empty[CustomHttpServiceProviderFactory]
-      case One(providerFactory) =>
-        List(providerFactory)
-      case Many(moreThanOne) if moreThanOne.map(_.name).distinct.size == moreThanOne.size =>
-        moreThanOne
-      case Many(moreThanOne) =>
-        throw new IllegalArgumentException(
-          s"CustomHttpServiceProviderFactory instances with conflicting names found: $moreThanOne"
-        )
-    }
   }
 
   private def createRoutesWithAuthentication(

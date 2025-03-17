@@ -10,6 +10,7 @@ import fr.davit.akka.http.metrics.core.HttpMetrics._
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.factory.InfrastructureServices
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory
 
 import java.util.concurrent.atomic.AtomicReference
@@ -18,20 +19,21 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(system: ActorSystem) extends LazyLogging {
+class NussknackerHttpServer(actorSystem: ActorSystem, metricsRegistry: MetricRegistry, designerConfig: DesignerConfig)
+    extends LazyLogging {
 
-  private implicit val systemImplicit: ActorSystem                = system
-  private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
+  private implicit val systemImplicit: ActorSystem                = actorSystem
+  private implicit val executionContextImplicit: ExecutionContext = actorSystem.dispatcher
 
-  def start(route: Route, designerConfig: DesignerConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
-    createAkkaHttpBinding(designerConfig, route, metricRegistry).map(_ => RouteInterceptor.set(route))
+  def this(infrastructureServices: InfrastructureServices, designerConfig: DesignerConfig) = {
+    this(infrastructureServices.actorSystem, infrastructureServices.metricsRegistry, designerConfig)
   }
 
-  private def createAkkaHttpBinding(
-      designerConfig: DesignerConfig,
-      route: Route,
-      metricsRegistry: MetricRegistry
-  ) = {
+  def start(route: Route): Resource[IO, Unit] = {
+    createAkkaHttpBinding(route).map(_ => RouteInterceptor.set(route))
+  }
+
+  private def createAkkaHttpBinding(route: Route) = {
     def createServer() = IO.fromFuture {
       IO {
         val bindingResultF = designerConfig.ssl match {

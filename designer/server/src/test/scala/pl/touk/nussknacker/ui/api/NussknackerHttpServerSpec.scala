@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -30,22 +30,10 @@ class NussknackerHttpServerSpec
       val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
       val port           = nextPort()
       for {
-        server <- createHttpServer()
+        server <- createHttpServer(port, keyStoreConfig)
         client <- createHttpClient(Some(prepareSSLContext(keyStoreConfig)))
         route = createRoute()
-        _ <- server.start(
-          route,
-          DesignerConfig.from(
-            ConfigFactory
-              .empty()
-              .withValue("http.interface", fromAnyRef("0.0.0.0"))
-              .withValue("http.port", fromAnyRef(port))
-              .withValue("ssl.enabled", fromAnyRef("true"))
-              .withValue("ssl.keyStore.location", fromAnyRef(keyStoreConfig.uri.getPath))
-              .withValue("ssl.keyStore.password", fromAnyRef("foobar"))
-          ),
-          new MetricRegistry
-        )
+        _ <- server.start(route)
       } yield {
         val response = client.send(basicRequest.get(uri"https://localhost:$port/test"))
         response.code should be(StatusCode.Ok)
@@ -53,7 +41,7 @@ class NussknackerHttpServerSpec
     }
   }
 
-  private def createHttpServer() = {
+  private def createHttpServer(port: Int, keyStoreConfig: KeyStoreConfig) = {
     Resource
       .make(
         acquire = IO(ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine))
@@ -61,7 +49,16 @@ class NussknackerHttpServerSpec
         release = system => IO(system.terminate())
       )
       .map { system =>
-        new NussknackerHttpServer(system)
+        val designerConfig = DesignerConfig.from(
+          ConfigFactory
+            .empty()
+            .withValue("http.interface", fromAnyRef("0.0.0.0"))
+            .withValue("http.port", fromAnyRef(port))
+            .withValue("ssl.enabled", fromAnyRef("true"))
+            .withValue("ssl.keyStore.location", fromAnyRef(keyStoreConfig.uri.getPath))
+            .withValue("ssl.keyStore.password", fromAnyRef("foobar"))
+        )
+        new NussknackerHttpServer(system, new MetricRegistry, designerConfig)
       }
   }
 
