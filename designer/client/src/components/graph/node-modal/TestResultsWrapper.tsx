@@ -39,10 +39,12 @@ export function TestResultsWrapper({
         TestResultUtils.stateForSelectTestResults(nodeResults),
     );
 
-    const { state } = useInputOutputContext();
+    const io = useInputOutputContext();
     useEffect(() => {
-        setTestResultsState(TestResultUtils.stateForSelectTestResults(nodeResults, state.inputDataSetId ? state.inputDataSetId : null));
-    }, [nodeResults, state.inputDataSetId]);
+        setTestResultsState(
+            TestResultUtils.stateForSelectTestResults(nodeResults, io?.state?.inputDataSetId ? io.state.inputDataSetId : null),
+        );
+    }, [nodeResults, io?.state?.inputDataSetId]);
 
     const [settings] = useUserSettings();
     return (

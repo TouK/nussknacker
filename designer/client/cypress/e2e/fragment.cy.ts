@@ -223,7 +223,7 @@ describe("Fragment", () => {
 
         cy.get("@anyValueWithSuggestionField").find("[data-testid='form-helper-text']").should("not.exist");
 
-        cy.get("[data-testid=window]").find("input[value=testOutput]").type("{selectall}fragmentResult");
+        cy.get("[data-testid=window]").find("input[value=e_2_e_001_fragment_test_process_test_output]").type("{selectall}fragmentResult");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
