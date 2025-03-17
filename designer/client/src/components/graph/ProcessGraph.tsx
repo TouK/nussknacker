@@ -3,7 +3,7 @@ import { g } from "jointjs";
 import { mapValues } from "lodash";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenario, getLayout, getProcessCounts, getStickyNotes } from "../../reducers/selectors/graph";
+import { getScenario, getLayout, getProcessCounts } from "../../reducers/selectors/graph";
 import { setLinksHovered } from "./utils/dragHelpers";
 import { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
@@ -17,15 +17,12 @@ import {
     nodesConnected,
     nodesDisconnected,
     resetSelection,
-    stickyNoteAdded,
     stickyNoteUpdated,
-    stickyNoteDeleted,
     toggleSelection,
 } from "../../actions/nk";
 import { NodeType } from "../../types";
 import { Capabilities } from "../../reducers/selectors/other";
 import { bindActionCreators } from "redux";
-import { StickyNoteType } from "../../types/stickyNote";
 
 export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(function ProcessGraph(
     { capabilities },
@@ -33,7 +30,6 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
 ): JSX.Element {
     const scenario = useSelector(getScenario);
     const processCounts = useSelector(getProcessCounts);
-    const stickyNotes = useSelector(getStickyNotes);
     const layout = useSelector(getLayout);
 
     const graph = useRef<Graph>();
@@ -46,12 +42,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             const relOffset = graph.current.processGraphPaper.clientToLocalPoint(clientOffset);
             // to make node horizontally aligned
             const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-            if (item?.type === StickyNoteType) {
-                graph.current.addStickyNote(scenario.name, scenario.processVersionId, mapValues(nodeInputRelOffset, Math.round));
-            } else {
-                graph.current.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round));
-                setLinksHovered(graph.current.graph);
-            }
+            graph.current.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round));
+            setLinksHovered(graph.current.graph);
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
@@ -84,9 +76,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     layoutChanged,
                     injectNode,
                     nodeAdded,
-                    stickyNoteAdded,
                     stickyNoteUpdated,
-                    stickyNoteDeleted,
                     resetSelection,
                     toggleSelection,
                 },
@@ -101,7 +91,6 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             connectDropTarget={connectDropTarget}
             isDraggingOver={isDraggingOver}
             capabilities={capabilities}
-            stickyNotes={stickyNotes}
             divId={"nk-graph-main"}
             nodeSelectionEnabled
             scenario={scenario}

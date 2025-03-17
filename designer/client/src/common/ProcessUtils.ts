@@ -17,6 +17,7 @@ import {
     ValidationResult,
     VariableTypes,
 } from "../types";
+import { StickyNoteDefinition, StickyNoteType } from "../types/stickyNote";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
@@ -209,7 +210,7 @@ class ProcessUtils {
     };
 
     extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
-        return components?.[this.determineComponentId(node)];
+        return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
     };
 
     determineComponentId = (node?: NodeType): string | null => {

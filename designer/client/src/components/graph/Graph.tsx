@@ -18,14 +18,7 @@ import { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import {
-    applyCellChanges,
-    calcLayout,
-    createPaper,
-    getStickyNoteCopyFromCell,
-    isModelElement,
-    isStickyNoteElement,
-} from "./GraphPartialsInTS";
+import { applyCellChanges, calcLayout, createPaper, isModelElement, isStickyNoteElement } from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
@@ -46,13 +39,7 @@ import { Events, GraphProps } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
-import { StickyNote } from "../../common/StickyNote";
 import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
-import { STICKY_NOTE_CONSTRAINTS } from "./EspNode/stickyNote";
-import { NotificationActions } from "../../http/HttpService";
-import i18next from "i18next";
-import * as DialogMessages from "../../common/DialogMessages";
-import { ConfirmDialogData } from "../modals/GenericConfirmDialog";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -65,12 +52,10 @@ type Props = GraphProps & {
     selectionState: NodeId[];
     userSettings: UserSettings;
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
-    showConfirmationWindow: (data: ConfirmDialogData) => void;
     isPristine?: boolean;
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
-    notifications: NotificationActions;
 };
 
 export const nuGraphNamespace = {
@@ -237,24 +222,7 @@ export class Graph extends React.Component<Props> {
                     this.handleInjectBetweenNodes(cell.model, linkBelowCell);
                     batchGroupBy.end(group);
                 }
-                if (isStickyNoteElement(cell.model)) {
-                    this.processGraphPaper.hideTools();
-                    if (!this.props.isPristine) {
-                        this.props.notifications.warn(
-                            i18next.t(
-                                "notification.warn.cannotMoveOnUnsavedVersion",
-                                "Save scenario before making any changes to sticky notes",
-                            ),
-                        );
-                        return;
-                    }
-                    cell.showTools();
-                    const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell.model);
-                    if (!updatedStickyNote) return;
-                    const position = cell.model.get("position");
-                    updatedStickyNote.layoutData = { x: position.x, y: position.y };
-                    this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
-                }
+                if (isStickyNoteElement(cell.model)) this.changeLayoutIfNeeded();
             })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;
@@ -279,16 +247,11 @@ export class Graph extends React.Component<Props> {
         return linkBelowCell;
     }
 
-    drawGraph = (
-        scenarioGraph: ScenarioGraph,
-        stickyNotes: StickyNote[],
-        layout: Layout,
-        processDefinitionData: ProcessDefinitionData,
-    ): void => {
+    drawGraph = (scenarioGraph: ScenarioGraph, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
         const { theme } = this.props;
 
         this.redrawing = true;
-        applyCellChanges(this.processGraphPaper, scenarioGraph, stickyNotes, processDefinitionData, theme);
+        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
 
         if (isEmpty(layout)) {
             this.forceLayout();
@@ -397,12 +360,10 @@ export class Graph extends React.Component<Props> {
             if (this.props.isFragment === true) return;
             this.processGraphPaper.hideTools();
             if (isStickyNoteElement(cellView.model)) {
-                if (!this.props.isPristine) return;
-                if (this.props.selectionState.length > 0) this.props.resetSelection();
                 showStickyNoteTools(cellView);
             }
             if (this.props.nodeSelectionEnabled) {
-                const nodeDataId = cellView.model.attributes.nodeData?.id;
+                const nodeDataId = cellView.model.attributes?.id;
                 if (!nodeDataId) {
                     return;
                 }
@@ -439,7 +400,7 @@ export class Graph extends React.Component<Props> {
 
     componentDidMount(): void {
         this.processGraphPaper = this.createPaper();
-        this.drawGraph(this.props.scenario.scenarioGraph, this.props.stickyNotes, this.props.layout, this.props.processDefinitionData);
+        this.drawGraph(this.props.scenario.scenarioGraph, this.props.layout, this.props.processDefinitionData);
         this.processGraphPaper.unfreeze();
         this.processGraphPaper.hideTools();
         this._prepareContentForExport();
@@ -485,65 +446,16 @@ export class Graph extends React.Component<Props> {
         });
 
         this.graph.on(Events.CELL_RESIZED, (cell: dia.Element) => {
+            if (this.props.isFragment === true) return;
             if (isStickyNoteElement(cell)) {
-                if (!this.props.isPristine) {
-                    this.props.notifications.warn(
-                        i18next.t("notification.warn.cannotResizeOnUnsavedVersion", "Save scenario before resizing sticky note"),
-                    );
-                    return;
-                }
-                const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
-                if (!updatedStickyNote) return;
-                const position = cell.get("position");
-                const size = cell.get("size");
-                // TODO move max width and height to some config?
-                const width = Math.max(
-                    STICKY_NOTE_CONSTRAINTS.MIN_WIDTH,
-                    Math.min(STICKY_NOTE_CONSTRAINTS.MAX_WIDTH, Math.round(size.width)),
-                );
-                const height = Math.max(
-                    STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT,
-                    Math.min(STICKY_NOTE_CONSTRAINTS.MAX_HEIGHT, Math.round(size.height)),
-                );
-                updatedStickyNote.layoutData = { x: position.x, y: position.y };
-                updatedStickyNote.dimensions = { width, height };
-                this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
+                this.props.stickyNoteUpdated(cell, null);
             }
         });
 
         this.graph.on(Events.CELL_CONTENT_UPDATED, (cell: dia.Element, content: string) => {
+            if (this.props.isFragment === true) return;
             if (isStickyNoteElement(cell)) {
-                if (!this.props.isPristine) {
-                    this.props.notifications.warn(
-                        i18next.t("notification.warn.cannotUpdateOnUnsavedVersion", "Save scenario before updating sticky note"),
-                    );
-                    return;
-                }
-                const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
-                if (!updatedStickyNote) return;
-                if (updatedStickyNote.content == content) return;
-                updatedStickyNote.content = content;
-                this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
-            }
-        });
-
-        this.graph.on(Events.CELL_DELETED, (cell: dia.Element) => {
-            if (isStickyNoteElement(cell)) {
-                if (!this.props.isPristine) {
-                    this.props.notifications.warn(
-                        i18next.t("notification.warn.cannotDeleteOnUnsavedVersion", "Save scenario before deleting sticky note"),
-                    );
-                    return;
-                }
-                this.props.showConfirmationWindow({
-                    text: DialogMessages.deleteStickyNote(),
-                    onConfirmCallback: (confirmed) => {
-                        const noteId = Number(cell.get("noteId"));
-                        confirmed && this.deleteStickyNote(this.props.scenario.name, noteId);
-                    },
-                    confirmText: i18next.t("panels.actions.delete-stickynote.yes", "Yes"),
-                    denyText: i18next.t("panels.actions.delete-stickynote.no", "No"),
-                });
+                this.props.stickyNoteUpdated(cell, content);
             }
         });
 
@@ -569,41 +481,15 @@ export class Graph extends React.Component<Props> {
         }
     }
 
-    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position): void {
-        if (this.props.isFragment === true) return;
-        const canAddStickyNote = this.props.capabilities.editFrontend;
-        if (canAddStickyNote) {
-            const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT };
-            this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position, dimensions);
-        }
-    }
-
-    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote): void {
-        if (this.props.isFragment === true) return;
-        const canUpdateStickyNote = this.props.capabilities.editFrontend;
-        if (canUpdateStickyNote) {
-            this.props.stickyNoteUpdated(scenarioName, scenarioVersionId, stickyNote);
-        }
-    }
-
-    deleteStickyNote(scenarioName: string, stickyNoteId: number): void {
-        if (this.props.isFragment === true) return;
-        const canUpdateStickyNote = this.props.capabilities.editFrontend;
-        if (canUpdateStickyNote) {
-            this.props.stickyNoteDeleted(scenarioName, stickyNoteId);
-        }
-    }
-
     // eslint-disable-next-line react/no-deprecated
     componentWillUpdate(nextProps: Props): void {
         const processChanged =
             !isEqual(this.props.scenario.scenarioGraph, nextProps.scenario.scenarioGraph) ||
             !isEqual(this.props.scenario.validationResult, nextProps.scenario.validationResult) ||
-            !isEqual(this.props.stickyNotes, nextProps.stickyNotes) ||
             !isEqual(this.props.layout, nextProps.layout) ||
             !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData);
         if (processChanged) {
-            this.drawGraph(nextProps.scenario.scenarioGraph, nextProps.stickyNotes, nextProps.layout, nextProps.processDefinitionData);
+            this.drawGraph(nextProps.scenario.scenarioGraph, nextProps.layout, nextProps.processDefinitionData);
         }
 
         //when e.g. layout changed we have to remember to highlight nodes
@@ -823,7 +709,7 @@ export class Graph extends React.Component<Props> {
 
         const { layout, layoutChanged } = this.props;
 
-        const elements = this.graph.getElements().filter(isModelElement);
+        const elements = this.graph.getElements().filter((e) => isModelElement(e) || isStickyNoteElement(e));
         const collection = elements.map((el) => {
             const { x, y } = el.get("position");
             return {

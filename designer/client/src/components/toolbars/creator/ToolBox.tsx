@@ -116,16 +116,14 @@ type ToolBoxProps = {
 export default function ToolBox(props: ToolBoxProps): JSX.Element {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const stickyNotesSettings = useSelector(getStickyNotesSettings);
-    const pristine = useSelector(isPristine);
     const { t } = useTranslation();
 
     const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups ?? [], [processDefinitionData]);
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
-    const stickyNoteToolGroup = useMemo(() => stickyNoteComponentGroup(pristine), [pristine]);
     const groups = useMemo(() => {
-        const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteToolGroup) : componentGroups;
+        const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteComponentGroup()) : componentGroups;
         return allComponentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
-    }, [componentGroups, filters, stickyNoteToolGroup, stickyNotesSettings]);
+    }, [componentGroups, filters, stickyNotesSettings]);
 
     return (
         <StyledToolbox id="toolbox">

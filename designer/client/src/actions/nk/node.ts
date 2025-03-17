@@ -5,10 +5,11 @@ import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
+import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, StickyNoteNodeType, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { EditNodeAction, EditScenarioLabels } from "./editNode";
 import { layoutChanged, NodePosition, Position } from "./ui/layout";
+import { dia } from "jointjs";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -49,6 +50,12 @@ type NodeAddedAction = {
     type: "NODE_ADDED";
     nodes: NodeType[];
     layout: NodePosition[];
+};
+
+type StickyNoteUpdatedAction = {
+    type: "STICKY_NOTE_UPDATED";
+    element: dia.Element;
+    content?: string;
 };
 
 export function deleteNodes(ids: NodeId[]): ThunkAction {
@@ -142,6 +149,21 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
     };
 }
 
+export function stickyNoteUpdated(element: dia.Element, content?: string): ThunkAction {
+    return (dispatch) => {
+        batchGroupBy.startOrContinue();
+        flushSync(() => {
+            dispatch({
+                type: "STICKY_NOTE_UPDATED",
+                element,
+                content,
+            });
+            dispatch(layoutChanged());
+        });
+        batchGroupBy.end();
+    };
+}
+
 export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[]): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
@@ -165,6 +187,7 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
 
 export type NodeActions =
     | NodeAddedAction
+    | StickyNoteUpdatedAction
     | DeleteNodesAction
     | NodesConnectedAction
     | NodesDisonnectedAction
