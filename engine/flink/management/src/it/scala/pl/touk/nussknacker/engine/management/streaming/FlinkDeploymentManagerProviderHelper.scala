@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
-  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -41,7 +40,6 @@ object FlinkDeploymentManagerProviderHelper {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
-      NoOpScenarioActivityManager,
       actorSystem.dispatcher,
       IORuntime.global,
       actorSystem,

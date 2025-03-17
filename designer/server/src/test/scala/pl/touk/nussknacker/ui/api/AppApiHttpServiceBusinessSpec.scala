@@ -364,7 +364,7 @@ class AppApiHttpServiceBusinessSpec
     }
   }
 
-  override def designerConfig: Config = {
+  override def designerRawConfig: Config = {
     simulatedChangeInApplicationConfig match {
       case Some(customization) => customization.withFallback(originDesignerConfig)
       case None                => originDesignerConfig
@@ -372,7 +372,7 @@ class AppApiHttpServiceBusinessSpec
   }
 
   private def originDesignerConfig = {
-    super.designerConfig
+    super.designerRawConfig
       .withValue("enableConfigEndpoint", fromAnyRef(true))
       .withValue(
         "globalBuildInfo",
