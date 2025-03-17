@@ -44,6 +44,7 @@ class ActionInfoService(
           .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
           case Right(parameters) =>
             Right(toUIActionParameters(parameters))
+//            Left(ApiCannotCompileScenario)
           case Left(e) =>
             logger.warn(s"Scenario compilation failed with error: $e while getting action parameters")
             Left(ApiCannotCompileScenario)
