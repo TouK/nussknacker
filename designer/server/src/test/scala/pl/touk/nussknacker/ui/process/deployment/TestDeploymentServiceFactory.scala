@@ -42,7 +42,6 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   val deploymentManagerDependencies: DeploymentManagerDependencies = DeploymentManagerDependencies(
     new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     new ProcessingTypeActionServiceStub,
-    new RepositoryBasedScenarioActivityManager(activityRepository, dbioRunner),
     ec,
     IORuntime.global,
     actorSystem,

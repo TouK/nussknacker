@@ -30,7 +30,7 @@ object QuestDbConfig {
       queueCapacity: Int
   )
 
-  def apply(config: Config): QuestDbConfig = parseOptionalConfig[Boolean](config, "questDbSettings.enabled") match {
+  def parse(config: Config): QuestDbConfig = parseOptionalConfig[Boolean](config, "questDbSettings.enabled") match {
     case Some(false) => Disabled
     case _ =>
       Enabled(

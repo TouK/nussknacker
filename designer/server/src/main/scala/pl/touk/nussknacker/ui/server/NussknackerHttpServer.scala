@@ -3,15 +3,15 @@ package pl.touk.nussknacker.ui.server
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import fr.davit.pekko.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
-import fr.davit.pekko.http.metrics.core.HttpMetrics._
+import fr.davit.pekko.http.metrics.core.HttpMetrics.enrichHttp
 import fr.davit.pekko.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.{Http, HttpsConnectionContext}
 import org.apache.pekko.http.scaladsl.server.Route
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
+import pl.touk.nussknacker.ui.factory.InfrastructureServices
+import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
@@ -19,46 +19,41 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem) extends LazyLogging {
+class NussknackerHttpServer(actorSystem: ActorSystem, metricsRegistry: MetricRegistry, designerConfig: DesignerConfig)
+    extends LazyLogging {
 
-  private implicit val systemImplicit: ActorSystem                = system
-  private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
+  private implicit val systemImplicit: ActorSystem                = actorSystem
+  private implicit val executionContextImplicit: ExecutionContext = actorSystem.dispatcher
 
-  def start(designerConfig: DesignerConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
-    for {
-      route <- routeProvider.createRoute(designerConfig)
-      _     <- createPekkoHttpBinding(designerConfig.rawConfig, route, metricRegistry)
-    } yield {
-      RouteInterceptor.set(route)
-    }
+  def this(infrastructureServices: InfrastructureServices, designerConfig: DesignerConfig) = {
+    this(infrastructureServices.actorSystem, infrastructureServices.metricsRegistry, designerConfig)
   }
 
-  private def createPekkoHttpBinding(
-      config: ConfigWithUnresolvedVersion,
-      route: Route,
-      metricsRegistry: MetricRegistry
-  ) = {
+  def start(route: Route): Resource[IO, Unit] = {
+    createPekkoHttpBinding(route).map(_ => RouteInterceptor.set(route))
+  }
+
+  private def createPekkoHttpBinding(route: Route) = {
     def createServer() = IO.fromFuture {
       IO {
-        val interface: String = config.resolved.getString("http.interface")
-        val port: Int         = config.resolved.getInt("http.port")
-
-        val bindingResultF = SslConfigParser.sslEnabled(config.resolved) match {
+        val bindingResultF = designerConfig.ssl match {
           case Some(keyStoreConfig) =>
             bindHttps(
-              interface,
-              port,
+              designerConfig.http.interface,
+              designerConfig.http.port,
               HttpsConnectionContextFactory.createServerContext(keyStoreConfig),
               route,
               metricsRegistry
             )
           case None =>
-            bindHttp(interface, port, route, metricsRegistry)
+            bindHttp(designerConfig.http.interface, designerConfig.http.port, route, metricsRegistry)
         }
         bindingResultF
           .onComplete {
             case Success(bindingResult) =>
-              logger.info(s"Nussknacker designer started on ${interface}:${bindingResult.localAddress.getPort}")
+              logger.info(
+                s"Nussknacker designer started on ${designerConfig.http.interface}:${bindingResult.localAddress.getPort}"
+              )
             case Failure(exception) =>
               logger.error(s"Nussknacker designer cannot start", exception)
           }

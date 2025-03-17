@@ -2,10 +2,7 @@ package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
 
 import scala.concurrent.Await
@@ -45,14 +42,3 @@ final case class DeploymentsStatusesSynchronizationConfig(
     delayBetweenSynchronizations: FiniteDuration = 1 second,
     synchronizationTimeout: FiniteDuration = 10 seconds
 )
-
-object DeploymentsStatusesSynchronizationConfig {
-
-  val ConfigPath = "deploymentStatusesSynchronization"
-
-  def parse(config: Config): DeploymentsStatusesSynchronizationConfig =
-    config
-      .getAs[DeploymentsStatusesSynchronizationConfig](ConfigPath)
-      .getOrElse(DeploymentsStatusesSynchronizationConfig())
-
-}

@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.config
 
-import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.component.ComponentLink
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser}
 
 import java.net.URI
 
@@ -73,28 +71,5 @@ object ComponentLinkConfig {
     }
 
   }
-
-}
-
-object ComponentLinksConfigExtractor {
-
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.EnumerationReader._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-
-  type ComponentLinksConfig = List[ComponentLinkConfig]
-
-  private val ComponentsLinkNamespace = "componentLinks"
-
-  implicit val optionListReader: ValueReader[Option[ComponentLinksConfig]] = (config: Config, path: String) =>
-    OptionReader
-      .optionValueReader[List[Config]]
-      .read(config, path)
-      .map(_.map(_.as[ComponentLinkConfig]))
-
-  def extract(config: Config): ComponentLinksConfig =
-    config
-      .as[Option[ComponentLinksConfig]](ComponentsLinkNamespace)
-      .getOrElse(List.empty)
 
 }

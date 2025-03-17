@@ -471,7 +471,7 @@ class AppApiHttpServiceSecuritySpec
     }
   }
 
-  override def designerConfig: Config = super.designerConfig
+  override def designerRawConfig: Config = super.designerRawConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
 
 }
