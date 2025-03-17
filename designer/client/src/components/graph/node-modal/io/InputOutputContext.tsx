@@ -37,7 +37,8 @@ const InputOutputContext = createContext<ContextType>(null);
 export const useInputOutputContext = () => {
     const context = useContext(InputOutputContext);
     if (!context) {
-        throw "used outside InputOutput context";
+        console.warn("used outside InputOutput context");
+        return null;
     }
     return context;
 };
