@@ -112,9 +112,10 @@ object DomainServices {
       modelDataProvider <- prepareModelDataReload(
         designerConfigLoader,
         alreadyLoadedConfig,
+        infrastructureServices,
+        modelClassLoaderProvider,
         additionalUIConfigProvider,
         globalNotificationRepository,
-        modelClassLoaderProvider
       )
       // deployment data deps
       actionServiceSupplier    = new DelayedInitActionServiceSupplier
@@ -146,9 +147,15 @@ object DomainServices {
         )
       )
       // ActionService initialization
-      deploymentDataProvider = ProcessingTypeDataProvider.fromState(
-        ProcessingTypeDataState.withUninitializedCombinedData(deploymentData)
-      )
+      // We wrap deploymentData with ProcessingTypeDataProvider to allow category restriction checking. These data are static, not reloadable
+      deploymentDataProvider <-
+        Resource.make(
+          IO(
+            ProcessingTypeDataProvider.fromState(
+              ProcessingTypeDataState.withUninitializedCombinedData(deploymentData)
+            )
+          )
+        )(_.close())
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       dmDispatcher =
         new DeploymentManagerDispatcher(
@@ -343,16 +350,22 @@ object DomainServices {
   private def prepareModelDataReload(
       designerConfigLoader: DesignerConfigLoader,
       alreadyLoadedConfig: DesignerConfig,
+      infrastructureServices: InfrastructureServices,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
-      modelClassLoaderProvider: ModelClassLoaderProvider
   ): Resource[IO, ReloadableProcessingTypeDataProvider[ModelDataWithProcessingTypeDataInput, _]] = {
+    import infrastructureServices._
     Resource
       .make(
         acquire = IO {
-          val loadModelDataIO = designerConfigLoader
-            .loadDesignerConfig()
-            .map(_.processingTypeConfigs())
+          val processingTypeConfigsLoader = ProcessingTypeConfigsLoaderLoader.createProcessingTypeConfigsLoader(
+            designerConfigLoader,
+            alreadyLoadedConfig,
+            infrastructureServices.ioSttpBackend
+          )
+          val loadModelDataIO = processingTypeConfigsLoader
+            .loadProcessingTypeConfigs()
             .map(
               ModelDataLoader.load(
                 _,
