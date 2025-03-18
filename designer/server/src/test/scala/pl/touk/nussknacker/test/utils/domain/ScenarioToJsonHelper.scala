@@ -20,7 +20,6 @@ object ScenarioToJsonHelper {
         scenarioGraph,
         comment = None,
         scenarioLabels = Some(List.empty),
-        forwardedUserName = None
       ).asJson
 
   }

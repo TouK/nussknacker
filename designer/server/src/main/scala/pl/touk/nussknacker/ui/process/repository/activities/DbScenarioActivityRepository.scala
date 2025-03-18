@@ -270,7 +270,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       id = id,
       processVersionId = scenarioVersion.value,
       content = prefix.getOrElse("") + content,
-      user = scenarioActivity.user.name.value,
+      user = scenarioActivity.user.impersonatedByUserName.getOrElse(scenarioActivity.user.name).value,
       createDate = scenarioActivity.date,
     )
   }
@@ -309,7 +309,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           id,
           activity,
           ScenarioComment.from(
-            content = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
+            content = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.user.name.value}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -600,7 +600,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           additionalProperties = AdditionalProperties(
             List(
               Some("sourceEnvironment" -> activity.sourceEnvironment.name),
-              Some("sourceUser"        -> activity.sourceUser.value),
               activity.targetEnvironment.map(v => "targetEnvironment" -> v.name),
               activity.sourceScenarioVersionId.map(v => "sourceScenarioVersion" -> v.toString),
             ).flatten.toMap
@@ -858,7 +857,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       case ScenarioActivityType.IncomingMigration =>
         (for {
           sourceEnvironment <- additionalPropertyFromEntity(entity, "sourceEnvironment")
-          sourceUser        <- additionalPropertyFromEntity(entity, "sourceUser")
           targetEnvironment = optionalAdditionalPropertyFromEntity(entity, "targetEnvironment")
           sourceScenarioVersion = optionalAdditionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
             toLongOption
@@ -870,7 +868,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
           sourceEnvironment = Environment(sourceEnvironment),
-          sourceUser = UserName(sourceUser),
           sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId.apply),
           targetEnvironment = targetEnvironment.map(Environment),
         )).map((entity.id, _))

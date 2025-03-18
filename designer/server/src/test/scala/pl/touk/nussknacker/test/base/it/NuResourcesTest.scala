@@ -332,7 +332,6 @@ trait NuResourcesTest
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post("/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       callback(status)
@@ -350,7 +349,6 @@ trait NuResourcesTest
       processingMode = None,
       engineSetupName = None,
       isFragment = true,
-      forwardedUserName = None
     )
     Post("/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
@@ -361,7 +359,7 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, None, Some(List.empty), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, Some(List.empty)), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
@@ -376,7 +374,6 @@ trait NuResourcesTest
         CanonicalProcessConverter.toScenarioGraph(process),
         comment,
         Some(List.empty),
-        None
       ),
       process.name
     )(
@@ -552,7 +549,6 @@ trait NuResourcesTest
         process,
         processingType.stringify,
         isFragment,
-        forwardedUserName = None
       )
     for {
       // FIXME: Using method `runInSerializableTransactionWithRetry` is a workaround for problem with flaky tests

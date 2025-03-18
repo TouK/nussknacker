@@ -339,7 +339,6 @@ class DictsFlowTest
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     val response = httpClient.send(
       quickRequest
