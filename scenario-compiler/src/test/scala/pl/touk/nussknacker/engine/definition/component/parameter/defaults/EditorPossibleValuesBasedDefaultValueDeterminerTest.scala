@@ -12,10 +12,12 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite with Matchers {
 
   test("determine default param value from first value from fixed values editor possible values") {
-    val fixedValuesEditor = FixedValuesParameterEditor(
-      List(
-        FixedExpressionValue("expr1", "label1"),
-        FixedExpressionValue("expr2", "label2")
+    val fixedValuesEditor = List(
+      FixedValuesParameterEditor(
+        List(
+          FixedExpressionValue("expr1", "label1"),
+          FixedExpressionValue("expr2", "label2")
+        )
       )
     )
 
@@ -33,31 +35,31 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
       SpelParameterEditor,
     )
 
-    determine(fixedValuesEditor: _*) shouldBe Some(Expression.spel("expr1"))
+    determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
   }
 
   test("determine default param value for dictionary parameter editor") {
-    val dictParam = DictParameterEditor("someDictId")
+    val dictParam = List(DictParameterEditor("someDictId"))
 
     determine(dictParam) shouldBe Some(Expression(Language.DictKeyWithLabel, ""))
   }
 
   test("not determine default param value from editors without possible values") {
-    val booleanParam        = BoolParameterEditor
-    val spelParameterEditor = SpelParameterEditor
+    val booleanParam        = List(BoolParameterEditor)
+    val spelParameterEditor = List(SpelParameterEditor)
 
     determine(booleanParam) shouldBe None
 
     determine(spelParameterEditor) shouldBe None
   }
 
-  private def determine(editors: ParameterEditor*): Option[Expression] = {
+  private def determine(editors: List[ParameterEditor]): Option[Expression] = {
     EditorPossibleValuesBasedDefaultValueDeterminer.determineParameterDefaultValue(
       DefaultValueDeterminerParameters(
         ParameterData(Unknown, List.empty),
         isOptional = false,
         ParameterConfig.empty,
-        Some(ParameterEditors.unsafeFromList(editors.toList))
+        editors
       )
     )
   }

@@ -48,8 +48,7 @@ object sampleTransformers {
             new LabeledExpression(label = "List", expression = "#AGG.list"),
             new LabeledExpression(label = "Set", expression = "#AGG.set"),
             new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
-          ),
-          isMainEditor = true
+          )
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
@@ -106,8 +105,7 @@ object sampleTransformers {
             new LabeledExpression(label = "List", expression = "#AGG.list"),
             new LabeledExpression(label = "Set", expression = "#AGG.set"),
             new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
-          ),
-          isMainEditor = true
+          )
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
@@ -168,8 +166,7 @@ object sampleTransformers {
             new LabeledExpression(label = "List", expression = "#AGG.list"),
             new LabeledExpression(label = "Set", expression = "#AGG.set"),
             new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
-          ),
-          isMainEditor = true
+          )
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,

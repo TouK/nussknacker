@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
   NodeDependency,
-  Parameter,
-  ParameterEditors
+  Parameter
 }
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -32,14 +31,12 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
   ): DynamicMultipleParamsService.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val fooParam = Parameter(ParameterName("foo"), Typed[String]).copy(editors =
-        Some(
-          ParameterEditors(
-            FixedValuesParameterEditor(
-              List(
-                nullFixedValue,
-                FixedExpressionValue("'fooValueFromConfig'", "From Config"),
-                FixedExpressionValue("'other'", "Other")
-              )
+        List(
+          FixedValuesParameterEditor(
+            List(
+              nullFixedValue,
+              FixedExpressionValue("'fooValueFromConfig'", "From Config"),
+              FixedExpressionValue("'other'", "Other")
             )
           )
         )

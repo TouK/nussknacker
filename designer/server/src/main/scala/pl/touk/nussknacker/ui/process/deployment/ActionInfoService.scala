@@ -65,7 +65,7 @@ class ActionInfoService(
             params.map { case (name, value) =>
               name.value -> UiActionParameterConfig(
                 value.defaultValue,
-                value.parsedEditors.map(_.mainEditor).getOrElse(SpelParameterEditor),
+                value.editors.flatMap(_.headOption).getOrElse(SpelParameterEditor),
                 value.label,
                 value.hintText
               )

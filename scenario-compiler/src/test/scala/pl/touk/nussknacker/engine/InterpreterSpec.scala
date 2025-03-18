@@ -1192,7 +1192,7 @@ object InterpreterSpec {
 
     private val spelTemplateParameter = Parameter
       .optional[String](spelTemplateParameterName)
-      .copy(isLazyParameter = true, editors = Some(ParameterEditors(SpelTemplateParameterEditor)))
+      .copy(isLazyParameter = true, editors = List(SpelTemplateParameterEditor))
 
     override def parameters: List[Parameter] = List(spelTemplateParameter)
 
@@ -1214,7 +1214,7 @@ object InterpreterSpec {
 
     override def parameters: List[Parameter] = List(
       Parameter[String](ParameterName("param")).copy(
-        editors = Some(ParameterEditors(DictParameterEditor("someDictId")))
+        editors = List(DictParameterEditor("someDictId"))
       )
     )
 

@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   OutputVariableNameDependency,
   Parameter,
-  ParameterEditors,
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -95,7 +94,7 @@ object SpelTemplatePartsCustomTransformer
     .optional[TemplateEvaluationResult](spelTemplateParameterName)
     .copy(
       isLazyParameter = true,
-      editors = Some(ParameterEditors(SpelTemplateParameterEditor))
+      editors = List(SpelTemplateParameterEditor)
     )
 
   override type State = Unit

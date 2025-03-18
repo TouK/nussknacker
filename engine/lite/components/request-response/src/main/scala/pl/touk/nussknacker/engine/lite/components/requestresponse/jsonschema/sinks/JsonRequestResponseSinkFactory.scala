@@ -39,18 +39,15 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
 
   private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(
     defaultValue = Some(Expression.spel("false")),
-    editors = Option(ParameterEditors(BoolParameterEditor)),
+    editors = List(BoolParameterEditor),
     validators = List(MandatoryParameterValidator)
   )
 
   private val rawValueParam = ParameterDeclaration.lazyMandatory[AnyRef](SinkRawValueParamName).withCreator()
 
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(
-    editors = Some(
-      ParameterEditors(
-        FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
-      )
-    )
+    editors =
+      List(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))
   )
 
   def rawParamStep()(implicit nodeId: NodeId): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>

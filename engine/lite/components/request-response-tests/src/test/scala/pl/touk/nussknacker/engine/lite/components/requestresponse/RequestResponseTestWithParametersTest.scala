@@ -16,7 +16,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   private val metaData: MetaData = MetaData("test1", RequestResponseMetaData(None))
 
-  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: Option[ParameterEditors])
+  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: List[ParameterEditor])
 
   private def createSource(rawSchema: String) = {
     val schema = JsonSchemaBuilder.parseSchema(rawSchema)
@@ -40,14 +40,12 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam(
         "name",
         Typed[String],
-        Option(
-          ParameterEditors(
-            SpelTemplateParameterEditor,
-            SpelParameterEditor,
-          )
+        List(
+          SpelTemplateParameterEditor,
+          SpelParameterEditor,
         )
       ),
-      SimplifiedParam("age", Typed[Long], None)
+      SimplifiedParam("age", Typed[Long], Nil)
     )
     source.testParametersDefinition.map(p =>
       SimplifiedParam(p.name.value, p.typ, p.editors)
@@ -77,18 +75,16 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam(
         "address.street",
         Typed[String],
-        Some(
-          ParameterEditors(
-            SpelTemplateParameterEditor,
-            SpelParameterEditor,
-          )
+        List(
+          SpelTemplateParameterEditor,
+          SpelParameterEditor,
         )
       ),
-      SimplifiedParam("address.number", Typed[Long], None),
+      SimplifiedParam("address.number", Typed[Long], Nil),
       SimplifiedParam(
         "additionalParams",
         Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)),
-        None
+        Nil
       )
     )
     source.testParametersDefinition.map(p =>
@@ -137,7 +133,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
             Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed[Long]))
           )
         ),
-        None
+        Nil
       )
     )
     source.testParametersDefinition.map(p =>
