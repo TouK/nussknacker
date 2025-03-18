@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api.testing
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 
@@ -17,9 +16,16 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       .source(exampleScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
       .emptySink("end", "monitor")
 
+  override protected def parametersProvidedForDryRun: String =
+    """
+      |"elements": {
+      |  "language": "spel",
+      |  "expression": "{'test'}"
+      |}
+      |""".stripMargin
+
   override protected def expectedSourceTestingParametersJson: String =
     """
-      |[
       |  {
       |    "name": "elements",
       |    "typ": {
@@ -57,7 +63,6 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       |    "hintText": null,
       |    "label": "elements"
       |  }
-      |]
       |""".stripMargin
 
   override protected def expectedTestDataJson: String =

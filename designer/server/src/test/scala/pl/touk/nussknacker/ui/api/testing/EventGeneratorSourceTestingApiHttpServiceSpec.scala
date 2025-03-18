@@ -34,8 +34,9 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
       )
       .emptySink("end", "dead-end")
 
-  override protected def expectedSourceTestingParametersJson: String =
-    "[]"
+  override protected def parametersProvidedForDryRun: String = ""
+
+  override protected def expectedSourceTestingParametersJson: String = ""
 
   override protected def validParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map.empty)

@@ -135,13 +135,22 @@ abstract class StubbedComponentImplementationInvoker(
       handleInvoke(impl, typingResult, nodeId)
     }
 
-    val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+    val originalValue = create(original, params, outputVariableNameOpt, additional)
     originalValue match {
       case contextTransformation: ContextTransformation =>
         contextTransformation.copy(implementation = transform(contextTransformation.implementation))
-      case componentExecutor => transform(componentExecutor)
+      case componentExecutor =>
+        transform(componentExecutor)
     }
   }
+
+  def create(
+      original: ComponentImplementationInvoker,
+      params: Params,
+      outputVariableNameOpt: Option[String],
+      additional: Seq[AnyRef]
+  ): Any =
+    original.invokeMethod(params, outputVariableNameOpt, additional)
 
   def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
 }
