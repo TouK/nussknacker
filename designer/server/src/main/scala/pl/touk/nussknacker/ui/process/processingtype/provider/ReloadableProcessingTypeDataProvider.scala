@@ -11,14 +11,11 @@ import scala.util.control.NonFatal
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
  *
- * One of the biggest issues is that it can break current operations - when reloadAll is invoked, e.g. during
- * process deploy via FlinkRestManager it may very well happen that http backed is closed between two Flink invocations.
+ * One of the biggest issues is that it can break current operations - when reloadAll is run, e.g. during discovering
+ * of components it may very well happen that components will be inconsistent inside the operation.
  * To handle this correctly we probably need sth like:
- * def withProcessingTypeData(processingType: ProcessingType)(action: ProcessingTypeData=>Future[T]): Future[T]
+ * def withProcessingTypeData(processingType: ProcessingType)(action: ProcessingTypeData=>F[T]): F[T]
  * to be able to wait for all operations to complete
- *
- * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
- * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
 class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] private (
     loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]

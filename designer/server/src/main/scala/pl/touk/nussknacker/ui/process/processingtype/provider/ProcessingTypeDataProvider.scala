@@ -238,6 +238,7 @@ object ProcessingTypeDataState {
 
   val uninitialized: ProcessingTypeDataState[Nothing, Nothing] = withUninitializedCombinedData(Map.empty)
 
+  // This method is used by external project
   def withUninitializedCombinedData[Data](all: Map[ProcessingType, ValueWithRestriction[Data]]) =
     new ProcessingTypeDataState(all, Failure(UninitializedCombinedDataException))
 

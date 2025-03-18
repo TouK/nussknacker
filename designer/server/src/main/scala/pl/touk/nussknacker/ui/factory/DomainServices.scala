@@ -96,6 +96,7 @@ object DomainServices {
   ): Resource[IO, DomainServices] = {
     import infrastructureServices._
     for {
+      // services for model data purpose
       deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(alreadyLoadedConfig.managersDir)
       modelClassLoaderProvider = createModelClassLoaderProvider(
         alreadyLoadedConfig.processingTypeConfigs(),
@@ -115,6 +116,7 @@ object DomainServices {
         globalNotificationRepository,
         modelClassLoaderProvider
       )
+      // deployment data deps
       actionServiceSupplier    = new DelayedInitActionServiceSupplier
       actionRepository         = DbScenarioActionRepository.create(dbRef)
       scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
@@ -143,10 +145,10 @@ object DomainServices {
           )
         )
       )
+      // ActionService initialization
       deploymentDataProvider = ProcessingTypeDataProvider.fromState(
         ProcessingTypeDataState.withUninitializedCombinedData(deploymentData)
       )
-      deploymentRepository       = new DeploymentRepository(dbRef, clock)
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       dmDispatcher =
         new DeploymentManagerDispatcher(
@@ -190,6 +192,9 @@ object DomainServices {
         actionService.invalidateInProgressActions()
         actionServiceSupplier.set(actionService)
       }
+      // end of ActionService initialization
+
+      deploymentRepository = new DeploymentRepository(dbRef, clock)
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
         deploymentRepository,
         deploymentDataProvider.mapValues(
@@ -202,16 +207,6 @@ object DomainServices {
         deploymentsStatusesSynchronizer,
         alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
       )
-      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
-        ProcessingTypeDataStateFactory
-          .create(
-            modelDataWithInputs,
-            deploymentData
-          )
-          .toEither
-          .toTry
-          .get
-      }
 
       reconciler = new ScenarioDeploymentReconciler(
         deploymentData.keys,
@@ -231,6 +226,36 @@ object DomainServices {
       fragmentResolver   = new FragmentResolver(fragmentRepository)
 
       counter = new ProcessCounter(fragmentRepository)
+
+      processAuthorizer = new AuthorizeProcess(futureProcessRepository)
+
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
+        actorSystem,
+        clock,
+        alreadyLoadedConfig.questDbSettings
+      )
+
+      countsReporter <- CountsReporterFactory.createCountsReporter(
+        alreadyLoadedConfig,
+        futureSttpBackend
+      )
+
+      fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef))(
+        executionContextWithIORuntime,
+        dbioRunner
+      )
+
+      // ProcessingTypeData-related services
+      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
+        ProcessingTypeDataStateFactory
+          .create(
+            modelDataWithInputs,
+            deploymentData
+          )
+          .toEither
+          .toTry
+          .get
+      }
 
       processingTypeServicesProvider = processingTypeDataProvider.mapValues(
         ProcessingTypeServices.create(
@@ -259,11 +284,6 @@ object DomainServices {
         writeProcessRepository,
       )
 
-      fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef))(
-        executionContextWithIORuntime,
-        dbioRunner
-      )
-
       componentService = {
         new DefaultComponentService(
           alreadyLoadedConfig.componentLinks,
@@ -272,19 +292,6 @@ object DomainServices {
           fragmentRepository
         )
       }
-
-      processAuthorizer = new AuthorizeProcess(futureProcessRepository)
-
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
-        actorSystem,
-        clock,
-        alreadyLoadedConfig.questDbSettings
-      )
-
-      countsReporter <- CountsReporterFactory.createCountsReporter(
-        alreadyLoadedConfig,
-        futureSttpBackend
-      )
 
       _ = Initialization.init(
         migrations,
@@ -412,6 +419,11 @@ object DomainServices {
     )
   }
 
+  // This hack with delayed init is needed because we have a cycle of dependencies:
+  // DeploymentManagerDispatcher -> DeploymentData -> PeriodicDeploymentManagerDecorator -> ProcessingTypeActionService.markActionExecutionFinished ->
+  // ActionService -> ProcessChangeListener -> FetchScenarioActivityService ->
+  // (to check if DM has ManagerSpecificScenarioActivitiesStoredByManager which are only for scheduling mechanism purpose) -> DeploymentManagerDispatcher
+  // TODO: scheduling mechanism shouldn't be implemented as DeploymentManager decorator
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
     private val actionServiceRef = new AtomicReference[Option[ActionService]](None)
 
