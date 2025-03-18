@@ -195,7 +195,8 @@ trait NuResourcesTest
       modelDependencies = modelDependencies,
       deploymentManagersClassLoader = deploymentManagersClassLoader,
       deploymentManagerDependencies = deploymentManagerDependencies,
-      dbRef = Some(testDbRef)
+      // FIXME abr remove if not needed
+      schedulingDeps = None
     )
   }
 

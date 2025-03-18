@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import cats.effect.unsafe.IORuntime
 import cats.effect.unsafe.implicits.global
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.periodic.SchedulingDependencies
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
   ModelClassLoaderProvider,
@@ -28,7 +28,7 @@ object TestProcessingTypeDataProviderFactory {
       allValues: Map[ProcessingType, ValueWithRestriction[T]],
       combinedValue: C
   ): ProcessingTypeDataProvider[T, C] =
-    fromState(
+    ProcessingTypeDataProvider.fromState(
       new ProcessingTypeDataState(
         allValues,
         Success(combinedValue),
@@ -38,7 +38,7 @@ object TestProcessingTypeDataProviderFactory {
   def createWithEmptyCombinedData[T](
       allValues: Map[ProcessingType, ValueWithRestriction[T]]
   ): ProcessingTypeDataProvider[T, Nothing] =
-    fromState(
+    ProcessingTypeDataProvider.fromState(
       new ProcessingTypeDataState(
         allValues,
         Failure(
@@ -55,7 +55,7 @@ object TestProcessingTypeDataProviderFactory {
       modelDependencies: ModelDependencies,
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      dbRef: Option[DbRef]
+      schedulingDeps: Option[ProcessingType => SchedulingDependencies]
   ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val finalProcessingTypeData =
       ModelDataLoader
@@ -72,7 +72,7 @@ object TestProcessingTypeDataProviderFactory {
               modelClassLoaderProvider,
               createWithEmptyCombinedData(modelDataWithInputs).mapValues(_.modelData),
               _ => deploymentManagerDependencies,
-              dbRef
+              schedulingDeps
             )
             .allocated
             .unsafeRunSync()
@@ -87,10 +87,7 @@ object TestProcessingTypeDataProviderFactory {
             .get
         }
 
-    fromState(finalProcessingTypeData)
+    ProcessingTypeDataProvider.fromState(finalProcessingTypeData)
   }
-
-  private def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
-    new ProcessingTypeDataProvider[T, C](stateValue)(IORuntime.global) {}
 
 }

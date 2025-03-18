@@ -11,15 +11,9 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   ProcessConfigEnricherFactory,
   SchedulePropertyExtractorFactory
 }
-import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
-import pl.touk.nussknacker.ui.process.repository.{
-  DBFetchingProcessRepository,
-  DbScenarioActionReadOnlyRepository,
-  ScenarioLabelsRepository,
-  SlickPeriodicProcessesRepository
-}
+import pl.touk.nussknacker.ui.process.repository.SlickPeriodicProcessesRepository
 
 import java.time.Clock
 
@@ -30,7 +24,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       schedulingSupported: SchedulingSupported,
       deploymentConfig: Config,
       dependencies: DeploymentManagerDependencies,
-      dbRef: DbRef,
+      schedulingDeps: SchedulingDependencies,
   ): DeploymentManager = {
     logger.info("Decorating DM with periodic functionality")
     import dependencies._
@@ -59,21 +53,14 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       schedulingSupported.customAdditionalDeploymentDataProvider
         .getOrElse(DefaultAdditionalDeploymentDataProvider)
 
-    val actionRepository =
-      DbScenarioActionReadOnlyRepository.create(dbRef)
-    val scenarioLabelsRepository =
-      new ScenarioLabelsRepository(dbRef)
-    val fetchingProcessRepository =
-      DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-
     val periodicProcessesRepository = schedulingConfig.legacyDb match {
       case None =>
         new SlickPeriodicProcessesRepository(
           schedulingConfig.processingType,
-          dbRef.db,
-          dbRef.profile,
+          schedulingDeps.dbRef.db,
+          schedulingDeps.dbRef.profile,
           clock,
-          fetchingProcessRepository
+          schedulingDeps.fetchingProcessRepository
         )
       case Some(customDbConfig) =>
         val (db, profile) = LegacyDbInitializer.init(customDbConfig)
@@ -82,13 +69,14 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
           db,
           profile,
           clock,
-          fetchingProcessRepository
+          schedulingDeps.fetchingProcessRepository
         )
     }
 
     PeriodicDeploymentManager(
       delegate = underlying,
-      dependencies = dependencies,
+      dmDependencies = dependencies,
+      schedulingDependencies = schedulingDeps,
       periodicProcessesRepository = periodicProcessesRepository,
       scheduledExecutionPerformer = schedulingSupported.createScheduledExecutionPerformer(rawSchedulingConfig),
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,

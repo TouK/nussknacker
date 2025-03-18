@@ -61,7 +61,6 @@ class BaseK8sDeploymentManagerTest
   protected def prepareManager(modelData: ModelData, deployConfig: Config): K8sDeploymentManager = {
     val dependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-      new ProcessingTypeActionServiceStub,
       system.dispatcher,
       IORuntime.global,
       system,

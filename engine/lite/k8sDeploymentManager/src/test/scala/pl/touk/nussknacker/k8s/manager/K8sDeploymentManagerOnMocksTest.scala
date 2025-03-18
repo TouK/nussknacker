@@ -10,11 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub
-}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessingTypeDeployedScenariosProviderStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -71,7 +67,6 @@ class K8sDeploymentManagerOnMocksTest
       ConfigFactory.empty(),
       DeploymentManagerDependencies(
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-        new ProcessingTypeActionServiceStub,
         system.dispatcher,
         IORuntime.global,
         system,

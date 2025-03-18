@@ -19,7 +19,7 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
       modelDataWithInputByProcessingType: Map[ProcessingType, ValueWithRestriction[
         ModelDataWithProcessingTypeDataInput
       ]],
-      deploymentDataByProcessingType: Map[ProcessingType, DeploymentData],
+      deploymentDataByProcessingType: Map[ProcessingType, ValueWithRestriction[DeploymentData]],
   ): Validated[
     ScenarioParametersConfigurationError,
     ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]
@@ -27,7 +27,7 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
     val processingTypesData = modelDataWithInputByProcessingType
       .map { case (processingType, modelDataWithInputWithRestriction) =>
         processingType -> modelDataWithInputWithRestriction.map { modelDataWithInput =>
-          val deploymentData = deploymentDataByProcessingType(processingType)
+          val deploymentData = deploymentDataByProcessingType(processingType).bypassRestriction
           val processingTypeData = ProcessingTypeData.createProcessingTypeData(
             processingType,
             modelDataWithInput.modelData,
@@ -41,9 +41,9 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    // Using NussknackerInternalUser is a hack, we should split deployment data from model data
+
     val processingTypesDataWithoutRestriction =
-      processingTypesData.mapValuesNow(_.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance).get)
+      processingTypesData.mapValuesNow(_.bypassRestriction)
     CombinedProcessingTypeData.create(processingTypesDataWithoutRestriction).map { combinedData =>
       new ProcessingTypeDataState(
         processingTypesData,
@@ -53,6 +53,12 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
         Success(combinedData)
       )
     }
+  }
+
+  private implicit class ValueWithRestrictionOps[T](valueWithRestriction: ValueWithRestriction[T]) {
+    // This is a hack, we should split deployment data and model data
+    def bypassRestriction: T =
+      valueWithRestriction.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance).get
   }
 
   final case class ModelDataWithProcessingTypeDataInput(
@@ -65,10 +71,6 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
       modelData.close()
     }
 
-  }
-
-  def toValueWithRestriction(processingTypeData: ProcessingTypeData): ValueWithRestriction[ProcessingTypeData] = {
-    ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
   }
 
 }

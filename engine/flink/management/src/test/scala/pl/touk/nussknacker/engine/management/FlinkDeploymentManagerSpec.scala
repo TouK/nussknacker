@@ -456,7 +456,6 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
   ): DeploymentManager = {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-      new ProcessingTypeActionServiceStub,
       ExecutionContext.global,
       IORuntime.global,
       ActorSystem(getClass.getSimpleName),

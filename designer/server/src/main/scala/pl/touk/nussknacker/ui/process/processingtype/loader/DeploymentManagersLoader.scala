@@ -13,14 +13,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
-import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
-import pl.touk.nussknacker.ui.process.processingtype.{
-  DeploymentData,
-  EngineNameInputData,
-  ModelClassLoaderProvider,
-  ScenarioParametersDeterminer
-}
+import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, SchedulingDependencies}
+import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
@@ -34,8 +28,8 @@ object DeploymentManagersLoader {
       modelClassLoaderProvider: ModelClassLoaderProvider,
       modelDataProviders: ProcessingTypeDataProvider[ModelData, _],
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      dbRef: Option[DbRef],
-  ): Resource[IO, Map[ProcessingType, DeploymentData]] = {
+      schedulingDepsProvider: Option[ProcessingType => SchedulingDependencies],
+  ): Resource[IO, Map[ProcessingType, ValueWithRestriction[DeploymentData]]] = {
     processingTypeConfigs.configByProcessingType.toList
       .map { case (processingType, processingTypeConfig) =>
         val deploymentManagerProvider =
@@ -45,17 +39,15 @@ object DeploymentManagersLoader {
           deploymentManagerProvider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
           processingTypeConfig.engineSetupName
         )
-
         val schedulingForProcessingType =
           if (processingTypeConfig.deploymentConfig.hasPath("scheduling") &&
             processingTypeConfig.deploymentConfig.getBoolean("scheduling.enabled")) {
-            SchedulingForProcessingType.Available(
-              dbRef.getOrElse(
-                throw new RuntimeException(
-                  s"dbRef not present, but required for Deployment Manager with scheduling enabled"
-                )
+            val schedulingDeps = schedulingDepsProvider.getOrElse(
+              throw new RuntimeException(
+                s"Scheduling dependencies not present, but required for Deployment Manager with scheduling enabled"
               )
-            )
+            )(processingType)
+            SchedulingForProcessingType.Available(schedulingDeps)
           } else {
             SchedulingForProcessingType.NotAvailable
           }
@@ -79,8 +71,9 @@ object DeploymentManagersLoader {
               processingTypeConfig.deploymentConfig,
               scenarioStateCacheTTL
             )
+          // TODO: separate scheduling from Deployment Managers
           decoratedDeploymentManager = schedulingForProcessingType match {
-            case SchedulingForProcessingType.Available(dbRef) =>
+            case SchedulingForProcessingType.Available(schedulingDeps) =>
               deploymentManager.schedulingSupport match {
                 case supported: SchedulingSupported =>
                   PeriodicDeploymentManagerDecorator.decorate(
@@ -88,7 +81,7 @@ object DeploymentManagersLoader {
                     schedulingSupported = supported,
                     deploymentConfig = processingTypeConfig.deploymentConfig,
                     dependencies = deploymentManagerDependencies,
-                    dbRef = dbRef,
+                    schedulingDeps = schedulingDeps,
                   )
                 case NoSchedulingSupport =>
                   throw new IllegalStateException(
@@ -123,7 +116,8 @@ object DeploymentManagersLoader {
               metaDataInitializer,
               deploymentScenarioPropertiesConfig,
               additionalValidators,
-              nameInputData
+              nameInputData,
+              processingTypeConfig.category
             )
           }
       }
@@ -145,10 +139,11 @@ object DeploymentManagersLoader {
                   metaDataInitializer,
                   deploymentScenarioPropertiesConfig,
                   additionalValidators,
-                  _
+                  _,
+                  category
                 )
               ) =>
-            processingType -> new DeploymentData(
+            val deploymentData = new DeploymentData(
               deploymentManagerType,
               validDeploymentManager,
               metaDataInitializer,
@@ -156,6 +151,7 @@ object DeploymentManagersLoader {
               additionalValidators,
               engineSetupNames(processingType)
             )
+            processingType -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(deploymentData, Set(category))
         }
       }
   }
@@ -177,7 +173,8 @@ object DeploymentManagersLoader {
       metaDataInitializer: MetaDataInitializer,
       deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       additionalValidators: List[CustomProcessValidator],
-      nameInputData: EngineNameInputData
+      nameInputData: EngineNameInputData,
+      category: String
   )
 
   private sealed trait SchedulingForProcessingType
@@ -186,7 +183,7 @@ object DeploymentManagersLoader {
 
     case object NotAvailable extends SchedulingForProcessingType
 
-    final case class Available(dbRef: DbRef) extends SchedulingForProcessingType
+    final case class Available(deps: SchedulingDependencies) extends SchedulingForProcessingType
 
   }
 

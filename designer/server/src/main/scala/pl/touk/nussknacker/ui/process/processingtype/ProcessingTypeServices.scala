@@ -54,6 +54,8 @@ final class ProcessingTypeServices private (
 
   def designerModelData: DesignerModelData = processingTypeData.designerModelData
 
+  // TODO: We should replace all usages of this method with access to DeploymentData which is created separately from model
+  //       to fully split deployment managers from model
   def deploymentData: DeploymentData = processingTypeData.deploymentData
 
   lazy val additionalComponentConfigs: Map[DesignerWideComponentId, ComponentAdditionalConfig] =

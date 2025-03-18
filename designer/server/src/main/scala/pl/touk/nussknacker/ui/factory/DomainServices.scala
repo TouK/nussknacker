@@ -22,7 +22,6 @@ import pl.touk.nussknacker.ui.notifications.Notification
 import pl.touk.nussknacker.ui.process.{DBProcessService, ProcessService}
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
-  DefaultProcessingTypeActionService,
   DefaultProcessingTypeDeployedScenariosProvider,
   DeploymentManagerDispatcher
 }
@@ -38,6 +37,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
+import pl.touk.nussknacker.ui.process.periodic.{DefaultProcessingTypeActionService, SchedulingDependencies}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.{
   DeploymentManagersLoader,
@@ -47,13 +47,13 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.{
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataStateFactory.ModelDataWithProcessingTypeDataInput
 import pl.touk.nussknacker.ui.process.processingtype.provider.{
   ProcessingTypeDataProvider,
+  ProcessingTypeDataState,
   ReloadableProcessingTypeDataProvider
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.processreport.{CountsReporterFactory, ProcessCounter}
-import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.statistics.FingerprintService
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
@@ -102,7 +102,6 @@ object DomainServices {
         deploymentManagersClassLoader
       )
 
-      actionServiceSupplier = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = AdditionalUIConfigProviderLoader.loadAdditionalUIConfigProvider(
         alreadyLoadedConfig,
         futureSttpBackend
@@ -116,6 +115,18 @@ object DomainServices {
         globalNotificationRepository,
         modelClassLoaderProvider
       )
+      _ = {
+        modelDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
+      }
+      actionServiceSupplier    = new DelayedInitActionServiceSupplier
+      actionRepository         = DbScenarioActionRepository.create(dbRef)
+      scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
+      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
+      futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(
+        dbRef,
+        actionRepository,
+        scenarioLabelsRepository
+      )
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader,
@@ -123,59 +134,26 @@ object DomainServices {
         modelDataProvider.mapValues(_.modelData),
         getDeploymentManagerDependencies(
           infrastructureServices,
-          additionalUIConfigProvider,
-          actionServiceSupplier,
           _
         ),
-        Some(infrastructureServices.dbRef)
-      )
-      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
-        ProcessingTypeDataStateFactory
-          .create(
-            modelDataWithInputs,
-            deploymentData
+        Some(
+          getSchedulingDependencies(
+            infrastructureServices,
+            actionServiceSupplier,
+            futureProcessRepository,
+            additionalUIConfigProvider,
+            _
           )
-          .toEither
-          .toTry
-          .get
-      }
-
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
-        actorSystem,
-        clock,
-        alreadyLoadedConfig.questDbSettings
+        )
       )
-      countsReporter <- CountsReporterFactory.createCountsReporter(
-        alreadyLoadedConfig,
-        futureSttpBackend
+      deploymentDataProvider = ProcessingTypeDataProvider.fromState(
+        ProcessingTypeDataState.withUninitializedCombinedData(deploymentData)
       )
-      deploymentRepository = new DeploymentRepository(dbRef, clock)
-      deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
-        deploymentRepository,
-        processingTypeDataProvider.mapValues(
-          _.deploymentData.validDeploymentManagerOrStub.deploymentSynchronisationSupport
-        ),
-        dbioRunner
-      )
-      _ <- DeploymentsStatusesSynchronizationScheduler.resource(
-        actorSystem,
-        deploymentsStatusesSynchronizer,
-        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
-      )
-      migrations                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
+      deploymentRepository       = new DeploymentRepository(dbRef, clock)
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
-      actionRepository           = DbScenarioActionRepository.create(dbRef)
-      scenarioLabelsRepository   = new ScenarioLabelsRepository(dbRef)
-      processRepository          = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
-      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      futureProcessRepository =
-        DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-
-      writeProcessRepository =
-        ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
       dmDispatcher =
         new DeploymentManagerDispatcher(
-          processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
+          deploymentDataProvider.mapValues(_.validDeploymentManagerOrStub),
           futureProcessRepository
         )
       fetchScenarioActivityService = new FetchScenarioActivityService(
@@ -194,6 +172,7 @@ object DomainServices {
           dmDispatcher,
           alreadyLoadedConfig.scenarioStateTimeout
         )(actorSystem)
+      processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       scenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
@@ -210,17 +189,35 @@ object DomainServices {
         alreadyLoadedConfig.deploymentCommentSettings,
         clock
       )
-
       _ = {
-        // we need to reload model data after deployment service creation to make sure that it will be done using
-        // correct classloader and that won't cause further delays during handling requests
         actionService.invalidateInProgressActions()
         actionServiceSupplier.set(actionService)
-        modelDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
+      }
+      deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
+        deploymentRepository,
+        deploymentDataProvider.mapValues(
+          _.validDeploymentManagerOrStub.deploymentSynchronisationSupport
+        ),
+        dbioRunner
+      )
+      _ <- DeploymentsStatusesSynchronizationScheduler.resource(
+        actorSystem,
+        deploymentsStatusesSynchronizer,
+        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
+      )
+      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
+        ProcessingTypeDataStateFactory
+          .create(
+            modelDataWithInputs,
+            deploymentData
+          )
+          .toEither
+          .toTry
+          .get
       }
 
       reconciler = new ScenarioDeploymentReconciler(
-        processingTypeDataProvider.all(NussknackerInternalUser.instance).keys,
+        deploymentData.keys,
         deploymentsStatusesProvider,
         actionRepository,
         dbioRunner
@@ -249,6 +246,10 @@ object DomainServices {
         )
       )
 
+      migrations = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
+      writeProcessRepository =
+        ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
+
       processService = new DBProcessService(
         scenarioStatusProvider,
         scenarioStatusPresenter,
@@ -276,6 +277,17 @@ object DomainServices {
       }
 
       processAuthorizer = new AuthorizeProcess(futureProcessRepository)
+
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
+        actorSystem,
+        clock,
+        alreadyLoadedConfig.questDbSettings
+      )
+
+      countsReporter <- CountsReporterFactory.createCountsReporter(
+        alreadyLoadedConfig,
+        futureSttpBackend
+      )
 
       _ = Initialization.init(
         migrations,
@@ -362,21 +374,29 @@ object DomainServices {
 
   private def getDeploymentManagerDependencies(
       infrastructureServices: InfrastructureServices,
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      actionServiceProvider: Supplier[ActionService],
       processingType: ProcessingType
   )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
-    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(infrastructureServices.dbRef, processingType),
-      new DefaultProcessingTypeActionService(
-        processingType,
-        actionServiceProvider.get(),
-      ),
       executionContextWithIORuntime,
       executionContextWithIORuntime.ioRuntime,
       infrastructureServices.actorSystem,
-      infrastructureServices.futureSttpBackend,
+      infrastructureServices.futureSttpBackend
+    )
+  }
+
+  private def getSchedulingDependencies(
+      infrastructureServices: InfrastructureServices,
+      actionServiceProvider: Supplier[ActionService],
+      fetchingProcessRepository: FetchingProcessRepository[Future],
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      processingType: ProcessingType
+  ) = {
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+    new SchedulingDependencies(
+      infrastructureServices.dbRef,
+      new DefaultProcessingTypeActionService(processingType, actionServiceProvider),
+      fetchingProcessRepository,
       additionalConfigsFromProvider
     )
   }

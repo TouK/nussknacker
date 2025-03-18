@@ -4,11 +4,7 @@ import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentManager,
-  ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub
-}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeployedScenariosProviderStub}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -41,7 +37,6 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = DeploymentManagerDependencies(
     new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-    new ProcessingTypeActionServiceStub,
     ec,
     IORuntime.global,
     actorSystem,

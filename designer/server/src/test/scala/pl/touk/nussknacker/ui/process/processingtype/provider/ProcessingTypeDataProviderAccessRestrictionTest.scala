@@ -70,7 +70,7 @@ class ProcessingTypeDataProviderAccessRestrictionTest
       modelDependencies = modelDependencies,
       deploymentManagersClassLoader = deploymentManagersClassLoader,
       deploymentManagerDependencies = TestFactory.deploymentManagerDependencies,
-      dbRef = None
+      schedulingDeps = None
     )
   }
 

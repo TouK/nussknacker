@@ -46,7 +46,12 @@ import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.{DeploymentData, ProcessingTypeData, ScenarioParametersService}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  DeploymentData,
+  ProcessingTypeData,
+  ScenarioParametersService,
+  ValueWithRestriction
+}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -889,7 +894,7 @@ class DefaultComponentServiceSpec
 
     TestProcessingTypeDataProviderFactory
       .create(
-        processingTypeDataMap.mapValuesNow(ProcessingTypeDataStateFactory.toValueWithRestriction),
+        processingTypeDataMap.mapValuesNow(toValueWithRestriction),
         ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
       )
       .mapValues { processingTypeData =>
@@ -898,6 +903,12 @@ class DefaultComponentServiceSpec
         )
         ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
       }
+  }
+
+  private def toValueWithRestriction(
+      processingTypeData: ProcessingTypeData
+  ): ValueWithRestriction[ProcessingTypeData] = {
+    ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
   }
 
   private def createDbProcessService(
