@@ -76,7 +76,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     val result: service.TransformationStepResult = definition(service.TransformationStep(List(), None))
     result match {
       case service.NextParameters(parameters, _, _) =>
-        parameters.head.editors.head shouldBe FixedValuesParameterEditor(
+        parameters.head.editors.headOption.get shouldBe FixedValuesParameterEditor(
           List(FixedExpressionValue("'PERSONS'", "PERSONS"))
         )
       case _ =>
