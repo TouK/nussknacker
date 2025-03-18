@@ -15,12 +15,12 @@ trait WithBatchDesignerConfig extends WithDesignerConfig with BeforeAndAfterAll 
     validateConsistency()
   }
 
-  override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
+  override def designerRawConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
     ConfigFactory.parseResources("config/business-cases/batch-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
-    val configValidator = new DesignerTestConfigValidator(designerConfig)
+    val configValidator = new DesignerTestConfigValidator(designerRawConfig)
     val processingTypeWithCategories =
       TestCategory.categoryByProcessingType.map { case (k, v) => (k.stringify, v.stringify) }
     configValidator.validateTestDataWithDesignerConfFile(processingTypeWithCategories)

@@ -27,7 +27,7 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    QuestDbConfig(config) shouldBe QuestDbConfig.Enabled(
+    QuestDbConfig.parse(config) shouldBe QuestDbConfig.Enabled(
       instanceId = "test",
       directory = Some("dir"),
       tasksExecutionDelay = 10 seconds,
@@ -42,7 +42,7 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
   }
 
   test("should return defaults") {
-    QuestDbConfig(ConfigFactory.empty()) shouldBe QuestDbConfig.Enabled(
+    QuestDbConfig.parse(ConfigFactory.empty()) shouldBe QuestDbConfig.Enabled(
       instanceId = "designer-statistics",
       directory = None,
       tasksExecutionDelay = 30 seconds,
@@ -65,7 +65,7 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
                                              |}
                                              |""".stripMargin)
 
-    QuestDbConfig(config) shouldBe QuestDbConfig.Disabled
+    QuestDbConfig.parse(config) shouldBe QuestDbConfig.Disabled
   }
 
 }

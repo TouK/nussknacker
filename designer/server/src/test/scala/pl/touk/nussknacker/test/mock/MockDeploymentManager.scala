@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.test.mock
 
-import akka.actor.ActorSystem
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -20,11 +20,7 @@ import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
 import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.mock.MockDeploymentManager.{
-  sampleCustomActionActivity,
-  sampleDeploymentId,
-  sampleDeploymentStatusDetails
-}
+import pl.touk.nussknacker.test.mock.MockDeploymentManager.{sampleDeploymentId, sampleDeploymentStatusDetails}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import sttp.client3.testing.SttpBackendStub
@@ -42,7 +38,6 @@ class MockDeploymentManager private (
     modelData: ModelData,
     deploymentManagerDependencies: DeploymentManagerDependencies,
     defaultDeploymentStatus: StateStatus,
-    scenarioActivityManager: ScenarioActivityManager,
     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     closeCreatedDeps: () => Unit,
 ) extends FlinkDeploymentManager(
@@ -114,10 +109,7 @@ class MockDeploymentManager private (
     logger.debug(s"Adding deploy for ${processVersion.processName}")
     deploys.add(processVersion.processName)
 
-    for {
-      _                    <- scenarioActivityManager.saveActivity(sampleCustomActionActivity(processVersion))
-      externalDeploymentId <- deployResult.getOrDefault(processVersion.processName, Future.successful(None))
-    } yield externalDeploymentId
+    deployResult.getOrDefault(processVersion.processName, Future.successful(None))
   }
 
   override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
@@ -160,7 +152,6 @@ object MockDeploymentManager {
       deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
-      scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
   ): MockDeploymentManager = {
     val actorSystem = ActorSystem("MockDeploymentManager")
@@ -178,7 +169,6 @@ object MockDeploymentManager {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       deployedScenariosProvider,
       actionService,
-      scenarioActivityManager,
       ExecutionContext.global,
       IORuntime.global,
       actorSystem,
@@ -192,7 +182,6 @@ object MockDeploymentManager {
       modelData,
       deploymentManagerDependencies,
       defaultProcessStateStatus,
-      scenarioActivityManager,
       customProcessStateDefinitionManager,
       closeCreatedDeps,
     )

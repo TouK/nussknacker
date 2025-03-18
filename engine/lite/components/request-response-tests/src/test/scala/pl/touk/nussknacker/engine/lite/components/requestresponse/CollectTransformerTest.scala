@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse
 
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import cats.data.{NonEmptyList, ValidatedNel}
 import io.circe.Json
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import org.scalatest.Inside.inside
 import org.scalatest.LoneElement._
 import org.scalatest.OptionValues

@@ -10,7 +10,8 @@ object CheckSqlSchemasInStagedScalaFilesPlugin extends sbt.AutoPlugin {
   override def requires: Plugins = ScalafixPlugin
 
   object autoImport {
-    val checkSqlSchemasInStagedScalaFiles = taskKey[Unit]("Check SQL schemas explicit usage in all SQL statements in staged Scala files")
+    val checkSqlSchemasInStagedScalaFiles =
+      taskKey[Unit]("Check SQL schemas explicit usage in all SQL statements in staged Scala files")
   }
 
   import autoImport.*
@@ -45,7 +46,7 @@ object CheckSqlSchemasInStagedScalaFilesPlugin extends sbt.AutoPlugin {
         streams.map(_.log.info(s"Checking explicit usage of SQL schemas in staged files ..."))
       }
       _ <- Step.task {
-        val rulesArg = "--rules=class:NoSlickTableOrPlainSqlWithoutSchema"
+        val rulesArg  = "--rules=class:NoSlickTableOrPlainSqlWithoutSchema"
         val filesArgs = files.map(f => s"--files ${quoteSbtArgument(f)}").mkString(" ")
         (Compile / ScalafixPlugin.autoImport.scalafix).toTask(s" $rulesArg $filesArgs")
       }

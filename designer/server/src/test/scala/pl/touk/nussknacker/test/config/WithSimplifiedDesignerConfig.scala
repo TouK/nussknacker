@@ -15,12 +15,12 @@ trait WithSimplifiedDesignerConfig extends WithDesignerConfig with BeforeAndAfte
     validateConsistency()
   }
 
-  override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
+  override def designerRawConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
+    ConfigFactory.parseResources("config/business-cases/dev-streaming-use-case-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
-    val configValidator = new DesignerTestConfigValidator(designerConfig)
+    val configValidator = new DesignerTestConfigValidator(designerRawConfig)
     val processingTypeWithCategories =
       TestCategory.categoryByProcessingType.map { case (k, v) => (k.stringify, v.stringify) }
     configValidator.validateTestDataWithDesignerConfFile(processingTypeWithCategories)

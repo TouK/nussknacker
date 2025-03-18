@@ -38,7 +38,7 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
     }
 
     // first load
-    reloadableProvider.reloadAll().unsafeRunSync()
+    reloadableProvider.reloadAll.unsafeRunSync()
     reloadableValueProvider.all shouldBe Map(givenProcessingType -> givenInitialValue)
     reloadableProvider.combined shouldBe combinedValue
     valueHolder.closeWasInvoked shouldBe false
@@ -47,7 +47,7 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
     val savedValueHolder = valueHolder
     valueHolder = new AutoClosableWithValue("newValue")
     combinedValue = "newCombinedValue"
-    reloadableProvider.reloadAll().unsafeRunSync()
+    reloadableProvider.reloadAll.unsafeRunSync()
     reloadableValueProvider.all shouldBe Map(givenProcessingType -> "newValue")
     reloadableProvider.combined shouldBe "newCombinedValue"
     savedValueHolder.closeWasInvoked shouldBe true
@@ -75,7 +75,7 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
 
     // first load
     an[Exception] shouldBe thrownBy {
-      reloadableProvider.reloadAll().unsafeRunSync()
+      reloadableProvider.reloadAll.unsafeRunSync()
     }
 
     val allDataAfterFailedLoad = reloadableProvider.all

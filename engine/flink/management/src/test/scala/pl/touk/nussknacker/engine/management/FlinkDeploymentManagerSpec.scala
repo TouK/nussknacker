@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.management
 
-import akka.actor.ActorSystem
 import cats.effect.unsafe.IORuntime
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.{fromString, fromValues}
 import org.apache.flink.api.common.{JobID, JobStatus}
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.LoneElement
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
@@ -457,7 +457,6 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
-      NoOpScenarioActivityManager,
       ExecutionContext.global,
       IORuntime.global,
       ActorSystem(getClass.getSimpleName),

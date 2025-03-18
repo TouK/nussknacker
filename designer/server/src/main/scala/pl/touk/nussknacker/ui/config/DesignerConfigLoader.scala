@@ -25,16 +25,16 @@ class AlwaysLoadingFileBasedDesignerConfigLoader private (classLoader: ClassLoad
 
   private val configLocationsProperty: String = "nussknacker.config.locations"
 
-  private val defaultConfigResource = "defaultDesignerConfig.conf"
-
   override def loadDesignerConfig(): IO[DesignerConfig] = {
     val locationsPropertyValueOpt = Option(System.getProperty(configLocationsProperty))
     val locations                 = locationsPropertyValueOpt.map(UriUtils.extractListOfLocations).getOrElse(List.empty)
     for {
-      baseUnresolvedConfig  <- IO.blocking(new ConfigFactoryExt(classLoader).parseUnresolved(locations))
-      parsedDefaultUiConfig <- IO.blocking(ConfigFactory.parseResources(classLoader, defaultConfigResource))
+      baseUnresolvedConfig <- IO.blocking(new ConfigFactoryExt(classLoader).parseUnresolved(locations))
+      parsedDefaultUiConfig <- IO.blocking(
+        ConfigFactory.parseResources(classLoader, DesignerConfig.defaultConfigResource)
+      )
       unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
-    } yield DesignerConfig(ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults))
+    } yield DesignerConfig.from(ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults))
   }
 
 }
