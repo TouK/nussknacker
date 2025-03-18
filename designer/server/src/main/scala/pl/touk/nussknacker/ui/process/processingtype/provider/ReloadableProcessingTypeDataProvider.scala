@@ -23,7 +23,7 @@ import scala.util.control.NonFatal
 class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] private (
     loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
 )(implicit ioRuntime: IORuntime)
-    extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
+    extends ProcessingTypeDataProvider[Data, CombinedData](loadMethod.unsafeRunSync())
     with LazyLogging {
 
   def reloadAll: IO[Unit] = {

@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -29,21 +30,12 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
     })
     val reloadableValueProvider = reloadableProvider.mapValues(_.value)
 
-    // before first load
-    val allDataBeforeLoad = reloadableProvider.all
-    allDataBeforeLoad shouldBe empty
-    valueHolder.closeWasInvoked shouldBe false
-    an[Exception] shouldBe thrownBy {
-      reloadableProvider.combined
-    }
-
-    // first load
-    reloadableProvider.reloadAll.unsafeRunSync()
+    // data are loaded at the beginning
     reloadableValueProvider.all shouldBe Map(givenProcessingType -> givenInitialValue)
     reloadableProvider.combined shouldBe combinedValue
     valueHolder.closeWasInvoked shouldBe false
 
-    // first reload = second load
+    // first reload
     val savedValueHolder = valueHolder
     valueHolder = new AutoClosableWithValue("newValue")
     combinedValue = "newCombinedValue"
@@ -54,12 +46,13 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
     valueHolder.closeWasInvoked shouldBe false
   }
 
-  test("should fail reload if error during combined data mapping ocurred") {
+  test("should fail reload if error during combined data mapping occurred") {
     val givenProcessingType      = "fooProcessingType"
     val givenInitialValue        = "fooValue"
+    val givenProblematicValue    = "newValue"
     val givenInitialCombinedData = "fooCombined"
 
-    val valueHolder   = new AutoClosableWithValue(givenInitialValue)
+    var valueHolder   = new AutoClosableWithValue(givenInitialValue)
     val combinedValue = givenInitialCombinedData
     val reloadableProvider = ReloadableProcessingTypeDataProvider(IO {
       new ProcessingTypeDataState(
@@ -68,18 +61,20 @@ class ReloadableProcessingTypeDataProviderTest extends AnyFunSuiteLike with Matc
       )
     })
     reloadableProvider.mapValues { parentValue =>
-      if (parentValue.value == givenInitialValue) {
+      if (parentValue.value == givenProblematicValue) {
         throw new Exception("some error happen")
       }
     }
 
-    // first load
+    // load with problematic value
+    valueHolder = new AutoClosableWithValue(givenProblematicValue)
     an[Exception] shouldBe thrownBy {
       reloadableProvider.reloadAll.unsafeRunSync()
     }
 
-    val allDataAfterFailedLoad = reloadableProvider.all
-    allDataAfterFailedLoad shouldBe empty
+    // rollback to previous value was done
+    val allValuesAfterFailedLoad = reloadableProvider.all.mapValuesNow(_.value)
+    allValuesAfterFailedLoad shouldBe Map(givenProcessingType -> givenInitialValue)
   }
 
   private class AutoClosableWithValue(val value: String) extends AutoCloseable {

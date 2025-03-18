@@ -115,9 +115,6 @@ object DomainServices {
         globalNotificationRepository,
         modelClassLoaderProvider
       )
-      _ = {
-        modelDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
-      }
       actionServiceSupplier    = new DelayedInitActionServiceSupplier
       actionRepository         = DbScenarioActionRepository.create(dbRef)
       scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)

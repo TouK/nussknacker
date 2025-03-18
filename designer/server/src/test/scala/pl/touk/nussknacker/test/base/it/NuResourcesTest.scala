@@ -190,13 +190,11 @@ trait NuResourcesTest
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val designerConfig = DesignerConfig.from(testConfig)
     TestProcessingTypeDataProviderFactory.create(
-      processingTypeConfigs = designerConfig.processingTypeConfigs,
+      processingTypeConfigs = designerConfig.processingTypeConfigs(),
       modelClassLoaderProvider = modelClassLoaderProvider,
       modelDependencies = modelDependencies,
       deploymentManagersClassLoader = deploymentManagersClassLoader,
       deploymentManagerDependencies = deploymentManagerDependencies,
-      // FIXME abr remove if not needed
-      schedulingDeps = None
     )
   }
 

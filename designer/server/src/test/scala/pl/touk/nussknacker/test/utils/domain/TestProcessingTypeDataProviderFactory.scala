@@ -55,7 +55,6 @@ object TestProcessingTypeDataProviderFactory {
       modelDependencies: ModelDependencies,
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      schedulingDeps: Option[ProcessingType => SchedulingDependencies]
   ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val finalProcessingTypeData =
       ModelDataLoader
@@ -72,7 +71,7 @@ object TestProcessingTypeDataProviderFactory {
               modelClassLoaderProvider,
               createWithEmptyCombinedData(modelDataWithInputs).mapValues(_.modelData),
               _ => deploymentManagerDependencies,
-              schedulingDeps
+              schedulingDepsProvider = None
             )
             .allocated
             .unsafeRunSync()

@@ -302,16 +302,17 @@ class ScenarioParametersServiceTest
           )
           val processingTypeData =
             TestProcessingTypeDataProviderFactory.create(
-              designerConfig.processingTypeConfigs,
+              designerConfig.processingTypeConfigs(),
               ModelClassLoaderProvider(
-                designerConfig.processingTypeConfigs.configByProcessingType
+                designerConfig
+                  .processingTypeConfigs()
+                  .configByProcessingType
                   .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
                 deploymentManagersClassLoader
               ),
               modelDependencies,
               deploymentManagersClassLoader,
               TestFactory.deploymentManagerDependencies,
-              None
             )
 
           val parametersService = processingTypeData.combined.parametersService
