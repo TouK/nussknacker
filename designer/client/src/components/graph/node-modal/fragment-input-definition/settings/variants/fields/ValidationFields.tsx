@@ -58,6 +58,7 @@ export default function ValidationFields({
                 readOnly={readOnly}
                 fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                 showValidation
+                showSwitch
             />
             <FormControl>
                 {fieldLabel({
