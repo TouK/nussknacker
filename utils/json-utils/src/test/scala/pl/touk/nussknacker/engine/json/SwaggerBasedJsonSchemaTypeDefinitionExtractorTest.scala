@@ -307,7 +307,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     val jsonToObjectExtracted = FromJsonSchemaBasedDecoder.decode(jsonObject, swaggerObject)
 
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe
-      Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time"))
+      Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time")).withoutValue
 
   }
 
