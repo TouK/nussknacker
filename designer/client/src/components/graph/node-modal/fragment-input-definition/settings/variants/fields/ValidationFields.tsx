@@ -78,7 +78,7 @@ export default function ValidationFields({
                             )
                         }
                         readOnly={readOnly}
-                        placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
+                        placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "e.g. Parameter value is not valid.")}
                         fieldErrors={[]}
                     />
                 </div>
