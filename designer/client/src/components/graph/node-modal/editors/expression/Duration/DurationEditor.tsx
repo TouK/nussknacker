@@ -77,7 +77,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
-            language={editorsParameters["DurationParameterEditor"].language}
+            language={editorsParameters.DurationParameterEditor.language}
         />
     );
 };

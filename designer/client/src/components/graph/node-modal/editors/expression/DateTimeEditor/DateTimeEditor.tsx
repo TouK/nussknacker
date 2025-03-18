@@ -29,7 +29,7 @@ export const DateTimeEditor: ExtendedEditor<DateTimeEditorProps> = (props: DateT
             dateFormat={dateFormat}
             timeFormat={timeFormat}
             formatter={dateFormatter}
-            language={editorsParameters["DateTimeParameterEditor"].language}
+            language={editorsParameters.DateTimeParameterEditor.language}
         />
     );
 };

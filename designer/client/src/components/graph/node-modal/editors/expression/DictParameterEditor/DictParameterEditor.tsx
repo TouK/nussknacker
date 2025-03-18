@@ -15,6 +15,7 @@ import { cx } from "@emotion/css";
 import { isEmpty } from "lodash";
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import { editorsParameters } from "../editorsParameters";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -41,6 +42,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const [value, setValue] = useState<ProcessDefinitionDataDictOption>();
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const dictId = editorConfig.dictId;
 
@@ -78,22 +80,32 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     // This logic is needed, because scenario is initially loaded without full validation data.
     // In that case the label is missing, and we need to fetch it separately.
     useEffect(() => {
-        if (!expressionObj.expression) return;
+        if (!expressionObj.expression) {
+            setIsLoading(false);
+            return;
+        }
         const parseObject = tryParseOrNull(expressionObj.expression);
-        if (!parseObject) return;
-        fetchProcessDefinitionDataDictByKey(parseObject?.key).then((response) => {
-            if (response.status == "success") {
-                setValue(response.data);
-            } else {
-                setValue(parseObject);
-            }
-        });
+        if (!parseObject) {
+            setIsLoading(false);
+            return;
+        }
+        fetchProcessDefinitionDataDictByKey(parseObject?.key)
+            .then((response) => {
+                if (response.status == "success") {
+                    setValue(response.data);
+                } else {
+                    setValue(parseObject);
+                }
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }, [expressionObj, fetchProcessDefinitionDataDictByKey]);
 
     // This condition means, that we should delay rendering this fragment when both conditions are met:
     // - expression is defined, so we know that value is present, but we do not yet have enough information to render it (label)
     // - value is not yet available - label is not yet loaded
-    if (!value && expressionObj?.expression) {
+    if (isLoading && expressionObj?.expression) {
         return;
     }
 
@@ -117,7 +129,10 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange({ expression: value ? JSON.stringify(value) : "", language: "dictKeyWithLabel" });
+                    onValueChange({
+                        expression: value ? JSON.stringify(value) : "",
+                        language: editorsParameters.DictParameterEditor.language,
+                    });
                     setValue(value);
                     setOpen(false);
                 }}

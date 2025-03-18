@@ -116,7 +116,10 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             value={option.value}
                             classes={{
                                 selected: css({ outline: "none" }),
-                                root: css({ "&:focus": { outline: "none" } }),
+                                root: css({
+                                    cursor: option.value === selectedEditor.type ? "default !important" : "pointer",
+                                    "&:focus": { outline: "none" },
+                                }),
                                 iconWrapper: css({
                                     marginLeft: "2px !important",
                                     display: "flex",

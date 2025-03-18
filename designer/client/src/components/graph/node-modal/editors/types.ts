@@ -8,7 +8,6 @@ type Editor = {
     possibleValues?: PossibleValue;
 };
 
-//TODO: FIXME
 export type ParamType = {
     name?: string;
     typ?: TypingResult;

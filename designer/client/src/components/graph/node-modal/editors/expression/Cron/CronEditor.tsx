@@ -68,7 +68,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     }, [open]);
 
     useEffect(() => {
-        onValueChange({ expression: encode(value), language: editorsParameters["CronParameterEditor"].language });
+        onValueChange({ expression: encode(value), language: editorsParameters.CronParameterEditor.language });
     }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {
