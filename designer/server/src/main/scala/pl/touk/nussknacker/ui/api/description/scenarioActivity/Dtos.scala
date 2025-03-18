@@ -602,9 +602,7 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         sourceEnvironment: String,
-        sourceUser: String,
         sourceScenarioVersionId: Option[Long],
-        targetEnvironment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.IncomingMigration,
@@ -614,9 +612,7 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        Some(AdditionalField("sourceEnvironment", sourceEnvironment)),
-        Some(AdditionalField("sourceUser", sourceUser)),
-        targetEnvironment.map(v => AdditionalField("targetEnvironment", v)),
+        Some(AdditionalField("migrateFrom", sourceEnvironment)),
         sourceScenarioVersionId.map(v => AdditionalField("sourceScenarioVersionId", v.toString)),
       ).flatten
     )
@@ -636,7 +632,7 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        AdditionalField("destinationEnvironment", destinationEnvironment),
+        AdditionalField("migrateTo", destinationEnvironment),
       )
     )
 

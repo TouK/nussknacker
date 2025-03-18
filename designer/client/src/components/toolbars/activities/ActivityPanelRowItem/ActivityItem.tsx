@@ -36,11 +36,14 @@ export const ActivityItem = forwardRef(
         const { handleSetIsActivityHovered } = useActivityItemInfo();
 
         const actionsWithVersionInfo: ActivityType[] = [
+            "AUTOMATIC_UPDATE",
+            "INCOMING_MIGRATION",
+            "OUTGOING_MIGRATION",
             "PERFORMED_SINGLE_EXECUTION",
             "PERFORMED_SCHEDULED_EXECUTION",
+            "SCENARIO_CANCELED",
             "SCENARIO_DEPLOYED",
             "SCENARIO_PAUSED",
-            "SCENARIO_CANCELED",
         ];
 
         const version =
