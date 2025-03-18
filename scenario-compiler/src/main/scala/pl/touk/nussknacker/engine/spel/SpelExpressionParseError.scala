@@ -270,4 +270,6 @@ object SpelExpressionParseError {
 
   }
 
+  case class JsonParsingError(message: String) extends ExpressionParseError
+
 }

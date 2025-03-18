@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
+import pl.touk.nussknacker.engine.language.json.JsonParser
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -103,7 +104,8 @@ object ExpressionCompiler {
         spelParser(SpelExpressionParser.Standard),
         spelParser(SpelExpressionParser.Template),
         DictKeyWithLabelExpressionParser,
-        TabularDataDefinitionParser
+        TabularDataDefinitionParser,
+        JsonParser
       )
     val parsers = defaultParsers.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, dictRegistry, expressionEvaluator)

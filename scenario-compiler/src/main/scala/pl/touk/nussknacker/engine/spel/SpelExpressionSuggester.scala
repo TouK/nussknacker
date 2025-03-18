@@ -445,7 +445,7 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
     val rawExpression = language match {
       case Language.Spel         => Try(parser.parseExpression(input, null))
       case Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
-      case Language.DictKeyWithLabel | Language.TabularDataDefinition =>
+      case Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json =>
         Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
     rawExpression

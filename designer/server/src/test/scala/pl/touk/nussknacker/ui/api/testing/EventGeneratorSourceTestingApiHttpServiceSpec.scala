@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import com.typesafe.config.{Config, ConfigFactory}
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
 
@@ -34,7 +36,11 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
       )
       .emptySink("end", "dead-end")
 
-  override protected def parametersProvidedForDryRun: String = ""
+  override protected def parametersProvidedForDryRun: String =
+    AdhocTestParametersRequest(
+      sourceParameters = validParameters,
+      scenarioGraph = toScenarioGraph(exampleScenario)
+    ).asJson.toString()
 
   override protected def expectedSourceTestingParametersJson: String = ""
 

@@ -131,6 +131,7 @@
     static values.
   * JsonDefaultExpression and AvroDefaultExpression default string values changed to SpEL template.
   * For now on, default values are provided for dry run parameters.
+* [#7690](https://github.com/TouK/nussknacker/pull/7690) Add JSON validation for ad hoc tests with schemaless topics.
 
 ## 1.18
 

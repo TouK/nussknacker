@@ -14,10 +14,11 @@ object EditorBasedLanguageDeterminer {
     editor match {
       case SpelParameterEditor => Expression.Language.Spel
       case BoolParameterEditor | DateParameterEditor | TimeParameterEditor | DateTimeParameterEditor |
-          TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) | PeriodParameterEditor(_) |
-          CronParameterEditor | FixedValuesParameterEditor(_) | FixedValuesWithIconParameterEditor(_) |
+          TextareaParameterEditor | DurationParameterEditor(_) | PeriodParameterEditor(_) | CronParameterEditor |
+          FixedValuesParameterEditor(_) | FixedValuesWithIconParameterEditor(_) |
           FixedValuesWithRadioParameterEditor(_) =>
         Expression.Language.Spel
+      case JsonParameterEditor => Expression.Language.Json
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate
       case DictParameterEditor(_) =>
