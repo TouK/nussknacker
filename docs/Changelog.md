@@ -152,6 +152,8 @@
   * `forbiddenCidrs` - list of forbidden CIDR.
 * [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
 * [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
+  Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
 
 ## 1.18
 
