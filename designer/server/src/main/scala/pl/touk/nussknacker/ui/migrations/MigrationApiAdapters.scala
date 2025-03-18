@@ -56,6 +56,46 @@ object MigrationApiAdapters {
 
   }
 
-  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map(1 -> MigrationApiAdapterV1ToV2)
+  case object MigrationApiAdapterV2ToV3 extends ApiAdapter[MigrateScenarioData] {
+
+    override def liftVersion: MigrateScenarioData => MigrateScenarioData = {
+      case v2: MigrateScenarioDataV2 =>
+        MigrateScenarioDataV3(
+          sourceEnvironmentId = v2.sourceEnvironmentId,
+          sourceScenarioVersionId = v2.sourceScenarioVersionId,
+          processingMode = v2.processingMode,
+          engineSetupName = v2.engineSetupName,
+          processCategory = v2.processCategory,
+          scenarioLabels = v2.scenarioLabels,
+          scenarioGraph = v2.scenarioGraph,
+          processName = v2.processName,
+          isFragment = v2.isFragment
+        )
+      case _ => throw new IllegalStateException("Expecting another value object")
+    }
+
+    override def downgradeVersion: MigrateScenarioData => MigrateScenarioData = {
+      case v3: MigrateScenarioDataV3 =>
+        MigrateScenarioDataV2(
+          sourceEnvironmentId = v3.sourceEnvironmentId,
+          sourceScenarioVersionId = v3.sourceScenarioVersionId,
+          remoteUserName = "",
+          processingMode = v3.processingMode,
+          engineSetupName = v3.engineSetupName,
+          processCategory = v3.processCategory,
+          scenarioLabels = v3.scenarioLabels,
+          scenarioGraph = v3.scenarioGraph,
+          processName = v3.processName,
+          isFragment = v3.isFragment
+        )
+      case _ => throw new IllegalStateException("Expecting another value object")
+    }
+
+  }
+
+  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map(
+    1 -> MigrationApiAdapterV1ToV2,
+    2 -> MigrationApiAdapterV2ToV3
+  )
 
 }

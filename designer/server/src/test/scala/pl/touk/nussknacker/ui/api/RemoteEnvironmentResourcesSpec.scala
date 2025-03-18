@@ -219,7 +219,10 @@ class RemoteEnvironmentResourcesSpec
     override def testMigration(
         processToInclude: ScenarioWithDetailsForMigrations => Boolean,
         batchingExecutionContext: ExecutionContext
-    )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
+    )(
+        implicit ec: ExecutionContext,
+        loggedUser: LoggedUser
+    ): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
 

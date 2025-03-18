@@ -24,7 +24,6 @@ final case class MigrationResult(process: CanonicalProcess, migrationsApplied: L
           canonicalProcess = process,
           labels = labels,
           increaseVersionWhenJsonNotChanged = true,
-          forwardedUserName = None,
           migrationsApplied = migrations
         )
       }
