@@ -110,10 +110,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Replaced the `editor` parameter with `editors` in the engine API `Parameter`.
   * Similarly, `ParameterConfig` in engine API now accepts an `editors` list instead of a single editor.
   * Removed a `DualEditor` from the components API.
-    * Added a `SpelEditor` to the components API.
-    * Added the `isMainEditor` property to the `SimpleEditor` annotation in the components API.
-    * For now on, the `SpelEditor` and `SimpleEditor` can be used together and it means that there are two available
-      editors for a property.
+    * Renamed a `SimpleEditor` to the `Editor` in components API.
+    * For now on, you can add multiple editors on a single param. The first editor annotation is treated as a default
+      editor.
 
 ### Other changes
 

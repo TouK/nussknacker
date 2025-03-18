@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
-import pl.touk.nussknacker.engine.api.definition.ParameterEditors
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -332,7 +332,7 @@ object ProcessCompilationError {
   final case class IncompatibleParameterDefinitionModification(
       paramName: ParameterName,
       language: Language,
-      parameterEditors: Option[ParameterEditors],
+      parameterEditors: List[ParameterEditor],
       nodeId: String
   ) extends PartSubGraphCompilationError
       with InASingleNode

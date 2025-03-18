@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
-import cats.implicits.catsSyntaxOptionId
 import com.cronutils.model.Cron
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -23,15 +22,14 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private def dualEditorAnnotated(
       @Editor(
         `type` = EditorType.FIXED_VALUES_EDITOR,
-        possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2")),
-        isMainEditor = true
+        possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2"))
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
       param: String
   ) = ()
 
   private def dualEditorAnnotatedLazy(
-      @Editor(`type` = EditorType.DATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.DATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       param: LazyParameter[String]
   ) = ()
@@ -58,6 +56,16 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       charseq: CharSequence
   ) = ()
 
+  private def multipleEditorsAnnotated(
+      @Editor(
+        `type` = EditorType.FIXED_VALUES_EDITOR,
+        possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2"))
+      )
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
+      param: String
+  ) = ()
+
   private val paramNotAnnotated = getFirstParam("notAnnotated", classOf[String])
 
   private val paramDualEditorAnnotated     = getFirstParam("dualEditorAnnotated", classOf[String])
@@ -70,59 +78,57 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private val paramRawEditorAnnotated     = getFirstParam("rawEditorAnnotated", classOf[String])
   private val paramRawEditorAnnotatedLazy = getFirstParam("rawEditorAnnotatedLazy", classOf[LazyParameter[String]])
 
+  private val paramMultipleEditorAnnotated = getFirstParam("multipleEditorsAnnotated", classOf[String])
+
   test("assign RawEditor when no annotation detected") {
-    EditorExtractor.extract(paramNotAnnotated, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(paramNotAnnotated, ParameterConfig.empty) shouldBe List(
       SpelParameterEditor,
       SpelTemplateParameterEditor,
-    ).some
+    )
   }
 
   test("detect @Editor annotations") {
 
     EditorExtractor.extract(paramDualEditorAnnotated, ParameterConfig.empty) shouldBe
-      ParameterEditors(
+      List(
         FixedValuesParameterEditor(
           possibleValues = List(FixedExpressionValue("'test'", "test2"))
         ),
         SpelParameterEditor,
-      ).some
+      )
 
     EditorExtractor.extract(paramDualEditorLazyAnnotated, ParameterConfig.empty) shouldBe
-      ParameterEditors(
+      List(
         DateParameterEditor,
         SpelParameterEditor,
-      ).some
+      )
   }
 
   test("detect @SimpleEditor annotation") {
 
     EditorExtractor.extract(paramSimpleEditorAnnotated, ParameterConfig.empty) shouldBe
-      ParameterEditors(BoolParameterEditor).some
+      List(BoolParameterEditor)
 
     EditorExtractor.extract(paramSimpleEditorLazyAnnotated, ParameterConfig.empty) shouldBe
-      ParameterEditors(BoolParameterEditor).some
+      List(BoolParameterEditor)
   }
 
   test("detect Spel @Editor annotation") {
-    EditorExtractor.extract(paramRawEditorAnnotated, ParameterConfig.empty) shouldBe ParameterEditors(
-      SpelParameterEditor
-    ).some
-    EditorExtractor.extract(paramRawEditorAnnotatedLazy, ParameterConfig.empty) shouldBe ParameterEditors(
-      SpelParameterEditor
-    ).some
+    EditorExtractor.extract(paramRawEditorAnnotated, ParameterConfig.empty) shouldBe List(SpelParameterEditor)
+    EditorExtractor.extract(paramRawEditorAnnotatedLazy, ParameterConfig.empty) shouldBe List(SpelParameterEditor)
   }
 
   test("determine editor by config") {
     val fixedValuesEditor = FixedValuesParameterEditor(List(FixedExpressionValue("'expression'", "label")))
     val config            = ParameterConfig(None, Some(List(fixedValuesEditor)), None, None, None)
 
-    EditorExtractor.extract(paramNotAnnotated, config) shouldBe ParameterEditors(fixedValuesEditor).some
+    EditorExtractor.extract(paramNotAnnotated, config) shouldBe List(fixedValuesEditor)
   }
 
   test("determine editor by type enum") {
     val param = getSimpleParamByType[JavaSampleEnum]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       FixedValuesParameterEditor(
         List(
           FixedExpressionValue(
@@ -136,82 +142,88 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
         )
       ),
       SpelParameterEditor
-    ).some
+    )
   }
 
   test("determine editor by type LocalDateTime") {
     val param = getSimpleParamByType[LocalDateTime]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       DateTimeParameterEditor,
       SpelParameterEditor,
-    ).some
+    )
   }
 
   test("determine editor by type LocalDate") {
     val param = getSimpleParamByType[LocalDate]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       DateParameterEditor,
       SpelParameterEditor,
-    ).some
+    )
   }
 
   test("determine editor by type LocalTime") {
     val param = getSimpleParamByType[LocalTime]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       TimeParameterEditor,
       SpelParameterEditor,
-    ).some
+    )
   }
 
   test("determine editor by type Duration") {
     val param = getSimpleParamByType[Duration]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
       SpelParameterEditor,
-    ).some
+    )
   }
 
   test("determine editor by config for Duration") {
     val param  = getSimpleParamByType[Duration]
     val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
 
-    EditorExtractor.extract(param, ParameterConfig.empty.copy(editors = Some(List(editor)))) shouldBe ParameterEditors(
-      editor
-    ).some
+    EditorExtractor.extract(param, ParameterConfig.empty.copy(editors = Some(List(editor)))) shouldBe List(editor)
   }
 
   test("determine editor by type Period") {
     val param = getSimpleParamByType[Period]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
       SpelParameterEditor,
-    ).some
+    )
   }
 
   test("determine editor by type Cron") {
     val param = getSimpleParamByType[Cron]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe ParameterEditors(
+    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
       CronParameterEditor,
       SpelParameterEditor,
-    ).some
+    )
   }
 
   test("determine editor by type Charsequence") {
     val charseqParam = getSimpleParamByType[CharSequence]
     val stringParam  = getSimpleParamByType[String]
 
-    val expectedEditor = ParameterEditors(
+    val expectedEditor = List(
       SpelParameterEditor,
       SpelTemplateParameterEditor,
-    ).some
+    )
     EditorExtractor.extract(charseqParam, ParameterConfig.empty) shouldBe expectedEditor
     EditorExtractor.extract(stringParam, ParameterConfig.empty) shouldBe expectedEditor
+  }
+
+  test("determine multiple editors") {
+    EditorExtractor.extract(paramMultipleEditorAnnotated, ParameterConfig.empty) shouldBe List(
+      FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test2"))),
+      SpelTemplateParameterEditor,
+      SpelParameterEditor,
+    )
   }
 
   private def getFirstParam(name: String, params: Class[_]*) = {

@@ -13,7 +13,7 @@ object ConfiguratorService extends Service with Serializable {
   @MethodToInvoke
   def invoke(
       @ParamName("Template ID")
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @NotBlank
       template: String,

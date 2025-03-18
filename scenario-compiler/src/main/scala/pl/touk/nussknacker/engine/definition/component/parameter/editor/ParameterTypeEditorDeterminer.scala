@@ -7,7 +7,7 @@ import java.time.temporal.ChronoUnit
 
 class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEditorDeterminer {
 
-  override def determine(): Option[ParameterEditors] = {
+  override def determine(): List[ParameterEditor] = {
     Option(typ)
       .collect { case s: SingleTypingResult =>
         s.runtimeObjType
@@ -15,49 +15,50 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
       .map(_.klass)
       .collect {
         case klazz if klazz.isEnum =>
-          ParameterEditors(
+          List(
             FixedValuesParameterEditor(
               possibleValues = klazz.getEnumConstants.toList.map(ParameterTypeEditorDeterminer.extractEnumValue(klazz))
             ),
             SpelParameterEditor
           )
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
-          ParameterEditors(
+          List(
             SpelParameterEditor,
             SpelTemplateParameterEditor,
           )
         case klazz if klazz == classOf[java.time.LocalDateTime] =>
-          ParameterEditors(
+          List(
             DateTimeParameterEditor,
             SpelParameterEditor,
           )
         case klazz if klazz == classOf[java.time.LocalTime] =>
-          ParameterEditors(
+          List(
             TimeParameterEditor,
             SpelParameterEditor
           )
         case klazz if klazz == classOf[java.time.LocalDate] =>
-          ParameterEditors(
+          List(
             DateParameterEditor,
             SpelParameterEditor
           )
         case klazz if klazz == classOf[java.time.Duration] =>
-          ParameterEditors(
+          List(
             DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
             SpelParameterEditor
           )
         case klazz if klazz == classOf[java.time.Period] =>
-          ParameterEditors(
+          List(
             PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
             SpelParameterEditor
           )
         // we use class name to avoid introducing dependency on cronutils in interpreter
         case klazz if klazz.getName == "com.cronutils.model.Cron" =>
-          ParameterEditors(
+          List(
             CronParameterEditor,
             SpelParameterEditor
           )
       }
+      .getOrElse(Nil)
   }
 
 }

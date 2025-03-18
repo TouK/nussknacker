@@ -244,7 +244,7 @@ object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) with Unbo
       .branchMandatory[Aggregator](AggregatorParamName)
       .withCreator(
         modify = _.copy(
-          editors = Some(AggregateHelper.DUAL_EDITOR),
+          editors = AggregateHelper.DUAL_EDITOR,
           additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
         )
       )

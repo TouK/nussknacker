@@ -11,7 +11,7 @@ case object MultipleParamsService extends Service {
   def invoke(
       @ParamName("foo") foo: String,
       @ParamName("bar")
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       bar: String,
       @ParamName("baz") baz: String,

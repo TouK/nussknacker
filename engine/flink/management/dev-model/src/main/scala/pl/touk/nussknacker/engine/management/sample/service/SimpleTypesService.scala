@@ -17,7 +17,7 @@ class SimpleTypesService extends Service with Serializable {
         `type` = EditorType.BOOL_EDITOR
       ) booleanParam: Boolean,
       @ParamName("DualParam")
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @NotBlank
       dualParam: String,
@@ -25,7 +25,7 @@ class SimpleTypesService extends Service with Serializable {
       @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       simpleParam: String,
       @ParamName("RawParam")
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = false)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       rawParam: String,
       @ParamName("intParam")
