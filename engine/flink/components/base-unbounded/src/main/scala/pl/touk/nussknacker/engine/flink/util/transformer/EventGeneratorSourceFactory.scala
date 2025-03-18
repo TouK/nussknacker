@@ -109,13 +109,11 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override def testRecordParser: TestRecordParser[AnyRef] =
         _.map(_.json).map(decodeValueUnsafe)
 
-      override def testParametersDefinition: List[Parameter] =
-        List.empty
+      override def testParametersDefinition: List[Parameter] = List.empty
 
-      override def parametersToTestData(params: Map[ParameterName, AnyRef]): AnyRef = {
-        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
-        List.fill(count)(generateSample())
-      }
+      override def parametersToTestData(
+          params: Map[ParameterName, AnyRef],
+      ): AnyRef = generateSample()
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
 
