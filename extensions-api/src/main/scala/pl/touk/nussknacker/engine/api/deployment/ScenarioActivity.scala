@@ -270,7 +270,6 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       sourceEnvironment: Environment,
-      sourceUser: UserName,
       sourceScenarioVersionId: Option[ScenarioVersionId],
       targetEnvironment: Option[Environment],
   ) extends ScenarioActivity

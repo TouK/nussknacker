@@ -100,7 +100,6 @@ class PeriodicDeploymentManagerTest
         canonicalProcess = scenario,
         processingType = TestDeploymentServiceFactory.processingType.stringify,
         isFragment = false,
-        forwardedUserName = None
       )
       val ProcessCreated(processId, versionId) =
         writeProcessRepository.saveNewProcess(action).dbioActionValues.value

@@ -888,7 +888,6 @@ class DeploymentServiceSpec
       canonicalProcess = canonicalProcess,
       processingType = "streaming",
       isFragment = false,
-      forwardedUserName = None
     )
     writeProcessRepository.saveNewProcess(action).map(_.value.processId).map(ProcessIdWithName(_, processName))
   }
@@ -904,7 +903,6 @@ class DeploymentServiceSpec
       canonicalProcess = canonicalProcess,
       processingType = "streaming",
       isFragment = true,
-      forwardedUserName = None
     )
 
     writeProcessRepository.saveNewProcess(action).map(_.value.processId).map(ProcessIdWithName(_, processName))

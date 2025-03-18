@@ -6208,11 +6208,13 @@ components:
       oneOf:
       - $ref: '#/components/schemas/MigrateScenarioRequestDtoV1'
       - $ref: '#/components/schemas/MigrateScenarioRequestDtoV2'
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV3'
       discriminator:
         propertyName: version
         mapping:
           '1': MigrateScenarioRequestDtoV1
           '2': MigrateScenarioRequestDtoV2
+          '3': MigrateScenarioRequestDtoV3
     MigrateScenarioRequestDtoV1:
       title: MigrateScenarioRequestDtoV1
       type: object
@@ -6272,6 +6274,45 @@ components:
           format: int64
         remoteUserName:
           type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioLabels:
+          type: array
+          items:
+            type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
+    MigrateScenarioRequestDtoV3:
+      title: MigrateScenarioRequestDtoV3
+      type: object
+      required:
+      - version
+      - sourceEnvironmentId
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        sourceScenarioVersionId:
+          type:
+          - integer
+          - 'null'
+          format: int64
         processingMode:
           type: string
         engineSetupName:

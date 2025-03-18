@@ -203,7 +203,6 @@ class PeriodicProcessServiceIntegrationTest
         canonicalProcess = canonicalProcess,
         processingType = "streaming",
         isFragment = false,
-        forwardedUserName = None
       )
       writeProcessRepository
         .saveNewProcess(action)(AdminUser("artificialTestAdmin", "artificialTestAdmin"))

@@ -339,7 +339,6 @@ class DBFetchingProcessRepositorySpec
       comment = None,
       labels = List.empty,
       increaseVersionWhenJsonNotChanged,
-      forwardedUserName = None
     )
 
     dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
@@ -357,7 +356,6 @@ class DBFetchingProcessRepositorySpec
       process,
       "Streaming",
       isFragment = false,
-      forwardedUserName = None
     )
 
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue
