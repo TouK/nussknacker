@@ -240,9 +240,16 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
     const { processVersionId } = scenario || {};
     const { t } = useTranslation();
 
+    const actionsWithVersionChange: ActivityType[] = [
+        "AUTOMATIC_UPDATE",
+        "INCOMING_MIGRATION",
+        "OUTGOING_MIGRATION",
+        "SCENARIO_DEPLOYED",
+        "SCENARIO_MODIFIED",
+    ];
+
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
-    const openVersionEnable =
-        ["SCENARIO_MODIFIED", "SCENARIO_DEPLOYED"].includes(activity.type) && activity.scenarioVersionId !== processVersionId;
+    const openVersionEnable = actionsWithVersionChange.includes(activity.type) && activity.scenarioVersionId !== processVersionId;
     const isVersionSelected = ["SCENARIO_MODIFIED"].includes(activity.type) && activity.scenarioVersionId === processVersionId;
 
     const getHeaderTitle = useMemo(() => {
