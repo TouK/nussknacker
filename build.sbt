@@ -2107,6 +2107,7 @@ lazy val designer = (project in file("designer/server"))
     listenerApi,
     customHttpServiceApi,
     configLoaderApi,
+    flinkKafkaComponents              % Test,
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,

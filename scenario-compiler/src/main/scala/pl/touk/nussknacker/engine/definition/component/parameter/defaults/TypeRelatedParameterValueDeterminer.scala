@@ -38,6 +38,7 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   private def defaultStringExpression(editor: Option[ParameterEditor]): Expression =
     EditorBasedLanguageDeterminer.determineLanguageOf(editor) match {
       case Language.Spel => Expression.spel("''")
+      case Language.Json => Expression.spel("{}")
       case language @ (Language.SpelTemplate | Language.DictKeyWithLabel | Language.TabularDataDefinition) =>
         Expression(language, "")
     }

@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.api.testing
 
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
 
@@ -17,12 +19,10 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       .emptySink("end", "monitor")
 
   override protected def parametersProvidedForDryRun: String =
-    """
-      |"elements": {
-      |  "language": "spel",
-      |  "expression": "{'test'}"
-      |}
-      |""".stripMargin
+    AdhocTestParametersRequest(
+      sourceParameters = validParameters,
+      scenarioGraph = toScenarioGraph(exampleScenario)
+    ).asJson.toString()
 
   override protected def expectedSourceTestingParametersJson: String =
     """

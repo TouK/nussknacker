@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 import pl.touk.nussknacker.engine.api.definition.{
   DictParameterEditor,
   FixedValuesParameterEditor,
+  JsonParameterEditor,
   SpelTemplateParameterEditor,
   SqlParameterEditor,
   TabularTypedDataEditor
@@ -20,6 +21,7 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
       case TabularTypedDataEditor :: Nil => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
       case (SpelTemplateParameterEditor | SqlParameterEditor) :: Nil => Some(Expression.spelTemplate(""))
       case DictParameterEditor(_) :: Nil                             => Some(Expression(Language.DictKeyWithLabel, ""))
+      case JsonParameterEditor :: Nil                                => Some(Expression.json("{}"))
       case FixedValuesParameterEditor(firstValue :: _) :: _ :: Nil   => Some(Expression.spel(firstValue.expression))
       case _ :: FixedValuesParameterEditor(firstValue :: _) :: Nil   => Some(Expression.spel(firstValue.expression))
       case _                                                         => None
