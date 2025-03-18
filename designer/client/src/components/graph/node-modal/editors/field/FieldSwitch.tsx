@@ -1,14 +1,47 @@
 import React, { useState, ReactNode, useMemo, useCallback } from "react";
-import { ExpressionObj } from "../expression/types";
+import { EditorType, ExpressionObj } from "../expression/types";
 import { Option } from "../../fragment-input-definition/TypeSelect";
-import { Box, Tabs, Tab } from "@mui/material";
+import { Box, Tabs, Tab, styled } from "@mui/material";
 import { css } from "@emotion/css";
-import { ParamType } from "../types";
+import { Editor, ParamType } from "../types";
 import { editorsParameters } from "../expression/editorsParameters";
 import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
 import { editors, isExtendedEditor } from "../expression/Editor";
 import { useTranslation } from "react-i18next";
 import { InfoTooltip } from "../expression/InfoTooltip";
+
+const StyledTab = styled(Tab)(({ theme }) => ({
+    fontSize: "0.65rem",
+    padding: theme.spacing(0, 0.5),
+    textTransform: "none",
+    minHeight: "20px",
+    minWidth: "45px",
+    border: `1px solid ${getBorderColor(theme)}`,
+    "&.Mui-selected": {
+        color: theme.palette.text.primary,
+        background: blendDarken(theme.palette.primary.main, 0.3),
+    },
+    "&[aria-disabled='true']": {
+        pointerEvents: "none",
+        cursor: "default",
+        background: theme.palette.action.disabledBackground,
+        "&:hover": {
+            background: theme.palette.action.disabledBackground,
+        },
+    },
+    ".MuiSvgIcon-root": {
+        backgroundColor: "inherit",
+    },
+}));
+
+const SINGLE_EDITOR_TO_DISPLAY: Editor["type"][] = [
+    EditorType.CRON_EDITOR,
+    EditorType.JSON_PARAMETER_EDITOR,
+    EditorType.SPEL_PARAMETER_EDITOR,
+    EditorType.SQL_PARAMETER_EDITOR,
+    EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR,
+    EditorType.DICT_PARAMETER_EDITOR,
+];
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -69,7 +102,9 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         [allowsSwitch, availableEditors, getHint, readOnly, selectedEditor.type],
     );
 
-    if (readOnly || !showSwitch) {
+    const isSingleEditorVisible = availableEditors.length === 1 && !SINGLE_EDITOR_TO_DISPLAY.includes(availableEditors[0].type);
+
+    if (readOnly || !showSwitch || isSingleEditorVisible) {
         return <>{typeof children === "function" ? children(selectedEditor) : children}</>;
     }
     return (
@@ -106,7 +141,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     }}
                 >
                     {availableEditorsOptions.map((option, index) => (
-                        <Tab
+                        <StyledTab
                             aria-disabled={option.isDisabled}
                             disableFocusRipple
                             disableRipple
@@ -127,29 +162,6 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                                     pointerEvents: "auto",
                                 }),
                             }}
-                            sx={(theme) => ({
-                                fontSize: "0.65rem",
-                                padding: theme.spacing(0, 0.5),
-                                textTransform: "none",
-                                minHeight: "20px",
-                                minWidth: "45px",
-                                border: `1px solid ${getBorderColor(theme)}`,
-                                "&.Mui-selected": {
-                                    color: theme.palette.text.primary,
-                                    background: blendDarken(theme.palette.primary.main, 0.3),
-                                },
-                                "&[aria-disabled='true']": {
-                                    pointerEvents: "none",
-                                    cursor: "default",
-                                    background: theme.palette.action.disabledBackground,
-                                    "&:hover": {
-                                        background: theme.palette.action.disabledBackground,
-                                    },
-                                },
-                                ".MuiSvgIcon-root": {
-                                    backgroundColor: "inherit",
-                                },
-                            })}
                             iconPosition="end"
                             icon={
                                 option.hint && (

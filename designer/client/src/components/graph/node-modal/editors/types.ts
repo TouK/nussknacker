@@ -2,7 +2,7 @@ import { TypingResult } from "../../../../types";
 import { EditorMode, EditorType } from "./expression/types";
 import { PossibleValue } from "../aggregate/aggregatorFieldsStack";
 
-type Editor = {
+export type Editor = {
     type: `${EditorType}`;
     dictId?: string;
     possibleValues?: PossibleValue;
