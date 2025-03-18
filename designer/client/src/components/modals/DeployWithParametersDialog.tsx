@@ -20,7 +20,6 @@ import { GroupedActionParameter } from "./GroupedActionParameter";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ToggleProcessActionModalData } from "./DeployProcessDialog";
 import LoaderSpinner from "../spinner/Spinner";
-import { useErrorBoundary } from "react-error-boundary";
 import { useLocalstorageState } from "rooks";
 
 function initialNodesData(params: ActionNodeParameters[]): NodesDeploymentData {
@@ -40,7 +39,6 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     } = props.data;
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
-    const { showBoundary } = useErrorBoundary();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [parametersDefinition, setParametersDefinition] = useState<ActionNodeParameters[]>([]);
     const [parametersValues, setParametersValues] = useState<NodesDeploymentData>({});
@@ -54,14 +52,10 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 setParametersDefinition(definition);
                 setParametersValues(initialValues);
             })
-            .catch((error) => {
-                console.log("error lbg: " + error);
-                showBoundary(error);
-            })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [processName, showBoundary]);
+    }, [processName]);
 
     useEffect(() => {
         getActionParameters();
