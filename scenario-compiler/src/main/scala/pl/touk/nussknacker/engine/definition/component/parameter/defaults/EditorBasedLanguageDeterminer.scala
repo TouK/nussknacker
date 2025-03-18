@@ -6,13 +6,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 object EditorBasedLanguageDeterminer {
 
   def determineLanguageOf(editor: Option[ParameterEditor]): Expression.Language = editor match {
-    case Some(SpelParameterEditor)                 => Expression.Language.Spel
-    case Some(simpleEditor: SimpleParameterEditor) => determineLanguageOf(simpleEditor)
-    case None                                      => Expression.Language.Spel
+    case Some(editor) => determineLanguageOf(editor)
+    case None         => Expression.Language.Spel
   }
 
-  private def determineLanguageOf(editor: SimpleParameterEditor): Expression.Language =
+  private def determineLanguageOf(editor: ParameterEditor): Expression.Language =
     editor match {
+      case SpelParameterEditor => Expression.Language.Spel
       case BoolParameterEditor | DateParameterEditor | TimeParameterEditor | DateTimeParameterEditor |
           TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) | PeriodParameterEditor(_) |
           CronParameterEditor | FixedValuesParameterEditor(_) | FixedValuesWithIconParameterEditor(_) |
