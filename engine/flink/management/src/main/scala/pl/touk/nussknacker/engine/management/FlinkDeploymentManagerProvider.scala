@@ -120,7 +120,7 @@ object FlinkStreamingPropertiesConfig {
   val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(SpelTemplateParameterEditor),
+      editor = Some(ConstStringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
@@ -159,7 +159,7 @@ object FlinkStreamingPropertiesConfig {
   val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(SpelTemplateParameterEditor),
+      editor = Some(ConstStringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"),
       hintText = None
