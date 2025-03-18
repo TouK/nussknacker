@@ -5628,6 +5628,9 @@ components:
           format: date-time
         createdBy:
           type: string
+    ConstStringParameterEditor:
+      title: ConstStringParameterEditor
+      type: object
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -7220,6 +7223,23 @@ components:
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
+    StaticParameterEditor:
+      title: StaticParameterEditor
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/ConstStringParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
     StatisticDto:
       title: StatisticDto
       type: object
@@ -7725,7 +7745,7 @@ components:
           - string
           - 'null'
         editor:
-          $ref: '#/components/schemas/ParameterEditor'
+          $ref: '#/components/schemas/StaticParameterEditor'
         label:
           type:
           - string
