@@ -44,7 +44,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const [isFetching, setIsFetching] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    const dictId = editorConfig.dictId;
+    const dictId = editorConfig?.dictId;
 
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {
