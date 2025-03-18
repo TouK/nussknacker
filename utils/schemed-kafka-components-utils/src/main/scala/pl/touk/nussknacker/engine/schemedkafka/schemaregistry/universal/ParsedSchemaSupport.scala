@@ -121,7 +121,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
 }
 
-object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
+class JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
@@ -140,17 +140,15 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       rawParameter: Parameter,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-    if (rawMode) {
-      Validated.Valid(
-        SingleSchemaBasedParameter(
-          rawParameter,
-          new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-        )
-      )
-    } else {
+    extractSchemaBasedParameter(
+      schema,
+      rawMode,
+      validationMode,
+      rawParameter,
       // in editor mode we use lax validation mode, to be backward compatible
-      JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = sinkValueParamName, ValidationMode.lax)
-    }
+      parameterForBasicMode =
+        JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = sinkValueParamName, ValidationMode.lax)
+    )
   }
 
   override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
@@ -161,4 +159,49 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
     JsonPayloadRecordFormatterSupport
+
+  protected def extractSchemaBasedParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      parameterForBasicMode: ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    if (rawMode) {
+      Validated.Valid(
+        SingleSchemaBasedParameter(
+          rawParameter,
+          new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+        )
+      )
+    } else {
+      parameterForBasicMode
+    }
+  }
+
+}
+
+object EmptySchemaJsonSupport extends JsonSchemaSupport {
+
+  override def extractParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    extractSchemaBasedParameter(
+      schema,
+      rawMode,
+      validationMode,
+      rawParameter,
+      // in editor mode we use lax validation mode, to be backward compatible
+      parameterForBasicMode = JsonSchemaBasedParameter.withEmptySchemaSupport(
+        schema.cast().rawSchema(),
+        defaultParamName = sinkValueParamName,
+        ValidationMode.lax
+      )
+    )
+  }
+
 }
