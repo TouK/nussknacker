@@ -80,10 +80,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     // This logic is needed, because scenario is initially loaded without full validation data.
     // In that case the label is missing, and we need to fetch it separately.
     useEffect(() => {
-        if (!expressionObj.expression) {
-            setIsLoading(false);
-            return;
-        }
+        if (!expressionObj.expression) return;
         const parseObject = tryParseOrNull(expressionObj.expression);
         if (!parseObject) {
             setIsLoading(false);
