@@ -4,7 +4,7 @@ import cats.implicits.catsSyntaxOptionId
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, StaticParameterConfig}
 import pl.touk.nussknacker.engine.api.definition.BoolParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
@@ -54,11 +54,11 @@ object LoggingService extends EagerService {
           .flatMap(_.get(debuggingWithLoggingComponentsAllowedPropertyName))
           .exists(_.toBoolean)
 
-      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = Map(
+      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = Map(
         ScenarioActionName.Deploy -> Map(
-          ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> ParameterConfig(
+          ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> StaticParameterConfig(
             defaultValue = "false".some,
-            editors = List(BoolParameterEditor).some,
+            editor = BoolParameterEditor,
             validators = None,
             label = "Enable debugging with logging components".some,
             hintText = None

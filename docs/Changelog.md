@@ -126,6 +126,8 @@
   * Added migration of scenario nodes from a string defined in SpEL to a SpelTemplate string. 
   * Removed the single `editor` from the UIParameter and now only the `editors` property is available.
   * Made changes to the Component API regarding editors. For details, please see the Migration Guide.
+  * Extract `StaticParameterEditor` as a set of editors for scenario properties and action parameters that handle only
+    static values.
 
 ## 1.18
 

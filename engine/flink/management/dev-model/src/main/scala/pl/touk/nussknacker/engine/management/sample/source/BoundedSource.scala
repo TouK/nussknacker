@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.management.sample.source
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.definition.SpelParameterEditor
+import pl.touk.nussknacker.engine.api.component.{StaticParameterConfig, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.definition.ConstStringParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.SourceFactory
@@ -31,7 +31,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
   def source(@ParamName("elements") elements: java.util.List[Any]) =
     new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActionParametersSupport {
 
-      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
+      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = {
         Map(
           ScenarioActionName.Deploy -> deployParameters
         )
@@ -55,11 +55,11 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
 
     }
 
-  private def deployParameters: Map[ParameterName, ParameterConfig] = {
+  private def deployParameters: Map[ParameterName, StaticParameterConfig] = {
     Map(
-      OFFSET_PARAMETER_NAME -> ParameterConfig(
+      OFFSET_PARAMETER_NAME -> StaticParameterConfig(
         defaultValue = None,
-        editors = Some(List(SpelParameterEditor)),
+        editor = ConstStringParameterEditor,
         validators = None,
         label = Some("Offset"),
         hintText = Some(
