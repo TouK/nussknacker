@@ -17,7 +17,7 @@ export const SettingLabelStyled = styled(FormLabel)(({ theme }) => ({
     fontSize: "12px",
     fontWeight: "400",
     ".MuiFormControl-root &": {
-        flexBasis: "30%",
+        flexBasis: "30% !important",
     },
 }));
 

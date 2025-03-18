@@ -14,7 +14,7 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-describe(TimeEditor.name, () => {
+describe("TimeEditor.name", () => {
     it("should display validation error when the field is required", () => {
         render(
             <NuThemeProvider>

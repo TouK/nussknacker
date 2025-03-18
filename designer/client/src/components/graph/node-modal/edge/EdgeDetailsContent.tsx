@@ -61,7 +61,7 @@ export default function EdgeDetailsContent({
                         isMarked={isMarked("edgeType.condition.expression")}
                         showValidation={showValidation}
                         showSwitch={showSwitch}
-                        onValueChange={changeEdgeTypeCondition}
+                        onValueChange={({ expression }) => changeEdgeTypeCondition(expression)}
                         fieldErrors={[]}
                     />
                 </BaseModalContent>

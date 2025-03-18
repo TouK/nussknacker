@@ -4,10 +4,9 @@ import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
-import { ExtendedEditor } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
 import { ExpressionLang, ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
-import { ParamType } from "../../types";
 import { NodeInput } from "../../../../../FormElements";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import i18next from "i18next";
@@ -16,12 +15,13 @@ import { cx } from "@emotion/css";
 import { isEmpty } from "lodash";
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import { editorsParameters } from "../editorsParameters";
 
 interface Props {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
-    param: ParamType;
+    editorConfig: $TodoType;
     showValidation: boolean;
     readOnly: boolean;
 }
@@ -29,7 +29,7 @@ interface Props {
 export const DictParameterEditor: ExtendedEditor<Props> = ({
     fieldErrors,
     expressionObj,
-    param,
+    editorConfig,
     onValueChange,
     showValidation,
     readOnly,
@@ -42,8 +42,9 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const [value, setValue] = useState<ProcessDefinitionDataDictOption>();
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const dictId = param.editor.dictId || param.editor?.simpleEditor?.dictId;
+    const dictId = editorConfig?.dictId;
 
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {
@@ -81,20 +82,27 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     useEffect(() => {
         if (!expressionObj.expression) return;
         const parseObject = tryParseOrNull(expressionObj.expression);
-        if (!parseObject) return;
-        fetchProcessDefinitionDataDictByKey(parseObject?.key).then((response) => {
-            if (response.status == "success") {
-                setValue(response.data);
-            } else {
-                setValue(parseObject);
-            }
-        });
+        if (!parseObject) {
+            setIsLoading(false);
+            return;
+        }
+        fetchProcessDefinitionDataDictByKey(parseObject?.key)
+            .then((response) => {
+                if (response.status == "success") {
+                    setValue(response.data);
+                } else {
+                    setValue(parseObject);
+                }
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }, [expressionObj, fetchProcessDefinitionDataDictByKey]);
 
     // This condition means, that we should delay rendering this fragment when both conditions are met:
     // - expression is defined, so we know that value is present, but we do not yet have enough information to render it (label)
     // - value is not yet available - label is not yet loaded
-    if (!value && expressionObj?.expression) {
+    if (isLoading && expressionObj?.expression) {
         return;
     }
 
@@ -118,7 +126,10 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange(value ? JSON.stringify(value) : "");
+                    onValueChange({
+                        expression: value ? JSON.stringify(value) : "",
+                        language: editorsParameters.DictParameterEditor.language,
+                    });
                     setValue(value);
                     setOpen(false);
                 }}
@@ -141,7 +152,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 renderOption={(props, option) => {
                     const isSelected = option.key === value?.key;
                     return (
-                        // aira-selected is set to false as it overrides styles defined in our menuOption
+                        // aria-selected is set to false as it overrides styles defined in our menuOption
                         <Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
                         </Box>
@@ -160,14 +171,22 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
 const isParseable = (expressionObj: ExpressionObj) =>
     tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
 
-DictParameterEditor.switchableToHint = () => i18next.t("editors.dictParameter.switchableToHint", "Switch to basic mode");
 DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
 DictParameterEditor.isSwitchableTo = () => true;
-DictParameterEditor.getExpressionMode = (expressionObj) => ({
-    language: ExpressionLang.SpEL,
-    expression: isParseable(expressionObj) ? "" : expressionObj.expression,
-});
-DictParameterEditor.getBasicMode = (expressionObj) => ({
-    language: ExpressionLang.DictKeyWithLabel,
-    expression: isParseable(expressionObj) ? expressionObj.expression : "",
-});
+DictParameterEditor.parseValueOnEditorChange = (expressionObj: ExpressionObj, newLanguage: ExpressionLang) => {
+    if (newLanguage === ExpressionLang.DictKeyWithLabel) {
+        return {
+            language: newLanguage,
+            expression: isParseable(expressionObj) ? expressionObj.expression : "",
+        };
+    }
+
+    if (newLanguage === ExpressionLang.SpEL) {
+        return {
+            language: newLanguage,
+            expression: isParseable(expressionObj) ? "" : expressionObj.expression,
+        };
+    }
+
+    return expressionObj;
+};

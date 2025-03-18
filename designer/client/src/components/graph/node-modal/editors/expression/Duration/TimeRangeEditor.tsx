@@ -4,21 +4,24 @@ import TimeRangeSection from "./TimeRangeSection";
 import { TimeRange } from "./TimeRangeComponent";
 import { Duration } from "./DurationEditor";
 import { FieldError } from "../../Validators";
+import { ExpressionLang, ExpressionObj } from "../types";
+import { OnValueChange } from "../Editor";
 
 type Props = {
     encode: (value: Duration | Period) => string;
     decode: ((exp: string) => Duration) | ((exp: string) => Period);
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     editorConfig: $TodoType;
     readOnly: boolean;
     showValidation: boolean;
     fieldErrors: FieldError[];
     expression: string;
     isMarked: boolean;
+    language: ExpressionLang;
 };
 
 export default function TimeRangeEditor(props: Props): JSX.Element {
-    const { encode, decode, onValueChange, editorConfig, readOnly, showValidation, fieldErrors, expression, isMarked } = props;
+    const { encode, decode, onValueChange, editorConfig, readOnly, showValidation, fieldErrors, expression, isMarked, language } = props;
 
     const components = editorConfig.timeRangeComponents as Array<TimeRange>;
     const [value, setValue] = useState(() => decode(expression));
@@ -40,9 +43,9 @@ export default function TimeRangeEditor(props: Props): JSX.Element {
     useEffect(() => {
         const encoded = encode(value);
         if (encoded !== expression) {
-            onValueChange(encoded);
+            onValueChange({ expression: encoded, language });
         }
-    }, [encode, expression, onValueChange, value]);
+    }, [encode, expression, language, onValueChange, value]);
 
     return (
         <TimeRangeSection

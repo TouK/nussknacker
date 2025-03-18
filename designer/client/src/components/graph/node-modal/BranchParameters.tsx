@@ -4,9 +4,14 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { FormControl, FormLabel } from "@mui/material";
+import { FormControl, FormLabel, styled } from "@mui/material";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
+const StyledFieldControl = styled("div")(() => ({
+    ".MuiFormControl-root": {
+        margin: 0,
+    },
+}));
 export interface BranchParametersProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
@@ -41,7 +46,7 @@ export default function BranchParameters({
                     <FormControl key={paramName}>
                         <FormLabel title={paramName}>{paramName}:</FormLabel>
                         <div className={nodeValue}>
-                            <div className="fieldsControl">
+                            <StyledFieldControl className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
                                     const branchId = branchParameter.branchId;
                                     //here we assume the parameters are correct wrt branch definition. If this is not the case,
@@ -78,7 +83,7 @@ export default function BranchParameters({
                                         />
                                     );
                                 })}
-                            </div>
+                            </StyledFieldControl>
                         </div>
                     </FormControl>
                 );

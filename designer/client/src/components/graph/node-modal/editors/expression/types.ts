@@ -19,3 +19,24 @@ export enum EditorMode {
     SpELTemplate = "spelTemplate",
     SQL = "sql",
 }
+
+export enum EditorType {
+    SPEL_PARAMETER_EDITOR = "SpelParameterEditor",
+    BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
+    STRING_PARAMETER_EDITOR = "StringParameterEditor",
+    FIXED_VALUES_PARAMETER_EDITOR = "FixedValuesParameterEditor",
+    FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR = "FixedValuesWithIconParameterEditor",
+    FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR = "FixedValuesWithRadioParameterEditor",
+    DATE = "DateParameterEditor",
+    TIME = "TimeParameterEditor",
+    DATE_TIME = "DateTimeParameterEditor",
+    DURATION_EDITOR = "DurationParameterEditor",
+    PERIOD_EDITOR = "PeriodParameterEditor",
+    CRON_EDITOR = "CronParameterEditor",
+    TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor",
+    JSON_PARAMETER_EDITOR = "JsonParameterEditor",
+    SQL_PARAMETER_EDITOR = "SqlParameterEditor",
+    SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
+    DICT_PARAMETER_EDITOR = "DictParameterEditor",
+    TABLE_EDITOR = "TabularTypedDataEditor",
+}

@@ -1,15 +1,16 @@
 import React from "react";
 import Input from "../field/Input";
-import { ExtendedEditor } from "./Editor";
+import { ExtendedEditor, OnValueChange } from "./Editor";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import i18next from "i18next";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { isQuoted } from "./SpelQuotesUtils";
 import { FieldError } from "../Validators";
+import { editorsParameters } from "./editorsParameters";
 
 type Props = {
-    expressionObj: $TodoType;
-    onValueChange: (value: string) => void;
+    expressionObj: ExpressionObj;
+    onValueChange: OnValueChange;
     className: string;
     formatter: Formatter;
     fieldErrors: FieldError[];
@@ -25,7 +26,12 @@ export const StringEditor: ExtendedEditor<Props> = (props: Props) => {
     return (
         <Input
             {...passProps}
-            onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
+            onChange={(event) =>
+                onValueChange({
+                    expression: stringFormatter.encode(event.target.value),
+                    language: editorsParameters.StringParameterEditor.language,
+                })
+            }
             value={stringFormatter.decode(expressionObj.expression) as string}
         />
     );
@@ -36,9 +42,9 @@ export const isSwitchableTo = ({ expression, language }: ExpressionObj): boolean
 };
 
 StringEditor.isSwitchableTo = isSwitchableTo;
-StringEditor.switchableToHint = () => i18next.t("editors.string.switchableToHint", "Switch to basic mode");
 StringEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.string.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.StringParameterEditor.displayName },
     );
