@@ -154,6 +154,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
+  To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`
 
 ## In version 1.18.0
 

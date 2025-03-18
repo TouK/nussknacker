@@ -122,7 +122,8 @@
   * [#7663](https://github.com/TouK/nussknacker/pull/7663) ad-hoc tests
 * [#7590](https://github.com/TouK/nussknacker/pull/7590) Replaced Akka and Akka HTTP libraries with Apache Pekko (1.0.3) and Apache Pekko HTTP (1.0.1)
 * [#7673](https://github.com/TouK/nussknacker/pull/7673) Improve the node documentation link in the node header
-* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
+  Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
 
 ## 1.18
 
