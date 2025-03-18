@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, StaticParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -128,7 +128,7 @@ package object definition {
       // This attribute is deprecated on BE and FE as it's not used anywhere.
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],
-      editor: ParameterEditor,
+      editor: StaticParameterEditor,
       label: Option[String],
       hintText: Option[String]
   )

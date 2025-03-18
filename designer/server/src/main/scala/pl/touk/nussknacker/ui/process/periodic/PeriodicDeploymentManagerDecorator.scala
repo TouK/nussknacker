@@ -1,11 +1,16 @@
 package pl.touk.nussknacker.ui.process.periodic
 
+import cats.implicits.catsSyntaxOptionId
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, NoSchedulingSupport, SchedulingSupported}
+import pl.touk.nussknacker.engine.api.definition.{
+  ConstStringParameterEditor,
+  MandatoryParameterValidator,
+  SpelTemplateParameterEditor
+}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   EmptyScheduledProcessListenerFactory,
   ProcessConfigEnricherFactory,
@@ -138,7 +143,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
 
   private val cronConfig = CronSchedulePropertyExtractor.CronPropertyDefaultName -> ScenarioPropertyConfig(
     defaultValue = None,
-    editor = Some(SpelTemplateParameterEditor),
+    editor = ConstStringParameterEditor.some,
     validators = Some(List(MandatoryParameterValidator, CronParameterValidator)),
     label = Some("Schedule"),
     hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")

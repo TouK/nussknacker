@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -79,29 +79,25 @@ class FlinkKafkaSource[T](
 
   private val defaultOffsetResetStrategy = kafkaConfig.defaultOffsetResetStrategy.getOrElse(OffsetResetStrategy.None)
 
-  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]] = {
+  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = {
     Map(
       ScenarioActionName.Deploy -> Map(
-        OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
+        OFFSET_RESET_STRATEGY_PARAM_NAME -> StaticParameterConfig(
           defaultValue = Some(defaultOffsetResetStrategy.toString),
-          editors = Some(
+          editor = FixedValuesWithRadioParameterEditor(
             List(
-              FixedValuesWithRadioParameterEditor(
-                List(
-                  FixedExpressionValue(
-                    OffsetResetStrategy.None.toString,
-                    s"Resume reading where it previously stopped"
-                  ),
-                  FixedExpressionValue(
-                    OffsetResetStrategy.ToLatest.toString,
-                    "Read new messages only"
-                  ),
-                  FixedExpressionValue(
-                    OffsetResetStrategy.ToEarliest.toString,
-                    "Read all messages from the topic"
-                  ),
-                )
-              )
+              FixedExpressionValue(
+                OffsetResetStrategy.None.toString,
+                s"Resume reading where it previously stopped"
+              ),
+              FixedExpressionValue(
+                OffsetResetStrategy.ToLatest.toString,
+                "Read new messages only"
+              ),
+              FixedExpressionValue(
+                OffsetResetStrategy.ToEarliest.toString,
+                "Read all messages from the topic"
+              ),
             )
           ),
           validators = None,

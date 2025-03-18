@@ -2,7 +2,12 @@ package pl.touk.nussknacker.ui.api.description
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  ConstStringParameterEditor,
+  FixedExpressionValue,
+  FixedExpressionValueWithIcon,
+  StaticParameterEditor
+}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -23,6 +28,9 @@ import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
+
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 
 class ActionInfoEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
@@ -94,7 +102,7 @@ object ActionInfoEndpoints {
       )
 
     val emptyUiActionParameterConfig: UiActionParameterConfigDto =
-      UiActionParameterConfigDto(None, SpelParameterEditor, None, None)
+      UiActionParameterConfigDto(None, ConstStringParameterEditor, None, None)
   }
 
   object Dtos {
@@ -108,8 +116,13 @@ object ActionInfoEndpoints {
       implicit val uiActionParametersSchema: Schema[UiActionParametersDto] = {
         implicit val nodeIdSchema: Schema[NodeId]                   = Schema.string
         implicit val scenarioActionName: Schema[ScenarioActionName] = Schema.string
-        implicit val parameterEditorSchema: Schema[ParameterEditor] =
-          NodesApiEndpoints.Dtos.NodeValidationResultDto.parameterEditorSchema
+        implicit lazy val durationSchema: Schema[Duration]          = Schema.schemaForJavaDuration
+        implicit val chronoUnitSchema: Schema[ChronoUnit] = NodesApiEndpoints.Dtos.NodeValidationResultDto.timeSchema
+        implicit val fixedExpressionSchema: Schema[FixedExpressionValue] =
+          NodesApiEndpoints.Dtos.fixedExpressionValueSchema
+        implicit val fixedExpressionWithIconSchema: Schema[FixedExpressionValueWithIcon] =
+          NodesApiEndpoints.Dtos.fixedExpressionValueWithIconSchema
+        implicit val parameterEditorSchema: Schema[StaticParameterEditor]    = Schema.derived
         implicit val parameterSchema: Schema[UiActionParameterConfigDto]     = Schema.derived
         implicit val nodeParametersSchema: Schema[UiActionNodeParametersDto] = Schema.derived
         implicit val mapScenarioActionParametersSchema
@@ -128,7 +141,7 @@ object ActionInfoEndpoints {
 
     @JsonCodec final case class UiActionParameterConfigDto(
         defaultValue: Option[String],
-        editor: ParameterEditor,
+        editor: StaticParameterEditor,
         label: Option[String],
         hintText: Option[String]
     )
