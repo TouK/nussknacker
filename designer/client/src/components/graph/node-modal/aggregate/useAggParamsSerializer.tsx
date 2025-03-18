@@ -35,9 +35,13 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
 
     const deserialize = useCallback(
         (input: string) => {
+            // if some more advanced transformation is done we should
+            console.log(input);
+            if (input.startsWith("{") && input.search("}.to.*") != -1) return [input];
             // if already a list we only need to add 'toString' so it's nicely displayed in editor
             // if only one element we need to wrap it in '{}' and add 'toString'
             const list = input.startsWith("{") && input.endsWith("}") ? input + ".toString" : "{" + input + "}.toString";
+
             return parser.parseList(list);
         },
         [parser],

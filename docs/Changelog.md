@@ -142,6 +142,8 @@
 * [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
 * [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
 * [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
+  Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
 
 ## 1.18
 
