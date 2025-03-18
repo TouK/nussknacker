@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
 import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor;
-import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.SpelParameterEditor$;
 import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
@@ -24,7 +23,7 @@ import java.util.Map;
  */
 public class AggregateHelper implements Serializable {
 
-    public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
+    public static final ParameterEditor EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
             new FixedExpressionValue("#AGG.first", "First"),
             new FixedExpressionValue("#AGG.last", "Last"),
             new FixedExpressionValue("#AGG.countWhen", "CountWhen"),
@@ -44,7 +43,7 @@ public class AggregateHelper implements Serializable {
     @Hidden
     public static final List<ParameterEditor> DUAL_EDITOR = JavaConverters.collectionAsScalaIterableConverter(
         Arrays.asList(
-            SIMPLE_EDITOR,
+            EDITOR,
             SpelParameterEditor$.MODULE$
         )
     ).asScala().toList();
