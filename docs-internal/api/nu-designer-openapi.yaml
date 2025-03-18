@@ -4893,12 +4893,8 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
-                      - name: sourceEnvironment
+                      - name: migrateFrom
                         value: preprod
-                      - name: sourceUser
-                        value: user-preprod
-                      - name: targetEnvironment
-                        value: prod
                       - name: sourceScenarioVersionId
                         value: '23'
                       type: INCOMING_MIGRATION
@@ -4907,7 +4903,7 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
-                      - name: destinationEnvironment
+                      - name: migrateTo
                         value: preprod
                       type: OUTGOING_MIGRATION
                     - id: 924dfcd3-fbc7-44ea-8763-813874382204
