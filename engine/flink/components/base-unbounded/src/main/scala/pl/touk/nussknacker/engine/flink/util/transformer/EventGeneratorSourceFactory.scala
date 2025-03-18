@@ -102,7 +102,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override val returnType: typing.TypingResult = value.returnType
 
       override def generateTestData(size: Int): TestData = {
-        val samples = List.fill(size)(encodeValueUnsafe(value.evaluate(Context("dummy_context"))))
+        val samples = List.fill(size)(encodeValueUnsafe(generateSample()))
         TestData(samples.map(TestRecord(_, None)))
       }
 
@@ -113,11 +113,11 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
 
       override def parametersToTestData(
           params: Map[ParameterName, AnyRef],
-      ): AnyRef = {
-        value.evaluate(Context("dummy"))
-      }
+      ): AnyRef = generateSample()
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
+
+      private def generateSample(): AnyRef = value.evaluate(Context("dummy_context"))
 
       private def encodeValueUnsafe(value: AnyRef) =
         ValueEncoder
