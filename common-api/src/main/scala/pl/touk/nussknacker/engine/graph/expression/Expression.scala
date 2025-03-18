@@ -6,6 +6,7 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.{
   DictKeyWithLabel,
+  Json,
   Spel,
   SpelTemplate,
   TabularDataDefinition
@@ -23,6 +24,7 @@ object Expression {
       case SpelTemplate          => "spelTemplate"
       case DictKeyWithLabel      => "dictKeyWithLabel"
       case TabularDataDefinition => "tabularDataDefinition"
+      case Json                  => "json"
     }
 
   }
@@ -32,6 +34,7 @@ object Expression {
     object SpelTemplate          extends Language
     object DictKeyWithLabel      extends Language
     object TabularDataDefinition extends Language
+    object Json                  extends Language
 
     implicit val encoder: Encoder[Language] = Encoder.encodeString.contramap(_.toString)
 
@@ -40,6 +43,7 @@ object Expression {
       case "spelTemplate"          => Right(SpelTemplate)
       case "dictKeyWithLabel"      => Right(DictKeyWithLabel)
       case "tabularDataDefinition" => Right(TabularDataDefinition)
+      case "json"                  => Right(Json)
       case unknown                 => Left(s"Unknown language [$unknown]")
     }
 
@@ -55,4 +59,6 @@ object Expression {
   )
 
   def tabularDataDefinition(definition: String): Expression = Expression(Language.TabularDataDefinition, definition)
+
+  def json(jsonString: String): Expression = Expression(Language.Json, jsonString)
 }

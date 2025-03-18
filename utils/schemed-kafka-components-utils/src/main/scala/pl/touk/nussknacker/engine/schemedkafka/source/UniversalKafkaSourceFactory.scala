@@ -33,7 +33,7 @@ import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransform
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{EmptySchemaJsonSupport, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 
 /**
@@ -248,8 +248,11 @@ class UniversalKafkaSourceFactory(
         NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
       )
       .andThen { runtimeSchema =>
-        val universalSchemaSupport: UniversalSchemaSupport =
-          schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        val universalSchemaSupport = runtimeSchema.schema match {
+          // For ad hoc tests we want to present the user with json editor when schemaless topic with Json content type was selected
+          case ContentTypesSchemas.schemaForJson => EmptySchemaJsonSupport
+          case _ => schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        }
         universalSchemaSupport
           .extractParameters(runtimeSchema.schema)
           .map { params =>
