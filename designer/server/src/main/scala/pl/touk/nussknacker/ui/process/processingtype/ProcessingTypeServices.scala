@@ -80,7 +80,7 @@ object ProcessingTypeServices {
     val scenarioValidator = new UIProcessValidator(
       processingTypeData.processingType,
       ProcessValidator.default(processingTypeData.designerModelData.modelData),
-      processingTypeData.deploymentData.scenarioPropertiesConfig,
+      processingTypeData.designerModelData.scenarioPropertiesConfig,
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
       new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
       processingTypeData.deploymentData.additionalValidators,
@@ -106,7 +106,7 @@ object ProcessingTypeServices {
     )
     val newProcessPreparer = new NewProcessPreparer(
       processingTypeData.deploymentData.metaDataInitializer,
-      processingTypeData.deploymentData.scenarioPropertiesConfig,
+      processingTypeData.designerModelData.scenarioPropertiesConfig,
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
     )
     val alignedComponentsDefinitionProvider = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData)
@@ -120,11 +120,11 @@ object ProcessingTypeServices {
     val parameterValidator =
       new ParametersValidator(
         processingTypeData.designerModelData.modelData,
-        processingTypeData.deploymentData.scenarioPropertiesConfig.keys
+        processingTypeData.designerModelData.scenarioPropertiesConfig.keys
       )
     val expressionSuggester = ExpressionSuggester(
       processingTypeData.designerModelData.modelData,
-      processingTypeData.deploymentData.scenarioPropertiesConfig.keys
+      processingTypeData.designerModelData.scenarioPropertiesConfig.keys
     )
     new ProcessingTypeServices(
       processingTypeData,

@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
@@ -52,7 +53,7 @@ class ProcessingTypeDataProviderAccessRestrictionTest
 
     val processingTypeConfigs = ProcessingTypeConfigs(allProcessingTypes.toList.map { processingType =>
       processingType -> ProcessingTypeConfig(
-        deploymentManagerType = "stub",
+        deploymentManagerType = DeploymentManagerType("stub"),
         engineSetupName = None,
         classPath = modelClasspath,
         deploymentConfig = ConfigFactory.empty(),

@@ -23,8 +23,8 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
+import java.net.URLClassLoader
 import java.nio.file.Path
-import scala.reflect.internal.util.ScalaClassLoader
 
 object ModelData extends LazyLogging {
 
@@ -94,6 +94,15 @@ object ModelData extends LazyLogging {
   }
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
+
+    def toModelDataProvider: BaseModelDataProvider = {
+      val invokableModelData = asInvokableModelData
+      new BaseModelDataProvider {
+        override val modelClassLoader: URLClassLoader     = invokableModelData.modelClassLoader
+        override def getCurrentModelData(): BaseModelData = invokableModelData
+      }
+    }
+
     def asInvokableModelData: ModelData = baseModelData.asInstanceOf[ModelData]
   }
 
@@ -229,9 +238,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition = withThisAsContextClassLoader {
+  final def modelDefinition: ModelDefinition =
     modelDefinitionWithClasses.modelDefinition
-  }
 
   private lazy val dictServicesFactory: DictServicesFactory =
     DictServicesFactoryLoader.justOne(modelClassLoader)
@@ -264,20 +272,6 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   final def close(): Unit = {
     designerDictServices.close()
-  }
-
-}
-
-// FIXME abr move to test code or to LocalModelData
-object ModelDataConversionOps {
-
-  implicit class Ops(modelData: ModelData) {
-
-    def toModelDataProvider: BaseModelDataProvider = new BaseModelDataProvider {
-      override def modelClassLoader: ScalaClassLoader.URLClassLoader = modelData.modelClassLoader
-      override def getCurrentModelData(): BaseModelData              = modelData
-    }
-
   }
 
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.factory
 
 import cats.effect.{IO, Resource}
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
 import pl.touk.nussknacker.ui.config.{AdditionalUIConfigProviderLoader, DesignerConfig, DesignerConfigLoader}
+import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
@@ -38,8 +39,12 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.processingtype._
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.ModelDataWithProcessingTypeDataInput
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  DeploymentManagersLoader,
+  ModelDataLoader,
+  ProcessingTypeDataStateFactory
+}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataStateFactory.ModelDataWithProcessingTypeDataInput
 import pl.touk.nussknacker.ui.process.processingtype.provider.{
   ProcessingTypeDataProvider,
   ReloadableProcessingTypeDataProvider
@@ -93,7 +98,7 @@ object DomainServices {
     for {
       deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(alreadyLoadedConfig.managersDir)
       modelClassLoaderProvider = createModelClassLoaderProvider(
-        alreadyLoadedConfig.processingTypeConfigs().configByProcessingType,
+        alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader
       )
 
@@ -111,18 +116,24 @@ object DomainServices {
         globalNotificationRepository,
         modelClassLoaderProvider
       )
+      deploymentData <- DeploymentManagersLoader.load(
+        alreadyLoadedConfig.processingTypeConfigs(),
+        deploymentManagersClassLoader,
+        modelClassLoaderProvider,
+        modelDataProvider.mapValues(_.modelData),
+        getDeploymentManagerDependencies(
+          infrastructureServices,
+          additionalUIConfigProvider,
+          actionServiceSupplier,
+          _
+        ),
+        Some(infrastructureServices.dbRef)
+      )
       processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
-        ProcessingTypeDataLoader
-          .toFinalProcessingTypeData(
+        ProcessingTypeDataStateFactory
+          .create(
             modelDataWithInputs,
-            getDeploymentManagerDependencies(
-              infrastructureServices,
-              additionalUIConfigProvider,
-              actionServiceSupplier,
-              _
-            )(executionContextWithIORuntime),
-            deploymentManagersClassLoader,
-            Some(dbRef)
+            deploymentData
           )
           .toEither
           .toTry
@@ -301,12 +312,14 @@ object DomainServices {
   }
 
   private def createModelClassLoaderProvider(
-      processingTypeConfigs: Map[String, ProcessingTypeConfig],
+      processingTypeConfigs: ProcessingTypeConfigs,
       deploymentManagersClassLoader: DeploymentManagersClassLoader
   ): ModelClassLoaderProvider = {
     val defaultWorkingDirOpt = None
     ModelClassLoaderProvider(
-      processingTypeConfigs.mapValuesNow(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt)),
+      processingTypeConfigs.configByProcessingType.mapValuesNow(c =>
+        ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt)
+      ),
       deploymentManagersClassLoader
     )
   }
@@ -325,7 +338,7 @@ object DomainServices {
             .loadDesignerConfig()
             .map(_.processingTypeConfigs())
             .map(
-              ProcessingTypeDataLoader.loadModelData(
+              ModelDataLoader.load(
                 _,
                 getModelDependencies(
                   additionalUIConfigProvider,

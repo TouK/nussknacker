@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 import scala.concurrent.duration.FiniteDuration
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes

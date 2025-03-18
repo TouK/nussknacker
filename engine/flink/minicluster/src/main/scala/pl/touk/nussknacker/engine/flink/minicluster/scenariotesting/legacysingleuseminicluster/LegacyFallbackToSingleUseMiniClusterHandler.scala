@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
+import java.net.URLClassLoader
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 // This class handles a legacy way to create single use minicluster
 // TODO: After we fully switch to shared mini cluster approach, it should be removed

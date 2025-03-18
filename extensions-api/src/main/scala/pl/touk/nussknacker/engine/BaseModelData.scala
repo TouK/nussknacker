@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
+import java.net.URLClassLoader
 
 // TODO: Replace ModelData -> BasedModelData inheritance with composition. Thanks to that it won't be needed to downcast
 //       to ModelData in case of interpreter invocation
@@ -24,7 +24,7 @@ trait BaseModelData {
 
 trait BaseModelDataProvider {
   // modelClassLoader is set once and won't be changed
-  def modelClassLoader: URLClassLoader
+  val modelClassLoader: URLClassLoader
 
   // other model data could be reloaded anytime so we need to always consider when this method should be invoke
   def getCurrentModelData(): BaseModelData

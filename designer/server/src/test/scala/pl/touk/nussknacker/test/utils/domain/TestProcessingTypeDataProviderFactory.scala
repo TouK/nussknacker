@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.test.utils.domain
 
 import cats.effect.unsafe.IORuntime
+import cats.effect.unsafe.implicits.global
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
@@ -12,7 +13,11 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
   ValueWithRestriction
 }
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  DeploymentManagersLoader,
+  ModelDataLoader,
+  ProcessingTypeDataStateFactory
+}
 import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 
 import scala.util.{Failure, Success}
@@ -53,19 +58,29 @@ object TestProcessingTypeDataProviderFactory {
       dbRef: Option[DbRef]
   ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val finalProcessingTypeData =
-      ProcessingTypeDataLoader
-        .loadModelData(
+      ModelDataLoader
+        .load(
           processingTypeConfigs,
           _ => modelDependencies,
           modelClassLoaderProvider
         )
         .transform { case (modelDataWithInputs, _) =>
-          ProcessingTypeDataLoader
-            .toFinalProcessingTypeData(
-              modelDataWithInputs,
-              _ => deploymentManagerDependencies,
+          val deploymentData = DeploymentManagersLoader
+            .load(
+              processingTypeConfigs,
               deploymentManagersClassLoader,
+              modelClassLoaderProvider,
+              createWithEmptyCombinedData(modelDataWithInputs).mapValues(_.modelData),
+              _ => deploymentManagerDependencies,
               dbRef
+            )
+            .allocated
+            .unsafeRunSync()
+            ._1
+          ProcessingTypeDataStateFactory
+            .create(
+              modelDataWithInputs,
+              deploymentData
             )
             .toEither
             .toTry
@@ -75,7 +90,7 @@ object TestProcessingTypeDataProviderFactory {
     fromState(finalProcessingTypeData)
   }
 
-  def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
+  private def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C](stateValue)(IORuntime.global) {}
 
 }

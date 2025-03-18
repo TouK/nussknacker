@@ -8,7 +8,6 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus

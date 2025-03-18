@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.ui.process
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
@@ -12,11 +15,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFac
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
-import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypeDataProviderFactory
+import pl.touk.nussknacker.ui.process.processingtype.{DeploymentData, ProcessingTypeData, ValueWithRestriction}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
@@ -184,6 +186,17 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       stateDefinitionManager: ProcessStateDefinitionManager,
       category: String
   ): ProcessingTypeData = {
+    val mockManager = MockDeploymentManager.create(
+      customProcessStateDefinitionManager = Some(stateDefinitionManager)
+    )
+    val deploymentData = new DeploymentData(
+      DeploymentManagerType("mock"),
+      Valid(mockManager),
+      MetaDataInitializer("streaming", Map.empty[String, String]),
+      Map.empty,
+      List.empty,
+      EngineSetupName("mock")
+    )
     ProcessingTypeData.createProcessingTypeData(
       processingType,
       LocalModelData(
@@ -191,15 +204,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {}))),
         componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       ),
-      new MockManagerProvider(
-        MockDeploymentManager.create(
-          customProcessStateDefinitionManager = Some(stateDefinitionManager)
-        )
-      ),
-      SchedulingForProcessingType.NotAvailable,
-      TestFactory.deploymentManagerDependencies,
-      deploymentConfig = ConfigFactory.empty(),
-      engineSetupName = EngineSetupName("mock"),
+      deploymentData,
       category = category,
       componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
     )

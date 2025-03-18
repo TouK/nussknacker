@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ProcessingMode, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 final case class DesignerModelData(
     modelData: ModelData,
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     // We hold definitions as a cache - computing them is a quite costly operation (it invokes external services)
     staticDefinitionForDynamicComponents: DynamicComponentsStaticDefinitions,
     processingMode: ProcessingMode

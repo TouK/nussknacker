@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.test.base.it
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
+import cats.data.Validated.Valid
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.{parser, Decoder, Encoder, Json}
@@ -54,7 +53,6 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusPr
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype._
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -166,16 +164,22 @@ trait NuResourcesTest
       modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
     )
 
+  private val deploymentData =
+    new DeploymentData(
+      processingTypeConfig.deploymentManagerType,
+      Valid(deploymentManager),
+      deploymentManagerProvider.metaDataInitializer(ConfigFactory.empty()),
+      deploymentManagerProvider.scenarioPropertiesConfig(ConfigFactory.empty()),
+      deploymentManagerProvider.additionalValidators(ConfigFactory.empty()),
+      deploymentManagerProvider.defaultEngineSetupName
+    )
+
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
         modelData,
-        deploymentManagerProvider,
-        SchedulingForProcessingType.NotAvailable,
-        deploymentManagerDependencies,
-        deploymentManagerProvider.defaultEngineSetupName,
-        processingTypeConfig.deploymentConfig,
+        deploymentData,
         processingTypeConfig.category,
         modelDependencies.componentDefinitionExtractionMode
       )

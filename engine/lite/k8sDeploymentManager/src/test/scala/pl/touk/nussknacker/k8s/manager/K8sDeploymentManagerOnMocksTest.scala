@@ -10,7 +10,6 @@ import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
-import pl.touk.nussknacker.engine.ModelDataConversionOps.Ops
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   ProcessingTypeActionServiceStub,
