@@ -19,16 +19,14 @@ class DatesTypesService extends Service with Serializable {
       @ParamName("durationParam")
       @Editor(
         `type` = EditorType.DURATION_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS),
-        isMainEditor = true
+        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
       duration: Duration,
       @ParamName("periodParam")
       @Editor(
         `type` = EditorType.PERIOD_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS),
-        isMainEditor = true
+        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
       period: Period,

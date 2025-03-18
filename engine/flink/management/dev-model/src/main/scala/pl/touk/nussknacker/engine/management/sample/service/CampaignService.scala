@@ -22,7 +22,7 @@ object CampaignService extends Service with Serializable {
       )
       registered: Boolean,
       @ParamName("BusinessConfig")
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @Nullable
       businessConfig: String,

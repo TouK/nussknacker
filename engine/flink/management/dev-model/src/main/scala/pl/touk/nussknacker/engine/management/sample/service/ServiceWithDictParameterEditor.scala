@@ -16,14 +16,14 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
       @Editor(`type` = EditorType.DICT_EDITOR, dictId = "rgb")
       rgb: String,
       @ParamName("BooleanDict")
-      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "boolean_dict", isMainEditor = true)
+      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "boolean_dict")
       @Editor(`type` = EditorType.SPEL_EDITOR)
       booleanDict: Option[java.lang.Boolean],
       @ParamName("LongDict")
       @Editor(`type` = EditorType.DICT_EDITOR, dictId = "long_dict")
       longDict: Option[java.lang.Long],
       @ParamName("RGBDictRAW")
-      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "rgb", isMainEditor = true)
+      @Editor(`type` = EditorType.DICT_EDITOR, dictId = "rgb")
       @Editor(`type` = EditorType.SPEL_EDITOR)
       rgbRaw: Option[String]
   ): Future[String] = {

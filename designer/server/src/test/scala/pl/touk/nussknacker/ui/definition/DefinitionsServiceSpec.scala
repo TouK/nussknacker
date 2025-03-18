@@ -41,8 +41,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         @ParamName("paramDualEditor")
         @Editor(
           `type` = EditorType.FIXED_VALUES_EDITOR,
-          possibleValues = Array(new LabeledExpression(expression = "expression", label = "label")),
-          isMainEditor = true
+          possibleValues = Array(new LabeledExpression(expression = "expression", label = "label"))
         )
         @Editor(`type` = EditorType.SPEL_EDITOR)
         input: String,

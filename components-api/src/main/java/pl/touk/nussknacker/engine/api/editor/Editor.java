@@ -28,9 +28,4 @@ public @interface Editor {
      * This field should be used only with {@link EditorType#DICT_EDITOR}
      */
     String dictId() default "";
-
-    /**
-     * Whether the editor will be displayed at first on the UI.
-     */
-    boolean isMainEditor() default false;
 }

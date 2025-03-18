@@ -11,7 +11,7 @@ class ReturningClassInstanceSource extends SourceFactory with UnboundedStreamCom
   @MethodToInvoke
   def source(
       @ParamName("Additional class")
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       additionalClass: String
   ) = {

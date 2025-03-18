@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   DictParameterEditor,
   FixedExpressionValue,
   FixedValuesParameterEditor,
-  ParameterEditors,
+  ParameterEditor,
   SpelParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -30,7 +30,7 @@ object ValueEditorValidator {
       initialValue: Option[FixedExpressionValue],
       paramName: ParameterName,
       nodeIds: Set[String]
-  ): ValidatedNel[PartSubGraphCompilationError, ParameterEditors] = {
+  ): ValidatedNel[PartSubGraphCompilationError, List[ParameterEditor]] = {
     val validatedInnerEditor = valueEditor match {
       case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
         validateFixedValuesList(fixedValuesList, allowOtherValue, initialValue, paramName, nodeIds)
@@ -42,9 +42,9 @@ object ValueEditorValidator {
 
     validatedInnerEditor.map { innerEditor =>
       if (valueEditor.allowOtherValue)
-        ParameterEditors(innerEditor, SpelParameterEditor)
+        List(innerEditor, SpelParameterEditor)
       else
-        ParameterEditors(innerEditor)
+        List(innerEditor)
     }
   }
 

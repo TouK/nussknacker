@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.definition.{
   Parameter,
   ParameterEditor,
-  ParameterEditors,
   SpelParameterEditor,
   SpelTemplateParameterEditor
 }
@@ -20,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 
 class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Matchers {
 
-  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: Option[ParameterEditors])
+  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: List[ParameterEditor])
 
   test("should generate test parameters for fragment input definition") {
     val fragmentInputDefinition = FragmentInputDefinition(
@@ -43,9 +42,9 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
       SimplifiedParam(
         "name",
         Typed.apply[String],
-        Some(ParameterEditors(SpelParameterEditor, SpelTemplateParameterEditor)),
+        List(SpelParameterEditor, SpelTemplateParameterEditor),
       ),
-      SimplifiedParam("age", Typed.apply[Long], None),
+      SimplifiedParam("age", Typed.apply[Long], Nil),
     )
     parameters.map(p =>
       SimplifiedParam(p.name.value, p.typ, p.editors)

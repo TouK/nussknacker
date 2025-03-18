@@ -76,7 +76,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     val result: service.TransformationStepResult = definition(service.TransformationStep(List(), None))
     result match {
       case service.NextParameters(parameters, _, _) =>
-        parameters.head.editors.head.mainEditor shouldBe FixedValuesParameterEditor(
+        parameters.head.editors.head shouldBe FixedValuesParameterEditor(
           List(FixedExpressionValue("'PERSONS'", "PERSONS"))
         )
       case _ =>
@@ -93,7 +93,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
     result match {
       case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
-        parameters.head.editors.head.mainEditor shouldBe FixedValuesParameterEditor(List())
+        parameters.head.editors.head shouldBe FixedValuesParameterEditor(List())
       case _ =>
     }
   }
@@ -108,7 +108,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
     result match {
       case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
-        parameters.head.editors.head.mainEditor shouldBe FixedValuesParameterEditor(List())
+        parameters.head.editors.head shouldBe FixedValuesParameterEditor(List())
       case _ =>
     }
   }

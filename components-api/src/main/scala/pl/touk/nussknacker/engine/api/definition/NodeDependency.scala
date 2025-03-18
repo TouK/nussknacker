@@ -70,7 +70,7 @@ object Parameter {
     Parameter(
       name,
       typ,
-      editors = None,
+      editors = Nil,
       validators = validators,
       defaultValue = None,
       additionalVariables = Map.empty,
@@ -92,7 +92,7 @@ object Parameter {
     Parameter(
       name,
       typ,
-      editors = None,
+      editors = Nil,
       validators = List.empty,
       defaultValue = None,
       additionalVariables = Map.empty,
@@ -123,7 +123,7 @@ object NotBlankParameter {
 case class Parameter(
     name: ParameterName,
     typ: TypingResult,
-    editors: Option[ParameterEditors],
+    editors: List[ParameterEditor],
     validators: List[ParameterValidator],
     defaultValue: Option[Expression],
     additionalVariables: Map[String, AdditionalVariable],
@@ -139,7 +139,7 @@ case class Parameter(
   def copy(
       name: ParameterName,
       typ: TypingResult,
-      editors: Option[ParameterEditors],
+      editors: List[ParameterEditor],
       validators: List[ParameterValidator],
       defaultValue: Option[Expression],
       additionalVariables: Map[String, AdditionalVariable],
@@ -169,7 +169,7 @@ case class Parameter(
   def copy(
       name: ParameterName = this.name,
       typ: TypingResult = this.typ,
-      editors: Option[ParameterEditors] = this.editors,
+      editors: List[ParameterEditor] = this.editors,
       validators: List[ParameterValidator] = this.validators,
       defaultValue: Option[Expression] = this.defaultValue,
       additionalVariables: Map[String, AdditionalVariable] = this.additionalVariables,
@@ -201,7 +201,7 @@ case class Parameter(
   def apply(
       name: ParameterName,
       typ: TypingResult,
-      editors: Option[ParameterEditors],
+      editors: List[ParameterEditor],
       validators: List[ParameterValidator],
       defaultValue: Option[Expression],
       additionalVariables: Map[String, AdditionalVariable],
@@ -233,7 +233,7 @@ case class Parameter(
   def apply(
       name: ParameterName,
       typ: TypingResult,
-      editors: Option[ParameterEditors],
+      editors: List[ParameterEditor],
       validators: List[ParameterValidator],
       defaultValue: Option[Expression],
       additionalVariables: Map[String, AdditionalVariable],
@@ -277,8 +277,8 @@ case class Parameter(
 
 //  // TODO: all three methods below could be removed when we split this class into api class and domain model class
   def editorsWithDefault: List[ParameterEditor] = editors match {
-    case Some(e) => e.value
-    case None    => List(SpelParameterEditor)
+    case Nil => List(SpelParameterEditor)
+    case nel => nel
   }
 
   def finalDefaultValue: Expression = defaultValue.getOrElse(Expression.spel(""))

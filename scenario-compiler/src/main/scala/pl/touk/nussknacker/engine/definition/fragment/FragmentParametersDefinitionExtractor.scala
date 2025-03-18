@@ -86,8 +86,8 @@ class FragmentParametersDefinitionExtractor(
           paramName = fragmentParameter.name,
           nodeIds = Set(nodeId.id)
         ) match {
-          case Valid(editors) => (Some(editors), List.empty)
-          case Invalid(e)     => (None, e.toList)
+          case Valid(editors) => (editors, List.empty)
+          case Invalid(e)     => (Nil, e.toList)
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))

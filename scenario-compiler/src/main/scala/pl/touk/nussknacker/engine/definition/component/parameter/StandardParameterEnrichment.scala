@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
   Parameter,
-  ParameterEditors,
+  ParameterEditor,
   ParameterValidator
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
   EditorBasedValidatorExtractor,
   ValidatorExtractorParameters
 }
+import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 /*
   For parameters defined explicitly in code (e.g. by DynamicComponent or using WithExplicitMethod) we want to define sensible fallback/defaults:
@@ -34,7 +35,7 @@ object StandardParameterEnrichment {
 
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {
     val parameterData = ParameterData(original.typ, Nil)
-    val finalEditors  = original.editors.orElse(EditorExtractor.extract(parameterData, parameterConfig))
+    val finalEditors  = original.editors.orElseIfEmpty(EditorExtractor.extract(parameterData, parameterConfig))
     val finalValidators =
       (original.validators ++
         parameterConfig.validators.toList.flatten ++
@@ -60,7 +61,7 @@ object StandardParameterEnrichment {
   private def extractAdditionalValidator(
       parameterData: ParameterData,
       parameterConfig: ParameterConfig,
-      finalEditors: Option[ParameterEditors]
+      finalEditors: List[ParameterEditor]
   ): Option[ParameterValidator] = {
     val validatorExtractorParameters =
       ValidatorExtractorParameters(parameterData, isOptional = true, parameterConfig, finalEditors)

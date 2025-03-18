@@ -29,7 +29,7 @@ class KafkaSinkFactory(
   @MethodToInvoke
   def create(
       processMetaData: MetaData,
-      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @ParamName("Topic") @NotBlank topic: String,
       @ParamName("Value") value: LazyParameter[AnyRef]

@@ -21,16 +21,14 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
       @ParamName("Duration")
       @Editor(
         `type` = EditorType.DURATION_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS),
-        isMainEditor = true
+        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
       duration: Duration,
       @ParamName("Period")
       @Editor(
         `type` = EditorType.PERIOD_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS),
-        isMainEditor = true
+        timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
       period: Period,
@@ -38,7 +36,7 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
       @Nullable
       nextMeeting: LocalDate,
       @ParamName("Scheduler")
-      @Editor(`type` = EditorType.CRON_EDITOR, isMainEditor = true)
+      @Editor(`type` = EditorType.CRON_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @Nullable
       cronScheduler: Cron
