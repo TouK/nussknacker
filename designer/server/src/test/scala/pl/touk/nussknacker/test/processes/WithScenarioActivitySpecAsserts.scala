@@ -62,7 +62,7 @@ trait WithScenarioActivitySpecAsserts
              |  "activities": [
              |    {
              |      "id": "${regexes.looseUuidRegex}",
-             |      "user": "allpermuser",
+             |      "user": "remoteUser",
              |      "date": "${regexes.zuluDateRegex}",
              |      "scenarioVersionId": 1,
              |      "additionalFields": [],
@@ -70,17 +70,13 @@ trait WithScenarioActivitySpecAsserts
              |    },
              |    {
              |      "id": "${regexes.looseUuidRegex}",
-             |      "user": "allpermuser",
+             |      "user": "remoteUser",
              |      "date": "${regexes.zuluDateRegex}",
              |      "scenarioVersionId": 2,
              |      "additionalFields": [
              |        {
              |          "name": "sourceEnvironment",
              |          "value": "$sourceEnvironment"
-             |        },
-             |        {
-             |          "name": "sourceUser",
-             |          "value": "$sourceUser"
              |        },
              |        {
              |          "name": "targetEnvironment",

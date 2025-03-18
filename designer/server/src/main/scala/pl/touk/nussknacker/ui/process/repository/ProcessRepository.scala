@@ -3,8 +3,6 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import io.circe.generic.JsonCodec
-import org.apache.pekko.http.scaladsl.model.HttpHeader
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
@@ -28,18 +26,6 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
-  @JsonCodec final case class RemoteUserName(name: String) extends AnyVal
-
-  object RemoteUserName {
-    val headerName = "Remote-User-Name".toLowerCase
-
-    def extractFromHeader: HttpHeader => Option[RemoteUserName] = {
-      case HttpHeader(`headerName`, value) => Some(RemoteUserName(value))
-      case _                               => None
-    }
-
-  }
-
   def create(
       dbRef: DbRef,
       clock: Clock,
@@ -61,7 +47,6 @@ object ProcessRepository {
       canonicalProcess: CanonicalProcess,
       processingType: ProcessingType,
       isFragment: Boolean,
-      forwardedUserName: Option[RemoteUserName]
   )
 
   sealed trait ModifyProcessAction {
@@ -69,7 +54,6 @@ object ProcessRepository {
     val canonicalProcess: CanonicalProcess
     val increaseVersionWhenJsonNotChanged: Boolean
     val labels: List[ScenarioLabel]
-    val forwardedUserName: Option[RemoteUserName]
     def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
   }
 
@@ -79,7 +63,6 @@ object ProcessRepository {
       comment: Option[Comment],
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
-      forwardedUserName: Option[RemoteUserName]
   ) extends ModifyProcessAction
 
   final case class MigrateProcessAction(
@@ -87,7 +70,6 @@ object ProcessRepository {
       canonicalProcess: CanonicalProcess,
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
-      forwardedUserName: Option[RemoteUserName],
       sourceEnvironment: String,
       targetEnvironment: String,
       sourceScenarioVersionId: Option[VersionId],
@@ -98,7 +80,6 @@ object ProcessRepository {
       canonicalProcess: CanonicalProcess,
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
-      forwardedUserName: Option[RemoteUserName],
       migrationsApplied: NonEmptyList[ProcessMigration]
   ) extends ModifyProcessAction
 
@@ -150,7 +131,7 @@ class DBProcessRepository(
       action: CreateProcessAction
   )(implicit loggedUser: LoggedUser): DB[Option[ProcessCreated]] = {
     // TODO: we should use loggedUser.id
-    val userName = action.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
+    val userName = loggedUser.username
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L),
       name = action.processName,
@@ -203,7 +184,7 @@ class DBProcessRepository(
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     editProcess(
       updateProcessAction,
-      (processId, oldVersionId, versionId, _) =>
+      (processId, oldVersionId, versionId) =>
         ScenarioActivity.ScenarioModified(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
@@ -225,7 +206,7 @@ class DBProcessRepository(
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     editProcess(
       migrateProcessAction,
-      (processId, _, versionId, user) =>
+      (processId, _, versionId) =>
         ScenarioActivity.IncomingMigration(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
@@ -233,7 +214,6 @@ class DBProcessRepository(
           date = clock.instant(),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
           sourceEnvironment = Environment(migrateProcessAction.sourceEnvironment),
-          sourceUser = UserName(user),
           sourceScenarioVersionId = migrateProcessAction.sourceScenarioVersionId.map(ScenarioVersionId.from),
           targetEnvironment = Some(Environment(migrateProcessAction.targetEnvironment)),
         )
@@ -245,7 +225,7 @@ class DBProcessRepository(
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     editProcess(
       automaticProcessUpdateAction,
-      (processId, _, versionId, _) =>
+      (processId, _, versionId) =>
         ScenarioActivity.AutomaticUpdate(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
@@ -259,9 +239,9 @@ class DBProcessRepository(
 
   def editProcess[ACTION <: ModifyProcessAction](
       action: ACTION,
-      activityCreator: (ProcessId, Option[VersionId], Option[VersionId], String) => ScenarioActivity,
+      activityCreator: (ProcessId, Option[VersionId], Option[VersionId]) => ScenarioActivity,
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
-    val userName = action.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
+    val userName = loggedUser.username
 
     def addScenarioModifiedActivity(
         scenarioId: ProcessId,
@@ -276,7 +256,7 @@ class DBProcessRepository(
       if (oldVersionId == newVersionId && comment.isEmpty) {
         DBIO.successful(())
       } else {
-        run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
+        run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId)))
       }
     }
 

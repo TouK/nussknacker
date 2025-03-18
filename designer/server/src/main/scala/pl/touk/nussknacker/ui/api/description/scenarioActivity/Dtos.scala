@@ -602,7 +602,6 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         sourceEnvironment: String,
-        sourceUser: String,
         sourceScenarioVersionId: Option[Long],
         targetEnvironment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
@@ -615,7 +614,6 @@ object Dtos {
       attachment = None,
       additionalFields = List(
         Some(AdditionalField("sourceEnvironment", sourceEnvironment)),
-        Some(AdditionalField("sourceUser", sourceUser)),
         targetEnvironment.map(v => AdditionalField("targetEnvironment", v)),
         sourceScenarioVersionId.map(v => AdditionalField("sourceScenarioVersionId", v.toString)),
       ).flatten

@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError}
@@ -46,8 +45,6 @@ class MigrationService(
     useLegacyCreateScenarioApi: Boolean,
     migrationApiAdapterService: MigrationApiAdapterService
 )(implicit val ec: ExecutionContext) {
-
-  private val passUsernameInMigration = true
 
   def migrate(
       migrateScenarioData: MigrateScenarioData
@@ -89,14 +86,11 @@ class MigrationService(
     val processName    = migrateScenarioData.processName
     val isFragment     = migrateScenarioData.isFragment
     val scenarioLabels = migrateScenarioData.scenarioLabels.map(ScenarioLabel.apply)
-    val forwardedUsernameO =
-      if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioData.remoteUserName)) else None
 
     val migrateScenarioCommand =
       MigrateScenarioCommand(
         scenarioGraph = scenarioGraph,
         scenarioLabels = Some(scenarioLabels.map(_.value)),
-        forwardedUserName = forwardedUsernameO,
         sourceEnvironment = sourceEnvironmentId,
         targetEnvironment = targetEnvironmentId,
         sourceScenarioVersionId = migrateScenarioData.sourceScenarioVersionId,
@@ -124,7 +118,6 @@ class MigrationService(
         targetEnvironmentId,
         parameters,
         isFragment,
-        forwardedUsernameO
       )
       processId <- getProcessId(processName)
       processIdWithName = ProcessIdWithName(processId, processName)
@@ -172,7 +165,6 @@ class MigrationService(
       targetEnvironmentId: String,
       parameters: ScenarioParameters,
       isFragment: Boolean,
-      forwardedUsername: Option[RemoteUserName]
   )(implicit loggedUser: LoggedUser) = {
     EitherT[Future, NuDesignerError, Unit](
       processService.getProcessId(processName).flatMap[Either[NuDesignerError, Unit]] {
@@ -196,7 +188,7 @@ class MigrationService(
             }
 
         case None =>
-          createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+          createProcess(processName, parameters, isFragment, useLegacyCreateScenarioApi)
       }
     ).leftMap(MigrationError.from(_))
   }
@@ -244,7 +236,6 @@ class MigrationService(
       processName: ProcessName,
       parameters: ScenarioParameters,
       isFragment: Boolean,
-      forwardedUsername: Option[RemoteUserName],
       useLegacyCreateScenarioApi: Boolean
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = if (useLegacyCreateScenarioApi) {
     processService
@@ -255,7 +246,6 @@ class MigrationService(
           processingMode = Some(parameters.processingMode),
           engineSetupName = Some(parameters.engineSetupName),
           isFragment = isFragment,
-          forwardedUserName = forwardedUsername
         )
       )
       .map(_.toEither)
@@ -272,7 +262,6 @@ class MigrationService(
       Some(parameters.processingMode),
       Some(parameters.engineSetupName),
       isFragment = isFragment,
-      forwardedUserName = forwardedUsername
     )
     processService
       .createProcess(createScenarioCommand)
