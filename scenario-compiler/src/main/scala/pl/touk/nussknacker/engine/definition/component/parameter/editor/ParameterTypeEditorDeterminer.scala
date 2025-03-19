@@ -23,8 +23,8 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
           )
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
           List(
-            SpelParameterEditor,
             SpelTemplateParameterEditor,
+            SpelParameterEditor,
           )
         case klazz if klazz == classOf[java.time.LocalDateTime] =>
           List(

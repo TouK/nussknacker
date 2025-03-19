@@ -4,13 +4,13 @@ import cats.implicits.catsSyntaxOptionId
 import pl.touk.nussknacker.engine.api.FragmentSpecificData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
-  ConstStringParameterEditor,
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
   FixedValuesParameterEditor,
   FixedValuesWithIconParameterEditor,
   MandatoryParameterValidator,
-  SpelTemplateParameterEditor
+  SpelTemplateParameterEditor,
+  StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.{
@@ -31,7 +31,7 @@ object FragmentPropertiesConfig {
   val docsUrlConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.docsUrlName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = ConstStringParameterEditor.some,
+      editor = StaticStringParameterEditor.some,
       // TODO: some validator
       validators = None,
       label = Some("Documentation url"),

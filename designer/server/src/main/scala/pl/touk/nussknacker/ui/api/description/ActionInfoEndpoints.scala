@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.api.description
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.{
-  ConstStringParameterEditor,
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
-  StaticParameterEditor
+  StaticParameterEditor,
+  StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -102,7 +102,7 @@ object ActionInfoEndpoints {
       )
 
     val emptyUiActionParameterConfig: UiActionParameterConfigDto =
-      UiActionParameterConfigDto(None, ConstStringParameterEditor, None, None)
+      UiActionParameterConfigDto(None, StaticStringParameterEditor, None, None)
   }
 
   object Dtos {
