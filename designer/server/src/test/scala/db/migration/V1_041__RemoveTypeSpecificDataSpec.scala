@@ -14,7 +14,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
     s"""{
        |  "metaData": $metaData,
        |  "nodes": [],
-       |  "additionalBranches": []
+       |  "additionalBranches": [],
+       |  "stickyNotes": []
        |}
        |""".stripMargin
   )
