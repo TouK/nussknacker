@@ -5,15 +5,12 @@ import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
-import { editors, OnValueChange, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
+import { editors, OnValueChange } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { EditorType, ExpressionLang, ExpressionObj } from "./expression/types";
+import { FieldSwitch } from "./field/FieldSwitch";
 import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
-import { cx } from "@emotion/css";
-import { FormControl, FormLabel } from "@mui/material";
-import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
-import { FieldSwitch } from "./field/FieldSwitch";
 
 interface Props {
     expressionObj: ExpressionObj;
