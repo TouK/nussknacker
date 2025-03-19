@@ -201,14 +201,35 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
         )
       )
 
-  lazy val modelDataReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
+  // TODO: remove when it won't be used
+  lazy val deprecatedProcessingTypeDataReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Model data reload service")
+      .summary("Deprecated processing type data reload service - use model reload service instead")
+      .deprecated()
+      .tag("App")
+      .withSecurity(auth)
+      .post
+      .in("app" / "processingtype" / "reload")
+      .out(
+        statusCode(NoContent).and(
+          emptyOutput
+            .example(
+              Example.of(
+                summary = Some("Reload done"),
+                value = ()
+              )
+            )
+        )
+      )
+
+  lazy val modelReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("Model reload service")
       .tag("App")
       .withSecurity(auth)
       .post
       // TODO: rename: to modeldata / reload
-      .in("app" / "processingtype" / "reload")
+      .in("app" / "model" / "reload")
       .out(
         statusCode(NoContent).and(
           emptyOutput

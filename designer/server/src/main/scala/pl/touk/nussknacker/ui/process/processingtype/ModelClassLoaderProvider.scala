@@ -47,7 +47,7 @@ class ModelClassLoaderProvider private (
       val currentConfig = processingTypeClassLoaders.mapValuesNow(_._2)(processingType)
       if (reloadedConfig != currentConfig) {
         throw new IllegalStateException(
-          s"Error during processing types reload. Model ClassLoader dependencies such as classpath cannot be modified during reload. " +
+          s"Error during model reload. Model ClassLoader dependencies such as classpath cannot be modified during reload. " +
             s"For processing type [$processingType], reloaded ClassLoader dependencies: [${reloadedConfig.show()}] " +
             s"do not match current dependencies: [${currentConfig.show()}]"
         )

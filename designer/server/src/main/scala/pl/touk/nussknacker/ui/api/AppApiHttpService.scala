@@ -155,7 +155,15 @@ class AppApiHttpService(
   }
 
   expose {
-    appApiEndpoints.modelDataReloadEndpoint
+    appApiEndpoints.modelReloadEndpoint
+      .serverSecurityLogic(authorizeAdminUser[Unit])
+      .serverLogicSuccess { _ => _ =>
+        reloadModelData.unsafeToFuture()
+      }
+  }
+
+  expose {
+    appApiEndpoints.deprecatedProcessingTypeDataReloadEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogicSuccess { _ => _ =>
         reloadModelData.unsafeToFuture()
