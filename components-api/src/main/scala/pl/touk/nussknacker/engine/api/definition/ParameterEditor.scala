@@ -10,7 +10,12 @@ import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait ParameterEditor
 
+// Editor with static values (without SpEL)
+@ConfiguredJsonCodec sealed trait StaticParameterEditor
+
 case object SpelParameterEditor extends ParameterEditor
+
+case object StaticStringParameterEditor extends StaticParameterEditor
 
 case object BoolParameterEditor extends ParameterEditor with StaticParameterEditor
 
@@ -89,8 +94,3 @@ case object CronParameterEditor extends ParameterEditor with StaticParameterEdit
     dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
 ) extends ParameterEditor
     with StaticParameterEditor
-
-// Editor with static values (without SpEL)
-@ConfiguredJsonCodec sealed trait StaticParameterEditor
-
-case object ConstStringParameterEditor extends StaticParameterEditor

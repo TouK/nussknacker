@@ -50,12 +50,12 @@ object EditorExtractor {
       .map(_.value().map(parameterEditor).toList)
       .getOrElse(Nil)
 
-  private def parameterEditor(simpleEditor: Editor): ParameterEditor = {
-    simpleEditor.`type`() match {
+  private def parameterEditor(editor: Editor): ParameterEditor = {
+    editor.`type`() match {
       case EditorType.BOOL_EDITOR => BoolParameterEditor
       case EditorType.FIXED_VALUES_EDITOR =>
         FixedValuesParameterEditor(
-          simpleEditor
+          editor
             .possibleValues()
             .map(value => FixedExpressionValue(value.expression(), value.label()))
             .toList
@@ -63,14 +63,14 @@ object EditorExtractor {
       case EditorType.DATE_EDITOR               => DateParameterEditor
       case EditorType.TIME_EDITOR               => TimeParameterEditor
       case EditorType.DATE_TIME_EDITOR          => DateTimeParameterEditor
-      case EditorType.DURATION_EDITOR           => DurationParameterEditor(simpleEditor.timeRangeComponents().toList)
-      case EditorType.PERIOD_EDITOR             => PeriodParameterEditor(simpleEditor.timeRangeComponents().toList)
+      case EditorType.DURATION_EDITOR           => DurationParameterEditor(editor.timeRangeComponents().toList)
+      case EditorType.PERIOD_EDITOR             => PeriodParameterEditor(editor.timeRangeComponents().toList)
       case EditorType.CRON_EDITOR               => CronParameterEditor
       case EditorType.TEXTAREA_EDITOR           => TextareaParameterEditor
       case EditorType.JSON_EDITOR               => JsonParameterEditor
       case EditorType.SQL_EDITOR                => SqlParameterEditor
       case EditorType.SPEL_TEMPLATE_EDITOR      => SpelTemplateParameterEditor
-      case EditorType.DICT_EDITOR               => DictParameterEditor(simpleEditor.dictId())
+      case EditorType.DICT_EDITOR               => DictParameterEditor(editor.dictId())
       case EditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
       case EditorType.SPEL_EDITOR               => SpelParameterEditor
     }

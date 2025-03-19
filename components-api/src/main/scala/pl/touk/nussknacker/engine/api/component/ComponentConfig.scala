@@ -4,10 +4,10 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{
-  ConstStringParameterEditor,
   ParameterEditor,
   ParameterValidator,
-  StaticParameterEditor
+  StaticParameterEditor,
+  StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
@@ -74,14 +74,14 @@ case class ParameterConfig(
 
 case class StaticParameterConfig(
     defaultValue: Option[String],
-    editor: StaticParameterEditor = ConstStringParameterEditor,
+    editor: StaticParameterEditor = StaticStringParameterEditor,
     validators: Option[List[ParameterValidator]],
     label: Option[String],
     hintText: Option[String]
 )
 
 object StaticParameterConfig {
-  val empty: StaticParameterConfig = StaticParameterConfig(None, ConstStringParameterEditor, None, None, None)
+  val empty: StaticParameterConfig = StaticParameterConfig(None, StaticStringParameterEditor, None, None, None)
 }
 
 object ParameterConfig {

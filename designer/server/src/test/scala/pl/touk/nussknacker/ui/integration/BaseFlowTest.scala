@@ -303,13 +303,13 @@ class BaseFlowTest
     val underTest = Map(
       "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
-        editor = ConstStringParameterEditor,
+        editor = StaticStringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
-        editor = ConstStringParameterEditor,
+        editor = StaticStringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
