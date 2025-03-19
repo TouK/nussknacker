@@ -106,7 +106,7 @@ class FlinkKafkaSource[T](
           hintText = None
         ),
       ),
-      ScenarioActionName("REDEPLOY") -> Map(
+      ScenarioActionName.Redeploy -> Map(
         OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
           defaultValue = Some(OffsetResetStrategy.None.toString),
           editor = Some(
