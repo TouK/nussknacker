@@ -28,7 +28,10 @@ final case class StandardRemoteEnvironmentConfig(
 )
 
 //TODO: extract interface to remote environment?
-trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment with LazyLogging {
+abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvironmentId: String)
+    extends FailFastCirceSupport
+    with RemoteEnvironment
+    with LazyLogging {
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
 
@@ -39,6 +42,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   def testModelMigrations: TestModelMigrations
 
   implicit def materializer: Materializer
+
+  override def environmentId: String = remoteEnvironmentId
 
   override def compare(
       localGraph: ScenarioGraph,
@@ -71,7 +76,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
       migrateScenarioRequest: MigrateScenarioData =
         MigrateScenarioDataV3(
-          environmentId,
+          localEnvironmentId,
           Some(localScenarioVersionId),
           processingMode,
           engineSetupName,
