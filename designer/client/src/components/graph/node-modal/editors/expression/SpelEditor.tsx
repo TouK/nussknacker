@@ -57,7 +57,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         [language, onValueChange],
     );
 
-    const { expression: value = "", language = ExpressionLang.SpEL } = expressionObj || {};
+    const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
 
     const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(() => {
         const properties: ExpressionSuggestProps["inputProps"] = {
