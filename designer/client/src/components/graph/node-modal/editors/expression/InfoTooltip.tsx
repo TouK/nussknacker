@@ -19,7 +19,9 @@ export const InfoTooltip = ({ text }: Props) => {
     const [tooltipOpen, setTooltipOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
 
-    const handleIconClick = () => {
+    const handleIconClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         setTooltipOpen((prev) => !prev);
     };
 

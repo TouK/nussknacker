@@ -5,10 +5,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactAce from "react-ace/lib/ace";
 import { ExtendedEditor } from "./Editor";
 import { Formatter } from "./Formatter";
-import { RawEditor, RawEditorProps } from "./RawEditor";
+import { SpelEditor, SpelEditorProps } from "./SpelEditor";
 import { isSwitchableTo } from "./StringEditor";
 import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
+import { editorsParameters } from "./editorsParameters";
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -26,7 +27,7 @@ interface EditSession extends Ace.EditSession {
     getMode(): SyntaxMode;
 }
 
-export interface Props extends RawEditorProps {
+export interface Props extends Omit<SpelEditorProps, "language"> {
     formatter: Formatter;
 }
 
@@ -100,7 +101,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
     const ref = useAliasUsageHighlight();
 
     return (
-        <RawEditor
+        <SpelEditor
             {...passProps}
             ref={ref}
             onValueChange={onValueChange}
@@ -108,14 +109,15 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             className={className}
             rows={6}
             editorMode={EditorMode.SQL}
+            language={editorsParameters.SqlParameterEditor.language}
         />
     );
 };
 
 SqlEditor.isSwitchableTo = isSwitchableTo;
-SqlEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 SqlEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.SqlParameterEditor.displayName },
     );

@@ -105,6 +105,24 @@ export const NodeTableStyled = styled("div")(({ theme }) => ({
         '&:has([aria-label="InputAdornmentEnd"])': {
             padding: theme.spacing(1, 2.5, 1, 0.625),
         },
+        // TODO: This style matches existing input placeholder styles. We should make it shareable somehow
+        "& .ace_placeholder": {
+            ...theme.typography.body1,
+            margin: 0,
+            textOverflow: "inherit",
+            overflowWrap: "normal",
+            lineHeight: "initial !important",
+            WebkitUserModify: "read-only !important",
+            whiteSpace: "pre",
+            overflow: "hidden",
+            color: "rgb(117, 117, 117) !important",
+            WebkitTextSecurity: "none",
+            direction: "inherit !important",
+            pointerEvents: "none !important",
+            textOrientation: "inherit !important",
+            writingMode: "inherit !important",
+            opacity: 1,
+        },
     },
 
     [`textarea.${nodeInput}`]: {

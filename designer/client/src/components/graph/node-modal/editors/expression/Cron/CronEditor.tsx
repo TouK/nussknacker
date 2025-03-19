@@ -6,15 +6,16 @@ import Input from "../../field/Input";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import { CronEditorStyled } from "./CronEditorStyled";
-import { ExtendedEditor } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
 import { FieldError } from "../../Validators";
 import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import { editorsParameters } from "../editorsParameters";
 
 export type CronExpression = string;
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
@@ -67,7 +68,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     }, [open]);
 
     useEffect(() => {
-        onValueChange(encode(value));
+        onValueChange({ expression: encode(value), language: editorsParameters.CronParameterEditor.language });
     }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {
@@ -104,10 +105,9 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
 CronEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     spelFormatters[FormatterType.Cron].decode(expressionObj.expression) != null || expressionObj.expression === "";
 
-CronEditor.switchableToHint = () => i18next.t("editors.cron.switchableToHint", "Switch to basic mode");
-
 CronEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.cron.notSwitchableToHint",
-        "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to basic mode",
+        "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.CronParameterEditor.displayName },
     );

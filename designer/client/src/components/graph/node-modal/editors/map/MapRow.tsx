@@ -33,7 +33,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 readOnly={readOnly}
                 showValidation={showValidation}
                 isMarked={isPropertyMarked("expression.expression")}
-                onChange={(value) => setItemProperty("expression.expression", value)}
+                onChange={({ expression }) => setItemProperty("expression.expression", expression)}
                 value={expression}
                 validationLabelInfo={typeInfo}
                 fieldErrors={getValidationErrorsForField(errors, `$fields-${index}-$value`)}

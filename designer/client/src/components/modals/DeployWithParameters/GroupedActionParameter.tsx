@@ -1,4 +1,4 @@
-import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
+import { ExpressionLang, ExpressionObj } from "../../graph/node-modal/editors/expression/types";
 import React, { useCallback } from "react";
 import { FieldLabel } from "../../graph/node-modal/FieldLabel";
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
@@ -19,7 +19,10 @@ export function GroupedActionParameter(props: Props): JSX.Element {
     const { nodeIds, parameterName, parameterConfig, errors, parameterValue, onChange } = props;
 
     const expressionObj = { expression: parameterValue, value: parameterValue, language: ExpressionLang.String };
-    const onValueChange = useCallback((newValue: string) => onChange(nodeIds, parameterName, newValue), [onChange, nodeIds, parameterName]);
+    const onValueChange = useCallback(
+        (newValue: ExpressionObj) => onChange(nodeIds, parameterName, newValue.expression),
+        [onChange, nodeIds, parameterName],
+    );
 
     return (
         <EditableEditor
