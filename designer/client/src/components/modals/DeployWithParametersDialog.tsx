@@ -20,7 +20,7 @@ import { GroupedActionParameter } from "./GroupedActionParameter";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ToggleProcessActionModalData } from "./DeployProcessDialog";
 import LoaderSpinner from "../spinner/Spinner";
-import { useErrorBoundary } from "react-error-boundary";
+import { useLocalstorageState } from "rooks";
 
 function initialNodesData(params: ActionNodeParameters[]): NodesDeploymentData {
     return params.reduce(
@@ -39,7 +39,6 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     } = props.data;
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
-    const { showBoundary } = useErrorBoundary();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [parametersDefinition, setParametersDefinition] = useState<ActionNodeParameters[]>([]);
     const [parametersValues, setParametersValues] = useState<NodesDeploymentData>({});
@@ -53,13 +52,10 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 setParametersDefinition(definition);
                 setParametersValues(initialValues);
             })
-            .catch((error) => {
-                showBoundary(error);
-            })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [processName, showBoundary]);
+    }, [processName]);
 
     useEffect(() => {
         getActionParameters();
@@ -94,6 +90,8 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
         ],
         [confirmAction, props, t],
     );
+
+    const [expandedState, setExpandedState] = useLocalstorageState("actionParametersExpandedState", {});
 
     if (isLoading) {
         return <LoaderSpinner show={true} />;
@@ -132,7 +130,17 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                             {t("dialog.advancedParameters.title", "Advanced parameters")}
                         </Typography>
                         {Object.entries(groupBy(parametersDefinition, (def) => def.componentId)).map(([componentId, nodeParameters]) => (
-                            <AdvancedParametersSection key={componentId} componentId={componentId}>
+                            <AdvancedParametersSection
+                                key={componentId}
+                                componentId={componentId}
+                                expanded={(expandedState[componentId] ??= false)}
+                                onChange={(isExpanded) =>
+                                    setExpandedState((prevState) => ({
+                                        ...prevState,
+                                        [componentId]: isExpanded,
+                                    }))
+                                }
+                            >
                                 <NodeTable>
                                     {Object.entries(nodeParameters[0].parameters).map(([paramName, paramConfig]) => {
                                         return (
