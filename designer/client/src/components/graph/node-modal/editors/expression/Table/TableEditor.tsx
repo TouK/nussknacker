@@ -34,6 +34,7 @@ import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { find, head, orderBy } from "lodash";
+import { editorsParameters } from "../editorsParameters";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -117,7 +118,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
 
     useEffect(() => {
         if (rawExpression !== expressionObj.expression) {
-            onValueChange(rawExpression);
+            onValueChange({ expression: rawExpression, language: editorsParameters.TabularTypedDataEditor.language });
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
@@ -551,6 +552,7 @@ export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps
 };
 
 TableEditor.isSwitchableTo = () => true; // TODO: implement
-TableEditor.switchableToHint = () => i18next.t("editors.table.switchableToHint", "Switch to table mode");
 TableEditor.notSwitchableToHint = () =>
-    i18next.t("editors.table.notSwitchableToHint", "Expression must match schema to switch to table mode");
+    i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
+        editorName: editorsParameters.TabularTypedDataEditor.displayName,
+    });

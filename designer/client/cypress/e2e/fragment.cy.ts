@@ -200,7 +200,7 @@ describe("Fragment", () => {
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
         cy.get("[data-testid=window]").find('[id="nk-graph-fragment"]').matchImage();
 
-        cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find('[title="Switch to expression mode"]');
+        cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find("[role=tab]").contains("expression");
         cy.get('[title="name_string_fixed"]').siblings().eq(0).contains("#meta.processName");
         cy.get('[title="name_string_fixed"]').find('[title="Hint text test"]').should("be.visible");
         cy.get('[title="non_boolean_or_string"]').siblings().eq(0).contains("1");
@@ -212,7 +212,7 @@ describe("Fragment", () => {
         cy.get("@anyValueWithSuggestionField").clear().type("Campaign 2020");
         cy.get("[id$='option-0']").contains("Campaign 2020 News").click({ force: true });
         cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Campaign 2020 News");
-        cy.get("@anyValueWithSuggestionField").find('[title="Switch to expression mode"]').click();
+        cy.get("@anyValueWithSuggestionField").find("[role=tab]").contains("expression").click();
 
         // Expression should be clear after switch
         cy.get("@anyValueWithSuggestionField").should("have.value", "");

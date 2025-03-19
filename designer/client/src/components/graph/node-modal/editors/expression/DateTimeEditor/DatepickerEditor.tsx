@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ExpressionObj } from "../types";
+import { ExpressionLang, ExpressionObj } from "../types";
 import { useDebouncedCallback } from "use-debounce";
 import moment from "moment";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
@@ -9,12 +9,13 @@ import { cx } from "@emotion/css";
 import { FieldError } from "../../Validators";
 import { isEmpty } from "lodash";
 import { nodeInput, nodeInputWithError } from "../../../NodeDetailsContent/NodeTableStyled";
+import { OnValueChange } from "../Editor";
 
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
     readOnly: boolean;
     className: string;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     isMarked: boolean;
@@ -23,6 +24,7 @@ export interface DatepickerEditorProps {
     momentFormat: string;
     dateFormat?: string;
     timeFormat?: string;
+    language?: ExpressionLang;
 }
 
 export function DatepickerEditor(props: DatepickerEditorProps) {
@@ -37,6 +39,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
         editorFocused,
         formatter,
         momentFormat,
+        language,
         ...other
     } = props;
 
@@ -58,7 +61,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
     const [value, setValue] = useState<string | moment.Moment>(decode(expression) == null ? null : decode(expression));
     const [onChange] = useDebouncedCallback<[value: string | moment.Moment]>((value) => {
         const encoded = encode(value);
-        onValueChange(encoded);
+        onValueChange({ expression: encoded, language });
     }, 200);
 
     useEffect(() => {

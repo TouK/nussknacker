@@ -1,14 +1,15 @@
 import React from "react";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { EditorType, ExtendedEditor } from "./Editor";
+import { ExtendedEditor, OnValueChange } from "./Editor";
 import i18next from "i18next";
 import { Textarea } from "../field/Textarea";
-import { ExpressionLang } from "./types";
+import { EditorType, ExpressionLang } from "./types";
 import { FieldError } from "../Validators";
+import { editorsParameters } from "./editorsParameters";
 
 type Props = {
     expressionObj: $TodoType;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     onFocus?: () => void;
     className?: string;
     inputClassName?: string;
@@ -44,7 +45,12 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
             isMarked={isMarked}
             fieldErrors={fieldErrors}
             showValidation={showValidation}
-            onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
+            onChange={(event) =>
+                onValueChange({
+                    expression: stringFormatter.encode(event.target.value),
+                    language: editorsParameters.TextareaParameterEditor.language,
+                })
+            }
             value={stringFormatter.decode(expressionObj.expression) as string}
             formattedValue={expressionObj.expression}
             className={className}
@@ -68,9 +74,9 @@ const parseable = (expressionObj) => {
 };
 
 TextareaEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj);
-TextareaEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 TextareaEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.TextareaParameterEditor.displayName },
     );

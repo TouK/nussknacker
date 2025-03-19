@@ -4,12 +4,13 @@ import { Expression, VariableTypes } from "../../../../../types";
 import { NodeValue } from "../../node";
 import { EditableEditor } from "../EditableEditor";
 import { FieldError } from "../Validators";
+import { ExpressionObj } from "../expression/types";
 
 interface MapValueProps {
     value: Expression;
     fieldErrors: FieldError[];
     variableTypes: VariableTypes;
-    onChange?: (value: unknown) => void;
+    onChange?: (value: ExpressionObj) => void;
     showValidation?: boolean;
     readOnly?: boolean;
     isMarked?: boolean;
@@ -31,6 +32,7 @@ export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
                 valueClassName={" "}
                 variableTypes={variableTypes}
                 validationLabelInfo={validationLabelInfo}
+                showSwitch={false}
             />
         </NodeValue>
     );

@@ -261,7 +261,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -365,7 +365,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -433,7 +433,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -561,7 +561,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",

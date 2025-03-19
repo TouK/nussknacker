@@ -2,13 +2,12 @@ import React, { ReactNode, useCallback } from "react";
 import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
-import { EditorType, OnValueChange } from "./Editor";
+import { OnValueChange } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
 import { FieldError } from "../Validators";
-import { ExpressionObj } from "./types";
-import { determineLangaugeBasedOnEditor } from "./EditorBasedLanguageDeterminer";
+import { EditorType, ExpressionObj } from "./types";
 
 type Props = {
     fieldName: string;
@@ -47,24 +46,23 @@ function ExpressionField(props: Props): JSX.Element {
     const exprTextPath = `${exprPath}.expression`;
     const exprLanguagePath = `${exprPath}.language`;
     const expressionObj = get(editedNode, exprPath);
-    const editor = parameterDefinition?.editor;
+    const editors = parameterDefinition?.editors || [];
 
     const onValueChange: OnValueChange = useCallback(
-        (value: ExpressionObj | string) => {
-            const adjustedExpressionLanguage = determineLangaugeBasedOnEditor(editor);
-            if (typeof value === "string") {
-                if (adjustedExpressionLanguage) {
-                    setNodeDataAt(exprLanguagePath, adjustedExpressionLanguage);
-                }
-                return setNodeDataAt(exprTextPath, value);
-            }
+        (value: ExpressionObj) => {
             setNodeDataAt(exprTextPath, value.expression);
-            setNodeDataAt(exprLanguagePath, adjustedExpressionLanguage ?? value.language);
+            setNodeDataAt(exprLanguagePath, value.language);
         },
-        [exprLanguagePath, exprTextPath, setNodeDataAt, editor],
+        [exprLanguagePath, exprTextPath, setNodeDataAt],
     );
 
-    if (editor?.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR || editor?.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR) {
+    if (
+        editors.some(
+            (editor) =>
+                editor?.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR ||
+                editor?.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR,
+        )
+    ) {
         return (
             <EditableEditor
                 fieldLabel={fieldLabel}

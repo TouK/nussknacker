@@ -53,11 +53,12 @@ export default function ValidationFields({
                     fieldLabel({ label: t("fragment.validation.validationExpression", "Validation expression:"), required: true })
                 }
                 expressionObj={validationExpression}
-                onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value)}
+                onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value.expression)}
                 variableTypes={extendedVariableType}
                 readOnly={readOnly}
                 fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                 showValidation
+                showSwitch
             />
             <FormControl>
                 {fieldLabel({
@@ -77,7 +78,7 @@ export default function ValidationFields({
                             )
                         }
                         readOnly={readOnly}
-                        placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
+                        placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "e.g. Parameter value is not valid.")}
                         fieldErrors={[]}
                     />
                 </div>

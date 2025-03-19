@@ -1,13 +1,13 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { DualEditorMode, EditorType } from "../../src/components/graph/node-modal/editors/expression/Editor";
 import { DurationEditor, duration } from "../../src/components/graph/node-modal/editors/expression/Duration/DurationEditor";
 import { TimeRange } from "../../src/components/graph/node-modal/editors/expression/Duration/TimeRangeComponent";
 import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { FormatterType, typeFormatters } from "../../src/components/graph/node-modal/editors/expression/Formatter";
 import type { Duration } from "../../src/components/graph/node-modal/editors/expression/Duration/DurationEditor";
+import { EditorType } from "../../src/components/graph/node-modal/editors/expression/types";
 
 describe(DurationEditor.name, () => {
     it("should display validation error when the field is required", () => {
@@ -19,8 +19,7 @@ describe(DurationEditor.name, () => {
                     onValueChange={mockValueChange}
                     fieldErrors={mockFieldErrors}
                     editorConfig={{
-                        simpleEditor: { type: EditorType.CRON_EDITOR },
-                        defaultMode: DualEditorMode.SIMPLE,
+                        type: EditorType.CRON_EDITOR,
                         timeRangeComponents: [TimeRange.Years],
                     }}
                     expressionObj={{ language: "spel", expression: "" }}

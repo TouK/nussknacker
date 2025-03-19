@@ -10,6 +10,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { IdField } from "./IdField";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { DescriptionField } from "./DescriptionField";
+import { ExpressionObj } from "./editors/expression/types";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
@@ -37,7 +38,7 @@ export default function Variable({
     variableTypes,
     renderFieldLabel,
 }: Props): JSX.Element {
-    const onExpressionChange = useCallback((value: string) => setProperty("value.expression", value), [setProperty]);
+    const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value.expression", value.expression), [setProperty]);
     const [isMarked] = useDiffMark();
     const inferredVariableType = useSelector((state: RootState) => {
         const expressionType = getExpressionType(state)(node.id);

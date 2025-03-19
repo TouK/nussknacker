@@ -6,7 +6,8 @@ import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { isEmpty } from "lodash";
-import { ExtendedEditor } from "../Editor";
+import { ExtendedEditor, OnValueChange } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
 
 export type Duration = {
     days: number;
@@ -17,7 +18,7 @@ export type Duration = {
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
@@ -76,6 +77,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
+            language={editorsParameters.DurationParameterEditor.language}
         />
     );
 };
@@ -83,12 +85,11 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
 DurationEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
-DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint", "Switch to basic mode");
-
 DurationEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.duration.noSwitchableToHint",
-        "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode",
+        "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.DurationParameterEditor.displayName },
     );
 
 export function duration(decodeExecResult) {
