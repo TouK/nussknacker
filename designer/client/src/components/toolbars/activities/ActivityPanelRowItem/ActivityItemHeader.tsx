@@ -244,7 +244,9 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
 
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
     const openVersionEnable = actionsWithVersionChange.includes(activity.type) && activity.scenarioVersionId !== processVersionId;
-    const isVersionSelected = ["SCENARIO_MODIFIED"].includes(activity.type) && activity.scenarioVersionId === processVersionId;
+    const isVersionSelected =
+        ["SCENARIO_MODIFIED", "AUTOMATIC_UPDATE", "INCOMING_MIGRATION"].includes(activity.type) &&
+        activity.scenarioVersionId === processVersionId;
 
     const getHeaderTitle = useMemo(() => {
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
