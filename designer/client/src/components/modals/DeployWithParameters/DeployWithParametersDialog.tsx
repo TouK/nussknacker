@@ -1,6 +1,6 @@
 import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId } from "../../../reducers/selectors/graph";
@@ -17,6 +17,7 @@ import { useLocalstorageState } from "rooks";
 import { AdvancedParameters } from "./AdvancedParameters";
 import { ErrorBoundary } from "../../common/error-boundary";
 import { TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
+import LoaderSpinner from "../../spinner/Spinner";
 
 export function DeployWithParametersDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {
     // TODO: get rid of meta
@@ -60,46 +61,48 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const [expandedState, setExpandedState] = useLocalstorageState("actionParametersExpandedState", {});
 
     return (
-        <PromptContent {...props} buttons={buttons}>
-            <div className={cx("modalContentDark")}>
-                <Typography variant={"h3"}>{props.data.title}</Typography>
-                {displayWarnings && <ProcessDialogWarnings />}
-                <CommentInput
-                    onChange={(e) => setComment(e.target.value)}
-                    value={comment}
-                    defaultValue={deploymentCommentSettings?.exampleComment}
-                    className={cx(
-                        css({
-                            minWidth: 600,
-                            minHeight: 80,
-                        }),
-                    )}
-                    autoFocus
-                />
-                <FormHelperText title={validationError} error>
-                    {validationError}
-                </FormHelperText>
-                <ErrorBoundary
-                    FallbackComponent={() => (
-                        <TextErrorBoundaryFallbackComponent
-                            header={t("error.textErrorBoundary.message", "There was a problem with loading advanced parameters")}
-                            message={t(
-                                "error.textErrorBoundary.description",
-                                "You can still use this feature, but advanced parameters won’t be available. If the problem persists, please contact your system administrator.",
-                            )}
-                        />
-                    )}
-                >
-                    <AdvancedParameters
-                        processName={processName}
-                        expandedState={expandedState}
-                        setExpandedState={setExpandedState}
-                        setParametersValues={setParametersValues}
-                        parametersValues={parametersValues}
+        <Suspense fallback={<LoaderSpinner show />}>
+            <PromptContent {...props} buttons={buttons}>
+                <div className={cx("modalContentDark")}>
+                    <Typography variant={"h3"}>{props.data.title}</Typography>
+                    {displayWarnings && <ProcessDialogWarnings />}
+                    <CommentInput
+                        onChange={(e) => setComment(e.target.value)}
+                        value={comment}
+                        defaultValue={deploymentCommentSettings?.exampleComment}
+                        className={cx(
+                            css({
+                                minWidth: 600,
+                                minHeight: 80,
+                            }),
+                        )}
+                        autoFocus
                     />
-                </ErrorBoundary>
-            </div>
-        </PromptContent>
+                    <FormHelperText title={validationError} error>
+                        {validationError}
+                    </FormHelperText>
+                    <ErrorBoundary
+                        FallbackComponent={() => (
+                            <TextErrorBoundaryFallbackComponent
+                                header={t("error.textErrorBoundary.message", "There was a problem with loading advanced parameters")}
+                                message={t(
+                                    "error.textErrorBoundary.description",
+                                    "You can still use this feature, but advanced parameters won’t be available. If the problem persists, please contact your system administrator.",
+                                )}
+                            />
+                        )}
+                    >
+                        <AdvancedParameters
+                            processName={processName}
+                            expandedState={expandedState}
+                            setExpandedState={setExpandedState}
+                            setParametersValues={setParametersValues}
+                            parametersValues={parametersValues}
+                        />
+                    </ErrorBoundary>
+                </div>
+            </PromptContent>
+        </Suspense>
     );
 }
 

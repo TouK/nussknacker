@@ -16,7 +16,6 @@ export function PromptContent({ children, ...props }: PropsWithChildren<DefaultC
             paddingTop: theme.custom.spacing.baseUnit * 2,
             paddingLeft: theme.custom.spacing.baseUnit * 6,
             paddingRight: theme.custom.spacing.baseUnit * 6,
-            minHeight: "250px",
         });
         return { ...props.classnames, content };
     }, [props.classnames, theme.custom.spacing.baseUnit]);
