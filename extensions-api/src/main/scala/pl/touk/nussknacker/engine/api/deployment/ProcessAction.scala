@@ -92,6 +92,9 @@ object ScenarioActionName {
   //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
   val RunOffSchedule: ScenarioActionName = ScenarioActionName("run now")
 
+  // For now redeploy is used to handle different UI behaviour when deploy and redeploy actions must have different sets of parameters.
+  val Redeploy: ScenarioActionName = ScenarioActionName("REDEPLOY")
+
   val DefaultActions: List[ScenarioActionName] = Nil
 
   val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy)
