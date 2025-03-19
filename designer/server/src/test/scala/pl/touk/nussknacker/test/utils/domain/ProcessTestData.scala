@@ -33,6 +33,7 @@ import pl.touk.nussknacker.test.mock.{
   StubModelDataWithModelDefinition,
   TestAdditionalUIConfigProvider
 }
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
@@ -141,7 +142,8 @@ object ProcessTestData {
   }
 
   private object ProcessValidatorDefaults {
-    val processingType: ProcessingType = Streaming.stringify
+    val processingType: ProcessingType           = Streaming.stringify
+    val stickyNotesSettings: StickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     val processValidator: ProcessValidator =
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
     val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
@@ -160,7 +162,8 @@ object ProcessTestData {
         ProcessValidatorDefaults.scenarioPropertiesConfigFinalizer,
       scenarioLabelsValidator: ScenarioLabelsValidator = ProcessValidatorDefaults.scenarioLabelsValidator,
       additionalValidators: List[CustomProcessValidator] = ProcessValidatorDefaults.additionalValidators,
-      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver
+      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver,
+      stickyNotesSettings: StickyNotesSettings = ProcessValidatorDefaults.stickyNotesSettings
   ): UIProcessValidator = new UIProcessValidator(
     processingType = processingType,
     validator = validator,
@@ -168,7 +171,8 @@ object ProcessTestData {
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
-    fragmentResolver = fragmentResolver
+    fragmentResolver = fragmentResolver,
+    stickyNotesSettings = stickyNotesSettings
   )
 
   def processValidator: UIProcessValidator = testProcessValidator()
