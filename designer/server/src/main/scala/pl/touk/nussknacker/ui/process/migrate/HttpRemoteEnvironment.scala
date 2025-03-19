@@ -35,10 +35,11 @@ final case class HttpRemoteEnvironmentConfig(
 class HttpRemoteEnvironment(
     httpConfig: HttpRemoteEnvironmentConfig,
     val testModelMigrations: TestModelMigrations,
-    val environmentId: String,
+    localEnvironmentId: String,
+    remoteEnvironmentId: String,
     impersonationSupport: ImpersonationSupport
 )(implicit as: ActorSystem, val materializer: Materializer)
-    extends StandardRemoteEnvironment
+    extends StandardRemoteEnvironment(localEnvironmentId, remoteEnvironmentId)
     with LazyLogging
     with AutoCloseable {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig

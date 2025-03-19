@@ -147,8 +147,7 @@ class StandardRemoteEnvironmentSpec
     super.afterAll()
   }
 
-  trait MockRemoteEnvironment extends StandardRemoteEnvironment {
-    override def environmentId = "testEnv"
+  class MockRemoteEnvironment extends StandardRemoteEnvironment("localEnv", "remoteEnv") {
 
     def config: StandardRemoteEnvironmentConfig = StandardRemoteEnvironmentConfig(
       batchSize = 100

@@ -115,16 +115,17 @@ object PekkoRoutesFactory {
 
     val optionalRoutes = List(
       designerConfig.remoteEnvironment
-        .map { migrationConfig =>
+        .map { remoteEnvironmentConfig =>
           val remoteEnvironment = new HttpRemoteEnvironment(
-            migrationConfig,
+            remoteEnvironmentConfig,
             new TestModelMigrations(
               processingTypeServicesProvider
                 .mapValues(_.designerModelData.modelData.migrations)
                 .mapValues(new ProcessModelMigrator(_)),
               processingTypeServicesProvider.mapValues(_.scenarioValidator)
             ),
-            designerConfig.environment,
+            designerConfig.environment,                  // local
+            remoteEnvironmentConfig.targetEnvironmentId, // remote
             impersonationSupport
           )
           new RemoteEnvironmentResources(
