@@ -4,15 +4,15 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.{Configuration, TaskManagerOptions}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
-import java.net.URLClassLoader
 import scala.concurrent.{ExecutionContext, Future}
 
 // This class handles a legacy way to create single use minicluster
 // TODO: After we fully switch to shared mini cluster approach, it should be removed
-class LegacyFallbackToSingleUseMiniClusterHandler(modelClassLoader: URLClassLoader, useCaseForDebug: String)
+class LegacyFallbackToSingleUseMiniClusterHandler(modelClassLoader: ModelClassLoader, useCaseForDebug: String)
     extends LazyLogging {
 
   def withSharedOrSingleUseClusterAsync[R](

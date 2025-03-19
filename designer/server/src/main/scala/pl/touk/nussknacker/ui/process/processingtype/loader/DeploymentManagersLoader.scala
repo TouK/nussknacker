@@ -10,15 +10,14 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, NoSchedulingSupport, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.process.periodic.{PeriodicDeploymentManagerDecorator, SchedulingDependencies}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
-
-import java.net.URLClassLoader
 
 object DeploymentManagersLoader {
 
@@ -60,7 +59,7 @@ object DeploymentManagersLoader {
           deploymentManager <-
             deploymentManagerProvider.createDeploymentManager(
               new BaseModelDataProvider {
-                override val modelClassLoader: URLClassLoader =
+                override val modelClassLoader: ModelClassLoader =
                   modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
                 override def getCurrentModelData(): BaseModelData = {
                   // This is a hack, we should split deployment data from model data

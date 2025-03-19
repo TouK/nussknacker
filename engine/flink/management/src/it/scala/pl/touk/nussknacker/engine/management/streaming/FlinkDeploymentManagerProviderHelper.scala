@@ -9,9 +9,13 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeployedScenariosProviderStub}
+import pl.touk.nussknacker.engine.classloader.{
+  DeploymentManagersClassLoader,
+  DeploymentManagersClassLoaderFactory,
+  ModelClassLoaderFactory
+}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManagerProvider
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 
 object FlinkDeploymentManagerProviderHelper {
 
@@ -20,7 +24,7 @@ object FlinkDeploymentManagerProviderHelper {
       deploymentManagerClassLoader: DeploymentManagersClassLoader
   ): DeploymentManager = {
     val typeConfig       = ProcessingTypeConfig.read(processingTypeConfig)
-    val modelClassLoader = ModelClassLoader(typeConfig.classPath, None, deploymentManagerClassLoader)
+    val modelClassLoader = ModelClassLoaderFactory.create(typeConfig.classPath, None, deploymentManagerClassLoader)
     val modelData = ModelData(
       processingTypeConfig = typeConfig,
       ModelDependencies(
@@ -53,7 +57,7 @@ object FlinkDeploymentManagerProviderHelper {
   def createDeploymentManager(
       processingTypeConfig: ConfigWithUnresolvedVersion,
   ): Resource[IO, DeploymentManager] = {
-    DeploymentManagersClassLoader
+    DeploymentManagersClassLoaderFactory
       .create(List.empty)
       .map { deploymentManagerClassLoader =>
         createDeploymentManager(processingTypeConfig, deploymentManagerClassLoader)

@@ -4,10 +4,10 @@ import cats.effect.{IO, Resource}
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, DeploymentManagersClassLoaderFactory}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
 import pl.touk.nussknacker.ui.config.{AdditionalUIConfigProviderLoader, DesignerConfig, DesignerConfigLoader}
@@ -97,7 +97,7 @@ object DomainServices {
     import infrastructureServices._
     for {
       // services for model data purpose
-      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(alreadyLoadedConfig.managersDir)
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory.create(alreadyLoadedConfig.managersDir)
       modelClassLoaderProvider = createModelClassLoaderProvider(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader

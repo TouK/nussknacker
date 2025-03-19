@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 
 import java.net.URLClassLoader
@@ -24,7 +25,7 @@ trait BaseModelData {
 
 trait BaseModelDataProvider {
   // modelClassLoader is set once and won't be changed
-  val modelClassLoader: URLClassLoader
+  val modelClassLoader: ModelClassLoader
 
   // other model data could be reloaded anytime so we need to always consider when this method should be invoke
   def getCurrentModelData(): BaseModelData

@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessConfigCreator,
   ProcessObjectDependencies
 }
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
@@ -26,7 +27,6 @@ import pl.touk.nussknacker.engine.modelconfig.{
   ModelConfigLoader
 }
 import pl.touk.nussknacker.engine.testing.LocalModelData.ExtractDefinitionFunImpl
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 object LocalModelData {
 

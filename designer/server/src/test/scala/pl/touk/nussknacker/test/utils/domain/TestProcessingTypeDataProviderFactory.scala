@@ -3,10 +3,8 @@ package pl.touk.nussknacker.test.utils.domain
 import cats.effect.unsafe.implicits.global
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
+import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
-import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.SchedulingDependencies
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
   ModelClassLoaderProvider,

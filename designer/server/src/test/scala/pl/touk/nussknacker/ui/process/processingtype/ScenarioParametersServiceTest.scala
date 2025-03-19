@@ -11,10 +11,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelDependencies
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -285,7 +285,7 @@ class ScenarioParametersServiceTest
     val designerConfig =
       DesignerConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
     val managersPath = workPath.resolve("managers")
-    DeploymentManagersClassLoader
+    DeploymentManagersClassLoaderFactory
       .create(
         List(
           managersPath.resolve("nussknacker-flink-manager.jar"),
