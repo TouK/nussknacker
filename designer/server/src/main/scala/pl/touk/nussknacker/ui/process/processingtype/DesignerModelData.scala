@@ -5,20 +5,14 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, ProcessingMode, Sc
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
-final case class DesignerModelData(
-    modelData: ModelData,
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
+final class DesignerModelData(
+    val modelData: ModelData,
+    val scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    val fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     // We hold definitions as a cache - computing them is a quite costly operation (it invokes external services)
-    staticDefinitionForDynamicComponents: DynamicComponentsStaticDefinitions,
-    processingMode: ProcessingMode
-) {
-
-  def close(): Unit = {
-    modelData.close()
-  }
-
-}
+    val staticDefinitionForDynamicComponents: DynamicComponentsStaticDefinitions,
+    val processingMode: ProcessingMode
+)
 
 object DesignerModelData {
 

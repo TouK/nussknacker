@@ -129,7 +129,7 @@ object TestFactory {
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {
     val actorSystem = ActorSystem("TestFactory")
-    DeploymentManagerDependencies(
+    new DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actorSystem.dispatcher,
       IORuntime.global,

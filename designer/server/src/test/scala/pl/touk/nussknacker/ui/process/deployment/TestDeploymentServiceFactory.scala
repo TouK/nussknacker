@@ -35,7 +35,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   val actionRepository: ScenarioActionRepository                 = newActionProcessRepository(dbRef)
   val listener                                                   = new TestProcessChangeListener
 
-  val deploymentManagerDependencies: DeploymentManagerDependencies = DeploymentManagerDependencies(
+  val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
     new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     ec,
     IORuntime.global,

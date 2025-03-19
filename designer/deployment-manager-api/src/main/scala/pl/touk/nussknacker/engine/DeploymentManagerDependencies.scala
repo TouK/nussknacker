@@ -7,12 +7,12 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DeploymentManagerDependencies(
-    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
-    executionContext: ExecutionContext,
-    ioRuntime: IORuntime,
-    actorSystem: ActorSystem,
-    sttpBackend: SttpBackend[Future, Any]
+final class DeploymentManagerDependencies(
+    val deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
+    val executionContext: ExecutionContext,
+    val ioRuntime: IORuntime,
+    val actorSystem: ActorSystem,
+    val sttpBackend: SttpBackend[Future, Any]
 ) {
   implicit def implicitExecutionContext: ExecutionContext    = executionContext
   implicit def implicitIORuntime: IORuntime                  = ioRuntime

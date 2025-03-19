@@ -61,10 +61,10 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
       valueWithRestriction.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance).get
   }
 
-  final case class ModelDataWithProcessingTypeDataInput(
-      modelData: ModelData,
-      category: String,
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+  final class ModelDataWithProcessingTypeDataInput(
+      val modelData: ModelData,
+      val category: String,
+      val componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) extends AutoCloseable {
 
     override def close(): Unit = {

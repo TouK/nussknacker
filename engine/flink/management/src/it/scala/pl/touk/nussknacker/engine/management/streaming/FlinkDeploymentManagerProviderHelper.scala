@@ -37,7 +37,7 @@ object FlinkDeploymentManagerProviderHelper {
     )
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend     = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-    val deploymentManagerDependencies = DeploymentManagerDependencies(
+    val deploymentManagerDependencies = new DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actorSystem.dispatcher,
       IORuntime.global,

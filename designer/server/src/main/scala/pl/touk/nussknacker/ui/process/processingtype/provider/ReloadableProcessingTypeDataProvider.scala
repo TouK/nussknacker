@@ -18,9 +18,10 @@ import scala.util.control.NonFatal
  * to be able to wait for all operations to complete
  */
 class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] private (
-    loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
+    loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]],
+    initialState: ProcessingTypeDataState[Data, CombinedData]
 )(implicit ioRuntime: IORuntime)
-    extends ProcessingTypeDataProvider[Data, CombinedData](loadMethod.unsafeRunSync())
+    extends ProcessingTypeDataProvider[Data, CombinedData](initialState)
     with LazyLogging {
 
   def reloadAll: IO[Unit] = {
@@ -73,13 +74,15 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] 
 
 object ReloadableProcessingTypeDataProvider {
 
-  def apply[Data <: AutoCloseable, CombinedData](
+  def create[Data <: AutoCloseable, CombinedData](
       loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
-  ): ReloadableProcessingTypeDataProvider[Data, CombinedData] = {
+  ): IO[ReloadableProcessingTypeDataProvider[Data, CombinedData]] = {
     // We create separate ioRuntime to ensure that we don't have some deadlocks during reading state where is used unsafeRunSync()
     // See ProcessingTypeDataProvider.state method
     implicit val ioRuntime: IORuntime = IORuntime.builder().build()
-    new ReloadableProcessingTypeDataProvider[Data, CombinedData](loadMethod)
+    loadMethod.map { initialState =>
+      new ReloadableProcessingTypeDataProvider[Data, CombinedData](loadMethod, initialState)
+    }
   }
 
 }

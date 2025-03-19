@@ -165,7 +165,7 @@ object MockDeploymentManager {
         deploymentManagersClassLoader
       )
     )
-    val deploymentManagerDependencies = DeploymentManagerDependencies(
+    val deploymentManagerDependencies = new DeploymentManagerDependencies(
       deployedScenariosProvider,
       ExecutionContext.global,
       IORuntime.global,

@@ -65,7 +65,7 @@ class K8sDeploymentManagerOnMocksTest
       LocalModelData(ConfigFactory.empty, List.empty).toModelDataProvider,
       k8sConfig,
       ConfigFactory.empty(),
-      DeploymentManagerDependencies(
+      new DeploymentManagerDependencies(
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
         system.dispatcher,
         IORuntime.global,

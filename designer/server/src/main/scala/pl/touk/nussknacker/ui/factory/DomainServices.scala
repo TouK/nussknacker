@@ -358,7 +358,7 @@ object DomainServices {
     import infrastructureServices._
     Resource
       .make(
-        acquire = IO {
+        acquire = {
           val processingTypeConfigsLoader = ProcessingTypeConfigsLoaderLoader.createProcessingTypeConfigsLoader(
             designerConfigLoader,
             alreadyLoadedConfig,
@@ -382,7 +382,7 @@ object DomainServices {
               globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state
             }
-          ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
+          ReloadableProcessingTypeDataProvider.create(loadAndNotifyIO)
         }
       )(
         release = _.close()
@@ -393,7 +393,7 @@ object DomainServices {
       infrastructureServices: InfrastructureServices,
       processingType: ProcessingType
   )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
-    DeploymentManagerDependencies(
+    new DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(infrastructureServices.dbRef, processingType),
       executionContextWithIORuntime,
       executionContextWithIORuntime.ioRuntime,

@@ -31,127 +31,93 @@ object DeploymentManagersLoader {
   ): Resource[IO, Map[ProcessingType, ValueWithRestriction[DeploymentData]]] = {
     processingTypeConfigs.configByProcessingType.toList
       .map { case (processingType, processingTypeConfig) =>
-        val deploymentManagerProvider =
-          createDeploymentManagerProvider(deploymentManagersClassLoader, processingTypeConfig)
-        val nameInputData = EngineNameInputData(
-          deploymentManagerProvider.defaultEngineSetupName,
-          deploymentManagerProvider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
-          processingTypeConfig.engineSetupName
-        )
-        val schedulingForProcessingType =
-          if (processingTypeConfig.deploymentConfig.hasPath("scheduling") &&
-            processingTypeConfig.deploymentConfig.getBoolean("scheduling.enabled")) {
-            val schedulingDeps = schedulingDepsProvider.getOrElse(
-              throw new RuntimeException(
-                s"Scheduling dependencies not present, but required for Deployment Manager with scheduling enabled"
-              )
-            )(processingType)
-            SchedulingForProcessingType.Available(schedulingDeps)
-          } else {
-            SchedulingForProcessingType.NotAvailable
-          }
-
-        val scenarioStateCacheTTL =
-          ScenarioStateCachingConfig.extractScenarioStateCacheTTL(processingTypeConfig.deploymentConfig)
-
-        val deploymentManagerDependencies = getDeploymentManagerDependencies(processingType)
-        val validDeploymentManager = for {
-          deploymentManager <-
-            deploymentManagerProvider.createDeploymentManager(
-              new BaseModelDataProvider {
-                override val modelClassLoader: ModelClassLoader =
-                  modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
-                override def getCurrentModelData(): BaseModelData = {
-                  // This is a hack, we should split deployment data from model data
-                  modelDataProviders.forProcessingTypeUnsafe(processingType)(NussknackerInternalUser.instance)
-                }
-              },
-              deploymentManagerDependencies,
-              processingTypeConfig.deploymentConfig,
-              scenarioStateCacheTTL
-            )
-          // TODO: separate scheduling from Deployment Managers
-          decoratedDeploymentManager = schedulingForProcessingType match {
-            case SchedulingForProcessingType.Available(schedulingDeps) =>
-              deploymentManager.schedulingSupport match {
-                case supported: SchedulingSupported =>
-                  PeriodicDeploymentManagerDecorator.decorate(
-                    underlying = deploymentManager,
-                    schedulingSupported = supported,
-                    deploymentConfig = processingTypeConfig.deploymentConfig,
-                    dependencies = deploymentManagerDependencies,
-                    schedulingDeps = schedulingDeps,
-                  )
-                case NoSchedulingSupport =>
-                  throw new IllegalStateException(
-                    s"DeploymentManager ${deploymentManagerProvider.name} does not support periodic execution"
-                  )
-              }
-            case SchedulingForProcessingType.NotAvailable =>
-              deploymentManager
-          }
-        } yield decoratedDeploymentManager
-
-        validDeploymentManager
-          .map(deploymentManager => Resource.fromAutoCloseable(IO.pure(deploymentManager)))
-          .sequence
-          .map { validDeploymentManager =>
-            val metaDataInitializer =
-              deploymentManagerProvider.metaDataInitializer(processingTypeConfig.deploymentConfig)
-            val schedulingPropertiesConfig = schedulingForProcessingType match {
-              case SchedulingForProcessingType.Available(_) =>
-                PeriodicDeploymentManagerDecorator.additionalScenarioProperties
-              case SchedulingForProcessingType.NotAvailable =>
-                Map.empty[String, ScenarioPropertyConfig]
-            }
-            val deploymentScenarioPropertiesConfig = deploymentManagerProvider.scenarioPropertiesConfig(
-              processingTypeConfig.deploymentConfig
-            ) ++ schedulingPropertiesConfig
-            val additionalValidators =
-              deploymentManagerProvider.additionalValidators(processingTypeConfig.deploymentConfig)
-            processingType -> DeploymentDataWithEngineNameInput(
-              processingTypeConfig.deploymentManagerType,
-              validDeploymentManager,
-              metaDataInitializer,
-              deploymentScenarioPropertiesConfig,
-              additionalValidators,
-              nameInputData,
-              processingTypeConfig.category
-            )
-          }
+        loadDeploymentDataWithEngineNameInput(
+          processingType,
+          processingTypeConfig,
+          deploymentManagersClassLoader,
+          modelClassLoaderProvider,
+          modelDataProviders,
+          getDeploymentManagerDependencies(processingType),
+          schedulingDepsProvider.map(_(processingType)),
+        ).map(processingType -> _)
       }
       .sequence
       .map(_.toMap)
-      .map { deploymentDataWithEngineNameInputByProcessingType =>
-        // We can't determine engine setup name during creation of each DeploymentManager because of the deduplication
-        // of deployments. See DeploymentManagerProvider.engineSetupIdentity
-        val engineSetupNames = ScenarioParametersDeterminer.determineEngineSetupNames(
-          deploymentDataWithEngineNameInputByProcessingType.mapValuesNow(_.nameInputData)
-        )
+      // We can't determine engine setup name during creation of each DeploymentManager because of the deduplication
+      // of deployments. See DeploymentManagerProvider.engineSetupIdentity
+      .map(toDeploymentDataWithRestriction)
+  }
 
-        deploymentDataWithEngineNameInputByProcessingType.map {
-          case (
-                processingType,
-                DeploymentDataWithEngineNameInput(
-                  deploymentManagerType,
-                  validDeploymentManager,
-                  metaDataInitializer,
-                  deploymentScenarioPropertiesConfig,
-                  additionalValidators,
-                  _,
-                  category
-                )
-              ) =>
-            val deploymentData = new DeploymentData(
-              deploymentManagerType,
-              validDeploymentManager,
-              metaDataInitializer,
-              deploymentScenarioPropertiesConfig,
-              additionalValidators,
-              engineSetupNames(processingType)
-            )
-            processingType -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(deploymentData, Set(category))
-        }
+  private def loadDeploymentDataWithEngineNameInput(
+      processingType: ProcessingType,
+      processingTypeConfig: ProcessingTypeConfig,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
+      modelClassLoaderProvider: ModelClassLoaderProvider,
+      modelDataProviders: ProcessingTypeDataProvider[ModelData, _],
+      deploymentManagerDependencies: DeploymentManagerDependencies,
+      schedulingDepsOpt: Option[SchedulingDependencies],
+  ): Resource[IO, DeploymentDataWithEngineNameInput] = {
+    val deploymentManagerProvider =
+      createDeploymentManagerProvider(deploymentManagersClassLoader, processingTypeConfig)
+    val nameInputData = EngineNameInputData(
+      deploymentManagerProvider.defaultEngineSetupName,
+      deploymentManagerProvider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
+      processingTypeConfig.engineSetupName
+    )
+
+    val scenarioStateCacheTTL =
+      ScenarioStateCachingConfig.extractScenarioStateCacheTTL(processingTypeConfig.deploymentConfig)
+
+    val validDeploymentManager = for {
+      deploymentManager <-
+        deploymentManagerProvider.createDeploymentManager(
+          new BaseModelDataProvider {
+            override val modelClassLoader: ModelClassLoader =
+              modelClassLoaderProvider.forProcessingTypeUnsafe(processingType)
+
+            override def getCurrentModelData(): BaseModelData = {
+              // This is a hack, we should split deployment data from model data
+              modelDataProviders.forProcessingTypeUnsafe(processingType)(NussknackerInternalUser.instance)
+            }
+          },
+          deploymentManagerDependencies,
+          processingTypeConfig.deploymentConfig,
+          scenarioStateCacheTTL
+        )
+      // TODO: separate scheduling from Deployment Managers - it complicates this logic
+      (decoratedDeploymentManager, schedulingPropertiesConfig) = PeriodicDeploymentManagerDecorator
+        .decorateIfSchedulingSupported(
+          deploymentManager,
+          processingTypeConfig.deploymentConfig,
+          deploymentManagerDependencies,
+          schedulingDepsOpt
+        )
+    } yield (decoratedDeploymentManager, schedulingPropertiesConfig)
+
+    validDeploymentManager
+      .map { case (deploymentManager, schedulingPropertiesConfig) =>
+        Resource.fromAutoCloseable(IO.pure(deploymentManager)).map((_, schedulingPropertiesConfig))
+      }
+      .sequence
+      .map { validDeploymentManagerAndSchedulingProperties =>
+        val validDeploymentManager = validDeploymentManagerAndSchedulingProperties.map(_._1)
+        val schedulingProperties   = validDeploymentManagerAndSchedulingProperties.map(_._2).valueOr(Map.empty)
+        val metaDataInitializer =
+          deploymentManagerProvider.metaDataInitializer(processingTypeConfig.deploymentConfig)
+        val deploymentScenarioPropertiesConfig = deploymentManagerProvider.scenarioPropertiesConfig(
+          processingTypeConfig.deploymentConfig
+        ) ++ schedulingProperties
+        val additionalValidators =
+          deploymentManagerProvider.additionalValidators(processingTypeConfig.deploymentConfig)
+        DeploymentDataWithEngineNameInput(
+          processingTypeConfig.deploymentManagerType,
+          validDeploymentManager,
+          metaDataInitializer,
+          deploymentScenarioPropertiesConfig,
+          additionalValidators,
+          nameInputData,
+          processingTypeConfig.category
+        )
       }
   }
 
@@ -166,6 +132,38 @@ object DeploymentManagersLoader {
     new DeploymentManagerProviderCorrectClassloaderHandler(loadedProvider, deploymentManagersClassLoader)
   }
 
+  private def toDeploymentDataWithRestriction(
+      deploymentDataWithEngineNameInputByProcessingType: Map[ProcessingType, DeploymentDataWithEngineNameInput]
+  ): Map[ProcessingType, ValueWithRestriction[DeploymentData]] = {
+    val engineSetupNames = ScenarioParametersDeterminer.determineEngineSetupNames(
+      deploymentDataWithEngineNameInputByProcessingType.mapValuesNow(_.nameInputData)
+    )
+
+    deploymentDataWithEngineNameInputByProcessingType.map {
+      case (
+            processingType,
+            DeploymentDataWithEngineNameInput(
+              deploymentManagerType,
+              validDeploymentManager,
+              metaDataInitializer,
+              deploymentScenarioPropertiesConfig,
+              additionalValidators,
+              _,
+              category
+            )
+          ) =>
+        val deploymentData = new DeploymentData(
+          deploymentManagerType = deploymentManagerType,
+          validDeploymentManager = validDeploymentManager,
+          metaDataInitializer = metaDataInitializer,
+          deploymentScenarioPropertiesConfig = deploymentScenarioPropertiesConfig,
+          additionalValidators = additionalValidators,
+          engineSetupName = engineSetupNames(processingType)
+        )
+        processingType -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(deploymentData, Set(category))
+    }
+  }
+
   private final case class DeploymentDataWithEngineNameInput(
       deploymentManagerType: DeploymentManagerType,
       validDeploymentManager: ValidatedNel[String, DeploymentManager],
@@ -175,15 +173,5 @@ object DeploymentManagersLoader {
       nameInputData: EngineNameInputData,
       category: String
   )
-
-  private sealed trait SchedulingForProcessingType
-
-  private object SchedulingForProcessingType {
-
-    case object NotAvailable extends SchedulingForProcessingType
-
-    final case class Available(deps: SchedulingDependencies) extends SchedulingForProcessingType
-
-  }
 
 }

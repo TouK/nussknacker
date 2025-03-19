@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, SchedulingSupported}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, NoSchedulingSupport, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   EmptyScheduledProcessListenerFactory,
   ProcessConfigEnricherFactory,
@@ -18,6 +18,46 @@ import pl.touk.nussknacker.ui.process.repository.SlickPeriodicProcessesRepositor
 import java.time.Clock
 
 object PeriodicDeploymentManagerDecorator extends LazyLogging {
+
+  def decorateIfSchedulingSupported(
+      underlying: DeploymentManager,
+      deploymentConfig: Config,
+      dependencies: DeploymentManagerDependencies,
+      schedulingDepsOpt: Option[SchedulingDependencies]
+  ): (DeploymentManager, Map[String, ScenarioPropertyConfig]) = {
+    val schedulingForProcessingType =
+      if (deploymentConfig.hasPath("scheduling") &&
+        deploymentConfig.getBoolean("scheduling.enabled")) {
+        val schedulingDeps = schedulingDepsOpt.getOrElse(
+          throw new RuntimeException(
+            s"Scheduling dependencies not present, but required for Deployment Manager with scheduling enabled"
+          )
+        )
+        SchedulingForProcessingType.Available(schedulingDeps)
+      } else {
+        SchedulingForProcessingType.NotAvailable
+      }
+    schedulingForProcessingType match {
+      case SchedulingForProcessingType.Available(schedulingDeps) =>
+        underlying.schedulingSupport match {
+          case supported: SchedulingSupported =>
+            val decoratedManager = PeriodicDeploymentManagerDecorator.decorate(
+              underlying = underlying,
+              schedulingSupported = supported,
+              deploymentConfig = deploymentConfig,
+              dependencies = dependencies,
+              schedulingDeps = schedulingDeps,
+            )
+            (decoratedManager, PeriodicDeploymentManagerDecorator.additionalScenarioProperties)
+          case NoSchedulingSupport =>
+            throw new IllegalStateException(
+              s"DeploymentManager ${underlying.getClass.getName} does not support periodic execution"
+            )
+        }
+      case SchedulingForProcessingType.NotAvailable =>
+        (underlying, Map.empty[String, ScenarioPropertyConfig])
+    }
+  }
 
   def decorate(
       underlying: DeploymentManager,
@@ -97,5 +137,15 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     label = Some("Schedule"),
     hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")
   )
+
+  private sealed trait SchedulingForProcessingType
+
+  private object SchedulingForProcessingType {
+
+    case object NotAvailable extends SchedulingForProcessingType
+
+    final case class Available(deps: SchedulingDependencies) extends SchedulingForProcessingType
+
+  }
 
 }

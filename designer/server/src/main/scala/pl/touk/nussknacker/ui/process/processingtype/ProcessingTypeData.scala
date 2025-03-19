@@ -87,7 +87,7 @@ object ProcessingTypeData {
         modelData.modelDefinition.components.components,
         processingType
       )
-    DesignerModelData(
+    new DesignerModelData(
       modelData,
       scenarioProperties,
       fragmentProperties,

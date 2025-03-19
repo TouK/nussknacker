@@ -42,7 +42,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
       RequestResponseComponentProvider.Components
     )
     val as: ActorSystem = ActorSystem(getClass.getSimpleName)
-    val dependencies = DeploymentManagerDependencies(
+    val dependencies = new DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
       as.dispatcher,
       IORuntime.global,
