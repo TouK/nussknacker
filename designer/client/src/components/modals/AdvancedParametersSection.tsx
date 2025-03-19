@@ -7,8 +7,8 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 
 interface Props {
     componentId: string;
-    onChange?: (isExpanded: boolean) => void;
-    expanded?: boolean;
+    onChange: (isExpanded: boolean) => void;
+    expanded: boolean;
 }
 
 export function AdvancedParametersSection({ children, componentId, onChange, expanded }: PropsWithChildren<Props>): JSX.Element {
@@ -17,9 +17,8 @@ export function AdvancedParametersSection({ children, componentId, onChange, exp
             disableGutters
             elevation={0}
             sx={{ border: 0, "&::before": { display: "none" } }}
-            onChange={onChange != null ? (_, isExpanded) => onChange(isExpanded) : null}
+            onChange={(_, isExpanded) => onChange(isExpanded)}
             expanded={expanded}
-            defaultExpanded={false}
         >
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon sx={{ color: "inherit" }} />}

@@ -133,12 +133,12 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                             <AdvancedParametersSection
                                 key={componentId}
                                 componentId={componentId}
-                                expanded={expandedState[componentId]}
+                                expanded={(expandedState[componentId] ??= false)}
                                 onChange={(isExpanded) =>
-                                    setExpandedState({
-                                        ...expandedState,
+                                    setExpandedState((prevState) => ({
+                                        ...prevState,
                                         [componentId]: isExpanded,
-                                    })
+                                    }))
                                 }
                             >
                                 <NodeTable>
