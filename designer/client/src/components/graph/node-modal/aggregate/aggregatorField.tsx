@@ -34,7 +34,7 @@ export type AggregateValue = WithUuid<AggRow>;
 export function AggregatorField({ parameterDefinitions, node, isEditMode, showValidation }: FieldWrapperProps) {
     const aggregators = useMemo(() => {
         const definition = findParamDefinitionByName(parameterDefinitions, "aggregator");
-        return definition.editor.simpleEditor.possibleValues;
+        return definition.editors[0].possibleValues || [];
     }, [parameterDefinitions]);
 
     const { aggregator } = useContext(AggregateContext);

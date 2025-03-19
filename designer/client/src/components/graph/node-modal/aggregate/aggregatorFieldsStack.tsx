@@ -116,8 +116,8 @@ export function AggregatorFieldsStack({
     );
 
     const onChangeExpression = useCallback(
-        (value: string) => {
-            onChange(uuid, { expression: value });
+        ({ expression }: ExpressionObj) => {
+            onChange(uuid, { expression });
         },
         [onChange, uuid],
     );
@@ -152,6 +152,7 @@ export function AggregatorFieldsStack({
                         readOnly={readOnly}
                         showValidation
                         fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
+                        showSwitch={false}
                     />
                 )}
             </DynamicLabel>

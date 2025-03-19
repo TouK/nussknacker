@@ -6,6 +6,7 @@ import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { ExtendedEditor } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
 
 const dateFormat = "YYYY-MM-DD";
 const isParseable = (expression: ExpressionObj): boolean => {
@@ -19,10 +20,20 @@ export const DateEditor: ExtendedEditor<DateEditorProps> = (props: DateEditorPro
     const { formatter } = props;
     const dateFormatter = formatter == null ? typeFormatters[FormatterType.Date] : formatter;
 
-    return <DatepickerEditor {...props} momentFormat={dateFormat} dateFormat={dateFormat} timeFormat={null} formatter={dateFormatter} />;
+    return (
+        <DatepickerEditor
+            {...props}
+            momentFormat={dateFormat}
+            dateFormat={dateFormat}
+            timeFormat={null}
+            formatter={dateFormatter}
+            language={editorsParameters.DateParameterEditor.language}
+        />
+    );
 };
 
-DateEditor.switchableToHint = () => i18next.t("editors.LocalDate.switchableToHint", "Switch to basic mode");
 DateEditor.notSwitchableToHint = () =>
-    i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to basic mode");
+    i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to {{editorName}} mode", {
+        editorName: editorsParameters.DateParameterEditor.displayName,
+    });
 DateEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);

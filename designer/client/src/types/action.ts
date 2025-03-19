@@ -1,10 +1,14 @@
 import { NodeId } from "./node";
 import { ActionName } from "../components/Process/types";
+import { EditorMode } from "../components/graph/node-modal/editors/expression/types";
 
 export interface ActionParameterConfig {
     editor: any;
     label: string;
-    defaultValue: string | null;
+    defaultValue: {
+        language: EditorMode | string;
+        expression: string;
+    } | null;
     hintText: string | null;
 }
 
