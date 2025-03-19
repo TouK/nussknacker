@@ -155,7 +155,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   This change should have been introduced as of starting from Nussknacker 1.15 when a feature flag `useNamingStrategyForConsumerGroupId`
   was removed to temporarily disable consumer group namespacing.
 * [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels will be auto-generated for all components that don't have `label` defined in `ComponentDefinition`. Labels will be visible in components palette and in components list.
-  Auto-generated label is created by formating component's name into Title Case, e.g. for component with name `aggregate-session`, label will be `Aggregate Session`
+  Auto-generated label is created by formating component's name into Title Case, e.g. for component with name `aggregate-session`, label will be `Aggregate Session`. If component provider has `componentPrefix` set, it'll be included in auto-generated label.
 
 ## In version 1.18.0
 
