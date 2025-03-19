@@ -358,6 +358,8 @@ object typing {
           Typed.record(fieldTypes)
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
+        case array: Array[_] =>
+          Typed(array.getClass)
         case javaList: java.util.List[_] =>
           typedListWithElementValues(
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,

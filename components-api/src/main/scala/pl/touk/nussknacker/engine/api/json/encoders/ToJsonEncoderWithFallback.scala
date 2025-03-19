@@ -13,7 +13,6 @@ import io.circe.Json.{
   fromInt,
   fromLong,
   fromString,
-  fromValues,
   Null
 }
 
@@ -47,6 +46,8 @@ object ToJsonEncoderWithFallback {
       fromFloat(value).map(_.validNel).getOrElse(s"Could not encode $value as json.".invalidNel)
     case value: Double =>
       fromDouble(value).map(_.validNel).getOrElse(s"Could not encode $value as json.".invalidNel)
+    case value: Number =>
+      fromDouble(value.doubleValue()).map(_.validNel).getOrElse(s"Could not encode $value as json.".invalidNel)
     case value: Instant =>
       Encoder[Instant].apply(value).validNel
     // Default implementation serializes to ISO_ZONED_DATE_TIME which is not handled well by some parsers...
@@ -72,6 +73,8 @@ object ToJsonEncoderWithFallback {
       encodeMap(map.asScala.toMap, fallback)
     case vals: java.util.Collection[_] =>
       encodeIterable(vals.asScala, fallback)
+    case vals: Array[_] =>
+      encodeIterable(vals, fallback)
     case vals: Iterable[_] =>
       encodeIterable(vals, fallback)
     case value: Enum[_] =>

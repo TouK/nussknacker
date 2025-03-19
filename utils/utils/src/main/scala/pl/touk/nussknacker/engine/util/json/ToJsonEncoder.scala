@@ -25,19 +25,8 @@ case class ToJsonEncoder(
   private val optionalCustomisations =
     ServiceLoader.load(classOf[ToJsonEncoderCustomisation], classLoader).asScala.map(_.encoder(this.encode))
 
-  private val additionalFallbackEncoders: PartialFunction[Any, Json] = {
-    // DisplayJson is not visible at the components-api level, therefore its handling needs to be added here
-    case value: DisplayJson =>
-      value.asJson
-    // fixme: Some numeric utils and helpers rely on the behavior,
-    //   where ToJsonEncoderWithFallback cannot decode java.lang.Number.
-    //   The decoding of Number could not have been therefore moved to ToJsonEncoderWithFallback
-    case value: Number =>
-      fromDoubleOrNull(value.doubleValue())
-    // fixme: Some SpEL behavior rely on the fact, that ToJsonEncoderWithFallback cannot decode scala Array.
-    //   The decoding of Array could not have been therefore moved to ToJsonEncoderWithFallback
-    case vals: Array[_] =>
-      fromValues(vals.map(encode))
+  private val additionalEncoders: PartialFunction[Any, Json] = { case value: DisplayJson =>
+    value.asJson
   }
 
   def encode(obj: Any): Json =
@@ -56,7 +45,7 @@ case class ToJsonEncoder(
       )
 
   private def customEncoding(obj: Any): Option[Json] = {
-    val customEncodingPF = optionalCustomisations.foldLeft(highPriority)(_.orElse(_))
+    val customEncodingPF = optionalCustomisations.foldLeft(highPriority.andThen(additionalEncoders))(_.orElse(_))
     if (customEncodingPF.isDefinedAt(obj)) {
       Try(customEncodingPF.apply(obj)).toOption
     } else {
@@ -68,8 +57,6 @@ case class ToJsonEncoder(
     customEncoding(any) match {
       case Some(value) =>
         Some(value)
-      case None if additionalFallbackEncoders.isDefinedAt(any) =>
-        Some(additionalFallbackEncoders(any))
       case None if !failOnUnknown =>
         Some(fromString(any.toString))
       case None =>
