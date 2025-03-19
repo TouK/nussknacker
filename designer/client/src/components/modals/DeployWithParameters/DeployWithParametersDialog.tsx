@@ -58,8 +58,6 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
         [confirmAction, props, t],
     );
 
-    const [expandedState, setExpandedState] = useLocalstorageState("actionParametersExpandedState", {});
-
     return (
         <Suspense fallback={<LoaderSpinner show />}>
             <PromptContent {...props} buttons={buttons}>
@@ -94,8 +92,6 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                     >
                         <AdvancedParameters
                             processName={processName}
-                            expandedState={expandedState}
-                            setExpandedState={setExpandedState}
                             setParametersValues={setParametersValues}
                             parametersValues={parametersValues}
                         />

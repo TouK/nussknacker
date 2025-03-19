@@ -9,11 +9,10 @@ import HttpService, { NodesDeploymentData } from "../../../http/HttpService";
 import { ActionNodeParameters } from "../../../types/action";
 import { useErrorBoundary } from "react-error-boundary";
 import { clear, suspend } from "suspend-react";
+import { useLocalstorageState } from "rooks";
 
 interface AdvancedParametersProps {
     processName: string;
-    expandedState: Record<string, boolean>;
-    setExpandedState: (state: Record<string, boolean>) => void;
     setParametersValues: (values: NodesDeploymentData) => void;
     parametersValues: NodesDeploymentData;
 }
@@ -28,15 +27,10 @@ function initialNodesData(params: ActionNodeParameters[]): NodesDeploymentData {
     );
 }
 
-export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({
-    processName,
-    expandedState,
-    setExpandedState,
-    setParametersValues,
-    parametersValues,
-}) => {
+export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processName, setParametersValues, parametersValues }) => {
     const { t } = useTranslation();
     const { showBoundary } = useErrorBoundary();
+    const [expandedState, setExpandedState] = useLocalstorageState("actionParametersExpandedState", {});
 
     const parametersDefinition: ActionNodeParameters[] | undefined = suspend(async () => {
         return HttpService.getActionParameters(processName)
@@ -56,9 +50,6 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({
     useEffect(() => {
         return () => clear();
     }, []);
-
-    console.log(parametersValues);
-    console.log(parametersDefinition);
 
     if (parametersDefinition?.length === 0) {
         return null;
@@ -80,12 +71,12 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({
                 <AdvancedParametersSection
                     key={componentId}
                     componentId={componentId}
-                    expanded={expandedState[componentId]}
+                    expanded={(expandedState[componentId] ??= false)}
                     onChange={(isExpanded) =>
-                        setExpandedState({
-                            ...expandedState,
+                        setExpandedState((prevState) => ({
+                            ...prevState,
                             [componentId]: isExpanded,
-                        })
+                        }))
                     }
                 >
                     <NodeTable>
