@@ -227,7 +227,7 @@ const WithOpenVersion = ({
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
-            title={"Change to " + scenarioVersion + " version"}
+            title={"Switch to version " + scenarioVersion}
             {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesOpenVersion })}
         >
             {children}
@@ -245,7 +245,7 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
     const openVersionEnable = actionsWithVersionChange.includes(activity.type) && activity.scenarioVersionId !== processVersionId;
     const isVersionSelected =
-        ["SCENARIO_MODIFIED", "AUTOMATIC_UPDATE", "INCOMING_MIGRATION"].includes(activity.type) &&
+        ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_MODIFIED"].includes(activity.type) &&
         activity.scenarioVersionId === processVersionId;
 
     const getHeaderTitle = useMemo(() => {
