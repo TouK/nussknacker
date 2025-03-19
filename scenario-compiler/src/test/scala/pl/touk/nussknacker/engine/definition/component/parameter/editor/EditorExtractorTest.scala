@@ -34,9 +34,9 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       param: LazyParameter[String]
   ) = ()
 
-  private def simpleEditorAnnotated(@Editor(`type` = EditorType.BOOL_EDITOR) param: String) = ()
+  private def editorAnnotated(@Editor(`type` = EditorType.BOOL_EDITOR) param: String) = ()
 
-  private def simpleEditorAnnotatedLazy(
+  private def editorAnnotatedLazy(
       @Editor(`type` = EditorType.BOOL_EDITOR) param: LazyParameter[String]
   ) = ()
 
@@ -71,9 +71,8 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private val paramDualEditorAnnotated     = getFirstParam("dualEditorAnnotated", classOf[String])
   private val paramDualEditorLazyAnnotated = getFirstParam("dualEditorAnnotatedLazy", classOf[LazyParameter[String]])
 
-  private val paramSimpleEditorAnnotated = getFirstParam("simpleEditorAnnotated", classOf[String])
-  private val paramSimpleEditorLazyAnnotated =
-    getFirstParam("simpleEditorAnnotatedLazy", classOf[LazyParameter[String]])
+  private val paramEditorAnnotated     = getFirstParam("editorAnnotated", classOf[String])
+  private val paramEditorLazyAnnotated = getFirstParam("editorAnnotatedLazy", classOf[LazyParameter[String]])
 
   private val paramRawEditorAnnotated     = getFirstParam("rawEditorAnnotated", classOf[String])
   private val paramRawEditorAnnotatedLazy = getFirstParam("rawEditorAnnotatedLazy", classOf[LazyParameter[String]])
@@ -82,8 +81,8 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   test("assign RawEditor when no annotation detected") {
     EditorExtractor.extract(paramNotAnnotated, ParameterConfig.empty) shouldBe List(
-      SpelParameterEditor,
       SpelTemplateParameterEditor,
+      SpelParameterEditor,
     )
   }
 
@@ -104,12 +103,12 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       )
   }
 
-  test("detect @SimpleEditor annotation") {
+  test("detect @Editor annotation") {
 
-    EditorExtractor.extract(paramSimpleEditorAnnotated, ParameterConfig.empty) shouldBe
+    EditorExtractor.extract(paramEditorAnnotated, ParameterConfig.empty) shouldBe
       List(BoolParameterEditor)
 
-    EditorExtractor.extract(paramSimpleEditorLazyAnnotated, ParameterConfig.empty) shouldBe
+    EditorExtractor.extract(paramEditorLazyAnnotated, ParameterConfig.empty) shouldBe
       List(BoolParameterEditor)
   }
 
@@ -211,8 +210,8 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
     val stringParam  = getSimpleParamByType[String]
 
     val expectedEditor = List(
-      SpelParameterEditor,
       SpelTemplateParameterEditor,
+      SpelParameterEditor,
     )
     EditorExtractor.extract(charseqParam, ParameterConfig.empty) shouldBe expectedEditor
     EditorExtractor.extract(stringParam, ParameterConfig.empty) shouldBe expectedEditor

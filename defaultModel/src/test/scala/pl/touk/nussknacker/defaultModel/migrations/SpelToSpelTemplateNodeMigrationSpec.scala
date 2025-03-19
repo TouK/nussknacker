@@ -72,6 +72,27 @@ class SpelToSpelTemplateNodeMigrationSpec extends AnyFunSuite with Matchers {
     )
   }
 
+  test("should migrate join branchParameters") {
+    val branchParameters = List(BranchParameters("branchId", paramsBeforeMigration))
+    val node             = Join("id", Some("out1"), "typ1", Nil, branchParameters, additionalFields)
+
+    val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
+
+    migrated shouldBe Join(
+      id = "id",
+      outputVar = Some("out1"),
+      nodeType = "typ1",
+      parameters = Nil,
+      branchParameters = List(
+        BranchParameters(
+          branchId = "branchId",
+          parameters = paramsAfterMigration
+        )
+      ),
+      additionalFields = additionalFields
+    )
+  }
+
   test("should migrate processor") {
     val node = Processor("id", ServiceRef("id", paramsBeforeMigration), Some(false), additionalFields)
 
