@@ -45,9 +45,7 @@ trait WithScenarioActivitySpecAsserts
 
   def verifyIncomingMigrationActivityExists(
       scenarioName: String,
-      sourceEnvironment: String,
-      sourceUser: String,
-      targetEnvironment: String,
+      migrateFrom: String
   ): Unit = {
     given()
       .when()
@@ -75,16 +73,8 @@ trait WithScenarioActivitySpecAsserts
              |      "scenarioVersionId": 2,
              |      "additionalFields": [
              |        {
-             |          "name": "sourceEnvironment",
-             |          "value": "$sourceEnvironment"
-             |        },
-             |        {
-             |          "name": "sourceUser",
-             |          "value": "$sourceUser"
-             |        },
-             |        {
-             |          "name": "targetEnvironment",
-             |          "value": "$targetEnvironment"
+             |          "name": "migrateFrom",
+             |          "value": "$migrateFrom"
              |        }
              |      ],
              |      "type": "INCOMING_MIGRATION"
