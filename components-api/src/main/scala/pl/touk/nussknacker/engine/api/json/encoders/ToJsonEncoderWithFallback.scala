@@ -55,12 +55,12 @@ object ToJsonEncoderWithFallback {
       encodeZonedDateTimeWithFormatter(DateTimeFormatter.ISO_OFFSET_DATE_TIME).apply(value).validNel
     case value: OffsetDateTime =>
       Encoder[OffsetDateTime].apply(value).validNel
-    case value: LocalDateTime =>
-      fromString(value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).validNel
     case value: LocalDate =>
-      fromString(value.format(DateTimeFormatter.ISO_LOCAL_DATE)).validNel
+      Encoder[LocalDate].apply(value).validNel
     case value: LocalTime =>
-      fromString(value.format(DateTimeFormatter.ISO_LOCAL_TIME)).validNel
+      Encoder[LocalTime].apply(value).validNel
+    case value: LocalDateTime =>
+      Encoder[LocalDateTime].apply(value).validNel
     case value: Duration =>
       fromString(value.toString).validNel // Duration uses ISO-8601 format by default
     case value: Period =>
