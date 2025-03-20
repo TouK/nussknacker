@@ -45,7 +45,7 @@ case class ToJsonEncoder(
       )
 
   private def customEncoding(obj: Any): Option[Json] = {
-    val customEncodingPF = optionalCustomisations.foldLeft(highPriority.andThen(additionalEncoders))(_.orElse(_))
+    val customEncodingPF = optionalCustomisations.foldLeft(highPriority.orElse(additionalEncoders))(_.orElse(_))
     if (customEncodingPF.isDefinedAt(obj)) {
       Try(customEncodingPF.apply(obj)).toOption
     } else {
