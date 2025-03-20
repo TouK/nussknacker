@@ -4,11 +4,10 @@ import cats.data.EitherT
 import cats.instances.future._
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.Materializer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator,
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.migrate.StandardRemoteEnvironmentSpec._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,10 +36,9 @@ class StandardRemoteEnvironmentSpec
   val migrationApiAdapterService = new MigrationApiAdapterService()
 
   it should "request to migrate valid scenario when remote scenario description version is lower than local scenario description version" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion - 1
-    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+    val remoteEnvironment: MockRemoteEnvironment =
       remoteEnvironmentMock(scenarioDescriptionVersion = remoteScenarioDescriptionVersion)
 
     whenReady(
@@ -64,9 +63,8 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "request to migrate valid scenario when remote scenario description version is the same as local scenario description version" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
     val localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
-    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+    val remoteEnvironment: MockRemoteEnvironment =
       remoteEnvironmentMock(scenarioDescriptionVersion = localScenarioDescriptionVersion)
 
     whenReady(
@@ -91,10 +89,9 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "request to migrate valid scenario when remote scenario description version is higher than local scenario description version" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion + 1
-    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+    val remoteEnvironment: MockRemoteEnvironment =
       remoteEnvironmentMock(scenarioDescriptionVersion = remoteScenarioDescriptionVersion)
 
     whenReady(
@@ -120,7 +117,6 @@ class StandardRemoteEnvironmentSpec
 
   // TODO: separate test to check response without labels to test decoder fallback
   it should "test migration" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
     val remoteEnvironment = environmentForTestMigration(
       processes = ProcessTestData.validScenarioDetailsForMigrations :: Nil,
       fragments = TestProcessUtil.wrapWithDetailsForMigration(
@@ -147,13 +143,23 @@ class StandardRemoteEnvironmentSpec
     super.afterAll()
   }
 
-  class MockRemoteEnvironment extends StandardRemoteEnvironment("localEnv", "remoteEnv") {
+}
+
+object StandardRemoteEnvironmentSpec {
+
+  private class MockRemoteEnvironment extends StandardRemoteEnvironment {
+
+    override protected implicit val ec: ExecutionContext = ExecutionContext.global
+    override protected val localEnvironmentId: String    = "localEnv"
+    override protected val remoteEnvironmentId: String   = "remoteEnv"
+
+    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioData] = None
 
     def config: StandardRemoteEnvironmentConfig = StandardRemoteEnvironmentConfig(
       batchSize = 100
     )
 
-    override implicit val materializer: Materializer = Materializer(system)
+    override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] = ???
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(
@@ -164,44 +170,36 @@ class StandardRemoteEnvironmentSpec
 
   }
 
-  private trait LastSentMigrateScenarioRequest {
-    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioData] = None
-  }
-
   private def remoteEnvironmentMock(
       scenarioDescriptionVersion: Int
-  ) = new MockRemoteEnvironment with LastSentMigrateScenarioRequest {
+  ): MockRemoteEnvironment = new MockRemoteEnvironment {
 
-    override protected def fetchRemoteMigrationScenarioDescriptionVersion(
-        implicit ec: ExecutionContext
-    ): EitherT[Future, NuDesignerError, Int] = {
+    override protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = {
       EitherT.rightT[Future, NuDesignerError](scenarioDescriptionVersion)
     }
 
     override protected def migrateScenario(
         migrateScenarioData: MigrateScenarioData
-    )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
+    )(implicit loggedUser: LoggedUser): FutureE[Unit] = {
       lastlySentMigrateScenarioRequest = Some(migrateScenarioData)
-      Future.successful(Right(()))
+      EitherT.rightT[Future, NuDesignerError](())
     }
   }
 
   private def environmentForTestMigration(
       processes: List[ScenarioWithDetailsForMigrations],
       fragments: List[ScenarioWithDetailsForMigrations]
-  ) = new MockRemoteEnvironment {
+  ): MockRemoteEnvironment = new MockRemoteEnvironment {
 
     private def allProcesses: List[ScenarioWithDetailsForMigrations] = processes ++ fragments
 
-    override protected def fetchProcesses(
-        implicit ec: ExecutionContext
-    ): Future[Either[NuDesignerError, List[ScenarioWithDetailsForMigrations]]] = {
-      Future.successful(Right(allProcesses.map(_.copy(scenarioGraph = None))))
+    override protected def fetchProcesses: FutureE[List[ScenarioWithDetailsForMigrations]] = {
+      EitherT.rightT[Future, NuDesignerError](allProcesses.map(_.copy(scenarioGraph = None)))
     }
 
     override protected def fetchProcessesDetails(
         names: List[ProcessName]
-    )(implicit ec: ExecutionContext): EitherT[Future, NuDesignerError, List[ScenarioWithDetailsForMigrations]] = {
+    ): FutureE[List[ScenarioWithDetailsForMigrations]] = {
       EitherT.rightT[Future, NuDesignerError](allProcesses.filter(p => names.contains(p.name)))
     }
   }

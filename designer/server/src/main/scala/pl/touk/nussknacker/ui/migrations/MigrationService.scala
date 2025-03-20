@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.migrations
 
 import cats.data.EitherT
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -9,13 +8,17 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.{FatalError, NuDesignerError, UnauthorizedError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
-import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
+import pl.touk.nussknacker.ui.migrations.MigrationService.{
+  MigrationError,
+  MigrationToArchivedError,
+  MigrationValidationError
+}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
@@ -24,7 +27,6 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   MigrateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -313,5 +315,19 @@ object MigrationService {
       }
 
   }
+
+  final case class MigrationValidationError(errors: ValidationErrors)
+      extends FatalError({
+        val messages = errors.globalErrors.map(_.error.message) ++
+          errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
+            s"$node - ${nerror.map(_.message).mkString(", ")}"
+          }
+        s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
+      })
+
+  final case class MigrationToArchivedError(processName: ProcessName, environment: String)
+      extends FatalError(
+        s"Cannot migrate, scenario $processName is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
+      )
 
 }

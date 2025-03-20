@@ -20,11 +20,9 @@ trait RemoteEnvironment {
       localGraph: ScenarioGraph,
       remoteProcessName: ProcessName,
       remoteProcessVersion: Option[VersionId]
-  )(
-      implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, Map[String, Difference]]]
 
-  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]]
+  def processVersions(processName: ProcessName): Future[List[ScenarioVersion]]
 
   def migrate(
       processingMode: ProcessingMode,
@@ -36,8 +34,7 @@ trait RemoteEnvironment {
       processName: ProcessName,
       isFragment: Boolean
   )(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
+      implicit loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
 
   // TODO This method is used by an external project. We should move it to some api module
@@ -45,22 +42,7 @@ trait RemoteEnvironment {
       processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,
       batchingExecutionContext: ExecutionContext
   )(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
+      implicit loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
 
 }
-
-final case class MigrationValidationError(errors: ValidationErrors)
-    extends FatalError({
-      val messages = errors.globalErrors.map(_.error.message) ++
-        errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
-          s"$node - ${nerror.map(_.message).mkString(", ")}"
-        }
-      s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
-    })
-
-final case class MigrationToArchivedError(processName: ProcessName, environment: String)
-    extends FatalError(
-      s"Cannot migrate, scenario $processName is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
-    )
