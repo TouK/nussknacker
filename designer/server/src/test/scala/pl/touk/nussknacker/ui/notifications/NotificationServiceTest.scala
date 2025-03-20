@@ -15,12 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  AdditionalModelConfigs,
-  DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId
-}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -31,10 +26,8 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DbScenarioActionRepository,
@@ -45,7 +38,6 @@ import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRe
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.{Clock, Duration, Instant, ZoneId}
 import java.time.temporal.ChronoUnit
@@ -316,37 +308,15 @@ class NotificationServiceTest
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,
-      mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
-      mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
+      TestFactory.processValidatorByProcessingType,
+      TestFactory.scenarioResolverByProcessingType,
       actionService,
       TestFactory.additionalComponentConfigsByProcessingType,
     ) {
       override protected def validateBeforeDeploy(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-          deployedScenarioData: DeployedScenarioData,
-          updateStrategy: DeploymentUpdateStrategy
+          runDeploymentCommand: DMRunDeploymentCommand,
       )(implicit user: LoggedUser): Future[Unit] = Future.successful(())
-
-      override protected def prepareDeployedScenarioData(
-          processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-          actionId: ProcessActionId,
-          nodesDeploymentData: NodesDeploymentData,
-          additionalDeploymentData: Map[String, String] = Map.empty
-      )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
-        Future.successful(
-          DeployedScenarioData(
-            processDetails.toEngineProcessVersion,
-            DeploymentData(
-              DeploymentId.fromActionId(actionId),
-              user.toManagerUser,
-              additionalDeploymentData,
-              nodesDeploymentData,
-              AdditionalModelConfigs.empty
-            ),
-            processDetails.json
-          )
-        )
-      }
     }
     (deploymentService, actionService, notificationService)
   }

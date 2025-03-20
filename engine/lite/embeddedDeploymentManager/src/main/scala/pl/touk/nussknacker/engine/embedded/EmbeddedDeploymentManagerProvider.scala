@@ -41,7 +41,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
     strategy.open(modelDataProvider, contextPreparer)
-    valid(new EmbeddedDeploymentManager(modelDataProvider, deployedScenariosProvider, strategy))
+    valid(new EmbeddedDeploymentManager(modelDataProvider, strategy))
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =

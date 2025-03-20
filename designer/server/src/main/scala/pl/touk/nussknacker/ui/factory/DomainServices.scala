@@ -20,11 +20,7 @@ import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeList
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.notifications.Notification
 import pl.touk.nussknacker.ui.process.{DBProcessService, ProcessService}
-import pl.touk.nussknacker.ui.process.deployment.{
-  ActionService,
-  DefaultProcessingTypeDeployedScenariosProvider,
-  DeploymentManagerDispatcher
-}
+import pl.touk.nussknacker.ui.process.deployment.{ActionService, DeploymentManagerDispatcher}
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
   FinishedDeploymentsStatusesSynchronizationScheduler,
@@ -61,7 +57,7 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 final class DomainServices(
     val futureProcessRepository: FetchingProcessRepository[Future],
@@ -309,7 +305,6 @@ object DomainServices {
         reconciler,
         alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
       )
-
       _ = Initialization.init(
         migrations,
         dbRef,
@@ -404,7 +399,6 @@ object DomainServices {
       processingType: ProcessingType
   )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
     new DeploymentManagerDependencies(
-      DefaultProcessingTypeDeployedScenariosProvider(infrastructureServices.dbRef, processingType),
       executionContextWithIORuntime,
       executionContextWithIORuntime.ioRuntime,
       infrastructureServices.actorSystem,

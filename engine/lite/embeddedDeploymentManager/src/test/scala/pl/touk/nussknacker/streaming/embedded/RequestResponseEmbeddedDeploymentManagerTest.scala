@@ -36,14 +36,13 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
   private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
-  protected def prepareFixture(initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
+  protected def prepareFixture(): FixtureParam = {
     val modelData = LocalModelData(
       ConfigFactory.empty(),
       RequestResponseComponentProvider.Components
     )
     val as: ActorSystem = ActorSystem(getClass.getSimpleName)
     val dependencies = new DeploymentManagerDependencies(
-      new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
       as.dispatcher,
       IORuntime.global,
       as,

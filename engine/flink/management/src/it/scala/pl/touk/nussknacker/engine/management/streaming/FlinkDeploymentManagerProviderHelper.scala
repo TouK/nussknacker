@@ -8,7 +8,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeployedScenariosProviderStub}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.classloader.{
   DeploymentManagersClassLoader,
   DeploymentManagersClassLoaderFactory,
@@ -38,7 +38,6 @@ object FlinkDeploymentManagerProviderHelper {
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend     = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
     val deploymentManagerDependencies = new DeploymentManagerDependencies(
-      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actorSystem.dispatcher,
       IORuntime.global,
       actorSystem,

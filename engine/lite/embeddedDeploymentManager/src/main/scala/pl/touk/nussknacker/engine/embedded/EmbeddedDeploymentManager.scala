@@ -12,8 +12,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /*
@@ -24,28 +23,12 @@ import scala.util.{Failure, Success, Try}
  */
 class EmbeddedDeploymentManager(
     override protected val modelDataProvider: BaseModelDataProvider,
-    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)
     extends LiteDeploymentManager
     with LazyLogging {
 
-  private val retrieveDeployedScenariosTimeout = 10.seconds
-
-  @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
-    val deployedScenarios =
-      Await.result(deployedScenariosProvider.getDeployedScenarios, retrieveDeployedScenariosTimeout)
-    deployedScenarios
-      .map(data =>
-        deployScenario(
-          data.processVersion,
-          data.deploymentData,
-          data.resolvedScenario,
-          throwInterpreterRunExceptionsImmediately = false
-        )
-      )
-      .toMap
-  }
+  @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = Map.empty
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {

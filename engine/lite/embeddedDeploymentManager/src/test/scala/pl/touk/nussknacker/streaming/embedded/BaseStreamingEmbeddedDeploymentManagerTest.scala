@@ -87,7 +87,6 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
   protected def prepareFixture(
       inputTopic: TopicName.ForSource = generateInputTopicName,
       outputTopic: TopicName.ForSink = generateOutputTopicName,
-      initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty,
       jsonSchema: String = defaultJsonSchema
   ): FixtureParam = {
     registerJsonSchema(inputTopic.toUnspecialized, jsonSchema, isKey = false)
@@ -118,15 +117,14 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
     val kafkaComponents = new MockLiteKafkaComponentProvider()
       .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
 
-    val modelData         = LocalModelData(configToUse, kafkaComponents)
-    val deploymentService = new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios)
+    val modelData = LocalModelData(configToUse, kafkaComponents)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit =
           throw new AssertionError("Should not happen...")
       }
       strategy.open(modelData.toModelDataProvider, LiteEngineRuntimeContextPreparer.noOp)
-      val manager = new EmbeddedDeploymentManager(modelData.toModelDataProvider, deploymentService, strategy)
+      val manager = new EmbeddedDeploymentManager(modelData.toModelDataProvider, strategy)
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }
   }

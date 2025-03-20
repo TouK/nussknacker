@@ -149,8 +149,6 @@ object MockDeploymentManager {
 
   def create(
       defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
-      deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
-        new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
   ): MockDeploymentManager = {
     val actorSystem = ActorSystem("MockDeploymentManager")
@@ -166,7 +164,6 @@ object MockDeploymentManager {
       )
     )
     val deploymentManagerDependencies = new DeploymentManagerDependencies(
-      deployedScenariosProvider,
       ExecutionContext.global,
       IORuntime.global,
       actorSystem,
