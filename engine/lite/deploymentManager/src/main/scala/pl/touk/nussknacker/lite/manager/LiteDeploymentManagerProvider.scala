@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   LiteralIntegerValidator,
   MinimalNumberValidator,
-  SpelTemplateParameterEditor,
   StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
