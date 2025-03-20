@@ -12,6 +12,8 @@ import { SettingsProvider } from "./containers/SettingsInitializer";
 import "./i18n";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
 import { StoreProvider } from "./store/provider";
+import { AiAssistantButton } from "./components/aiAsistant/components/AiAssistantButton";
+import { MyRuntimeProvider } from "./components/aiAsistant/MyRuntimeProvider";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -27,19 +29,23 @@ const root = createRoot(rootContainer);
 
 const Root = () => (
     <>
-        <NuThemeProvider>
-            <ErrorBoundary>
-                <StoreProvider>
-                    <SettingsProvider>
-                        <NussknackerInitializer>
-                            <BuildInfoProvider>
-                                <RouterProvider router={router} />
-                            </BuildInfoProvider>
-                        </NussknackerInitializer>
-                    </SettingsProvider>
-                </StoreProvider>
-            </ErrorBoundary>
-        </NuThemeProvider>
+        <MyRuntimeProvider>
+            <NuThemeProvider>
+                <ErrorBoundary>
+                    <StoreProvider>
+                        <SettingsProvider>
+                            <NussknackerInitializer>
+                                <AiAssistantButton />
+                                <BuildInfoProvider>
+                                    <RouterProvider router={router} />
+                                </BuildInfoProvider>
+                            </NussknackerInitializer>
+                        </SettingsProvider>
+                    </StoreProvider>
+                </ErrorBoundary>
+            </NuThemeProvider>
+        </MyRuntimeProvider>
+
         <GlideGridPortal />
     </>
 );
