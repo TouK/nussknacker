@@ -5,7 +5,7 @@ import cats.implicits._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
-import pl.touk.nussknacker.engine.{newdeployment, BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFres
 import scala.concurrent.Future
 
 class FlinkDeploymentManager(
-    modelData: BaseModelData,
+    modelDataProvider: BaseModelDataProvider,
     dependencies: DeploymentManagerDependencies,
     flinkConfig: FlinkConfig,
     miniClusterWithServicesOpt: Option[FlinkMiniClusterWithServices],
@@ -44,7 +44,7 @@ class FlinkDeploymentManager(
   private val slotsChecker = new FlinkSlotsChecker(client)
 
   private val testRunner = new FlinkMiniClusterScenarioTestRunner(
-    modelData,
+    modelDataProvider,
     miniClusterWithServicesOpt
       .filter(_ => flinkConfig.scenarioTesting.reuseSharedMiniCluster),
     flinkConfig.scenarioTesting.parallelism,
@@ -52,13 +52,11 @@ class FlinkDeploymentManager(
   )
 
   private val verification = new FlinkMiniClusterScenarioStateVerifier(
-    modelData,
+    modelDataProvider,
     miniClusterWithServicesOpt
       .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster),
     flinkConfig.scenarioStateVerification.timeout.toPausePolicy
   )
-
-  private val statusDeterminer = new FlinkStatusDetailsDeterminer(modelData.namingStrategy, client.getJobConfig)
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
@@ -260,13 +258,16 @@ class FlinkDeploymentManager(
 
     override def createScheduledExecutionPerformer(
         rawSchedulingConfig: Config,
-    ): ScheduledExecutionPerformer = FlinkScheduledExecutionPerformer.create(client, modelData, rawSchedulingConfig)
+    ): ScheduledExecutionPerformer =
+      FlinkScheduledExecutionPerformer.create(client, modelDataProvider, rawSchedulingConfig)
 
   }
 
   private def getAllJobsStatusesFromFlink()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[Map[ProcessName, List[(DeploymentStatusDetails, JobOverview)]]]] = {
+    val statusDeterminer =
+      new FlinkStatusDetailsDeterminer(modelDataProvider.getCurrentModelData().namingStrategy, client.getJobConfig)
     client
       .getJobsOverviews()
       .flatMap { result =>

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.statistics
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -14,7 +15,6 @@ import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStati
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository

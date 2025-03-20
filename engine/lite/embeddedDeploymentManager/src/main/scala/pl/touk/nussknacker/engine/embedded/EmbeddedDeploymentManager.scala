@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.embedded
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{newdeployment, ModelData}
+import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -22,7 +22,7 @@ import scala.util.{Failure, Success, Try}
   checking status, but for this @volatile on interpreters should suffice.
  */
 class EmbeddedDeploymentManager(
-    override protected val modelData: ModelData,
+    override protected val modelDataProvider: BaseModelDataProvider,
     deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)

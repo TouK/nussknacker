@@ -45,7 +45,7 @@ class NotificationApiHttpServiceBusinessSpec
           )
         )
     }
-    "return notification when processing type data are reloaded" in {
+    "return notification when model is reloaded" in {
       given()
         .when()
         .applicationState {
@@ -137,7 +137,7 @@ class NotificationApiHttpServiceBusinessSpec
     given()
       .when()
       .basicAuthAdmin()
-      .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+      .post(s"$nuDesignerHttpAddress/api/app/model/reload")
       .Then()
       .statusCode(204)
   }

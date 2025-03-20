@@ -9,7 +9,8 @@ import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.Http.ServerBinding
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.stream.Materializer
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.BaseModelDataProvider
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
@@ -64,8 +65,11 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
 
   private var server: ServerBinding = _
 
-  override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
-    super.open(modelData, contextPreparer)
+  override def open(
+      modelDataProvider: BaseModelDataProvider,
+      contextPreparer: LiteEngineRuntimeContextPreparer
+  ): Unit = {
+    super.open(modelDataProvider, contextPreparer)
     logger.info(s"Serving request-response on ${httpConfig.port}")
 
     val route = new ScenarioDispatcherRoute(slugToScenarioRoute)
@@ -96,7 +100,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
     // RequestResponseScenarioInterpreter is 'opened' in constructor of RequestResponseRunnableScenarioInterpreter
     lazy val interpreterTry = Try(
       new RequestResponseRunnableScenarioInterpreter(
-        modelData,
+        modelDataProvider.getCurrentModelData().asInvokableModelData,
         contextPreparer,
         parsedResolvedScenario,
         jobData,

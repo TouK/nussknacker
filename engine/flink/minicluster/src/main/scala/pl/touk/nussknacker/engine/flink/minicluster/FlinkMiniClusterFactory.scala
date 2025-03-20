@@ -8,14 +8,12 @@ import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   ScenarioStateVerificationConfig,
   ScenarioTestingConfig
 }
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-
-import java.net.URLClassLoader
 
 object FlinkMiniClusterFactory extends LazyLogging {
 
@@ -41,7 +39,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
   }
 
   def createMiniClusterWithServicesIfConfigured(
-      modelClassLoader: URLClassLoader,
+      modelClassLoader: ModelClassLoader,
       config: FlinkMiniClusterConfig,
       useMiniClusterForDeployment: Boolean,
       scenarioTestingConfig: ScenarioTestingConfig,
@@ -64,7 +62,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
   }
 
   def createMiniClusterWithServices(
-      modelClassLoader: URLClassLoader,
+      modelClassLoader: ModelClassLoader,
       miniClusterConfigOverrides: Configuration,
   ): FlinkMiniClusterWithServices = {
     val miniClusterConfig = DefaultMiniClusterConfig

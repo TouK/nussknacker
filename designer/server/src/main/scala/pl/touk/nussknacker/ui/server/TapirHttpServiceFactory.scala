@@ -35,7 +35,7 @@ object TapirHttpServiceFactory {
     val appApiHttpService = new AppApiHttpService(
       designerConfig = designerConfig,
       authManager = authManager,
-      reloadProcessingTypes = reloadProcessingTypes,
+      reloadModelData = reloadModelData,
       modelInfos = processingTypeServicesProvider.mapValues(_.designerModelData.modelData.info),
       categories = processingTypeServicesProvider.mapValues(_.category),
       processService = processService,

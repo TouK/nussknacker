@@ -1,14 +1,12 @@
-package pl.touk.nussknacker.engine.util.loader
+package pl.touk.nussknacker.engine.classloader
 
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.UrlUtils.ExpandFiles
 
-import java.net.URL
 import java.nio.file.{Files, Path}
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
-object DeploymentManagersClassLoader extends LazyLogging {
+object DeploymentManagersClassLoaderFactory extends LazyLogging {
 
   def create(managersDirs: List[Path]): Resource[IO, DeploymentManagersClassLoader] = {
     val invalidPaths = managersDirs
@@ -36,5 +34,3 @@ object DeploymentManagersClassLoader extends LazyLogging {
   }
 
 }
-
-class DeploymentManagersClassLoader private (urls: Seq[URL], parent: ClassLoader) extends URLClassLoader(urls, parent)

@@ -51,7 +51,11 @@ class DeploymentServiceTest
       TestFactory.newDeploymentRepository(testDbRef, clock),
       new DeploymentManagerDispatcher(
         TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-          Map(Streaming.stringify -> ValueWithRestriction.anyUser(new MockableDeploymentManager(modelDataOpt = None)))
+          Map(
+            Streaming.stringify -> ValueWithRestriction.anyUser(
+              new MockableDeploymentManager(modelDataProviderOpt = None)
+            )
+          )
         ),
         TestFactory.newFutureFetchingScenarioRepository(testDbRef)
       ),

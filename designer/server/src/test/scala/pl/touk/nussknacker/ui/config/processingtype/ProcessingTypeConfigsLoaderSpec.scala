@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, includ
 import pl.touk.nussknacker.ui.config.{DesignerConfig, SimpleConfigLoadingDesignerConfigLoader}
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigsLoader
 
-class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
+class ProcessingTypeConfigsLoaderSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
