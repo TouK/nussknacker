@@ -25,18 +25,7 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       dependencies: DeploymentManagerDependencies,
       schedulingDepsOpt: Option[SchedulingDependencies]
   ): (DeploymentManager, Map[String, ScenarioPropertyConfig]) = {
-    val schedulingForProcessingType =
-      if (deploymentConfig.hasPath("scheduling") &&
-        deploymentConfig.getBoolean("scheduling.enabled")) {
-        val schedulingDeps = schedulingDepsOpt.getOrElse(
-          throw new RuntimeException(
-            s"Scheduling dependencies not present, but required for Deployment Manager with scheduling enabled"
-          )
-        )
-        SchedulingForProcessingType.Available(schedulingDeps)
-      } else {
-        SchedulingForProcessingType.NotAvailable
-      }
+    val schedulingForProcessingType = determineIfSchedulingIsAvailable(deploymentConfig, schedulingDepsOpt)
     schedulingForProcessingType match {
       case SchedulingForProcessingType.Available(schedulingDeps) =>
         underlying.schedulingSupport match {
@@ -59,7 +48,24 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     }
   }
 
-  def decorate(
+  private def determineIfSchedulingIsAvailable(
+      deploymentConfig: Config,
+      schedulingDepsOpt: Option[SchedulingDependencies]
+  ): SchedulingForProcessingType = {
+    if (deploymentConfig.hasPath("scheduling") &&
+      deploymentConfig.getBoolean("scheduling.enabled")) {
+      val schedulingDeps = schedulingDepsOpt.getOrElse(
+        throw new RuntimeException(
+          s"Scheduling dependencies not present, but required for Deployment Manager with scheduling enabled"
+        )
+      )
+      SchedulingForProcessingType.Available(schedulingDeps)
+    } else {
+      SchedulingForProcessingType.NotAvailable
+    }
+  }
+
+  private def decorate(
       underlying: DeploymentManager,
       schedulingSupported: SchedulingSupported,
       deploymentConfig: Config,

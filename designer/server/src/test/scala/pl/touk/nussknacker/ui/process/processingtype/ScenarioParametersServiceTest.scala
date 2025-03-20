@@ -285,38 +285,38 @@ class ScenarioParametersServiceTest
     val designerConfig =
       DesignerConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
     val managersPath = workPath.resolve("managers")
-    DeploymentManagersClassLoaderFactory
-      .create(
-        List(
-          managersPath.resolve("nussknacker-flink-manager.jar"),
-          managersPath.resolve("lite-embedded-manager.jar"),
-        )
-      )
-      .use { deploymentManagersClassLoader =>
-        IO {
-          val modelDependencies = ModelDependencies(
-            Map.empty,
-            componentId => DesignerWideComponentId(componentId.toString),
-            Some(workPath),
-            ComponentDefinitionExtractionMode.FinalDefinition
+    val parameterServiceResource = for {
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory
+        .create(
+          List(
+            managersPath.resolve("nussknacker-flink-manager.jar"),
+            managersPath.resolve("lite-embedded-manager.jar"),
           )
-          val processingTypeData =
-            TestProcessingTypeDataProviderFactory.create(
-              designerConfig.processingTypeConfigs(),
-              ModelClassLoaderProvider(
-                designerConfig
-                  .processingTypeConfigs()
-                  .configByProcessingType
-                  .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
-                deploymentManagersClassLoader
-              ),
-              modelDependencies,
-              deploymentManagersClassLoader,
-              TestFactory.deploymentManagerDependencies,
-            )
-
-          val parametersService = processingTypeData.combined.parametersService
-
+        )
+      modelDependencies = ModelDependencies(
+        Map.empty,
+        componentId => DesignerWideComponentId(componentId.toString),
+        Some(workPath),
+        ComponentDefinitionExtractionMode.FinalDefinition
+      )
+      processingTypeData <- TestProcessingTypeDataProviderFactory.create(
+        designerConfig.processingTypeConfigs(),
+        ModelClassLoaderProvider(
+          designerConfig
+            .processingTypeConfigs()
+            .configByProcessingType
+            .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
+          deploymentManagersClassLoader
+        ),
+        modelDependencies,
+        deploymentManagersClassLoader,
+        TestFactory.deploymentManagerDependencies,
+      )
+      parametersService = processingTypeData.combined.parametersService
+    } yield parametersService
+    parameterServiceResource
+      .use { parametersService =>
+        IO {
           parametersService.scenarioParametersCombinationsWithWritePermission(
             TestFactory.adminUser()
           ) should contain theSameElementsAs List(

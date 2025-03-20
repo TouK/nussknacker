@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.test.base.it
 
 import cats.data.Validated.Valid
+import cats.effect.unsafe.implicits.global
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -187,15 +188,18 @@ trait NuResourcesTest
 
   protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+  protected val (processingTypeDataProvider, closeDeploymentManagers) = {
     val designerConfig = DesignerConfig.from(testConfig)
-    TestProcessingTypeDataProviderFactory.create(
-      processingTypeConfigs = designerConfig.processingTypeConfigs(),
-      modelClassLoaderProvider = modelClassLoaderProvider,
-      modelDependencies = modelDependencies,
-      deploymentManagersClassLoader = deploymentManagersClassLoader,
-      deploymentManagerDependencies = deploymentManagerDependencies,
-    )
+    TestProcessingTypeDataProviderFactory
+      .create(
+        processingTypeConfigs = designerConfig.processingTypeConfigs(),
+        modelClassLoaderProvider = modelClassLoaderProvider,
+        modelDependencies = modelDependencies,
+        deploymentManagersClassLoader = deploymentManagersClassLoader,
+        deploymentManagerDependencies = deploymentManagerDependencies,
+      )
+      .allocated
+      .unsafeRunSync()
   }
 
   protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
@@ -235,7 +239,7 @@ trait NuResourcesTest
       processStateProvider,
       scenarioStatusPresenter,
       newProcessPreparerByProcessingType,
-      typeToConfig.mapCombined(_.parametersService),
+      processingTypeDataProvider.mapCombined(_.parametersService),
       processResolverByProcessingType,
       dbioRunner,
       futureFetchingScenarioRepository,
@@ -274,6 +278,11 @@ trait NuResourcesTest
   override def beforeEach(): Unit = {
     super.beforeEach()
     processChangeListener.clear()
+  }
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    closeDeploymentManagers.unsafeRunSync()
   }
 
   protected def saveCanonicalProcessAndAssertSuccess(

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -28,23 +29,27 @@ class ProcessingTypeDataProviderAccessRestrictionTest
   }
 
   test("allow to access to processing type data only users that has read access to associated category") {
-    val provider = mockProcessingTypeDataProvider("foo", "bar")
+    mockProcessingTypeDataProvider("foo", "bar")
+      .use { provider =>
+        IO {
+          val fooCategoryUser =
+            RealLoggedUser("fooCategoryUser", "fooCategoryUser", Map("fooCategory" -> Set(Permission.Read)))
 
-    val fooCategoryUser =
-      RealLoggedUser("fooCategoryUser", "fooCategoryUser", Map("fooCategory" -> Set(Permission.Read)))
+          provider.forProcessingType("foo")(fooCategoryUser)
+          an[UnauthorizedError] shouldBe thrownBy {
+            provider.forProcessingType("bar")(fooCategoryUser)
+          }
+          provider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
 
-    provider.forProcessingType("foo")(fooCategoryUser)
-    an[UnauthorizedError] shouldBe thrownBy {
-      provider.forProcessingType("bar")(fooCategoryUser)
-    }
-    provider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
-
-    val mappedProvider = provider.mapValues(_ => ())
-    mappedProvider.forProcessingType("foo")(fooCategoryUser)
-    an[UnauthorizedError] shouldBe thrownBy {
-      mappedProvider.forProcessingType("bar")(fooCategoryUser)
-    }
-    mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
+          val mappedProvider = provider.mapValues(_ => ())
+          mappedProvider.forProcessingType("foo")(fooCategoryUser)
+          an[UnauthorizedError] shouldBe thrownBy {
+            mappedProvider.forProcessingType("bar")(fooCategoryUser)
+          }
+          mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
+        }
+      }
+      .unsafeRunSync()
   }
 
   private def mockProcessingTypeDataProvider(processingTypeName: String, processingTypeNames: String*) = {

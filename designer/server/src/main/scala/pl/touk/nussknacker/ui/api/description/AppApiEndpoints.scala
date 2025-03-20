@@ -228,7 +228,6 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
       .tag("App")
       .withSecurity(auth)
       .post
-      // TODO: rename: to modeldata / reload
       .in("app" / "model" / "reload")
       .out(
         statusCode(NoContent).and(

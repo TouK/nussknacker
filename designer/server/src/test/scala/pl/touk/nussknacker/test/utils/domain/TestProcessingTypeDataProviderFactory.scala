@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import cats.effect.unsafe.implicits.global
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
@@ -48,22 +49,22 @@ object TestProcessingTypeDataProviderFactory {
       modelDependencies: ModelDependencies,
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val finalProcessingTypeData =
-      loadModelData(processingTypeConfigs, modelClassLoaderProvider, modelDependencies)
-        .transform { case (modelDataWithInputs, _) =>
-          val (deploymentData, _) = loadDeploymentManagers(
-            processingTypeConfigs,
-            modelClassLoaderProvider,
-            deploymentManagersClassLoader,
-            deploymentManagerDependencies,
-            modelDataWithInputs
-          ).allocated
-            .unsafeRunSync()
-          createProcessingTypeDataState(modelDataWithInputs, deploymentData)
-        }
+  ): Resource[IO, ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
 
-    ProcessingTypeDataProvider.fromState(finalProcessingTypeData)
+    val modelDataProvider = loadModelData(processingTypeConfigs, modelClassLoaderProvider, modelDependencies)
+    for {
+      deploymentDatas <- loadDeploymentManagers(
+        processingTypeConfigs,
+        modelClassLoaderProvider,
+        deploymentManagersClassLoader,
+        deploymentManagerDependencies,
+        modelDataProvider.mapValues(_.modelData)
+      )
+      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
+        createProcessingTypeDataState(modelDataWithInputs, deploymentDatas)
+
+      }
+    } yield processingTypeDataProvider
   }
 
   private def loadModelData(
@@ -71,11 +72,14 @@ object TestProcessingTypeDataProviderFactory {
       modelClassLoaderProvider: ModelClassLoaderProvider,
       modelDependencies: ModelDependencies
   ) = {
-    ModelDataLoader
-      .load(
-        processingTypeConfigs,
-        _ => modelDependencies,
-        modelClassLoaderProvider
+    ProcessingTypeDataProvider
+      .fromState(
+        ModelDataLoader
+          .load(
+            processingTypeConfigs,
+            _ => modelDependencies,
+            modelClassLoaderProvider
+          )
       )
   }
 
@@ -84,16 +88,14 @@ object TestProcessingTypeDataProviderFactory {
       modelClassLoaderProvider: ModelClassLoaderProvider,
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      modelDataWithInputs: Map[ProcessingType, ValueWithRestriction[
-        ProcessingTypeDataStateFactory.ModelDataWithProcessingTypeDataInput
-      ]]
+      modelDataProvider: ProcessingTypeDataProvider[ModelData, _]
   ) = {
     DeploymentManagersLoader
       .load(
         processingTypeConfigs,
         deploymentManagersClassLoader,
         modelClassLoaderProvider,
-        createWithEmptyCombinedData(modelDataWithInputs).mapValues(_.modelData),
+        modelDataProvider,
         _ => deploymentManagerDependencies,
         schedulingDepsProvider = None
       )
