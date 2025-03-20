@@ -79,9 +79,9 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     );
 
     const onValueChange = useCallback(
-        (id: string | ExpressionObj) => {
-            if (typeof id !== "string") throw "expression not expected here.";
-            return id === creatorFakeId ? onCreate() : onSelected(id);
+        (value: ExpressionObj) => {
+            if (typeof value?.expression !== "string") return;
+            return value.expression === creatorFakeId ? onCreate() : onSelected(value.expression);
         },
         [onCreate, onSelected],
     );
