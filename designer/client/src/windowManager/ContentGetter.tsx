@@ -27,7 +27,7 @@ const AdhocTestingDialog = loadable(() => import("../components/modals/AdhocTest
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const DeployWithParametersDialog = loadable(() => import("../components/modals/DeployWithParametersDialog"), {
+const DeployWithParametersDialog = loadable(() => import("../components/modals/DeployWithParameters/DeployWithParametersDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const GenericConfirmDialog = loadable(() => import("../components/modals/GenericConfirmDialog"), {
