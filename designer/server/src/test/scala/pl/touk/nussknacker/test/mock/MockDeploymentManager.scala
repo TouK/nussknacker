@@ -20,7 +20,11 @@ import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManage
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.mock.MockDeploymentManager.{sampleDeploymentId, sampleDeploymentStatusDetails}
+import pl.touk.nussknacker.test.mock.MockDeploymentManager.{
+  defaultCancelResult,
+  sampleDeploymentId,
+  sampleDeploymentStatusDetails
+}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import sttp.client3.testing.SttpBackendStub
@@ -31,13 +35,12 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{Success, Try}
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
 class MockDeploymentManager private (
     modelData: ModelData,
     deploymentManagerDependencies: DeploymentManagerDependencies,
-    defaultDeploymentStatus: StateStatus,
     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     closeCreatedDeps: () => Unit,
 ) extends FlinkDeploymentManager(
@@ -54,10 +57,14 @@ class MockDeploymentManager private (
 
   import deploymentManagerDependencies._
 
+  private val defaultDeployResult = Future.successful(
+    None
+  ) // Future.failed(new IllegalAccessException("Unexpected deploy. Check if withWaitForDeployFinish has been used."))
+
   val deployResult = new ConcurrentHashMap[ProcessName, Future[Option[ExternalDeploymentId]]]
 
   @volatile
-  var cancelResult: Future[Unit] = Future.successful(())
+  var cancelResult: Future[Unit] = defaultCancelResult
 
   val managerProcessStates = new ConcurrentHashMap[ProcessName, List[DeploymentStatusDetails]]
 
@@ -82,10 +89,7 @@ class MockDeploymentManager private (
       Thread.sleep(delayBeforeStateReturn.toMillis)
       WithDataFreshnessStatus.fresh(
         managerProcessStates
-          .getOrDefault(
-            scenarioName,
-            List(sampleDeploymentStatusDetails(defaultDeploymentStatus, sampleDeploymentId))
-          )
+          .getOrDefault(scenarioName, List.empty)
           .map { deploymentStatus =>
             val tasksOverview = JobTasksOverview(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, None)
             val deploymentIdUuid =
@@ -109,7 +113,10 @@ class MockDeploymentManager private (
     logger.debug(s"Adding deploy for ${processVersion.processName}")
     deploys.add(processVersion.processName)
 
-    deployResult.getOrDefault(processVersion.processName, Future.successful(None))
+    deployResult.getOrDefault(
+      processVersion.processName,
+      defaultDeployResult
+    )
   }
 
   override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
@@ -147,8 +154,11 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
 
 object MockDeploymentManager {
 
+  private[mock] val defaultCancelResult =
+    Future.successful(())
+//    Future.failed(new IllegalAccessException("Unexpected cancel. Check if withWaitForCancelFinish has been used."))
+
   def create(
-      defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
       deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
@@ -179,7 +189,6 @@ object MockDeploymentManager {
     new MockDeploymentManager(
       modelData,
       deploymentManagerDependencies,
-      defaultProcessStateStatus,
       customProcessStateDefinitionManager,
       closeCreatedDeps,
     )
@@ -215,29 +224,56 @@ object MockDeploymentManager {
 
 object MockDeploymentManagerSyntaxSugar {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
   implicit class Ops(deploymentManager: MockDeploymentManager) {
 
     def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
-      val promise = Promise[Option[ExternalDeploymentId]]()
-      val future  = promise.future
-      deploymentManager.deployResult.put(name, future)
+      val resultStub = stubDeployResult(name)
       try {
         action
       } finally {
-        promise.complete(Try(None))
-        deploymentManager.deployResult.remove(name, future)
+        resultStub.complete()
+        resultStub.clean()
+      }
+    }
+
+    def stubDeployResult[T](name: ProcessName): ResultStub = {
+      val promise = Promise[Option[ExternalDeploymentId]]()
+      deploymentManager.deployResult.put(name, promise.future)
+      new ResultStub {
+        override def complete(): ResultStub = {
+          promise.complete(Success(None))
+          this
+        }
+        override def clean(): Unit = deploymentManager.deployResult.remove(name, promise.future)
       }
     }
 
     def withWaitForCancelFinish[T](action: => T): T = {
-      val promise = Promise[Unit]()
+      val resultStub = stubCancelResult()
       try {
-        deploymentManager.cancelResult = promise.future
         action
       } finally {
-        promise.complete(Try(()))
-        deploymentManager.cancelResult = Future.successful(())
+        resultStub.complete()
+        resultStub.clean()
       }
+    }
+
+    def stubCancelResult(): ResultStub = {
+      val promise = Promise[Unit]()
+      deploymentManager.cancelResult = Future.successful(())
+      new ResultStub {
+        override def complete(): ResultStub = {
+          promise.complete(Success(()))
+          this
+        }
+        override def clean(): Unit = cleanCancelResult()
+      }
+    }
+
+    def cleanCancelResult(): Unit = {
+      deploymentManager.cancelResult = defaultCancelResult
     }
 
     def withFailingDeployment[T](name: ProcessName)(action: => T): T = {
@@ -295,6 +331,14 @@ object MockDeploymentManagerSyntaxSugar {
     def withEmptyProcessState[T](processName: ProcessName)(action: => T): T = {
       withProcessStates(processName, List.empty)(action)
     }
+
+  }
+
+  trait ResultStub {
+
+    def complete(): ResultStub
+
+    def clean(): Unit
 
   }
 

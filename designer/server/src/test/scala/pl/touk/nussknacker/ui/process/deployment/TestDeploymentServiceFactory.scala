@@ -29,11 +29,11 @@ import scala.concurrent.duration.FiniteDuration
 
 class TestDeploymentServiceFactory(dbRef: DbRef) {
 
-  private val dbioRunner                                         = newDBIOActionRunner(dbRef)
-  val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(dbRef)
-  val activityRepository: ScenarioActivityRepository             = newScenarioActivityRepository(dbRef, clock)
-  val actionRepository: ScenarioActionRepository                 = newActionProcessRepository(dbRef)
-  val listener                                                   = new TestProcessChangeListener
+  private val dbioRunner                                              = newDBIOActionRunner(dbRef)
+  val fetchingScenarioDBIORepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(dbRef)
+  val activityRepository: ScenarioActivityRepository                  = newScenarioActivityRepository(dbRef, clock)
+  val actionRepository: ScenarioActionRepository                      = newActionProcessRepository(dbRef)
+  val listener                                                        = new TestProcessChangeListener
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
     new ProcessingTypeDeployedScenariosProviderStub(List.empty),
@@ -65,7 +65,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
-        fetchingProcessRepository,
+        fetchingScenarioDBIORepository,
         actionRepository,
         dbioRunner
       )
@@ -73,7 +73,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 
     val actionService = {
       new ActionService(
-        fetchingProcessRepository,
+        fetchingScenarioDBIORepository,
         actionRepository,
         dbioRunner,
         listener,

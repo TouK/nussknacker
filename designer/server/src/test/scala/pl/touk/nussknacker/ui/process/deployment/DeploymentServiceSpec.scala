@@ -66,9 +66,7 @@ class DeploymentServiceSpec
 
   import TestDeploymentServiceFactory._
 
-  private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
-    defaultProcessStateStatus = SimpleStateStatus.Running,
-  )
+  private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
     deploymentServiceFactory.create(deploymentManager)
@@ -145,17 +143,19 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
-    deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(
-        CommonCommandData(processIdWithName, Comment.from("samplePattern"), user),
-        StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-        NodesDeploymentData.empty
-      )
-    )
-
-    eventually {
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
-    }
+    deploymentManager
+      .withWaitForDeployFinish(processName) {
+        deploymentServiceWithCommentSettings
+          .processCommand(
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, Comment.from("samplePattern"), user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
+          )
+          .futureValue
+      }
+      .futureValue
   }
 
   test("should not cancel a deployed process without cancel comment when comment is required") {
@@ -163,24 +163,25 @@ class DeploymentServiceSpec
 
     val processName: ProcessName = generateProcessName
     val (processIdWithName, _)   = prepareDeployedProcess(processName).dbioActionValues
+    deploymentManager.withProcessRunning(processName) {
+      deploymentManager.withWaitForCancelFinish {
+        deploymentServiceWithCommentSettings
+          .processCommand(CancelScenarioCommand(CommonCommandData(processIdWithName, None, user)))
+          .failed
+          .futureValue
 
-    deploymentManager.withWaitForCancelFinish {
-      deploymentServiceWithCommentSettings
-        .processCommand(CancelScenarioCommand(CommonCommandData(processIdWithName, None, user)))
-        .failed
-        .futureValue
+        eventually {
+          val status = scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue
 
-      eventually {
-        val status = scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue
+          status should not be SimpleStateStatus.Canceled
 
-        status should not be SimpleStateStatus.Canceled
+          status shouldBe SimpleStateStatus.Running
+        }
 
-        status shouldBe SimpleStateStatus.Running
-      }
-
-      eventually {
-        val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
-        inProgressActions should have size 0
+        eventually {
+          val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
+          inProgressActions should have size 0
+        }
       }
     }
   }
@@ -189,21 +190,23 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
-    deploymentManager.withWaitForDeployFinish(processName) {
-      deploymentService
-        .processCommand(
-          RunDeploymentCommand(
-            CommonCommandData(processIdWithName, None, user),
-            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-            NodesDeploymentData.empty
+    deploymentManager.withProcessRunning(processName) {
+      deploymentManager.withWaitForDeployFinish(processName) {
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, None, user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
           )
-        )
-        .futureValue
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.DuringDeploy
-    }
+          .futureValue
+        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.DuringDeploy
+      }
 
-    eventually {
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
+      eventually {
+        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
+      }
     }
   }
 
@@ -237,22 +240,24 @@ class DeploymentServiceSpec
     val processName: ProcessName    = generateProcessName
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 
-    checkIsFollowingDeploy(
-      scenarioStatusProvider.getScenarioStatus(processId).futureValue,
-      expected = true
-    )
-    fetchingProcessRepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-      .dbioActionValues
-      .value
-      .lastStateAction should not be None
+    deploymentManager.withProcessRunning(processName) {
+      checkIsFollowingDeploy(
+        scenarioStatusProvider.getScenarioStatus(processId).futureValue,
+        expected = true
+      )
+      fetchingScenarioDBIORepository
+        .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+        .dbioActionValues
+        .value
+        .lastStateAction should not be None
+    }
 
     deploymentManager.withProcessFinished(processName, DeploymentId.fromActionId(deployActionId)) {
       reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses().futureValue
     }
 
     val processDetails =
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     val lastStateAction = processDetails.lastStateAction.value
     lastStateAction.actionName shouldBe ScenarioActionName.Deploy
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
@@ -275,7 +280,7 @@ class DeploymentServiceSpec
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
     def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ScenarioActionName]) = {
-      fetchingProcessRepository
+      fetchingScenarioDBIORepository
         .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
         .dbioActionValues
         .flatMap(_.lastStateAction)
@@ -284,7 +289,6 @@ class DeploymentServiceSpec
     }
 
     deploymentManager.withEmptyProcessState(processName) {
-
       checkStatusAction(SimpleStateStatus.NotDeployed, None)
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
@@ -300,9 +304,12 @@ class DeploymentServiceSpec
         listener.events shouldBe Symbol("empty")
       }
     }
-    eventually {
-      checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
-      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+
+    deploymentManager.withProcessRunning(processName) {
+      eventually {
+        checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
+        listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+      }
     }
 
     val activities = dbioRunner.run(activityRepository.findActivities(processIdWithName.id)).futureValue
@@ -339,7 +346,7 @@ class DeploymentServiceSpec
       result.getMessage shouldBe s"Not enough free slots on Flink cluster. Available slots: ${FlinkClientStub.maxParallelism}, requested: $requestedParallelism. " +
         s"Decrease scenario's parallelism or extend Flink cluster resources"
       deploymentManager.deploys should not contain processName
-      fetchingProcessRepository
+      fetchingScenarioDBIORepository
         .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
         .dbioActionValues
         .flatMap(_.lastStateAction) shouldBe None
@@ -364,7 +371,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
-    fetchingProcessRepository
+    fetchingScenarioDBIORepository
       .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
       .dbioActionValues
       .value
@@ -375,7 +382,7 @@ class DeploymentServiceSpec
     }
 
     val processDetails =
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
@@ -383,7 +390,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
-    fetchingProcessRepository
+    fetchingScenarioDBIORepository
       .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
       .dbioActionValues
       .value
@@ -394,7 +401,7 @@ class DeploymentServiceSpec
     }
 
     val processDetails =
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
@@ -535,7 +542,7 @@ class DeploymentServiceSpec
   test("Should return not deployed status for process with empty state - not deployed state") {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
-    fetchingProcessRepository
+    fetchingScenarioDBIORepository
       .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
       .dbioActionValues
       .value
@@ -548,7 +555,7 @@ class DeploymentServiceSpec
     }
 
     val processDetails =
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction shouldBe None
     processDetails.lastAction shouldBe None
   }
@@ -556,7 +563,7 @@ class DeploymentServiceSpec
   test("Should return not deployed status for process with not found state - not deployed state") {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
-    fetchingProcessRepository
+    fetchingScenarioDBIORepository
       .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
       .dbioActionValues
       .value
@@ -567,7 +574,7 @@ class DeploymentServiceSpec
     }
 
     val processDetails =
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction shouldBe None
     processDetails.lastAction shouldBe None
   }
@@ -575,7 +582,7 @@ class DeploymentServiceSpec
   test("Should return not deployed status for process without actions and with state (it should never happen) ") {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
-    fetchingProcessRepository
+    fetchingScenarioDBIORepository
       .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
       .dbioActionValues
       .value
@@ -588,7 +595,7 @@ class DeploymentServiceSpec
     }
 
     val processDetails =
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     processDetails.lastStateAction shouldBe None
     processDetails.lastAction shouldBe None
   }
@@ -653,7 +660,7 @@ class DeploymentServiceSpec
   test("Should getScenariosStatuses bulk with the same result as for single scenario") {
     val (_, _, runningScenarioId) = prepareScenariosInVariousStates
 
-    val processesDetails = fetchingProcessRepository
+    val processesDetails = fetchingScenarioDBIORepository
       .fetchLatestProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
