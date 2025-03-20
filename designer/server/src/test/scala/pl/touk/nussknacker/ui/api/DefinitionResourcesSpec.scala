@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.{parser, Json}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
@@ -28,6 +28,8 @@ import pl.touk.nussknacker.ui.definition.{
   ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+
+import scala.concurrent.duration.DurationInt
 
 class DefinitionResourcesSpec
     extends AnyFunSpec
@@ -253,9 +255,11 @@ class DefinitionResourcesSpec
       )
       val initialExpressions =
         parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
-      initialExpressions shouldEqual List("'SMS'", "''", "''")
+      initialExpressions shouldEqual List("'SMS'", "", "")
     }
   }
+
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(55.seconds.dilated)
 
   it("initial parameters for dynamic components should take into account static component configuration in file") {
     getProcessDefinitionData() ~> check {

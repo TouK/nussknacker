@@ -81,10 +81,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     Parameter[String](ParameterName("par1"))
       .copy(
         editors = List(
-          SpelParameterEditor,
           SpelTemplateParameterEditor,
+          SpelParameterEditor,
         ),
-        defaultValue = Some("''".spel)
+        defaultValue = Some("".spelTemplate)
       ),
     Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
     Parameter(ParameterName("val1"), Unknown),
@@ -234,10 +234,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       Parameter[String](ParameterName("par1"))
         .copy(
           editors = List(
-            SpelParameterEditor,
             SpelTemplateParameterEditor,
+            SpelParameterEditor,
           ),
-          defaultValue = Some("''".spel)
+          defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
       Parameter(ParameterName("val1"), Unknown),
@@ -307,10 +307,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       Parameter[String](ParameterName("par1"))
         .copy(
           editors = List(
-            SpelParameterEditor,
             SpelTemplateParameterEditor,
+            SpelParameterEditor,
           ),
-          defaultValue = Some("''".spel)
+          defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
       Parameter(ParameterName("val1"), Unknown),
@@ -393,7 +393,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .optional[CharSequence](ParameterName("optionalParameter"))
         .copy(
           editors = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(),
-          defaultValue = Some("".spel)
+          defaultValue = Some("".spelTemplate)
         )
     )
   }

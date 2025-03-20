@@ -277,11 +277,14 @@ trait TestingApiHttpServiceSpec
              |                },
              |                "editors": [
              |                    {
+             |                        "type": "SpelTemplateParameterEditor"
+             |                    },
+             |                    {
              |                        "type": "SpelParameterEditor"
              |                    }
              |                ],
              |                "defaultValue": {
-             |                    "language": "spel",
+             |                    "language": "spelTemplate",
              |                    "expression": ""
              |                },
              |                "additionalVariables": {

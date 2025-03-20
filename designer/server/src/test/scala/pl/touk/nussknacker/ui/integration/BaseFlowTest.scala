@@ -118,11 +118,11 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("param"),
             "label"        -> fromString("param"),
-            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
+            "defaultValue" -> Expression.spelTemplate("default-from-additional-ui-config-provider").asJson,
             "editors" -> fromValues(
               List(
-                encodeEditor(SpelParameterEditor),
                 encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
@@ -200,11 +200,11 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("quax"),
             "label"        -> fromString("quax"),
-            "defaultValue" -> Expression.spel("''").asJson,
+            "defaultValue" -> Expression.spelTemplate("").asJson,
             "editors" -> fromValues(
               List(
-                encodeEditor(SpelParameterEditor),
                 encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> Null,
@@ -224,11 +224,11 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("fromConfig-v1"),
             "label"        -> fromString("fromConfig-v1"),
-            "defaultValue" -> Expression.spel("''").asJson,
+            "defaultValue" -> Expression.spelTemplate("").asJson,
             "editors" -> fromValues(
               List(
-                encodeEditor(SpelParameterEditor),
                 encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> Null,

@@ -59,7 +59,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
       c
-        .withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
+        .withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("realDefault"))
         .withValue(s"componentsUiConfig.$n.params.par1.label", fromAnyRef("Parameter 1"))
     )
 
@@ -1500,10 +1500,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     Parameter[String](ParameterName("par1"))
       .copy(
         editors = List(
-          SpelParameterEditor,
           SpelTemplateParameterEditor,
+          SpelParameterEditor,
         ),
-        defaultValue = Some("'realDefault'".spel),
+        defaultValue = Some("realDefault".spelTemplate),
         labelOpt = Some("Parameter 1")
       ),
     Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
