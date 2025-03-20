@@ -35,5 +35,6 @@ export const getAdditionalComponents = createSelector(
     isCloudInstance,
     getUserSettings,
     (state: RootState) => state.cloudData?.additionalComponents,
-    (isCloud, userSettings, additionalComponents) => (isCloud && userSettings["cloud.componentCreators"] ? additionalComponents : []),
+    (isCloud, userSettings, additionalComponents) =>
+        isCloud && userSettings["cloud.showIntegrationsCreators"] ? additionalComponents : [],
 );

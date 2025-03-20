@@ -1,4 +1,5 @@
 import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
+import { useUserSettings } from "../../common/userSettings";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useDispatch, useSelector } from "react-redux";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
@@ -18,13 +19,15 @@ import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useSelector(getCapabilities);
     const [showSurvey] = useSurvey();
+    const [userSettings] = useUserSettings();
 
-    const hiddenToolbars = useMemo(
+    const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
+            "user-settings-panel": !userSettings["debug.userSettingsVisible"],
         }),
-        [editFrontend, showSurvey],
+        [editFrontend, showSurvey, userSettings],
     );
 
     return useMemo(
