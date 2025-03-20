@@ -199,8 +199,6 @@ class RemoteEnvironmentResourcesSpec
         localScenarioGraph: ScenarioGraph,
         remoteProcessName: ProcessName,
         remoteProcessVersion: Option[VersionId]
-    )(
-        implicit ec: ExecutionContext
     ): Future[Either[NuDesignerError, Map[String, ScenarioGraphComparator.Difference]]] = {
       compareInvocations = localScenarioGraph :: compareInvocations
       Future.successful(
@@ -212,16 +210,13 @@ class RemoteEnvironmentResourcesSpec
       )
     }
 
-    override def processVersions(processName: ProcessName)(
-        implicit ec: ExecutionContext
-    ): Future[List[ScenarioVersion]] = Future.successful(List())
+    override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] = Future.successful(List())
 
     override def testMigration(
         processToInclude: ScenarioWithDetailsForMigrations => Boolean,
         batchingExecutionContext: ExecutionContext
     )(
-        implicit ec: ExecutionContext,
-        loggedUser: LoggedUser
+        implicit loggedUser: LoggedUser
     ): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
@@ -235,7 +230,7 @@ class RemoteEnvironmentResourcesSpec
         localScenarioVersionId: VersionId,
         processName: ProcessName,
         isFragment: Boolean
-    )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
+    )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
       val localScenarioGraph = scenarioGraph
       migrateInvocations = localScenarioGraph :: migrateInvocations
       Future.successful(Right(()))

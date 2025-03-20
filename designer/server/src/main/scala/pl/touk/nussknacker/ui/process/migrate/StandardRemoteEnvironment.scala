@@ -5,10 +5,9 @@ import cats.implicits._
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
@@ -28,12 +27,15 @@ final case class StandardRemoteEnvironmentConfig(
 )
 
 //TODO: extract interface to remote environment?
-abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvironmentId: String)
-    extends FailFastCirceSupport
-    with RemoteEnvironment
-    with LazyLogging {
+trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment with LazyLogging {
 
-  private type FutureE[T] = EitherT[Future, NuDesignerError, T]
+  protected implicit val ec: ExecutionContext
+
+  protected val localEnvironmentId: String
+
+  protected val remoteEnvironmentId: String
+
+  protected type FutureE[T] = EitherT[Future, NuDesignerError, T]
 
   private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
 
@@ -41,19 +43,15 @@ abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvir
 
   def testModelMigrations: TestModelMigrations
 
-  implicit def materializer: Materializer
-
   override def environmentId: String = remoteEnvironmentId
 
   override def compare(
       localGraph: ScenarioGraph,
       remoteProcessName: ProcessName,
       remoteProcessVersion: Option[VersionId]
-  )(
-      implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, Map[String, Difference]]] = {
     (for {
-      process <- EitherT(fetchProcessVersion(remoteProcessName, remoteProcessVersion))
+      process <- fetchProcessVersion(remoteProcessName, remoteProcessVersion)
       compared <- EitherT.rightT[Future, NuDesignerError](
         ScenarioGraphComparator.compare(localGraph, process.scenarioGraphUnsafe)
       )
@@ -69,7 +67,7 @@ abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvir
       localScenarioVersionId: VersionId,
       processName: ProcessName,
       isFragment: Boolean
-  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
+  )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
 
     val result: EitherT[Future, NuDesignerError, Unit] = for {
       remoteScenarioDescriptionVersion <- fetchRemoteMigrationScenarioDescriptionVersion
@@ -105,9 +103,7 @@ abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvir
       case Left(apiAdapterServiceError) =>
         EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
       case Right(transformedMigrateScenarioRequest) =>
-        EitherT(
-          migrateScenario(transformedMigrateScenarioRequest)
-        )
+        migrateScenario(transformedMigrateScenarioRequest)
     }
   }
 
@@ -115,9 +111,9 @@ abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvir
   override def testMigration(
       processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,
       batchingExecutionContext: ExecutionContext
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
+  )(implicit user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
-      allBasicProcesses <- EitherT(fetchProcesses)
+      allBasicProcesses <- fetchProcesses
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
       processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext)
@@ -128,7 +124,7 @@ abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvir
   private def fetchGroupByGroup(
       basicProcesses: List[ScenarioWithDetailsForMigrations],
       batchingExecutionContext: ExecutionContext
-  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetailsForMigrations]] = {
+  ): FutureE[List[ScenarioWithDetailsForMigrations]] = {
     val groupedBasicProcesses = basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
@@ -148,29 +144,20 @@ abstract class StandardRemoteEnvironment(localEnvironmentId: String, remoteEnvir
     }
   }
 
-  override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]] =
-    ???
-
-  protected def fetchRemoteMigrationScenarioDescriptionVersion(
-      implicit ec: ExecutionContext
-  ): EitherT[Future, NuDesignerError, Int] = ???
+  protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = ???
 
   protected def migrateScenario(migrateScenarioData: MigrateScenarioData)(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
-  ): Future[Either[NuDesignerError, Unit]] = ???
+      implicit loggedUser: LoggedUser
+  ): FutureE[Unit] = ???
 
-  protected def fetchProcesses(
-      implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, List[ScenarioWithDetailsForMigrations]]] = ???
+  protected def fetchProcesses: FutureE[List[ScenarioWithDetailsForMigrations]] = ???
 
-  protected def fetchProcessVersion(name: ProcessName, remoteProcessVersion: Option[VersionId])(
-      implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = ???
+  protected def fetchProcessVersion(
+      name: ProcessName,
+      remoteProcessVersion: Option[VersionId]
+  ): FutureE[ScenarioWithDetailsForMigrations] = ???
 
-  protected def fetchProcessesDetails(names: List[ProcessName])(
-      implicit ec: ExecutionContext
-  ): EitherT[Future, NuDesignerError, List[ScenarioWithDetailsForMigrations]] = ???
+  protected def fetchProcessesDetails(names: List[ProcessName]): FutureE[List[ScenarioWithDetailsForMigrations]] = ???
 
 }
 
