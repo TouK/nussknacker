@@ -6,7 +6,8 @@ import { Context } from "../../../../common/TestResultUtils";
 
 export function ContextTree({ context, oldFields = [] }: { context: Context; oldFields?: string[] }): JSX.Element {
     const data = mapValues(context?.variables, (v) => v?.pretty);
-    const newFields = Object.keys(data).filter((k) => !oldFields.includes(k));
+    const keys = Object.keys(data);
+    const expandedFields = keys.filter((k) => !oldFields.includes(k) || (k !== "inputMeta" && keys.length === oldFields.length));
     return (
         <Box
             sx={(theme) => ({
@@ -29,8 +30,7 @@ export function ContextTree({ context, oldFields = [] }: { context: Context; old
                     BASE_BACKGROUND_COLOR: "transparent",
                     OBJECT_NAME_COLOR: "var(--objectNameColor, inherit)",
                 }}
-                expandLevel={newFields.length ? 1 : 2}
-                expandPaths={["$"].concat(newFields.map((k) => `$.${k}`))}
+                expandPaths={["$", ...expandedFields.map((k) => `$.${k}`)]}
                 data={data}
                 sortObjectKeys
                 nodeRenderer={getNodeRenderer(oldFields)}

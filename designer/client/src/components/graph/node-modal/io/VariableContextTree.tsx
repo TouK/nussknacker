@@ -7,7 +7,7 @@ import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTitle } from "./ContextTitle";
 import { useInputOutputContext } from "./InputOutputContext";
-import { NextNodesCounts } from "./NextNodesCounts";
+import { CountsForNodes } from "./CountsForNodes";
 import { ContextTree } from "./ContextTree";
 import { startCase } from "lodash";
 
@@ -84,7 +84,7 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
         <Box
             sx={{
                 width: "100%",
-                minWidth: 280,
+                minWidth: 260,
             }}
         >
             <Stack
@@ -97,7 +97,7 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
                 }}
             >
                 <Typography variant="subtitle1">{direction === "input" ? "Input context" : "Output context"}</Typography>
-                <NextNodesCounts
+                <CountsForNodes
                     nodes={(direction === "input" ? prevNodes : nodeIds).map((id) => ({
                         id,
                         count: processCounts[id]?.all,
