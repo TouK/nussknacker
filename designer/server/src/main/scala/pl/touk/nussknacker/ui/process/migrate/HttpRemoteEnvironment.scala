@@ -15,9 +15,8 @@ import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{ApiVersion, MigrateScenarioRequestDto}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData
 import pl.touk.nussknacker.ui.security.api.{AuthManager, ImpersonatedUserData, ImpersonationSupport, LoggedUser}
 
@@ -34,14 +33,15 @@ final case class HttpRemoteEnvironmentConfig(
 
 class HttpRemoteEnvironment(
     httpConfig: HttpRemoteEnvironmentConfig,
-    val testModelMigrations: TestModelMigrations,
-    localEnvironmentId: String,
-    remoteEnvironmentId: String,
+    override val testModelMigrations: TestModelMigrations,
+    override val localEnvironmentId: String,
+    override val remoteEnvironmentId: String,
     impersonationSupport: ImpersonationSupport
-)(implicit as: ActorSystem, val materializer: Materializer)
-    extends StandardRemoteEnvironment(localEnvironmentId, remoteEnvironmentId)
+)(implicit override val ec: ExecutionContext, as: ActorSystem, val materializer: Materializer)
+    extends StandardRemoteEnvironment
     with LazyLogging
     with AutoCloseable {
+
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
   private val closeTimeout = 10 seconds
@@ -54,16 +54,15 @@ class HttpRemoteEnvironment(
 
   def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 
-  override def processVersions(processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[List[ScenarioVersion]] =
-    invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", processName.value)).map { result =>
+  override def processVersions(processName: ProcessName): Future[List[ScenarioVersion]] =
+    invokeJson[ScenarioWithDetailsForMigrations](
+      HttpMethods.GET,
+      List("processes", processName.value)
+    ).map { result =>
       result.fold(_ => List(), _.historyUnsafe)
     }
 
-  override protected def fetchRemoteMigrationScenarioDescriptionVersion(
-      implicit ec: ExecutionContext
-  ): EitherT[Future, NuDesignerError, Int] = {
+  override protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = {
     EitherT {
       invokeJson[ApiVersion](
         HttpMethods.GET,
@@ -74,23 +73,22 @@ class HttpRemoteEnvironment(
     }
   }
 
-  override protected def migrateScenario(migrateScenarioData: MigrateScenarioData)(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
-  ): Future[Either[NuDesignerError, Unit]] = {
+  override protected def migrateScenario(
+      migrateScenarioData: MigrateScenarioData
+  )(implicit loggedUser: LoggedUser): FutureE[Unit] = {
     val dto = MigrateScenarioData.fromDomain(migrateScenarioData)
-    invokeForSuccess(
-      HttpMethods.POST,
-      List("migrate"),
-      Query.Empty,
-      HttpEntity(dto.asJson.noSpaces),
-      impersonationHeader(loggedUser)
-    )
+    EitherT {
+      invokeForSuccess(
+        HttpMethods.POST,
+        List("migrate"),
+        Query.Empty,
+        HttpEntity(dto.asJson.noSpaces),
+        impersonationHeader(loggedUser)
+      )
+    }
   }
 
-  override protected def fetchProcesses(
-      implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, List[ScenarioWithDetailsForMigrations]]] = {
+  override protected def fetchProcesses: FutureE[List[ScenarioWithDetailsForMigrations]] = EitherT {
     invokeJson[List[ScenarioWithDetailsForMigrations]](
       HttpMethods.GET,
       List("processes"),
@@ -98,9 +96,10 @@ class HttpRemoteEnvironment(
     )
   }
 
-  override protected def fetchProcessVersion(name: ProcessName, remoteProcessVersion: Option[VersionId])(
-      implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
+  override protected def fetchProcessVersion(
+      name: ProcessName,
+      remoteProcessVersion: Option[VersionId]
+  ): FutureE[ScenarioWithDetailsForMigrations] = EitherT {
     invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
       List("processes", name.value) ++ remoteProcessVersion.map(_.value.toString).toList,
@@ -108,9 +107,9 @@ class HttpRemoteEnvironment(
     )
   }
 
-  override protected def fetchProcessesDetails(names: List[ProcessName])(
-      implicit ec: ExecutionContext
-  ): EitherT[Future, NuDesignerError, List[ScenarioWithDetailsForMigrations]] = EitherT {
+  override protected def fetchProcessesDetails(
+      names: List[ProcessName]
+  ): FutureE[List[ScenarioWithDetailsForMigrations]] = EitherT {
     invokeJson[List[ScenarioWithDetailsForMigrations]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
@@ -166,7 +165,7 @@ class HttpRemoteEnvironment(
       query: Query = Query.Empty,
       requestEntity: RequestEntity,
       headers: Seq[HttpHeader]
-  )(implicit ec: ExecutionContext): Future[XError[Unit]] =
+  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, Unit]] =
     invoke(method, pathParts, query, requestEntity, headers) { response =>
       if (response.status.isSuccess()) {
         response.discardEntityBytes()
@@ -190,7 +189,7 @@ class HttpRemoteEnvironment(
       } else {
         Unmarshaller
           .stringUnmarshaller(response.entity)
-          .map(error => Either.left(RemoteEnvironmentCommunicationError(response.status, error)))
+          .map(error => RemoteEnvironmentCommunicationError(response.status, error).asLeft)
       }
     }
   }
