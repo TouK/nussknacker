@@ -8,7 +8,6 @@ import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -25,13 +24,13 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import sttp.client3.testing.SttpBackendStub
 
-import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-import scala.util.Success
+import scala.util.{Failure, Success}
+import scala.util.control.NonFatal
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
 class MockDeploymentManager private (
@@ -67,7 +66,6 @@ class MockDeploymentManager private (
   @volatile
   var delayBeforeStateReturn: FiniteDuration = 0 seconds
 
-  // queue of invocations to e.g. check that deploy was already invoked in "DeploymentManager"
   val successfulDeploys = new ConcurrentLinkedQueue[ProcessName]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -113,9 +111,13 @@ class MockDeploymentManager private (
         defaultDeployResult
       )
       .map { result =>
-        logger.debug(s"Adding deploy for ${processVersion.processName}")
+        logger.debug(s"Deploy successful for ${processVersion.processName}")
         successfulDeploys.add(processVersion.processName)
         result
+      }
+      .recoverWith { case NonFatal(ex) =>
+        logger.error(s"Deploy failed for ${processVersion.processName}", ex)
+        Future.failed(ex)
       }
   }
 
@@ -156,8 +158,11 @@ object MockDeploymentManager {
 
   def create(
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
-      defaultDeployResult: Future[Option[ExternalDeploymentId]] =
-        Future.failed(new IllegalAccessException("Unexpected deploy. Check if withWaitForDeployFinish has been used.")),
+      defaultDeployResult: Future[Option[ExternalDeploymentId]] = Future.failed(
+        new IllegalAccessException(
+          "Unexpected deploy. Check if either withStubbedDeployFinish or withWaitForDeployFinish has been used."
+        )
+      ),
       defaultCancelResult: Future[Unit] =
         Future.failed(new IllegalAccessException("Unexpected cancel. Check if withWaitForCancelFinish has been used."))
   ): MockDeploymentManager = {
@@ -203,36 +208,31 @@ object MockDeploymentManager {
   // Pass correct deploymentId
   private[mock] def sampleDeploymentId: DeploymentId = DeploymentId(UUID.randomUUID().toString)
 
-  private def sampleCustomActionActivity(processVersion: ProcessVersion) =
-    ScenarioActivity.CustomAction(
-      scenarioId = ScenarioId(processVersion.processId.value),
-      scenarioActivityId = ScenarioActivityId.random,
-      user = ScenarioUser.internalNuUser,
-      date = Instant.now(),
-      scenarioVersionId = Some(ScenarioVersionId.from(processVersion.versionId)),
-      actionName = "Custom action of MockDeploymentManager just before deployment",
-      comment = ScenarioComment.from(
-        content = "With comment from DeploymentManager",
-        lastModifiedByUserName = ScenarioUser.internalNuUser.name,
-        lastModifiedAt = Instant.now()
-      ),
-      result = DeploymentResult.Success(Instant.now()),
-    )
-
 }
 
 object MockDeploymentManagerSyntaxSugar {
 
   implicit class Ops(deploymentManager: MockDeploymentManager) {
 
+    def withStubbedDeployFinish[T](name: ProcessName)(action: => T): T = {
+      val future = Future.successful(Option.empty[ExternalDeploymentId])
+      deploymentManager.deployResult.put(name, future)
+      try {
+        action
+      } finally {
+        deploymentManager.deployResult.remove(name, future)
+      }
+    }
+
     def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
       val promise = Promise[Option[ExternalDeploymentId]]()
-      deploymentManager.deployResult.put(name, promise.future)
+      val future  = promise.future
+      deploymentManager.deployResult.put(name, future)
       try {
         action
       } finally {
         promise.complete(Success(None))
-        deploymentManager.deployResult.remove(name, promise.future)
+        deploymentManager.deployResult.remove(name, future)
       }
     }
 

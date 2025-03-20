@@ -49,13 +49,13 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None
   ): TestDeploymentServiceServices = {
-    val processingTypeDataProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
+    val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
     )
 
     val dmDispatcher = {
       val futureFetchingProcessRepository = newFutureFetchingScenarioRepository(dbRef)
-      new DeploymentManagerDispatcher(processingTypeDataProvider, futureFetchingProcessRepository)
+      new DeploymentManagerDispatcher(deploymentManagerProvider, futureFetchingProcessRepository)
     }
 
     val deploymentsStatusesProvider =

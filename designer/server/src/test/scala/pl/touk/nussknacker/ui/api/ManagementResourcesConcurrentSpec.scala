@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{PatientScalaFutures, VeryPatientScalaFutures}
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
@@ -22,7 +22,7 @@ class ManagementResourcesConcurrentSpec
     with ScalatestRouteTest
     with FailFastCirceSupport
     with Matchers
-    with PatientScalaFutures
+    with VeryPatientScalaFutures
     with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
@@ -33,7 +33,7 @@ class ManagementResourcesConcurrentSpec
     val scenario    = ProcessTestData.sampleScenario.withProcessName(processName)
     saveCanonicalProcessAndAssertSuccess(scenario)
 
-    deploymentManager.withWaitForDeployFinish(processName) {
+    deploymentManager.withStubbedDeployFinish(processName) {
       val firstDeployResult  = deployProcess(processName)
       val secondDeployResult = deployProcess(processName)
       eventually {
@@ -61,7 +61,7 @@ class ManagementResourcesConcurrentSpec
 
     val scenario = ProcessTestData.sampleScenario.withProcessName(processName)
     saveCanonicalProcessAndAssertSuccess(scenario)
-    deploymentManager.withWaitForDeployFinish(processName) {
+    deploymentManager.withStubbedDeployFinish(processName) {
       val firstDeployResult = deployProcess(processName)
       // we have to check if deploy was invoke, otherwise cancel can be faster than deploy
       eventually {

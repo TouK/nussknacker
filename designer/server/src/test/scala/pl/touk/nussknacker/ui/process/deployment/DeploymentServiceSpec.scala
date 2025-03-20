@@ -784,6 +784,19 @@ class DeploymentServiceSpec
     }
   }
 
+  test("should recover jobs") {
+    val processName = generateProcessName
+    prepareDeployedProcess(processName).dbioActionValues
+
+    deploymentManager.withStubbedDeployFinish(processName) {
+      reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true).futureValue
+    }
+
+    eventually {
+      deploymentManager.successfulDeploys should contain(processName)
+    }
+  }
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     listener.clear()
