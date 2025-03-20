@@ -8,7 +8,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData}
+import pl.touk.nussknacker.engine.{JobsRecoveryOptions, MetaDataInitializer, ModelData}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
@@ -881,6 +881,7 @@ class DefaultComponentServiceSpec
           MetaDataInitializer("streaming", Map.empty[String, String]),
           deploymentScenarioPropertiesConfig = Map.empty,
           additionalValidators = List.empty,
+          jobsRecoveryOptions = JobsRecoveryOptions.noRecovery,
           engineSetupName = EngineSetupName("Mock")
         )
         ProcessingTypeData.createProcessingTypeData(

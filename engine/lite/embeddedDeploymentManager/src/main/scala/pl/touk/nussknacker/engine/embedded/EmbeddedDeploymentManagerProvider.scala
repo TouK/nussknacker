@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.embedded
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{BaseModelDataProvider, CustomProcessValidator, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{
+  BaseModelDataProvider,
+  CustomProcessValidator,
+  DeploymentManagerDependencies,
+  JobsRecoveryOptions
+}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
@@ -46,5 +51,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     Nil,
     List(EmbeddedRequestResponseScenarioValidator)
   )
+
+  override def jobsRecoveryOptions(config: Config): JobsRecoveryOptions = JobsRecoveryOptions(recoverJobsOnStart = true)
 
 }

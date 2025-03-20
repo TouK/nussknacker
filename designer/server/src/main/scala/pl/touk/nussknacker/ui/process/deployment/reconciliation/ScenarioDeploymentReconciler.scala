@@ -1,21 +1,40 @@
 package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
+import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.JobsRecoveryOptions
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  DeploymentManager,
+  DeploymentUpdateStrategy,
+  DMRunDeploymentCommand
+}
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.Fresh
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId, User}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioActionRepository}
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, FetchingProcessRepository, ScenarioActionRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class ScenarioDeploymentReconciler(
-    allProcessingTypes: => Iterable[ProcessingType],
+    processingTypeServicesProvider: ProcessingTypeDataProvider[
+      ScenarioDeploymentReconciler.ProcessingTypeServicesDeps,
+      _
+    ],
     deploymentStatusesProvider: EngineSideDeploymentStatusesProvider,
     actionRepository: ScenarioActionRepository,
+    scenarioRepository: FetchingProcessRepository[Future],
     dbioActionRunner: DBIOActionRunner
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
@@ -29,7 +48,7 @@ class ScenarioDeploymentReconciler(
     for {
       // Currently, synchronization is supported only for DeploymentManagers that supports DeploymentsStatusesQueryForAllScenarios
       bulkQueriedStatuses <- deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(
-        allProcessingTypes
+        processingTypeServicesProvider.all.keys
       )
       deploymentStatuses = bulkQueriedStatuses.getAllDeploymentStatuses
       // We compare status by instances instead of by names. Thanks to that, PeriodicStateStatus won't be handled.
@@ -50,5 +69,105 @@ class ScenarioDeploymentReconciler(
       }
     }
   }
+
+  def recoverNotRunningDeploymentsThatShouldBeRunning(shouldRecover: JobsRecoveryOptions => Boolean): Future[Unit] = {
+    implicit val user: LoggedUser                     = NussknackerInternalUser.instance
+    implicit val freshnessPolicy: DataFreshnessPolicy = Fresh
+    val processingTypeForWhichJobsShouldBeRecovered = processingTypeServicesProvider.all.toList.collect {
+      case (processingType, processingTypeServices) if shouldRecover(processingTypeServices.jobsRecoveryOptions) =>
+        processingType
+    }
+    for {
+      // Currently, job recovery is supported only for DeploymentManagers that supports DeploymentsStatusesQueryForAllScenarios
+      bulkQueriedStatuses <- deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(
+        processingTypeForWhichJobsShouldBeRecovered
+      )
+      // In the perfect World we would fetch all deployments that are not finished for all scenarios, but with action model, we have to fetch deployed scenarios
+      // (having last state action = deploy and state = finished (not execution finished)). See comment in newdeployment.DeploymentService
+      lastDeployedScenarios <- scenarioRepository.fetchLatestProcessesDetails[CanonicalProcess](
+        ScenarioQuery.deployed.copy(processingTypes = Some(processingTypeForWhichJobsShouldBeRecovered))
+      )
+      notFinishedDeploymentsForScenario = lastDeployedScenarios.map(scenario =>
+        (scenario, DeploymentId.fromActionId(scenario.lastDeployedAction.get.id))
+      )
+      notFinishedDeploymentsThatAreNotRunning = notFinishedDeploymentsForScenario.filter {
+        case (scenario, deploymentId) =>
+          val bulkQueriedStatusForScenario = bulkQueriedStatuses.getDeploymentStatusesUnsafe(scenario.idData).value
+          !bulkQueriedStatusForScenario.exists(status =>
+            status.deploymentId.contains(deploymentId) && SimpleStateStatus.DefaultFollowingDeployStatuses.contains(
+              status.status
+            )
+          )
+      }
+      runDeploymentCommandsByProcessingType <-
+        Future
+          .sequence(notFinishedDeploymentsThatAreNotRunning.map { case (scenario, deploymentId) =>
+            val lastDeployAction = scenario.lastDeployedAction.get
+            // TODO: what should be in name?
+            val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
+            val deploymentData = DeploymentData(
+              deploymentId,
+              deployingUser,
+              // TODO: Store this data and use them during jobs recovery. Currently after restart some jobs will work differently
+              nodesData = NodesDeploymentData.empty,
+              additionalDeploymentData = Map.empty,
+              additionalModelConfigs = AdditionalModelConfigs.empty
+            )
+            processingTypeServicesProvider
+              .forProcessingTypeUnsafe(scenario.processingType)
+              .scenarioResolver
+              .resolveScenario(scenario.json)
+              .map {
+                case Validated.Valid(resolvedScenario) =>
+                  Some(
+                    scenario.processingType -> DMRunDeploymentCommand(
+                      scenario.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
+                      deploymentData,
+                      resolvedScenario,
+                      DeploymentUpdateStrategy
+                        .ReplaceDeploymentWithSameScenarioName(RestoreStateFromReplacedJobSavepoint)
+                    )
+                  )
+                case Validated.Invalid(errors) =>
+                  logger.error(
+                    s"Errors during scenario [${scenario.name}] resolution for job recovery purpose: " +
+                      s"${errors.map(PrettyValidationErrors.formatErrorMessage).toList.mkString}. Scenario won't be recovered"
+                  )
+                  None
+              }
+          })
+          .map(_.flatten)
+      _ = Future.sequence(runDeploymentCommandsByProcessingType.map { case (processingType, data) =>
+        logger.info(
+          s"Recovering scenario [${data.processVersion.processName}] deployment [${data.deploymentData.deploymentId}]"
+        )
+        val deployResultFuture = processingTypeServicesProvider
+          .forProcessingTypeUnsafe(processingType)
+          .deploymentManager
+          .processCommand(data)
+        deployResultFuture.andThen {
+          case Success(_) =>
+            logger.info(
+              s"Scenario [${data.processVersion.processName}] deployment [${data.deploymentData.deploymentId}] recovery finished successfully"
+            )
+          case Failure(ex) =>
+            logger.warn(
+              s"Scenario [${data.processVersion.processName}] deployment [${data.deploymentData.deploymentId}] recovery failed. Application will start anyway.",
+              ex
+            )
+        }
+      })
+    } yield ()
+  }
+
+}
+
+object ScenarioDeploymentReconciler {
+
+  final class ProcessingTypeServicesDeps(
+      val deploymentManager: DeploymentManager,
+      val jobsRecoveryOptions: JobsRecoveryOptions,
+      val scenarioResolver: ScenarioResolver
+  )
 
 }

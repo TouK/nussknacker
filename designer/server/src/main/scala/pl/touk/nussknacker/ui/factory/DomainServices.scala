@@ -61,7 +61,7 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 
 final class DomainServices(
     val futureProcessRepository: FetchingProcessRepository[Future],
@@ -215,18 +215,6 @@ object DomainServices {
         alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
       )
 
-      reconciler = new ScenarioDeploymentReconciler(
-        deploymentData.keys,
-        deploymentsStatusesProvider,
-        actionRepository,
-        dbioRunner
-      )
-      _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
-        actorSystem,
-        reconciler,
-        alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
-      )
-
       scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
       fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
@@ -299,6 +287,28 @@ object DomainServices {
           fragmentRepository
         )
       }
+
+      reconciler = new ScenarioDeploymentReconciler(
+        processingTypeServicesProvider.mapValues(services =>
+          new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
+            services.deploymentData.validDeploymentManagerOrStub,
+            services.deploymentData.jobsRecoveryOptions,
+            services.scenarioResolver
+          )
+        ),
+        deploymentsStatusesProvider,
+        actionRepository,
+        futureProcessRepository,
+        dbioRunner
+      )
+      _ <- Resource.eval(
+        IO.fromFuture(IO(reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart)))
+      )
+      _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
+        actorSystem,
+        reconciler,
+        alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
+      )
 
       _ = Initialization.init(
         migrations,

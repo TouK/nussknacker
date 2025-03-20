@@ -111,9 +111,12 @@ object TestFactory {
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
-  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
-    Streaming.stringify -> new ScenarioResolver(sampleResolver, Streaming.stringify)
-  )
+  val scenarioResolver = new ScenarioResolver(sampleResolver, Streaming.stringify)
+
+  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] =
+    mapProcessingTypeDataProvider(
+      Streaming.stringify -> scenarioResolver
+    )
 
   def additionalComponentConfigsByProcessingType
       : ProcessingTypeDataProvider[Map[DesignerWideComponentId, ComponentAdditionalConfig], _] =

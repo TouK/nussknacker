@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -182,17 +183,7 @@ class EmbeddedDeploymentManager(
       WithDataFreshnessStatus.fresh(
         deployments
           .get(scenarioName)
-          .map { interpreterData =>
-            DeploymentStatusDetails(
-              status = interpreterData.scenarioDeployment
-                .fold(
-                  _ => ProblemStateStatus(s"Scenario compilation errors"),
-                  deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
-                ),
-              deploymentId = Some(interpreterData.deploymentId),
-              version = Some(interpreterData.scenarioVersionId)
-            )
-          }
+          .map(_.statusDetails)
           .toList
       )
     )
@@ -217,8 +208,16 @@ class EmbeddedDeploymentManager(
 
     }
 
-  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-    NoDeploymentsStatusesQueryForAllScenariosSupport
+  override val deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    new DeploymentsStatusesQueryForAllScenariosSupported {
+      override def getAllScenariosDeploymentsStatuses()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
+        Future {
+          WithDataFreshnessStatus.fresh(deployments.mapValuesNow(deployment => List(deployment.statusDetails)))
+        }
+      }
+    }
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
@@ -232,10 +231,22 @@ class EmbeddedDeploymentManager(
 
   override protected def executionContext: ExecutionContext = ec
 
-  private sealed case class ScenarioDeploymentData(
+  private case class ScenarioDeploymentData(
       deploymentId: DeploymentId,
       scenarioVersionId: VersionId,
       scenarioDeployment: Try[Deployment]
-  )
+  ) {
+
+    def statusDetails = DeploymentStatusDetails(
+      status = scenarioDeployment
+        .fold(
+          _ => ProblemStateStatus(s"Scenario compilation errors"),
+          deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
+        ),
+      deploymentId = Some(deploymentId),
+      version = Some(scenarioVersionId)
+    )
+
+  }
 
 }

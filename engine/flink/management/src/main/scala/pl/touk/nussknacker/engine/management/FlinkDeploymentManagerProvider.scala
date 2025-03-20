@@ -61,6 +61,11 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
     Try(config.getString(RestUrlPath)).toOption
   }
 
+  override def jobsRecoveryOptions(deploymentConfig: Config): JobsRecoveryOptions = {
+    val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
+    JobsRecoveryOptions(recoverJobsOnStart = flinkConfig.useMiniClusterForDeployment)
+  }
+
 }
 
 object FlinkDeploymentManagerProvider extends LazyLogging {

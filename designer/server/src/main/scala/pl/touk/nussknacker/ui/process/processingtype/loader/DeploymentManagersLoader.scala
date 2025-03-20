@@ -109,12 +109,14 @@ object DeploymentManagersLoader {
         ) ++ schedulingProperties
         val additionalValidators =
           deploymentManagerProvider.additionalValidators(processingTypeConfig.deploymentConfig)
+        val jobsRecoveryOptions = deploymentManagerProvider.jobsRecoveryOptions(processingTypeConfig.deploymentConfig)
         DeploymentDataWithEngineNameInput(
           processingTypeConfig.deploymentManagerType,
           validDeploymentManager,
           metaDataInitializer,
           deploymentScenarioPropertiesConfig,
           additionalValidators,
+          jobsRecoveryOptions,
           nameInputData,
           processingTypeConfig.category
         )
@@ -148,6 +150,7 @@ object DeploymentManagersLoader {
               metaDataInitializer,
               deploymentScenarioPropertiesConfig,
               additionalValidators,
+              jobsRecoveryOptions,
               _,
               category
             )
@@ -158,6 +161,7 @@ object DeploymentManagersLoader {
           metaDataInitializer = metaDataInitializer,
           deploymentScenarioPropertiesConfig = deploymentScenarioPropertiesConfig,
           additionalValidators = additionalValidators,
+          jobsRecoveryOptions = jobsRecoveryOptions,
           engineSetupName = engineSetupNames(processingType)
         )
         processingType -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(deploymentData, Set(category))
@@ -170,6 +174,7 @@ object DeploymentManagersLoader {
       metaDataInitializer: MetaDataInitializer,
       deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       additionalValidators: List[CustomProcessValidator],
+      jobsRecoveryOptions: JobsRecoveryOptions,
       nameInputData: EngineNameInputData,
       category: String
   )
