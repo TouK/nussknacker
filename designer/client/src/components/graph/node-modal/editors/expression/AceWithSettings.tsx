@@ -14,7 +14,7 @@ export default forwardRef(function AceWithSettings(
     const [userSettings, toggleSettings] = useUserSettings();
 
     const [showLinesName, noWrapName] = useMemo<(keyof UserSettings)[]>(
-        () => [`${props.inputProps.language}.showLines`, `${props.inputProps.language}.noWrap`],
+        () => [`editor.${props.inputProps.language}.showLines`, `editor.${props.inputProps.language}.noWrap`],
         [props],
     );
 
