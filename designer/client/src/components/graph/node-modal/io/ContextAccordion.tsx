@@ -39,7 +39,10 @@ export const ContextAccordion = ({
                 },
             }}
             ref={accordionRef}
-            disableGutters
+            // disableGutters
+            sx={{
+                zoom: 0.75,
+            }}
         >
             <AccordionSummary expandIcon={<ExpandMore />} sx={{ overflow: "hidden" }}>
                 {title}

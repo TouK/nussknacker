@@ -87,9 +87,9 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
 
     return (
         <Wrapper>
-            <Allotment ref={ref} onChange={onChange} defaultSizes={[240, 820, 240]}>
-                <Allotment.Pane preferredSize="18.5%" minSize={collapsedSize}>
-                    <SidePanelBox sx={{ alignItems: "start", overflowY: leftCollapsed ? "hidden" : "auto" }}>
+            <Allotment ref={ref} onChange={onChange} defaultSizes={[278, 820, 278]}>
+                <Allotment.Pane preferredSize="20%" minSize={collapsedSize}>
+                    <SidePanelBox sx={{ alignItems: "flex-start", overflowY: leftCollapsed ? "hidden" : "auto" }}>
                         <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
                             <VariableContextTree direction="input" />
                         </ErrorBoundary>
@@ -98,11 +98,11 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
                         <ExpandLess />
                     </PanelButton>
                 </Allotment.Pane>
-                <Allotment.Pane minSize={820} preferredSize="63%" className={shadowClassName}>
+                <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
                     {children}
                 </Allotment.Pane>
-                <Allotment.Pane preferredSize="18.5%" minSize={collapsedSize}>
-                    <SidePanelBox sx={{ alignItems: "end", overflowY: rightCollapsed ? "hidden" : "auto" }}>
+                <Allotment.Pane preferredSize="20%" minSize={collapsedSize}>
+                    <SidePanelBox sx={{ alignItems: "flex-end", overflowY: rightCollapsed ? "hidden" : "auto" }}>
                         <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
                             <VariableContextTree direction="output" />
                         </ErrorBoundary>
