@@ -51,7 +51,7 @@ class ManagementResourcesConcurrentSpec
       val statuses = List(firstStatus, secondStatus)
       statuses should contain only (StatusCodes.OK, StatusCodes.Conflict)
       eventually {
-        deploymentManager.deploys.asScala.count(_ == processName) shouldBe 1
+        deploymentManager.successfulDeploys.asScala.count(_ == processName) shouldBe 1
       }
     }
   }
@@ -65,7 +65,7 @@ class ManagementResourcesConcurrentSpec
       val firstDeployResult = deployProcess(processName)
       // we have to check if deploy was invoke, otherwise cancel can be faster than deploy
       eventually {
-        deploymentManager.deploys.asScala.count(_ == processName) shouldBe 1
+        deploymentManager.successfulDeploys.asScala.count(_ == processName) shouldBe 1
       }
       cancelProcess(processName) ~> check {
         status shouldBe StatusCodes.OK

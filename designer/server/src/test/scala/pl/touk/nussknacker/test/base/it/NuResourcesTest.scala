@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -68,6 +69,7 @@ import java.net.URI
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.util.Success
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -107,7 +109,12 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
+  protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
+    // In pekko tests, it is hard to use deploymentManager.withWaitForDeployFinish(...) syntax because checks are done in function pipeline
+    // so we stub results with happy-path defaults. After rewriting endpoint to Tapir, and tests to rest-assured based it should be easier
+    defaultDeployResult = Future.successful(None),
+    defaultCancelResult = Future.successful(())
+  )
 
   protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
 

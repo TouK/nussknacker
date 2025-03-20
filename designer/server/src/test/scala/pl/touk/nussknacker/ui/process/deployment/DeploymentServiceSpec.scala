@@ -66,9 +66,7 @@ class DeploymentServiceSpec
 
   import TestDeploymentServiceFactory._
 
-  private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
-    defaultProcessStateStatus = SimpleStateStatus.Running,
-  )
+  private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
     deploymentServiceFactory.create(deploymentManager)
@@ -145,17 +143,19 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
-    deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(
-        CommonCommandData(processIdWithName, Comment.from("samplePattern"), user),
-        StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-        NodesDeploymentData.empty
-      )
-    )
-
-    eventually {
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
-    }
+    deploymentManager
+      .withWaitForDeployFinish(processName) {
+        deploymentServiceWithCommentSettings
+          .processCommand(
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, Comment.from("samplePattern"), user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
+          )
+          .futureValue
+      }
+      .futureValue
   }
 
   test("should not cancel a deployed process without cancel comment when comment is required") {
@@ -163,12 +163,12 @@ class DeploymentServiceSpec
 
     val processName: ProcessName = generateProcessName
     val (processIdWithName, _)   = prepareDeployedProcess(processName).dbioActionValues
-
-    deploymentManager.withWaitForCancelFinish {
-      deploymentServiceWithCommentSettings
+    deploymentManager.withProcessRunning(processName) {
+      val error = deploymentServiceWithCommentSettings
         .processCommand(CancelScenarioCommand(CommonCommandData(processIdWithName, None, user)))
         .failed
         .futureValue
+      error.getMessage shouldBe "Comment is required."
 
       eventually {
         val status = scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue
@@ -189,21 +189,23 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
-    deploymentManager.withWaitForDeployFinish(processName) {
-      deploymentService
-        .processCommand(
-          RunDeploymentCommand(
-            CommonCommandData(processIdWithName, None, user),
-            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-            NodesDeploymentData.empty
+    deploymentManager.withProcessRunning(processName) {
+      deploymentManager.withWaitForDeployFinish(processName) {
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, None, user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
           )
-        )
-        .futureValue
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.DuringDeploy
-    }
+          .futureValue
+        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.DuringDeploy
+      }
 
-    eventually {
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
+      eventually {
+        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
+      }
     }
   }
 
@@ -237,15 +239,17 @@ class DeploymentServiceSpec
     val processName: ProcessName    = generateProcessName
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 
-    checkIsFollowingDeploy(
-      scenarioStatusProvider.getScenarioStatus(processId).futureValue,
-      expected = true
-    )
-    fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-      .dbioActionValues
-      .value
-      .lastStateAction should not be None
+    deploymentManager.withProcessRunning(processName) {
+      checkIsFollowingDeploy(
+        scenarioStatusProvider.getScenarioStatus(processId).futureValue,
+        expected = true
+      )
+      fetchingScenarioDBIORepository
+        .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+        .dbioActionValues
+        .value
+        .lastStateAction should not be None
+    }
 
     deploymentManager.withProcessFinished(processName, DeploymentId.fromActionId(deployActionId)) {
       reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses().futureValue
@@ -284,7 +288,6 @@ class DeploymentServiceSpec
     }
 
     deploymentManager.withEmptyProcessState(processName) {
-
       checkStatusAction(SimpleStateStatus.NotDeployed, None)
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
@@ -300,9 +303,12 @@ class DeploymentServiceSpec
         listener.events shouldBe Symbol("empty")
       }
     }
-    eventually {
-      checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
-      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+
+    deploymentManager.withProcessRunning(processName) {
+      eventually {
+        checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
+        listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+      }
     }
 
     val activities = dbioRunner.run(activityRepository.findActivities(processIdWithName.id)).futureValue
@@ -338,7 +344,7 @@ class DeploymentServiceSpec
           .futureValue
       result.getMessage shouldBe s"Not enough free slots on Flink cluster. Available slots: ${FlinkClientStub.maxParallelism}, requested: $requestedParallelism. " +
         s"Decrease scenario's parallelism or extend Flink cluster resources"
-      deploymentManager.deploys should not contain processName
+      deploymentManager.successfulDeploys should not contain processName
       fetchingScenarioDBIORepository
         .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
         .dbioActionValues
@@ -781,7 +787,7 @@ class DeploymentServiceSpec
   override def beforeEach(): Unit = {
     super.beforeEach()
     listener.clear()
-    deploymentManager.deploys.clear()
+    deploymentManager.successfulDeploys.clear()
   }
 
   private def checkIsFollowingDeploy(status: StateStatus, expected: Boolean) = {

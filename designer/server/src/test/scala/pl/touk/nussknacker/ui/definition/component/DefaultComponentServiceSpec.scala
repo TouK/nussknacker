@@ -52,7 +52,6 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ScenarioParametersService,
   ValueWithRestriction
 }
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api._
