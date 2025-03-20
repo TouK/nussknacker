@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSettings, toggleSettings } from "../actions/nk/userSettings";
 import { getUserSettings } from "../reducers/selectors/userSettings";

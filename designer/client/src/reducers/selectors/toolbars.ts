@@ -1,20 +1,25 @@
 import { createSelector } from "reselect";
-import { defaultToolbarsConfig } from "../../components/toolbarSettings/defaultToolbarsConfig";
+import { fallbackToolbarsConfig } from "../../components/toolbarSettings/fallbackToolbarsConfig";
+import { ToolbarsConfig } from "../../components/toolbarSettings/types";
+import { WithId } from "../../types/common";
 import { RootState } from "../index";
 import { ToolbarsSide, ToolbarsState, ToolbarsStates } from "../toolbars";
 import { isArchived, isFragment } from "./graph";
 import { getSettings } from "./settings";
-import { getUserSettings } from "./userSettings";
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {};
-export const getToolbarsConfig = createSelector(
-    getSettings,
-    isFragment,
-    isArchived,
-    getUserSettings,
-    (settings, fragment, archived, userSettings) =>
-        settings?.processToolbarsConfiguration || defaultToolbarsConfig(fragment, archived, userSettings["debug.userSettingsVisible"]),
-);
+
+const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }: WithId<ToolbarsConfig>): WithId<ToolbarsConfig> => ({
+    ...toolbars,
+    [ToolbarsSide.TopRight]: [{ id: "survey-panel" }, ...topRight],
+    [ToolbarsSide.BottomRight]: [...bottomRight, { id: "user-settings-panel" }],
+});
+
+export const getToolbarsConfig = createSelector(getSettings, isFragment, isArchived, (settings, fragment, archived) => {
+    const toolbars = settings?.processToolbarsConfiguration || fallbackToolbarsConfig(fragment, archived);
+    return appendDefaultToolbars(toolbars);
+});
+
 export const getToolbarsConfigId = createSelector(getToolbarsConfig, getToolbarsState, (c, t) => c?.id || t?.currentConfigId);
 export const getToolbars = createSelector(getToolbarsState, getToolbarsConfigId, (t, id) => t?.[`#${id}`] || ({} as ToolbarsState));
 export const getToolbarsInitData = createSelector(getToolbars, (t) => t.initData || []);

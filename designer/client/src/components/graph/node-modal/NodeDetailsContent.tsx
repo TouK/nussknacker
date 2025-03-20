@@ -49,7 +49,8 @@ export const NodeDetailsContent = ({
     }, [configuredAdditionalComponents, node]);
 
     const nodeSwitcherVisible =
-        creatorType && (creatorType === "aggregate" ? userSettings["node.showAggregateSwitcher"] : userSettings["cloud.componentCreators"]);
+        creatorType &&
+        (creatorType === "aggregate" ? userSettings["node.showAggregateSwitcher"] : userSettings["cloud.showIntegrationsCreators"]);
 
     const tenantId = useSelector(getRemoteTenantId);
     const cloudHost = useSelector(getRemoteWebHost);

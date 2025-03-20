@@ -43,7 +43,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const [settings] = useUserSettings();
     const isCloud = useSelector(isCloudInstance);
     useEffect(() => {
-        if (isCloud && settings["cloud.componentCreators"]) {
+        if (isCloud && settings["cloud.showIntegrationsCreators"]) {
             dispatch(getAdditionalComponents());
         }
     }, [dispatch, isCloud, settings]);

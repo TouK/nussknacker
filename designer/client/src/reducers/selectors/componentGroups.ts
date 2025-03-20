@@ -19,8 +19,8 @@ export const getComponentGroupsExtender = createSelector(
     getAdditionalComponents,
     (stickyNotesSettings, pristine, isFragment, userSettings, additionalComponents): ((c: ComponentGroup[]) => ComponentGroup[]) =>
         compactFlow(
-            userSettings["node.fragmentCreator"] && appendFragmentCreator(isFragment),
-            userSettings["cloud.componentCreators"] && appendAdditionalCreators(additionalComponents),
+            userSettings["node.showFragmentCreator"] && appendFragmentCreator(isFragment),
+            userSettings["cloud.showIntegrationsCreators"] && appendAdditionalCreators(additionalComponents),
             appendStickyNotes(stickyNotesSettings, pristine),
         ),
 );
