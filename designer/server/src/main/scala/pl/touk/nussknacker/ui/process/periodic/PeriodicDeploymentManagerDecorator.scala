@@ -5,32 +5,72 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, SchedulingSupported}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, NoSchedulingSupport, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   EmptyScheduledProcessListenerFactory,
   ProcessConfigEnricherFactory,
   SchedulePropertyExtractorFactory
 }
-import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
 import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
-import pl.touk.nussknacker.ui.process.repository.{
-  DBFetchingProcessRepository,
-  DbScenarioActionReadOnlyRepository,
-  ScenarioLabelsRepository,
-  SlickPeriodicProcessesRepository
-}
+import pl.touk.nussknacker.ui.process.repository.SlickPeriodicProcessesRepository
 
 import java.time.Clock
 
 object PeriodicDeploymentManagerDecorator extends LazyLogging {
 
-  def decorate(
+  def decorateIfSchedulingSupported(
+      underlying: DeploymentManager,
+      deploymentConfig: Config,
+      dependencies: DeploymentManagerDependencies,
+      schedulingDepsOpt: Option[SchedulingDependencies]
+  ): (DeploymentManager, Map[String, ScenarioPropertyConfig]) = {
+    val schedulingForProcessingType = determineIfSchedulingIsAvailable(deploymentConfig, schedulingDepsOpt)
+    schedulingForProcessingType match {
+      case SchedulingForProcessingType.Available(schedulingDeps) =>
+        underlying.schedulingSupport match {
+          case supported: SchedulingSupported =>
+            val decoratedManager = PeriodicDeploymentManagerDecorator.decorate(
+              underlying = underlying,
+              schedulingSupported = supported,
+              deploymentConfig = deploymentConfig,
+              dependencies = dependencies,
+              schedulingDeps = schedulingDeps,
+            )
+            (decoratedManager, PeriodicDeploymentManagerDecorator.additionalScenarioProperties)
+          case NoSchedulingSupport =>
+            throw new IllegalStateException(
+              s"DeploymentManager ${underlying.getClass.getName} does not support periodic execution"
+            )
+        }
+      case SchedulingForProcessingType.NotAvailable =>
+        (underlying, Map.empty[String, ScenarioPropertyConfig])
+    }
+  }
+
+  private def determineIfSchedulingIsAvailable(
+      deploymentConfig: Config,
+      schedulingDepsOpt: Option[SchedulingDependencies]
+  ): SchedulingForProcessingType = {
+    if (deploymentConfig.hasPath("scheduling") &&
+      deploymentConfig.getBoolean("scheduling.enabled")) {
+      val schedulingDeps = schedulingDepsOpt.getOrElse(
+        throw new RuntimeException(
+          s"Scheduling dependencies not present, but required for Deployment Manager with scheduling enabled"
+        )
+      )
+      SchedulingForProcessingType.Available(schedulingDeps)
+    } else {
+      SchedulingForProcessingType.NotAvailable
+    }
+  }
+
+  private def decorate(
       underlying: DeploymentManager,
       schedulingSupported: SchedulingSupported,
       deploymentConfig: Config,
       dependencies: DeploymentManagerDependencies,
-      dbRef: DbRef,
+      schedulingDeps: SchedulingDependencies,
   ): DeploymentManager = {
     logger.info("Decorating DM with periodic functionality")
     import dependencies._
@@ -59,21 +99,14 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       schedulingSupported.customAdditionalDeploymentDataProvider
         .getOrElse(DefaultAdditionalDeploymentDataProvider)
 
-    val actionRepository =
-      DbScenarioActionReadOnlyRepository.create(dbRef)
-    val scenarioLabelsRepository =
-      new ScenarioLabelsRepository(dbRef)
-    val fetchingProcessRepository =
-      DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-
     val periodicProcessesRepository = schedulingConfig.legacyDb match {
       case None =>
         new SlickPeriodicProcessesRepository(
           schedulingConfig.processingType,
-          dbRef.db,
-          dbRef.profile,
+          schedulingDeps.dbRef.db,
+          schedulingDeps.dbRef.profile,
           clock,
-          fetchingProcessRepository
+          schedulingDeps.fetchingProcessRepository
         )
       case Some(customDbConfig) =>
         val (db, profile) = LegacyDbInitializer.init(customDbConfig)
@@ -82,13 +115,14 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
           db,
           profile,
           clock,
-          fetchingProcessRepository
+          schedulingDeps.fetchingProcessRepository
         )
     }
 
     PeriodicDeploymentManager(
       delegate = underlying,
-      dependencies = dependencies,
+      dmDependencies = dependencies,
+      schedulingDependencies = schedulingDeps,
       periodicProcessesRepository = periodicProcessesRepository,
       scheduledExecutionPerformer = schedulingSupported.createScheduledExecutionPerformer(rawSchedulingConfig),
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
@@ -109,5 +143,15 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
     label = Some("Schedule"),
     hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")
   )
+
+  private sealed trait SchedulingForProcessingType
+
+  private object SchedulingForProcessingType {
+
+    case object NotAvailable extends SchedulingForProcessingType
+
+    final case class Available(deps: SchedulingDependencies) extends SchedulingForProcessingType
+
+  }
 
 }

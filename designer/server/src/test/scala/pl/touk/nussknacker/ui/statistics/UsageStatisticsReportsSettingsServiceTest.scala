@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -17,14 +18,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
-import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
-  emptyActivityStatistics,
-  emptyComponentStatistics,
-  emptyGeneralStatistics,
-  emptyScenarioStatistics,
-  emptyUptimeStats
-}
+import pl.touk.nussknacker.ui.statistics.ScenarioStatistics._
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global

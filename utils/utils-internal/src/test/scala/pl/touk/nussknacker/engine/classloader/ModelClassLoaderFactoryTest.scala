@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.util.loader
+package pl.touk.nussknacker.engine.classloader
 
 import cats.effect.unsafe.implicits.global
 import org.scalatest.BeforeAndAfterAll
@@ -8,10 +8,10 @@ import org.scalatest.matchers.should.Matchers
 import java.net.{URL, URLClassLoader}
 import java.nio.file.Path
 
-class ModelClassLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+class ModelClassLoaderFactoryTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
   private val (deploymentManagersClassLoader, releaseDeploymentManagersClassLoaderResources) =
-    DeploymentManagersClassLoader
+    DeploymentManagersClassLoaderFactory
       .create(List.empty)
       .allocated
       .unsafeRunSync()
@@ -27,7 +27,7 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfter
 
     val urls = List(resource(""), nonFileUrl)
 
-    val loader = ModelClassLoader(
+    val loader = ModelClassLoaderFactory.create(
       urls.map(_.toURI.toString),
       workingDirectoryOpt = None,
       deploymentManagersClassLoader = deploymentManagersClassLoader,
@@ -48,7 +48,7 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfter
   }
 
   test("should resolve classpath using working directory when defined") {
-    val loader = ModelClassLoader(
+    val loader = ModelClassLoaderFactory.create(
       urls = List("relative/path", "/absolute/path"),
       workingDirectoryOpt = Some(Path.of("/some/working/directory")),
       deploymentManagersClassLoader = deploymentManagersClassLoader

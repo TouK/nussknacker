@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.deployment.{NoSchedulingSupport, SchedulingSupported}
-import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
@@ -12,20 +9,17 @@ import pl.touk.nussknacker.engine.definition.component.{
   DynamicComponentStaticDefinitionDeterminer
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
-import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManagerDecorator
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
-import scala.util.control.NonFatal
-
-final case class ProcessingTypeData private (
-    processingType: ProcessingType,
-    designerModelData: DesignerModelData,
-    deploymentData: DeploymentData,
-    category: String,
-) extends AutoCloseable {
+final class ProcessingTypeData private (
+    val processingType: ProcessingType,
+    val designerModelData: DesignerModelData,
+    // TODO: We should replace all usages of this method with access to DeploymentData which is created separately from model
+    //       to fully split deployment managers from model
+    val deploymentData: DeploymentData,
+    val category: String,
+) {
 
   // TODO: We should allow to have >1 processing mode configured inside one model and return a List here
   //       But for now, we throw an error when there is >1 processing mode and use have to split such a configuration
@@ -40,11 +34,6 @@ final case class ProcessingTypeData private (
       deploymentData.engineSetupErrors
     )
 
-  override def close(): Unit = {
-    designerModelData.close()
-    deploymentData.close()
-  }
-
 }
 
 object ProcessingTypeData {
@@ -55,114 +44,40 @@ object ProcessingTypeData {
   def createProcessingTypeData(
       processingType: ProcessingType,
       modelData: ModelData,
-      deploymentManagerProvider: DeploymentManagerProvider,
-      schedulingForProcessingType: SchedulingForProcessingType,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      deploymentConfig: Config,
+      deploymentData: DeploymentData,
       category: String,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ProcessingTypeData = {
-    try {
-      val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(deploymentConfig)
-      val deploymentData =
-        createDeploymentData(
-          deploymentManagerProvider,
-          schedulingForProcessingType,
-          deploymentManagerDependencies,
-          engineSetupName,
-          modelData,
-          deploymentConfig,
-          metaDataInitializer,
-        )
-
-      val designerModelData =
-        createDesignerModelData(modelData, metaDataInitializer, processingType, componentDefinitionExtractionMode)
-      ProcessingTypeData(
+    val designerModelData =
+      createDesignerModelData(
+        modelData,
+        deploymentData.metaDataInitializer,
+        deploymentData.deploymentScenarioPropertiesConfig,
         processingType,
-        designerModelData,
-        deploymentData,
-        category
+        componentDefinitionExtractionMode
       )
-    } catch {
-      case NonFatal(ex) =>
-        throw new IllegalArgumentException(
-          s"Error during creation of processing type data for processing type [$processingType]",
-          ex
-        )
-    }
-  }
-
-  private def createDeploymentData(
-      deploymentManagerProvider: DeploymentManagerProvider,
-      schedulingForProcessingType: SchedulingForProcessingType,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      modelData: ModelData,
-      deploymentConfig: Config,
-      metaDataInitializer: MetaDataInitializer
-  ) = {
-    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(deploymentConfig)
-
-    val validDeploymentManager = for {
-      deploymentManager <-
-        deploymentManagerProvider.createDeploymentManager(
-          modelData,
-          deploymentManagerDependencies,
-          deploymentConfig,
-          scenarioStateCacheTTL
-        )
-      decoratedDeploymentManager = schedulingForProcessingType match {
-        case SchedulingForProcessingType.Available(dbRef) =>
-          deploymentManager.schedulingSupport match {
-            case supported: SchedulingSupported =>
-              PeriodicDeploymentManagerDecorator.decorate(
-                underlying = deploymentManager,
-                schedulingSupported = supported,
-                deploymentConfig = deploymentConfig,
-                dependencies = deploymentManagerDependencies,
-                dbRef = dbRef,
-              )
-            case NoSchedulingSupport =>
-              throw new IllegalStateException(
-                s"DeploymentManager ${deploymentManagerProvider.name} does not support periodic execution"
-              )
-          }
-
-        case SchedulingForProcessingType.NotAvailable =>
-          deploymentManager
-      }
-    } yield decoratedDeploymentManager
-
-    val additionalScenarioProperties = schedulingForProcessingType match {
-      case SchedulingForProcessingType.Available(_) =>
-        PeriodicDeploymentManagerDecorator.additionalScenarioProperties
-      case SchedulingForProcessingType.NotAvailable =>
-        Map.empty[String, ScenarioPropertyConfig]
-    }
-    val scenarioProperties = additionalScenarioProperties ++
-      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
-        .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
-    val fragmentProperties = modelData.modelConfig
-      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
-
-    DeploymentData(
-      validDeploymentManager,
-      metaDataInitializer,
-      scenarioProperties,
-      fragmentProperties,
-      deploymentManagerProvider.additionalValidators(deploymentConfig),
-      DeploymentManagerType(deploymentManagerProvider.name),
-      engineSetupName
+    new ProcessingTypeData(
+      processingType,
+      designerModelData,
+      deploymentData,
+      category
     )
   }
 
   private def createDesignerModelData(
       modelData: ModelData,
       metaDataInitializer: MetaDataInitializer,
+      deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       processingType: ProcessingType,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
+    val scenarioProperties = modelData.modelConfig
+      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]](
+        "scenarioPropertiesConfig",
+        Map.empty
+      ) ++ deploymentScenarioPropertiesConfig
+    val fragmentProperties = modelData.modelConfig
+      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     val staticDefinitionForDynamicComponents =
       createDynamicComponentsStaticDefinitions(modelData, metaDataInitializer, componentDefinitionExtractionMode)
@@ -172,7 +87,13 @@ object ProcessingTypeData {
         modelData.modelDefinition.components.components,
         processingType
       )
-    DesignerModelData(modelData, staticDefinitionForDynamicComponents, singleProcessingMode)
+    new DesignerModelData(
+      modelData,
+      scenarioProperties,
+      fragmentProperties,
+      staticDefinitionForDynamicComponents,
+      singleProcessingMode
+    )
   }
 
   private def createDynamicComponentsStaticDefinitions(
@@ -196,16 +117,6 @@ object ProcessingTypeData {
           Some(createStaticDefinitions(_.basicComponentsUnsafe))
       }
     )
-  }
-
-  sealed trait SchedulingForProcessingType
-
-  object SchedulingForProcessingType {
-
-    case object NotAvailable extends SchedulingForProcessingType
-
-    final case class Available(dbRef: DbRef) extends SchedulingForProcessingType
-
   }
 
 }

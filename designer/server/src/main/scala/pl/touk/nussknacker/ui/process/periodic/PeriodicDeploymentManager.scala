@@ -27,10 +27,11 @@ object PeriodicDeploymentManager {
       originalConfig: Config,
       listenerFactory: ScheduledProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-      dependencies: DeploymentManagerDependencies,
+      dmDependencies: DeploymentManagerDependencies,
+      schedulingDependencies: SchedulingDependencies,
       periodicProcessesRepository: PeriodicProcessesRepository,
   ): PeriodicDeploymentManager = {
-    import dependencies._
+    import dmDependencies._
 
     val clock                 = Clock.systemDefaultZone()
     val listener              = listenerFactory.create(originalConfig)
@@ -46,8 +47,8 @@ object PeriodicDeploymentManager {
       schedulingConfig.maxFetchedPeriodicScenarioActivities,
       processConfigEnricher,
       clock,
-      dependencies.actionService,
-      dependencies.configsFromProvider,
+      schedulingDependencies.actionService,
+      schedulingDependencies.configsFromProvider,
     )
 
     // These actors have to be created with retries because they can initially fail to create due to taken names,
@@ -55,20 +56,20 @@ object PeriodicDeploymentManager {
     val deploymentActor = createActorWithRetry(
       s"periodic-${schedulingConfig.processingType}-deployer",
       DeploymentActor.props(service, schedulingConfig.deployInterval),
-      dependencies.actorSystem
+      dmDependencies.actorSystem
     )
     val rescheduleFinishedActor = createActorWithRetry(
       s"periodic-${schedulingConfig.processingType}-rescheduler",
       RescheduleFinishedActor.props(service, schedulingConfig.rescheduleCheckInterval),
-      dependencies.actorSystem
+      dmDependencies.actorSystem
     )
 
     val toClose = () => {
       runSafely(listener.close())
       // deploymentActor and rescheduleFinishedActor just call methods from PeriodicProcessService on interval,
       // they don't have any internal state, so stopping them non-gracefully is safe
-      runSafely(dependencies.actorSystem.stop(deploymentActor))
-      runSafely(dependencies.actorSystem.stop(rescheduleFinishedActor))
+      runSafely(dmDependencies.actorSystem.stop(deploymentActor))
+      runSafely(dmDependencies.actorSystem.stop(rescheduleFinishedActor))
     }
     new PeriodicDeploymentManager(
       delegate,

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -7,7 +8,8 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
@@ -25,7 +27,7 @@ import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElem
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockFetchingProcessRepository}
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
@@ -44,9 +46,13 @@ import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.{
+  DeploymentData,
+  ProcessingTypeData,
+  ScenarioParametersService,
+  ValueWithRestriction
+}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api._
@@ -869,14 +875,18 @@ class DefaultComponentServiceSpec
   ): ProcessingTypeDataProvider[ComponentServiceProcessingTypeData, ScenarioParametersService] = {
     val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
       case (processingType, (modelData, category)) =>
+        val deploymentData = new DeploymentData(
+          DeploymentManagerType("mock"),
+          Valid(MockDeploymentManager.create()),
+          MetaDataInitializer("streaming", Map.empty[String, String]),
+          deploymentScenarioPropertiesConfig = Map.empty,
+          additionalValidators = List.empty,
+          engineSetupName = EngineSetupName("Mock")
+        )
         ProcessingTypeData.createProcessingTypeData(
           processingType,
           modelData,
-          new MockManagerProvider,
-          SchedulingForProcessingType.NotAvailable,
-          TestFactory.deploymentManagerDependencies,
-          EngineSetupName("Mock"),
-          deploymentConfig = ConfigFactory.empty(),
+          deploymentData,
           category = category,
           ComponentDefinitionExtractionMode.FinalDefinition
         )
@@ -884,7 +894,7 @@ class DefaultComponentServiceSpec
 
     TestProcessingTypeDataProviderFactory
       .create(
-        processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
+        processingTypeDataMap.mapValuesNow(toValueWithRestriction),
         ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
       )
       .mapValues { processingTypeData =>
@@ -893,6 +903,12 @@ class DefaultComponentServiceSpec
         )
         ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
       }
+  }
+
+  private def toValueWithRestriction(
+      processingTypeData: ProcessingTypeData
+  ): ValueWithRestriction[ProcessingTypeData] = {
+    ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
   }
 
   private def createDbProcessService(

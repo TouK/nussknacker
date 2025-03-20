@@ -28,6 +28,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562)
     * Deploy and cancel http request requires valid json in request body (see `DeployRequest` and `CancelRequest`) instead of plain text, e.g. `{"comment": "example text"}`.
     * For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "ToLatest"}}}`.
+* [#7658](https://github.com/TouK/nussknacker/pull/7658) `/app/processingtype/reload` endpoint doesn't reload Deployment Managers
 
 ### Code API changes
 
@@ -85,6 +86,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Other changes:
     * `StatusDetails` was renamed to `DeploymentStatusDetails`
     * Fields: `externalDeploymentId`, `externalDeploymentId`, `attributes`, `attributes` were removed from `StatusDetails`
+* [#7658](https://github.com/TouK/nussknacker/pull/7658) `DeploymentManager` is not reloaded during processing type reload
+  * `DeploymentManagerProvider.createDeploymentManager()` takes `BaseModelDataProvider` instead of `BaseModelData`
+    * To access `modelClassLoader` use `BaseModelDataProvider.modelClassLoader`
+    * To access other fields from `ModelData`, use `BaseModelDataProvider.getCurrentModelData()`
+    * To create `BaseModelDataProvider` from `ModelData` use `BaseModelData.toModelDataProvider` extension method
 * [#7598](https://github.com/TouK/nussknacker/pull/7598) Classes from `pl.touk.nussknacker.engine.sttp` package
   were moved to `pl.touk.nussknacker.http.backend`
 * [#7586](https://github.com/TouK/nussknacker/pull/7586) Renamed ComponentUseCase to ComponentUseContext.

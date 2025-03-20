@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.namespaces.Namespace
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoaderFactory, ModelClassLoaderFactory}
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 
 object RunnableScenarioInterpreterFactory extends LazyLogging {
 
@@ -26,7 +26,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
       system: ActorSystem
   ): Resource[IO, RunnableScenarioInterpreter] = {
     for {
-      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(List.empty)
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory.create(List.empty)
       scenarioInterpreter <- Resource
         .make(
           acquire = IO.delay {
@@ -34,7 +34,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
             val urls        = modelConfig.as[List[String]]("classPath")
             val modelData = ModelData.duringExecution(
               ModelConfigs(modelConfig),
-              ModelClassLoader(urls, workingDirectoryOpt = None, deploymentManagersClassLoader),
+              ModelClassLoaderFactory.create(urls, workingDirectoryOpt = None, deploymentManagersClassLoader),
               resolveConfigs = true
             )
             val metricRegistry = prepareMetricRegistry(runtimeConfig, modelData.namingStrategy.namespace)
