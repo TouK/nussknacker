@@ -12,13 +12,13 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoaderFactory, ModelClassLoaderFactory}
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStateVerificationConfig
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
-import pl.touk.nussknacker.engine.util.loader.{DeploymentManagersClassLoader, ModelClassLoader}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager.{sampleDeploymentId, sampleDeploymentStatusDetails}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
@@ -41,7 +41,7 @@ class MockDeploymentManager private (
     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
     closeCreatedDeps: () => Unit,
 ) extends FlinkDeploymentManager(
-      modelData,
+      modelData.toModelDataProvider,
       deploymentManagerDependencies,
       FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
       Some(
@@ -151,24 +151,22 @@ object MockDeploymentManager {
       defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
       deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-      actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
   ): MockDeploymentManager = {
     val actorSystem = ActorSystem("MockDeploymentManager")
     val (deploymentManagersClassLoader, closeDeploymentManagerClassLoader) =
-      DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()(IORuntime.global)
+      DeploymentManagersClassLoaderFactory.create(List.empty).allocated.unsafeRunSync()(IORuntime.global)
     val modelData = ModelData(
       ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
       TestFactory.modelDependencies,
-      ModelClassLoader(
+      ModelClassLoaderFactory.create(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig).classPath,
         None,
         deploymentManagersClassLoader
       )
     )
-    val deploymentManagerDependencies = DeploymentManagerDependencies(
+    val deploymentManagerDependencies = new DeploymentManagerDependencies(
       deployedScenariosProvider,
-      actionService,
       ExecutionContext.global,
       IORuntime.global,
       actorSystem,
@@ -306,7 +304,7 @@ class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentM
     extends FlinkDeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]

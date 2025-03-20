@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.ui.factory
 
 import cats.effect.{IO, Resource}
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, DeploymentManagersClassLoaderFactory}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
 import pl.touk.nussknacker.ui.config.{AdditionalUIConfigProviderLoader, DesignerConfig, DesignerConfigLoader}
+import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.ui.notifications.Notification
 import pl.touk.nussknacker.ui.process.{DBProcessService, ProcessService}
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
-  DefaultProcessingTypeActionService,
   DefaultProcessingTypeDeployedScenariosProvider,
   DeploymentManagerDispatcher
 }
@@ -37,17 +37,23 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
+import pl.touk.nussknacker.ui.process.periodic.{DefaultProcessingTypeActionService, SchedulingDependencies}
 import pl.touk.nussknacker.ui.process.processingtype._
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  DeploymentManagersLoader,
+  ModelDataLoader,
+  ProcessingTypeDataStateFactory
+}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataStateFactory.ModelDataWithProcessingTypeDataInput
 import pl.touk.nussknacker.ui.process.processingtype.provider.{
   ProcessingTypeDataProvider,
+  ProcessingTypeDataState,
   ReloadableProcessingTypeDataProvider
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.processreport.{CountsReporterFactory, ProcessCounter}
-import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.statistics.FingerprintService
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
@@ -77,7 +83,7 @@ final class DomainServices(
     val scenarioStatusPresenter: ScenarioStatusPresenter,
     val dmDispatcher: DeploymentManagerDispatcher,
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
-    val reloadProcessingTypes: IO[Unit],
+    val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
 )
 
@@ -90,66 +96,70 @@ object DomainServices {
   ): Resource[IO, DomainServices] = {
     import infrastructureServices._
     for {
-      deploymentManagersClassLoader <- DeploymentManagersClassLoader.create(alreadyLoadedConfig.managersDir)
+      // services for model data purpose
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory.create(alreadyLoadedConfig.managersDir)
       modelClassLoaderProvider = createModelClassLoaderProvider(
-        alreadyLoadedConfig.processingTypeConfigs().configByProcessingType,
+        alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader
       )
 
-      actionServiceSupplier = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = AdditionalUIConfigProviderLoader.loadAdditionalUIConfigProvider(
         alreadyLoadedConfig,
         futureSttpBackend
       )
       // 1 hour is the delay to propagate all global notifications for all users
       globalNotificationRepository = InMemoryTimeseriesRepository[Notification](Duration.ofHours(1), Clock.systemUTC())
-      processingTypeDataProvider <- prepareProcessingTypeDataReload(
+      modelDataProvider <- prepareModelDataReload(
         designerConfigLoader,
         alreadyLoadedConfig,
         infrastructureServices,
-        deploymentManagersClassLoader,
         modelClassLoaderProvider,
         additionalUIConfigProvider,
-        actionServiceSupplier,
         globalNotificationRepository,
       )
-
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
-        actorSystem,
-        clock,
-        alreadyLoadedConfig.questDbSettings
-      )
-      countsReporter <- CountsReporterFactory.createCountsReporter(
-        alreadyLoadedConfig,
-        futureSttpBackend
-      )
-      deploymentRepository = new DeploymentRepository(dbRef, clock)
-      deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
-        deploymentRepository,
-        processingTypeDataProvider.mapValues(
-          _.deploymentData.validDeploymentManagerOrStub.deploymentSynchronisationSupport
-        ),
-        dbioRunner
-      )
-      _ <- DeploymentsStatusesSynchronizationScheduler.resource(
-        actorSystem,
-        deploymentsStatusesSynchronizer,
-        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
-      )
-      migrations                 = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
-      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
-      actionRepository           = DbScenarioActionRepository.create(dbRef)
-      scenarioLabelsRepository   = new ScenarioLabelsRepository(dbRef)
-      processRepository          = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
+      // deployment data deps
+      actionServiceSupplier    = new DelayedInitActionServiceSupplier
+      actionRepository         = DbScenarioActionRepository.create(dbRef)
+      scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      futureProcessRepository =
-        DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
-
-      writeProcessRepository =
-        ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
+      futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(
+        dbRef,
+        actionRepository,
+        scenarioLabelsRepository
+      )
+      deploymentData <- DeploymentManagersLoader.load(
+        alreadyLoadedConfig.processingTypeConfigs(),
+        deploymentManagersClassLoader,
+        modelClassLoaderProvider,
+        modelDataProvider.mapValues(_.modelData),
+        getDeploymentManagerDependencies(
+          infrastructureServices,
+          _
+        ),
+        Some(
+          getSchedulingDependencies(
+            infrastructureServices,
+            actionServiceSupplier,
+            futureProcessRepository,
+            additionalUIConfigProvider,
+            _
+          )
+        )
+      )
+      // ActionService initialization
+      // We wrap deploymentData with ProcessingTypeDataProvider to allow category restriction checking. These data are static, not reloadable
+      deploymentDataProvider <-
+        Resource.make(
+          IO(
+            ProcessingTypeDataProvider.fromState(
+              ProcessingTypeDataState.withUninitializedCombinedData(deploymentData)
+            )
+          )
+        )(_.close())
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       dmDispatcher =
         new DeploymentManagerDispatcher(
-          processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
+          deploymentDataProvider.mapValues(_.validDeploymentManagerOrStub),
           futureProcessRepository
         )
       fetchScenarioActivityService = new FetchScenarioActivityService(
@@ -168,6 +178,7 @@ object DomainServices {
           dmDispatcher,
           alreadyLoadedConfig.scenarioStateTimeout
         )(actorSystem)
+      processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       scenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
@@ -184,17 +195,28 @@ object DomainServices {
         alreadyLoadedConfig.deploymentCommentSettings,
         clock
       )
-
       _ = {
-        // we need to reload processing type data after deployment service creation to make sure that it will be done using
-        // correct classloader and that won't cause further delays during handling requests
         actionService.invalidateInProgressActions()
         actionServiceSupplier.set(actionService)
-        processingTypeDataProvider.reloadAll.unsafeRunSync()(executionContextWithIORuntime.ioRuntime)
       }
+      // end of ActionService initialization
+
+      deploymentRepository = new DeploymentRepository(dbRef, clock)
+      deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
+        deploymentRepository,
+        deploymentDataProvider.mapValues(
+          _.validDeploymentManagerOrStub.deploymentSynchronisationSupport
+        ),
+        dbioRunner
+      )
+      _ <- DeploymentsStatusesSynchronizationScheduler.resource(
+        actorSystem,
+        deploymentsStatusesSynchronizer,
+        alreadyLoadedConfig.deploymentsStatusesSynchronizationConfig
+      )
 
       reconciler = new ScenarioDeploymentReconciler(
-        processingTypeDataProvider.all(NussknackerInternalUser.instance).keys,
+        deploymentData.keys,
         deploymentsStatusesProvider,
         actionRepository,
         dbioRunner
@@ -212,6 +234,36 @@ object DomainServices {
 
       counter = new ProcessCounter(fragmentRepository)
 
+      processAuthorizer = new AuthorizeProcess(futureProcessRepository)
+
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(
+        actorSystem,
+        clock,
+        alreadyLoadedConfig.questDbSettings
+      )
+
+      countsReporter <- CountsReporterFactory.createCountsReporter(
+        alreadyLoadedConfig,
+        futureSttpBackend
+      )
+
+      fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef))(
+        executionContextWithIORuntime,
+        dbioRunner
+      )
+
+      // ProcessingTypeData-related services
+      processingTypeDataProvider = modelDataProvider.transform { case (modelDataWithInputs, _) =>
+        ProcessingTypeDataStateFactory
+          .create(
+            modelDataWithInputs,
+            deploymentData
+          )
+          .toEither
+          .toTry
+          .get
+      }
+
       processingTypeServicesProvider = processingTypeDataProvider.mapValues(
         ProcessingTypeServices.create(
           alreadyLoadedConfig,
@@ -222,6 +274,10 @@ object DomainServices {
           _
         )
       )
+
+      migrations = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
+      writeProcessRepository =
+        ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
       processService = new DBProcessService(
         scenarioStatusProvider,
@@ -235,11 +291,6 @@ object DomainServices {
         writeProcessRepository,
       )
 
-      fingerprintService = new FingerprintService(new FingerprintRepositoryImpl(dbRef))(
-        executionContextWithIORuntime,
-        dbioRunner
-      )
-
       componentService = {
         new DefaultComponentService(
           alreadyLoadedConfig.componentLinks,
@@ -248,8 +299,6 @@ object DomainServices {
           fragmentRepository
         )
       }
-
-      processAuthorizer = new AuthorizeProcess(futureProcessRepository)
 
       _ = Initialization.init(
         migrations,
@@ -280,65 +329,60 @@ object DomainServices {
       scenarioStatusPresenter = scenarioStatusPresenter,
       dmDispatcher = dmDispatcher,
       processingTypeServicesProvider = processingTypeServicesProvider,
-      reloadProcessingTypes = processingTypeDataProvider.reloadAll,
+      reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
     )
   }
 
   private def createModelClassLoaderProvider(
-      processingTypeConfigs: Map[String, ProcessingTypeConfig],
+      processingTypeConfigs: ProcessingTypeConfigs,
       deploymentManagersClassLoader: DeploymentManagersClassLoader
   ): ModelClassLoaderProvider = {
     val defaultWorkingDirOpt = None
     ModelClassLoaderProvider(
-      processingTypeConfigs.mapValuesNow(c => ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt)),
+      processingTypeConfigs.configByProcessingType.mapValuesNow(c =>
+        ModelClassLoaderDependencies(c.classPath, defaultWorkingDirOpt)
+      ),
       deploymentManagersClassLoader
     )
   }
 
-  private def prepareProcessingTypeDataReload(
+  private def prepareModelDataReload(
       designerConfigLoader: DesignerConfigLoader,
       alreadyLoadedConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
-      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      actionServiceProvider: Supplier[ActionService],
       globalNotificationRepository: InMemoryTimeseriesRepository[Notification],
-  )(
-      implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
-  ): Resource[IO, ReloadableProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
+  ): Resource[IO, ReloadableProcessingTypeDataProvider[ModelDataWithProcessingTypeDataInput, _]] = {
+    import infrastructureServices._
     Resource
       .make(
-        acquire = IO {
+        acquire = {
           val processingTypeConfigsLoader = ProcessingTypeConfigsLoaderLoader.createProcessingTypeConfigsLoader(
             designerConfigLoader,
             alreadyLoadedConfig,
             infrastructureServices.ioSttpBackend
-          )(executionContextWithIORuntime.ioRuntime)
-          val processingTypeDataLoader = new ProcessingTypeDataLoader(processingTypeConfigsLoader)
-          val loadProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
-            getModelDependencies(
-              additionalUIConfigProvider,
-              _,
-              alreadyLoadedConfig.componentDefinitionExtractionMode
-            ),
-            getDeploymentManagerDependencies(
-              infrastructureServices,
-              additionalUIConfigProvider,
-              actionServiceProvider,
-              _
-            ),
-            deploymentManagersClassLoader,
-            modelClassLoaderProvider,
-            Some(infrastructureServices.dbRef),
           )
-          val loadAndNotifyIO = loadProcessingTypeDataIO
+          val loadModelDataIO = processingTypeConfigsLoader
+            .loadProcessingTypeConfigs()
+            .map(
+              ModelDataLoader.load(
+                _,
+                getModelDependencies(
+                  additionalUIConfigProvider,
+                  _,
+                  alreadyLoadedConfig.componentDefinitionExtractionMode
+                ),
+                modelClassLoaderProvider,
+              )
+            )
+          val loadAndNotifyIO = loadModelDataIO
             .map { state =>
               globalNotificationRepository.saveEntry(Notification.configurationReloaded)
               state
             }
-          ReloadableProcessingTypeDataProvider(loadAndNotifyIO)
+          ReloadableProcessingTypeDataProvider.create(loadAndNotifyIO)
         }
       )(
         release = _.close()
@@ -347,21 +391,29 @@ object DomainServices {
 
   private def getDeploymentManagerDependencies(
       infrastructureServices: InfrastructureServices,
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      actionServiceProvider: Supplier[ActionService],
       processingType: ProcessingType
   )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
-    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
-    DeploymentManagerDependencies(
+    new DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(infrastructureServices.dbRef, processingType),
-      new DefaultProcessingTypeActionService(
-        processingType,
-        actionServiceProvider.get(),
-      ),
       executionContextWithIORuntime,
       executionContextWithIORuntime.ioRuntime,
       infrastructureServices.actorSystem,
-      infrastructureServices.futureSttpBackend,
+      infrastructureServices.futureSttpBackend
+    )
+  }
+
+  private def getSchedulingDependencies(
+      infrastructureServices: InfrastructureServices,
+      actionServiceProvider: Supplier[ActionService],
+      fetchingProcessRepository: FetchingProcessRepository[Future],
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      processingType: ProcessingType
+  ) = {
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+    new SchedulingDependencies(
+      infrastructureServices.dbRef,
+      new DefaultProcessingTypeActionService(processingType, actionServiceProvider),
+      fetchingProcessRepository,
       additionalConfigsFromProvider
     )
   }
@@ -380,6 +432,11 @@ object DomainServices {
     )
   }
 
+  // This hack with delayed init is needed because we have a cycle of dependencies:
+  // DeploymentManagerDispatcher -> DeploymentData -> PeriodicDeploymentManagerDecorator -> ProcessingTypeActionService.markActionExecutionFinished ->
+  // ActionService -> ProcessChangeListener -> FetchScenarioActivityService ->
+  // (to check if DM has ManagerSpecificScenarioActivitiesStoredByManager which are only for scheduling mechanism purpose) -> DeploymentManagerDispatcher
+  // TODO: scheduling mechanism shouldn't be implemented as DeploymentManager decorator
   private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
     private val actionServiceRef = new AtomicReference[Option[ActionService]](None)
 

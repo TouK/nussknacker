@@ -2,8 +2,7 @@ package pl.touk.nussknacker.k8s.manager
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies}
-import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.{BaseModelDataProvider, CustomProcessValidator, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -22,7 +21,7 @@ import scala.concurrent.duration.FiniteDuration
 class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
@@ -30,7 +29,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     Validated.valid(
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
         new K8sDeploymentManager(
-          modelData,
+          modelDataProvider,
           K8sDeploymentManagerConfig.parse(config),
           config,
           dependencies

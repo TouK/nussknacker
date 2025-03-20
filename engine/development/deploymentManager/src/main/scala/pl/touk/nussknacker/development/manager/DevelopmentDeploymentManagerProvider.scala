@@ -17,15 +17,16 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, modelData: BaseModelData)
-    extends DeploymentManager
+class DevelopmentDeploymentManager(
+    dependencies: DeploymentManagerDependencies,
+    modelDataProvider: BaseModelDataProvider
+) extends DeploymentManager
     with LazyLogging {
 
   import dependencies._
@@ -45,13 +46,13 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
   private val miniClusterWithServices =
     FlinkMiniClusterFactory
       .createMiniClusterWithServices(
-        modelData.modelClassLoader,
+        modelDataProvider.modelClassLoader,
         new Configuration,
       )
 
   private lazy val flinkTestRunner =
     new FlinkMiniClusterScenarioTestRunner(
-      modelData,
+      modelDataProvider,
       Some(miniClusterWithServices),
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
@@ -198,12 +199,12 @@ class DevelopmentDeploymentManager(dependencies: DeploymentManagerDependencies, 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
-    Validated.valid(new DevelopmentDeploymentManager(dependencies, modelData))
+    Validated.valid(new DevelopmentDeploymentManager(dependencies, modelDataProvider))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

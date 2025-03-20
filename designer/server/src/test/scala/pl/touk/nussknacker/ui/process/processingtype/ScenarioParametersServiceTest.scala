@@ -11,16 +11,15 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelDependencies
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.nio.file.Path
@@ -286,39 +285,38 @@ class ScenarioParametersServiceTest
     val designerConfig =
       DesignerConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
     val managersPath = workPath.resolve("managers")
-    DeploymentManagersClassLoader
-      .create(
-        List(
-          managersPath.resolve("nussknacker-flink-manager.jar"),
-          managersPath.resolve("lite-embedded-manager.jar"),
-        )
-      )
-      .use { deploymentManagersClassLoader =>
-        IO {
-          val modelDependencies = ModelDependencies(
-            Map.empty,
-            componentId => DesignerWideComponentId(componentId.toString),
-            Some(workPath),
-            ComponentDefinitionExtractionMode.FinalDefinition
+    val parameterServiceResource = for {
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory
+        .create(
+          List(
+            managersPath.resolve("nussknacker-flink-manager.jar"),
+            managersPath.resolve("lite-embedded-manager.jar"),
           )
-          val processingTypeData =
-            new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
-              .loadProcessingTypeData(
-                _ => modelDependencies,
-                _ => TestFactory.deploymentManagerDependencies,
-                deploymentManagersClassLoader,
-                ModelClassLoaderProvider(
-                  designerConfig
-                    .processingTypeConfigs()
-                    .configByProcessingType
-                    .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
-                  deploymentManagersClassLoader
-                ),
-                dbRef = None,
-              )
-              .unsafeRunSync()
-          val parametersService = processingTypeData.combinedDataTry.get.parametersService
-
+        )
+      modelDependencies = ModelDependencies(
+        Map.empty,
+        componentId => DesignerWideComponentId(componentId.toString),
+        Some(workPath),
+        ComponentDefinitionExtractionMode.FinalDefinition
+      )
+      processingTypeData <- TestProcessingTypeDataProviderFactory.create(
+        designerConfig.processingTypeConfigs(),
+        ModelClassLoaderProvider(
+          designerConfig
+            .processingTypeConfigs()
+            .configByProcessingType
+            .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
+          deploymentManagersClassLoader
+        ),
+        modelDependencies,
+        deploymentManagersClassLoader,
+        TestFactory.deploymentManagerDependencies,
+      )
+      parametersService = processingTypeData.combined.parametersService
+    } yield parametersService
+    parameterServiceResource
+      .use { parametersService =>
+        IO {
           parametersService.scenarioParametersCombinationsWithWritePermission(
             TestFactory.adminUser()
           ) should contain theSameElementsAs List(
