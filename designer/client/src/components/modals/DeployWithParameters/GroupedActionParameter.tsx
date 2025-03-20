@@ -1,10 +1,10 @@
-import { ExpressionLang, ExpressionObj } from "../graph/node-modal/editors/expression/types";
+import { ExpressionLang, ExpressionObj } from "../../graph/node-modal/editors/expression/types";
 import React, { useCallback } from "react";
-import { FieldLabel } from "../graph/node-modal/FieldLabel";
-import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
-import { ActionParameterConfig, ActionParameterName } from "../../types/action";
-import { NodeValidationError } from "../../types";
-import { default as EditableEditor } from "../graph/node-modal/editors/EditableEditor";
+import { FieldLabel } from "../../graph/node-modal/FieldLabel";
+import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
+import { ActionParameterConfig, ActionParameterName } from "../../../types/action";
+import { NodeValidationError } from "../../../types";
+import { default as EditableEditor } from "../../graph/node-modal/editors/EditableEditor";
 
 interface Props {
     nodeIds: string[];
