@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
@@ -21,6 +22,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
@@ -38,11 +40,13 @@ import scala.jdk.CollectionConverters._
 class TableSource(
     tableDefinition: TableDefinition,
     flinkDataDefinition: FlinkDataDefinition,
-    testDataGenerationMode: TestDataGenerationMode
+    testDataGenerationMode: TestDataGenerationMode,
+    miniCluster: FlinkMiniClusterWithServices
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
-    with TestDataGenerator {
+    with TestDataGenerator
+    with LazyLogging {
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -98,7 +102,10 @@ class TableSource(
         .build()
     }
     (testRecords: List[TestRecord]) =>
-      FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDataParserSchema)
+      miniCluster.withDetachedStreamExecutionEnvironment { env =>
+        new FlinkMiniClusterTableOperations(MiniClusterEnvBuilder.buildStreamTableEnv(env))
+          .parseTestRecords(testRecords, tableDataParserSchema)
+      }
   }
 
   override def generateTestData(size: Int): TestData = {
@@ -106,19 +113,22 @@ class TableSource(
       val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
       Schema.newBuilder().fromRowDataType(dataType).build()
     }
-    testDataGenerationMode match {
-      case TestDataGenerationMode.Random =>
-        FlinkMiniClusterTableOperations.generateRandomTestData(
-          amount = size,
-          schema = generateDataSchema
-        )
-      case TestDataGenerationMode.Live =>
-        FlinkMiniClusterTableOperations.generateLiveTestData(
-          limit = size,
-          schema = generateDataSchema,
-          flinkDataDefinition = flinkDataDefinition,
-          tableId = tableDefinition.tableId
-        )
+    miniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val tableOps = new FlinkMiniClusterTableOperations(MiniClusterEnvBuilder.buildStreamTableEnv(env))
+      testDataGenerationMode match {
+        case TestDataGenerationMode.Random =>
+          tableOps.generateRandomTestData(
+            amount = size,
+            schema = generateDataSchema
+          )
+        case TestDataGenerationMode.Live =>
+          tableOps.generateLiveTestData(
+            limit = size,
+            schema = generateDataSchema,
+            flinkDataDefinition = flinkDataDefinition,
+            tableId = tableDefinition.tableId
+          )
+      }
     }
   }
 
