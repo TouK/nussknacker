@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.helper
 
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 
 object DateProcessHelper extends HideToString {
 
@@ -10,6 +10,11 @@ object DateProcessHelper extends HideToString {
     description = "Returns current time in milliseconds"
   )
   def nowTimestamp(): Long = System.currentTimeMillis()
+
+  @Documentation(
+    description = "Returns current time as an Instant"
+  )
+  def now(): Instant = Instant.ofEpochSecond(System.currentTimeMillis())
 
   @Documentation(description =
     "Just parses a date.\n" +
