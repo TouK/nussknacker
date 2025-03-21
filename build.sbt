@@ -298,6 +298,8 @@ val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
+// keep calcite synchronized with version used by current flink-sql-parser
+val calciteV              = "1.32.0"
 val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV                = "3.8.1"
@@ -1842,7 +1844,6 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
-// TODO: check if any flink-table / connector / format dependencies' scope can be limited
 lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkTable.jar"): _*)
@@ -1851,24 +1852,29 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-table-api-java"        % flinkV,
-        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
-        "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
-        "org.apache.flink" % "flink-table-runtime"         % flinkV,
-        "org.apache.flink" % "flink-clients"               % flinkV,
-        "org.apache.flink" % "flink-connector-files"       % flinkV, // needed for testing data generation
-        "org.apache.flink" % "flink-json"                  % flinkV, // needed for testing data generation
+        "org.apache.calcite" % "calcite-linq4j"              % calciteV, // required by fliink-sql-parser
+        "org.apache.flink"   % "flink-table-api-java"        % flinkV,
+        "org.apache.flink"   % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink"   % "flink-table-planner-loader"  % flinkV,
+        "org.apache.flink"   % "flink-table-runtime"         % flinkV,
+        "org.apache.flink"   % "flink-clients"               % flinkV,
+        "org.apache.flink"   % "flink-sql-parser"            % flinkV,
+        "org.apache.flink"   % "flink-connector-files"       % flinkV, // needed for testing data generation
+        "org.apache.flink"   % "flink-json"                  % flinkV, // needed for testing data generation
+        "org.apache.flink"   % "flink-csv"                   % flinkV % Test,
       )
     }
   )
   .dependsOn(
-    flinkComponentsApi   % Provided,
-    componentsApi        % Provided,
-    commonUtils          % Provided,
-    componentsUtils      % Provided,
-    flinkComponentsUtils % Provided,
-    jsonUtils            % Provided,
-    testUtils            % Test,
+    flinkComponentsApi     % Provided,
+    componentsApi          % Provided,
+    commonUtils            % Provided,
+    componentsUtils        % Provided,
+    flinkComponentsUtils   % Provided,
+    jsonUtils              % Provided,
+    flinkMiniCluster       % Provided,
+    testUtils              % Test,
+    flinkComponentsTestkit % Test,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
