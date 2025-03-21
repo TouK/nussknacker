@@ -285,7 +285,7 @@ class DefinitionResourcesSpec
         parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
       initialExpressions shouldEqual List(
         "'fooValueFromConfig'",
-        "'barValueFromProviderCode'",
+        "barValueFromProviderCode",
         "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'"
       )
     }

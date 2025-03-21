@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.{Context, EagerService, NodeId, Params, ServiceInvoker, TemplateEvaluationResult}
+import pl.touk.nussknacker.engine.api.{Context, EagerService, NodeId, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -47,14 +47,14 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
     case TransformationStep(
           (ParameterName("foo"), DefinedEagerParameter(fooValue, _)) :: (
             ParameterName("bar"),
-            DefinedEagerParameter(barValue: TemplateEvaluationResult, _)
+            DefinedEagerParameter(barValue: String, _)
           ) :: Nil,
           _
         ) =>
       NextParameters(
         List(
           Parameter(ParameterName("baz"), Typed[String])
-            .copy(defaultValue = Some(Expression.spel(s"'$fooValue' + '-' + '${barValue.renderedTemplate}''")))
+            .copy(defaultValue = Some(Expression.spel(s"'$fooValue' + '-' + '$barValue'")))
         )
       )
     case TransformationStep(
