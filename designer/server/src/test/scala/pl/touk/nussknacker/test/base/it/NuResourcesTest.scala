@@ -179,7 +179,7 @@ trait NuResourcesTest
       deploymentManagerProvider.metaDataInitializer(ConfigFactory.empty()),
       deploymentManagerProvider.scenarioPropertiesConfig(ConfigFactory.empty()),
       deploymentManagerProvider.additionalValidators(ConfigFactory.empty()),
-      deploymentManagerProvider.jobsRecoveryOptions(ConfigFactory.empty()),
+      deploymentManagerProvider.jobsRecoverySettings(ConfigFactory.empty()),
       deploymentManagerProvider.defaultEngineSetupName
     )
 

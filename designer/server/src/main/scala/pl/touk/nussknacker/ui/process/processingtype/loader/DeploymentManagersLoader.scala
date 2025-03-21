@@ -109,14 +109,14 @@ object DeploymentManagersLoader {
         ) ++ schedulingProperties
         val additionalValidators =
           deploymentManagerProvider.additionalValidators(processingTypeConfig.deploymentConfig)
-        val jobsRecoveryOptions = deploymentManagerProvider.jobsRecoveryOptions(processingTypeConfig.deploymentConfig)
+        val jobsRecoverySettings = deploymentManagerProvider.jobsRecoverySettings(processingTypeConfig.deploymentConfig)
         DeploymentDataWithEngineNameInput(
           processingTypeConfig.deploymentManagerType,
           validDeploymentManager,
           metaDataInitializer,
           deploymentScenarioPropertiesConfig,
           additionalValidators,
-          jobsRecoveryOptions,
+          jobsRecoverySettings,
           nameInputData,
           processingTypeConfig.category
         )
@@ -150,7 +150,7 @@ object DeploymentManagersLoader {
               metaDataInitializer,
               deploymentScenarioPropertiesConfig,
               additionalValidators,
-              jobsRecoveryOptions,
+              jobsRecoverySettings,
               _,
               category
             )
@@ -161,7 +161,7 @@ object DeploymentManagersLoader {
           metaDataInitializer = metaDataInitializer,
           deploymentScenarioPropertiesConfig = deploymentScenarioPropertiesConfig,
           additionalValidators = additionalValidators,
-          jobsRecoveryOptions = jobsRecoveryOptions,
+          jobsRecoverySettings = jobsRecoverySettings,
           engineSetupName = engineSetupNames(processingType)
         )
         processingType -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(deploymentData, Set(category))
@@ -174,7 +174,7 @@ object DeploymentManagersLoader {
       metaDataInitializer: MetaDataInitializer,
       deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       additionalValidators: List[CustomProcessValidator],
-      jobsRecoveryOptions: JobsRecoveryOptions,
+      jobsRecoverySettings: JobsRecoverySettings,
       nameInputData: EngineNameInputData,
       category: String
   )

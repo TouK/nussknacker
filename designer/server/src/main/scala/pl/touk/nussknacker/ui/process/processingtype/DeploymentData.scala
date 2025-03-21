@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{CustomProcessValidator, JobsRecoveryOptions, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{CustomProcessValidator, JobsRecoverySettings, MetaDataInitializer}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -13,7 +13,7 @@ final class DeploymentData(
     val metaDataInitializer: MetaDataInitializer,
     val deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     val additionalValidators: List[CustomProcessValidator],
-    val jobsRecoveryOptions: JobsRecoveryOptions,
+    val jobsRecoverySettings: JobsRecoverySettings,
     val engineSetupName: EngineSetupName,
 ) {
 

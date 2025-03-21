@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoveryOptions, ModelData}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
@@ -90,7 +90,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
             processingType.stringify -> ValueWithRestriction.anyUser(
               new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
                 deploymentManager,
-                JobsRecoveryOptions.noRecovery,
+                JobsRecoverySettings.noRecovery,
                 TestFactory.scenarioResolver
               )
             )

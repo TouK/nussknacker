@@ -288,7 +288,7 @@ object DomainServices {
         processingTypeServicesProvider.mapValues(services =>
           new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
             services.deploymentData.validDeploymentManagerOrStub,
-            services.deploymentData.jobsRecoveryOptions,
+            services.deploymentData.jobsRecoverySettings,
             services.scenarioResolver
           )
         ),

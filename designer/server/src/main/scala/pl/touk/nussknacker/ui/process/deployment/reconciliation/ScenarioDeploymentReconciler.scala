@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.JobsRecoveryOptions
+import pl.touk.nussknacker.engine.JobsRecoverySettings
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
@@ -77,10 +77,10 @@ class ScenarioDeploymentReconciler(
     }
   }
 
-  def recoverNotRunningDeploymentsThatShouldBeRunning(shouldRecover: JobsRecoveryOptions => Boolean): Future[Unit] = {
+  def recoverNotRunningDeploymentsThatShouldBeRunning(shouldRecover: JobsRecoverySettings => Boolean): Future[Unit] = {
     implicit val user: LoggedUser = NussknackerInternalUser.instance
     val processingTypeForWhichJobsShouldBeRecovered = processingTypeServicesProvider.all.toList.collect {
-      case (processingType, processingTypeServices) if shouldRecover(processingTypeServices.jobsRecoveryOptions) =>
+      case (processingType, processingTypeServices) if shouldRecover(processingTypeServices.jobsRecoverySettings) =>
         processingType
     }
     for {
@@ -212,7 +212,7 @@ object ScenarioDeploymentReconciler {
 
   final class ProcessingTypeServicesDeps(
       val deploymentManager: DeploymentManager,
-      val jobsRecoveryOptions: JobsRecoveryOptions,
+      val jobsRecoverySettings: JobsRecoverySettings,
       val scenarioResolver: ScenarioResolver
   )
 

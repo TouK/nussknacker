@@ -61,9 +61,9 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
     Try(config.getString(RestUrlPath)).toOption
   }
 
-  override def jobsRecoveryOptions(deploymentConfig: Config): JobsRecoveryOptions = {
+  override def jobsRecoverySettings(deploymentConfig: Config): JobsRecoverySettings = {
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
-    JobsRecoveryOptions(recoverJobsOnStart = flinkConfig.useMiniClusterForDeployment)
+    JobsRecoverySettings(recoverJobsOnStart = flinkConfig.useMiniClusterForDeployment)
   }
 
 }

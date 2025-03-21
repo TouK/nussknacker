@@ -43,7 +43,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   // TODO: replace scenario types by the separate lists of deployments and of models
   def engineSetupIdentity(config: Config): Any = ()
 
-  def jobsRecoveryOptions(config: Config): JobsRecoveryOptions = JobsRecoveryOptions.noRecovery
+  def jobsRecoverySettings(config: Config): JobsRecoverySettings = JobsRecoverySettings.noRecovery
 
 }
 
@@ -73,10 +73,10 @@ object MetaDataInitializer {
     MetaDataInitializer(metadataType, _ => overridingProperties)
 }
 
-case class JobsRecoveryOptions(recoverJobsOnStart: Boolean)
+case class JobsRecoverySettings(recoverJobsOnStart: Boolean)
 
-object JobsRecoveryOptions {
+object JobsRecoverySettings {
 
-  val noRecovery: JobsRecoveryOptions = JobsRecoveryOptions(recoverJobsOnStart = false)
+  val noRecovery: JobsRecoverySettings = JobsRecoverySettings(recoverJobsOnStart = false)
 
 }

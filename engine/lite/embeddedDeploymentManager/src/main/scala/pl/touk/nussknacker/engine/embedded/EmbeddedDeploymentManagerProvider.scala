@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.{
   BaseModelDataProvider,
   CustomProcessValidator,
   DeploymentManagerDependencies,
-  JobsRecoveryOptions
+  JobsRecoverySettings
 }
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -52,6 +52,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     List(EmbeddedRequestResponseScenarioValidator)
   )
 
-  override def jobsRecoveryOptions(config: Config): JobsRecoveryOptions = JobsRecoveryOptions(recoverJobsOnStart = true)
+  override def jobsRecoverySettings(config: Config): JobsRecoverySettings =
+    JobsRecoverySettings(recoverJobsOnStart = true)
 
 }
