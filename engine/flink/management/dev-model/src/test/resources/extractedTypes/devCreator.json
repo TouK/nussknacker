@@ -15829,6 +15829,48 @@
             "result": {"refClazzName": "java.time.LocalDateTime"}
           }
         }
+      ],
+      "now": [
+        {
+          "description": "Returns current time as an Instant",
+          "name": "now",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.Instant"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.helper.DummyDateFormatHelper$"},
+    "methods": {
+      "format": [
+        {
+          "name": "format",
+          "signature": {
+            "noVarArgs": [
+              {"name": "temporal", "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.helper.DummyUuidHelper$"},
+    "methods": {
+      "uuid": [
+        {
+          "name": "uuid",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
       ]
     },
     "staticMethods": {}
