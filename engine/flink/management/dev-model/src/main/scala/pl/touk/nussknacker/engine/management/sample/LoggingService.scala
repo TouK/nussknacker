@@ -4,10 +4,10 @@ import cats.implicits.catsSyntaxOptionId
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, StaticParameterConfig}
+import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.BoolParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
-import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType, LabeledExpression}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -23,9 +23,14 @@ object LoggingService extends EagerService {
   def prepare(
       @ParamName("logger") @Nullable loggerName: String,
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[
-        TemplateEvaluationResult
-      ]
+      @ParamName("message")
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
+      @Editor(
+        `type` = EditorType.FIXED_VALUES_EDITOR,
+        possibleValues = Array(new LabeledExpression(expression = "expression", label = "label"))
+      )
+      message: LazyParameter[TemplateEvaluationResult]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
       private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"

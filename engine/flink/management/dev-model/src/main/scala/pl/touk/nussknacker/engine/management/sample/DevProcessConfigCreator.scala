@@ -147,7 +147,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None)
               )
             )
           )

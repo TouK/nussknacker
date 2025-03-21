@@ -23,7 +23,7 @@ export enum EditorMode {
 export enum EditorType {
     SPEL_PARAMETER_EDITOR = "SpelParameterEditor",
     BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
-    STRING_PARAMETER_EDITOR = "StringParameterEditor",
+    STATIC_STRING_PARAMETER_EDITOR = "StaticStringParameterEditor",
     FIXED_VALUES_PARAMETER_EDITOR = "FixedValuesParameterEditor",
     FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR = "FixedValuesWithIconParameterEditor",
     FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR = "FixedValuesWithRadioParameterEditor",

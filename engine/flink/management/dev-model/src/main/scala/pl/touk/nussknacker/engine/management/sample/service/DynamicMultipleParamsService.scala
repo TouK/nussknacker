@@ -54,7 +54,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
       NextParameters(
         List(
           Parameter(ParameterName("baz"), Typed[String])
-            .copy(defaultValue = Some(Expression.spel(s"'$fooValue' + '-' + ${barValue.renderedTemplate}")))
+            .copy(defaultValue = Some(Expression.spel(s"'$fooValue' + '-' + '${barValue.renderedTemplate}''")))
         )
       )
     case TransformationStep(
