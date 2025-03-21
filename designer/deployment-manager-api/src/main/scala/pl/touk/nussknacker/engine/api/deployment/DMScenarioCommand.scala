@@ -41,6 +41,7 @@ case class DMRunDeploymentCommand(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     canonicalProcess: CanonicalProcess,
+    // TODO: job update strategy should be a part of deployment service logic, instead of DeploymentManager's
     updateStrategy: DeploymentUpdateStrategy
 ) extends DMScenarioCommand[Option[ExternalDeploymentId]]
 

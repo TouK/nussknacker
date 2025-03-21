@@ -16,7 +16,13 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  AdditionalModelConfigs,
+  DeploymentData,
+  DeploymentId,
+  EngineSetupName,
+  User
+}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
@@ -104,10 +110,6 @@ class ScenarioDeploymentReconciler(
   )(implicit user: LoggedUser): Future[List[(ScenarioWithDetailsEntity[CanonicalProcess], DeploymentId)]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = Fresh
     for {
-      // Currently, job recovery is supported only for DeploymentManagers that supports DeploymentsStatusesQueryForAllScenarios
-      bulkQueriedStatuses <- deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(
-        processingTypeForWhichJobsShouldBeRecovered
-      )
       // In the perfect World we would fetch all deployments that are not finished for all scenarios, but with deployments modelled as actions, we have to fetch deployed scenarios
       // (having last state action = deploy and state = finished (not execution finished)). See comment in newdeployment.DeploymentService
       lastDeployedScenarios <- scenarioRepository.fetchLatestProcessesDetails[CanonicalProcess](
@@ -115,6 +117,10 @@ class ScenarioDeploymentReconciler(
       )
       notFinishedDeploymentsForScenario = lastDeployedScenarios.map(scenario =>
         (scenario, DeploymentId.fromActionId(scenario.lastDeployedAction.get.id))
+      )
+      // Currently, job recovery is supported only for DeploymentManagers that supports DeploymentsStatusesQueryForAllScenarios
+      bulkQueriedStatuses <- deploymentStatusesProvider.getBulkQueriedDeploymentStatusesForSupportedManagers(
+        processingTypeForWhichJobsShouldBeRecovered
       )
       notFinishedDeploymentsThatAreNotRunning = notFinishedDeploymentsForScenario.filter {
         case (scenario, deploymentId) =>
@@ -155,6 +161,7 @@ class ScenarioDeploymentReconciler(
               scenario.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
               deploymentData,
               resolvedScenario,
+              // This strategy has no sense in our case, see notice next to DeploymentUpdateStrategy
               DeploymentUpdateStrategy
                 .ReplaceDeploymentWithSameScenarioName(RestoreStateFromReplacedJobSavepoint)
             )
@@ -171,12 +178,12 @@ class ScenarioDeploymentReconciler(
   private def recoverScenarioJob(processingType: ProcessingType, deployCommand: DMRunDeploymentCommand)(
       implicit user: LoggedUser
   ) = {
-    logger.info(
-      s"Recovering scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}]"
-    )
-    val deployManager = processingTypeServicesProvider
+    val services = processingTypeServicesProvider
       .forProcessingTypeUnsafe(processingType)
-      .deploymentManager
+    logger.info(
+      s"Recovering scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] on engine setup [${services.engineSetupName}]"
+    )
+    val deployManager = services.deploymentManager
     val deployResultFuture = {
       deployManager
         .processCommand(
@@ -194,12 +201,12 @@ class ScenarioDeploymentReconciler(
     deployResultFuture.transform {
       case Success(_) =>
         logger.info(
-          s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery finished successfully"
+          s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery on engine setup [${services.engineSetupName}] finished successfully"
         )
         Success(())
       case Failure(ex) =>
         logger.warn(
-          s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery failed. Application will start anyway.",
+          s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery on engine setup [${services.engineSetupName}] failed. Application will start anyway.",
           ex
         )
         Success(())
@@ -212,6 +219,7 @@ object ScenarioDeploymentReconciler {
 
   final class ProcessingTypeServicesDeps(
       val deploymentManager: DeploymentManager,
+      val engineSetupName: EngineSetupName,
       val jobsRecoverySettings: JobsRecoverySettings,
       val scenarioResolver: ScenarioResolver
   )

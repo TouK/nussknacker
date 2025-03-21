@@ -287,9 +287,10 @@ object DomainServices {
       reconciler = new ScenarioDeploymentReconciler(
         processingTypeServicesProvider.mapValues(services =>
           new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
-            services.deploymentData.validDeploymentManagerOrStub,
-            services.deploymentData.jobsRecoverySettings,
-            services.scenarioResolver
+            deploymentManager = services.deploymentData.validDeploymentManagerOrStub,
+            engineSetupName = services.deploymentData.engineSetupName,
+            jobsRecoverySettings = services.deploymentData.jobsRecoverySettings,
+            scenarioResolver = services.scenarioResolver
           )
         ),
         deploymentsStatusesProvider,
