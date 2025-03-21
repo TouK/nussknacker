@@ -43,7 +43,6 @@ Because we use [HOCON](../#conventions), you can set (or override) any configura
 | INFLUXDB_URL                  | string   | http://localhost:8086                                  | URL to InfluxDB used by counts mechanism                                                                                                                                                                                                                     |
 | PROMETHEUS_METRICS_PORT       | int      |                                                        | When defined, JMX MBeans are exposed as Prometheus metrics on this port                                                                                                                                                                                      |
 | PROMETHEUS_AGENT_CONFIG_FILE  | int      | $NUSSKNACKER_DIR/conf/jmx_prometheus.yaml              | Default configuration for JMX Prometheus agent. Used only when agent is enabled. See `PROMETHEUS_METRICS_PORT`                                                                                                                                               |
-| TABLES_DEFINITION_FILE        | string   | $NUSSKNACKER_DIR/conf/dev-tables-definition.sql        | Location of file containing definitions of tables for Flink Table API components in Flink Sql                                                                                                                                                                |
 
 ## OAuth2 environment variables
 

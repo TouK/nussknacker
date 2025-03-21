@@ -38,8 +38,11 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
       env = Map(
-        "SAVEPOINT_DIR_NAME"                -> savepointDir.getFileName.toString,
-        "FLINK_PROPERTIES"                  -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
+        "SAVEPOINT_DIR_NAME" -> savepointDir.getFileName.toString,
+        //  Nu requires a little bit more metaspace than Flink default allocate based on process size
+        "FLINK_PROPERTIES" ->
+          s"""jobmanager.memory.jvm-metaspace.size: 400m
+             |state.savepoints.dir: ${savepointDir.toFile.toURI.toString}""".stripMargin,
         "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString
       ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
