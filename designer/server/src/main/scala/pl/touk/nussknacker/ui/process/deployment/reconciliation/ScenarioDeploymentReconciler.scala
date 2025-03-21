@@ -1,6 +1,10 @@
 package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
 import cats.data.Validated
+import cats.implicits.toFunctorOps
+import cats.instances.list._
+import cats.instances.tuple._
+import cats.syntax.apply._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.JobsRecoverySettings
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
@@ -38,7 +42,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class ScenarioDeploymentReconciler(
     processingTypeServicesProvider: ProcessingTypeDataProvider[
@@ -93,16 +97,44 @@ class ScenarioDeploymentReconciler(
       notFinishedDeploymentsThatAreNotRunning <- collectNotFinishedDeploymentsThatAreNotRunning(
         processingTypeForWhichJobsShouldBeRecovered
       )
+      _ = logRecoveryBegin(notFinishedDeploymentsThatAreNotRunning)
       runDeploymentCommandsByProcessingType <-
         Future
           .sequence(notFinishedDeploymentsThatAreNotRunning.map { case (scenario, deploymentId) =>
             prepareRunDeploymentCommandForValidScenario(scenario, deploymentId)
           })
           .map(_.flatten)
-      _ <- Future.sequence(runDeploymentCommandsByProcessingType.map { case (processingType, deployCommand) =>
-        recoverScenarioJob(processingType, deployCommand)
+      recoveryResult <- Future.sequence(runDeploymentCommandsByProcessingType.map {
+        case (processingType, deployCommand) =>
+          recoverScenarioJob(processingType, deployCommand)
       })
+      _ = logRecoveryEnd(recoveryResult)
     } yield ()
+  }
+
+  private def logRecoveryBegin(
+      notFinishedDeploymentsThatAreNotRunning: List[(ScenarioWithDetailsEntity[CanonicalProcess], DeploymentId)]
+  ): Unit = {
+    if (notFinishedDeploymentsThatAreNotRunning.isEmpty) {
+      logger.info(
+        s"No jobs to recover."
+      )
+    } else {
+      logger.info(
+        s"Starting jobs recovery process. ${notFinishedDeploymentsThatAreNotRunning.size} jobs to recover."
+      )
+    }
+  }
+
+  private def logRecoveryEnd(
+      recoveryResult: List[Try[Unit]]
+  ): Unit = {
+    if (recoveryResult.nonEmpty) {
+      val (successes, failures) = recoveryResult.partition(_.isSuccess)
+      logger.info(
+        s"Jobs recovery process finished. $successes jobs recovered successfully, $failures jobs recovery failed."
+      )
+    }
   }
 
   private def collectNotFinishedDeploymentsThatAreNotRunning(
@@ -177,7 +209,7 @@ class ScenarioDeploymentReconciler(
 
   private def recoverScenarioJob(processingType: ProcessingType, deployCommand: DMRunDeploymentCommand)(
       implicit user: LoggedUser
-  ) = {
+  ): Future[Try[Unit]] = {
     val services = processingTypeServicesProvider
       .forProcessingTypeUnsafe(processingType)
     logger.info(
@@ -203,13 +235,13 @@ class ScenarioDeploymentReconciler(
         logger.info(
           s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery on engine setup [${services.engineSetupName}] finished successfully"
         )
-        Success(())
+        Success(Success())
       case Failure(ex) =>
         logger.warn(
           s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery on engine setup [${services.engineSetupName}] failed. Application will start anyway.",
           ex
         )
-        Success(())
+        Success(Failure(ex))
     }
   }
 
