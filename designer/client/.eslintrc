@@ -1,86 +1,97 @@
 {
-    "root": false,
-    "settings": {
-        "react": {
-            "version": "detect"
-        }
-    },
-    "env": {
-        "browser": true,
-        "node": true
-    },
-    "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended",
-        "plugin:react-hooks/recommended",
-        "plugin:@typescript-eslint/recommended",
-        "prettier"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint", "i18next"],
-    "rules": {
-        "i18next/no-literal-string": [
-            "error",
-            {
-                "ignore": ["-icon", ".svg", ".jpg", ".jpeg", ".png"],
-                "ignoreCallee": [
-                    "t",
-                    "withTranslation",
-                    "useTranslation",
-                    "reportEvent",
-                    "headerStyles",
-                    "_.get",
-                    "_.pick",
-                    "_.has",
-                    "classNames",
-                    "classnames",
-                    "cx",
-                    "api.get",
-                    "api.post",
-                    "describe",
-                    "css",
-                    "querySelector",
-                    "querySelectorAll"
-                ],
-                "ignoreAttribute": [
-                    "onHandleColor",
-                    "svgFile",
-                    "bounds",
-                    "handle",
-                    "column",
-                    "glyph",
-                    "value",
-                    "style",
-                    "classNames",
-                    "className",
-                    "valueClassName",
-                    "rowClassName",
-                    "fieldType",
-                    "classNamePrefix"
-                ]
-            }
+  "root": false,
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "i18next", "import"],
+  "rules": {
+    "i18next/no-literal-string": [
+      "error",
+      {
+        "ignore": ["-icon", ".svg", ".jpg", ".jpeg", ".png"],
+        "ignoreCallee": [
+          "t",
+          "withTranslation",
+          "useTranslation",
+          "reportEvent",
+          "headerStyles",
+          "_.get",
+          "_.pick",
+          "_.has",
+          "classNames",
+          "classnames",
+          "cx",
+          "api.get",
+          "api.post",
+          "describe",
+          "css",
+          "querySelector",
+          "querySelectorAll"
         ],
-        "react/prop-types": "off",
-        "react-hooks/exhaustive-deps": "error"
-    },
-    "overrides": [
-        {
-            "files": ["!src/**/*"],
-            "rules": {
-                "@typescript-eslint/no-var-requires": "off"
-            }
-        },
-        {
-            "files": ["**/*.ts"],
-            "parserOptions": {
-                "project": "tsconfig.json"
-            }
-        },
-        {
-            "files": ["cypress/**/*.ts"],
-            "parserOptions": {
-                "project": "cypress/tsconfig.json"
-            }
+        "ignoreAttribute": [
+          "onHandleColor",
+          "svgFile",
+          "bounds",
+          "handle",
+          "column",
+          "glyph",
+          "value",
+          "style",
+          "classNames",
+          "className",
+          "valueClassName",
+          "rowClassName",
+          "fieldType",
+          "classNamePrefix"
+        ]
+      }
+    ],
+    "react/prop-types": "off",
+    "react-hooks/exhaustive-deps": "error",
+    "import/order": [
+      "warn",
+      {
+        "groups": ["builtin", "external", ["internal", "parent", "sibling", "index"]],
+        "newlines-between": "always",
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
         }
+      }
     ]
+  },
+  "overrides": [
+    {
+      "files": ["!src/**/*"],
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    },
+    {
+      "files": ["**/*.ts"],
+      "parserOptions": {
+        "project": "tsconfig.json"
+      }
+    },
+    {
+      "files": ["cypress/**/*.ts"],
+      "parserOptions": {
+        "project": "cypress/tsconfig.json"
+      }
+    }
+  ]
 }
