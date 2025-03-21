@@ -3,7 +3,6 @@ package pl.touk.nussknacker.devmodel
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
 import pl.touk.nussknacker.devmodel.TestData._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -14,9 +13,6 @@ import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-
-import java.io.File
-import java.nio.charset.StandardCharsets
 
 class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
 
@@ -38,7 +34,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
   private lazy val sqlOutputTableNameTest3 = "output_test3"
   private val tableComponentName           = "table"
 
-  private lazy val sqlTablesConfig =
+  private lazy val tablesDefinition =
     s"""
        |CREATE TABLE $sqlInputTableNameTest1 (
        |   someInt     INT,
@@ -105,17 +101,10 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |);
        |""".stripMargin
 
-  private lazy val sqlTablesDefinitionFilePath = {
-    val tempFile = File.createTempFile("tables-definition-test", ".sql")
-    tempFile.deleteOnExit()
-    FileUtils.writeStringToFile(tempFile, sqlTablesConfig, StandardCharsets.UTF_8)
-    tempFile.toPath
-  }
-
   private lazy val kafkaTableConfig =
     s"""
        |{
-       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  tableDefinition: \"\"\" $tablesDefinition \"\"\"
        |}
        |""".stripMargin
 
