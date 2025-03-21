@@ -2,6 +2,7 @@ import React from "react";
 import { Thread } from "@assistant-ui/react-ui";
 import { Composer } from "./components/Composer";
 import { UserMessage } from "./components/UserMessage";
+import { AssistantMessage } from "./components/AssistantMessage";
 import { styled } from "@mui/material";
 
 const StyledRoot = styled("div")(({ theme }) => ({
@@ -26,10 +27,7 @@ export const AiAssistant = () => {
                 components={{
                     UserMessage,
                     Composer: () => <></>,
-                    // MessagesFooter: () => <div>This is a footer message</div>,
-                    // AssistantMessage: () => <div>This is an assistant message</div>,
-                    // ThreadWelcome: () => <div>Welcome to the thread</div>,
-                    EditComposer: () => <>works</>,
+                    AssistantMessage,
                 }}
             />
             <Composer />

@@ -24,7 +24,7 @@ export const Composer = () => {
     }, [send]);
 
     return (
-        <Box component={"form"} display="flex" flexDirection="row" alignItems="center">
+        <Box display="flex" flexDirection="row" alignItems="center">
             <NodeTable sx={{ margin: 0, width: "80%" }}>
                 <div className={nodeValue}>
                     <NodeInput

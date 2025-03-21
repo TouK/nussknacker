@@ -3,12 +3,18 @@ import { useMessage } from "@assistant-ui/react";
 import { Box, Typography } from "@mui/material";
 
 export const UserMessage = () => {
-    const { content } = useMessage();
+    const { content, ...rest } = useMessage();
+    const questionLabel = "Question:";
 
+    console.log(rest);
     return (
         <Box sx={{ display: "flex", flexDirection: "column" }}>
-            {content.map(({ text, id }) => {
-                return <Typography key={id}>Question: {text}</Typography>;
+            {content.map((part, index) => {
+                return (
+                    <Typography key={index}>
+                        {questionLabel} {part.text}
+                    </Typography>
+                );
             })}
         </Box>
     );

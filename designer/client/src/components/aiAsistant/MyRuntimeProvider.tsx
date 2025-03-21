@@ -2,32 +2,46 @@ import React, { ReactNode } from "react";
 import { AssistantRuntimeProvider, useLocalRuntime, type ChatModelAdapter } from "@assistant-ui/react";
 
 const backendApi = async function* ({ messages, abortSignal, context }) {
-    console.log({ messages });
+    const response = await fetch("http://0.0.0.0:8080/sse", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question: messages[messages.length - 1].content[0].text, userId: "12345" }),
+    });
 
-    // Sample message parts to simulate streaming
-    const responseParts = [
-        "Hello",
-        ", I'm analyzing your deployment parameters",
-        ".\n\nYour process ",
-        "has several components that need configuration",
-        ".\n\nHave you considered ",
-        "adding validation rules to your parameters?",
-        " This would ensure data integrity during deployment."
-    ];
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    const responseParts = [];
 
-    for (const part of responseParts) {
-        // Check if request was aborted
-        if (abortSignal?.aborted) {
-            throw new Error("Request aborted");
+    const readStream = async () => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            value.split("data: ").forEach((line) => {
+                const chunk = line.replace(/\r?\n\r?\n$/, "");
+                responseParts.push(chunk);
+            });
         }
+    };
 
-        // Yield each part with a delay to simulate streaming
-        yield {
-            choices: [{ delta: { content: part } }]
-        };
+    readStream();
 
-        // Simulate network delay between chunks
-        await new Promise(resolve => setTimeout(resolve, 300));
+    if (abortSignal) {
+        abortSignal.addEventListener("abort", () => {
+            reader.cancel();
+        });
+    }
+
+    while (true) {
+        if (responseParts.length > 0) {
+            const part = responseParts.shift();
+            yield {
+                choices: [{ delta: { content: part } }],
+            };
+        } else {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        }
     }
 };
 
