@@ -37,10 +37,6 @@ import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
-import pl.touk.nussknacker.engine.schemedkafka.FlinkUniversalSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
-import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import java.nio.charset.StandardCharsets
@@ -87,9 +83,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "universal-kafka"         -> all(universalKafkaSource(modelDependencies)),
-      "delayed-universal-kafka" -> all(delayedUniversalKafkaSource(modelDependencies)),
-      "real-kafka"              -> all(fixedValueKafkaSource[String](modelDependencies, new SimpleStringSchema())),
+      "real-kafka" -> all(fixedValueKafkaSource[String](modelDependencies, new SimpleStringSchema())),
       "real-kafka-json-SampleProduct" -> all(
         fixedValueKafkaSource(
           modelDependencies,
@@ -275,30 +269,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     new KafkaSourceFactory[String, T](
       schemaFactory,
       formatterFactory,
-      modelDependencies,
-      new FlinkKafkaSourceImplFactory(None)
-    )
-  }
-
-  private def universalKafkaSource(
-      modelDependencies: ProcessObjectDependencies,
-  ): UniversalKafkaSourceFactory = {
-    val schemaRegistryClientFactory = UniversalSchemaRegistryClientFactory
-    new UniversalKafkaSourceFactory(
-      schemaRegistryClientFactory,
-      FlinkUniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
-      modelDependencies,
-      new FlinkKafkaSourceImplFactory(None)
-    )
-  }
-
-  private def delayedUniversalKafkaSource(
-      modelDependencies: ProcessObjectDependencies,
-  ): UniversalKafkaSourceFactory = {
-    val schemaRegistryClientFactory = UniversalSchemaRegistryClientFactory
-    new DelayedUniversalKafkaSourceFactory(
-      schemaRegistryClientFactory,
-      FlinkUniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
       modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )

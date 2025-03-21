@@ -335,7 +335,7 @@ class UniversalKafkaSourceFactory(
       .optional[Any](dataSampleParamName)
       .withCreator(
         modify = _.copy(
-          // todo change to JsonEditor
+          // todo change editor to JsonEditor and expression to Json after introducing JSON Expression language
           editor = Some(StringParameterEditor),
           validators = List(JsonValidator),
           defaultValue = Some(Expression.spel("'{}'")),

@@ -10,7 +10,7 @@ import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
-import { FieldSwitch } from "./field/FieldSwitch";
+import { FieldSwitch, SINGLE_EDITOR_TO_DISPLAY } from "./field/FieldSwitch";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -82,6 +82,9 @@ function EditableEditorRow({
     rowClassName?: string;
     renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
+    const isSingleEditorVisible =
+        props?.param?.editors?.length === 1 && SINGLE_EDITOR_TO_DISPLAY.includes(props?.param?.editors?.[0]?.type);
+    const isMultipleEditors = props?.param?.editors?.length > 1;
     return (
         <FormControl
             className={cx(rowClassName && rowClassName)}
@@ -89,7 +92,10 @@ function EditableEditorRow({
                 width: "100%",
                 margin: rowClassName && 0,
                 "& .MuiFormLabel-root": {
-                    marginTop: !props.readOnly && props.showSwitch ? LABEL_MARGIN_WHEN_FIELD_SWITCH_VISIBLE : undefined,
+                    marginTop:
+                        !props.readOnly && props.showSwitch && (isSingleEditorVisible || isMultipleEditors)
+                            ? LABEL_MARGIN_WHEN_FIELD_SWITCH_VISIBLE
+                            : undefined,
                 },
             }}
         >
