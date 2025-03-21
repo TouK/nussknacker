@@ -14,6 +14,7 @@ import scala.concurrent.duration.FiniteDuration
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
+// If you are adding some method with default value, mind that it should be override in DeploymentManagerProviderCorrectClassloaderHandler
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(

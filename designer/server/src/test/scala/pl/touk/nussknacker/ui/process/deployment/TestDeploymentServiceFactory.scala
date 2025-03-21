@@ -6,6 +6,7 @@ import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
@@ -90,6 +91,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
             processingType.stringify -> ValueWithRestriction.anyUser(
               new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
                 deploymentManager,
+                EngineSetupName("mock"),
                 JobsRecoverySettings.noRecovery,
                 TestFactory.scenarioResolver
               )
