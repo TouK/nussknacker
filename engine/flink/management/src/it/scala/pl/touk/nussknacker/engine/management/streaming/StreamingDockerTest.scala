@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoaderFactory
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.DockerTest
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 
 import java.util.UUID
 
@@ -41,7 +41,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
       .unsafeRunSync()
 
   protected lazy val (deploymentManagerClassLoader, releaseDeploymentManagerClassLoaderResources) =
-    DeploymentManagersClassLoader.create(List.empty).allocated.unsafeRunSync()
+    DeploymentManagersClassLoaderFactory.create(List.empty).allocated.unsafeRunSync()
 
   protected lazy val deploymentManager: DeploymentManager =
     FlinkDeploymentManagerProviderHelper.createDeploymentManager(

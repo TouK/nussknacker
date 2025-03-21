@@ -6,7 +6,7 @@ import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import pl.touk.nussknacker.engine.BaseModelData
+import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkMiniClusterScenarioStateVerifier(
-    modelData: BaseModelData,
+    modelDataProvider: BaseModelDataProvider,
     sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
     waitForJobIsFinishedRetryPolicy: retry.Policy
 )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime)
@@ -30,13 +30,13 @@ class FlinkMiniClusterScenarioStateVerifier(
   // because it is already in separate assembly for purpose of sending it to Flink during deployment.
   // Other option would be to add flinkExecutor.jar to classpath from which DM is loaded
   private val jobInvoker = new ReflectiveMethodInvoker[JobExecutionResult](
-    modelData.modelClassLoader,
+    modelDataProvider.modelClassLoader,
     "pl.touk.nussknacker.engine.process.scenariotesting.FlinkScenarioStateVerificationJob",
     "run"
   )
 
   private val legacyFallbackToSingleUseMiniClusterHandler =
-    new LegacyFallbackToSingleUseMiniClusterHandler(modelData.modelClassLoader, "scenario state verification")
+    new LegacyFallbackToSingleUseMiniClusterHandler(modelDataProvider.modelClassLoader, "scenario state verification")
 
   def verify(
       processVersion: ProcessVersion,
@@ -50,7 +50,7 @@ class FlinkMiniClusterScenarioStateVerifier(
           .getOrElse(scenario)
         def runJob(env: StreamExecutionEnvironment): JobExecutionResult =
           jobInvoker.invokeStaticMethod(
-            modelData,
+            modelDataProvider.getCurrentModelData(),
             scenarioWithOverriddenParallelism,
             processVersion,
             savepointPath,

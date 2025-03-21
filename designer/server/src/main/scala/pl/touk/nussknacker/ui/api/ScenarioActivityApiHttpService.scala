@@ -403,9 +403,7 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           sourceEnvironment = sourceEnvironment.name,
-          sourceUser = sourceUser.value,
           sourceScenarioVersionId = sourceScenarioVersionId.map(_.value),
-          targetEnvironment = targetEnvironment.map(_.name),
         )
       case ScenarioActivity.OutgoingMigration(
             _,
@@ -462,7 +460,6 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
-          scheduleName = scheduleName,
           scheduledExecutionStatus = scheduledExecutionStatus,
           createdAt = createdAt,
           retriesLeft = retriesLeft,

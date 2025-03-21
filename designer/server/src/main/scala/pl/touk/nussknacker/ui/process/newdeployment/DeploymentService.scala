@@ -40,12 +40,10 @@ import scala.language.higherKinds
 import scala.util.control.NonFatal
 
 // TODO: This class is a new version of deployment.DeploymentService. The problem with the old one is that
-//       it joins multiple responsibilities like activity log (currently called "actions") and deployments management.
-//       Also, because of the fact that periodic mechanism is build as a plug-in (DeploymentManager), some deployment related
-//       operations (run now operation) is modeled as a CustomAction. Eventually, we should:
-//       - Move periodic mechanism into to the designer's core
-//       - Remove CustomAction
-//       After we do this, we can remove legacy classes and fully switch to the new once.
+//       it has assumption, that scenario can have only one deployment. This is reasonable for streaming
+//       scenarios but not for batch scenarios which can have many invocation done concurrently.
+//       We should extract the logic related with streaming scenarios lifecycle to some separated class
+//       and use this class for deployment management for both streaming and batch cases
 class DeploymentService(
     scenarioMetadataRepository: ScenarioMetadataRepository,
     scenarioGraphVersionService: ScenarioGraphVersionService,

@@ -11,19 +11,17 @@ import scala.util.control.NonFatal
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
  *
- * One of the biggest issues is that it can break current operations - when reloadAll is invoked, e.g. during
- * process deploy via FlinkRestManager it may very well happen that http backed is closed between two Flink invocations.
+ * One of the biggest issues is that it can break current operations - when reloadAll is run, e.g. during discovering
+ * of components it may very well happen that components will be inconsistent inside the operation.
  * To handle this correctly we probably need sth like:
- * def withProcessingTypeData(processingType: ProcessingType)(action: ProcessingTypeData=>Future[T]): Future[T]
+ * def withProcessingTypeData(processingType: ProcessingType)(action: ProcessingTypeData=>F[T]): F[T]
  * to be able to wait for all operations to complete
- *
- * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
- * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
 class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] private (
-    loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
+    loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]],
+    initialState: ProcessingTypeDataState[Data, CombinedData]
 )(implicit ioRuntime: IORuntime)
-    extends ProcessingTypeDataProvider[Data, CombinedData](ProcessingTypeDataState.uninitialized)
+    extends ProcessingTypeDataProvider[Data, CombinedData](initialState)
     with LazyLogging {
 
   def reloadAll: IO[Unit] = {
@@ -76,13 +74,15 @@ class ReloadableProcessingTypeDataProvider[Data <: AutoCloseable, CombinedData] 
 
 object ReloadableProcessingTypeDataProvider {
 
-  def apply[Data <: AutoCloseable, CombinedData](
+  def create[Data <: AutoCloseable, CombinedData](
       loadMethod: IO[ProcessingTypeDataState[Data, CombinedData]]
-  ): ReloadableProcessingTypeDataProvider[Data, CombinedData] = {
+  ): IO[ReloadableProcessingTypeDataProvider[Data, CombinedData]] = {
     // We create separate ioRuntime to ensure that we don't have some deadlocks during reading state where is used unsafeRunSync()
     // See ProcessingTypeDataProvider.state method
     implicit val ioRuntime: IORuntime = IORuntime.builder().build()
-    new ReloadableProcessingTypeDataProvider[Data, CombinedData](loadMethod)
+    loadMethod.map { initialState =>
+      new ReloadableProcessingTypeDataProvider[Data, CombinedData](loadMethod, initialState)
+    }
   }
 
 }

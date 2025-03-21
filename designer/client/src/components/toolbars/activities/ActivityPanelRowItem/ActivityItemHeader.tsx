@@ -227,6 +227,7 @@ const WithOpenVersion = ({
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
+            title={"Switch to version " + scenarioVersion}
             {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesOpenVersion })}
         >
             {children}
@@ -239,10 +240,13 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
     const { processVersionId } = scenario || {};
     const { t } = useTranslation();
 
+    const actionsWithVersionChange: ActivityType[] = ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_DEPLOYED", "SCENARIO_MODIFIED"];
+
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
-    const openVersionEnable =
-        ["SCENARIO_MODIFIED", "SCENARIO_DEPLOYED"].includes(activity.type) && activity.scenarioVersionId !== processVersionId;
-    const isVersionSelected = ["SCENARIO_MODIFIED"].includes(activity.type) && activity.scenarioVersionId === processVersionId;
+    const openVersionEnable = actionsWithVersionChange.includes(activity.type) && activity.scenarioVersionId !== processVersionId;
+    const isVersionSelected =
+        ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_MODIFIED"].includes(activity.type) &&
+        activity.scenarioVersionId === processVersionId;
 
     const getHeaderTitle = useMemo(() => {
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
@@ -258,7 +262,6 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
                 <Typography
                     variant={"caption"}
                     component={SearchHighlighter}
-                    title={text}
                     highlights={[searchQuery]}
                     sx={(theme) => ({
                         color: theme.palette.text.primary,

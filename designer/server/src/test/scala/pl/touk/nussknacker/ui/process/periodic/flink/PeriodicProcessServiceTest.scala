@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.ScheduledDeploymentDetails
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.EnrichedProcessConfig

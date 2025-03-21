@@ -59,15 +59,19 @@ class BaseK8sDeploymentManagerTest
     .withValue("imagePullPolicy", fromAnyRef("Never"))
 
   protected def prepareManager(modelData: ModelData, deployConfig: Config): K8sDeploymentManager = {
-    val dependencies = DeploymentManagerDependencies(
+    val dependencies = new DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-      new ProcessingTypeActionServiceStub,
       system.dispatcher,
       IORuntime.global,
       system,
       backend
     )
-    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig, dependencies)
+    new K8sDeploymentManager(
+      modelData.toModelDataProvider,
+      K8sDeploymentManagerConfig.parse(deployConfig),
+      deployConfig,
+      dependencies
+    )
   }
 
   override protected def beforeAll(): Unit = {

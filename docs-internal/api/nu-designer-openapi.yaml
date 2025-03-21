@@ -345,6 +345,128 @@ paths:
                         process-version: '0.1'
                         engine-version: '0.2'
                         generation-time: '2023-09-25T09:26:30.402299'
+  /api/app/processingtype/reload:
+    post:
+      tags:
+      - App
+      summary: Deprecated processing type data reload service - use model reload service
+        instead
+      operationId: postApiAppProcessingtypeReload
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/app/model/reload:
+    post:
+      tags:
+      - App
+      summary: Model reload service
+      operationId: postApiAppModelReload
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/app/healthCheck/process/deployment:
     get:
       tags:
@@ -499,66 +621,6 @@ paths:
                     processes:
                     - process2
                     - process3
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/app/processingtype/reload:
-    post:
-      tags:
-      - App
-      summary: Processing type data reload service
-      operationId: postApiAppProcessingtypeReload
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      responses:
-        '204':
-          description: ''
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4831,12 +4893,8 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
-                      - name: sourceEnvironment
+                      - name: migrateFrom
                         value: preprod
-                      - name: sourceUser
-                        value: user-preprod
-                      - name: targetEnvironment
-                        value: prod
                       - name: sourceScenarioVersionId
                         value: '23'
                       type: INCOMING_MIGRATION
@@ -4845,7 +4903,7 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
-                      - name: destinationEnvironment
+                      - name: migrateTo
                         value: preprod
                       type: OUTGOING_MIGRATION
                     - id: 924dfcd3-fbc7-44ea-8763-813874382204
@@ -4898,8 +4956,6 @@ paths:
                         value: '2024-01-17 14:21:17'
                       - name: finished
                         value: '2024-01-17 14:21:17'
-                      - name: scheduleName
-                        value: main-schedule
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4914,8 +4970,6 @@ paths:
                         value: '2024-01-17 14:21:17'
                       - name: finished
                         value: '2024-01-17 14:21:17'
-                      - name: scheduleName
-                        value: main-schedule
                       - name: retriesLeft
                         value: '1'
                       - name: nextRetryAt
@@ -5103,8 +5157,8 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Processing data
-                      icon: /assets/activities/processingData.svg
+                      displayableName: Run now scheduling
+                      icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
@@ -5216,8 +5270,8 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Processing data
-                      icon: /assets/activities/processingData.svg
+                      displayableName: Run now scheduling
+                      icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment

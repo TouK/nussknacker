@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.embedded.streaming
 
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
@@ -36,7 +37,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
     )
     val interpreterTry = Try(
       KafkaTransactionalScenarioInterpreter(
-        modelData,
+        modelDataProvider.getCurrentModelData().asInvokableModelData,
         contextPreparer,
         parsedResolvedScenario,
         jobData,

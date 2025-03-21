@@ -4,12 +4,12 @@ import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 
 class ScenarioStatisticsTest
     extends AnyFunSuite

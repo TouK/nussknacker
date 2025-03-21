@@ -6,7 +6,7 @@ import cats.effect.unsafe.IORuntime
 import io.circe.Json
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import pl.touk.nussknacker.engine.BaseModelData
+import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkMiniClusterScenarioTestRunner(
-    modelData: BaseModelData,
+    modelDataProvider: BaseModelDataProvider,
     sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
     parallelism: Int,
     waitForJobIsFinishedRetryPolicy: retry.Policy
@@ -30,13 +30,13 @@ class FlinkMiniClusterScenarioTestRunner(
   // because it is already in separate assembly for purpose of sending it to Flink during deployment.
   // Other option would be to add flinkExecutor.jar to classpath from which DM is loaded
   private val jobInvoker = new ReflectiveMethodInvoker[JobExecutionResult](
-    modelData.modelClassLoader,
+    modelDataProvider.modelClassLoader,
     "pl.touk.nussknacker.engine.process.scenariotesting.FlinkScenarioTestingJob",
     "run"
   )
 
   private val legacyFallbackToSingleUseMiniClusterHandler =
-    new LegacyFallbackToSingleUseMiniClusterHandler(modelData.modelClassLoader, "scenario testing")
+    new LegacyFallbackToSingleUseMiniClusterHandler(modelDataProvider.modelClassLoader, "scenario testing")
 
   // NU-1455: We encode variable on the engine, because of classLoader's problems
   def runTests(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): Future[TestResults[Json]] = {
@@ -52,7 +52,7 @@ class FlinkMiniClusterScenarioTestRunner(
           env: StreamExecutionEnvironment
       ): JobExecutionResult = {
         jobInvoker.invokeStaticMethod(
-          modelData,
+          modelDataProvider.getCurrentModelData(),
           scenarioWithOverriddenParallelism,
           scenarioTestData,
           collectingListener,

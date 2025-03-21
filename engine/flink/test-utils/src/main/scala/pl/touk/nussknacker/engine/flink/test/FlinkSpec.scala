@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.configuration.Configuration
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Suite}
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.WithConfig
 
 import java.util.UUID

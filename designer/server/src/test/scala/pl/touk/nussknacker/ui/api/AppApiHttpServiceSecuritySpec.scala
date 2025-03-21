@@ -379,7 +379,7 @@ class AppApiHttpServiceSecuritySpec
     }
   }
 
-  "The processing type data reload endpoint when" - {
+  "The model reload endpoint when" - {
     "authenticated should" - {
       "allow to reload when user is an admin" in {
         given()
@@ -397,7 +397,7 @@ class AppApiHttpServiceSecuritySpec
           }
           .when()
           .basicAuthAdmin()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(204)
       }
@@ -417,7 +417,7 @@ class AppApiHttpServiceSecuritySpec
           }
           .when()
           .basicAuthAllPermUser()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(403)
           .body(equalTo("The supplied authentication is not authorized to access this resource"))
@@ -440,7 +440,7 @@ class AppApiHttpServiceSecuritySpec
           }
           .when()
           .basicAuthUnknownUser()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
@@ -463,7 +463,7 @@ class AppApiHttpServiceSecuritySpec
           }
           .when()
           .noAuth()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(403)
           .body(equalTo("The supplied authentication is not authorized to access this resource"))

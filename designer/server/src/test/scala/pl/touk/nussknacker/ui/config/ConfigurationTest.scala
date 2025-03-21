@@ -4,7 +4,7 @@ import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.TestFactory
@@ -24,7 +24,7 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
     ModelData(
       config,
       TestFactory.modelDependencies,
-      ModelClassLoader(config.classPath, None, deploymentManagersClassLoader),
+      ModelClassLoaderFactory.create(config.classPath, None, deploymentManagersClassLoader),
     )
   }
 

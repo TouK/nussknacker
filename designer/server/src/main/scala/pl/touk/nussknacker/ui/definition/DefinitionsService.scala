@@ -157,8 +157,8 @@ object DefinitionsService {
     new DefinitionsService(
       processingTypeData.designerModelData.modelData,
       processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
-      processingTypeData.deploymentData.scenarioPropertiesConfig,
-      processingTypeData.deploymentData.fragmentPropertiesConfig,
+      processingTypeData.designerModelData.scenarioPropertiesConfig,
+      processingTypeData.designerModelData.fragmentPropertiesConfig,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository,
