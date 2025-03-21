@@ -151,7 +151,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       )
     )
 
-  private def prepareDeploy(scenarioId: ProcessId): Future[_] = {
+  def prepareDeploy(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Deploy
     val comment    = Comment.from("Deploy comment")
     dbioRunner.run(
