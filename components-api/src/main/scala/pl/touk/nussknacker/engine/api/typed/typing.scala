@@ -346,15 +346,21 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
-    def fromInstance(obj: Any): TypingResult = {
+    def fromInstance(obj: Any): TypingResult =
+      fromInstance(obj, TypedNull)
+
+    def fromInstanceWithNullsAsUnknowns(obj: Any): TypingResult =
+      fromInstance(obj, Unknown)
+
+    private def fromInstance(obj: Any, onNull: => TypingResult): TypingResult = {
       obj match {
         case null =>
-          TypedNull
+          onNull
         case map: Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(map)
+          val fieldTypes = typeMapFields(map, onNull)
           Typed.record(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
         case javaMap: java.util.Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(javaMap.asScala.toMap)
+          val fieldTypes = typeMapFields(javaMap.asScala.toMap, onNull)
           Typed.record(fieldTypes)
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
@@ -381,8 +387,8 @@ object typing {
       }
     }
 
-    private def typeMapFields(map: Map[String, Any]) = map.map { case (k, v) =>
-      k -> fromInstance(v)
+    private def typeMapFields(map: Map[String, Any], onNull: => TypingResult) = map.map { case (k, v) =>
+      k -> fromInstance(v, onNull)
     }
 
     // This is a factory method allowing to create TypedUnion, but also ensuring that none of type will be duplicated,

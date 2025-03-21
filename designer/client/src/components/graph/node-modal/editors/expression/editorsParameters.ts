@@ -18,7 +18,7 @@ export const editorsParameters: Record<EditorType, { displayName: string; langua
         displayName: "Fixed Values",
         language: ExpressionLang.SpEL,
     },
-    [EditorType.JSON_PARAMETER_EDITOR]: { displayName: "Json", language: ExpressionLang.JSON },
+    [EditorType.JSON_PARAMETER_EDITOR]: { displayName: "Json", language: ExpressionLang.SpEL },
     [EditorType.PERIOD_EDITOR]: { displayName: "Period", language: ExpressionLang.SpEL },
     [EditorType.SPEL_PARAMETER_EDITOR]: { displayName: "Expression", language: ExpressionLang.SpEL },
     [EditorType.STATIC_STRING_PARAMETER_EDITOR]: { displayName: "Text", language: ExpressionLang.String },

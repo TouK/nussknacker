@@ -34,7 +34,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     },
 }));
 
-const SINGLE_EDITOR_TO_DISPLAY: Editor["type"][] = [
+export const SINGLE_EDITOR_TO_DISPLAY: Editor["type"][] = [
     EditorType.CRON_EDITOR,
     EditorType.JSON_PARAMETER_EDITOR,
     EditorType.SPEL_PARAMETER_EDITOR,

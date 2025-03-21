@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedV
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
@@ -27,6 +28,7 @@ object KafkaUniversalComponentTransformer {
   final val sinkValidationModeParamName = ParameterName("Value validation mode")
   final val sinkRawEditorParamName      = ParameterName("Raw editor")
   final val contentTypeParamName        = ParameterName("Content type")
+  final val dataSampleParamName         = ParameterName("Data sample")
 
   def extractValidationMode(value: String): ValidationMode =
     ValidationMode.fromString(value, sinkValidationModeParamName)
