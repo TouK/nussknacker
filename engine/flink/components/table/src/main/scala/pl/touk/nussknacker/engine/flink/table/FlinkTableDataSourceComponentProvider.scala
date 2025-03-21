@@ -3,14 +3,17 @@ package pl.touk.nussknacker.engine.flink.table
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.util.FlinkUserCodeClassLoaders.SafetyNetWrapperClassLoader
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, FlinkDdlParser}
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 
+import java.net.URLClassLoader
 import scala.jdk.CollectionConverters._
 
 class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyLogging {
@@ -25,19 +28,25 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
     val sqlStatements                   = parsedConfig.tableDefinition
     val catalogConfigurationOpt         = parsedConfig.catalogConfiguration.map(_.asJava).map(Configuration.fromMap)
-    val flinkDataDefinition             = FlinkDataDefinition.applyUnsafe(sqlStatements, catalogConfigurationOpt)
+    val parsedSqlStatements             = sqlStatements.map(FlinkDdlParser.parseUnsafe).toList.flatten
+    val flinkDataDefinition             = FlinkDataDefinition.applyUnsafe(parsedSqlStatements, catalogConfigurationOpt)
+
+    val modelClassLoader = castModelClassloader()
+    val miniCluster      = FlinkMiniClusterFactory.createMiniClusterWithServices(modelClassLoader, new Configuration())
 
     List(
       ComponentDefinition(
         tableComponentName,
         new TableSourceFactory(
           flinkDataDefinition,
-          testDataGenerationModeOrDefault
+          testDataGenerationModeOrDefault,
+          miniCluster,
+          modelClassLoader
         )
       ),
       ComponentDefinition(
         tableComponentName,
-        new TableSinkFactory(flinkDataDefinition)
+        new TableSinkFactory(flinkDataDefinition, miniCluster, modelClassLoader)
       )
     )
   }
@@ -45,6 +54,27 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
   override def isAutoLoaded: Boolean = false
+
+  // TODO: Pass ModelClassLoader through API
+  private def castModelClassloader() = {
+    val modelClassLoader = Thread.currentThread().getContextClassLoader match {
+      // When executing tests in Designer, a SafetyNetWrapperClassLoader is used with the ModelClassloader as parent
+      case wrapperClassLoader: SafetyNetWrapperClassLoader =>
+        wrapperClassLoader.getParent match {
+          case cl: URLClassLoader => cl
+          case _ =>
+            throw new IllegalStateException(
+              "FlinkTableDataSourceComponentProvider should be loaded with ModelClassLoader as context ClassLoader"
+            )
+        }
+      case cl: URLClassLoader => cl
+      case _ =>
+        throw new IllegalStateException(
+          "FlinkTableDataSourceComponentProvider should be loaded with ModelClassLoader as context ClassLoader"
+        )
+    }
+    modelClassLoader
+  }
 
 }
 

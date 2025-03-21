@@ -299,6 +299,7 @@ lazy val commonSettings =
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
 val flinkV                = "1.19.2"
 val flinkConnectorKafkaV  = "3.2.0-1.19"
+val jdbcFlinkConnectorV   = "3.2.0-1.19"
 val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
@@ -1891,7 +1892,8 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
         "org.apache.flink"   % "flink-sql-parser"            % flinkV,
         "org.apache.flink"   % "flink-connector-files"       % flinkV, // needed for testing data generation
         "org.apache.flink"   % "flink-json"                  % flinkV, // needed for testing data generation
-        "org.apache.flink"   % "flink-csv"                   % flinkV % Test,
+        "org.apache.flink"   % "flink-csv"                   % flinkV              % Test,
+        "org.apache.flink"   % "flink-connector-jdbc"        % jdbcFlinkConnectorV % Test,
       )
     }
   )
