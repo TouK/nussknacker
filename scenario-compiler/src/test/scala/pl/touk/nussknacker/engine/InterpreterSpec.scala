@@ -1205,7 +1205,7 @@ object InterpreterSpec {
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
-      Future.successful(params(spelTemplateParameterName).asInstanceOf[TemplateEvaluationResult].renderedTemplate)
+      Future.successful(params(spelTemplateParameterName).asInstanceOf[String])
     }
 
   }
