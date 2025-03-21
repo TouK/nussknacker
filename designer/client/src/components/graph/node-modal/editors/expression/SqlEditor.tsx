@@ -6,10 +6,10 @@ import ReactAce from "react-ace/lib/ace";
 import { ExtendedEditor } from "./Editor";
 import { Formatter } from "./Formatter";
 import { SpelEditor, SpelEditorProps } from "./SpelEditor";
-import { isSwitchableTo } from "./StringEditor";
-import { EditorMode } from "./types";
+import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
 import { Ace } from "ace-builds";
 import { editorsParameters } from "./editorsParameters";
+import { isQuoted } from "./SpelQuotesUtils";
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -112,6 +112,14 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             language={editorsParameters.SqlParameterEditor.language}
         />
     );
+};
+
+const splitConcats = (value: string) => {
+    return value.split(/\s*\+\s*/gm);
+};
+
+export const isSwitchableTo = ({ expression, language }: ExpressionObj): boolean => {
+    return language === ExpressionLang.SpEL && splitConcats(expression.trim()).some(isQuoted);
 };
 
 SqlEditor.isSwitchableTo = isSwitchableTo;

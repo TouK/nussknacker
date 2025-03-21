@@ -5682,9 +5682,6 @@ components:
           format: date-time
         createdBy:
           type: string
-    StaticStringParameterEditor:
-      title: StaticStringParameterEditor
-      type: object
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -7281,7 +7278,6 @@ components:
       title: StaticParameterEditor
       oneOf:
       - $ref: '#/components/schemas/BoolParameterEditor'
-      - $ref: '#/components/schemas/StaticStringParameterEditor'
       - $ref: '#/components/schemas/CronParameterEditor'
       - $ref: '#/components/schemas/DateParameterEditor'
       - $ref: '#/components/schemas/DateTimeParameterEditor'
@@ -7292,8 +7288,12 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/StaticStringParameterEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
+    StaticStringParameterEditor:
+      title: StaticStringParameterEditor
+      type: object
     StatisticDto:
       title: StatisticDto
       type: object
