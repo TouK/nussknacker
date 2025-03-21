@@ -4,7 +4,8 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalid, valid}
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -35,8 +36,10 @@ import scala.jdk.CollectionConverters._
 
 class TableSinkFactory(flinkDataDefinition: FlinkDataDefinition)
     extends SingleInputDynamicComponent[Sink]
-    with SinkFactory
-    with BoundedStreamComponent {
+    with SinkFactory {
+
+  override def allowedProcessingModes: Component.AllowedProcessingModes =
+    SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
   @transient
   private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail

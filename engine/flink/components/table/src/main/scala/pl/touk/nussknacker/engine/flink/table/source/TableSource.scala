@@ -26,7 +26,10 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
-import pl.touk.nussknacker.engine.flink.table.source.TableSource._
+import pl.touk.nussknacker.engine.flink.table.source.TableSource.{
+  filteringInternalViewName,
+  SQL_EXPRESSION_PARAMETER_NAME
+}
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
 
@@ -126,6 +129,6 @@ class TableSource(
 }
 
 object TableSource {
-  val SQL_EXPRESSION_PARAMETER_NAME     = "sqlExpression"
   private val filteringInternalViewName = "filteringView"
+  val SQL_EXPRESSION_PARAMETER_NAME     = "sqlExpression"
 }
