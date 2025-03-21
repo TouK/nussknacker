@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
-import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
+import pl.touk.nussknacker.engine.management.sample.helper.{DateProcessHelper, DummyDateFormatHelper, DummyUuidHelper}
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
@@ -224,7 +224,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "RGB"            -> all(RGBDictionary.instance),
       "BusinessConfig" -> categories(BusinessConfigDictionary.instance),
       "TypedConfig"    -> all(ConfigTypedGlobalVariable),
-      "HelperFunction" -> all(GenericHelperFunction)
+      "HelperFunction" -> all(GenericHelperFunction),
+      "UTIL"           -> all(DummyUuidHelper),
+      "DATE_FORMAT"    -> all(DummyDateFormatHelper)
     )
 
     val additionalClasses = ExpressionConfig.defaultAdditionalClasses ++ List(
