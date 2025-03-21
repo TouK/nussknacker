@@ -1,11 +1,19 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
+import cats.implicits.toTraverseOps
+import org.apache.flink.configuration.Configuration
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases.allColumnTypesTable
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
-import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.definition.{
+  FlinkDataDefinition,
+  FlinkDdlParser,
+  TablesDefinitionDiscovery
+}
+import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
@@ -14,18 +22,28 @@ class TableSourceDataGenerationTest
     extends AnyFunSuite
     with Matchers
     with LoneElement
-    with ValidatedValuesDetailedMessage {
+    with ValidatedValuesDetailedMessage
+    with ModelClassLoaderSimulationSuite {
 
-  private val flinkDataDefinition =
-    FlinkDataDefinition.applyUnsafe(Some(FlinkSqlTableTestCases.allColumnTypesTable), None)
-
-  private val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
-
-  private val tableSource = new TableSource(
-    tableDefinition = discovery.listTables.loneElement,
-    flinkDataDefinition = flinkDataDefinition,
-    testDataGenerationMode = TestDataGenerationMode.Random
-  )
+  private val tableSource = {
+    val flinkDataDefinition =
+      FlinkDataDefinition.applyUnsafe(FlinkDdlParser.parseUnsafe(allColumnTypesTable), None)
+    val minicluster =
+      FlinkMiniClusterFactory.createMiniClusterWithServices(simulatedModelClassloader, new Configuration())
+    val discovery = TablesDefinitionDiscovery
+      .prepareDiscovery(
+        flinkDataDefinition,
+        FlinkMiniClusterFactory.createMiniClusterWithServices(simulatedModelClassloader, new Configuration()),
+        simulatedModelClassloader
+      )
+      .validValue
+    new TableSource(
+      tableDefinition = discovery.listTables.sequence.validValue.loneElement,
+      flinkDataDefinition = flinkDataDefinition,
+      testDataGenerationMode = TestDataGenerationMode.Random,
+      minicluster
+    )
+  }
 
   /*
   Note: Testing features like data generation or scenario testing (like ad hoc test) requires a full e2e test where

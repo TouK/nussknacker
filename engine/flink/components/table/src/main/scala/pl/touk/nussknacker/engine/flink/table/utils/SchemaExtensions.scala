@@ -27,6 +27,13 @@ object SchemaExtensions {
       )
     }
 
+    def containsPersistableMetadataColumns(): Boolean = {
+      resolvedSchema.getColumns.asScala.toList.exists {
+        case col: Column.MetadataColumn => col.isPersisted
+        case _                          => false
+      }
+    }
+
     // This is a copy-paste of toRowDataType is public and returns fields instead of DataType
     // The original method is used in toSourceRowDataType and toSinkRowDataType, but is private
     def toRowDataTypeFields(columnPredicate: Column => Boolean): List[DataTypes.Field] =

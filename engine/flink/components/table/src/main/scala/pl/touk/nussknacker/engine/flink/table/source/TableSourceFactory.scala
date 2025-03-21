@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
@@ -24,17 +26,29 @@ import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 
+import java.net.URLClassLoader
+import scala.collection.compat.toTraversableLikeExtensionMethods
+
 class TableSourceFactory(
     flinkDataDefinition: FlinkDataDefinition,
-    testDataGenerationMode: TestDataGenerationMode
+    testDataGenerationMode: TestDataGenerationMode,
+    miniCluster: FlinkMiniClusterWithServices,
+    classLoader: URLClassLoader
 ) extends SingleInputDynamicComponent[Source]
-    with SourceFactory {
+    with SourceFactory
+    with LazyLogging {
 
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
   @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery
+    .prepareDiscovery(
+      flinkDataDefinition,
+      miniCluster,
+      classLoader
+    )
+    .orFail
 
   override type State = TableSourceFactoryState
 
@@ -42,7 +56,9 @@ class TableSourceFactory(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val tableDefinitions          = tablesDiscovery.listTables
+      val (errors, tableDefinitions) = tablesDiscovery.listTables.map(_.toEither).partitionMap(identity)
+      errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
+
       val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
       NextParameters(
         parameters = tableNameParamDeclaration.createParameter() :: Nil,
@@ -72,7 +88,7 @@ class TableSourceFactory(
           s"Unexpected final state determined during parameters validation: $finalStateOpt"
         )
     }
-    new TableSource(selectedTable, flinkDataDefinition, testDataGenerationMode)
+    new TableSource(selectedTable, flinkDataDefinition, testDataGenerationMode, miniCluster)
   }
 
   override def nodeDependencies: List[NodeDependency] = List.empty

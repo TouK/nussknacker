@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.table.sink
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalid, valid}
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDependency, Parameter, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
@@ -31,18 +33,30 @@ import pl.touk.nussknacker.engine.util.parameters.{
 }
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
+import java.net.URLClassLoader
+import scala.collection.compat.toTraversableLikeExtensionMethods
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-class TableSinkFactory(flinkDataDefinition: FlinkDataDefinition)
-    extends SingleInputDynamicComponent[Sink]
-    with SinkFactory {
+class TableSinkFactory(
+    flinkDataDefinition: FlinkDataDefinition,
+    miniCluster: FlinkMiniClusterWithServices,
+    classLoader: URLClassLoader
+) extends SingleInputDynamicComponent[Sink]
+    with SinkFactory
+    with LazyLogging {
 
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
   @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery
+    .prepareDiscovery(
+      flinkDataDefinition,
+      miniCluster,
+      classLoader
+    )
+    .orFail
 
   override type State = TableSinkFactoryState
 
@@ -59,7 +73,9 @@ class TableSinkFactory(flinkDataDefinition: FlinkDataDefinition)
   override def nodeDependencies: List[NodeDependency] = List.empty
 
   private lazy val prepareInitialParameters: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    val tableDefinitions          = tablesDiscovery.listTables
+    val (errors, tableDefinitions) = tablesDiscovery.listTables.map(_.toEither).partitionMap(identity)
+    errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
+
     val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
     NextParameters(
       parameters = tableNameParamDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
