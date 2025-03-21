@@ -79,6 +79,13 @@
         "selector": "ImportNamespaceSpecifier",
         "message": "Wildcard imports are not allowed."
       }
+    ],
+    "@typescript-eslint/consistent-type-imports": [
+      "warn",
+      {
+        "prefer": "type-imports",
+        "disallowTypeAnnotations": false
+      }
     ]
   },
   "overrides": [
