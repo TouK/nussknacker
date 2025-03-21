@@ -27,4 +27,8 @@ trait WithCategoryUsedMoreThanOnceConfigScenarioHelper {
     rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = true)
   }
 
+  def updateScenario(scenarioName: ProcessName, scenario: CanonicalProcess): ProcessId = {
+    rawScenarioHelper.updateScenario(scenarioName, scenario).processId
+  }
+
 }
