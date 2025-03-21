@@ -13,8 +13,6 @@ class DeploymentManagerDispatcher(
     processRepository: FetchingProcessRepository[Future]
 ) {
 
-  def all(implicit user: LoggedUser): Map[ProcessingType, DeploymentManager] = managers.all
-
   def deploymentManagerUnsafe(
       processId: ProcessIdWithName
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {

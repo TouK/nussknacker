@@ -110,8 +110,8 @@ trait NuResourcesTest
   protected val processChangeListener = new TestProcessChangeListener()
 
   protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
-    // In pekko tests, it is hard to use deploymentManager.withWaitForDeployFinish(...) syntax because checks are done in function pipeline
-    // so we stub results with happy-path defaults. After rewriting endpoint to Tapir, and tests to rest-assured based it should be easier
+    // In pekko-based resources tests, it is hard to use deploymentManager.withStubbedDeployResult(...) syntax because checks are done in function pipeline.
+    // Because of that we stub results with happy-path defaults. After rewriting endpoint to Tapir and tests to rest-assured-based it should be easier
     defaultDeployResult = Future.successful(None),
     defaultCancelResult = Future.successful(())
   )

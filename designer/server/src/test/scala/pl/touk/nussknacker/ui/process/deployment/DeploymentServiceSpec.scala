@@ -788,7 +788,7 @@ class DeploymentServiceSpec
     val processName = generateProcessName
     prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentManager.withStubbedDeployFinish(processName) {
+    deploymentManager.withStubbedDeployResult(processName) {
       reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true).futureValue
     }
 

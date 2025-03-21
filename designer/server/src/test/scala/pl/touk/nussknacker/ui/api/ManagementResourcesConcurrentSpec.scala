@@ -33,7 +33,7 @@ class ManagementResourcesConcurrentSpec
     val scenario    = ProcessTestData.sampleScenario.withProcessName(processName)
     saveCanonicalProcessAndAssertSuccess(scenario)
 
-    deploymentManager.withStubbedDeployFinish(processName) {
+    deploymentManager.withStubbedDeployResult(processName) {
       val firstDeployResult  = deployProcess(processName)
       val secondDeployResult = deployProcess(processName)
       eventually {
@@ -61,7 +61,7 @@ class ManagementResourcesConcurrentSpec
 
     val scenario = ProcessTestData.sampleScenario.withProcessName(processName)
     saveCanonicalProcessAndAssertSuccess(scenario)
-    deploymentManager.withStubbedDeployFinish(processName) {
+    deploymentManager.withStubbedDeployResult(processName) {
       val firstDeployResult = deployProcess(processName)
       // we have to check if deploy was invoke, otherwise cancel can be faster than deploy
       eventually {

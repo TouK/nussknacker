@@ -59,7 +59,7 @@ class MockDeploymentManager private (
   @volatile
   var cancelResult: Future[Unit] = defaultCancelResult
 
-  private[mock] def cleanCancelResult() = cancelResult = defaultCancelResult
+  private[mock] def cleanCancelResult(): Unit = cancelResult = defaultCancelResult
 
   val managerProcessStates = new ConcurrentHashMap[ProcessName, List[DeploymentStatusDetails]]
 
@@ -214,7 +214,7 @@ object MockDeploymentManagerSyntaxSugar {
 
   implicit class Ops(deploymentManager: MockDeploymentManager) {
 
-    def withStubbedDeployFinish[T](name: ProcessName)(action: => T): T = {
+    def withStubbedDeployResult[T](name: ProcessName)(action: => T): T = {
       val future = Future.successful(Option.empty[ExternalDeploymentId])
       deploymentManager.deployResult.put(name, future)
       try {
