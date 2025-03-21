@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -27,8 +28,10 @@ class TableSourceFactory(
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode
 ) extends SingleInputDynamicComponent[Source]
-    with SourceFactory
-    with BoundedStreamComponent {
+    with SourceFactory {
+
+  override def allowedProcessingModes: Component.AllowedProcessingModes =
+    SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
   @transient
   private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail

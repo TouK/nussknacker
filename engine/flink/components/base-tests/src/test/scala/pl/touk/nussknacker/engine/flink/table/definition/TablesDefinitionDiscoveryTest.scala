@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
-import cats.data.Validated.Invalid
+import cats.implicits.catsSyntaxValidatedId
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog._
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
+import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.EmptyDataDefinitionConfiguration
 import pl.touk.nussknacker.engine.flink.table.definition.TablesDefinitionDiscoveryTest.invalidSqlStatements
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
@@ -24,24 +25,15 @@ class TablesDefinitionDiscoveryTest
     with PatientScalaFutures {
 
   test("return error for empty flink data definition") {
-    FlinkDataDefinition.create(
-      sqlStatements = None,
-      catalogConfigurationOpt = None,
-    ) should matchPattern { case Invalid(EmptyDataDefinition) =>
-    }
+    FlinkDataDefinition.apply(None, None) shouldBe EmptyDataDefinitionConfiguration.invalidNel
   }
 
   test("extracts configuration from valid sql statement") {
-    val flinkDataDefinition = FlinkDataDefinition
-      .create(
-        sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
-        catalogConfigurationOpt = None,
-      )
-      .validValue
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
-    val tablesDefinitions = discovery.listTables
-    val tableDefinition   = tablesDefinitions.loneElement
-    val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
+    val flinkDataDefinition = FlinkDataDefinition.applyUnsafe(Some(FlinkSqlTableTestCases.allColumnTypesTable), None)
+    val discovery           = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
+    val tablesDefinitions   = discovery.listTables
+    val tableDefinition     = tablesDefinitions.loneElement
+    val sourceRowType       = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
     sourceRowType.getFieldNames.asScala shouldBe List(
       "someString",
       "someVarChar",
@@ -63,43 +55,9 @@ class TablesDefinitionDiscoveryTest
     )
   }
 
-  test("extracts configuration from tables outside of builtin catalog and database") {
-    val tableName = "testTable2"
-    val statementsStr = s"""
-       |CREATE CATALOG someCatalog WITH (
-       |  'type' = 'generic_in_memory'
-       |);
-       |
-       |CREATE DATABASE someCatalog.someDatabase;
-       |
-       |CREATE TABLE someCatalog.someDatabase.$tableName
-       |(
-       |    someString  STRING
-       |) WITH (
-       |      'connector' = 'datagen'
-       |);""".stripMargin
-
-    val flinkDataDefinition = FlinkDataDefinition
-      .create(
-        sqlStatements = Some(SqlStatementReader.readSql(statementsStr)),
-        catalogConfigurationOpt = None,
-      )
-      .validValue
-    val discovery        = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
-    val tablesDefinition = discovery.listTables.loneElement
-
-    tablesDefinition.tableId.toString shouldBe "`someCatalog`.`someDatabase`.`testTable2`"
-    tablesDefinition.schema shouldBe ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
-  }
-
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
-      val flinkDataDefinition = FlinkDataDefinition
-        .create(
-          sqlStatements = Some(SqlStatementReader.readSql(invalidStatement)),
-          catalogConfigurationOpt = None,
-        )
-        .validValue
+      val flinkDataDefinition         = FlinkDataDefinition.applyUnsafe(Some(invalidStatement), None)
       val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).invalidValue
 
       sqlStatementExecutionErrors.size shouldBe 1
@@ -108,13 +66,13 @@ class TablesDefinitionDiscoveryTest
 
   test("use catalog configuration in data definition") {
     val catalogConfiguration = Configuration.fromMap(Map("type" -> StubbedCatalogFactory.catalogName).asJava)
-    val flinkDataDefinition  = FlinkDataDefinition.create(None, Some(catalogConfiguration)).validValue
+    val flinkDataDefinition  = FlinkDataDefinition.applyUnsafe(None, Some(catalogConfiguration))
 
     val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
 
     val tableDefinition = discovery.listTables.loneElement
 
-    tableDefinition.tableId.toString shouldBe s"`${FlinkDataDefinition.internalCatalogName}`." +
+    tableDefinition.tableId.toString shouldBe s"`_nu_catalog`." +
       s"`${StubbedCatalogFactory.sampleBoundedTablePath.getDatabaseName}`." +
       s"`${StubbedCatalogFactory.sampleBoundedTablePath.getObjectName}`"
     tableDefinition.schema shouldBe ResolvedSchema.of(
@@ -130,12 +88,6 @@ object TablesDefinitionDiscoveryTest {
     """|CREATE TABLE testTable
        |(
        |    someString  STRING
-       |) WITH (
-       |      'connector' = 'datagen
-       |);""".stripMargin, // no closing quote
-    """|CREATE TABLE testTable
-       |(
-       |    someString  STRING
        |)
        |;""".stripMargin, // no WITH clause
     """|CREATE TABLE testTable
@@ -144,12 +96,6 @@ object TablesDefinitionDiscoveryTest {
        |) WITH (
        |      'connector' = ''
        |);""".stripMargin, // empty string connector - does not reach the dedicated error because fails earlier
-    """|CREATE TABLE test-table
-       |(
-       |    someString  STRING
-       |) WITH (
-       |      'connector' = 'datagen'
-       |);""".stripMargin, // invalid table name
     """|CREATE TABLE somedb.testTable
        |(
        |    someString  STRING

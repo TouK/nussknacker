@@ -16,13 +16,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
@@ -79,22 +78,15 @@ class TableSinkParametersTest extends AnyFunSuite with Matchers with PatientScal
        |);
        |""".stripMargin
 
-  private lazy val sqlTablesDefinitionFilePath = {
-    val tempFile = File.createTempFile("tables-definition", ".sql")
-    tempFile.deleteOnExit()
-    FileUtils.writeStringToFile(tempFile, tablesDefinition, StandardCharsets.UTF_8)
-    tempFile.toPath
-  }
-
   private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(
     s"""
        |{
-       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  tableDefinition: \"\"\" $tablesDefinition \"\"\"
        |}
        |""".stripMargin
   )
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
+  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
     tableComponentsConfig,
     ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )

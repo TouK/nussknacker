@@ -3,13 +3,9 @@ package pl.touk.nussknacker.engine.flink.table.source
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
-import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
-import pl.touk.nussknacker.engine.flink.table.definition.{
-  FlinkDataDefinition,
-  SqlStatementReader,
-  TablesDefinitionDiscovery
-}
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
@@ -20,12 +16,8 @@ class TableSourceDataGenerationTest
     with LoneElement
     with ValidatedValuesDetailedMessage {
 
-  private val flinkDataDefinition = FlinkDataDefinition
-    .create(
-      sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
-      catalogConfigurationOpt = None,
-    )
-    .validValue
+  private val flinkDataDefinition =
+    FlinkDataDefinition.applyUnsafe(Some(FlinkSqlTableTestCases.allColumnTypesTable), None)
 
   private val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
 
