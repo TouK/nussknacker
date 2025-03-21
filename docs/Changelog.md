@@ -134,6 +134,11 @@
 * [#7764](https://github.com/TouK/nussknacker/pull/7764) Fix SpEL template evaluation on runtime. For now on, there is
   no need to pass .toString on variable in SpEL template expression. 
 * [#7690](https://github.com/TouK/nussknacker/pull/7690) Add JSON validation for ad hoc tests with schemaless topics.
+* [#7693](https://github.com/TouK/nussknacker/pull/7693) Fixes for incoming/outgoing migration activities:
+  * displayed username refers to the user that executes migration
+  * correct source and target environment names
+  * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
+  Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
 
 ## 1.18
 
