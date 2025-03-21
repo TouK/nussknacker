@@ -487,7 +487,7 @@ lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
 lazy val deploymentManagerArtifacts = taskKey[List[(File, String)]]("deployment manager artifacts")
 
 def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
-  val devConfigFiles = Set("dev-tables-definition.sql", "dev-application.conf", "dev-oauth2-users.conf")
+  val devConfigFiles = Set("dev-application.conf", "dev-oauth2-users.conf")
   files.filterNot { case (file, _) => devConfigFiles.contains(file.getName) }
 }
 
