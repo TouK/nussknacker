@@ -72,6 +72,13 @@
           "caseInsensitive": true
         }
       }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "ImportNamespaceSpecifier",
+        "message": "Wildcard imports are not allowed."
+      }
     ]
   },
   "overrides": [
