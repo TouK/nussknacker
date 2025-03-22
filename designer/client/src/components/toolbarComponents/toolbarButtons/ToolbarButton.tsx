@@ -8,6 +8,7 @@ import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { Icon } from "./ToolbarButtonStyled";
 
+// TODO: use MUI button for consistency
 export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
     { onDrop, title, className, disabled, name, icon, hasError, isActive, type, ...props },
     ref,
@@ -15,7 +16,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
     const { variant } = useContext(ToolbarButtonsContext);
     const { palette } = useTheme();
 
-    const margin = variant === ButtonsVariant.horizontal ? 0 : 2;
+    const margin = 2;
     const width = (variant === ButtonsVariant.small ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE) - 2 * margin;
     const styles = css({
         margin,
@@ -47,16 +48,18 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         ...props,
         ...getEventTrackingProps({ selector: mapToolbarButtonToStatisticsEvent(type) }),
         title: title || name,
-        className: cx(styles, className),
+        className: cx("toolbarButton-Root", styles, className),
         children: (
             <>
                 <Icon
                     title={title}
+                    className={"toolbarButton-Icon"}
                     sx={
                         variant === ButtonsVariant.horizontal
                             ? {
-                                  height: "2em",
                                   "&, &>*": {
+                                      flex: "none",
+                                      height: "2em",
                                       width: "2em",
                                   },
                               }
@@ -67,6 +70,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
                 </Icon>
                 <Typography
                     variant={variant === ButtonsVariant.horizontal ? "button" : "overline"}
+                    className={"toolbarButton-Label"}
                     sx={{
                         color: "inherit",
                         display: variant === ButtonsVariant.small ? "none" : "unset",
