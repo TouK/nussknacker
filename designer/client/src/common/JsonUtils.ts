@@ -1,5 +1,5 @@
 import { flatten, IFlattened } from "flattenizer";
-import { cloneDeep, isEmpty, isEqual, isObject, mapKeys, transform } from "lodash";
+import { isEqual, isObject, mapKeys, transform } from "lodash";
 
 export function tryParseOrNull<T = any>(input: string): T | null {
     try {
@@ -30,20 +30,4 @@ export function objectDiff<O, B>(object: O, base: B): Partial<O> {
             result[key] = isObject(value) && isObject(base[key]) ? objectDiff(value, base[key]) : value;
         }
     });
-}
-
-export function removeEmptyProperties<O>(obj: O): Partial<O> {
-    if (isEmpty(obj)) {
-        return obj;
-    } else {
-        const objCopy = cloneDeep(obj);
-        Object.keys(objCopy).forEach((key) => {
-            if (!isEmpty(objCopy[key]) && isObject(objCopy[key])) {
-                objCopy[key] = removeEmptyProperties(objCopy[key]);
-            } else if (isEmpty(objCopy[key])) {
-                delete objCopy[key];
-            }
-        });
-        return objCopy;
-    }
 }
