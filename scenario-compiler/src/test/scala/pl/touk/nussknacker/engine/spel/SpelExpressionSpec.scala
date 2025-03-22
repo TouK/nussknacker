@@ -1154,10 +1154,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("evaluates expression with template context") {
-    parse[String]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
+    parse[TemplateEvaluationResult]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
       .renderedTemplate shouldBe "alamakota 444"
-    parse[String](
+    parse[TemplateEvaluationResult](
       "alamakota #{444 + #obj.value} #{#mapValue.foo}",
       ctx,
       flavour = SpelExpressionParser.Template
@@ -1167,7 +1167,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("evaluates empty template as empty string") {
-    parse[String]("", ctx, flavour = SpelExpressionParser.Template).validExpression
+    parse[TemplateEvaluationResult]("", ctx, flavour = SpelExpressionParser.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
       .renderedTemplate shouldBe ""
   }
