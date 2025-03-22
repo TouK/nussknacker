@@ -1,5 +1,4 @@
 import React, { ForwardedRef, forwardRef } from "react";
-import humanizeString from "humanize-string";
 import { Box, styled, Typography } from "@mui/material";
 import { formatDateTime } from "../../../../common/DateUtils";
 import { ItemActivity } from "../ActivitiesPanel";
@@ -10,6 +9,9 @@ import { getItemColors } from "../helpers/activityItemColors";
 import { useTranslation } from "react-i18next";
 import { ActivityItemComment } from "./ActivityItemComment";
 import { useActivityItemInfo } from "./ActivityItemProvider";
+import { lowerCase, upperFirst } from "lodash";
+
+const humanizeString = (str: string) => upperFirst(lowerCase(str));
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: theme.spacing(0.5, 1.25),
