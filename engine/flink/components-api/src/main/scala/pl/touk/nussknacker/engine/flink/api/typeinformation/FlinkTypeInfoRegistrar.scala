@@ -40,9 +40,12 @@ object FlinkTypeInfoRegistrar {
   }
 
   private def register(entry: RegistrationEntry[_]): Unit = {
-    val opt = Option(TypeExtractor.getTypeInfoFactory(entry.klass))
-    if (opt.isEmpty) {
-      TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
+    // TypeExtractor is not thread safe, and we may arrive here as a result of concurrent initialization
+    // of multiple Flink deployment managers
+    classOf[TypeExtractor].synchronized {
+      if (TypeExtractor.getTypeInfoFactory(entry.klass) == null) {
+        TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
+      }
     }
   }
 
