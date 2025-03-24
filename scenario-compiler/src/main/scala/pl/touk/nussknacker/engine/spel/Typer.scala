@@ -514,7 +514,7 @@ private[spel] class Typer(
     (for {
       leftValue  <- left.valueOpt
       rightValue <- right.valueOpt
-      res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])
+      res        <- Try(op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])).toOption
     } yield {
       res
         .map(Typed.fromInstance)

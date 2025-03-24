@@ -1,16 +1,15 @@
-package pl.touk.nussknacker.engine.api.typed
+package pl.touk.nussknacker.engine.api.json.decoders
 
 import cats.implicits.toTraverseOps
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
-import pl.touk.nussknacker.engine.api.json.FromJsonDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.math.BigInteger
-import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
+import java.time._
 import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters._
 
-object ValueDecoder {
+object FromJsonTypingResultBasedDecoder {
   private val intClass           = Typed.typedClass[Int]
   private val shortClass         = Typed.typedClass[Short]
   private val longClass          = Typed.typedClass[Long]
@@ -67,7 +66,7 @@ object ValueDecoder {
       } yield decodedFields.toMap.asJava
     case Unknown =>
       /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
-      obj.as[Json].map(FromJsonDecoder.jsonToAny)
+      obj.as[Json].map(FromJsonSimpleDecoder.jsonToAny)
     case typ => Left(DecodingFailure(s"Decoding of type [$typ] is not supported.", List()))
   }
 
