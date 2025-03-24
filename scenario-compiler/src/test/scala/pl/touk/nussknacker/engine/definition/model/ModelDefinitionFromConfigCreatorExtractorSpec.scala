@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   Parameter,
   RegExpParameterValidator
 }
-import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType, LabeledExpression}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
@@ -335,8 +335,8 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     @MethodToInvoke
     def invoke(
         @ParamName("param1")
-        @SimpleEditor(
-          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
           possibleValues = Array(
             new LabeledExpression(expression = "'foo'", label = "foo"),
             new LabeledExpression(expression = "'bar'", label = "bar")

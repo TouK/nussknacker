@@ -7,18 +7,17 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{
   DictParameterEditor,
-  DualParameterEditor,
   FixedExpressionValue,
   FixedValuesParameterEditor,
-  ParameterEditor
+  ParameterEditor,
+  SpelParameterEditor
 }
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
   ParameterValueInput,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object ValueEditorValidator {
 
@@ -31,7 +30,7 @@ object ValueEditorValidator {
       initialValue: Option[FixedExpressionValue],
       paramName: ParameterName,
       nodeIds: Set[String]
-  ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
+  ): ValidatedNel[PartSubGraphCompilationError, List[ParameterEditor]] = {
     val validatedInnerEditor = valueEditor match {
       case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
         validateFixedValuesList(fixedValuesList, allowOtherValue, initialValue, paramName, nodeIds)
@@ -43,9 +42,9 @@ object ValueEditorValidator {
 
     validatedInnerEditor.map { innerEditor =>
       if (valueEditor.allowOtherValue)
-        DualParameterEditor(innerEditor, DualEditorMode.SIMPLE)
+        List(innerEditor, SpelParameterEditor)
       else
-        innerEditor
+        List(innerEditor)
     }
   }
 

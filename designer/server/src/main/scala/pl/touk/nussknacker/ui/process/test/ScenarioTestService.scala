@@ -5,11 +5,9 @@ import cats.syntax.either._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.SourceTestDataGenerationError
@@ -67,9 +65,6 @@ class ScenarioTestService(
     testInfoProvider
       .getTestParameters(processVersion, canonical)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
-      .map {
-        assignUserFriendlyEditor
-      }
       .toList
   }
 
@@ -175,18 +170,6 @@ class ScenarioTestService(
       (),
       tooManySamplesError(testDataSettings.maxSamplesCount)
     )
-  }
-
-  private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
-    val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
-      uiParameter.editor match {
-        case DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)
-            if uiParameter.typ.canBeConvertedTo(Typed[String]) =>
-          uiParameter.copy(editor = StringParameterEditor)
-        case _ => uiParameter
-      }
-    }
-    uiSourceParameter.copy(parameters = adaptedParameters)
   }
 
   private def toCanonicalProcess(

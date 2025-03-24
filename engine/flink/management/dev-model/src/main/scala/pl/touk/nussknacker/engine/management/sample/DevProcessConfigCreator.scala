@@ -125,13 +125,19 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
               Map(
                 ParameterName("foo") -> ParameterConfig(
                   defaultValue = None,
-                  editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+                  editors = Some(List(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))),
                   validators = None,
                   label = None,
                   hintText = None
                 ),
-                ParameterName("bar") -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
-                ParameterName("baz") -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
+                ParameterName("bar") -> ParameterConfig(
+                  None,
+                  Some(List(SpelTemplateParameterEditor)),
+                  None,
+                  None,
+                  None
+                ),
+                ParameterName("baz") -> ParameterConfig(None, Some(List(SpelTemplateParameterEditor)), None, None, None)
               )
             )
           )
@@ -141,7 +147,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None)
               )
             )
           )
@@ -162,14 +168,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
               Map(
                 ParameterName("overriddenByDevConfigParam") -> ParameterConfig(
                   defaultValue = None,
-                  editor = None,
+                  editors = None,
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
                   hintText = None
                 ),
                 ParameterName("overriddenByFileConfigParam") -> ParameterConfig(
                   defaultValue = None,
-                  editor = None,
+                  editors = None,
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
                   hintText = None

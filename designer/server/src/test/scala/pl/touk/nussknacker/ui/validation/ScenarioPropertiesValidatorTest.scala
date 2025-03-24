@@ -39,7 +39,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ),
       optionalFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
-        editor = Some(StringParameterEditor),
+        editor = Some(StaticStringParameterEditor),
         validators = None,
         label = Some(label),
         hintText = None
