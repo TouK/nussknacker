@@ -5,7 +5,6 @@ import { ExpressionLang } from "../../components/graph/node-modal/editors/expres
 import NodeUtils from "../../components/graph/NodeUtils";
 import { BranchParams, Edge, EdgeType, LayoutData, NodeId, NodeType, ProcessDefinitionData, StickyNoteNodeType } from "../../types";
 import { GraphState } from "./types";
-import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "../../components/graph/EspNode/stickyNote";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
     return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));

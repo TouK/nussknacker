@@ -4,7 +4,7 @@ import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { UseTranslationResponse } from "react-i18next";
-import { Layout, NodePosition, Position } from "../../actions/nk";
+import { Layout, NodePosition, Position, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -12,13 +12,13 @@ import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../.
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { UserSettings } from "../../reducers/userSettings";
-import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { Edge, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import { applyCellChanges, calcLayout, createPaper, isModelElement, isStickyNoteElement } from "./GraphPartialsInTS";
+import { applyCellChanges, calcLayout, createPaper, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
@@ -56,6 +56,8 @@ type Props = GraphProps & {
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
+    stickyNoteUpdated?: typeof stickyNoteUpdated;
+    stickyNoteSetErrors?: typeof stickyNoteSetErrors;
 };
 
 export const nuGraphNamespace = {
@@ -427,7 +429,7 @@ export class Graph extends React.Component<Props> {
                     resetSelection();
                 })
                 .on(RangeSelectEvents.SELECTED, ({ elements, mode }: RangeSelectedEventData) => {
-                    const nodes = elements.filter((el) => isModelElement(el)).map(({ id }) => id.toString());
+                    const nodes = elements.filter((el) => isModelOrStickyNote(el)).map(({ id }) => id.toString());
                     if (mode === SelectionMode.toggle) {
                         toggleSelection(...nodes);
                     } else {
@@ -645,11 +647,19 @@ export class Graph extends React.Component<Props> {
             this.#unhighlightCell(cell, nodeFocused);
         });
 
+        const stickyNotes: Record<string, NodeValidationError[]> = elements
+            .filter((n) => isStickyNoteElement(n))
+            .reduce((acc, user) => {
+                acc[user.id.toString()] = [];
+                return acc;
+            }, {});
+        this.props?.stickyNoteSetErrors(stickyNotes);
         const validationErrors = ProcessUtils.getValidationErrors(scenario);
         const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 
+        this.props?.stickyNoteSetErrors(validationErrors?.invalidNodes);
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {
             const nodeId = el.id.toString();
@@ -709,7 +719,7 @@ export class Graph extends React.Component<Props> {
 
         const { layout, layoutChanged } = this.props;
 
-        const elements = this.graph.getElements().filter((e) => isModelElement(e) || isStickyNoteElement(e));
+        const elements = this.graph.getElements().filter((e) => isModelOrStickyNote(e));
         const collection = elements.map((el) => {
             const { x, y } = el.get("position");
             return {
@@ -746,7 +756,7 @@ export class Graph extends React.Component<Props> {
     private moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
         this.redrawing = true;
         const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId);
-        const cellsToBeMoved = nodeIdsToBeMoved.map((nodeId) => this.graph.getCell(nodeId)).filter(isModelElement);
+        const cellsToBeMoved = nodeIdsToBeMoved.map((nodeId) => this.graph.getCell(nodeId)).filter(isModelOrStickyNote);
         const { position: originalPosition } = this.findNodeInLayout(movedNodeId);
         const offset = {
             x: position.x - originalPosition.x,
@@ -787,7 +797,7 @@ export class Graph extends React.Component<Props> {
         this.graph.on(
             Events.CHANGE_POSITION,
             rafThrottle((element: dia.Cell, position: dia.Point, options) => {
-                if (this.redrawing || !isModelElement(element)) return;
+                if (this.redrawing || !isModelOrStickyNote(element)) return;
                 if (options.group) return;
 
                 const movingCells: dia.Cell[] = [element];

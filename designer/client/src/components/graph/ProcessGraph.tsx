@@ -18,6 +18,7 @@ import {
     nodesDisconnected,
     resetSelection,
     stickyNoteUpdated,
+    stickyNoteSetErrors,
     toggleSelection,
 } from "../../actions/nk";
 import { NodeType } from "../../types";
@@ -77,6 +78,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     injectNode,
                     nodeAdded,
                     stickyNoteUpdated,
+                    stickyNoteSetErrors,
                     resetSelection,
                     toggleSelection,
                 },

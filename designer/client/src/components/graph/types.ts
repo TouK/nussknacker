@@ -7,6 +7,7 @@ import {
     nodesConnected,
     nodesDisconnected,
     stickyNoteUpdated,
+    stickyNoteSetErrors,
     resetSelection,
     toggleSelection,
 } from "../../actions/nk";
@@ -19,7 +20,6 @@ type ScenarioGraphProps = {
     layoutChanged: typeof layoutChanged;
     injectNode: typeof injectNode;
     nodeAdded: typeof nodeAdded;
-    stickyNoteUpdated: typeof stickyNoteUpdated;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 

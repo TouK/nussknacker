@@ -5,6 +5,7 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
 import { NodeId, NodeType, NodeValidationError, UiScenarioProperties, UIParameter } from "../../../../types";
 import { isEqual } from "lodash";
+import { StickyNoteType } from "../../../../types/stickyNote";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
@@ -22,6 +23,8 @@ export const getNodeDetails = createDeepEqualSelector(
     (state: RootState) => state.nodeDetails,
     (nodeDetails) => (nodeId: string) => nodeDetails[nodeId],
 );
+
+export const getStickyNotesCount = createSelector(getScenarioGraph, (s) => s.nodes.filter((n) => n.type === StickyNoteType).length);
 
 export const getValidationPerformed = createSelector(
     getNodeDetails,
