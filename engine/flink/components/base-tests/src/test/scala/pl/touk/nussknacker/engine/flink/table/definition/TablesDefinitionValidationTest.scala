@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.scalatest.{Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionCreationError.FlinkDdlParseError.ParseError
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionDiscoveryError.{
   CatalogDiscoveryProblem,
@@ -19,9 +20,9 @@ class TablesDefinitionValidationTest
     with ModelClassLoaderSimulationSuite
     with Inside {
 
-  private val minicluster = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+  private val env = StreamTableEnvironment.create(StreamExecutionEnvironment.getExecutionEnvironment)
   private def validate(sql: String) =
-    TablesDefinitionValidation.validateWithoutExternalConnections(sql, minicluster, simulatedModelClassloader)
+    TablesDefinitionValidation.validateWithoutExternalConnections(sql, env, simulatedModelClassloader)
 
   test("should not return external calls reliant validation errors") {
     val sql =

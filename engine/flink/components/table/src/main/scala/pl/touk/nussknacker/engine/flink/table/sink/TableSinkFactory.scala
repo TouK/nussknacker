@@ -4,6 +4,10 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalid, valid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.EnvironmentSettings
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
@@ -65,19 +69,25 @@ class TableSinkFactory(
       nonRawModeValidateValueParametersFinalStep(context)
   }
 
-  private val miniclusterDependency                   = TypedNodeDependency[FlinkMiniClusterWithServices]
-  override def nodeDependencies: List[NodeDependency] = List(miniclusterDependency)
+  private val streamEnvDependency                     = TypedNodeDependency[StreamExecutionEnvironment]
+  override def nodeDependencies: List[NodeDependency] = List(streamEnvDependency)
 
   private def prepareInitialParameters(dependencies: List[NodeDependencyValue]): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val minicluster = miniclusterDependency.extract(dependencies)
+      val streamEnv = streamEnvDependency.extract(dependencies)
+      val streamTableEnv = StreamTableEnvironment.create(
+        streamEnv,
+        EnvironmentSettings
+          .newInstance()
+          .withConfiguration(Configuration.fromMap(streamEnv.getConfiguration.toMap))
+          .build()
+      )
+
       val (errors, tableDefinitions) = TablesDefinitionDiscovery
-        .prepareDiscovery(
+        .discoverTables(
           flinkDataDefinition,
-          minicluster
+          streamTableEnv
         )
-        .orFail
-        .listTables
         .map(_.toEither)
         .partitionMap(identity)
       errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))

@@ -4,6 +4,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 
 // This is only for purpose of using an empty URLClassLoader as contextClassLoader in tests ran from Intellij Idea
+// TODO: check if this will still be necessary after changes in NodeDependency
 trait ModelClassLoaderSimulationSuite extends BeforeAndAfterAll { this: Suite =>
 
   private val originalContextClassLoader: ClassLoader       = Thread.currentThread().getContextClassLoader
