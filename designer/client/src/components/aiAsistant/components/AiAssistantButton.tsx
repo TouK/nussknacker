@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Box, Paper } from "@mui/material";
-import { AiAssistant } from "../AiAssistant";
+import { Box, Divider, Paper, Typography } from "@mui/material";
+import { AiAssistant } from "./AiAssistant";
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
 import { blendDarken } from "../../../containers/theme/helpers";
 
@@ -20,7 +20,7 @@ export const AiAssistantButton = () => {
         <div>
             <Box
                 bottom={32}
-                right={32}
+                right={320}
                 position={"fixed"}
                 zIndex={1800}
                 p={2}
@@ -28,8 +28,8 @@ export const AiAssistantButton = () => {
                 sx={(theme) => ({
                     background: blendDarken(theme.palette.primary.main, 0.6),
                     cursor: "pointer",
-                    width: 100,
-                    height: 100,
+                    width: 75,
+                    height: 75,
                     borderRadius: "50%",
                     display: "flex",
                     flexDirection: "column",
@@ -38,14 +38,11 @@ export const AiAssistantButton = () => {
                 })}
             >
                 <NuIcon />
+                <Typography component="span" variant={"overline"} fontWeight={"bold"} pt={0.5}>
+                    Assistant
+                </Typography>
             </Box>
-            {open && (
-                <Box position={"fixed"} bottom={135} right={40} zIndex={1800} sx={{ background: "white" }}>
-                    <Paper sx={{ height: 500, width: 500, p: 2 }}>
-                        <AiAssistant />
-                    </Paper>
-                </Box>
-            )}
+            {open && <AiAssistant />}
         </div>
     );
 };

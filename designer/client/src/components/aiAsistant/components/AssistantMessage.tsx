@@ -5,7 +5,6 @@ import { Box, Typography } from "@mui/material";
 export const AssistantMessage = () => {
     const { status, content } = useMessage();
 
-    console.log(status);
     return (
         <Box my={2}>
             {content.map((part, index) => (
