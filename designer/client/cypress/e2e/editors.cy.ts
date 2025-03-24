@@ -36,20 +36,6 @@ describe("Editors", () => {
             .find("[id='ace-editor']")
             .type("{backspace}{backspace}"); //clear field
 
-        // Open SpEL editor hint
-        cy.get("[data-testid=window]")
-            .contains(/Additional class/i)
-            .siblings()
-            .find("[data-testid='InfoIcon']")
-            .click();
-
-        // Wait for a tooltip rendering and positioning
-        cy.contains("You are using an expression-based approach");
-        cy.wait(200);
-        cy.get("[data-testid=window]").matchImage();
-
-        cy.get("[role=tab]").contains("string template").click();
-
         // Open SpEL template editor hint
         cy.get("[data-testid=window]")
             .contains(/Additional class/i)
@@ -59,6 +45,20 @@ describe("Editors", () => {
 
         // Wait for a tooltip rendering and positioning
         cy.contains("You are using a string-template-based approach");
+        cy.wait(200);
+        cy.get("[data-testid=window]").matchImage();
+
+        cy.get("[role=tab]").contains("expression").click();
+
+        // Open SpEL editor hint
+        cy.get("[data-testid=window]")
+            .contains(/Additional class/i)
+            .siblings()
+            .find("[data-testid='InfoIcon']")
+            .click();
+
+        // Wait for a tooltip rendering and positioning
+        cy.contains("You are using an expression-based approach");
         cy.wait(200);
         cy.get("[data-testid=window]").matchImage();
     });
