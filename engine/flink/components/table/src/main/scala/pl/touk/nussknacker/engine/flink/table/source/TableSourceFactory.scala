@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
+import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -18,8 +19,11 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.definition.{
+  FlinkDataDefinition,
+  FlinkDataDefinitionError,
+  TablesDefinitionDiscovery
+}
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.{
   AvailableTables,
   SelectedTable,
@@ -67,8 +71,12 @@ class TableSourceFactory(
           flinkDataDefinition,
           streamTableEnv
         )
-        .map(_.toEither)
-        .partitionMap(identity)
+        .foldLeft((List.empty[FlinkDataDefinitionError], List.empty[TableDefinition])) {
+          case ((errs, tables), Validated.Invalid(errsNel)) =>
+            (errs ++ errsNel.toList, tables)
+          case ((errs, tables), Validated.Valid(table)) =>
+            (errs, table :: tables)
+        }
       errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
 
       val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)

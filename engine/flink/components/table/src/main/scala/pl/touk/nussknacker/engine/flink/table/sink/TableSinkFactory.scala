@@ -29,7 +29,11 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.definition.{
+  FlinkDataDefinition,
+  FlinkDataDefinitionError,
+  TablesDefinitionDiscovery
+}
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
@@ -88,8 +92,13 @@ class TableSinkFactory(
           flinkDataDefinition,
           streamTableEnv
         )
-        .map(_.toEither)
-        .partitionMap(identity)
+        .foldLeft((List.empty[FlinkDataDefinitionError], List.empty[TableDefinition])) {
+          case ((errs, tables), Validated.Invalid(errsNel)) =>
+            (errs ++ errsNel.toList, tables)
+          case ((errs, tables), Validated.Valid(table)) =>
+            (errs, table :: tables)
+        }
+
       errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
 
       val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
