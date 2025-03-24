@@ -17,7 +17,7 @@ export function IconModalTitle({ startIcon, endIcon, children, ...props }: IconM
         <ModalTitle {...props}>
             {startIcon}
             {children && (
-                <Typography component="span" variant={"subtitle2"}>
+                <Typography component="span" variant={"subtitle2"} noWrap>
                     {children}
                 </Typography>
             )}
