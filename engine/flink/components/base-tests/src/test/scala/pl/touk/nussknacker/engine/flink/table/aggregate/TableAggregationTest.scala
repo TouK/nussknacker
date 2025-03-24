@@ -10,10 +10,11 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.FlinkTableOpsComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{
   buildMultipleAggregationsScenario,
@@ -39,21 +40,23 @@ class TableAggregationTest
     with Inside
     with BeforeAndAfterAll {
 
-  private lazy val additionalComponents: List[ComponentDefinition] =
-    FlinkTableComponentProvider.configIndependentComponents
+  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableOpsComponentProvider().create(
+    ConfigFactory.empty(),
+    ProcessObjectDependencies.withConfig(ConfigFactory.empty())
+  )
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()
-
-  override protected def afterAll(): Unit = {
-    super.afterAll()
-    flinkMiniClusterWithServices.close()
-  }
 
   test("should be able to aggregate by number types, string and boolean declared in spel") {
     val aggregationParameters =

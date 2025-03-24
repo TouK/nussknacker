@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.table.aggregate
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
+import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -45,7 +46,8 @@ object TableAggregationFactory {
 
 class TableAggregationFactory
     extends CustomStreamTransformer
-    with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
+    with SingleInputDynamicComponent[FlinkCustomStreamTransformation]
+    with BoundedStreamComponent {
 
   case class TableAggregationTransformationState(
       selectedAggregator: TableAggregator,

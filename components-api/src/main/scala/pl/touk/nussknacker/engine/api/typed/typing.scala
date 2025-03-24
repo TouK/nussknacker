@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.json.encoders.{ToJsonEncoderWithFallback, TypeEncoders}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
@@ -308,7 +309,7 @@ object typing {
       }
 
     // to not have separate class for each array, we pass Array of Objects
-    private[typed] val KlassForArrays = classOf[Array[Object]]
+    val KlassForArrays: Class[Array[Object]] = classOf[Array[Object]]
 
     private def determineArrayType(klass: Class[_], parameters: Option[List[TypingResult]]): TypedClass = {
       val determinedComponentType = Typed(klass.getComponentType)
@@ -357,6 +358,8 @@ object typing {
           Typed.record(fieldTypes)
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
+        case array: Array[_] =>
+          Typed(array.getClass)
         case javaList: java.util.List[_] =>
           typedListWithElementValues(
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
@@ -368,7 +371,7 @@ object typing {
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
-              ValueEncoder.encodeValue(other) match {
+              ToJsonEncoderWithFallback.encodeValue(other) match {
                 case Valid(_)   => TypedObjectWithValue(typedClass, other)
                 case Invalid(_) => typedClass
               }
