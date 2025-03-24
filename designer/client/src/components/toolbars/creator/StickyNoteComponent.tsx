@@ -22,6 +22,9 @@ export const stickyNoteComponentGroup = (stickyNotesSetting: StickyNotesSettings
                     label: "Sticky Note",
                     componentId: StickyNoteType + (disabled ? "_disabled" : ""),
                     disabled: () => disabled,
+                    tooltip: disabled
+                        ? `Max number of sticky notes [${stickyNotesSetting.maxNotesCount}] has been reached. You can change this in the app configuration.`
+                        : null,
                 },
             ],
             name: "Misc",

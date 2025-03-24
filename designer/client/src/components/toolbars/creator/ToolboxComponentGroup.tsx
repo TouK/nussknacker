@@ -79,6 +79,7 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
                     key={component.componentId}
                     highlights={highlights}
                     disabled={component.disabled ? component.disabled() : false}
+                    tooltip={component?.tooltip}
                 />
             )),
         [highlights, componentGroup.components],

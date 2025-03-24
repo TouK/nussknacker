@@ -175,7 +175,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     };
 
     const printNode = (node: NodeType) => {
-        return node ? <NodeDetailsContent node={node} /> : <div className="notPresent">Node not present</div>;
+        return node?.id ? <NodeDetailsContent node={node} /> : <div className="notPresent">Node not present</div>;
     };
 
     const stubOnChange = () => {

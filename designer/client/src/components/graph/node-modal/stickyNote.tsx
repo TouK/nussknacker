@@ -35,20 +35,20 @@ export function StickyNote({
         </Field>
     );
 
-    const stickyNode = node as StickyNoteNodeType;
+    const stickyNote = node as StickyNoteNodeType;
     return (
         <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                node={stickyNode}
+                node={stickyNote}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
             />
-            {simpleField("Content", stickyNode.content)}
-            {simpleField("Size", `Width: ${stickyNode.dimensions.width} Height: ${stickyNode.dimensions.height}`)}
-            {simpleField("Color", stickyNode.color)}
+            {simpleField("Content", stickyNote.content)}
+            {simpleField("Size", `Width: ${stickyNote.dimensions.width} Height: ${stickyNote.dimensions.height}`)}
+            {simpleField("Color", stickyNote.color)}
         </>
     );
 }

@@ -264,7 +264,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "STICKY_NOTE_SET_ERRORS": {
             const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
             const [stickyNotes, graphNodes] = partition(nodes, (node) => node.type === StickyNoteType);
-            const stickyNodesUpdated = stickyNotes.map((stickyNote) => {
+            const stickyNotesUpdated = stickyNotes.map((stickyNote) => {
                 return action.stickyNoteErrors[stickyNote.id]
                     ? {
                           ...stickyNote,
@@ -278,7 +278,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     ...state.scenario,
                     scenarioGraph: {
                         ...scenarioGraph,
-                        nodes: [...graphNodes, ...stickyNodesUpdated],
+                        nodes: [...graphNodes, ...stickyNotesUpdated],
                     },
                 },
             };

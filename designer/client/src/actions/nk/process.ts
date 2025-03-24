@@ -13,14 +13,15 @@ export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
     | { type: "DISPLAY_PROCESS"; scenario: Scenario };
 
-// We add sticky notes to nodes to handle them as nodes on FE but on BE they are present just to be saved, we do not process them as nodes.
-// Thanks to that we do not have to handle edge-cases with 'loose nodes'
-// `addStickyNotesToNodes` - Merge stickyNotes with nodes
-// `extractStickyNotesFromNodes` - Split stickyNotes from nodes
+// We add sticky notes to nodes to treat them as nodes on the front-end (FE), but on the back-end (BE), they are only present to be saved. We do not process them as nodes on the BE.
+// This allows us to avoid handling edge cases with 'loose nodes'.
+// `addStickyNotesToNodes` - Merges sticky notes with nodes.
+// `extractStickyNotesFromNodes` - Separates sticky notes from nodes.
 export function addStickyNotesToNodes(data: Scenario): Scenario {
     const stickyNotesWithType = data.scenarioGraph.stickyNotes.map((name) => ({
         ...name,
         type: StickyNoteType,
+        errors: [],
     }));
     return {
         ...data,

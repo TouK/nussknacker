@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
-import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source, StickyNote}
+import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -286,7 +286,7 @@ class UIProcessValidator(
       if (numberOfStickyNotes > notesLimit)
         formatErrors(
           NonEmptyList.fromListUnsafe(
-            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(n.id, notesLimit, numberOfStickyNotes))
+            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(n.id, numberOfStickyNotes, notesLimit))
           )
         )
       else ValidationResult.success
