@@ -15,7 +15,8 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
-import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
+import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
+import pl.touk.nussknacker.engine.api.json.encoders.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,

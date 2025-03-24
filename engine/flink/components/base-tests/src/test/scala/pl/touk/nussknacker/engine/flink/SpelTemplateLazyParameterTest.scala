@@ -91,7 +91,7 @@ object SpelTemplatePartsCustomTransformer
   private val spelTemplateParameterName = ParameterName("template")
 
   private val spelTemplateParameter = Parameter
-    .optional[String](spelTemplateParameterName)
+    .optional[TemplateEvaluationResult](spelTemplateParameterName)
     .copy(
       isLazyParameter = true,
       editor = Some(SpelTemplateParameterEditor)

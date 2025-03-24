@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.engine.api.json
+package pl.touk.nussknacker.engine.api.json.decoders
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import scala.jdk.CollectionConverters._
 
-object FromJsonDecoder {
+object FromJsonSimpleDecoder {
 
   def jsonToAny(json: Json): Any = json.fold(
     jsonNull = null,

@@ -9,10 +9,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.flink.table.{FlinkTableComponentProvider, SpelValues}
+import pl.touk.nussknacker.engine.flink.table.{FlinkTableOpsComponentProvider, SpelValues}
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct._
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
@@ -34,21 +35,23 @@ class TableJoinTest
 
   import scala.jdk.CollectionConverters._
 
-  private lazy val additionalComponents: List[ComponentDefinition] =
-    FlinkTableComponentProvider.configIndependentComponents ::: Nil
+  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableOpsComponentProvider().create(
+    ConfigFactory.empty(),
+    ProcessObjectDependencies.withConfig(ConfigFactory.empty())
+  )
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()
-
-  override protected def afterAll(): Unit = {
-    super.afterAll()
-    flinkMiniClusterWithServices.close()
-  }
 
   private val mainBranchId   = "main"
   private val joinedBranchId = "joined"

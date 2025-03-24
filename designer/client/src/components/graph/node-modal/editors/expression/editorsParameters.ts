@@ -24,7 +24,7 @@ export const editorsParameters: Record<EditorType, { displayName: string; langua
     [EditorType.STRING_PARAMETER_EDITOR]: { displayName: "Text", language: ExpressionLang.String },
     [EditorType.TEXTAREA_PARAMETER_EDITOR]: { displayName: "Text", language: ExpressionLang.SpEL },
     [EditorType.TIME]: { displayName: "Time", language: ExpressionLang.SpEL },
-    [EditorType.SQL_PARAMETER_EDITOR]: { displayName: "SQL", language: ExpressionLang.SQL },
+    [EditorType.SQL_PARAMETER_EDITOR]: { displayName: "SQL", language: ExpressionLang.SpELTemplate },
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: {
         displayName: "String Template",
         language: ExpressionLang.SpELTemplate,
