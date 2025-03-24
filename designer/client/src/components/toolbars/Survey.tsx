@@ -2,7 +2,7 @@ import { Button, Stack, Typography, useTheme } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useWindows, WindowKind } from "../../windowManager";
-import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { useSurvey } from "./useSurvey";
 

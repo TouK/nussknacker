@@ -5,10 +5,11 @@ import { Reducer } from "../actions/reduxTypes";
 import { Panels, panels } from "./panel";
 
 export enum ToolbarsSide {
-    TopRight = "topRight",
-    BottomRight = "bottomRight",
-    TopLeft = "topLeft",
-    BottomLeft = "bottomLeft",
+    RightTop = "topRight",
+    RightBottom = "bottomRight",
+    LeftTop = "topLeft",
+    LeftBottom = "bottomLeft",
+    TopCenter = "top",
 }
 
 type ComponentGroupToolbox = {
@@ -58,8 +59,8 @@ function setupPositions(positions: Positions, toolbars: Array<[string, ToolbarsS
     const groups = Object.values(positions);
     const newToolbars = toolbars.filter(([id]) => !groups.some((g) => g.includes(id)));
     return newToolbars.reduce((nextState, [id, side]) => {
-        const currentValues = nextState[side || ToolbarsSide.TopRight] || [];
-        return { ...nextState, [side || ToolbarsSide.TopRight]: [...currentValues, id] };
+        const currentValues = nextState[side || ToolbarsSide.RightTop] || [];
+        return { ...nextState, [side || ToolbarsSide.RightTop]: [...currentValues, id] };
     }, positions);
 }
 
