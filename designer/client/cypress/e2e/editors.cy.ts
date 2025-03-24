@@ -44,7 +44,7 @@ describe("Editors", () => {
             .click();
 
         // Wait for a tooltip rendering and positioning
-        cy.contains("You are using an expression-based approach");
+        cy.contains("You are using an expression-based input");
         cy.wait(200);
         cy.get("[data-testid=window]").matchImage();
 
@@ -58,7 +58,7 @@ describe("Editors", () => {
             .click();
 
         // Wait for a tooltip rendering and positioning
-        cy.contains("You are using a string-template-based approach");
+        cy.contains("You are using a string-template-based input");
         cy.wait(200);
         cy.get("[data-testid=window]").matchImage();
     });
