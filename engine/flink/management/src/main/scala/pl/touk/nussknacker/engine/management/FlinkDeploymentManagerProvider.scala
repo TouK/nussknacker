@@ -34,14 +34,14 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
     Ficus.mapValueReader[String].map(map => Configuration.fromMap(map.asJava))
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkDeploymentManagerProvider
-      .createDeploymentManager(modelData, dependencies, flinkConfig, scenarioStateCacheTTL)
+      .createDeploymentManager(modelDataProvider, dependencies, flinkConfig, scenarioStateCacheTTL)
       .toValidatedNel
   }
 
@@ -66,14 +66,14 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
 object FlinkDeploymentManagerProvider extends LazyLogging {
 
   private[management] def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       flinkConfig: FlinkConfig,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): Validated[String, DeploymentManager] = {
     logger.info("Creating FlinkStreamingDeploymentManager")
     import dependencies._
-    val miniClusterWithServicesOpt = createMiniClusterIfNeeded(modelData, flinkConfig)
+    val miniClusterWithServicesOpt = createMiniClusterIfNeeded(modelDataProvider, flinkConfig)
     val miniClusterJobManagerUriOpt = miniClusterWithServicesOpt
       .filter(_ => flinkConfig.useMiniClusterForDeployment)
       .map { miniClusterWithServices =>
@@ -88,11 +88,11 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
         val client = FlinkClient.create(parsedHttpClientConfig)
         val jobRunner = miniClusterWithServicesOpt
           .filter { _ => flinkConfig.useMiniClusterForDeployment }
-          .map(new FlinkMiniClusterScenarioJobRunner(_, modelData))
-          .getOrElse(new RemoteFlinkScenarioJobRunner(modelData, client))
+          .map(new FlinkMiniClusterScenarioJobRunner(_, modelDataProvider))
+          .getOrElse(new RemoteFlinkScenarioJobRunner(modelDataProvider, client))
         val underlying =
           new FlinkDeploymentManager(
-            modelData,
+            modelDataProvider,
             dependencies,
             flinkConfig,
             miniClusterWithServicesOpt,
@@ -103,9 +103,9 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
       }
   }
 
-  private def createMiniClusterIfNeeded(modelData: BaseModelData, flinkConfig: FlinkConfig) =
+  private def createMiniClusterIfNeeded(modelDataProvider: BaseModelDataProvider, flinkConfig: FlinkConfig) =
     FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
-      modelData.modelClassLoader,
+      modelDataProvider.modelClassLoader,
       flinkConfig.miniCluster,
       flinkConfig.useMiniClusterForDeployment,
       flinkConfig.scenarioTesting,

@@ -42,9 +42,8 @@ class RequestResponseEmbeddedDeploymentManagerTest
       RequestResponseComponentProvider.Components
     )
     val as: ActorSystem = ActorSystem(getClass.getSimpleName)
-    val dependencies = DeploymentManagerDependencies(
+    val dependencies = new DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
-      new ProcessingTypeActionServiceStub,
       as.dispatcher,
       IORuntime.global,
       as,
@@ -53,7 +52,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
     val port = AvailablePortFinder.findAvailablePorts(1).head
     val manager = new EmbeddedDeploymentManagerProvider()
       .createDeploymentManager(
-        modelData,
+        modelData.toModelDataProvider,
         dependencies,
         ConfigFactory
           .empty()

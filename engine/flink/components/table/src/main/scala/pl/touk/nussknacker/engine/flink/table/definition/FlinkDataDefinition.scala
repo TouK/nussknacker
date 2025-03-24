@@ -1,60 +1,107 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
 import cats.data.{Validated, ValidatedNel}
-import cats.implicits.{toFunctorOps, toTraverseOps}
+import cats.implicits._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.catalog.CatalogDescriptor
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.internalCatalogName
-import pl.touk.nussknacker.engine.flink.table.definition.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement._
 
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class FlinkDataDefinition private (
-    sqlStatements: Option[List[String]],
-    catalogConfigurationOpt: Option[Configuration]
+class FlinkDataDefinition(
+    sqlDdl: List[FlinkSqlDdlStatement]
 ) extends Serializable {
 
   def registerIn(tableEnvironment: TableEnvironment): ValidatedNel[DataDefinitionRegistrationError, Unit] = {
-    val sqlStatementsExecutionResults = sqlStatements.toList.flatten
-      .map(s =>
+    val registrationResults = sqlDdl.map {
+      case CreateTable(SqlString(sql)) =>
         Validated
-          .fromTry(Try(tableEnvironment.executeSql(s)))
-          .leftMap(SqlStatementExecutionError(s, _): DataDefinitionRegistrationError)
+          .fromTry(Try(tableEnvironment.executeSql(sql)))
+          .leftMap(SqlStatementExecutionError(sql, _): DataDefinitionRegistrationError)
           .toValidatedNel
-      )
-    val catalogRegistrationResult = catalogConfigurationOpt.map { catalogConfiguration =>
-      Validated
-        .fromTry(
-          Try {
-            tableEnvironment
-              .createCatalog(internalCatalogName, CatalogDescriptor.of(internalCatalogName, catalogConfiguration))
-            tableEnvironment.useCatalog(internalCatalogName)
-          }
+      case CreateCatalog(CatalogName(name), options) =>
+        val catalogConf = Configuration.fromMap(
+          options
+            .map { case SqlOption(key, value) =>
+              key -> value
+            }
+            .toMap
+            .asJava
         )
-        .leftMap(CatalogRegistrationError(catalogConfiguration, _): DataDefinitionRegistrationError)
-        .toValidatedNel
+        Validated
+          .fromTry(Try { tableEnvironment.createCatalog(name, CatalogDescriptor.of(name, catalogConf)) })
+          .leftMap(CatalogRegistrationError(catalogConf, _): DataDefinitionRegistrationError)
+          .toValidatedNel
     }
-    (sqlStatementsExecutionResults ::: catalogRegistrationResult.toList).sequence.void
+    registrationResults.sequence.void
   }
 
 }
 
 object FlinkDataDefinition {
 
-  // We can't user dollar ($) character in this name as some catalogs such as Apache Iceberg use it internally
-  // to split object paths
-  private[table] val internalCatalogName = "_nu_catalog"
+  trait FlinkDataDefinitionCreationError extends IllegalArgumentException
 
-  def create(
-      sqlStatements: Option[List[String]],
-      catalogConfigurationOpt: Option[Configuration]
-  ): Validated[EmptyDataDefinition.type, FlinkDataDefinition] = {
-    Validated.cond(
-      sqlStatements.isDefined || catalogConfigurationOpt.isDefined,
-      new FlinkDataDefinition(sqlStatements, catalogConfigurationOpt),
-      EmptyDataDefinition
-    )
+  case object EmptyDataDefinitionConfiguration extends FlinkDataDefinitionCreationError {
+    override def getMessage: String =
+      "Empty data definition configuration. At least one of either tableDefinitionFilePath or catalogConfiguration should be configured"
+  }
+
+  def apply(
+      sql: Option[String],
+      additionalCatalogConfiguration: Option[Configuration]
+  ): ValidatedNel[FlinkDataDefinitionCreationError, FlinkDataDefinition] = {
+    if (sql.isEmpty && additionalCatalogConfiguration.isEmpty) {
+      EmptyDataDefinitionConfiguration.invalidNel
+    } else {
+      val parsedDdls = sql.map(FlinkDdlParser.parse).getOrElse(List.empty.validNel)
+      val additionalCatalog = additionalCatalogConfiguration
+        .map(CreateCatalog.buildAdditionalCatalogFromConfig)
+        .toList
+        .validNel
+
+      (parsedDdls, additionalCatalog).mapN { (ddls, catalogs) =>
+        new FlinkDataDefinition(ddls ++ catalogs)
+      }
+    }
+  }
+
+  def applyUnsafe(sql: Option[String], additionalCatalogConfiguration: Option[Configuration]): FlinkDataDefinition =
+    apply(sql, additionalCatalogConfiguration).fold(errs => throw errs.head, identity)
+
+  sealed trait FlinkSqlDdlStatement
+
+  object FlinkSqlDdlStatement {
+    final case class SqlOption(key: String, value: String)
+    final case class SqlString(value: String)
+    final case class CatalogName(value: String)
+
+    final case class CreateTable(
+        sql: SqlString
+    ) extends FlinkSqlDdlStatement
+
+    final case class CreateCatalog(
+        name: CatalogName,
+        options: List[SqlOption]
+    ) extends FlinkSqlDdlStatement
+
+    object CreateCatalog {
+      // We can't user dollar ($) character in this name as some catalogs such as Apache Iceberg use it internally
+      // to split object paths
+      private val internalCatalogName = "_nu_catalog"
+
+      def buildAdditionalCatalogFromConfig(configuration: Configuration): CreateCatalog = {
+        val conf = configuration.toMap.asScala.map { case (k, v) =>
+          SqlOption(k, v)
+        }.toList
+        CreateCatalog(CatalogName(internalCatalogName), conf)
+      }
+
+    }
+
   }
 
   implicit class DataDefinitionRegistrationResultExtension[T](
@@ -75,13 +122,11 @@ object FlinkDataDefinition {
 
 }
 
-object EmptyDataDefinition
-
 sealed trait DataDefinitionRegistrationError {
   def message: String
 }
 
-final case class SqlStatementExecutionError(statement: SqlStatement, exception: Throwable)
+final case class SqlStatementExecutionError(statement: String, exception: Throwable)
     extends DataDefinitionRegistrationError {
 
   override def message: String =
@@ -96,13 +141,5 @@ final case class CatalogRegistrationError(catalogConfiguration: Configuration, e
 
   override def message: String =
     s"Could not created catalog with configuration: $catalogConfiguration. Caused by: $exception"
-
-}
-
-final case class DefaultDatabaseSetupError(dbName: String, exception: Throwable)
-    extends DataDefinitionRegistrationError {
-
-  override def message: SqlStatement =
-    s"Could not set default database to: $dbName. Caused by: $exception"
 
 }

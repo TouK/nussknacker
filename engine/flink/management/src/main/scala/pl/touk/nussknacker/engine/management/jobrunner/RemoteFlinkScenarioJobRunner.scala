@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.jobrunner
 
 import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
-import pl.touk.nussknacker.engine.BaseModelData
+import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -13,10 +13,11 @@ import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RemoteFlinkScenarioJobRunner(modelData: BaseModelData, client: FlinkClient)(implicit ec: ExecutionContext)
-    extends FlinkScenarioJobRunner {
+class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, client: FlinkClient)(
+    implicit ec: ExecutionContext
+) extends FlinkScenarioJobRunner {
 
-  private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
+  private val modelJarProvider = new FlinkModelJarProvider(modelDataProvider.modelClassLoader.getURLs.toList)
 
   override def runScenarioJob(
       command: DMRunDeploymentCommand,
@@ -24,7 +25,7 @@ class RemoteFlinkScenarioJobRunner(modelData: BaseModelData, client: FlinkClient
   ): Future[Option[JobID]] = {
     import command._
     val args = prepareProgramArgs(
-      modelData.inputConfigDuringExecution.serialized,
+      modelDataProvider.getCurrentModelData().inputConfigDuringExecution.serialized,
       processVersion,
       deploymentData,
       canonicalProcess

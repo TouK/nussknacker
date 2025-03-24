@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.commons.io.FileUtils
 import org.apache.flink.types.Row
 import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
@@ -11,16 +10,13 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeplo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, StubbedCatalogFactory}
+import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
+import pl.touk.nussknacker.engine.flink.table.definition.StubbedCatalogFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSource.SQL_EXPRESSION_PARAMETER_NAME
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
-
-import java.io.File
-import java.nio.charset.StandardCharsets
 
 class TableSourceTest
     extends AnyFunSuite
@@ -33,36 +29,30 @@ class TableSourceTest
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private lazy val tablesDefinition =
-    s"""CREATE DATABASE testdb;
-       |
-       |CREATE TABLE testdb.tablewithqualifiedname (
-       |      `quantity` INT
-       |) WITH (
-       |    'connector' = 'datagen',
-       |    'number-of-rows' = '1'
-       |);
-       |""".stripMargin
-
-  private lazy val sqlTablesDefinitionFilePath = {
-    val tempFile = File.createTempFile("tables-definition", ".sql")
-    tempFile.deleteOnExit()
-    FileUtils.writeStringToFile(tempFile, tablesDefinition, StandardCharsets.UTF_8)
-    tempFile.toPath
-  }
-
   private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(
     s"""{
-       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  tableDefinition: \"\"\"
+       |      CREATE TABLE test_table (
+       |            `quantity` INT
+       |      ) WITH (
+       |          'connector' = 'datagen',
+       |          'number-of-rows' = '1'
+       |      );
+       |  \"\"\"
        |}""".stripMargin
   )
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
+  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
     tableComponentsConfig,
     ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
@@ -70,26 +60,10 @@ class TableSourceTest
     .withExtraComponents(tableComponents)
     .build()
 
-  override protected def afterAll(): Unit = {
-    super.afterAll()
-    flinkMiniClusterWithServices.close()
-  }
-
-  test("be possible to use table declared inside a database other than the default one") {
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", "table", "Table" -> s"'`default_catalog`.`testdb`.`tablewithqualifiedname`'".spel)
-      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
-
-    val result = runner.runWithoutData[Row](scenario).validValue
-    result.errors shouldBe empty
-    result.successes.loneElement
-  }
-
   test("be possible to use nodes deployment data") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'`default_catalog`.`testdb`.`tablewithqualifiedname`'".spel)
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
       .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
 
     val result = runner
@@ -110,7 +84,7 @@ class TableSourceTest
     )
 
     val tableComponentsBasedOnCatalogConfiguration: List[ComponentDefinition] =
-      new FlinkTableComponentProvider().create(
+      new FlinkTableDataSourceComponentProvider().create(
         configWithCatalogConfiguration,
         ProcessObjectDependencies.withConfig(configWithCatalogConfiguration)
       )
@@ -126,7 +100,7 @@ class TableSourceTest
       .source(
         "start",
         "table",
-        "Table" -> (s"'`${FlinkDataDefinition.internalCatalogName}`." +
+        "Table" -> (s"'`_nu_catalog`." +
           s"`${StubbedCatalogFactory.sampleBoundedTablePath.getDatabaseName}`." +
           s"`${StubbedCatalogFactory.sampleBoundedTablePath.getObjectName}`'").spel
       )

@@ -8,8 +8,8 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterJobClient}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 
-import java.net.URLClassLoader
 import java.util.{stream => jstream}
 import scala.jdk.CollectionConverters._
 
@@ -19,7 +19,7 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
 
   def createStreamExecutionEnvironment(
       miniCluster: MiniCluster,
-      modelClassLoader: URLClassLoader,
+      modelClassLoader: ModelClassLoader,
       attached: Boolean
   ): StreamExecutionEnvironment = {
     val pipelineExecutorServiceLoader = createPipelineExecutorServiceLoader(miniCluster, modelClassLoader)
@@ -36,7 +36,7 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
   // dependency to flink-clients.
   private def createPipelineExecutorServiceLoader(
       miniCluster: MiniCluster,
-      modelClassLoader: URLClassLoader
+      modelClassLoader: ModelClassLoader
   ): PipelineExecutorServiceLoader =
     new PipelineExecutorServiceLoader {
 

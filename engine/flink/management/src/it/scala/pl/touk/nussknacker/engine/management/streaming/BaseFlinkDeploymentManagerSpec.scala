@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -336,7 +336,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
         workingDirectoryOpt = None,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
-      ModelClassLoader(processingTypeConfig.classPath, None, deploymentManagerClassLoader)
+      ModelClassLoaderFactory.create(processingTypeConfig.classPath, None, deploymentManagerClassLoader)
     )
     val definition = modelData.modelDefinition
     definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

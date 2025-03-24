@@ -2,18 +2,12 @@ package pl.touk.nussknacker.ui.process.processingtype.loader
 
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  CustomProcessValidator,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer
-}
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -29,13 +23,13 @@ private[loader] class DeploymentManagerProviderCorrectClassloaderHandler(
   override def name: String = ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.name }
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) {
-      delegate.createDeploymentManager(modelData, dependencies, deploymentConfig, scenarioStateCacheTTL)
+      delegate.createDeploymentManager(modelDataProvider, dependencies, deploymentConfig, scenarioStateCacheTTL)
     }
   }
 

@@ -22,7 +22,6 @@
       <env name="DB_DRIVER" value="org.postgresql.Driver" />
       <env name="DB_USER" value="nu" />
       <env name="DB_PASSWORD" value="nupassword" />
-      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/dev-tables-definition.sql" />
       <env name="WORKING_DIR" value="$PROJECT_DIR$/designer/server/work" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />

@@ -31,13 +31,13 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
   import net.ceedubs.ficus.Ficus._
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     import deploymentManagerDependencies._
-    valid(new MockableDeploymentManager(Some(modelData)))
+    valid(new MockableDeploymentManager(Some(modelDataProvider)))
   }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
@@ -56,13 +56,13 @@ object MockableDeploymentManagerProvider {
 
   type ScenarioName = String
 
-  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])(
+  class MockableDeploymentManager(modelDataProviderOpt: Option[BaseModelDataProvider])(
       implicit executionContext: ExecutionContext,
       ioRuntime: IORuntime
   ) extends DeploymentManager
       with ManagerSpecificScenarioActivitiesStoredByManager {
 
-    private lazy val miniClusterWithServicesOpt = modelDataOpt.map { modelData =>
+    private lazy val miniClusterWithServicesOpt = modelDataProviderOpt.map { modelData =>
       FlinkMiniClusterFactory.createMiniClusterWithServices(
         modelData.modelClassLoader,
         new Configuration,
@@ -70,9 +70,9 @@ object MockableDeploymentManagerProvider {
     }
 
     private lazy val testRunnerOpt =
-      modelDataOpt.map { modelData =>
+      modelDataProviderOpt.map { modelDataProvider =>
         new FlinkMiniClusterScenarioTestRunner(
-          modelData,
+          modelDataProvider,
           miniClusterWithServicesOpt,
           parallelism = 1,
           waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy

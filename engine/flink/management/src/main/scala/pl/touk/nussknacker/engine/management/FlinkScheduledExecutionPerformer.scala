@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
-import pl.touk.nussknacker.engine.{newdeployment, BaseModelData}
+import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ScheduledExecutionPerformer
@@ -23,14 +23,14 @@ object FlinkScheduledExecutionPerformer {
 
   def create(
       flinkClient: FlinkClient,
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       rawSchedulingConfig: Config,
   ): ScheduledExecutionPerformer = {
     new FlinkScheduledExecutionPerformer(
       flinkClient = flinkClient,
       jarsDir = Paths.get(rawSchedulingConfig.getString("jarsDir")),
-      inputConfigDuringExecution = modelData.inputConfigDuringExecution,
-      modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
+      getCurrentInputConfigDuringExecution = () => modelDataProvider.getCurrentModelData().inputConfigDuringExecution,
+      modelJarProvider = new FlinkModelJarProvider(modelDataProvider.modelClassLoader.getURLs.toList)
     )
   }
 
@@ -40,8 +40,8 @@ object FlinkScheduledExecutionPerformer {
 // Warning: This won't work correctly with useMiniClusterForDeployment mode because it uses always the same model classpath
 class FlinkScheduledExecutionPerformer(
     flinkClient: FlinkClient,
+    getCurrentInputConfigDuringExecution: () => InputConfigDuringExecution,
     jarsDir: Path,
-    inputConfigDuringExecution: InputConfigDuringExecution,
     modelJarProvider: FlinkModelJarProvider
 ) extends ScheduledExecutionPerformer
     with LazyLogging {
@@ -63,7 +63,9 @@ class FlinkScheduledExecutionPerformer(
   }
 
   override def provideInputConfigDuringExecutionJson(): Future[InputConfigDuringExecution] =
-    Future.successful(inputConfigDuringExecution)
+    Future {
+      getCurrentInputConfigDuringExecution()
+    }
 
   private def copyJarToLocalDir(processVersion: ProcessVersion): Future[String] = Future {
     jarsDir.toFile.mkdirs()

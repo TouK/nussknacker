@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.factory
 
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.IORuntime
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.util.{ExecutionContextWithIORuntime, ExecutionContextWithIORuntimeAdapter}
@@ -27,6 +28,8 @@ final class InfrastructureServices(
 
   val futureSttpBackend: SttpBackend[Future, Any] =
     IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime)
+
+  implicit val implicitIORuntime: IORuntime = executionContextWithIORuntime.ioRuntime
 
 }
 

@@ -17,7 +17,7 @@ import scala.concurrent.duration.FiniteDuration
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]

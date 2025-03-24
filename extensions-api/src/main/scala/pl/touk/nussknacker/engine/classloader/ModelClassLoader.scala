@@ -1,14 +1,12 @@
-package pl.touk.nussknacker.engine.util.loader
+package pl.touk.nussknacker.engine.classloader
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.util.StringUtils._
-import pl.touk.nussknacker.engine.util.UrlUtils._
 
 import java.net.URL
-import java.nio.file.Path
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
-class ModelClassLoader private (val urls: List[URL], parent: ClassLoader) extends URLClassLoader(urls, parent) {
+class ModelClassLoader private[classloader] (val urls: List[URL], parent: ClassLoader)
+    extends URLClassLoader(urls, parent) {
 
   override def toString: String = s"ModelClassLoader(${toString(this)})"
 
@@ -31,17 +29,5 @@ object ModelClassLoader extends LazyLogging {
   // but in case of running from sbt it contains only sbt-launcher.jar
   val flinkWorkAroundEmptyClassloader: ModelClassLoader =
     new ModelClassLoader(List(new URL("http://dummy-classpath.invalid")), getClass.getClassLoader)
-  val defaultJarExtension = ".jar"
-
-  // workingDirectoryOpt is for the purpose of easier testing. We can't easily change the working directory otherwise - see https://stackoverflow.com/a/840229
-  def apply(
-      urls: List[String],
-      workingDirectoryOpt: Option[Path],
-      deploymentManagersClassLoader: DeploymentManagersClassLoader,
-      jarExtension: String = defaultJarExtension
-  ): ModelClassLoader = {
-    val postProcessedURLs = urls.map(_.convertToURL(workingDirectoryOpt)).flatMap(_.expandFiles(jarExtension))
-    new ModelClassLoader(postProcessedURLs, deploymentManagersClassLoader)
-  }
 
 }
