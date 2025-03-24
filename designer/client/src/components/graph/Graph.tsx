@@ -349,21 +349,9 @@ export class Graph extends React.Component<Props> {
             }
         };
 
-        const showStickyNoteTools = (cellView: dia.CellView) => {
-            cellView.showTools();
-        };
-
-        const hideToolsOnBlankClick = (evt: dia.Event) => {
-            evt.preventDefault();
-            this.processGraphPaper.hideTools();
-        };
-
         const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
             if (this.props.isFragment === true) return;
             this.processGraphPaper.hideTools();
-            if (isStickyNoteElement(cellView.model)) {
-                showStickyNoteTools(cellView);
-            }
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes?.id;
                 if (!nodeDataId) {
@@ -395,7 +383,6 @@ export class Graph extends React.Component<Props> {
             handleGraphEvent(null, selectNode, (view) => !isStickyNoteElement(view.model)),
         );
         this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
-        this.processGraphPaper.on(Events.BLANK_POINTERCLICK, hideToolsOnBlankClick);
 
         this.hooverHandling();
     }
@@ -641,25 +628,31 @@ export class Graph extends React.Component<Props> {
 
     #highlightNodes = (selectedNodeIds: string[] = [], scenario = this.props.scenario): void => {
         this.processGraphPaper.freeze();
+        this.processGraphPaper.hideTools();
         const elements = this.graph.getElements();
         elements.forEach((cell) => {
             this.#unhighlightCell(cell, nodeValidationError);
             this.#unhighlightCell(cell, nodeFocused);
+            if (isStickyNoteElement(cell) && selectedNodeIds.includes(cell.id.toString())) {
+                cell.findView(this.processGraphPaper).showTools();
+            }
         });
 
-        const stickyNotes: Record<string, NodeValidationError[]> = elements
-            .filter((n) => isStickyNoteElement(n))
-            .reduce((acc, user) => {
-                acc[user.id.toString()] = [];
-                return acc;
-            }, {});
-        this.props?.stickyNoteSetErrors(stickyNotes);
+        if (this.props.stickyNoteSetErrors) {
+            const stickyNotes: Record<string, NodeValidationError[]> = elements
+                .filter((n) => isStickyNoteElement(n))
+                .reduce((acc, user) => {
+                    acc[user.id.toString()] = [];
+                    return acc;
+                }, {});
+            this.props.stickyNoteSetErrors(stickyNotes);
+        }
         const validationErrors = ProcessUtils.getValidationErrors(scenario);
         const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 
-        this.props?.stickyNoteSetErrors(validationErrors?.invalidNodes);
+        if (this.props.stickyNoteSetErrors) this.props?.stickyNoteSetErrors(validationErrors?.invalidNodes);
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {
             const nodeId = el.id.toString();
