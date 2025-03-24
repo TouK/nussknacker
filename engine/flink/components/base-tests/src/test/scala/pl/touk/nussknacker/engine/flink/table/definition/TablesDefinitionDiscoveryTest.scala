@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.flink.table.definition
 
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.DataTypes
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog._
 import org.scalatest.Inside.inside
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionCreationError.EmptyDataDefinitionConfiguration
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionDiscoveryError.{
   ConnectorDiscoveryProblem,
@@ -34,14 +35,13 @@ class TablesDefinitionDiscoveryTest
     with PatientScalaFutures
     with ModelClassLoaderSimulationSuite {
 
-  private val minicluster = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+  private val env = StreamTableEnvironment.create(StreamExecutionEnvironment.getExecutionEnvironment)
 
   private def discoverTables(sql: String) = {
     val parsedSql      = FlinkDdlParser.parseUnsafe(sql)
     val dataDefinition = FlinkDataDefinition.applyUnsafe(parsedSql, None)
     TablesDefinitionDiscovery
-      .prepareDiscovery(dataDefinition, minicluster)
-      .andThen(_.listTables.sequence)
+      .discoverTables(dataDefinition, env)
   }
 
   test("extracts table definition with correct source and sink data type") {
@@ -58,7 +58,7 @@ class TablesDefinitionDiscoveryTest
           |    'path' = '.',
           |    'format' = 'csv'
           |);""".stripMargin
-    val tableDefinition = discoverTables(sql).validValue.loneElement
+    val tableDefinition = discoverTables(sql).loneElement.validValue
 
     val sourceRowType = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
     sourceRowType.getFieldNames.asScala shouldBe List(
@@ -85,9 +85,8 @@ class TablesDefinitionDiscoveryTest
   test("use catalog configuration in data definition") {
     val catalogConfiguration = Configuration.fromMap(Map("type" -> StubbedCatalogFactory.catalogName).asJava)
     val flinkDataDefinition  = FlinkDataDefinition.applyUnsafe(List.empty, Some(catalogConfiguration))
-    val discovery =
-      TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition, minicluster).validValue
-    val tableDefinition = discovery.listTables.sequence.validValue.loneElement
+    val tableDefinition =
+      TablesDefinitionDiscovery.discoverTables(flinkDataDefinition, env).loneElement.validValue
 
     tableDefinition.tableId.toString shouldBe s"`_nu_catalog`." +
       s"`${StubbedCatalogFactory.sampleBoundedTablePath.getDatabaseName}`." +
@@ -106,7 +105,7 @@ class TablesDefinitionDiscoveryTest
           |    'path' = '.',
           |    'format' = 'csv'
           |);""".stripMargin
-    discoverTables(sql) shouldBe Symbol("valid")
+    discoverTables(sql).loneElement shouldBe Symbol("valid")
   }
 
   test("return error for empty flink data definition") {
@@ -121,7 +120,7 @@ class TablesDefinitionDiscoveryTest
          |) WITH (
          |    'connector' = 'datagen'
          |);""".stripMargin
-    val error = discoverTables(sql).invalidValue.toList.loneElement
+    val error = discoverTables(sql).loneElement.invalidValue.toList.loneElement
 
     inside(error) { case e: SqlStatementExecutionError =>
       e.getMessage should include("Cause: Could not execute CreateTable in path `default_catalog`.`somedb`.`testTable`")
@@ -137,7 +136,7 @@ class TablesDefinitionDiscoveryTest
         |    'password' = 'password',
         |    'base-url' = 'jdbc:postgresql://localhost:5432'
         |)""".stripMargin
-    val error = discoverTables(sql).invalidValue.toList.loneElement
+    val error = discoverTables(sql).loneElement.invalidValue.toList.loneElement
     inside(error) { case e: CatalogRegistrationError =>
       e.getMessage shouldBe
         """Could not create catalog.
@@ -153,7 +152,7 @@ class TablesDefinitionDiscoveryTest
           |) WITH (
           |  'connector' = 'not-on-classpath-connector'
           |)""".stripMargin
-    val error = discoverTables(sql).invalidValue.toList.loneElement
+    val error = discoverTables(sql).loneElement.invalidValue.toList.loneElement
     inside(error) { case e: ConnectorDiscoveryProblem =>
       e.getMessage shouldBe "Could not find matching connector: [not-on-classpath-connector]"
     }
@@ -168,7 +167,7 @@ class TablesDefinitionDiscoveryTest
           |  'path' = '.',
           |  'format' = 'not-on-classpath-format'
           |)""".stripMargin
-    val errors = discoverTables(sql).invalidValue.toList
+    val errors = discoverTables(sql).loneElement.invalidValue.toList
     inside(errors) { case err1 :: err2 :: Nil =>
       err1.getMessage shouldBe "Could not find any format factory for identifier 'not-on-classpath-format' in the classpath."
       err2.getMessage shouldBe "Could not find any format factory for identifier 'not-on-classpath-format' in the classpath."
@@ -183,7 +182,7 @@ class TablesDefinitionDiscoveryTest
           |  'connector' = 'datagen',
           |  'redundant' = '123'
           |)""".stripMargin
-    val error = discoverTables(sql).invalidValue.toList.loneElement
+    val error = discoverTables(sql).loneElement.invalidValue.toList.loneElement
     inside(error) { case e: TableEnvironmentRuntimeValidationError =>
       e.getMessage shouldBe
         """|Unsupported options found for 'datagen'.
@@ -213,7 +212,7 @@ class TablesDefinitionDiscoveryTest
           |  'connector' = 'blackhole',
           |  'redundant' = '123'
           |)""".stripMargin
-    val error = discoverTables(sql).invalidValue.toList.loneElement
+    val error = discoverTables(sql).loneElement.invalidValue.toList.loneElement
     inside(error) { case e: TableEnvironmentRuntimeValidationError =>
       e.getMessage shouldBe
         """|Unsupported options found for 'blackhole'.
@@ -244,7 +243,7 @@ class TablesDefinitionDiscoveryTest
           |    'format' = 'csv',
           |    'redundant' = '123'
           |);""".stripMargin
-    val error = discoverTables(sql).invalidValue.toList
+    val error = discoverTables(sql).loneElement.invalidValue.toList
     inside(error) { case List(e1: TableEnvironmentRuntimeValidationError, e2) =>
       val expectedMessage =
         """|Unsupported options found for 'filesystem'.
