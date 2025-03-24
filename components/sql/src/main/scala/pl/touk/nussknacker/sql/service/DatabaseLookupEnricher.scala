@@ -31,7 +31,7 @@ object DatabaseLookupEnricher {
   private def keyColumnParam(tableDef: TableDefinition): Parameter = {
     val columnNameValues = tableDef.columnDefs.map(column => FixedExpressionValue(s"'${column.name}'", column.name))
     Parameter(KeyColumnParamName, Typed[String])
-      .copy(editor = Some(FixedValuesParameterEditor(columnNameValues)))
+      .copy(editors = List(FixedValuesParameterEditor(columnNameValues)))
   }
 
   private def keyValueParam(keyColumnName: String, tableDef: TableDefinition): Parameter = {
@@ -62,7 +62,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
     val possibleTables: List[FixedExpressionValue] =
       schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
-    Parameter(TableParamName, Typed[String]).copy(editor = Some(FixedValuesParameterEditor(possibleTables)))
+    Parameter(TableParamName, Typed[String]).copy(editors = List(FixedValuesParameterEditor(possibleTables)))
   }
 
   import DatabaseLookupEnricher._

@@ -1,7 +1,7 @@
 import { BoolEditor } from "./BoolEditor";
 import { SpelEditor } from "./SpelEditor";
 import { SqlEditor } from "./SqlEditor";
-import { StringEditor } from "./StringEditor";
+import { StaticStringEditor } from "./StaticStringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { EditorType, ExpressionLang, ExpressionObj } from "./types";
 import React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
@@ -62,7 +62,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.JSON_PARAMETER_EDITOR]: JsonEditor,
     [EditorType.PERIOD_EDITOR]: PeriodEditor,
     [EditorType.SPEL_PARAMETER_EDITOR]: SpelEditor,
-    [EditorType.STRING_PARAMETER_EDITOR]: StringEditor,
+    [EditorType.STATIC_STRING_PARAMETER_EDITOR]: StaticStringEditor,
     [EditorType.TEXTAREA_PARAMETER_EDITOR]: TextareaEditor,
     [EditorType.TIME]: TimeEditor,
     [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,

@@ -200,7 +200,7 @@ describe("Fragment", () => {
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
         cy.get("[data-testid=window]").find('[id="nk-graph-fragment"]').matchImage();
 
-        cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find("[role=tab]").contains("expression");
+        cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find("[role=tab]").contains("fixed values");
         cy.get('[title="name_string_fixed"]').siblings().eq(0).contains("#meta.processName");
         cy.get('[title="name_string_fixed"]').find('[title="Hint text test"]').should("be.visible");
         cy.get('[title="non_boolean_or_string"]').siblings().eq(0).contains("1");
@@ -298,6 +298,7 @@ describe("Fragment", () => {
 
         // Verify existing fragment after properties change
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").get("[title='name_value_string_any_value']").get("[role=tab]").contains("expression").click();
         cy.get("[data-testid=window]").get("[title='name_value_string_any_value']").siblings().eq(0).find("[id='ace-editor']").type("test");
 
         cy.get("@window")

@@ -54,7 +54,7 @@ class ValidationResourcesSpec
         Map(
           "requiredStringProperty" -> ScenarioPropertyConfig(
             None,
-            Some(StringParameterEditor),
+            Some(StaticStringParameterEditor),
             Some(List(MandatoryParameterValidator)),
             Some("label"),
             None

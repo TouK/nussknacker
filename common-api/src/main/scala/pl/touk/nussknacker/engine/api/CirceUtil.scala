@@ -18,24 +18,34 @@ object CirceUtil {
     io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
   def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] =
-    decodeJson(new String(json, StandardCharsets.UTF_8))
+    decodeJson(toString(json))
 
-  def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json))
+  def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json), json)
 
-  def decodeJsonUnsafe[T: Decoder](json: String, message: String): T = unsafe(decodeJson(json), message)
+  def decodeJsonUnsafe[T: Decoder](json: String, message: String): T = unsafe(decodeJson(json), json, message)
 
-  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = unsafe(decodeJson(json))
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = {
+    val jsonString = toString(json)
+    unsafe(decodeJson(jsonString), jsonString)
+  }
 
-  def decodeJsonUnsafe[T: Decoder](json: Array[Byte], message: String): T = unsafe(decodeJson(json), message)
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte], message: String): T = {
+    val jsonString = toString(json)
+    unsafe(decodeJson(jsonString), jsonString, message)
+  }
 
-  def decodeJsonUnsafe[T: Decoder](json: Json): T = unsafe(Decoder[T].decodeJson(json))
+  def decodeJsonUnsafe[T: Decoder](json: Json): T = unsafe(Decoder[T].decodeJson(json), json.asString.getOrElse(""))
 
-  def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T = unsafe(Decoder[T].decodeJson(json), message)
+  def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T =
+    unsafe(Decoder[T].decodeJson(json), json.asString.getOrElse(""), message)
 
-  private def unsafe[T](result: Either[circe.Error, T], message: String = "") = result match {
+  private def toString(json: Array[Byte]): String =
+    new String(json, StandardCharsets.UTF_8)
+
+  private def unsafe[T](result: Either[circe.Error, T], json: => String, message: String = "") = result match {
     case Left(error) =>
       throw DecodingError(
-        s"Failed to decode${if (message.isBlank) "" else s" - $message"}, error: ${error.getMessage}",
+        s"Failed to decode${if (message.isBlank) "" else s" - $message"}, error: ${error.getMessage}, json: $json",
         error
       )
     case Right(data) => data

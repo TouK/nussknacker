@@ -754,8 +754,8 @@ object SampleNodes {
     private val aTypeDeclaration = ParameterDeclaration
       .mandatory[String](aTypeParamName)
       .withCreator(modify =
-        _.copy(editor =
-          Some(
+        _.copy(editors =
+          List(
             FixedValuesParameterEditor(
               List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
             )
@@ -769,8 +769,8 @@ object SampleNodes {
       .mandatory[Int](versionParamName)
       .withAdvancedCreator[List[Int]](
         create = versions =>
-          _.copy(editor =
-            Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+          _.copy(editors =
+            List(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
           )
       )
 
@@ -924,8 +924,8 @@ object SampleNodes {
     private val aTypeParamDeclaration = ParameterDeclaration
       .mandatory[String](aTypeParamName)
       .withCreator(
-        modify = _.copy(editor =
-          Some(
+        modify = _.copy(editors =
+          List(
             FixedValuesParameterEditor(
               List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
             )
@@ -939,8 +939,8 @@ object SampleNodes {
       .mandatory[Int](versionParamName)
       .withAdvancedCreator[List[Int]](
         create = versions =>
-          _.copy(editor =
-            Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+          _.copy(editors =
+            List(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
           )
       )
 
