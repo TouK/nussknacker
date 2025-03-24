@@ -12,7 +12,7 @@ import { getProcessDefinitionData } from "../../../reducers/selectors/processDef
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
 
