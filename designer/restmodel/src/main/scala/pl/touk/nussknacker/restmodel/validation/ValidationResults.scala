@@ -5,7 +5,8 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
-import pl.touk.nussknacker.engine.api.typed.{typing, TypeEncoders}
+import pl.touk.nussknacker.engine.api.json.encoders.TypeEncoders
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIParameter

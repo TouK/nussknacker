@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegis
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.{ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.nio.file.Path
@@ -93,6 +94,15 @@ object ModelData extends LazyLogging {
   }
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
+
+    def toModelDataProvider: BaseModelDataProvider = {
+      val invokableModelData = asInvokableModelData
+      new BaseModelDataProvider {
+        override val modelClassLoader: ModelClassLoader   = invokableModelData.modelClassLoader
+        override def getCurrentModelData(): BaseModelData = invokableModelData
+      }
+    }
+
     def asInvokableModelData: ModelData = baseModelData.asInstanceOf[ModelData]
   }
 
@@ -228,9 +238,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition = withThisAsContextClassLoader {
+  final def modelDefinition: ModelDefinition =
     modelDefinitionWithClasses.modelDefinition
-  }
 
   private lazy val dictServicesFactory: DictServicesFactory =
     DictServicesFactoryLoader.justOne(modelClassLoader)
@@ -252,7 +261,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     }
   }
 
-  override def modelClassLoader: ModelClassLoader
+  def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 

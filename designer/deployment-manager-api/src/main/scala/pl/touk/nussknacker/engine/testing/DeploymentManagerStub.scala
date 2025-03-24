@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.testing
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.{
-  BaseModelData,
+  BaseModelDataProvider,
   DeploymentManagerDependencies,
   DeploymentManagerProvider,
   MetaDataInitializer
@@ -68,7 +68,7 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
 class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]

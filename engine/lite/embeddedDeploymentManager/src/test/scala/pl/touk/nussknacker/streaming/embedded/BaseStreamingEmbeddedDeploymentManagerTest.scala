@@ -125,8 +125,8 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit =
           throw new AssertionError("Should not happen...")
       }
-      strategy.open(modelData, LiteEngineRuntimeContextPreparer.noOp)
-      val manager = new EmbeddedDeploymentManager(modelData, deploymentService, strategy)
+      strategy.open(modelData.toModelDataProvider, LiteEngineRuntimeContextPreparer.noOp)
+      val manager = new EmbeddedDeploymentManager(modelData.toModelDataProvider, deploymentService, strategy)
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }
   }

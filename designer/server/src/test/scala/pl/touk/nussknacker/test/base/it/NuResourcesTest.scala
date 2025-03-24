@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.test.base.it
 
-import cats.effect.IO
+import cats.data.Validated.Valid
 import cats.effect.unsafe.implicits.global
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.{parser, Decoder, Encoder, Json}
@@ -54,8 +54,6 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusPr
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype._
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData.SchedulingForProcessingType
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -167,16 +165,22 @@ trait NuResourcesTest
       modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
     )
 
+  private val deploymentData =
+    new DeploymentData(
+      processingTypeConfig.deploymentManagerType,
+      Valid(deploymentManager),
+      deploymentManagerProvider.metaDataInitializer(ConfigFactory.empty()),
+      deploymentManagerProvider.scenarioPropertiesConfig(ConfigFactory.empty()),
+      deploymentManagerProvider.additionalValidators(ConfigFactory.empty()),
+      deploymentManagerProvider.defaultEngineSetupName
+    )
+
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
         modelData,
-        deploymentManagerProvider,
-        SchedulingForProcessingType.NotAvailable,
-        deploymentManagerDependencies,
-        deploymentManagerProvider.defaultEngineSetupName,
-        processingTypeConfig.deploymentConfig,
+        deploymentData,
         processingTypeConfig.category,
         modelDependencies.componentDefinitionExtractionMode
       )
@@ -184,18 +188,18 @@ trait NuResourcesTest
 
   protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    TestProcessingTypeDataProviderFactory.fromState(
-      new ProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs()))
-        .loadProcessingTypeData(
-          _ => modelDependencies,
-          _ => deploymentManagerDependencies,
-          deploymentManagersClassLoader,
-          modelClassLoaderProvider,
-          Some(testDbRef),
-        )
-        .unsafeRunSync()
-    )
+  protected val (processingTypeDataProvider, closeDeploymentManagers) = {
+    val designerConfig = DesignerConfig.from(testConfig)
+    TestProcessingTypeDataProviderFactory
+      .create(
+        processingTypeConfigs = designerConfig.processingTypeConfigs(),
+        modelClassLoaderProvider = modelClassLoaderProvider,
+        modelDependencies = modelDependencies,
+        deploymentManagersClassLoader = deploymentManagersClassLoader,
+        deploymentManagerDependencies = deploymentManagerDependencies,
+      )
+      .allocated
+      .unsafeRunSync()
   }
 
   protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
@@ -235,7 +239,7 @@ trait NuResourcesTest
       processStateProvider,
       scenarioStatusPresenter,
       newProcessPreparerByProcessingType,
-      typeToConfig.mapCombined(_.parametersService),
+      processingTypeDataProvider.mapCombined(_.parametersService),
       processResolverByProcessingType,
       dbioRunner,
       futureFetchingScenarioRepository,
@@ -274,6 +278,11 @@ trait NuResourcesTest
   override def beforeEach(): Unit = {
     super.beforeEach()
     processChangeListener.clear()
+  }
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    closeDeploymentManagers.unsafeRunSync()
   }
 
   protected def saveCanonicalProcessAndAssertSuccess(

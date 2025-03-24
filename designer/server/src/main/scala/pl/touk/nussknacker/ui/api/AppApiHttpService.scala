@@ -24,7 +24,7 @@ import scala.util.control.NonFatal
 class AppApiHttpService(
     designerConfig: DesignerConfig,
     authManager: AuthManager,
-    reloadProcessingTypes: IO[Unit],
+    reloadModelData: IO[Unit],
     modelInfos: ProcessingTypeDataProvider[ModelInfo, _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
@@ -155,10 +155,18 @@ class AppApiHttpService(
   }
 
   expose {
-    appApiEndpoints.processingTypeDataReloadEndpoint
+    appApiEndpoints.modelReloadEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogicSuccess { _ => _ =>
-        reloadProcessingTypes.unsafeToFuture()
+        reloadModelData.unsafeToFuture()
+      }
+  }
+
+  expose {
+    appApiEndpoints.deprecatedProcessingTypeDataReloadEndpoint
+      .serverSecurityLogic(authorizeAdminUser[Unit])
+      .serverLogicSuccess { _ => _ =>
+        reloadModelData.unsafeToFuture()
       }
   }
 

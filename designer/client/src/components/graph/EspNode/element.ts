@@ -107,7 +107,7 @@ export const updateNodeCounts =
 
 export function makeElement(processDefinitionData: ProcessDefinitionData, theme: Theme): (node: NodeType) => shapes.devs.Model {
     return (node: NodeType) => {
-        const description = node.additionalFields.description;
+        const description = node.additionalFields?.description;
         const { text: bodyContent } = getBodyContent(node.id);
         const { text: helpContent } = getBodyContent(description ? "𝒊" : "");
 

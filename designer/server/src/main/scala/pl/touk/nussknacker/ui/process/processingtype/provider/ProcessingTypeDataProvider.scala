@@ -36,7 +36,7 @@ import scala.util.{Failure, Try}
   * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if they
   * have access to category.
   */
-abstract class ProcessingTypeDataProvider[Data, CombinedData](
+class ProcessingTypeDataProvider[Data, CombinedData](
     initialState: ProcessingTypeDataState[Data, CombinedData]
 )(implicit ioRuntime: IORuntime)
     extends LazyLogging {
@@ -104,16 +104,25 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](
     accessStateInCriticalSection(_.value).unsafeRunSync()
   }
 
-  final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] = {
+  def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] = {
     val childProvider =
       new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this.state, _.mapValues(fun))
     observers.add(childProvider)
     childProvider
   }
 
-  final def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] = {
+  def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] = {
     val childProvider =
       new TransformingProcessingTypeDataProvider[Data, CombinedData, Data, CC](this.state, _.mapCombined(fun))
+    observers.add(childProvider)
+    childProvider
+  }
+
+  def transform[TT, CC](
+      fun: (Map[ProcessingType, ValueWithRestriction[Data]], Try[CombinedData]) => ProcessingTypeDataState[TT, CC]
+  ): TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CC] = {
+    val childProvider =
+      new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CC](this.state, _.transform(fun))
     observers.add(childProvider)
     childProvider
   }
@@ -151,6 +160,17 @@ abstract class ProcessingTypeDataProvider[Data, CombinedData](
     stateMutex.lock.surround {
       doWithState(stateOps)
     }
+  }
+
+}
+
+object ProcessingTypeDataProvider {
+
+  def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] = {
+    // We create separate ioRuntime to ensure that we don't have some deadlocks during reading state where is used unsafeRunSync()
+    // See ProcessingTypeDataProvider.state method
+    implicit val ioRuntime: IORuntime = IORuntime.builder().build()
+    new ProcessingTypeDataProvider[T, C](stateValue)
   }
 
 }
@@ -206,14 +226,21 @@ final class ProcessingTypeDataState[+Data, +CombinedData](
     new ProcessingTypeDataState[Data, CC](all, newCombined)
   }
 
+  def transform[TT, CC](
+      fun: (Map[ProcessingType, ValueWithRestriction[Data]], Try[CombinedData]) => ProcessingTypeDataState[TT, CC]
+  ): ProcessingTypeDataState[TT, CC] = {
+    fun(all, combinedDataTry)
+  }
+
 }
 
 object ProcessingTypeDataState {
 
-  val uninitialized = new ProcessingTypeDataState(
-    all = Map.empty,
-    combinedDataTry = Failure(UninitializedCombinedDataException)
-  )
+  val uninitialized: ProcessingTypeDataState[Nothing, Nothing] = withUninitializedCombinedData(Map.empty)
+
+  // This method is used by external project
+  def withUninitializedCombinedData[Data](all: Map[ProcessingType, ValueWithRestriction[Data]]) =
+    new ProcessingTypeDataState(all, Failure(UninitializedCombinedDataException))
 
   private[provider] object UninitializedCombinedDataException
       extends IllegalAccessException("ProcessingTypeData is not initialized")

@@ -273,18 +273,18 @@ class AppApiHttpServiceBusinessSpec
     }
   }
 
-  "The processing type data reload endpoint should" - {
-    "reload processing types-related model data when" - {
+  "The model reload endpoint should" - {
+    "reload model data when" - {
       "'scenarioTypes' configuration is changed" in {
         val componentNamesBeforeReload = fetchComponentGroupNamesWithOccurencesCount()
 
         given()
           .applicationState {
-            simulatedChangeInApplicationConfig = Some(additionalProcessingTypeCustomization)
+            simulatedChangeInApplicationConfig = Some(additionalModelCustomization)
           }
           .when()
           .basicAuthAdmin()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(204)
 
@@ -318,7 +318,7 @@ class AppApiHttpServiceBusinessSpec
           }
           .when()
           .basicAuthAdmin()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(500)
           .body(
@@ -344,12 +344,12 @@ class AppApiHttpServiceBusinessSpec
           }
           .when()
           .basicAuthAdmin()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(500)
           .body(
             startsWith(
-              "Error during processing types reload. Model ClassLoader dependencies such as classpath cannot be modified during reload."
+              "Error during model reload. Model ClassLoader dependencies such as classpath cannot be modified during reload."
             )
           )
       }
@@ -360,7 +360,7 @@ class AppApiHttpServiceBusinessSpec
     super.beforeEach()
     if (simulatedChangeInApplicationConfig.isDefined) {
       simulatedChangeInApplicationConfig = None
-      forceReloadProcessingTypes()
+      forceReloadModel()
     }
   }
 
@@ -384,7 +384,7 @@ class AppApiHttpServiceBusinessSpec
       )
   }
 
-  private def additionalProcessingTypeCustomization = {
+  private def additionalModelCustomization = {
     ConfigFactory.parseString(
       s"""
          |scenarioTypes {
@@ -417,11 +417,11 @@ class AppApiHttpServiceBusinessSpec
       .toMap
   }
 
-  private def forceReloadProcessingTypes(): Unit = {
+  private def forceReloadModel(): Unit = {
     given()
       .when()
       .basicAuthAdmin()
-      .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+      .post(s"$nuDesignerHttpAddress/api/app/model/reload")
       .Then()
       .statusCode(204)
   }

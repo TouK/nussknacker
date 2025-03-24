@@ -43,7 +43,7 @@ class ScheduledExecutionPerformerTest extends AnyFunSuite with Matchers with Sca
     new FlinkScheduledExecutionPerformer(
       flinkClient = FlinkClientStub,
       jarsDir = jarsDir,
-      inputConfigDuringExecution = InputConfigDuringExecution(ConfigFactory.empty()),
+      getCurrentInputConfigDuringExecution = () => InputConfigDuringExecution(ConfigFactory.empty()),
       modelJarProvider = modelJarProvider
     )
   }
