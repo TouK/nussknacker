@@ -1,20 +1,22 @@
 import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
 import { useUserSettings } from "../../common/userSettings";
 import { ToolbarsSide } from "../../reducers/toolbars";
+import { Box, Stack, styled } from "@mui/material";
+import React, { ComponentType, Fragment, PropsWithChildren, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
-import { ToolbarsContainer } from "./ToolbarsContainer";
-import { SidePanel } from "../sidePanels/SidePanel";
-import { Toolbar } from "./toolbar";
 import { getCapabilities } from "../../reducers/selectors/other";
+import { ToolbarsSide } from "../../reducers/toolbars";
+import { SidePanel } from "../sidePanels/SidePanel";
+import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
+import { SidePanelToggleButton } from "../SidePanelToggleButton";
 import { useSurvey } from "../toolbars/useSurvey";
 import { DragAndDropContainer } from "./DragAndDropContainer";
-import { Box, styled } from "@mui/material";
-import { Overlay } from "./Overlay";
 import { Grid9 } from "./Grid9";
-import { PanelSide } from "../../actions/nk";
-import { SidePanelToggleButton } from "../SidePanelToggleButton";
-import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
+import { Overlay } from "./Overlay";
+import { Toolbar } from "./toolbar";
+import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer";
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useSelector(getCapabilities);
@@ -59,11 +61,27 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
 
     return (
         <DragAndDropContainer onMove={onMove}>
+            <Stack
+                direction="row"
+                sx={{
+                    position: "absolute",
+                    zIndex: 990000,
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    overflowY: "hidden",
+                    overflowX: "auto",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                }}
+            >
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
+            </Stack>
             <SidePanelsContextProvider configId={configId}>
                 <OverlayGrid9>
                     <Box gridArea="left" component={SidePanel} side={PanelSide.Left}>
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} />
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} />
+                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.LeftTop} />
+                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.LeftBottom} />
                     </Box>
 
                     <OverlayGrid9 gridArea="body" m={0.5}>
@@ -75,8 +93,8 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     </OverlayGrid9>
 
                     <Box gridArea="right" component={SidePanel} side={PanelSide.Right}>
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} />
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} />
+                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.RightTop} />
+                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.RightBottom} />
                     </Box>
                 </OverlayGrid9>
             </SidePanelsContextProvider>
@@ -89,16 +107,26 @@ export const OverlayGrid9 = Overlay.withComponent(Grid9);
 const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
     const padding = `calc(${theme.spacing(0.375)} / 2)`;
     switch (side) {
-        case ToolbarsSide.TopLeft:
-        case ToolbarsSide.TopRight:
+        case ToolbarsSide.LeftTop:
+        case ToolbarsSide.RightTop:
             return { paddingBottom: padding };
-        case ToolbarsSide.BottomLeft:
-        case ToolbarsSide.BottomRight:
+        case ToolbarsSide.LeftBottom:
+        case ToolbarsSide.RightBottom:
             return { paddingTop: padding };
         default:
             return {
-                paddingTop: padding,
-                paddingBottom: padding,
+                padding: 0,
+                flexDirection: "row",
+                pointerEvents: "none",
+                [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
+                    flexDirection: "row",
+                    margin: 1,
+                    gap: 1,
+                    minWidth: 100,
+                    "&>*": {
+                        pointerEvents: "all",
+                    },
+                },
             };
     }
 });

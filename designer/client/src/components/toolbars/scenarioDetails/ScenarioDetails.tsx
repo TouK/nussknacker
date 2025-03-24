@@ -11,7 +11,7 @@ import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../.
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { CssFade } from "../../CssFade";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import {
     PanelScenarioDetails,

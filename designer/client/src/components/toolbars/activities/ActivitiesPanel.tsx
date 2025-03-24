@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "./types";
 import { VariableSizeList } from "react-window";
