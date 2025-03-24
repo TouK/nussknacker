@@ -7,7 +7,7 @@ import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 
 export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons">>;
 
-export function DefaultToolbarPanel(props: ToolbarPanelProps): ReactElement {
+export function ButtonsToolbar(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
     const { children, title, id, buttonsVariant, componentUrl, ...passProps } = props;
 

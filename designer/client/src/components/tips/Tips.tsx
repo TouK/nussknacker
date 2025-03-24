@@ -8,7 +8,7 @@ import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";
-import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import Errors from "./error/Errors";
 import { TipPanelStyled } from "./Styled";

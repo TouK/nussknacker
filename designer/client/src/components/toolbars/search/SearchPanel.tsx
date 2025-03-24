@@ -3,7 +3,7 @@ import React, { ReactElement, useCallback, useEffect, useRef, useState } from "r
 import { useTranslation } from "react-i18next";
 import { AdvancedOptionsIcon, SearchIcon } from "../../table/SearchFilter";
 import { Focusable } from "../../themed/InputWithIcon";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchQuery, SearchResults } from "./SearchResults";
 import { SearchInputWithIcon } from "../../themed/SearchInput";

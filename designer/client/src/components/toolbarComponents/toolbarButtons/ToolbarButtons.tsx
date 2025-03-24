@@ -3,6 +3,7 @@ import React, { createContext, PropsWithChildren } from "react";
 import { ToolbarButtonWrapper } from "./ToolbarButtonStyled";
 
 export enum ButtonsVariant {
+    xs = "xs",
     small = "small",
     label = "label",
     horizontal = "horizontal",

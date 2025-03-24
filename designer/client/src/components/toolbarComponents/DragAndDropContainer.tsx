@@ -1,10 +1,10 @@
+import { DragDropContext, OnDragEndResponder, OnDragStartResponder } from "@hello-pangea/dnd";
+import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import React, { PropsWithChildren, useCallback, useState } from "react";
 import { ToolbarPosition } from "../../actions/nk/toolbars";
-import { DragDropContext, DropResult } from "@hello-pangea/dnd";
-import { alpha, GlobalStyles, useTheme } from "@mui/material";
-import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME } from "./ToolbarsContainer";
-import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
 import { EventTrackingSelector, EventTrackingType, useEventTracking } from "../../containers/event-tracking";
+import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME, DROPPABLE_CLASSNAME } from "./ToolbarsContainer";
 
 type Props = PropsWithChildren<{
     onMove: (from: ToolbarPosition, to: ToolbarPosition) => void;
@@ -12,14 +12,16 @@ type Props = PropsWithChildren<{
 
 export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 
+export const DraggableIdContext = React.createContext<string | null>(null);
+
 export function DragAndDropContainer({ children, onMove }: Props) {
-    const [isDragging, setIsDragging] = useState(false);
+    const [draggableId, setDraggableId] = useState<string | null>(null);
     const { trackEvent } = useEventTracking();
 
-    const onDragEnd = useCallback(
-        (result: DropResult) => {
+    const onDragEnd: OnDragEndResponder = useCallback(
+        (result) => {
             trackEvent({ selector: EventTrackingSelector.ToolbarPanel, event: EventTrackingType.Move });
-            setIsDragging(false);
+            setDraggableId(null);
             const { destination, type, reason, source } = result;
             if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
                 const from: ToolbarPosition = [source.droppableId, source.index];
@@ -30,8 +32,8 @@ export function DragAndDropContainer({ children, onMove }: Props) {
         [onMove, trackEvent],
     );
 
-    const onDragStart = useCallback(() => {
-        setIsDragging(true);
+    const onDragStart: OnDragStartResponder = useCallback(({ draggableId }) => {
+        setDraggableId(draggableId);
     }, []);
 
     const theme = useTheme();
@@ -41,12 +43,18 @@ export function DragAndDropContainer({ children, onMove }: Props) {
             <GlobalStyles
                 styles={{
                     [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
-                        minHeight: isDragging ? "1em" : null,
+                        minHeight: draggableId ? "1em" : null,
                         minWidth: SIDEBAR_WIDTH,
                         position: "relative",
-                        backgroundColor: theme.palette.background.paper,
-                        "&::after": {
-                            content: isDragging ? "''" : null,
+                        // backgroundColor: theme.palette.background.paper,
+                    },
+                }}
+            />
+            <GlobalStyles
+                styles={{
+                    [`.${DROPPABLE_CLASSNAME}`]: {
+                        [`.${DRAGGABLE_LIST_CLASSNAME}::after`]: {
+                            content: draggableId ? "''" : null,
                             transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
                             position: "absolute",
                             top: 0,
@@ -57,21 +65,19 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                             background: theme.palette.action.selected,
                             outline: `3px dashed ${theme.palette.common.white}`,
                             outlineOffset: -4,
-
-                            [`.${DRAGGING_FROM_CLASSNAME} > &`]: {
-                                background: alpha(theme.palette.warning.light, 0.2),
-                                outlineColor: theme.palette.warning.light,
-                            },
-
-                            [`.${DRAGGING_OVER_CLASSNAME} > &`]: {
-                                background: alpha(theme.palette.info.main, 0.2),
-                                outlineColor: theme.palette.info.main,
-                            },
+                        },
+                        [`.${DRAGGING_FROM_CLASSNAME} > .${DRAGGABLE_LIST_CLASSNAME}::after`]: {
+                            background: alpha(theme.palette.warning.light, 0.2),
+                            outlineColor: theme.palette.warning.light,
+                        },
+                        [`.${DRAGGING_OVER_CLASSNAME} > .${DRAGGABLE_LIST_CLASSNAME}::after`]: {
+                            background: alpha(theme.palette.info.main, 0.2),
+                            outlineColor: theme.palette.info.main,
                         },
                     },
                 }}
             />
-            {children}
+            <DraggableIdContext.Provider value={draggableId}>{children}</DraggableIdContext.Provider>
         </DragDropContext>
     );
 }
