@@ -210,8 +210,15 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 width: "100%",
                 height: "100%",
             },
-            ".joint-sticky-note-remove-tool > circle": {
-                fill: "#ca344c",
+            ".sticky-note-errors": {
+                fontFamily: theme.typography.fontFamily,
+                fontSize: theme.typography.body1.fontSize,
+                color: theme.palette.text.primary,
+            },
+            ".sticky-note-error": {
+                backgroundColor: theme.palette.error.main,
+                marginTop: "5px",
+                padding: "0px 5px",
             },
             ".sticky-note-markdown-editor:disabled": {
                 display: "none",

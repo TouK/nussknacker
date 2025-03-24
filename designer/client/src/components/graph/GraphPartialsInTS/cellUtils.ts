@@ -7,6 +7,10 @@ export function isModelElement(el: dia.Cell): el is shapes.devs.Model {
     return el instanceof shapes.devs.Model;
 }
 
+export function isModelOrStickyNote(el: dia.Cell): el is shapes.devs.Model {
+    return isModelElement(el) || isStickyNoteElement(el);
+}
+
 export function isStickyNoteElement(el: dia.Cell): el is shapes.devs.Model {
     return isElement(el) && el.get("type") === `stickyNote.StickyNoteElement`;
 }

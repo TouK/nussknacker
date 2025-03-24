@@ -76,6 +76,10 @@ object ProcessCompilationError {
 
   final case class LooseNode(nodeIds: Set[String]) extends ProcessCompilationError with ScenarioGraphLevelError
 
+  final case class StickyNotesLimitExceeded(nodeId: String, notesCount: Int, notesLimit: Int)
+      extends ProcessCompilationError
+      with InASingleNode
+
   final case class StickyNoteContentTooLong(nodeId: String, length: Int, max: Int)
       extends ProcessCompilationError
       with InASingleNode

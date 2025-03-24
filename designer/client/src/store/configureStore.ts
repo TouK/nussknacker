@@ -28,7 +28,14 @@ export default function configureStore() {
                         "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                     ],
                 }),
-                nodeValidationMiddleware(["NODE_ADDED", "DELETE_NODES", "NODES_CONNECTED", "NODES_DISCONNECTED", "NODES_WITH_EDGES_ADDED"]),
+                nodeValidationMiddleware([
+                    "NODE_ADDED",
+                    "DELETE_NODES",
+                    "NODES_CONNECTED",
+                    "NODES_DISCONNECTED",
+                    "NODES_WITH_EDGES_ADDED",
+                    "STICKY_NOTE_UPDATED",
+                ]),
             ),
         ),
     );

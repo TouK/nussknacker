@@ -12,6 +12,7 @@ import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
 import { concat } from "lodash";
 import { stickyNoteComponentGroup } from "./StickyNoteComponent";
+import { getStickyNotesCount } from "../../graph/node-modal/NodeDetailsContent/selectors";
 
 const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
@@ -115,14 +116,19 @@ type ToolBoxProps = {
 export default function ToolBox(props: ToolBoxProps): JSX.Element {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const stickyNotesSettings = useSelector(getStickyNotesSettings);
+    const stickyNotesCount = useSelector(getStickyNotesCount);
     const { t } = useTranslation();
 
     const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups ?? [], [processDefinitionData]);
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
+    const stickyNoteToolGroup = useMemo(
+        () => stickyNoteComponentGroup(stickyNotesSettings, stickyNotesCount),
+        [stickyNotesCount, stickyNotesSettings],
+    );
     const groups = useMemo(() => {
-        const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteComponentGroup()) : componentGroups;
+        const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteToolGroup) : componentGroups;
         return allComponentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
-    }, [componentGroups, filters, stickyNotesSettings]);
+    }, [componentGroups, filters, stickyNoteToolGroup, stickyNotesSettings]);
 
     return (
         <StyledToolbox id="toolbox">

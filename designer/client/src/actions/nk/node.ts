@@ -4,12 +4,25 @@ import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
+import { getProcessDefinitionData, getSettings } from "../../reducers/selectors/settings";
+import {
+    Edge,
+    EdgeType,
+    NodeId,
+    NodeType,
+    NodeValidationError,
+    ProcessDefinitionData,
+    PropertiesType,
+    ValidationResult,
+    VariableTypes,
+} from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { EditNodeAction, EditScenarioLabels } from "./editNode";
 import { layoutChanged, NodePosition, Position } from "./ui/layout";
 import { dia } from "jointjs";
+import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
+import HttpService from "../../http/HttpService";
+import { StickyNoteType } from "../../types/stickyNote";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -161,6 +174,15 @@ export function stickyNoteUpdated(element: dia.Element, content?: string): Thunk
             dispatch(layoutChanged());
         });
         batchGroupBy.end();
+    };
+}
+
+export function stickyNoteSetErrors(stickyNoteErrors: Record<string, NodeValidationError[]>): ThunkAction {
+    return (dispatch) => {
+        dispatch({
+            type: "STICKY_NOTE_SET_ERRORS",
+            stickyNoteErrors,
+        });
     };
 }
 

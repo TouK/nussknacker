@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
+import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick, sortBy } from "lodash";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
 import { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -22,6 +22,7 @@ import {
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
+import { StickyNoteType } from "../../types/stickyNote";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -259,6 +260,30 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
+
+        case "STICKY_NOTE_SET_ERRORS": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const [stickyNotes, graphNodes] = partition(nodes, (node) => node.type === StickyNoteType);
+            const stickyNodesUpdated = stickyNotes.map((stickyNote) => {
+                return action.stickyNoteErrors[stickyNote.id]
+                    ? {
+                          ...stickyNote,
+                          errors: action.stickyNoteErrors[stickyNote.id],
+                      }
+                    : stickyNote;
+            });
+            return {
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: [...graphNodes, ...stickyNodesUpdated],
+                    },
+                },
+            };
+        }
+
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
 

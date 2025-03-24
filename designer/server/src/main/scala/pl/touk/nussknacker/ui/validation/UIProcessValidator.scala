@@ -124,7 +124,8 @@ class UIProcessValidator(
       .add(validateNodesId(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
-      .add(validateStickyNotes(scenarioGraph))
+      .add(validateStickyNotesLength(scenarioGraph))
+      .add(validateStickyNotesLimit(scenarioGraph))
       .add(validateEdgeUniqueness(scenarioGraph))
       .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
       .add(warningValidation(scenarioGraph))
@@ -262,7 +263,7 @@ class UIProcessValidator(
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
   }
 
-  private def validateStickyNotes(scenarioGraph: ScenarioGraph): ValidationResult = {
+  private def validateStickyNotesLength(scenarioGraph: ScenarioGraph): ValidationResult = {
     val tooLongStickyNotes = scenarioGraph.stickyNotes
       .filter(n => n.content.length > stickyNotesSettings.maxContentLength)
 
@@ -277,6 +278,19 @@ class UIProcessValidator(
         )
       )
     }
+  }
+
+  private def validateStickyNotesLimit(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val numberOfStickyNotes = scenarioGraph.stickyNotes.length
+    stickyNotesSettings.maxNotesCount.fold(ValidationResult.success)(notesLimit => {
+      if (numberOfStickyNotes > notesLimit)
+        formatErrors(
+          NonEmptyList.fromListUnsafe(
+            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(n.id, notesLimit, numberOfStickyNotes))
+          )
+        )
+      else ValidationResult.success
+    })
   }
 
   private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {

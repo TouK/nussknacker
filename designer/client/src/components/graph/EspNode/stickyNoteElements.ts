@@ -44,6 +44,7 @@ export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNode
                 height: stickyNote.dimensions.height,
                 color: stickyNote.color,
                 content: stickyNote.content,
+                errors: stickyNote.errors,
             },
             rankDir: "R",
         };
