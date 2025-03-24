@@ -1,6 +1,10 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.EnvironmentSettings
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
@@ -12,7 +16,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
@@ -40,22 +43,30 @@ class TableSourceFactory(
 
   override type State = TableSourceFactoryState
 
-  private val miniclusterDependency                   = TypedNodeDependency[FlinkMiniClusterWithServices]
-  override def nodeDependencies: List[NodeDependency] = List(miniclusterDependency)
+  // TODO: StreamExecutionEnvironment or StreamTableEnvironment? StreamTableEnvironment would be better because we
+  //  convert it into it in almost every case and it should be replaceable
+  // TODO: we need some wrapper to clean the env but its not so simple
+  private val streamEnvDependency                     = TypedNodeDependency[StreamExecutionEnvironment]
+  override def nodeDependencies: List[NodeDependency] = List(streamEnvDependency)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val minicluster = miniclusterDependency.extract(dependencies)
+      val streamEnv = streamEnvDependency.extract(dependencies)
+      val streamTableEnv = StreamTableEnvironment.create(
+        streamEnv,
+        EnvironmentSettings
+          .newInstance()
+          .withConfiguration(Configuration.fromMap(streamEnv.getConfiguration.toMap))
+          .build()
+      )
 
       val (errors, tableDefinitions) = TablesDefinitionDiscovery
-        .prepareDiscovery(
+        .discoverTables(
           flinkDataDefinition,
-          minicluster
+          streamTableEnv
         )
-        .orFail
-        .listTables
         .map(_.toEither)
         .partitionMap(identity)
       errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
@@ -64,7 +75,7 @@ class TableSourceFactory(
       NextParameters(
         parameters = tableNameParamDeclaration.createParameter() :: Nil,
         errors = List.empty,
-        state = Some(AvailableTables(tableDefinitions, minicluster))
+        state = Some(AvailableTables(tableDefinitions, streamTableEnv))
       )
     case TransformationStep(
           (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
@@ -84,14 +95,14 @@ class TableSourceFactory(
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Source = {
-    val (selectedTable, minicluster) = finalStateOpt match {
-      case Some(SelectedTable(table, minicluster)) => table -> minicluster
+    val (selectedTable, env) = finalStateOpt match {
+      case Some(SelectedTable(table, env)) => table -> env
       case _ =>
         throw new IllegalStateException(
           s"Unexpected final state determined during parameters validation: $finalStateOpt"
         )
     }
-    new TableSource(selectedTable, flinkDataDefinition, testDataGenerationMode, minicluster)
+    new TableSource(selectedTable, flinkDataDefinition, testDataGenerationMode, env)
   }
 
 }
@@ -100,10 +111,10 @@ object TableSourceFactory {
 
   sealed trait TableSourceFactoryState
 
-  private case class AvailableTables(tableDefinitions: List[TableDefinition], minicluster: FlinkMiniClusterWithServices)
+  private case class AvailableTables(tableDefinitions: List[TableDefinition], env: StreamTableEnvironment)
       extends TableSourceFactoryState
 
-  private case class SelectedTable(tableDefinition: TableDefinition, minicluster: FlinkMiniClusterWithServices)
+  private case class SelectedTable(tableDefinition: TableDefinition, env: StreamTableEnvironment)
       extends TableSourceFactoryState
 
 }

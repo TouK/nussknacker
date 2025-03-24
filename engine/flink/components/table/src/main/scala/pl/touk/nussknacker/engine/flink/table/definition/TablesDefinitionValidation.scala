@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.flink.table.definition
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.factories.{CatalogFactory, FactoryUtil}
 import org.apache.flink.table.factories.FactoryUtil.DefaultCatalogContext
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement.{
   CreateCatalog,
   CreateTable
@@ -24,7 +25,7 @@ object TablesDefinitionValidation {
 
   def validateWithoutExternalConnections(
       sqlDdlStatements: String,
-      minicluster: FlinkMiniClusterWithServices,
+      env: StreamTableEnvironment,
       classLoader: URLClassLoader
   ): ValidatedNel[FlinkDataDefinitionError, Unit] = {
     FlinkDdlParser.parse(sqlDdlStatements).andThen { statements =>
@@ -35,9 +36,7 @@ object TablesDefinitionValidation {
         FlinkDataDefinition
           .apply(createTableStatements, None)
           .andThen { definition =>
-            TablesDefinitionDiscovery
-              .prepareDiscovery(definition, minicluster)
-              .andThen(_.listTables.sequence)
+            TablesDefinitionDiscovery.discoverTables(definition, env).sequence
           }
           .void
       }

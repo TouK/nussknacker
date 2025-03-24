@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
 import cats.implicits.toTraverseOps
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases.allColumnTypesTable
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.definition.{
@@ -28,19 +28,17 @@ class TableSourceDataGenerationTest
   private val tableSource = {
     val flinkDataDefinition =
       FlinkDataDefinition.applyUnsafe(FlinkDdlParser.parseUnsafe(allColumnTypesTable), None)
-    val minicluster =
-      FlinkMiniClusterFactory.createMiniClusterWithServices(simulatedModelClassloader, new Configuration())
+    val env =
+      StreamTableEnvironment.create(StreamExecutionEnvironment.getExecutionEnvironment)
     val discovery = TablesDefinitionDiscovery
-      .prepareDiscovery(
-        flinkDataDefinition,
-        FlinkMiniClusterFactory.createMiniClusterWithServices(simulatedModelClassloader, new Configuration())
-      )
-      .validValue
+      .discoverTables(flinkDataDefinition, env)
+      .sequence
+
     new TableSource(
-      tableDefinition = discovery.listTables.sequence.validValue.loneElement,
+      tableDefinition = discovery.validValue.loneElement,
       flinkDataDefinition = flinkDataDefinition,
       testDataGenerationMode = TestDataGenerationMode.Random,
-      minicluster
+      env
     )
   }
 

@@ -41,7 +41,7 @@ class TableSource(
     tableDefinition: TableDefinition,
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode,
-    miniCluster: FlinkMiniClusterWithServices
+    environmentForTestingPurposes: StreamTableEnvironment
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
@@ -102,10 +102,9 @@ class TableSource(
         .build()
     }
     (testRecords: List[TestRecord]) =>
-      miniCluster.withDetachedStreamExecutionEnvironment { env =>
-        new FlinkMiniClusterTableOperations(MiniClusterEnvBuilder.buildStreamTableEnv(env))
-          .parseTestRecords(testRecords, tableDataParserSchema)
-      }
+      // TODO: clean up env if necessary
+      new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
+        .parseTestRecords(testRecords, tableDataParserSchema)
   }
 
   override def generateTestData(size: Int): TestData = {
@@ -113,22 +112,21 @@ class TableSource(
       val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
       Schema.newBuilder().fromRowDataType(dataType).build()
     }
-    miniCluster.withDetachedStreamExecutionEnvironment { env =>
-      val tableOps = new FlinkMiniClusterTableOperations(MiniClusterEnvBuilder.buildStreamTableEnv(env))
-      testDataGenerationMode match {
-        case TestDataGenerationMode.Random =>
-          tableOps.generateRandomTestData(
-            amount = size,
-            schema = generateDataSchema
-          )
-        case TestDataGenerationMode.Live =>
-          tableOps.generateLiveTestData(
-            limit = size,
-            schema = generateDataSchema,
-            flinkDataDefinition = flinkDataDefinition,
-            tableId = tableDefinition.tableId
-          )
-      }
+    // TODO: clean up env if necessary
+    val tableOps = new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
+    testDataGenerationMode match {
+      case TestDataGenerationMode.Random =>
+        tableOps.generateRandomTestData(
+          amount = size,
+          schema = generateDataSchema
+        )
+      case TestDataGenerationMode.Live =>
+        tableOps.generateLiveTestData(
+          limit = size,
+          schema = generateDataSchema,
+          flinkDataDefinition = flinkDataDefinition,
+          tableId = tableDefinition.tableId
+        )
     }
   }
 
