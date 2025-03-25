@@ -1,5 +1,7 @@
 import { createSelector } from "reselect";
 
+import { ButtonsVariant } from "../../components/toolbarComponents/toolbarButtons";
+import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons";
 import { fallbackToolbarsConfig } from "../../components/toolbarSettings/fallbackToolbarsConfig";
 import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import type { WithId } from "../../types/common";
@@ -14,7 +16,14 @@ const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars ||
 const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }: WithId<ToolbarsConfig>): WithId<ToolbarsConfig> => ({
     ...toolbars,
     [ToolbarsSide.RightTop]: [{ id: "survey-panel" }, ...topRight],
-    [ToolbarsSide.RightBottom]: [...bottomRight, { id: "user-settings-panel" }],
+    [ToolbarsSide.RightBottom]: [
+        ...bottomRight,
+        {
+            id: "user-settings-panel",
+            buttonsVariant: ButtonsVariant.horizontal,
+            buttons: [{ type: BuiltinButtonTypes.viewReset }],
+        },
+    ],
 });
 
 export const getToolbarsConfig = createSelector(getSettings, isFragment, isArchived, (settings, fragment, archived) => {
