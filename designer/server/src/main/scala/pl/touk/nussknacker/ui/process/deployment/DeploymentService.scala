@@ -91,24 +91,15 @@ class DeploymentService(
         actionName = ScenarioActionName.Deploy
       ) { case (ctx, actionFinalizer) =>
         for {
-          deployedScenarioData <- prepareDeployedScenarioData(
+          dmCommand <- prepareDMRunDeploymentCommand(
             ctx.latestScenarioDetails,
             ctx.actionId,
             // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
             //       references to existing fields and uses correct types. We should also protect from sql injection attacks
-            command.nodesDeploymentData
-          )
-          updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
-            command.stateRestoringStrategy
-          )
-          dmCommand = DMRunDeploymentCommand(
-            deployedScenarioData.processVersion,
-            deployedScenarioData.deploymentData,
-            deployedScenarioData.resolvedScenario,
-            updateStrategy
+            command
           )
           // TODO: move validateBeforeDeploy before creating an action
-          actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData, updateStrategy)
+          actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, dmCommand)
             .transformWith {
               case Failure(ex) =>
                 actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
@@ -128,8 +119,7 @@ class DeploymentService(
 
   protected def validateBeforeDeploy(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-      deployedScenarioData: DeployedScenarioData,
-      updateStrategy: DeploymentUpdateStrategy
+      runDeploymentCommand: DMRunDeploymentCommand,
   )(implicit user: LoggedUser): Future[Unit] = {
     for {
       // 1. check scenario has no errors
@@ -152,21 +142,20 @@ class DeploymentService(
         .deploymentManagerUnsafe(processDetails.processingType)
         .processCommand(
           DMValidateScenarioCommand(
-            processDetails.toEngineProcessVersion,
-            deployedScenarioData.deploymentData,
-            deployedScenarioData.resolvedScenario,
-            updateStrategy
+            runDeploymentCommand.processVersion,
+            runDeploymentCommand.deploymentData,
+            runDeploymentCommand.canonicalProcess,
+            runDeploymentCommand.updateStrategy
           )
         )
     } yield ()
   }
 
-  protected def prepareDeployedScenarioData(
+  private def prepareDMRunDeploymentCommand(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
-      nodesDeploymentData: NodesDeploymentData,
-      additionalDeploymentData: Map[String, String] = Map.empty
-  )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
+      command: RunDeploymentCommand,
+  )(implicit user: LoggedUser): Future[DMRunDeploymentCommand] = {
     for {
       resolvedCanonicalProcess <- scenarioResolver
         .forProcessingTypeUnsafe(processDetails.processingType)
@@ -178,11 +167,20 @@ class DeploymentService(
       deploymentData = DeploymentData(
         DeploymentId.fromActionId(actionId),
         user.toManagerUser,
-        additionalDeploymentData,
-        nodesDeploymentData,
+        additionalDeploymentData = Map.empty,
+        command.nodesDeploymentData,
         getAdditionalModelConfigsRequiredForRuntime(processDetails.processingType)
       )
-    } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
+      updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+        command.stateRestoringStrategy
+      )
+      dmCommand = DMRunDeploymentCommand(
+        processDetails.toEngineProcessVersion,
+        deploymentData,
+        resolvedCanonicalProcess,
+        updateStrategy
+      )
+    } yield dmCommand
   }
 
   private def getAdditionalModelConfigsRequiredForRuntime(processingType: ProcessingType)(implicit user: LoggedUser) = {
