@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.server
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.ui.config.DesignerConfig
@@ -14,12 +15,10 @@ import pl.touk.nussknacker.ui.customhttpservice.{
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.factory.DomainServices
 
-import scala.concurrent.ExecutionContext
-
 object CustomHttpServiceProvidersLoader {
 
   def loadCustomHttpServiceProviders(designerConfig: DesignerConfig, domainServices: DomainServices)(
-      implicit ec: ExecutionContext
+      implicit ec: ExecutionContextWithIORuntime
   ): Resource[IO, Map[String, CustomHttpServiceProvider]] = {
     val customHttpServiceProviderFactories = Multiplicity(
       ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)

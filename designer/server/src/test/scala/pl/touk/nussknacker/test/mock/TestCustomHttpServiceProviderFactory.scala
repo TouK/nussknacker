@@ -3,6 +3,7 @@ package pl.touk.nussknacker.test.mock
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProvider,
   CustomHttpServiceProviderFactory,
@@ -18,7 +19,7 @@ class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFact
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  ): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit ec: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
@@ -39,7 +40,7 @@ class SecondTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvid
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  ): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit ec: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
