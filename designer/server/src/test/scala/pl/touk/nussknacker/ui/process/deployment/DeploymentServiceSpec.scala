@@ -784,6 +784,7 @@ class DeploymentServiceSpec
     }
   }
 
+  // TODO: add tests for more advanced things such as changes in model api
   test("should recover jobs") {
     val processName = generateProcessName
     prepareDeployedProcess(processName).dbioActionValues
