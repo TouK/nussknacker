@@ -1,9 +1,11 @@
 import { createSelector } from "reselect";
+
 import { fallbackToolbarsConfig } from "../../components/toolbarSettings/fallbackToolbarsConfig";
-import { ToolbarsConfig } from "../../components/toolbarSettings/types";
-import { WithId } from "../../types/common";
-import { RootState } from "../index";
-import { ToolbarsSide, ToolbarsState, ToolbarsStates } from "../toolbars";
+import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
+import type { WithId } from "../../types/common";
+import type { RootState } from "../index";
+import type { ToolbarsState, ToolbarsStates } from "../toolbars";
+import { ToolbarsSide } from "../toolbars";
 import { isArchived, isFragment } from "./graph";
 import { getSettings } from "./settings";
 
