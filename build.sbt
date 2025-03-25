@@ -206,7 +206,7 @@ lazy val commonSettings =
         // we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
-      // scaladoc complains about links used Java classses and links to external sources used in Scala classes.
+      // scaladoc complains about links used Java classes and links to external sources used in Scala classes.
       // See: https://github.com/scala/bug/issues/9311; https://github.com/pureconfig/pureconfig/issues/200
       // As a workaround we suppress the link warning.
       Compile / doc / scalacOptions += "-Wconf:msg=Could not find any member to link for.*:s",
