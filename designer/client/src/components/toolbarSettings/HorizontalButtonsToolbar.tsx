@@ -13,7 +13,7 @@ export const HorizontalToolbar = ({ children }: PropsWithChildren) => {
             sx={(theme) => ({
                 alignItems: "center",
                 background: theme.palette.background.paper,
-                boxShadow: theme.shadows[5],
+                boxShadow: theme.shadows[3],
                 borderRadius: theme.spacing(0.5),
             })}
             {...handleProps}
