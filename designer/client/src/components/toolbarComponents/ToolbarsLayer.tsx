@@ -52,11 +52,7 @@ type ToolbarsLayerProps = PropsWithChildren<{
 const AbsolutePanel = styled(Box)(({ theme }) => ({
     position: "absolute",
     zIndex: theme.zIndex.appBar,
-    overflowY: "hidden",
-    overflowX: "auto",
-    display: "flex",
-    alignItems: "center",
-    pointerEvents: "none",
+    overflow: "hidden",
 }));
 
 const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
@@ -73,13 +69,14 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
 
     return (
         <DragAndDropContainer onMove={onMove}>
-            <AbsolutePanel sx={(t) => ({ top: t.spacing(1), left: t.spacing(1), right: t.spacing(1) })}>
-                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
-            </AbsolutePanel>
-
-            <AbsolutePanel sx={(t) => ({ bottom: t.spacing(1), left: t.spacing(1), right: t.spacing(1) })}>
-                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomCenter} />
-            </AbsolutePanel>
+            <AbsoluteOverlayGrid9 m={0.5} sx={{ inset: 0, justifyItems: "center" }}>
+                <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
+                <StyledToolbarsContainer
+                    sx={{ gridArea: "bottom" }}
+                    availableToolbars={availableToolbars}
+                    side={ToolbarsSide.BottomCenter}
+                />
+            </AbsoluteOverlayGrid9>
 
             <SidePanelsContextProvider configId={configId}>
                 <OverlayGrid9>
@@ -107,6 +104,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
 };
 
 export const OverlayGrid9 = Overlay.withComponent(Grid9);
+export const AbsoluteOverlayGrid9 = AbsolutePanel.withComponent(OverlayGrid9);
 
 const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
     const padding = `calc(${theme.spacing(0.375)} / 2)`;
