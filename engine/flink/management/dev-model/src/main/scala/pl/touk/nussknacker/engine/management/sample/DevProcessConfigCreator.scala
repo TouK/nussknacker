@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{
   EspDeserializationSchema,
@@ -32,12 +33,22 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
-import pl.touk.nussknacker.engine.management.sample.helper.{DateProcessHelper, DummyDateFormatHelper, DummyUuidHelper}
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
+import pl.touk.nussknacker.engine.util.functions.{
+  base64,
+  collection,
+  conversion,
+  date,
+  dateFormat,
+  geo,
+  numeric,
+  random,
+  util
+}
 
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -225,14 +236,20 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
-      "DATE"           -> all(DateProcessHelper),
+      "GEO"            -> anyCategory(geo),
+      "NUMERIC"        -> anyCategory(numeric),
+      "CONV"           -> anyCategory(conversion),
+      "COLLECTION"     -> anyCategory(collection),
+      "DATE"           -> anyCategory(date),
+      "DATE_FORMAT"    -> anyCategory(dateFormat),
+      "UTIL"           -> anyCategory(util),
+      "RANDOM"         -> anyCategory(random),
+      "BASE64"         -> anyCategory(base64),
       "DICT"           -> categories(TestDictionary.instance),
       "RGB"            -> all(RGBDictionary.instance),
       "BusinessConfig" -> categories(BusinessConfigDictionary.instance),
       "TypedConfig"    -> all(ConfigTypedGlobalVariable),
-      "HelperFunction" -> all(GenericHelperFunction),
-      "UTIL"           -> all(DummyUuidHelper),
-      "DATE_FORMAT"    -> all(DummyDateFormatHelper)
+      "HelperFunction" -> all(GenericHelperFunction)
     )
 
     val additionalClasses = ExpressionConfig.defaultAdditionalClasses ++ List(
