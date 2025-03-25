@@ -1,7 +1,10 @@
-import { DragDropContext, OnDragEndResponder, OnDragStartResponder } from "@hello-pangea/dnd";
+import type { OnDragEndResponder, OnDragStartResponder } from "@hello-pangea/dnd";
+import { DragDropContext } from "@hello-pangea/dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
-import React, { PropsWithChildren, useCallback, useState } from "react";
-import { ToolbarPosition } from "../../actions/nk/toolbars";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useState } from "react";
+
+import type { ToolbarPosition } from "../../actions/nk/toolbars";
 import { EventTrackingSelector, EventTrackingType, useEventTracking } from "../../containers/event-tracking";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME, DROPPABLE_CLASSNAME } from "./ToolbarsContainer";

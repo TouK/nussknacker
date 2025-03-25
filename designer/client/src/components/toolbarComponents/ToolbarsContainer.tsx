@@ -1,24 +1,25 @@
 import { cx } from "@emotion/css";
-import {
-    Draggable,
+import type {
     DraggableChildrenFn,
     DraggableLocation,
     DraggableProvided,
     DraggableRubric,
     DraggableStateSnapshot,
-    Droppable,
     DroppableProps,
     DroppableProvided,
     DroppableStateSnapshot,
 } from "@hello-pangea/dnd";
+import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { alpha, styled } from "@mui/material";
-import React, { CSSProperties, PropsWithChildren, Suspense, useCallback, useContext, useMemo } from "react";
+import type { CSSProperties, PropsWithChildren } from "react";
+import React, { Suspense, useCallback, useContext, useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { DraggableIdContext, TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
-import { Toolbar } from "./toolbar";
+import type { Toolbar } from "./toolbar";
 
 export const StyledDraggableItem = styled("div")(({ theme }) => ({
     [`&.${DRAGGING_CLASSNAME}`]: {
