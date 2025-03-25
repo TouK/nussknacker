@@ -235,7 +235,7 @@ class ScenarioDeploymentReconciler(
         logger.info(
           s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery on engine setup [${services.engineSetupName}] finished successfully"
         )
-        Success(Success())
+        Success(Success(()))
       case Failure(ex) =>
         logger.warn(
           s"Scenario [${deployCommand.processVersion.processName}] deployment [${deployCommand.deploymentData.deploymentId}] recovery on engine setup [${services.engineSetupName}] failed. Application will start anyway.",
