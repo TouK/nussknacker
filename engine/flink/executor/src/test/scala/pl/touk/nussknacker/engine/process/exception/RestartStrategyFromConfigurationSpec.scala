@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.exception
 
-import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
@@ -9,9 +8,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@silent("deprecated")
+@nowarn("msg=deprecated")
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val metaData = MetaData.combineTypeSpecificProperties(

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -39,6 +38,7 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import shapeless.syntax.typeable.typeableOps
 
 import java.util.concurrent.TimeUnit
+import scala.annotation.nowarn
 import scala.language.implicitConversions
 
 /*
@@ -57,7 +57,7 @@ class FlinkProcessRegistrar(
 
   import FlinkProcessRegistrar._
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(

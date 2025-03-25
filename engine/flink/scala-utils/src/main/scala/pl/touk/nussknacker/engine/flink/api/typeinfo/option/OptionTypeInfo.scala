@@ -17,13 +17,13 @@
  */
 package pl.touk.nussknacker.engine.flink.api.typeinfo.option
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.annotation.{Public, PublicEvolving, VisibleForTesting}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{AtomicType, TypeInformation}
 import org.apache.flink.api.common.typeutils.{TypeComparator, TypeSerializer}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.NothingSerializer
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 /** TypeInformation for [[Option]]. */
@@ -60,7 +60,7 @@ class OptionTypeInfo[A, T <: Option[A]](private val elemTypeInfo: TypeInformatio
   }
 
   @PublicEvolving
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   def createSerializer(executionConfig: ExecutionConfig): TypeSerializer[T] = {
     if (elemTypeInfo == null) {
       // this happens when the type of a DataSet is None, i.e. DataSet[None]

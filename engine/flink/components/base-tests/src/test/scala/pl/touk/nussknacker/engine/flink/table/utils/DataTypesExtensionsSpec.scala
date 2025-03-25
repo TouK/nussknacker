@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.table.api.DataTypes
@@ -9,7 +8,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
 
-@silent("deprecated")
+import scala.annotation.nowarn
+
+@nowarn("msg=deprecated")
 class DataTypesExtensionsSpec extends AnyFunSuiteLike with Matchers {
 
   test("to typing result conversion for raw type") {

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{AggregateFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
 import org.apache.flink.streaming.api.datastream.{KeyedStream, SingleOutputStreamOperator}
@@ -26,6 +25,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
 
 import java.lang
+import scala.annotation.nowarn
 
 object OnEventTriggerWindowOperator {
   type Input[A] = ValueWithContext[StringKeyedValue[A]]
@@ -56,7 +56,7 @@ object OnEventTriggerWindowOperator {
 
 }
 
-@silent("deprecated")
+@nowarn("msg=deprecated")
 class OnEventTriggerWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,

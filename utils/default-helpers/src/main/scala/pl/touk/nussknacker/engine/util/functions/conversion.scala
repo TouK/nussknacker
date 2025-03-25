@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+
+import scala.annotation.nowarn
 
 object conversion extends ConversionUtils
 
@@ -21,7 +22,7 @@ trait ConversionUtils extends HideToString {
   // TODO - remove in 1.19
   @Documentation(description = "Deprecated - will be removed in 1.19")
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number =
     numeric.toNumber(stringOrNumber)
 

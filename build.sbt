@@ -14,9 +14,8 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-// Warning: Flink doesn't work correctly with 2.12.11
-val scala212 = "2.12.10"
-val scala213 = "2.13.15"
+val scala212 = "2.12.20"
+val scala213 = "2.13.16"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -25,13 +24,6 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 }
 
 lazy val supportedScalaVersions = List(scala212, scala213)
-
-// Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
-// Silencer 1.7.x requires Scala 2.12.11+
-// Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
-// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.19"
-lazy val silencerV_2_12 = "1.6.0"
 
 lazy val scalaFixV = "0.14.2"
 
@@ -173,12 +165,6 @@ lazy val commonSettings =
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
-      libraryDependencies += compilerPlugin(
-        "com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value) {
-          case (2, 12) => silencerV_2_12
-          case _       => silencerV
-        } cross CrossVersion.full
-      ),
       libraryDependencies ++= forScalaVersion(scalaVersion.value) {
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
@@ -207,7 +193,7 @@ lazy val commonSettings =
             // -release option has no influence on class version so we at least setup target to 8 and check java version
             // at the begining of our Apps
             "-target:jvm-1.8",
-            "-P:silencer:globalFilters=deprecated"
+//            "-P:silencer:globalFilters=deprecated"
           )
         case (2, 13) =>
           Seq(
@@ -226,12 +212,6 @@ lazy val commonSettings =
       ),
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
-      libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % forScalaVersion(scalaVersion.value) {
-          case (2, 12) => silencerV_2_12
-          case _       => silencerV
-        }                 % Provided cross CrossVersion.full
-      ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
         "org.apache.avro"    % "avro"             % avroV,

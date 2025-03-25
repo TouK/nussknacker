@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -11,6 +10,7 @@ import org.scalatest.matchers.must.Matchers
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import scala.annotation.nowarn
 import scala.reflect.{classTag, ClassTag}
 
 class CaseClassSerializationTest extends AnyFunSuite with Matchers {
@@ -49,7 +49,7 @@ class CaseClassSerializationTest extends AnyFunSuite with Matchers {
     deserialized shouldEqual input
   }
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   private def getSerializer[T: ClassTag] =
     TypeExtractor
       .getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]])

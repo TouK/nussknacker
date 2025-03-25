@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import com.github.ghik.silencer.silent
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -46,6 +45,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import java.util.{Date, Optional, UUID}
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.Nullable
+import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -485,7 +485,7 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
-    @silent("deprecated")
+    @nowarn("msg=deprecated")
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
         implicit nodeId: NodeId

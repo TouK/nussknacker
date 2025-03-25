@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine
 import cats.Monad
 import cats.effect.IO
 import cats.syntax.all._
-import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
+import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Success}
@@ -53,7 +53,7 @@ private class InterpreterInternal[F[_]: Monad](
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
     node match {

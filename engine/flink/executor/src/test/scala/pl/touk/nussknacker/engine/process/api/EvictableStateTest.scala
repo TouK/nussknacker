@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.api
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.JobID
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -17,7 +16,9 @@ import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermar
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-@silent("deprecated")
+import scala.annotation.nowarn
+
+@nowarn("msg=deprecated")
 class EvictableStateTest
     extends AnyFlatSpec
     with Matchers

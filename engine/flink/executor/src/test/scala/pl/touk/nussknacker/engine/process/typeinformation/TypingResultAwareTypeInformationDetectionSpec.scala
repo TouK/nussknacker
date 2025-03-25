@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -29,9 +28,10 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.CustomTypedObject
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@silent("deprecated")
+@nowarn("msg=deprecated")
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers

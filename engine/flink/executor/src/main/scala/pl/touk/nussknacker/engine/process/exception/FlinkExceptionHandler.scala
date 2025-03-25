@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.exception
 
-import com.github.ghik.silencer.silent
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, stringValueReader, toFicusConfig}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
@@ -23,6 +22,7 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler.{
 import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
+import scala.annotation.nowarn
 import scala.util.control.NonFatal
 
 /*
@@ -48,7 +48,7 @@ class FlinkExceptionHandler(
     classLoader: ClassLoader
 ) extends ExceptionHandler {
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
     RestartStrategyFromConfiguration.readFromConfiguration(modelDependencies.config, metaData)
 

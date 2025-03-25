@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.javasample
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -13,12 +12,14 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
+import scala.annotation.nowarn
+
 class Objects extends Serializable {
 
   def source: WithCategories[SourceFactory] =
     WithCategories.anyCategory(SourceFactory.noParamUnboundedStreamFactory[Model](new StandardFlinkSource[Model] {
 
-      @silent("deprecated")
+      @nowarn("msg=deprecated")
       override def sourceStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.api.datastream
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -8,6 +7,8 @@ import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
+
+import scala.annotation.nowarn
 
 object DataStreamImplicits {
 
@@ -26,7 +27,7 @@ object DataStreamImplicits {
 
   implicit class DataStreamExtension[T <: AnyRef](stream: DataStream[T]) {
 
-    @silent("deprecated")
+    @nowarn("msg=deprecated")
     def mapWithState[R: TypeInformation, S: TypeInformation](fun: (T, Option[S]) => (R, Option[S])): DataStream[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]

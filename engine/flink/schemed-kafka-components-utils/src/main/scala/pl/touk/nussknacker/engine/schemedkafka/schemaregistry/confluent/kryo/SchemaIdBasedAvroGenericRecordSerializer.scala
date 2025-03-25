@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo
 
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
-import com.github.ghik.silencer.silent
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.flink.api.serialization.InstanceBasedKryoSerializerRegistrar
@@ -12,6 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 
 import java.io.ByteArrayOutputStream
+import scala.annotation.nowarn
 
 object SchemaIdBasedAvroGenericRecordSerializer {
 
@@ -23,7 +23,7 @@ object SchemaIdBasedAvroGenericRecordSerializer {
   //         - KryoSerializer.equals checks Objects.equals(defaultSerializers, other.defaultSerializers)
   //         - KryoSerializer.defaultSerializers is a LinkedHashMap<Class<?>, ExecutionConfig.SerializableSerializer<?>>
   //         - SerializableSerializer has equals method not implemented (so it checks reference equality)
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   def registrar(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig) = {
     new InstanceBasedKryoSerializerRegistrar(
       new SchemaIdBasedAvroGenericRecordSerializer(

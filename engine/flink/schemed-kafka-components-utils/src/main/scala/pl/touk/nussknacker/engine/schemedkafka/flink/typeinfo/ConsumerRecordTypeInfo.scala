@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
@@ -9,13 +8,14 @@ import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
 
 import java.util.{Objects, Optional}
+import scala.annotation.nowarn
 
 class ConsumerRecordTypeInfo[K, V](val keyTypeInfo: TypeInformation[K], val valueTypeInfo: TypeInformation[V])
     extends TypeInformation[ConsumerRecord[K, V]] {
 
   override def getTypeClass: Class[ConsumerRecord[K, V]] = classOf[ConsumerRecord[K, V]]
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   override def createSerializer(
       config: org.apache.flink.api.common.ExecutionConfig
   ): TypeSerializer[ConsumerRecord[K, V]] = {

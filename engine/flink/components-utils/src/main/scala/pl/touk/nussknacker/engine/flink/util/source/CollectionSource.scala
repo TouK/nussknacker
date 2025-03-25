@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.streaming.api.datastream.DataStreamSource
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 case class CollectionSource[T](
@@ -33,7 +33,7 @@ case class CollectionSource[T](
     createSourceStream(list, env, flinkNodeContext)
   }
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   protected def createSourceStream[T](
       list: List[T],
       env: StreamExecutionEnvironment,

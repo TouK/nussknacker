@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import cats.data.NonEmptyList
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -27,6 +26,8 @@ import pl.touk.nussknacker.engine.kafka.source.flink.{
   FlinkKafkaSource,
   FlinkKafkaSourceImplFactory
 }
+
+import scala.annotation.nowarn
 
 /**
   * `createDelayedKafkaSourceWithFixedDelay` is used to create KafkaSource with specified fixed delay (eg 2 hours).
@@ -136,7 +137,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       namingStrategy
     ) {
 
-      @silent("deprecated")
+      @nowarn("msg=deprecated")
       override protected def createFlinkSource(
           consumerGroupId: String,
           flinkNodeContext: FlinkCustomNodeContext

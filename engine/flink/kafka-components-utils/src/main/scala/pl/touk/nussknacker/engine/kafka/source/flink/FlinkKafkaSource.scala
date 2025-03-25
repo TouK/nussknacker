@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import cats.data.NonEmptyList
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.datastream.DataStreamSource
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
 import java.util.Properties
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
@@ -61,7 +61,7 @@ class FlinkKafkaSource[T](
     with WithActionParametersSupport
     with LazyLogging {
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
@@ -108,7 +108,7 @@ class FlinkKafkaSource[T](
     )
   }
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -134,7 +134,7 @@ class FlinkKafkaSource[T](
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
-  @silent("deprecated")
+  @nowarn("msg=deprecated")
   protected def createFlinkSource(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -207,7 +207,7 @@ object FlinkKafkaSource {
 //       and moving deserialization logic to separate flatMap function that would produce Context.
 //       Thanks to that contextInitializer.initContext would be wrapped by exception handling mechanism as well.
 //       It is done this way in lite engine implementation.
-@silent("deprecated")
+@nowarn("msg=deprecated")
 class FlinkKafkaConsumerHandlingExceptions[T](
     topics: java.util.List[String],
     deserializationSchema: FlinkDeserializationSchemaWrapper[T],
