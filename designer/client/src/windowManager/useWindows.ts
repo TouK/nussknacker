@@ -48,17 +48,25 @@ export function useWindows(parent?: WindowId) {
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
 
+    const margin = 30;
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
             const isModal = windowData.isModal === undefined ? !forceDisableModals : windowData.isModal && !forceDisableModals;
-            return await _open({ isResizable: false, ...windowData, isModal });
+            return await _open({
+                isResizable: false,
+                ...windowData,
+                layoutData: {
+                    top: margin * 2,
+                    ...windowData.layoutData,
+                },
+                isModal,
+            });
         },
         [forceDisableModals, _open],
     );
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
-            const margin = 30;
             return open({
                 id: node.id,
                 title: node.id,
