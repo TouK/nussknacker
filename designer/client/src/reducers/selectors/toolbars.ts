@@ -13,8 +13,8 @@ const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars ||
 
 const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }: WithId<ToolbarsConfig>): WithId<ToolbarsConfig> => ({
     ...toolbars,
-    [ToolbarsSide.TopRight]: [{ id: "survey-panel" }, ...topRight],
-    [ToolbarsSide.BottomRight]: [...bottomRight, { id: "user-settings-panel" }],
+    [ToolbarsSide.RightTop]: [{ id: "survey-panel" }, ...topRight],
+    [ToolbarsSide.RightBottom]: [...bottomRight, { id: "user-settings-panel" }],
 });
 
 export const getToolbarsConfig = createSelector(getSettings, isFragment, isArchived, (settings, fragment, archived) => {
