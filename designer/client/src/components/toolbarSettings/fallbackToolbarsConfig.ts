@@ -3,11 +3,10 @@ import { ToolbarsSide } from "../../reducers/toolbars";
 import { WithId } from "../../types/common";
 import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { BuiltinButtonTypes } from "./buttons";
-import { DEV_TOOLBARS } from "./DEV_TOOLBARS";
 import { ToolbarsConfig } from "./types";
 
 //It's only to local development
-export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
+export function fallbackToolbarsConfig(isFragment: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
     const processPanelButtons = (!isFragment ? [{ type: BuiltinButtonTypes.processProperties }] : []).concat([
         { type: BuiltinButtonTypes.processCompare },
         { type: BuiltinButtonTypes.processMigrate },
@@ -72,7 +71,6 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
                 ],
             },
         ],
-        [ToolbarsSide.TopLeft]: [{ id: "survey-panel" }, { id: "tips-panel" }, { id: "creator-panel" }, { id: "activities-panel" }],
-        [ToolbarsSide.BottomRight]: DEV_TOOLBARS,
+        [ToolbarsSide.TopLeft]: [{ id: "tips-panel" }, { id: "creator-panel" }, { id: "activities-panel" }],
     };
 }

@@ -11,10 +11,13 @@ export type ProcessingType = string;
 
 export function fetchProcessDefinition(processingType: ProcessingType, isFragment?: boolean): ThunkAction<Promise<ProcessDefinitionData>> {
     return async (dispatch) => {
-        const { data: processDefinitionData } = await HttpService.fetchProcessDefinitionData(processingType, isFragment);
+        const { data } = await HttpService.fetchProcessDefinitionData(processingType, isFragment);
 
-        dispatch({ type: "PROCESS_DEFINITION_DATA", processDefinitionData });
+        dispatch({
+            type: "PROCESS_DEFINITION_DATA",
+            processDefinitionData: data,
+        });
 
-        return processDefinitionData;
+        return data;
     };
 }

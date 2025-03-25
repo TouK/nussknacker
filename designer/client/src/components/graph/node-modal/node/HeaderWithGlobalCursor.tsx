@@ -25,12 +25,14 @@ export const HeaderWithGlobalCursor: typeof Window.Header = (props) => {
                 component={Window.Header}
                 {...props}
                 sx={
-                    draggable && {
-                        cursor: "grab",
-                        [`${rootSelector}:has(&)`]: {
-                            cursor: "grabbing",
-                        },
-                    }
+                    draggable
+                        ? {
+                              cursor: "grab",
+                              [`${rootSelector}:has(&)`]: {
+                                  cursor: "grabbing",
+                              },
+                          }
+                        : undefined
                 }
             />
         </>

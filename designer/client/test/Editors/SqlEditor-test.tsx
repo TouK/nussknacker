@@ -25,7 +25,7 @@ const store = mockStore({
     graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },
 });
 
-describe(SqlEditor.name, () => {
+describe("SqlEditor", () => {
     it("should display validation error when the field is required", () => {
         render(
             <NuThemeProvider>

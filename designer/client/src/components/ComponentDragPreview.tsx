@@ -1,13 +1,13 @@
 import { css } from "@emotion/css";
-import React, { forwardRef, ReactPortal, useEffect, useMemo, useState } from "react";
+import React, { forwardRef, useEffect, useMemo, useState } from "react";
 import { useDragDropManager, useDragLayer } from "react-dnd";
 import { createPortal } from "react-dom";
 import { useDebouncedValue } from "rooks";
 import { NodeType } from "../types";
-import { ComponentPreview } from "./ComponentPreview";
-import { DndTypes } from "./toolbars/creator/Tool";
-import { StickyNotePreview } from "./StickyNotePreview";
 import { StickyNoteType } from "../types/stickyNote";
+import { ComponentPreview, ComponentPreviewProps } from "./ComponentPreview";
+import { StickyNotePreview } from "./StickyNotePreview";
+import { DndTypes } from "./toolbars/creator/Tool";
 
 function useNotNull<T>(value: T) {
     const [current, setCurrent] = useState(() => value);
@@ -16,6 +16,13 @@ function useNotNull<T>(value: T) {
         setCurrent(value);
     }, [value]);
     return current;
+}
+
+function PreviewElement(props: ComponentPreviewProps) {
+    if (props.node.type === StickyNoteType) {
+        return <StickyNotePreview isActive={props.isActive} isOver={props.isOver} />;
+    }
+    return <ComponentPreview {...props} />;
 }
 
 export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => number }>(function ComponentDragPreview(
@@ -55,22 +62,17 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => nu
         return null;
     }
 
-    function createPortalForPreview(child: JSX.Element): ReactPortal {
-        return createPortal(
-            <div ref={forwardedRef} className={wrapperStyles} style={{ transform: `translate(${x}px, ${y}px)` }}>
-                <div
-                    style={{
-                        transformOrigin: "top left",
-                        transform: `scale(${scale()})`,
-                    }}
-                >
-                    {child}
-                </div>
-            </div>,
-            document.body,
-        );
-    }
-
-    if (node?.type === StickyNoteType) return createPortalForPreview(<StickyNotePreview isActive={active} isOver={isOver} />);
-    return createPortalForPreview(<ComponentPreview node={node} isActive={active} isOver={isOver} />);
+    return createPortal(
+        <div ref={forwardedRef} className={wrapperStyles} style={{ transform: `translate(${x}px, ${y}px)` }}>
+            <div
+                style={{
+                    transformOrigin: "top left",
+                    transform: `scale(${scale()})`,
+                }}
+            >
+                <PreviewElement node={node} isActive={active} isOver={isOver} />
+            </div>
+        </div>,
+        document.body,
+    );
 });

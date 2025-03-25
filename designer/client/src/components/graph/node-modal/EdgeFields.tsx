@@ -1,19 +1,19 @@
-import { Edge, EdgeKind, VariableTypes } from "../../../types";
+import { css, cx } from "@emotion/css";
+import { uniq } from "lodash";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { NodeValue } from "./node";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import { Edge, EdgeKind, VariableTypes } from "../../../types";
+import NodeUtils from "../NodeUtils";
 import { EdgeTypeOption, EdgeTypeSelect } from "./EdgeTypeSelect";
 import { EditableEditor } from "./editors/EditableEditor";
-import { css, cx } from "@emotion/css";
-import { FieldsRow } from "./fragment-input-definition/FieldsRow";
-import NodeUtils from "../NodeUtils";
-import { uniq } from "lodash";
 import { ExpressionLang, ExpressionObj } from "./editors/expression/types";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { useTranslation } from "react-i18next";
 import { FieldError } from "./editors/Validators";
+import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
+import { NodeValue } from "./node";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 interface Props {
@@ -88,15 +88,15 @@ export function EdgeFields(props: Props): JSX.Element {
     );
 
     function getValueEditor() {
-        if (edge.edgeType.type === EdgeKind.switchNext) {
+        if (edge.edgeType?.type === EdgeKind.switchNext) {
             return (
                 <EditableEditor
                     valueClassName={cx(nodeValue, css({ gridArea: "expr" }))}
                     variableTypes={variableTypes}
                     fieldLabel={t("node.fields.edge.expression", "Expression")}
                     expressionObj={{
-                        expression: edge.edgeType.condition?.expression !== undefined ? edge.edgeType.condition?.expression : "true",
-                        language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
+                        expression: edge.edgeType?.condition?.expression !== undefined ? edge.edgeType?.condition?.expression : "true",
+                        language: edge.edgeType?.condition?.language || ExpressionLang.SpEL,
                     }}
                     readOnly={readOnly}
                     onValueChange={onValueChange}
@@ -131,7 +131,7 @@ export function EdgeFields(props: Props): JSX.Element {
                         readOnly={readOnly || types.length < 2}
                         edge={edge}
                         onChange={(type) =>
-                            setEdge(({ edgeType: { condition, ...edgeType }, ...edge }) => ({
+                            setEdge(({ edgeType: { condition, ...edgeType } = {}, ...edge }) => ({
                                 ...edge,
                                 edgeType: type === EdgeKind.switchNext ? { ...edgeType, type, condition } : { ...edgeType, type },
                             }))

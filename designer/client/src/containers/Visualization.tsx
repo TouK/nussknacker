@@ -22,7 +22,7 @@ import Toolbars from "../components/toolbars/Toolbars";
 import { RootState } from "../reducers";
 import { getGraph, getProcessVersionId, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
-import { getProcessDefinitionData } from "../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";

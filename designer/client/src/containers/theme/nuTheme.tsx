@@ -1,14 +1,13 @@
 import { alpha, createTheme, Palette, PaletteMode } from "@mui/material";
-import { fontFamily, formLabelWidth, globalStyles } from "./styles";
-import { blendDarken, blendLighten } from "./helpers";
 import { deepmerge } from "@mui/utils";
-import { lightModePalette } from "./lightModePalette";
-import { darkModePalette } from "./darkModePalette";
+import { Dispatch, SetStateAction } from "react";
+import { NodeType } from "../../types";
 import { WindowKind } from "../../windowManager/WindowKind";
 import { EnvironmentTagColor } from "../EnvironmentTag";
-import { NodeType } from "../../types";
-import NodeUtils from "../../components/graph/NodeUtils";
-import { Dispatch, SetStateAction } from "react";
+import { darkModePalette } from "./darkModePalette";
+import { blendDarken, blendLighten } from "./helpers";
+import { lightModePalette } from "./lightModePalette";
+import { fontFamily, formLabelWidth, globalStyles } from "./styles";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -75,7 +74,7 @@ const custom = {
 const extendWithHelpers = (custom: CustomPalette) => ({
     ...custom,
     getNodeStyles: function (this: CustomPalette, nodeType: NodeType["type"]) {
-        return this.nodes[nodeType];
+        return this.nodes[nodeType] || { fill: "inherit" };
     },
     getWindowStyles: function (this: CustomPalette, type = WindowKind.default) {
         switch (type) {

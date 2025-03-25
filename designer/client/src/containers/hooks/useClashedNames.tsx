@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import HttpService from "../../http/HttpService";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 
-export function useClashedNames(shouldDownload: boolean): string[] {
-    const [clashedNames, setClashedNames] = useState<string[]>([]);
+export function useClashedNames(shouldDownload = true): string[] {
+    const dispatch = useDispatch();
+    const clashedNames = useSelector(getScenariosNames);
+
     useEffect(() => {
         if (shouldDownload) {
-            HttpService.fetchProcesses().then((processes) => {
-                const names = processes.data.map((process) => process.name);
-                setClashedNames((prevState) => [].concat(prevState, names));
-            });
+            dispatch(fetchScenarios());
         }
-    }, [shouldDownload]);
+    }, [dispatch, shouldDownload]);
+
     return clashedNames;
 }
