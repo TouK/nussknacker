@@ -3,6 +3,8 @@ import { useUserSettings } from "../../common/userSettings";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { Box, Stack, styled } from "@mui/material";
 import React, { ComponentType, Fragment, PropsWithChildren, useCallback, useEffect, useMemo } from "react";
+import { Box, styled } from "@mui/material";
+import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
@@ -47,6 +49,16 @@ type ToolbarsLayerProps = PropsWithChildren<{
     configId: string;
 }>;
 
+const AbsolutePanel = styled(Box)(({ theme }) => ({
+    position: "absolute",
+    zIndex: theme.zIndex.appBar,
+    overflowY: "hidden",
+    overflowX: "auto",
+    display: "flex",
+    alignItems: "center",
+    pointerEvents: "none",
+}));
+
 const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
     const dispatch = useDispatch();
     const { toolbars, configId, children } = props;
@@ -61,22 +73,14 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
 
     return (
         <DragAndDropContainer onMove={onMove}>
-            <Stack
-                direction="row"
-                sx={{
-                    position: "absolute",
-                    zIndex: 990000,
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    overflowY: "hidden",
-                    overflowX: "auto",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                }}
-            >
+            <AbsolutePanel sx={(t) => ({ top: t.spacing(1), left: t.spacing(1), right: t.spacing(1) })}>
                 <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
-            </Stack>
+            </AbsolutePanel>
+
+            <AbsolutePanel sx={(t) => ({ bottom: t.spacing(1), left: t.spacing(1), right: t.spacing(1) })}>
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomCenter} />
+            </AbsolutePanel>
+
             <SidePanelsContextProvider configId={configId}>
                 <OverlayGrid9>
                     <Box gridArea="left" component={SidePanel} side={PanelSide.Left}>
