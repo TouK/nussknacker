@@ -5,7 +5,7 @@ import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.customhttpservice.CustomHttpServiceProvider
+import pl.touk.nussknacker.ui.customhttpservice.{CustomHttpServiceProvider, PekkoCustomHttpServiceProvider}
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.process.{ConfigScenarioToolbarService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService => LegacyDeploymentService}
@@ -142,13 +142,14 @@ object PekkoRoutesFactory {
       },
     ).flatten
 
-    val customHttpServiceRoutes = customHttpServiceProviders.map { case (name, provider) =>
-      new RouteWithUser {
-        override protected def securedRoute(implicit user: LoggedUser): Route =
-          pathPrefix("custom" / name) {
-            provider.provideRouteWithUser(user)
-          }
-      }
+    val customHttpServiceRoutes = customHttpServiceProviders.map {
+      case (name, provider: PekkoCustomHttpServiceProvider) =>
+        new RouteWithUser {
+          override protected def securedRoute(implicit user: LoggedUser): Route =
+            pathPrefix("custom" / name) {
+              provider.provideRouteWithUser(user)
+            }
+        }
     }
 
     routes ++ optionalRoutes ++ customHttpServiceRoutes
