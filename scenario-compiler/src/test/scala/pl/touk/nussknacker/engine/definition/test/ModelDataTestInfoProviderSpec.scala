@@ -320,6 +320,24 @@ class ModelDataTestInfoProviderSpec
     error shouldBe MultipleSourcesRequired(1)
   }
 
+  test("should get test parameters with defaults") {
+    val scenarioWithMultipleParams = ScenarioBuilder
+      .streaming("single source scenario")
+      .source(
+        "source1",
+        "genericSourceWithTestParameters",
+        "par1" -> "a".spelTemplate,
+        "a"    -> "42".spel
+      )
+      .emptySink("end", "dead-end")
+    val processVersion = processVersionFor(scenarioWithMultipleParams)
+
+    val result = testInfoProvider.getTestParameters(processVersion, scenarioWithMultipleParams)
+
+    result.getOrElse("source1", Nil).find(_.name.value == "par1").value.defaultValue shouldBe Some("".spelTemplate)
+    result.getOrElse("source1", Nil).find(_.name.value == "a").value.defaultValue shouldBe Some("0".spel)
+  }
+
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {
     ScenarioBuilder
       .streaming("single source scenario")
