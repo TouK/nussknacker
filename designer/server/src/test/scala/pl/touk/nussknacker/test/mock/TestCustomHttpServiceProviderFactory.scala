@@ -19,7 +19,7 @@ class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFact
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit ec: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
@@ -40,7 +40,7 @@ class SecondTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvid
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit ec: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
