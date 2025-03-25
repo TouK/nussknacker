@@ -24,7 +24,7 @@ class PartReferenceTypeInformation extends TypeInformation[PartReference] {
 
   override def isKeyType: Boolean = false
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[PartReference] = {
     val fragmentOutputFieldsSerializer = new KryoSerializer[Map[String, Any]](classOf[Map[String, Any]], config)
     new PartReferenceSerializer(fragmentOutputFieldsSerializer)

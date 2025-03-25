@@ -16,7 +16,7 @@ import scala.annotation.nowarn
 
 class OneSource extends StandardFlinkSource[String] {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext

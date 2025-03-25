@@ -18,7 +18,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.annotation.nowarn
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class EvictableStateTest
     extends AnyFlatSpec
     with Matchers

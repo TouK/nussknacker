@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 /**
   * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
   */
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: AssignerWithPunctuatedWatermarks[T])
     extends FlinkSource
     with Serializable {

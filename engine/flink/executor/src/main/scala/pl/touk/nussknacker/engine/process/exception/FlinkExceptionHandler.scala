@@ -48,7 +48,7 @@ class FlinkExceptionHandler(
     classLoader: ClassLoader
 ) extends ExceptionHandler {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
     RestartStrategyFromConfiguration.readFromConfiguration(modelDependencies.config, metaData)
 

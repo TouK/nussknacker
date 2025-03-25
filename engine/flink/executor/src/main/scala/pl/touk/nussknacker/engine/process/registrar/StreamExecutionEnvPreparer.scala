@@ -52,7 +52,7 @@ class DefaultStreamExecutionEnvPreparer(
 ) extends StreamExecutionEnvPreparer
     with LazyLogging {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def preRegistration(
       env: StreamExecutionEnvironment,
       compilerData: FlinkProcessCompilerData,
@@ -92,7 +92,7 @@ class DefaultStreamExecutionEnvPreparer(
     }
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }

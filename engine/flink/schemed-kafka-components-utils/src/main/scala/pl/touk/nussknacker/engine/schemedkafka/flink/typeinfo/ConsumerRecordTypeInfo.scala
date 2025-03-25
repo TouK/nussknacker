@@ -15,7 +15,7 @@ class ConsumerRecordTypeInfo[K, V](val keyTypeInfo: TypeInformation[K], val valu
 
   override def getTypeClass: Class[ConsumerRecord[K, V]] = classOf[ConsumerRecord[K, V]]
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createSerializer(
       config: org.apache.flink.api.common.ExecutionConfig
   ): TypeSerializer[ConsumerRecord[K, V]] = {

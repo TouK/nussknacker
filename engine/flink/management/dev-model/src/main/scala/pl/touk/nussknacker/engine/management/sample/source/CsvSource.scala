@@ -22,7 +22,7 @@ import scala.annotation.nowarn
 
 class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext

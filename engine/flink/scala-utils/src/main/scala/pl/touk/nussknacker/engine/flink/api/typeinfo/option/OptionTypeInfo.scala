@@ -60,7 +60,7 @@ class OptionTypeInfo[A, T <: Option[A]](private val elemTypeInfo: TypeInformatio
   }
 
   @PublicEvolving
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def createSerializer(executionConfig: ExecutionConfig): TypeSerializer[T] = {
     if (elemTypeInfo == null) {
       // this happens when the type of a DataSet is None, i.e. DataSet[None]

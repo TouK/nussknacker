@@ -33,7 +33,7 @@ case class CollectionSource[T](
     createSourceStream(list, env, flinkNodeContext)
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected def createSourceStream[T](
       list: List[T],
       env: StreamExecutionEnvironment,

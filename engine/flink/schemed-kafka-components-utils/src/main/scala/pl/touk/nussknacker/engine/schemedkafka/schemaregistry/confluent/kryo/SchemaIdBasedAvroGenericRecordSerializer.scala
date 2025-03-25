@@ -23,7 +23,7 @@ object SchemaIdBasedAvroGenericRecordSerializer {
   //         - KryoSerializer.equals checks Objects.equals(defaultSerializers, other.defaultSerializers)
   //         - KryoSerializer.defaultSerializers is a LinkedHashMap<Class<?>, ExecutionConfig.SerializableSerializer<?>>
   //         - SerializableSerializer has equals method not implemented (so it checks reference equality)
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def registrar(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig) = {
     new InstanceBasedKryoSerializerRegistrar(
       new SchemaIdBasedAvroGenericRecordSerializer(

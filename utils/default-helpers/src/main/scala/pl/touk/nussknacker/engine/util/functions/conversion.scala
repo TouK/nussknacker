@@ -22,7 +22,7 @@ trait ConversionUtils extends HideToString {
   // TODO - remove in 1.19
   @Documentation(description = "Deprecated - will be removed in 1.19")
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number =
     numeric.toNumber(stringOrNumber)
 

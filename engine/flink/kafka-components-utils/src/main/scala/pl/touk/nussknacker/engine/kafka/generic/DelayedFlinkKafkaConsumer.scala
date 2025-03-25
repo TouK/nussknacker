@@ -114,7 +114,7 @@ class DelayedFlinkKafkaConsumer[T](
       nodeId
     ) {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createFetcher(
       sourceContext: SourceFunction.SourceContext[T],
       assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],

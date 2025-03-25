@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalT
 
 import scala.annotation.nowarn
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class DataTypesExtensionsSpec extends AnyFunSuiteLike with Matchers {
 
   test("to typing result conversion for raw type") {

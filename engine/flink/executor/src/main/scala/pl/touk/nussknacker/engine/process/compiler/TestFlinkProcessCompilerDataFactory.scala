@@ -171,7 +171,7 @@ class TestFlinkExceptionHandler(
     classLoader: ClassLoader
 ) extends FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader) {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
   override val consumer: FlinkEspExceptionConsumer = _ => {}

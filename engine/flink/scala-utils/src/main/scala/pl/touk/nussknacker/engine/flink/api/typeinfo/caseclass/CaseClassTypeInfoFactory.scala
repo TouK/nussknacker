@@ -15,7 +15,7 @@ import scala.reflect.runtime.universe._
 // Generic class factory for creating CaseClassTypeInfo
 abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfoFactory[T] with Serializable {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createTypeInfo(
       t: Type,
       genericParameters: java.util.Map[String, TypeInformation[_]]

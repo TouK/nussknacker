@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, Stream
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val metaData = MetaData.combineTypeSpecificProperties(

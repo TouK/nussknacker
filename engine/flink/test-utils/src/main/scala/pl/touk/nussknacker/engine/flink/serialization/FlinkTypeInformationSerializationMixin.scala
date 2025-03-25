@@ -12,17 +12,17 @@ import scala.annotation.nowarn
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected val executionConfigWithoutKryo: ExecutionConfig = new ExecutionConfig {
     disableGenericTypes()
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected val executionConfigWithKryo: ExecutionConfig = new ExecutionConfig {
     enableGenericTypes()
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected def getSerializeRoundTrip[T](
       record: T,
       typeInfo: TypeInformation[T],

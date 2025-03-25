@@ -57,7 +57,7 @@ class FlinkProcessRegistrar(
 
   import FlinkProcessRegistrar._
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(

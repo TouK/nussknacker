@@ -9,7 +9,7 @@ import scala.annotation.nowarn
 
 object StandardFlinkSourceFunctionUtils {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def createSourceStream[Raw](
       env: StreamExecutionEnvironment,
       sourceFunction: SourceFunction[Raw],

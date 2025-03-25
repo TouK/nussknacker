@@ -24,7 +24,7 @@ case class InterpretationResultMapTypeInfo(ctx: Map[String, TypeInformation[Inte
 
   override def isKeyType: Boolean = false
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[InterpretationResult] =
     InterpretationResultMapTypeSerializer(ctx.mapValuesNow(_.createSerializer(config)))
 

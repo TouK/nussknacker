@@ -11,7 +11,7 @@ import scala.reflect.{classTag, ClassTag}
 class ConcreteCaseClassTypeInfo[T <: Product](cls: Class[T], fields: List[(String, TypeInformation[_])])
     extends CaseClassTypeInfo[T](cls, Array.empty, fields.map(_._2), fields.map(_._1)) {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
     new ScalaCaseClassSerializer[T](cls, fields.map(_._2.createSerializer(config)).toArray)
   }

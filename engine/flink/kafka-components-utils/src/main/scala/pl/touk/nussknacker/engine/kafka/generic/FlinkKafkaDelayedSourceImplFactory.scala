@@ -137,7 +137,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       namingStrategy
     ) {
 
-      @nowarn("msg=deprecated")
+      @nowarn("cat=deprecation")
       override protected def createFlinkSource(
           consumerGroupId: String,
           flinkNodeContext: FlinkCustomNodeContext

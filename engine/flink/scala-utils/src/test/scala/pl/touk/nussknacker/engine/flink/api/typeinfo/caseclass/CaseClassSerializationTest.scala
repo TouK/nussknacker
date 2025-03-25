@@ -49,7 +49,7 @@ class CaseClassSerializationTest extends AnyFunSuite with Matchers {
     deserialized shouldEqual input
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   private def getSerializer[T: ClassTag] =
     TypeExtractor
       .getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]])

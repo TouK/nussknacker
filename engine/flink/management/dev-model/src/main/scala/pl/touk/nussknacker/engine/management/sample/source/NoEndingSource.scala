@@ -25,7 +25,7 @@ import scala.annotation.nowarn
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSupport[String] {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.test.ClassLoaderWithServices
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
 
   private val config = ConfigFactory.parseMap(

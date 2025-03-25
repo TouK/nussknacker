@@ -9,7 +9,7 @@ import scala.annotation.nowarn
  * It is a copy-paste of BoundedOutOfOrdernessTimestampExtractor but taking timestamp from previousElementTimestamp
  * See https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html#using-kafka-timestamps-and-flink-event-time-in-kafka-010
  */
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class BoundedOutOfOrderPreviousElementAssigner[T](maxOutOfOrdernessMillis: Long)
     extends AssignerWithPeriodicWatermarks[T]
     with Serializable {

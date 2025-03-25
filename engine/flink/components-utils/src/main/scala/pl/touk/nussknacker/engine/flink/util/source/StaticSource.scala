@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.watermark
 
 import scala.annotation.nowarn
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 object StaticSource extends SourceFunction[String] {
 
   @volatile var buffer = List[Timer]()

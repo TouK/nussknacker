@@ -245,7 +245,7 @@ abstract class CaseClassTypeInfo[T <: Product](
       logicalKeyFields += fieldId
     }
 
-    @nowarn("msg=deprecated")
+    @nowarn("cat=deprecation")
     override def createTypeComparator(config: ExecutionConfig): TypeComparator[T] = {
       val maxIndex = logicalKeyFields.max
 

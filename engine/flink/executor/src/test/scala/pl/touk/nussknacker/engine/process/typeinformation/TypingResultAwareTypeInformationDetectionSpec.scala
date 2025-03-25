@@ -31,7 +31,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers

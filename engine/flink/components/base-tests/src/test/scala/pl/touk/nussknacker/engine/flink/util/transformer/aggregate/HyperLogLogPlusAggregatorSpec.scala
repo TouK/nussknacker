@@ -17,7 +17,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.annotation.nowarn
 import scala.util.Random
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
 
   // the aim of this test is to be able to test different parameters easily

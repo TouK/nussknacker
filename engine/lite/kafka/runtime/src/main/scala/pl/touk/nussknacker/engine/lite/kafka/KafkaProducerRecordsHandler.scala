@@ -86,7 +86,7 @@ private class TransactionalProducerRecordsHandler private (
     producer.beginTransaction()
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def onRecordsSuccessfullyProcessed(
       records: ConsumerRecords[Array[Byte], Array[Byte]],
       consumer: KafkaConsumer[_, _]

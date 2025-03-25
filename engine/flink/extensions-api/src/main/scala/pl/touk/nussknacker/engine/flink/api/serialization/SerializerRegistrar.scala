@@ -23,7 +23,7 @@ class InstanceBasedKryoSerializerRegistrar[T, S <: Serializer[T] with Serializab
     clazz: Class[T]
 ) extends SerializerRegistrar[S] {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def registerIn(config: ExecutionConfig): Unit = {
     val serializableSerializer = new ExecutionConfig.SerializableSerializer(serializerInstance)
     config.getRegisteredTypesWithKryoSerializers.put(clazz, serializableSerializer)
@@ -32,7 +32,7 @@ class InstanceBasedKryoSerializerRegistrar[T, S <: Serializer[T] with Serializab
 
 }
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class ClassBasedKryoSerializerRegistrar[T, S <: Serializer[T]](serializerClass: Class[S], clazz: Class[T])
     extends SerializerRegistrar[S] {
 

@@ -170,16 +170,12 @@ lazy val commonSettings =
         case _       => Seq()
       },
       semanticdbEnabled                := true,
-      semanticdbVersion                := forScalaVersion(scalaVersion.value) {
-        case (2, 12) => "4.8.4"
-        case _       => "4.13.2"
-      },
+      semanticdbVersion                := "4.13.4",
       scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding",
         "utf8",
-        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -193,12 +189,12 @@ lazy val commonSettings =
             // -release option has no influence on class version so we at least setup target to 8 and check java version
             // at the begining of our Apps
             "-target:jvm-1.8",
-//            "-P:silencer:globalFilters=deprecated"
+            "-Xfatal-warnings",
           )
         case (2, 13) =>
           Seq(
             "-Ymacro-annotations",
-            "-Wconf:cat=deprecation:silent"
+            "-Werror",
           )
       },
       Compile / compile / javacOptions := Seq(

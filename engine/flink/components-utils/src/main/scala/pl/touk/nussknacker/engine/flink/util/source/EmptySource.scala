@@ -16,7 +16,7 @@ import scala.annotation.nowarn
 
 case class EmptySource(returnType: TypingResult) extends StandardFlinkSource[Any] with ReturningType {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext

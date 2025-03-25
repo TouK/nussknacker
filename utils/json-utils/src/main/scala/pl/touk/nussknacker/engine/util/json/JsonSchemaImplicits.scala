@@ -39,7 +39,7 @@ object JsonSchemaImplicits {
     def acceptsEverythingAsAdditionalProperty: Boolean =
       schema.permitsAdditionalProperties() && schema.getSchemaOfAdditionalProperties == null
 
-    @nowarn("msg=deprecated")
+    @nowarn("cat=deprecation")
     def patternProperties: Map[Pattern, Schema] = {
       // getPatternProperties is deprecated but for now there is no alternative https://github.com/everit-org/json-schema/issues/304
       schema.getPatternProperties.asScala.toMap

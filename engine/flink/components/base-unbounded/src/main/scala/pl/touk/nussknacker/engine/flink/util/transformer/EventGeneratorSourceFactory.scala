@@ -53,7 +53,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
     extends SourceFactory
     with UnboundedStreamComponent {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   @MethodToInvoke
   def create(
       @ParamName("schedule")
@@ -134,7 +134,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
 
 }
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
 
   @volatile private var isRunning = true

@@ -27,7 +27,7 @@ object DataStreamImplicits {
 
   implicit class DataStreamExtension[T <: AnyRef](stream: DataStream[T]) {
 
-    @nowarn("msg=deprecated")
+    @nowarn("cat=deprecation")
     def mapWithState[R: TypeInformation, S: TypeInformation](fun: (T, Option[S]) => (R, Option[S])): DataStream[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]

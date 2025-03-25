@@ -61,7 +61,7 @@ class FlinkKafkaSource[T](
     with WithActionParametersSupport
     with LazyLogging {
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
@@ -108,7 +108,7 @@ class FlinkKafkaSource[T](
     )
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -134,7 +134,7 @@ class FlinkKafkaSource[T](
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   protected def createFlinkSource(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -207,7 +207,7 @@ object FlinkKafkaSource {
 //       and moving deserialization logic to separate flatMap function that would produce Context.
 //       Thanks to that contextInitializer.initContext would be wrapped by exception handling mechanism as well.
 //       It is done this way in lite engine implementation.
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class FlinkKafkaConsumerHandlingExceptions[T](
     topics: java.util.List[String],
     deserializationSchema: FlinkDeserializationSchemaWrapper[T],

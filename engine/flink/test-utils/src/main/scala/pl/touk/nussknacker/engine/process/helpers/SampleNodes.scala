@@ -485,7 +485,7 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
-    @nowarn("msg=deprecated")
+    @nowarn("cat=deprecation")
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
         implicit nodeId: NodeId

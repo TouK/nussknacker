@@ -46,7 +46,7 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
 
   override def isKeyType: Boolean = false
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
     createSerializer(serializers = informations.map { case (k, v) =>
       (k, v.createSerializer(config))
@@ -158,7 +158,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     if nonEqualKeysCompatible == false we require keys in new and old serializer are the same
 
    */
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   override def resolveSchemaCompatibility(newSerializer: TypeSerializer[T]): TypeSerializerSchemaCompatibility[T] = {
     if (newSerializer.snapshotConfiguration().getClass != getClass) {
       TypeSerializerSchemaCompatibility.incompatible()

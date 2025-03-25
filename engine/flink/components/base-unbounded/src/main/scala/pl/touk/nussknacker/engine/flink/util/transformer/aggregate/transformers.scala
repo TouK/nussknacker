@@ -89,7 +89,7 @@ object transformers {
     )
   }
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def tumblingTransformer(
       groupBy: LazyParameter[CharSequence],
       aggregateBy: LazyParameter[AnyRef],
@@ -154,7 +154,7 @@ object transformers {
       )
 
   // Experimental component, API may change in the future
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   def sessionWindowTransformer(
       groupBy: LazyParameter[CharSequence],
       aggregateBy: LazyParameter[AnyRef],

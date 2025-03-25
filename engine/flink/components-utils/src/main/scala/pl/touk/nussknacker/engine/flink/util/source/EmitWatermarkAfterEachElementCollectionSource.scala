@@ -23,7 +23,7 @@ import scala.reflect.ClassTag
 /**
  * This source in contrary to `CollectionSource` emit watermark after each element. It is important feature during tests if you want to make them deterministic.
  */
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class EmitWatermarkAfterEachElementCollectionSource[T](
     list: Seq[T],
     returnType: TypingResult,

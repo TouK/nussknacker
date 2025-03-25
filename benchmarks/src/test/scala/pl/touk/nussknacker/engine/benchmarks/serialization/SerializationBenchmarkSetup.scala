@@ -22,7 +22,7 @@ class SerializationBenchmarkSetup[T](
 
   private val data = new ByteArrayOutputStream(10 * 1024)
 
-  @nowarn("msg=deprecated")
+  @nowarn("cat=deprecation")
   private val serializer = typeInfo.createSerializer(config)
 
   {

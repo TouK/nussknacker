@@ -56,7 +56,7 @@ object OnEventTriggerWindowOperator {
 
 }
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 class OnEventTriggerWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,

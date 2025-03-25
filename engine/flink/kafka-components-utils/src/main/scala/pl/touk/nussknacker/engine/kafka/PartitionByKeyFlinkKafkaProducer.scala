@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
 
 import scala.annotation.nowarn
 
-@nowarn("msg=deprecated")
+@nowarn("cat=deprecation")
 object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](
