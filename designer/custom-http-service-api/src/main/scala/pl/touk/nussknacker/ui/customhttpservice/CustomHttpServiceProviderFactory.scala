@@ -12,6 +12,6 @@ trait CustomHttpServiceProviderFactory {
   def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService,
-  )(implicit ec: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider]
+  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider]
 
 }
