@@ -58,13 +58,13 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
     * We want to be able to use model config with unresolved env variables.
     * It is for purpose where engine (e.g. Flink) see other host names / ports than designer.
     * It is especially useful for local development. Remember that when you turn it off, you can't
-    * use optional substitutions (e.g. ${?KAFKA_ADDRESS} in model config. Otherwise they will be removed.
+    * use optional substitutions e.g. <code>$${?KAFKA_ADDRESS}</code> in model config. Otherwise they will be removed.
     */
   protected def shouldResolveEnvVariables: Boolean =
     sys.env.get("INPUT_CONFIG_RESOLVE_ENV_VARIABLES").forall(_.toBoolean)
 
   /**
-    * Same as [[resolveInputConfigDuringExecution]] but with provided param configWithDefaults containing inputConfig
+    * Same as [[resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion, ClassLoader)]] but with provided param configWithDefaults containing inputConfig
     * with resolved default values.
     */
   protected def resolveInputConfigDuringExecution(
