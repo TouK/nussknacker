@@ -1,11 +1,13 @@
-import { useWindowManager, WindowId, WindowType } from "@touk/window-manager";
+import type { WindowId, WindowType } from "@touk/window-manager";
+import { useWindowManager } from "@touk/window-manager";
 import { defaults } from "lodash";
 import { useCallback, useEffect, useMemo } from "react";
+
 import { useUserSettings } from "../common/userSettings";
-import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
-import { InfoDialogData } from "../components/modals/GenericInfoDialog";
-import { Scenario } from "../components/Process/types";
-import { NodeType } from "../types";
+import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
+import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
+import type { Scenario } from "../components/Process/types";
+import type { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
@@ -46,17 +48,25 @@ export function useWindows(parent?: WindowId) {
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
 
+    const margin = 30;
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
             const isModal = windowData.isModal === undefined ? !forceDisableModals : windowData.isModal && !forceDisableModals;
-            return await _open({ isResizable: false, ...windowData, isModal });
+            return await _open({
+                isResizable: false,
+                ...windowData,
+                layoutData: {
+                    top: margin * 2,
+                    ...windowData.layoutData,
+                },
+                isModal,
+            });
         },
         [forceDisableModals, _open],
     );
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
-            const margin = 30;
             return open({
                 id: node.id,
                 title: node.id,
