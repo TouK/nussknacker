@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
+import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ScenarioTestDataGenerationError,
   SourceTestDataGenerationError,
@@ -64,9 +65,16 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     modelData.withThisAsContextClassLoader {
       commonModelDataInfoProvider
         .collectAllSources(scenario)
-        .map(source => source.id -> getTestParameters(source, jobData))
+        .map(source => source.id -> getTestParametersWithDefaults(source, jobData))
         .toMap
     }
+  }
+
+  private def getTestParametersWithDefaults(source: SourceNodeData, jobData: JobData): List[Parameter] = {
+    val testParameters = getTestParameters(source, jobData)
+    val testParametersEnrichedWithDefaults =
+      StandardParameterEnrichment.enrichParameterDefinitions(testParameters, Map.empty)
+    testParametersEnrichedWithDefaults
   }
 
   // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint

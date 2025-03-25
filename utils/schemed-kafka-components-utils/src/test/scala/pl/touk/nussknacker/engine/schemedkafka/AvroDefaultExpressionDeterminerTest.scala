@@ -6,6 +6,7 @@ import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
@@ -15,7 +16,7 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
   test("string default") {
     verify("stringField_0")(
-      { _ shouldBe Some("'stringDefault'".spel) },
+      { _ shouldBe Some("stringDefault".spelTemplate) },
     )
   }
 
@@ -80,7 +81,13 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
     val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
     val expression          = validatedExpression.valueOr(errors => throw errors.head)
     expressionAssertion(expression)
-    expression.map(evaluate).foreach(_ shouldEqual record.get(fieldName))
+    expression match {
+      case Some(e @ Expression(Language.Spel, spelExpression)) =>
+        evaluate(e) shouldEqual record.get(fieldName)
+      case Some(Expression(Language.SpelTemplate, spelTemplateExpression)) =>
+        spelTemplateExpression shouldBe record.get(fieldName)
+      case _ =>
+    }
   }
 
   private def evaluate(expression: Expression): AnyRef = {

@@ -346,7 +346,9 @@ object validationHelpers {
             CirceUtil.decodeJsonUnsafe[String](testRecord.json)
           }
 
-        override def testParametersDefinition: List[Parameter] = Nil
+        override def testParametersDefinition: List[Parameter] = params.nameToValueMap.map { case (k, v) =>
+          Parameter(k, Typed.fromInstance(v))
+        }.toList
 
         override def parametersToTestData(params: Map[ParameterName, AnyRef]): String = ""
       }
