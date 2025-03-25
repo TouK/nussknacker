@@ -1,15 +1,17 @@
-import React, { ForwardedRef, forwardRef } from "react";
 import { Box, styled, Typography } from "@mui/material";
-import { formatDateTime } from "../../../../common/DateUtils";
-import { ItemActivity } from "../ActivitiesPanel";
-import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import ActivityItemHeader from "./ActivityItemHeader";
-import { ActivityType } from "../types";
-import { getItemColors } from "../helpers/activityItemColors";
-import { useTranslation } from "react-i18next";
-import { ActivityItemComment } from "./ActivityItemComment";
-import { useActivityItemInfo } from "./ActivityItemProvider";
 import { lowerCase, upperFirst } from "lodash";
+import type { ForwardedRef } from "react";
+import React, { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
+
+import { formatDateTime } from "../../../../common/DateUtils";
+import { SearchHighlighter } from "../../creator/SearchHighlighter";
+import type { ItemActivity } from "../ActivitiesPanel";
+import { getItemColors } from "../helpers/activityItemColors";
+import type { ActivityType } from "../types";
+import { ActivityItemComment } from "./ActivityItemComment";
+import ActivityItemHeader from "./ActivityItemHeader";
+import { useActivityItemInfo } from "./ActivityItemProvider";
 
 const humanizeString = (str: string) => upperFirst(lowerCase(str));
 

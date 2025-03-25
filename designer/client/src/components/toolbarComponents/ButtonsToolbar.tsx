@@ -1,7 +1,9 @@
-import React, { PropsWithChildren, ReactElement } from "react";
+import type { PropsWithChildren, ReactElement } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
+
 import { RemoteComponent } from "../RemoteComponent";
-import { ToolbarConfig } from "../toolbarSettings/types";
+import type { ToolbarConfig } from "../toolbarSettings/types";
 import { ToolbarButtons } from "./toolbarButtons";
 import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 

@@ -1,6 +1,7 @@
-import { ReactElement } from "react";
-import { ToolbarsSide } from "../../reducers/toolbars";
-import { ToolbarConfig } from "../toolbarSettings/types";
+import type { ReactElement } from "react";
+
+import type { ToolbarsSide } from "../../reducers/toolbars";
+import type { ToolbarConfig } from "../toolbarSettings/types";
 
 export interface Toolbar extends ToolbarConfig {
     id: string;

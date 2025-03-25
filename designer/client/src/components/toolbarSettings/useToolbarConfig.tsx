@@ -1,11 +1,12 @@
 import { flatMap, uniqBy } from "lodash";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { ToolbarsSide } from "../../reducers/toolbars";
-import { Toolbar } from "../toolbarComponents/toolbar";
-import { ToolbarConfig, ToolbarsConfig } from "./types";
-import { toolbarSelector } from "./ToolbarSelector";
+
 import { getToolbarsConfig } from "../../reducers/selectors/toolbars";
+import type { ToolbarsSide } from "../../reducers/toolbars";
+import type { Toolbar } from "../toolbarComponents/toolbar";
+import { toolbarSelector } from "./ToolbarSelector";
+import type { ToolbarConfig, ToolbarsConfig } from "./types";
 
 const parseCollection = (collection: ToolbarsConfig): Toolbar[] =>
     uniqBy<Toolbar>(

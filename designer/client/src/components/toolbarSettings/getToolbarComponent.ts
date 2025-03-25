@@ -1,7 +1,10 @@
 /* eslint-disable quote-props */
-import { ComponentType, lazy } from "react";
+import type { ComponentType } from "react";
+import { lazy } from "react";
+
 import TipsPanel from "../tips/Tips";
-import { ButtonsToolbar, ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
+import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
+import { ButtonsToolbar } from "../toolbarComponents/ButtonsToolbar";
 import { ActivitiesPanel } from "../toolbars/activities";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
@@ -9,7 +12,7 @@ import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
 import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { HorizontalButtonsToolbar } from "./HorizontalButtonsToolbar";
-import { ToolbarConfig } from "./types";
+import type { ToolbarConfig } from "./types";
 
 export function getToolbarComponent(config?: ToolbarConfig): ComponentType<ToolbarPanelProps> {
     switch (config?.id) {

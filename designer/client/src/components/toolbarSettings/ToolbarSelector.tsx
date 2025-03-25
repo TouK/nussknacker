@@ -1,9 +1,9 @@
 import React from "react";
-import { TOOLBAR_BUTTONS_MAP, ToolbarButton } from "./buttons";
-import { TOOLBAR_COMPONENTS_MAP } from "./TOOLBAR_COMPONENTS_MAP";
-import { ToolbarConfig } from "./types";
+
+import type { ToolbarButton } from "./buttons";
+import { TOOLBAR_BUTTONS_MAP } from "./buttons";
 import { getToolbarComponent, getToolbarHorizontalComponent } from "./getToolbarComponent";
-import { ToolbarConfig } from "./types";
+import type { ToolbarConfig } from "./types";
 
 function buttonSelector(btn: ToolbarButton, i: number) {
     // this type have to be specified to avoid type errors

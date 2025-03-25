@@ -1,16 +1,19 @@
-import { isEmpty } from "lodash";
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { AdvancedOptionsIcon, SearchIcon } from "../../table/SearchFilter";
-import { Focusable } from "../../themed/InputWithIcon";
-import { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
-import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { SearchQuery, SearchResults } from "./SearchResults";
-import { SearchInputWithIcon } from "../../themed/SearchInput";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { Collapse } from "@mui/material";
-import { AdvancedSearchFilters } from "./AdvancedSearchFilters";
+import { isEmpty } from "lodash";
+import type { ReactElement } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { AdvancedOptionsIcon, SearchIcon } from "../../table/SearchFilter";
+import type { Focusable } from "../../themed/InputWithIcon";
+import { SearchInputWithIcon } from "../../themed/SearchInput";
 import { SearchPanelStyled } from "../../tips/Styled";
+import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { AdvancedSearchFilters } from "./AdvancedSearchFilters";
+import type { SearchQuery } from "./SearchResults";
+import { SearchResults } from "./SearchResults";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
