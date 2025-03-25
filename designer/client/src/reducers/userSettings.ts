@@ -1,6 +1,7 @@
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import { Reducer } from "../actions/reduxTypes";
+
+import type { Reducer } from "../actions/reduxTypes";
 import { isDev } from "../devHelpers";
 
 type SettingsNames =
@@ -36,6 +37,8 @@ const reducer: Reducer<UserSettings> = (
             return action.settings;
         case "TOGGLE_SETTINGS":
             return action.settings.reduce((value, key) => ({ ...value, [key]: !state[key] }), state);
+        case "RESET_TOOLBARS":
+            return { ...state, "debug.userSettingsVisible": isDev };
         default:
             return state;
     }
