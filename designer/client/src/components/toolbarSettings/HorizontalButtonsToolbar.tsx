@@ -1,9 +1,11 @@
 import { DragIndicator } from "@mui/icons-material";
 import { Divider, Stack } from "@mui/material";
-import React, { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
+import React from "react";
+
 import { useDragHandler } from "../common/dndItems/DragHandle";
 import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons";
-import { ToolbarConfig } from "./types";
+import type { ToolbarConfig } from "./types";
 
 export const HorizontalToolbar = ({ children }: PropsWithChildren) => {
     const handleProps = useDragHandler();

@@ -1,8 +1,10 @@
 import { combineReducers } from "redux";
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import { Reducer } from "../actions/reduxTypes";
-import { Panels, panels } from "./panel";
+
+import type { Reducer } from "../actions/reduxTypes";
+import type { Panels } from "./panel";
+import { panels } from "./panel";
 
 export enum ToolbarsSide {
     RightTop = "topRight",
