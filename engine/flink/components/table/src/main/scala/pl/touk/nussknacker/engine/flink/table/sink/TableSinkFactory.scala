@@ -18,23 +18,15 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{
-  BoolParameterEditor,
-  NodeDependency,
-  Parameter,
-  ParameterDeclaration,
-  TypedNodeDependency
-}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.{
   FlinkDataDefinition,
   FlinkDataDefinitionError,
   TablesDefinitionDiscovery
 }
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
@@ -47,8 +39,6 @@ import pl.touk.nussknacker.engine.util.parameters.{
 }
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
-import java.net.URLClassLoader
-import scala.collection.compat.toTraversableLikeExtensionMethods
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
