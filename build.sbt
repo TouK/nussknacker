@@ -206,7 +206,7 @@ lazy val commonSettings =
         // we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
-      // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
+      // TODO
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
