@@ -62,6 +62,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
+      @DefaultValue("T(java.time.Duration).parse('PT1M')")
       schedule: Duration,
       // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
