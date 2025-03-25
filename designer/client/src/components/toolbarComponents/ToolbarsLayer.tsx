@@ -4,8 +4,10 @@ import { ToolbarsSide } from "../../reducers/toolbars";
 import { Box, Stack, styled } from "@mui/material";
 import React, { ComponentType, Fragment, PropsWithChildren, useCallback, useEffect, useMemo } from "react";
 import { Box, styled } from "@mui/material";
-import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { getCapabilities } from "../../reducers/selectors/other";
@@ -17,7 +19,7 @@ import { useSurvey } from "../toolbars/useSurvey";
 import { DragAndDropContainer } from "./DragAndDropContainer";
 import { Grid9 } from "./Grid9";
 import { Overlay } from "./Overlay";
-import { Toolbar } from "./toolbar";
+import type { Toolbar } from "./toolbar";
 import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer";
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
@@ -47,17 +49,18 @@ export function useToolbarsVisibility(toolbars: Toolbar[]) {
 type ToolbarsLayerProps = PropsWithChildren<{
     toolbars: Toolbar[];
     configId: string;
+    externalLayerWrapper?: React.ComponentType<PropsWithChildren>;
 }>;
 
 const AbsolutePanel = styled(Box)(({ theme }) => ({
     position: "absolute",
-    zIndex: theme.zIndex.appBar,
+    zIndex: theme.zIndex.snackbar,
     overflow: "hidden",
 }));
 
 const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
     const dispatch = useDispatch();
-    const { toolbars, configId, children } = props;
+    const { toolbars, configId, children, externalLayerWrapper: ExternalLayerWrapper = React.Fragment } = props;
 
     useEffect(() => {
         dispatch(registerToolbars(toolbars, configId));
@@ -69,14 +72,16 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
 
     return (
         <DragAndDropContainer onMove={onMove}>
-            <AbsoluteOverlayGrid9 m={0.5} sx={{ inset: 0, justifyItems: "center" }}>
-                <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
-                <StyledToolbarsContainer
-                    sx={{ gridArea: "bottom" }}
-                    availableToolbars={availableToolbars}
-                    side={ToolbarsSide.BottomCenter}
-                />
-            </AbsoluteOverlayGrid9>
+            <ExternalLayerWrapper>
+                <AbsoluteOverlayGrid9 m={0.5} sx={{ inset: 120, justifyItems: "center" }}>
+                    <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
+                    <StyledToolbarsContainer
+                        sx={{ gridArea: "bottom" }}
+                        availableToolbars={availableToolbars}
+                        side={ToolbarsSide.BottomCenter}
+                    />
+                </AbsoluteOverlayGrid9>
+            </ExternalLayerWrapper>
 
             <SidePanelsContextProvider configId={configId}>
                 <OverlayGrid9>
