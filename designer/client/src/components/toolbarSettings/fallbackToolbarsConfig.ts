@@ -1,9 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import { ToolbarsSide } from "../../reducers/toolbars";
-import { WithId } from "../../types/common";
+import type { WithId } from "../../types/common";
 import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { BuiltinButtonTypes } from "./buttons";
-import { ToolbarsConfig } from "./types";
+import type { ToolbarsConfig } from "./types";
 
 //It's only to local development
 export function fallbackToolbarsConfig(isFragment: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
