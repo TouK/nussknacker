@@ -1,4 +1,5 @@
 import { Box, styled } from "@mui/material";
+import { useWindowManager } from "@touk/window-manager";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -50,6 +51,7 @@ type ToolbarsLayerProps = PropsWithChildren<{
 
 const AbsolutePanel = styled(Box)(({ theme }) => ({
     position: "absolute",
+    inset: 0,
     zIndex: theme.zIndex.snackbar,
     overflow: "hidden",
 }));
@@ -65,17 +67,22 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
     const availableToolbars = useToolbarsVisibility(toolbars);
 
     const onMove = useCallback((from, to) => dispatch(moveToolbar(from, to, configId)), [configId, dispatch]);
+    const { windows } = useWindowManager();
+    const windowOpened = windows.length;
 
     return (
         <DragAndDropContainer onMove={onMove}>
             <ExternalLayerWrapper>
-                <AbsoluteOverlayGrid9 m={0.5} sx={{ inset: 120, justifyItems: "center" }}>
+                <AbsoluteOverlayGrid9
+                    m={0.5}
+                    sx={(theme) => ({
+                        transition: theme.transitions.create("top"),
+                        top: windowOpened ? 10 : 45,
+                        justifyItems: "center",
+                        overflow: "auto",
+                    })}
+                >
                     <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
-                    <StyledToolbarsContainer
-                        sx={{ gridArea: "bottom" }}
-                        availableToolbars={availableToolbars}
-                        side={ToolbarsSide.BottomCenter}
-                    />
                 </AbsoluteOverlayGrid9>
             </ExternalLayerWrapper>
 
@@ -93,6 +100,12 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                         <Box component={SidePanelToggleButton} type={PanelSide.Left} gridArea="bottom/left" />
                         <Box component={SidePanelToggleButton} type={PanelSide.Right} gridArea="bottom/right" />
                     </OverlayGrid9>
+
+                    <StyledToolbarsContainer
+                        sx={{ gridArea: "bottom" }}
+                        availableToolbars={availableToolbars}
+                        side={ToolbarsSide.BottomCenter}
+                    />
 
                     <Box gridArea="right" component={SidePanel} side={PanelSide.Right}>
                         <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.RightTop} />
@@ -118,12 +131,11 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
             return { paddingTop: padding };
         default:
             return {
-                padding: 0,
+                padding: theme.spacing(0.5),
                 flexDirection: "row",
                 pointerEvents: "none",
                 [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
                     flexDirection: "row",
-                    margin: 1,
                     gap: 1,
                     minWidth: 100,
                     "&>*": {
