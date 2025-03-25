@@ -680,6 +680,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     // It has to be in the default, Compile scope because all components are eagerly loaded so it will be loaded also
     // on the Flink side where this library is missing
     liteComponentsApi,
+    defaultHelpers,
     componentsUtils      % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     scenarioCompiler     % Provided,
