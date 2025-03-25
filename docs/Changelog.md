@@ -129,9 +129,8 @@
   * Made changes to the Component API regarding editors. For details, please see the Migration Guide.
   * Extract `StaticParameterEditor` as a set of editors for scenario properties and action parameters that handle only
     static values.
-* [#7747](https://github.com/TouK/nussknacker/pull/7747) Bump Scala 2.12 and 2.13 to newest versions (2.12.10 -> 2.12.20, 2.13.15 -> 2.13.16)
-  * SemanticDB was updated to newest version to make it work with Scala 2.12 (4.8.4/4.13.2 -> 4.13.4)
-
+* [#7747](https://github.com/TouK/nussknacker/pull/7747) Bump Scala 2.12 and 2.13 to the newest versions (2.12.10 -> 2.12.20, 2.13.15 -> 2.13.16)
+  * SemanticDB was updated to the newest version to make it work with Scala 2.12 (4.8.4/4.13.2 -> 4.13.4)
 
 ## 1.18
 
