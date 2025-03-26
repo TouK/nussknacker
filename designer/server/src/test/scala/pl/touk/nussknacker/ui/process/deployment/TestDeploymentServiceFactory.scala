@@ -3,9 +3,10 @@ package pl.touk.nussknacker.ui.process.deployment
 import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeployedScenariosProviderStub}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
@@ -24,19 +25,19 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import sttp.client3.testing.SttpBackendStub
 
 import java.time.Clock
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 class TestDeploymentServiceFactory(dbRef: DbRef) {
 
-  private val dbioRunner                                         = newDBIOActionRunner(dbRef)
-  val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(dbRef)
-  val activityRepository: ScenarioActivityRepository             = newScenarioActivityRepository(dbRef, clock)
-  val actionRepository: ScenarioActionRepository                 = newActionProcessRepository(dbRef)
-  val listener                                                   = new TestProcessChangeListener
+  private val dbioRunner                                                    = newDBIOActionRunner(dbRef)
+  val fetchingScenarioDBIORepository: DBFetchingProcessRepository[DB]       = newFetchingProcessRepository(dbRef)
+  val fetchingScenarioFutureRepository: DBFetchingProcessRepository[Future] = newFutureFetchingScenarioRepository(dbRef)
+  val activityRepository: ScenarioActivityRepository = newScenarioActivityRepository(dbRef, clock)
+  val actionRepository: ScenarioActionRepository     = newActionProcessRepository(dbRef)
+  val listener                                       = new TestProcessChangeListener
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
-    new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     ec,
     IORuntime.global,
     actorSystem,
@@ -49,13 +50,13 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None
   ): TestDeploymentServiceServices = {
-    val processingTypeDataProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
+    val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
     )
 
     val dmDispatcher = {
       val futureFetchingProcessRepository = newFutureFetchingScenarioRepository(dbRef)
-      new DeploymentManagerDispatcher(processingTypeDataProvider, futureFetchingProcessRepository)
+      new DeploymentManagerDispatcher(deploymentManagerProvider, futureFetchingProcessRepository)
     }
 
     val deploymentsStatusesProvider =
@@ -65,7 +66,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
-        fetchingProcessRepository,
+        fetchingScenarioDBIORepository,
         actionRepository,
         dbioRunner
       )
@@ -73,7 +74,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 
     val actionService = {
       new ActionService(
-        fetchingProcessRepository,
+        fetchingScenarioDBIORepository,
         actionRepository,
         dbioRunner,
         listener,
@@ -85,9 +86,21 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 
     val deploymentsReconciler =
       new ScenarioDeploymentReconciler(
-        Set(processingType.stringify),
+        TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
+          Map(
+            processingType.stringify -> ValueWithRestriction.anyUser(
+              new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
+                deploymentManager,
+                EngineSetupName("mock"),
+                JobsRecoverySettings.noRecovery,
+                TestFactory.scenarioResolver
+              )
+            )
+          )
+        ),
         deploymentsStatusesProvider,
         actionRepository,
+        fetchingScenarioFutureRepository,
         dbioRunner
       )
 

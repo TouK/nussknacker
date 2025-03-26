@@ -21,7 +21,7 @@ import {
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
-        const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
+        const savedProcessState = state.graphReducer.history.past?.[0]?.scenario || state.graphReducer.history.present.scenario;
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 

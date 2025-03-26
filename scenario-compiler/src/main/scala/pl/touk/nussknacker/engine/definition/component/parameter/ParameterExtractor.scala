@@ -50,16 +50,16 @@ object ParameterExtractor {
     val parameterData = ParameterData(p, paramType)
     val isOptional    = OptionalDeterminer.isOptional(parameterData, isScalaOptionParameter, isJavaOptionalParameter)
 
-    val editor = EditorExtractor.extract(parameterData, parameterConfig)
+    val editors = EditorExtractor.extract(parameterData, parameterConfig)
     val validators =
-      ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional, parameterConfig, editor))
+      ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional, parameterConfig, editors))
     val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(
-      DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, editor)
+      DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, editors)
     )
     Parameter(
       name,
       paramType,
-      editor,
+      editors,
       validators,
       defaultValue,
       additionalVariables(p, isLazyParameter),

@@ -1,23 +1,23 @@
-import React, { PropsWithChildren, createContext } from "react";
+import { PropsOf } from "@emotion/react";
+import React, { createContext, PropsWithChildren } from "react";
 import { ToolbarButtonWrapper } from "./ToolbarButtonStyled";
 
 export enum ButtonsVariant {
     small = "small",
     label = "label",
+    horizontal = "horizontal",
 }
 
 type Props = {
     variant?: ButtonsVariant;
-};
+} & PropsOf<typeof ToolbarButtonWrapper>;
 
 export const ToolbarButtonsContext = createContext<{ variant: ButtonsVariant }>({ variant: ButtonsVariant.label });
 
-export function ToolbarButtons(props: PropsWithChildren<Props>): JSX.Element {
-    const { variant = ButtonsVariant.label } = props;
-
+export function ToolbarButtons({ variant = ButtonsVariant.label, ...props }: PropsWithChildren<Props>): JSX.Element {
     return (
         <ToolbarButtonsContext.Provider value={{ variant }}>
-            <ToolbarButtonWrapper>{props.children}</ToolbarButtonWrapper>
+            <ToolbarButtonWrapper {...props} />
         </ToolbarButtonsContext.Provider>
     );
 }

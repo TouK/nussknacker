@@ -7,9 +7,6 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DualEditor {
-
-    SimpleEditor simpleEditor();
-
-    DualEditorMode defaultMode();
+public @interface Editors {
+    Editor[] value();
 }

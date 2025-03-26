@@ -35,12 +35,14 @@ object AvroDefaultExpressionDeterminer {
   */
 class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
 
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
+
   import scala.jdk.CollectionConverters._
 
   import AvroDefaultExpressionDeterminer._
 
   private val validatedNullExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
-    Valid(Some(asSpelExpression("null")))
+    Valid(Some("null".spel))
 
   private def typeNotSupported(
       implicit fieldSchema: Schema.Field
@@ -68,7 +70,7 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case Schema.Type.RECORD =>
         typeNotSupported
       case Schema.Type.ENUM =>
-        withValidation[String](str => s"'$str'")
+        withValidation[String](str => s"'$str'".spel)
       case Schema.Type.ARRAY =>
         typeNotSupported
       case Schema.Type.MAP =>
@@ -80,12 +82,12 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
           case None                   => Invalid(InvalidValue).toValidatedNel
         }
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
-        withValidation[String](uuid => s"T(${classOf[UUID].getName}).fromString('$uuid')")
+        withValidation[String](uuid => s"T(${classOf[UUID].getName}).fromString('$uuid')".spel)
       case Schema.Type.BYTES | Schema.Type.FIXED
           if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         typeNotSupported
       case Schema.Type.STRING =>
-        withValidation[String](str => s"'$str'")
+        withValidation[String](str => s"$str".spelTemplate)
       case Schema.Type.BYTES =>
         typeNotSupported
       case Schema.Type.FIXED =>
@@ -95,21 +97,21 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case Schema.Type.INT if schema.getLogicalType == LogicalTypes.timeMillis() =>
         typeNotSupported
       case Schema.Type.INT =>
-        withValidation[Integer](_.toString)
+        withValidation[Integer](_.toString.spel)
       case Schema.Type.LONG
           if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes
             .timestampMicros() =>
-        withValidation[java.lang.Long](l => s"T(${classOf[Instant].getName}).ofEpochMilli(${l}L)")
+        withValidation[java.lang.Long](l => s"T(${classOf[Instant].getName}).ofEpochMilli(${l}L)".spel)
       case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timeMicros() =>
         typeNotSupported
       case Schema.Type.LONG =>
-        withValidation[java.lang.Long](l => s"${l}L")
+        withValidation[java.lang.Long](l => s"${l}L".spel)
       case Schema.Type.FLOAT =>
-        withValidation[java.lang.Float](_.toString)
+        withValidation[java.lang.Float](_.toString.spel)
       case Schema.Type.DOUBLE =>
-        withValidation[java.lang.Double](_.toString)
+        withValidation[java.lang.Double](_.toString.spel)
       case Schema.Type.BOOLEAN =>
-        withValidation[java.lang.Boolean](_.toString)
+        withValidation[java.lang.Boolean](_.toString.spel)
       case Schema.Type.NULL =>
         validatedNullExpression
     }
@@ -124,7 +126,5 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case Some(_)                         => Invalid(InvalidValue).toValidatedNel
       case None                            => Invalid(NullNotAllowed).toValidatedNel
     }
-
-  private implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)
 
 }

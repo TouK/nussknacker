@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -112,5 +112,5 @@ object ScenarioActionName {
  * Used to define Flink parameters for each action
  */
 trait WithActionParametersSupport {
-  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, ParameterConfig]]
+  def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]]
 }

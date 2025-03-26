@@ -105,6 +105,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   More details can be found in:
   * [Migration guide for Apache Pekko](https://pekko.apache.org/docs/pekko/1.0/project/migration-guides.html)
   * [Migration guide for Apache Pekko HTTP](https://pekko.apache.org/docs/pekko-http/1.0/migration-guide/index.html)
+* [#7632](https://github.com/TouK/nussknacker/pull/7632) Simplified parameter editors API.
+  * Removed the single `editor` from the UIParameter and now only the `editors` property is available.
+  * Replaced the `editor` parameter with `editors` in the engine API `Parameter`.
+  * Similarly, `ParameterConfig` in engine API now accepts an `editors` list instead of a single editor.
+  * Removed a `DualEditor` from the components API.
+    * Renamed a `SimpleEditor` to the `Editor` in components API.
+    * For now on, you can add multiple editors on a single param. The first editor annotation is treated as a default
+      editor.
 
 ### Other changes
 

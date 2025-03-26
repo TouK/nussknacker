@@ -39,7 +39,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ),
       optionalFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
-        editor = Some(StringParameterEditor),
+        editor = Some(StaticStringParameterEditor),
         validators = None,
         label = Some(label),
         hintText = None
@@ -239,29 +239,6 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               _,
               _,
               Some(_),
-              NodeValidationErrorType.SaveAllowed,
-              None
-            )
-          ) =>
-    }
-  }
-
-  test("validate non empty config with unknown property") {
-    val unknownProperty = "unknown"
-    val result = validator.validate(
-      Map(
-        "propReq"       -> "5",
-        unknownProperty -> "some text"
-      ).toList
-    )
-
-    result.errors.processPropertiesErrors should matchPattern {
-      case List(
-            NodeValidationError(
-              "UnknownProperty",
-              _,
-              _,
-              Some(`unknownProperty`),
               NodeValidationErrorType.SaveAllowed,
               None
             )

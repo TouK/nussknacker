@@ -14,6 +14,7 @@ import scala.concurrent.duration.FiniteDuration
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
+// If you are adding some method with default value, mind that it should be override in DeploymentManagerProviderCorrectClassloaderHandler
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(
@@ -43,6 +44,8 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   // TODO: replace scenario types by the separate lists of deployments and of models
   def engineSetupIdentity(config: Config): Any = ()
 
+  def jobsRecoverySettings(config: Config): JobsRecoverySettings = JobsRecoverySettings.noRecovery
+
 }
 
 /**
@@ -69,4 +72,12 @@ object MetaDataInitializer {
   type MetadataType = String
   def apply(metadataType: MetadataType, overridingProperties: Map[String, String]): MetaDataInitializer =
     MetaDataInitializer(metadataType, _ => overridingProperties)
+}
+
+case class JobsRecoverySettings(recoverJobsOnStart: Boolean)
+
+object JobsRecoverySettings {
+
+  val noRecovery: JobsRecoverySettings = JobsRecoverySettings(recoverJobsOnStart = false)
+
 }

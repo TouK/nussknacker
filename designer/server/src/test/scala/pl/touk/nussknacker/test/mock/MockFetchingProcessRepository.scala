@@ -132,5 +132,5 @@ class MockFetchingProcessRepository private (
 
   private def check[T](condition: Option[T], value: T) = condition.forall(_ == value)
 
-  private def checkSeq[T](condition: Option[Seq[T]], value: T) = condition.forall(_.contains(value))
+  private def checkSeq[T](condition: Option[Iterable[T]], value: T) = condition.forall(_.toSeq.contains(value))
 }

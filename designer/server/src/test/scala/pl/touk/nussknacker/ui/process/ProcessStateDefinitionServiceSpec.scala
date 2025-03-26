@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.deployment._
@@ -195,6 +195,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       MetaDataInitializer("streaming", Map.empty[String, String]),
       Map.empty,
       List.empty,
+      JobsRecoverySettings.noRecovery,
       EngineSetupName("mock")
     )
     ProcessingTypeData.createProcessingTypeData(

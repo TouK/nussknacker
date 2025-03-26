@@ -13,28 +13,26 @@ object CampaignService extends Service with Serializable {
   @MethodToInvoke
   def invoke(
       @ParamName("CampaignName")
-      @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
       @NotBlank
       campaignName: String,
       @ParamName("Registered")
-      @SimpleEditor(
-        `type` = SimpleEditorType.BOOL_EDITOR
+      @Editor(
+        `type` = EditorType.BOOL_EDITOR
       )
       registered: Boolean,
       @ParamName("BusinessConfig")
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-        defaultMode = DualEditorMode.SIMPLE
-      )
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       @Nullable
       businessConfig: String,
       @ParamName("Product Counts")
-      @RawEditor
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       @CompileTimeEvaluableValue
       productCounts: Int,
       @ParamName("CampaignType")
-      @SimpleEditor(
-        `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+      @Editor(
+        `type` = EditorType.FIXED_VALUES_EDITOR,
         possibleValues = Array(
           new LabeledExpression(expression = "'mail'", label = "Mail campaign"),
           new LabeledExpression(expression = "'sms'", label = "Sms campaign"),

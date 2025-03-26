@@ -455,7 +455,6 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
   ): DeploymentManager = {
     val deploymentManagerDependencies = new DeploymentManagerDependencies(
-      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       ExecutionContext.global,
       IORuntime.global,
       ActorSystem(getClass.getSimpleName),

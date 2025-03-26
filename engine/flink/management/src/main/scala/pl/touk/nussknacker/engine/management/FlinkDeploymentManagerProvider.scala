@@ -61,6 +61,11 @@ class FlinkDeploymentManagerProvider extends DeploymentManagerProvider {
     Try(config.getString(RestUrlPath)).toOption
   }
 
+  override def jobsRecoverySettings(deploymentConfig: Config): JobsRecoverySettings = {
+    val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
+    JobsRecoverySettings(recoverJobsOnStart = flinkConfig.useMiniClusterForDeployment)
+  }
+
 }
 
 object FlinkDeploymentManagerProvider extends LazyLogging {
@@ -120,7 +125,7 @@ object FlinkStreamingPropertiesConfig {
   val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = Some(StaticStringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
@@ -159,7 +164,7 @@ object FlinkStreamingPropertiesConfig {
   val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = Some(StaticStringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"),
       hintText = None

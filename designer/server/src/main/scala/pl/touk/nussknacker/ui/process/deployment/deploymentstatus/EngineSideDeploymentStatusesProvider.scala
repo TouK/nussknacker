@@ -137,6 +137,15 @@ class BulkQueriedDeploymentStatuses(
     deploymentStatus                    <- deploymentStatuses
   } yield deploymentStatus
 
+  def getDeploymentStatusesUnsafe(
+      scenarioIdData: ScenarioIdData
+  ): WithDataFreshnessStatus[List[DeploymentStatusDetails]] =
+    getDeploymentStatuses(scenarioIdData).getOrElse(
+      throw new IllegalArgumentException(
+        s"Deployment Manager configured at processing type [${scenarioIdData.processingType}] doesn't support deployments bulk querying"
+      )
+    )
+
   def getDeploymentStatuses(
       scenarioIdData: ScenarioIdData
   ): Option[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] =

@@ -6,9 +6,9 @@ final case class ScenarioQuery(
     isFragment: Option[Boolean] = None,
     isArchived: Option[Boolean] = None,
     isDeployed: Option[Boolean] = None,
-    categories: Option[Seq[String]] = None,
-    processingTypes: Option[Seq[String]] = None,
-    names: Option[Seq[ProcessName]] = None,
+    categories: Option[Iterable[String]] = None,
+    processingTypes: Option[Iterable[String]] = None,
+    names: Option[Iterable[ProcessName]] = None,
 )
 
 object ScenarioQuery {

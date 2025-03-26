@@ -5,8 +5,9 @@ import pl.touk.nussknacker.engine.api.definition._
 object EditorBasedValidatorExtractor extends ValidatorExtractor {
 
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
-    params.extractedEditor.collect { case FixedValuesParameterEditor(possibleValues) =>
-      FixedValuesValidator(possibleValues)
+    params.extractedEditors match {
+      case FixedValuesParameterEditor(possibleValues) :: Nil => Some(FixedValuesValidator(possibleValues))
+      case _                                                 => None
     }
   }
 

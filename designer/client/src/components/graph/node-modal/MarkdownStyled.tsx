@@ -72,6 +72,9 @@ export const MarkdownStyled = styled(MarkdownWithPlugins)(({ theme }) => ({
             textDecoration: "none",
         },
     },
+    code: {
+        backgroundColor: theme.palette.grey["700"],
+    },
 }));
 
 export type MarkdownStyledProps = PropsOf<typeof MarkdownStyled>;

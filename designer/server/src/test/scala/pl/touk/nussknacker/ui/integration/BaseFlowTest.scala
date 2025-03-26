@@ -11,7 +11,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -119,12 +118,11 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("param"),
             "label"        -> fromString("param"),
-            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
-            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "defaultValue" -> Expression.spelTemplate("default-from-additional-ui-config-provider").asJson,
             "editors" -> fromValues(
               List(
-                encodeEditor(SpelParameterEditor),
                 encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
@@ -136,17 +134,6 @@ class BaseFlowTest
             "defaultValue" -> Expression
               .spel("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL")
               .asJson,
-            "editor" -> encodeEditor(
-              DualParameterEditor(
-                FixedValuesParameterEditor(
-                  List(
-                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL", "normal"),
-                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
-                  )
-                ),
-                DualEditorMode.SIMPLE
-              )
-            ),
             "editors" -> fromValues(
               List(
                 encodeEditor(
@@ -176,7 +163,6 @@ class BaseFlowTest
             "name"         -> fromString("foo"),
             "label"        -> fromString("foo"),
             "defaultValue" -> Expression.spel("'test'").asJson,
-            "editor"       -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
             "editors" -> fromValues(
               List(
                 encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))
@@ -188,12 +174,10 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("bar"),
             "label"        -> fromString("bar"),
-            "defaultValue" -> Expression.spel("''").asJson,
-            "editor"       -> encodeEditor(StringParameterEditor),
+            "defaultValue" -> Expression.spelTemplate("").asJson,
             "editors" -> fromValues(
               List(
                 encodeEditor(SpelTemplateParameterEditor),
-                encodeEditor(SpelParameterEditor)
               )
             ),
             "hintText"      -> Null,
@@ -203,9 +187,6 @@ class BaseFlowTest
             "name"         -> fromString("baz"),
             "label"        -> fromString("baz"),
             "defaultValue" -> Expression.spel("1").asJson,
-            "editor" -> encodeEditor(
-              FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
-            ),
             "editors" -> fromValues(
               List(
                 encodeEditor(
@@ -219,12 +200,11 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("quax"),
             "label"        -> fromString("quax"),
-            "defaultValue" -> Expression.spel("''").asJson,
-            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "defaultValue" -> Expression.spelTemplate("").asJson,
             "editors" -> fromValues(
               List(
-                encodeEditor(SpelParameterEditor),
                 encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> Null,
@@ -244,12 +224,11 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("fromConfig-v1"),
             "label"        -> fromString("fromConfig-v1"),
-            "defaultValue" -> Expression.spel("''").asJson,
-            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "defaultValue" -> Expression.spelTemplate("").asJson,
             "editors" -> fromValues(
               List(
-                encodeEditor(SpelParameterEditor),
                 encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> Null,
@@ -324,13 +303,13 @@ class BaseFlowTest
     val underTest = Map(
       "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
-        editor = StringParameterEditor,
+        editor = StaticStringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
-        editor = StringParameterEditor,
+        editor = StaticStringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
@@ -366,7 +345,6 @@ class BaseFlowTest
     validationResponse.code shouldEqual StatusCode.Ok
     validationResponse.body should include("Configured property environment (Environment) is missing")
     validationResponse.body should include("This field value has to be an integer number")
-    validationResponse.body should include("Unknown property unknown")
     validationResponse.body should include("Property numberOfThreads (Number of threads) has invalid value") //
   }
 

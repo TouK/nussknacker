@@ -21,10 +21,10 @@ export const editorsParameters: Record<EditorType, { displayName: string; langua
     [EditorType.JSON_PARAMETER_EDITOR]: { displayName: "Json", language: ExpressionLang.JSON },
     [EditorType.PERIOD_EDITOR]: { displayName: "Period", language: ExpressionLang.SpEL },
     [EditorType.SPEL_PARAMETER_EDITOR]: { displayName: "Expression", language: ExpressionLang.SpEL },
-    [EditorType.STRING_PARAMETER_EDITOR]: { displayName: "Text", language: ExpressionLang.String },
+    [EditorType.STATIC_STRING_PARAMETER_EDITOR]: { displayName: "Text", language: ExpressionLang.String },
     [EditorType.TEXTAREA_PARAMETER_EDITOR]: { displayName: "Text", language: ExpressionLang.SpEL },
     [EditorType.TIME]: { displayName: "Time", language: ExpressionLang.SpEL },
-    [EditorType.SQL_PARAMETER_EDITOR]: { displayName: "SQL", language: ExpressionLang.SQL },
+    [EditorType.SQL_PARAMETER_EDITOR]: { displayName: "SQL", language: ExpressionLang.SpELTemplate },
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: {
         displayName: "String Template",
         language: ExpressionLang.SpELTemplate,

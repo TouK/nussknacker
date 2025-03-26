@@ -42,9 +42,6 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       |        }
       |      ]
       |    },
-      |    "editor": {
-      |      "type": "RawParameterEditor"
-      |    },
       |    "editors": [
       |      {
       |        "type": "SpelParameterEditor"
@@ -52,7 +49,7 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       |    ],
       |    "defaultValue": {
       |      "language": "spel",
-      |      "expression": ""
+      |      "expression": "{}"
       |    },
       |    "additionalVariables": {
       |    },

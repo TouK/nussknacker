@@ -123,6 +123,14 @@
 * [#7590](https://github.com/TouK/nussknacker/pull/7590) Replaced Akka and Akka HTTP libraries with Apache Pekko (1.0.3) and Apache Pekko HTTP (1.0.1)
 * [#7673](https://github.com/TouK/nussknacker/pull/7673) Improve the node documentation link in the node header
 * [#7653](https://github.com/TouK/nussknacker/pull/7653) Refactored JSON codecs
+* [#7632](https://github.com/TouK/nussknacker/pull/7632) Simplified parameter editors API
+  * Added migration of scenario nodes from a string defined in SpEL to a SpelTemplate string. 
+  * Removed the single `editor` from the UIParameter and now only the `editors` property is available.
+  * Made changes to the Component API regarding editors. For details, please see the Migration Guide.
+  * Extract `StaticParameterEditor` as a set of editors for scenario properties and action parameters that handle only
+    static values.
+  * JsonDefaultExpression and AvroDefaultExpression default string values changed to SpEL template.
+  * For now on, default values are provided for dry run parameters.
 
 ## 1.18
 

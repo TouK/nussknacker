@@ -199,7 +199,7 @@ object TableSinkFactory {
 
   private val rawModeParameterDeclaration = ParameterDeclaration
     .mandatory[Boolean](rawModeParameterName)
-    .withCreator(c => c.copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor)))
+    .withCreator(c => c.copy(defaultValue = Some(Expression.spel("false")), editors = List(BoolParameterEditor)))
 
   private val restrictedParamNamesForNonRawMode: Set[ParameterName] = Set(
     tableNameParamName,

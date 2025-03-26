@@ -50,4 +50,8 @@ private[loader] class DeploymentManagerProviderCorrectClassloaderHandler(
   override def engineSetupIdentity(config: Config): Any =
     ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.engineSetupIdentity(config) }
 
+  override def jobsRecoverySettings(config: Config): JobsRecoverySettings = {
+    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.jobsRecoverySettings(config) }
+  }
+
 }

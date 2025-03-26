@@ -247,8 +247,8 @@ object validationHelpers {
       case TransformationStep(Nil, _) =>
         NextParameters(
           List(
-            Parameter(ParameterName("paramWithFixedValues"), Typed[Int]).copy(editor =
-              Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two"))))
+            Parameter(ParameterName("paramWithFixedValues"), Typed[Int]).copy(editors =
+              List(FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two"))))
             )
           )
         )
@@ -346,7 +346,9 @@ object validationHelpers {
             CirceUtil.decodeJsonUnsafe[String](testRecord.json)
           }
 
-        override def testParametersDefinition: List[Parameter] = Nil
+        override def testParametersDefinition: List[Parameter] = params.nameToValueMap.map { case (k, v) =>
+          Parameter(k, Typed.fromInstance(v))
+        }.toList
 
         override def parametersToTestData(params: Map[ParameterName, AnyRef]): String = ""
       }

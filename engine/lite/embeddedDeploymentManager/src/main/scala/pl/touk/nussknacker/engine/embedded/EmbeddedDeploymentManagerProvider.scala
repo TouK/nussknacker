@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.embedded
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{BaseModelDataProvider, CustomProcessValidator, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{
+  BaseModelDataProvider,
+  CustomProcessValidator,
+  DeploymentManagerDependencies,
+  JobsRecoverySettings
+}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
@@ -36,7 +41,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
     strategy.open(modelDataProvider, contextPreparer)
-    valid(new EmbeddedDeploymentManager(modelDataProvider, deployedScenariosProvider, strategy))
+    valid(new EmbeddedDeploymentManager(modelDataProvider, strategy))
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =
@@ -46,5 +51,8 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     Nil,
     List(EmbeddedRequestResponseScenarioValidator)
   )
+
+  override def jobsRecoverySettings(config: Config): JobsRecoverySettings =
+    JobsRecoverySettings(recoverJobsOnStart = true)
 
 }

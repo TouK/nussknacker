@@ -1,17 +1,19 @@
+import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { useSelector } from "react-redux";
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { NodeType } from "../../../../types";
 import ProcessUtils from "../../../../common/ProcessUtils";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
+import { NodeType } from "../../../../types";
+import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
+import { IconModalTitle } from "./IconModalTitle";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";
 import { NodeDocs } from "./SubHeader";
-import { IconModalTitle } from "./IconModalTitle";
-import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
-import { styled } from "@mui/material";
 
-const getNodeAttributes = (node: NodeType) => nodeAttributes[node.type];
+const getNodeAttributes = (node: NodeType) => {
+    return nodeAttributes[node.type] || node;
+};
 
 type IconModalHeaderProps = PropsWithChildren<{
     startIcon?: React.ReactElement;

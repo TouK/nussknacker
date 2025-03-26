@@ -1,9 +1,14 @@
 import { ModuleUrl } from "@touk/federated-component";
 import { isEmpty } from "lodash";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { getAdditionalComponents } from "../../../reducers/cloudData";
+import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
@@ -34,6 +39,17 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const [filter, setFilter] = useState("");
     const clearFilter = useCallback(() => setFilter(""), []);
 
+    const dispatch = useDispatch();
+    const [settings] = useUserSettings();
+    const isCloud = useSelector(isCloudInstance);
+    useEffect(() => {
+        if (isCloud && settings["cloud.showIntegrationsCreators"]) {
+            dispatch(getAdditionalComponents());
+        }
+    }, [dispatch, isCloud, settings]);
+
+    const { componentGroups } = useSelector(getProcessDefinitionData);
+
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
             <SearchInputWithIcon
@@ -47,6 +63,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             </SearchInputWithIcon>
             <ToolBox
                 filter={filter}
+                data={componentGroups}
                 addGroupLabelElement={({ name }) => (
                     <AddGroupElement
                         url={additionalParams?.addGroupElement}

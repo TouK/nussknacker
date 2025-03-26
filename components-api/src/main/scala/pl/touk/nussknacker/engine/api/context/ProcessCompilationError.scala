@@ -332,7 +332,7 @@ object ProcessCompilationError {
   final case class IncompatibleParameterDefinitionModification(
       paramName: ParameterName,
       language: Language,
-      parameterEditor: Option[ParameterEditor],
+      parameterEditors: List[ParameterEditor],
       nodeId: String
   ) extends PartSubGraphCompilationError
       with InASingleNode

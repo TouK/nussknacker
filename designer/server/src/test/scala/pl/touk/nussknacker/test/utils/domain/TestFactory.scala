@@ -9,7 +9,6 @@ import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeployedScenariosProviderStub
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
@@ -111,9 +110,12 @@ object TestFactory {
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
-  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
-    Streaming.stringify -> new ScenarioResolver(sampleResolver, Streaming.stringify)
-  )
+  val scenarioResolver = new ScenarioResolver(sampleResolver, Streaming.stringify)
+
+  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] =
+    mapProcessingTypeDataProvider(
+      Streaming.stringify -> scenarioResolver
+    )
 
   def additionalComponentConfigsByProcessingType
       : ProcessingTypeDataProvider[Map[DesignerWideComponentId, ComponentAdditionalConfig], _] =
@@ -130,7 +132,6 @@ object TestFactory {
   val deploymentManagerDependencies: DeploymentManagerDependencies = {
     val actorSystem = ActorSystem("TestFactory")
     new DeploymentManagerDependencies(
-      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       actorSystem.dispatcher,
       IORuntime.global,
       actorSystem,
