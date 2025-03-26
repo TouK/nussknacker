@@ -1,14 +1,15 @@
-import { alpha, createTheme, Palette, PaletteMode } from "@mui/material";
-import { fontFamily, formLabelWidth, globalStyles } from "./styles";
-import { blendDarken, blendLighten } from "./helpers";
+import type { Palette, PaletteMode } from "@mui/material";
+import { alpha, createTheme } from "@mui/material";
 import { deepmerge } from "@mui/utils";
-import { lightModePalette } from "./lightModePalette";
+import type { Dispatch, SetStateAction } from "react";
+
+import type { NodeType } from "../../types";
+import { WindowKind } from "../../windowManager";
+import type { EnvironmentTagColor } from "../EnvironmentTag";
 import { darkModePalette } from "./darkModePalette";
-import { WindowKind } from "../../windowManager/WindowKind";
-import { EnvironmentTagColor } from "../EnvironmentTag";
-import { NodeType } from "../../types";
-import NodeUtils from "../../components/graph/NodeUtils";
-import { Dispatch, SetStateAction } from "react";
+import { blendDarken, blendLighten } from "./helpers";
+import { lightModePalette } from "./lightModePalette";
+import { fontFamily, formLabelWidth, globalStyles } from "./styles";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -193,6 +194,9 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                                         maxWidth: "20em",
                                         overflowWrap: "anywhere",
                                         marginTop: "9px",
+                                    },
+                                    ".MuiFormLabel-root:has(+ .MuiBox-root [role='tablist'])": {
+                                        marginTop: "27px",
                                     },
                                 };
                             }
