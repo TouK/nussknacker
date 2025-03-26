@@ -143,7 +143,7 @@ class SpelExpression(
       case literal: LiteralExpression => List(RenderedLiteral(literal.getExpressionString))
       case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
         // TODO: Should we use the same trick with re-parsing after ClassCastException as we use in ParsedSpelExpression?
-        List(RenderedSubExpression(spelExpr.getValue[String](evaluationContext, classOf[String])))
+        List(RenderedSubExpression(spelExpr.getValue(evaluationContext)))
       case composite: CompositeStringExpression => composite.getExpressions.toList.flatMap(renderExpression)
       case other =>
         throw new IllegalArgumentException(
@@ -310,7 +310,7 @@ object SpelExpressionParser extends LazyLogging {
       classDefinitionSet: ClassDefinitionSet,
   ): SpelExpressionParser = {
 
-    val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
+    val parser = new AdjustingTemplateExpressionSpringSpelExpressionParser(
       // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
@@ -326,6 +326,26 @@ object SpelExpressionParser extends LazyLogging {
       flavour,
       evaluationContextPreparer
     )
+  }
+
+  private class AdjustingTemplateExpressionSpringSpelExpressionParser(configuration: SpelParserConfiguration)
+      extends org.springframework.expression.spel.standard.SpelExpressionParser(configuration) {
+
+    // Override for: org.springframework.expression.common.TemplateAwareExpressionParser.parseTemplate, because
+    // spring should return only StringExpression for template
+    override def parseExpression(expressionString: String, context: ParserContext): Expression = {
+      val expression = super.parseExpression(expressionString, context)
+      if (context != null && context.isTemplate) {
+        expression match {
+          case l: LiteralExpression         => l
+          case s: CompositeStringExpression => s
+          case other                        => new CompositeStringExpression(expressionString, Array(other))
+        }
+      } else {
+        expression
+      }
+    }
+
   }
 
 }
