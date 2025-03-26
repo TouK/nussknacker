@@ -333,7 +333,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("button", "ad hoc").should("be.enabled").click();
+        cy.contains("button", "test").should("be.enabled").click();
         cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type("10");
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
