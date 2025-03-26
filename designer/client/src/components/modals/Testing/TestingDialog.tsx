@@ -2,14 +2,14 @@ import { Box } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 
-import type { ScenarioGraph, UIParameter, VariableTypes } from "../../../types";
+import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
-import type { ActionValues } from "../AdhocTesting/AdhocTestingFormContext";
 import type { FormValue, TouchedValue } from "./TestingForm";
 import { TestingForm, TestType } from "./TestingForm";
 
@@ -27,17 +27,6 @@ export type TestingViewParams = {
     markdownContent?: string;
 };
 
-export interface TestingParameters {
-    parameters: UIParameter[];
-    variableTypes: VariableTypes;
-    processingType: string;
-    scenarioName: string;
-    initialValues: ActionValues;
-    onConfirmAction: (values: ActionValues) => void;
-    sourceId: string;
-    scenarioGraph: ScenarioGraph;
-}
-
 export interface TestingData {
     view: TestingViewParams;
 }
@@ -49,8 +38,18 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         kind,
     } = data;
 
+    const testCapabilities = useSelector(getTestCapabilities);
+
+    const availabilityMap: Record<TestType, boolean> = {
+        [TestType.withParameters]: testCapabilities.canTestWithForm,
+        [TestType.withGeneratedData]: testCapabilities.canGenerateTestData && testCapabilities.canBeTested,
+    };
+    const availableTestTypes = Object.entries(availabilityMap)
+        .filter(([_, isAvailable]) => isAvailable)
+        .map(([key]) => key as TestType);
+
     const [testType, setState] = useState<FormValue>({
-        testType: TestType.withParameters,
+        testType: availableTestTypes[0] ?? "",
     });
     const [touched, setTouched] = useState<TouchedValue>({
         testType: false,
@@ -76,7 +75,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                         touched={touched}
                         handleSetTouched={handleSetTouched}
                         testingData={props.data}
-                        closeDialog={() => close()}
+                        closeDialog={close}
                     />
                 </Box>
             </ContentSize>

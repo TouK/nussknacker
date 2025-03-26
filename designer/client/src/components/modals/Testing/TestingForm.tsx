@@ -8,7 +8,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { testScenarioWithGeneratedData } from "../../../actions/nk/displayTestResults";
-import { getScenarioGraph, getTestParameters } from "../../../reducers/selectors/graph";
+import { getScenarioGraph, getTestCapabilities, getTestParameters } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import type { WindowKind } from "../../../windowManager";
 import type { ChangeableValue } from "../../ChangeableValue";
@@ -70,11 +70,19 @@ export function TestingForm({ value, touched, onChange, handleSetTouched, testin
         meta: { view },
     } = testingData;
 
+    const testCapabilities = useSelector(getTestCapabilities);
+    const testWithParametersIsAvailable = testCapabilities.canTestWithForm;
+    const testWithGeneratedDataIsAvailable = testCapabilities.canGenerateTestData && testCapabilities.canBeTested;
+
     // Test with parameters
     const adhocTestingAction = useAdhocTestingAction();
     const { variableTypes, parameters = [], initialValues, onConfirmAction } = adhocTestingAction;
     const [adhocTestingCurrentValue, setAdhocTestingCurrentValue] = useState(initialValues);
-    const { adhocTestingErrors, adhocTestingIsValid } = useAdhocTestingParametersValidation(adhocTestingAction, adhocTestingCurrentValue);
+    const { adhocTestingErrors, adhocTestingIsValid } = useAdhocTestingParametersValidation(
+        adhocTestingAction,
+        adhocTestingCurrentValue,
+        testWithParametersIsAvailable,
+    );
     const adhocTestingValidationErrors = flow((errors) => extendErrors(errors, value.testType, "testType", []))(adhocTestingErrors);
     const adhocTestingConfirm = useCallback(async () => {
         onConfirmAction(adhocTestingCurrentValue);
@@ -109,6 +117,7 @@ export function TestingForm({ value, touched, onChange, handleSetTouched, testin
         value.testType === TestType.withParameters ? adhocTestingIsValid && !thereAreMultipleSources : generatedDataTestingIsValid;
     const confirmForm = value.testType === TestType.withParameters ? adhocTestingConfirm : generatedDataTestingConfirm;
 
+    // Elements
     const testWithParametersElementWhenSingleSource =
         value.testType === TestType.withParameters && !thereAreMultipleSources ? <MarkdownForm content={view.markdownContent} /> : <></>;
 
@@ -185,12 +194,14 @@ export function TestingForm({ value, touched, onChange, handleSetTouched, testin
                                 value={TestType.withParameters}
                                 Icon={DryRunTestingIcon}
                                 active={value.testType === TestType.withParameters}
+                                disabled={!testWithParametersIsAvailable}
                             />
                             <CustomRadio
                                 label={t("testingForm.label.withGeneratedData", "Live samples")}
                                 value={TestType.withGeneratedData}
                                 Icon={GenerateAndTestIcon}
                                 active={value.testType === TestType.withGeneratedData}
+                                disabled={!testWithGeneratedDataIsAvailable}
                             />
                         </FormGroup>
                         <ValidationLabels
