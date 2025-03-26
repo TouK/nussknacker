@@ -1,15 +1,16 @@
-import { NodeValidationError } from "../../../types";
 import { useCallback, useEffect, useState } from "react";
-import { ActionValues } from "./AdhocTestingFormContext";
+
 import { validateAdhocTestParameters } from "../../../actions/nk/adhocTesting";
-import { AdhocTestingParameters } from "./AdhocTestingDialog";
+import type { NodeValidationError } from "../../../types";
+import type { AdhocTestingParameters } from "./AdhocTestingDialog";
+import type { ActionValues } from "./AdhocTestingFormContext";
 
 export function useAdhocTestingParametersValidation(
     action: Pick<AdhocTestingParameters, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
     value: ActionValues,
 ): {
-    isValid: boolean;
-    errors: NodeValidationError[];
+    adhocTestingIsValid: boolean;
+    adhocTestingErrors: NodeValidationError[];
 } {
     const { scenarioName, parameters, sourceId, scenarioGraph } = action;
     const [errors, setErrors] = useState<NodeValidationError[]>([]);
@@ -40,7 +41,7 @@ export function useAdhocTestingParametersValidation(
     }, [validate, value]);
 
     return {
-        errors,
-        isValid: errors.length < 1,
+        adhocTestingErrors: errors,
+        adhocTestingIsValid: errors.length < 1,
     };
 }

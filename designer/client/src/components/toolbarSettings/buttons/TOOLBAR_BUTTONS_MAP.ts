@@ -1,4 +1,5 @@
-import { ComponentType } from "react";
+import type { ComponentType } from "react";
+
 import CopyButton from "../../toolbars/edit/buttons/CopyButton";
 import DeleteButton from "../../toolbars/edit/buttons/DeleteButton";
 import LayoutButton from "../../toolbars/edit/buttons/LayoutButton";
@@ -8,29 +9,30 @@ import UndoButton from "../../toolbars/edit/buttons/UndoButton";
 import ArchiveButton from "../../toolbars/process/buttons/ArchiveButton";
 import { ArchiveToggleButton } from "../../toolbars/process/buttons/ArchiveToggleButton";
 import CompareButton from "../../toolbars/process/buttons/CompareButton";
-import ImportButton from "../../toolbars/process/buttons/ImportButton";
 import ExportButton from "../../toolbars/process/buttons/ExportButton";
+import ImportButton from "../../toolbars/process/buttons/ImportButton";
 import MigrateButton from "../../toolbars/process/buttons/MigrateButton";
 import PDFButton from "../../toolbars/process/buttons/PDFButton";
 import SaveButton from "../../toolbars/process/buttons/SaveButton";
 import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton";
-import { LinkButton } from "./LinkButton";
 import CancelDeployButton from "../../toolbars/scenarioActions/buttons/CancelDeployButton";
 import DeployButton from "../../toolbars/scenarioActions/buttons/DeployButton";
 import PropertiesButton from "../../toolbars/scenarioActions/buttons/PropertiesButton";
+import RunOffScheduleButton from "../../toolbars/scenarioActions/buttons/RunOffScheduleButton";
+import AdhocTestingButton from "../../toolbars/test/buttons/AdhocTestingButton";
 import CountsButton from "../../toolbars/test/buttons/CountsButton";
 import FromFileButton from "../../toolbars/test/buttons/FromFileButton";
-import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
 import GenerateAndTestButton from "../../toolbars/test/buttons/GenerateAndTestButton";
-import AdhocTestingButton from "../../toolbars/test/buttons/AdhocTestingButton";
+import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
 import HideButton from "../../toolbars/test/buttons/HideButton";
+import ScenarioTestButton from "../../toolbars/test/buttons/ScenarioTestButton";
 import { ResetViewButton } from "../../toolbars/view/buttons/ResetViewButton";
 import { ZoomInButton } from "../../toolbars/view/buttons/ZoomInButton";
 import { ZoomOutButton } from "../../toolbars/view/buttons/ZoomOutButton";
 import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
-import { ToolbarButton, ToolbarButtonTypes } from "./types";
-import RunOffScheduleButton from "../../toolbars/scenarioActions/buttons/RunOffScheduleButton";
+import { LinkButton } from "./LinkButton";
+import type { ToolbarButton, ToolbarButtonTypes } from "./types";
 
 export type PropsOfButton<T> = ToolbarButton & {
     type: T;
@@ -70,4 +72,5 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [CustomButtonTypes.customLink]: LinkButton,
     [CustomButtonTypes.adhocTesting]: AdhocTestingButton,
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
+    [CustomButtonTypes.scenarioTest]: ScenarioTestButton,
 };
