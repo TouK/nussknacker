@@ -10,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, RuntimeMode}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, JobRuntimeData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessCompilerData
+import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, ProcessCompilerData}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -114,8 +114,9 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       )
     val jobData: JobData =
       JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
     val compilerData = ProcessCompilerData.prepare(
-      jobData,
+      jobRuntimeData,
       modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
       Seq.empty,
@@ -128,7 +129,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val parts  = compilerData.compile(process).value
     val source = parts.sources.head
     val compiledNode =
-      compilerData.subPartCompiler.compile(source.node, source.validationContext)(jobData).result.value
+      compilerData.subPartCompiler.compile(source.node, source.validationContext).result.value
 
     val inputContext                = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global

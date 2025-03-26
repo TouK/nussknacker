@@ -58,11 +58,11 @@ class DefaultStreamExecutionEnvPreparer(
       deploymentData: DeploymentData
   ): Unit = {
 
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(compilerData.jobData, deploymentData)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(compilerData.jobRuntimeData.jobData, deploymentData)
 
     val streamMetaData =
       MetaDataExtractor
-        .extractTypeSpecificDataOrDefault[StreamMetaData](compilerData.jobData.metaData, StreamMetaData())
+        .extractTypeSpecificDataOrDefault[StreamMetaData](compilerData.jobRuntimeData.metaData, StreamMetaData())
     env.setRestartStrategy(compilerData.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 

@@ -54,7 +54,7 @@ class ProcessCompiler(
   // ProcessCompiler does not compile fragment, you must resolve it with ScenarioResolver before!
   override def compile(
       process: CanonicalProcess
-  )(implicit jobData: JobData): CompilationResult[CompiledProcessParts] = {
+  )(implicit jobRuntimeData: JobRuntimeData): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
   }
 
@@ -62,7 +62,7 @@ class ProcessCompiler(
 
 trait ProcessValidator extends LazyLogging {
 
-  def validate(process: CanonicalProcess, isFragment: Boolean)(implicit jobData: JobData): CompilationResult[Unit] = {
+  def validate(process: CanonicalProcess, isFragment: Boolean)(implicit jobRuntimeData: JobRuntimeData): CompilationResult[Unit] = {
 
     try {
       CompilationResult.map4(
@@ -86,7 +86,7 @@ trait ProcessValidator extends LazyLogging {
 
   def withLabelsDictTyper: ProcessValidator
 
-  protected def compile(process: CanonicalProcess)(implicit jobData: JobData): CompilationResult[_]
+  protected def compile(process: CanonicalProcess)(implicit jobRuntimeData: JobRuntimeData): CompilationResult[_]
 
   protected def customProcessValidator: CustomProcessValidator
 
@@ -104,7 +104,7 @@ protected trait ProcessCompilerBase {
 
   protected def compile(
       process: CanonicalProcess
-  )(implicit jobData: JobData): CompilationResult[CompiledProcessParts] = {
+  )(implicit jobRuntimeData: JobRuntimeData): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
       val compilationResultWithArtificial =
         ProcessCanonizer.uncanonizeArtificial(process).map(ProcessSplitter.split).map(compile)
@@ -117,7 +117,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(
       splittedProcess: SplittedProcess
-  )(implicit jobData: JobData): CompilationResult[CompiledProcessParts] =
+  )(implicit jobRuntimeData: JobRuntimeData): CompilationResult[CompiledProcessParts] =
     CompilationResult.map2(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
       compileSources(splittedProcess.sources)
@@ -131,7 +131,7 @@ protected trait ProcessCompilerBase {
    */
   private def compileSources(
       sources: NonEmptyList[SourcePart]
-  )(implicit jobData: JobData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
+  )(implicit jobRuntimeData: JobRuntimeData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
     val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), new BranchEndContexts(Nil))
     // we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
     // know compilation results (stored in BranchEndContexts) of all branches that end in this join
@@ -159,7 +159,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)(
-      implicit jobData: JobData
+      implicit jobRuntimeData: JobRuntimeData
   ): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
     implicit val nodeId: NodeId = new NodeId(source.id)
 
@@ -174,7 +174,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileParts(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])(
-      implicit jobData: JobData
+      implicit jobRuntimeData: JobRuntimeData
   ): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
     import CompilationResult._
     parts
@@ -188,7 +188,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)(
-      implicit jobData: JobData
+      implicit jobRuntimeData: JobRuntimeData
   ): CompilationResult[compiledgraph.part.SubsequentPart] = {
     implicit val nodeId: NodeId = NodeId(part.id)
     part match {
@@ -204,7 +204,8 @@ protected trait ProcessCompilerBase {
   def compileSourcePart(
       part: SourcePart,
       sourceData: SourceNodeData
-  )(implicit nodeId: NodeId, jobData: JobData): CompilationResult[compiledgraph.part.SourcePart] = {
+  )(implicit nodeId: NodeId, jobRuntimeData: JobRuntimeData): CompilationResult[compiledgraph.part.SourcePart] = {
+    import jobRuntimeData._
     val NodeCompilationResult(typingInfo, parameters, initialCtx, compiledSource, _) =
       nodeCompiler.compileSource(sourceData)
 
@@ -231,7 +232,7 @@ protected trait ProcessCompilerBase {
   def compileSinkPart(
       node: EndingNode[Sink],
       ctx: ValidationContext
-  )(implicit jobData: JobData, nodeId: NodeId): CompilationResult[part.SinkPart] = {
+  )(implicit jobRuntimeData: JobRuntimeData, nodeId: NodeId): CompilationResult[part.SinkPart] = {
     val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
     CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
@@ -243,7 +244,7 @@ protected trait ProcessCompilerBase {
       node: splittednode.EndingNode[CustomNode],
       data: CustomNodeData,
       ctx: ValidationContext
-  )(implicit jobData: JobData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
+  )(implicit jobRuntimeData: JobRuntimeData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
       nodeCompiler.compileCustomNodeObject(data, Left(ctx), ending = true)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
@@ -270,7 +271,9 @@ protected trait ProcessCompilerBase {
       node: splittednode.OneOutputNode[CustomNodeData],
       data: CustomNodeData,
       ctx: Either[ValidationContext, BranchEndContexts]
-  )(implicit jobData: JobData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
+  )(implicit jobRuntimeData: JobRuntimeData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
+    import jobRuntimeData._
+
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
       nodeCompiler.compileCustomNodeObject(data, ctx.map(_.contextsForJoin(data.id)), ending = false)
 

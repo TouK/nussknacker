@@ -128,7 +128,7 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData                     = compilerData.jobData
+      val jobData                     = compilerData.jobRuntimeData
       val componentUseContextProvider = compilerData.runtimeMode
 
       FlinkCustomNodeContext(
@@ -297,7 +297,7 @@ class FlinkProcessRegistrar(
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
       }
 
-      withSinkAdded.name(operatorName(compilerData.jobData, part.node, "sink"))
+      withSinkAdded.name(operatorName(compilerData.jobRuntimeData, part.node, "sink"))
       Map()
     }
 
@@ -338,7 +338,7 @@ class FlinkProcessRegistrar(
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
         case _                       => Map.empty
       })
-      val metaData                      = compilerData.jobData.metaData
+      val metaData                      = compilerData.jobRuntimeData.metaData
       val asyncExecutionContextPreparer = compilerData.asyncExecutionContextPreparer
       val streamMetaData =
         MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())

@@ -4,7 +4,7 @@ import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode}
+import pl.touk.nussknacker.engine.{Interpreter, JobRuntimeData, RuntimeMode}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
@@ -38,7 +38,7 @@ class FlinkProcessCompilerData(
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode))
+      _.open(FlinkEngineRuntimeContextImpl(jobRuntimeData.jobData, runtimeContext, runtimeMode))
     }
   }
 
@@ -47,7 +47,7 @@ class FlinkProcessCompilerData(
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobData).result)
+    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobRuntimeData).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -55,14 +55,14 @@ class FlinkProcessCompilerData(
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  def jobData: JobData = compilerData.jobData
+  def jobRuntimeData: JobRuntimeData = compilerData.jobRuntimeData
 
   def interpreter: Interpreter = compilerData.interpreter
 
   def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
     compilerData.expressionCompiler,
     compilerData.expressionEvaluator,
-    jobData
+    jobRuntimeData.jobData
   )
 
   def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
@@ -74,7 +74,7 @@ class FlinkProcessCompilerData(
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
     exceptionHandler.open(
-      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode)
+      FlinkEngineRuntimeContextImpl(jobRuntimeData, runtimeContext, runtimeMode)
     )
     exceptionHandler
   }
