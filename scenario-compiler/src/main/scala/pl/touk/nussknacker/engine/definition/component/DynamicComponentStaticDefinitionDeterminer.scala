@@ -1,23 +1,17 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DynamicComponent,
-  JoinDynamicComponent,
-  SingleInputDynamicComponent,
-  WithStaticParameters
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{DynamicComponent, JoinDynamicComponent, SingleInputDynamicComponent, WithStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.{JobRuntimeData, ModelData}
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
 // It is necessary to provide them, because:
@@ -25,13 +19,12 @@ import pl.touk.nussknacker.engine.definition.component.parameter.StandardParamet
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
 class DynamicComponentStaticDefinitionDeterminer(
-    nodeValidator: DynamicNodeValidator,
-    createMetaData: ProcessName => MetaData
+    nodeValidator: DynamicNodeValidator
 ) extends LazyLogging {
 
   private def determineStaticDefinition(
       dynamic: DynamicComponentDefinitionWithImplementation
-  ): ComponentStaticDefinition = {
+  )(implicit jobRuntimeData: JobRuntimeData): ComponentStaticDefinition = {
     val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
       parameters,
@@ -39,14 +32,14 @@ class DynamicComponentStaticDefinitionDeterminer(
     )
   }
 
-  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
-    def inferParameters(transformer: DynamicComponent[_])(inputContext: transformer.InputContext) = {
-      // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
-      //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
-      val scenarioName              = ProcessName("fakeScenarioName")
-      val metaData                  = createMetaData(scenarioName)
-      implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
-      implicit val nodeId: NodeId   = NodeId("fakeNodeId")
+  private def determineInitialParameters(
+      dynamic: DynamicComponentDefinitionWithImplementation
+  )(implicit jobRuntimeData: JobRuntimeData): List[Parameter] = {
+    def inferParameters(
+        transformer: DynamicComponent[_]
+    )(inputContext: transformer.InputContext) = {
+      // We assume that this information is not important for determining initial parameters of dynamic nodes, so we pass fake values
+      implicit val nodeId: NodeId = NodeId("fakeNodeId")
       nodeValidator
         .validateNode(
           transformer,
@@ -83,18 +76,18 @@ object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
-      createMetaData: ProcessName => MetaData,
+      jobRuntimeData: JobRuntimeData,
       extractComponentsDefinitions: Components => List[ComponentDefinitionWithImplementation]
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
-      new DynamicComponentStaticDefinitionDeterminer(nodeValidator, createMetaData)
+      new DynamicComponentStaticDefinitionDeterminer(nodeValidator)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
       extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
-          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
+          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)(jobRuntimeData)
       }.toMap
     }
   }

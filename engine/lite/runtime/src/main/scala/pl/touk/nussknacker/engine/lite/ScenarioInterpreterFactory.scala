@@ -4,19 +4,14 @@ import cats.{Monad, Monoid}
 import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
-import pl.touk.nussknacker.engine.{compiledgraph, InterpretationResult, ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseContext,
-  ProcessObjectDependencies,
-  ServiceExecutionContext,
-  Source
-}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ServiceExecutionContext, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -84,8 +79,9 @@ object ScenarioInterpreterFactory {
       )
       val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
+      val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
       val compilerData = ProcessCompilerData.prepare(
-        jobData,
+        jobRuntimeData,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
@@ -108,7 +104,7 @@ object ScenarioInterpreterFactory {
           compilerData,
           runtimeMode,
           capabilityTransformer,
-          jobData
+          jobRuntimeData
         ).compile
           .map(_.run)
           .map { case (sinkTypes, invoker) =>
@@ -169,7 +165,7 @@ object ScenarioInterpreterFactory {
       processCompilerData: ProcessCompilerData,
       runtimeMode: RuntimeMode,
       capabilityTransformer: CapabilityTransformer[F],
-      jobData: JobData
+      jobRuntimeData: JobRuntimeData
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
     // we collect errors and also typing results of sinks
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
@@ -253,7 +249,7 @@ object ScenarioInterpreterFactory {
         node: SplittedNode[_],
         validationContext: ValidationContext,
     ): ValidatedNel[ProcessCompilationError, Node] =
-      processCompilerData.subPartCompiler.compile(node, validationContext)(jobData).result
+      processCompilerData.subPartCompiler.compile(node, validationContext)(jobRuntimeData).result
 
     private def customComponentContext(nodeId: String) =
       CustomComponentContext[F](nodeId, capabilityTransformer)
@@ -329,7 +325,7 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       processCompilerData.interpreter
-        .interpret[F](node, jobData, ctx, ServiceExecutionContext(ec))
+        .interpret[F](node, jobRuntimeData.jobData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value

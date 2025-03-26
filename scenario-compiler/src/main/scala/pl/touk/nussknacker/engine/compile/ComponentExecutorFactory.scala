@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.IorNel
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, Params, Service}
+import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.api.{NodeId, Params, Service}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.transformation.{OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
@@ -23,7 +25,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy
   )(
       implicit nodeId: NodeId,
-      jobData: JobData
+      jobRuntimeData: JobRuntimeData
   ): IorNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
       doCreateComponentExecutor[ComponentExecutor](
@@ -34,7 +36,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         componentUseContext,
         nonServicesLazyParamStrategy
       )
-    }(nodeId, jobData.metaData).toIor
+    }(nodeId, jobRuntimeData.metaData).toIor
   }
 
   private def doCreateComponentExecutor[ComponentExecutor](
@@ -45,9 +47,10 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       componentUseContext: ComponentUseContext,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy
   )(
-      implicit jobData: JobData,
+      implicit jobRuntimeData: JobRuntimeData,
       nodeId: NodeId
   ): ComponentExecutor = {
+    import jobRuntimeData._
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
       componentDefinition.component match {
         // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
@@ -59,8 +62,20 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     val paramsMap = Params(
       params.map { case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1 }.toMap
     )
+    // TODO: refactor implementationInvoker's to not use AnyRefs
+    val nodeDependenciesRaw = jobRuntimeData.nodeDependencies.map {
+      case TypedNodeDependencyValue(value) => value.asInstanceOf[AnyRef]
+      case _: OutputVariableNameValue =>
+        throw new IllegalStateException(
+          "Output variable name node dependency was used in implementation invoker context but shouldn't be"
+        )
+    }
     componentDefinition.implementationInvoker
-      .invokeMethod(paramsMap, outputVariableNameOpt, Seq(jobData.metaData, nodeId, componentUseContext) ++ additional)
+      .invokeMethod(
+        paramsMap,
+        outputVariableNameOpt,
+        nodeDependenciesRaw ++ Seq(nodeId, componentUseContext) ++ additional
+      )
       .asInstanceOf[ComponentExecutor]
   }
 

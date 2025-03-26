@@ -113,14 +113,17 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     AccountService.clear()
     NameDictService.clear()
 
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    val jobData        = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
     val processCompilerData =
-      prepareCompilerData(jobData, additionalComponents, listeners)
+      prepareCompilerData(jobRuntimeData, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
     val parts       = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
+      failOnErrors(
+        processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobRuntimeData).result
+      )
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
@@ -173,7 +176,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   }
 
   def prepareCompilerData(
-      jobData: JobData,
+      jobRuntimeData: JobRuntimeData,
       additionalComponents: List[ComponentDefinition],
       listeners: Seq[ProcessListener]
   ): ProcessCompilerData = {
@@ -196,7 +199,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
-      jobData,
+      jobRuntimeData,
       definitionsWithTypes,
       new SimpleDictRegistry(
         Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
