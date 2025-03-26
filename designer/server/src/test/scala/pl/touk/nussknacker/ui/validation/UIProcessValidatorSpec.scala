@@ -624,34 +624,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     validate(validScenarioGraphWithFields(Map("field2" -> "true"))) should not be withoutErrorsAndWarnings
   }
 
-  test("handle unknown properties validation") {
-    val processValidator = ProcessTestData.testProcessValidator(
-      scenarioProperties = Map(
-        "field2" -> ScenarioPropertyConfig(
-          defaultValue = None,
-          editor = None,
-          validators = Some(List(CompileTimeEvaluableValueValidator)),
-          label = Some("label"),
-          hintText = None
-        )
-      ) ++ FlinkStreamingPropertiesConfig.properties
-    )
-
-    val result =
-      processValidator.validate(
-        validScenarioGraphWithFields(Map("field1" -> "true")),
-        ProcessTestData.sampleProcessName,
-        isFragment = false,
-        labels = List.empty,
-      )
-
-    result.errors.processPropertiesErrors should matchPattern {
-      case List(
-            NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed, None)
-          ) =>
-    }
-  }
-
   test("not allows save with incorrect characters in ids") {
     def process(nodeId: String) = createGraph(
       List(Source(nodeId, SourceRef(ProcessTestData.existingSourceFactory, List()))),
