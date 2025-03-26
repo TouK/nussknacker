@@ -1,16 +1,20 @@
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
-import React, { forwardRef, ReactNode, useMemo } from "react";
-import { VariableTypes } from "../../../../types";
-import { UnknownFunction } from "../../../../types/common";
+import type { ReactNode } from "react";
+import React, { forwardRef, useMemo } from "react";
+
+import type { VariableTypes } from "../../../../types";
+import type { UnknownFunction } from "../../../../types/common";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
-import { editors, OnValueChange } from "./expression/Editor";
+import type { OnValueChange } from "./expression/Editor";
+import { editors } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
-import { EditorType, ExpressionLang, ExpressionObj } from "./expression/types";
+import type { ExpressionObj } from "./expression/types";
+import { EditorType, ExpressionLang } from "./expression/types";
 import { FieldSwitch } from "./field/FieldSwitch";
-import { ParamType } from "./types";
-import { FieldError, PossibleValue } from "./Validators";
+import type { ParamType } from "./types";
+import type { FieldError, PossibleValue } from "./Validators";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -71,8 +75,6 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
 
 EditableEditor.displayName = "EditableEditor";
 
-const LABEL_MARGIN_WHEN_FIELD_SWITCH_VISIBLE = "27px";
-
 function EditableEditorRow({
     rowClassName,
     renderFieldLabel,
@@ -88,9 +90,6 @@ function EditableEditorRow({
             sx={{
                 width: "100%",
                 margin: rowClassName && 0,
-                "& .MuiFormLabel-root": {
-                    marginTop: !props.readOnly && props.showSwitch ? LABEL_MARGIN_WHEN_FIELD_SWITCH_VISIBLE : undefined,
-                },
             }}
         >
             <>
