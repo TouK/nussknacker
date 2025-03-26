@@ -1,30 +1,35 @@
-import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
-import { ToolbarsSide } from "../../reducers/toolbars";
+import { Box, styled } from "@mui/material";
+import type { PropsWithChildren} from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
+import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
-import { ToolbarsContainer } from "./ToolbarsContainer";
-import { SidePanel } from "../sidePanels/SidePanel";
-import { Toolbar } from "./toolbar";
+import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
+import { ToolbarsSide } from "../../reducers/toolbars";
+import { SidePanel } from "../sidePanels/SidePanel";
+import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
+import { SidePanelToggleButton } from "../SidePanelToggleButton";
 import { useSurvey } from "../toolbars/useSurvey";
 import { DragAndDropContainer } from "./DragAndDropContainer";
-import { Box, styled } from "@mui/material";
 import { Overlay } from "./Overlay";
+import type { Toolbar } from "./toolbar";
+import { ToolbarsContainer } from "./ToolbarsContainer";
 import { Grid9 } from "./Grid9";
-import { PanelSide } from "../../actions/nk";
-import { SidePanelToggleButton } from "../SidePanelToggleButton";
-import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useSelector(getCapabilities);
     const [showSurvey] = useSurvey();
+    const [userSettings] = useUserSettings();
 
-    const hiddenToolbars = useMemo(
+    const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
+            "user-settings-panel": !userSettings["debug.userSettingsVisible"],
         }),
-        [editFrontend, showSurvey],
+        [editFrontend, showSurvey, userSettings],
     );
 
     return useMemo(

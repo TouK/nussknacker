@@ -1,11 +1,14 @@
 import React from "react";
-import { TOOLBAR_BUTTONS_MAP, ToolbarButton } from "./buttons";
-import { ToolbarConfig } from "./types";
+
+import type { ToolbarButton } from "./buttons";
+import { TOOLBAR_BUTTONS_MAP } from "./buttons";
 import { TOOLBAR_COMPONENTS_MAP } from "./TOOLBAR_COMPONENTS_MAP";
+import type { ToolbarConfig } from "./types";
 
 function buttonSelector(btn: ToolbarButton, i: number) {
     // this type have to be specified to avoid type errors
     const Component: React.ComponentType<ToolbarButton> = TOOLBAR_BUTTONS_MAP[btn.type];
+    if (!Component) return null;
     return <Component key={i} {...btn} />;
 }
 

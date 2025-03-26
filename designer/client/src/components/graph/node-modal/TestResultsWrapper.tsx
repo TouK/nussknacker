@@ -1,13 +1,18 @@
-import TestResultsSelect from "./tests/TestResultsSelect";
-import { NodeId } from "../../../types";
-import React, { createContext, PropsWithChildren, useContext, useMemo, useState } from "react";
+import type { PropsWithChildren} from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+
+import type { StateForSelectTestResults } from "../../../common/TestResultUtils";
+import TestResultUtils from "../../../common/TestResultUtils";
+import { useUserSettings } from "../../../common/userSettings";
+import { getTestResults } from "../../../reducers/selectors/graph";
+import type { NodeId } from "../../../types";
+import { useInputOutputContext } from "./io/InputOutputContext";
 import TestErrors from "./tests/TestErrors";
 import TestResultsComponent from "./tests/TestResults";
-import TestResultUtils, { StateForSelectTestResults } from "../../../common/TestResultUtils";
-import { useSelector } from "react-redux";
-import { getTestResults } from "../../../reducers/selectors/graph";
+import TestResultsSelect from "./tests/TestResultsSelect";
 
-const Context = createContext<StateForSelectTestResults>(null);
+export const Context = createContext<StateForSelectTestResults>(null);
 
 export function useTestResults(): StateForSelectTestResults {
     const context = useContext(Context);
@@ -32,18 +37,34 @@ export function TestResultsWrapper({
         }
         return null;
     }, [nodeId, results, showTestResults]);
+
     const [testResultsState, setTestResultsState] = useState<StateForSelectTestResults>(
         TestResultUtils.stateForSelectTestResults(nodeResults),
     );
 
+    const io = useInputOutputContext();
+    useEffect(() => {
+        setTestResultsState(
+            TestResultUtils.stateForSelectTestResults(nodeResults, io?.state?.inputDataSetId ? io.state.inputDataSetId : null),
+        );
+    }, [nodeResults, io?.state?.inputDataSetId]);
+
+    const [settings] = useUserSettings();
     return (
-        <>
-            <TestResultsSelect results={nodeResults} value={testResultsState.testResultsIdToShow} onChange={setTestResultsState} />
-            <Context.Provider value={testResultsState}>
-                <TestErrors />
-                {children}
-                <TestResultsComponent nodeId={nodeId} />
-            </Context.Provider>
-        </>
+        <Context.Provider value={testResultsState}>
+            {settings["node.showInputsAndOutputs"] ? (
+                <>
+                    <TestErrors />
+                    {children}
+                </>
+            ) : (
+                <>
+                    <TestResultsSelect results={nodeResults} value={testResultsState.testResultsIdToShow} onChange={setTestResultsState} />
+                    <TestErrors />
+                    {children}
+                    <TestResultsComponent nodeId={nodeId} />
+                </>
+            )}
+        </Context.Provider>
     );
 }

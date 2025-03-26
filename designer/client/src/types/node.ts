@@ -1,6 +1,6 @@
-import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
-import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
-import { StickyNoteType } from "./stickyNote";
+import type { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
+import type { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
+import type { StickyNoteType } from "./stickyNote";
 
 type Type = "FragmentInput" | typeof StickyNoteType | string;
 
@@ -18,8 +18,9 @@ export type NodeType<F extends Field = Field> = {
     type: Type;
     isDisabled?: boolean;
     additionalFields?: {
-        description: string;
+        description?: string;
         layoutData?: LayoutData;
+        creatorType?: string;
     };
     parameters?: Parameter[];
     branchParameters?: BranchParams[];

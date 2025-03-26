@@ -1,14 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
+import { find, head } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import ProcessUtils from "../../../../common/ProcessUtils";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { MapVariableProps } from "../MapVariable";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
+import type { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import { FieldsSelect } from "./FieldsSelect";
-import { find, head } from "lodash";
+import type { FragmentInputParameter } from "./item";
 import { getDefaultFields } from "./item/utils";
-import { FragmentInputParameter } from "./item";
 
 interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly"> {
     isEditMode?: boolean;

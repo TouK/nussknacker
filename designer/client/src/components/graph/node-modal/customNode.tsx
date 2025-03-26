@@ -1,10 +1,13 @@
-import React, { PropsWithChildren, useMemo } from "react";
+import type { PropsWithChildren} from "react";
+import React, { useMemo } from "react";
+
 import ProcessUtils from "../../../common/ProcessUtils";
-import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
+import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
 import { AggregateParametersList } from "./aggregateParametersList";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
+import { isAggregate } from "./isAggregate";
 import { NodeField } from "./NodeField";
 import { ParametersList } from "./parametersList";
 
@@ -40,9 +43,8 @@ export function CustomNode({
     );
 
     const ParametersComponent = useMemo(() => {
-        const isAggregate = ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
-        return isAggregate ? AggregateParametersList : ParametersList;
-    }, [node.nodeType]);
+        return isAggregate(node) ? AggregateParametersList : ParametersList;
+    }, [node]);
 
     return (
         <>

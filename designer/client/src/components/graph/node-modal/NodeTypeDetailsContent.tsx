@@ -1,15 +1,18 @@
 import { cloneDeep, isEqual, set } from "lodash";
-import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
+import type { SetStateAction} from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
+import { getCreatorType } from "../../../reducers/selectors/getCreator";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import type { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { ParamFieldLabel } from "./FieldLabel";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
-import { FragmentInputParameter } from "./fragment-input-definition/item";
+import type { FragmentInputParameter } from "./fragment-input-definition/item";
 import { FragmentInput } from "./fragmentInput";
 import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { JoinNode } from "./joinNode";
@@ -310,8 +313,8 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     showValidation={showValidation}
                 />
             );
-        case "VariableBuilder":
-            return (
+        case "VariableBuilder": {
+            return getCreatorType(node) ? null : (
                 <VariableBuilder
                     addElement={addElement}
                     errors={errors}
@@ -324,6 +327,7 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     variableTypes={variableTypes}
                 />
             );
+        }
         case "Variable":
             return (
                 <Variable

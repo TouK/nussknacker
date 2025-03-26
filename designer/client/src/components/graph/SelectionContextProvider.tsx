@@ -1,8 +1,9 @@
 import { min } from "lodash";
+import type {
+    PropsWithChildren,
+    ReactElement} from "react";
 import React, {
     createContext,
-    PropsWithChildren,
-    ReactElement,
     useCallback,
     useContext,
     useEffect,
@@ -14,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { useDebouncedCallback } from "use-debounce";
+
 import {
     copySelection,
     cutSelection,
@@ -32,7 +34,7 @@ import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
@@ -56,6 +58,7 @@ function useClipboardParse() {
     return useCallback(
         (text) => {
             const selection = tryParseOrNull(text);
+            // TODO: check what happens with wrong nodes.
             const isValid = selection?.edges && selection?.nodes?.every((node) => NodeUtils.isAvailable(node, processDefinitionData));
             return isValid ? selection : null;
         },

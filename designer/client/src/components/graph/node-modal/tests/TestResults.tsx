@@ -1,13 +1,14 @@
+import { Download } from "@mui/icons-material";
+import InfoIcon from "@mui/icons-material/Info";
+import { Box, FormControl, FormLabel, Link } from "@mui/material";
 import { isEmpty, isObject, join } from "lodash";
 import React from "react";
-import InfoIcon from "@mui/icons-material/Info";
+import { useTranslation } from "react-i18next";
+
+import type { NodeId } from "../../../../types";
 import NodeTip from "../NodeTip";
 import { useTestResults } from "../TestResultsWrapper";
-import { NodeId } from "../../../../types";
-import { Box, FormControl, FormLabel, Link } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import TestResultsVariables from "./TestResultsVariables";
-import { Download } from "@mui/icons-material";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const { t } = useTranslation();

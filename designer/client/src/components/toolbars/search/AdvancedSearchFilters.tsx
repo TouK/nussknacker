@@ -1,16 +1,17 @@
-import React, { useEffect, useMemo } from "react";
 import { Box, Button, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
-import { SearchLabel } from "../../sidePanels/SearchLabel";
-import { resolveSearchQuery, searchQueryToString, selectorByName } from "./utils";
-import { SearchQuery } from "./SearchResults";
-import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
-import { useSelector } from "react-redux";
-import { getScenario } from "../../../reducers/selectors/graph";
-import NodeUtils from "../../graph/NodeUtils";
 import { uniq } from "lodash";
-import { getComponentGroups } from "../../../reducers/selectors/settings";
+import React, { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+
+import { getScenario } from "../../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import NodeUtils from "../../graph/NodeUtils";
+import { SearchLabel } from "../../sidePanels/SearchLabel";
+import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
+import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
+import type { SearchQuery } from "./SearchResults";
+import { resolveSearchQuery, searchQueryToString, selectorByName } from "./utils";
 
 export function AdvancedSearchFilters({
     filterFields,
@@ -26,7 +27,7 @@ export function AdvancedSearchFilters({
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
     const { t } = useTranslation();
-    const componentsGroups = useSelector(getComponentGroups);
+    const { componentGroups } = useSelector(getProcessDefinitionData);
     const { scenarioGraph } = useSelector(getScenario);
     const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
 
@@ -45,9 +46,9 @@ export function AdvancedSearchFilters({
 
     const componentLabels = useMemo(() => {
         return new Set(
-            componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
+            componentGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
         );
-    }, [componentsGroups]);
+    }, [componentGroups]);
 
     const nodeTypes = useMemo(() => {
         const availableTypes = allNodes

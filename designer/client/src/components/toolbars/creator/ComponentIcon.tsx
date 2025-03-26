@@ -1,13 +1,14 @@
 import { memoize } from "lodash";
 import React, { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { useSelector } from "react-redux";
+
 import ProcessUtils from "../../../common/ProcessUtils";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { NodeType, ProcessDefinitionData } from "../../../types";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import type { NodeType, ProcessDefinitionData } from "../../../types";
+import { StickyNoteType } from "../../../types/stickyNote";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";
-import { createRoot } from "react-dom/client";
-import { StickyNoteType } from "../../../types/stickyNote";
 
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {

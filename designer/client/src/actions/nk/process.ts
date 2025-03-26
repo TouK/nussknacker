@@ -1,14 +1,16 @@
 import { omit } from "lodash/fp";
-import { ActionCreators as UndoActionCreators } from "redux-undo";
-import { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
-import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { ProcessDefinitionData, ScenarioGraph } from "../../types";
-import { ThunkAction } from "../reduxTypes";
-import HttpService from "./../../http/HttpService";
-import { layoutChanged, Position } from "./ui/layout";
 import { flushSync } from "react-dom";
-import { Dimensions, StickyNote } from "../../common/StickyNote";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
+
+import type { Dimensions, StickyNote } from "../../common/StickyNote";
+import type { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
+import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
+import HttpService from "./../../http/HttpService";
+import type { Position } from "./ui/layout";
+import { layoutChanged } from "./ui/layout";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }

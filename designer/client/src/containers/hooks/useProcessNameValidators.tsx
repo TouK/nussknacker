@@ -1,11 +1,13 @@
 import { useMemo } from "react";
+
 import * as DialogMessages from "../../common/DialogMessages";
-import { HandledErrorType, mandatoryValueValidator, Validator } from "../../components/graph/node-modal/editors/Validators";
+import type { Validator } from "../../components/graph/node-modal/editors/Validators";
+import { HandledErrorType, mandatoryValueValidator } from "../../components/graph/node-modal/editors/Validators";
 import { useClashedNames } from "./useClashedNames";
 
 //TODO: move this validation to backend to simplify FE code
 export function useProcessNameValidators(): Validator[] {
-    const clashedNames = useClashedNames(true);
+    const clashedNames = useClashedNames();
 
     const alreadyExistsValidator = useMemo(
         (): Validator => ({

@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
 import { Typography, useTheme } from "@mui/material";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
+
 import { useUserSettings } from "../../common/userSettings";
-import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
+import type { UserSettings } from "../../reducers/userSettings";
+import type { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { UserSettings } from "../../reducers/userSettings";
 
 export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
@@ -17,9 +18,11 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
         theme.setMode(lightMode ? "light" : "dark");
     }, [theme, lightMode]);
 
-    const value = Object.entries(settings).map(([label, value]) => ({ label, value }));
+    const value = Object.entries(settings)
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.label.localeCompare(a.label));
     return (
-        <ToolbarWrapper {...props} title={t("panels.userSettings.title", "🧪 User settings")}>
+        <ToolbarWrapper {...props} title={t("panels.userSettings.title", "User settings")} color={"#254706"}>
             <Creatable
                 isMulti
                 value={value}
@@ -30,21 +33,20 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
                     multiValue: (base) => ({
                         ...base,
                         width: "100%",
-                        backgroundColor: theme.palette.success.dark,
+                        backgroundColor: theme.palette.background.default,
+                        color: theme.palette.getContrastText(theme.palette.background.default),
                         cursor: "pointer",
-                        color: theme.palette.getContrastText(theme.palette.success.dark),
                     }),
                     multiValueLabel: (base) => ({
                         ...base,
                         width: "100%",
-                        fontWeight: "bold",
-                        color: theme.palette.getContrastText(theme.palette.success.dark),
+                        color: "inherit",
                     }),
                     control: (base) => ({
                         ...base,
                         padding: 0,
                         border: "none",
-                        backgroundColor: theme.palette.background.paper,
+                        backgroundColor: "transparent",
                         outline: 0,
                         borderRadius: 0,
                         boxShadow: "none",

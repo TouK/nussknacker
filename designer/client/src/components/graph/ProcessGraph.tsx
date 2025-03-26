@@ -1,31 +1,40 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { g } from "jointjs";
 import { mapValues } from "lodash";
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenario, getLayout, getProcessCounts, getStickyNotes } from "../../reducers/selectors/graph";
-import { setLinksHovered } from "./utils/dragHelpers";
-import { Graph } from "./Graph";
-import GraphWrapped from "./GraphWrapped";
-import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
-import NodeUtils from "./NodeUtils";
-import { DndTypes } from "../toolbars/creator/Tool";
+import { bindActionCreators } from "redux";
+
 import {
+    editNode,
+    fetchProcessDefinition,
     injectNode,
     layoutChanged,
     nodeAdded,
     nodesConnected,
     nodesDisconnected,
+    replaceNode,
     resetSelection,
     stickyNoteAdded,
-    stickyNoteUpdated,
     stickyNoteDeleted,
+    stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
-import { NodeType } from "../../types";
-import { Capabilities } from "../../reducers/selectors/other";
-import { bindActionCreators } from "redux";
-import { StickyNoteType } from "../../types/stickyNote";
+import type { ThunkAction } from "../../actions/reduxTypes";
+import HttpService from "../../http/HttpService";
+import { createUniqueName } from "../../reducers/graph/utils";
+import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
+import { getLayout, getProcessCounts, getScenario, getStickyNotes } from "../../reducers/selectors/graph";
+import type { Capabilities } from "../../reducers/selectors/other";
+import type { NodeType } from "../../types";
+import type { Scenario } from "../Process/types";
+import { DndTypes } from "../toolbars/creator/Tool";
+import { jsonToFileInFormData } from "./createFragment";
+import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
+import type { Graph } from "./Graph";
+import GraphWrapped from "./GraphWrapped";
+import NodeUtils from "./NodeUtils";
+import { setLinksHovered } from "./utils/dragHelpers";
 
 export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(function ProcessGraph(
     { capabilities },
@@ -46,12 +55,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             const relOffset = graph.current.processGraphPaper.clientToLocalPoint(clientOffset);
             // to make node horizontally aligned
             const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-            if (item?.type === StickyNoteType) {
-                graph.current.addStickyNote(scenario.name, scenario.processVersionId, mapValues(nodeInputRelOffset, Math.round));
-            } else {
-                graph.current.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round));
-                setLinksHovered(graph.current.graph);
-            }
+            graph.current.addNode(item, mapValues(nodeInputRelOffset, Math.round));
+            setLinksHovered(graph.current.graph);
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
@@ -64,7 +69,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     .inflate(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-                setLinksHovered(graph.current.graph, rect);
+                setLinksHovered(graph.current.graph, rect, null, item);
             } else {
                 setLinksHovered(graph.current.graph);
             }
@@ -83,6 +88,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     nodesDisconnected,
                     layoutChanged,
                     injectNode,
+                    editNode,
+                    replaceNode,
                     nodeAdded,
                     stickyNoteAdded,
                     stickyNoteUpdated,
@@ -94,6 +101,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             ),
         [dispatch],
     );
+
+    const createFragment = useCallback((callback) => dispatch(createFragmentAction(scenario, callback)), [dispatch, scenario]);
 
     return (
         <GraphWrapped
@@ -108,6 +117,82 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             processCounts={processCounts}
             layout={layout}
             {...actions}
+            createFragment={createFragment}
         />
     );
 });
+
+const FRAGMENT_TEMPLATE = {
+    metaData: {
+        id: "test-frament",
+        additionalFields: {
+            description: null,
+            properties: {
+                docsUrl: "",
+                componentGroup: "fragments",
+                icon: "/assets/components/FragmentInput.svg",
+            },
+            metaDataType: "FragmentSpecificData",
+            showDescription: false,
+        },
+    },
+    nodes: [
+        {
+            id: "input",
+            parameters: [],
+            additionalFields: {
+                description: null,
+                layoutData: {
+                    x: 0,
+                    y: 0,
+                },
+            },
+            type: "FragmentInputDefinition",
+        },
+        {
+            id: "output",
+            outputName: "output",
+            fields: [],
+            additionalFields: {
+                description: null,
+                layoutData: {
+                    x: 0,
+                    y: 180,
+                },
+            },
+            type: "FragmentOutputDefinition",
+        },
+    ],
+    additionalBranches: [],
+};
+
+function createFragmentAction(scenario: Scenario, callback: (node: NodeType | null) => void): ThunkAction {
+    return async (dispatch, getState) => {
+        await dispatch(fetchScenarios());
+        const scenarios = getScenariosNames(getState());
+        const uniqueName = createUniqueName("empty fragment", scenarios);
+
+        const { processingType, engineSetupName, processCategory, processingMode } = scenario;
+        await HttpService.createProcess({
+            name: uniqueName,
+            isFragment: true,
+            category: processCategory,
+            processingMode: processingMode,
+            engineSetupName: engineSetupName,
+        });
+        const { data } = await HttpService.importProcess(uniqueName, jsonToFileInFormData(FRAGMENT_TEMPLATE));
+        await HttpService.saveProcess(uniqueName, data.scenarioGraph, "import placeholder data", []);
+        const { componentGroups } = await dispatch(fetchProcessDefinition(processingType, false));
+        const component = componentGroups
+            .find((g) => g.name.toLowerCase() === "fragments")
+            ?.components.find((c) => c.componentId === `fragment-${uniqueName}`);
+        callback(
+            component
+                ? {
+                      ...component.node,
+                      id: component.label,
+                  }
+                : null,
+        );
+    };
+}

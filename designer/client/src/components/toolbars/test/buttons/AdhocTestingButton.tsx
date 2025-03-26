@@ -1,15 +1,17 @@
-import React, { useCallback } from "react";
+import loadable from "@loadable/component";
+import React, { useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getTestParameters } from "../../../../reducers/selectors/graph";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+
+import { getTestParameters, getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
-import { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
-import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
+import { NodeContext } from "../../../graph/node-modal/node/NodeDetails";
+import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
-import { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import UrlIcon from "../../../UrlIcon";
-import loadable from "@loadable/component";
+import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import { ButtonProgress } from "./ButtonProgress";
 
 export type AdhocTestingButtonProps = {
     name?: string;
@@ -27,6 +29,7 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
     const isAvailable = useAdhocTestingAvailability(disabled);
 
     const testParameters = useSelector(getTestParameters);
+    const isLoading = useSelector(getTestResultsLoading);
     const sourcesFound = testParameters.length;
 
     const multipleSourcesTest = useCallback(() => {
@@ -46,15 +49,27 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
         });
     }, [action, docs, markdownContent, open, t]);
 
+    const nodeContext = useContext(NodeContext);
+
     return (
-        <ToolbarButton
-            name={name || t("panels.actions.adhoc-testing.button.name", "ad hoc")}
-            title={title || t("panels.actions.adhoc-testing.button.title", "run test on ad hoc data")}
-            icon={<AdhocTestingIcon />}
-            disabled={!isAvailable}
-            onClick={sourcesFound > 1 ? multipleSourcesTest : oneSourceTest}
-            type={type}
-        />
+        <ButtonProgress enabled={isLoading}>
+            <ToolbarButton
+                name={name || t("panels.actions.adhoc-testing.button.name", "ad hoc")}
+                title={title || t("panels.actions.adhoc-testing.button.title", "run test on ad hoc data")}
+                icon={<AdhocTestingIcon />}
+                disabled={!isAvailable || isLoading}
+                onClick={(e) => {
+                    if (sourcesFound > 1) {
+                        return multipleSourcesTest();
+                    }
+                    if (action.previousTestData && Boolean(nodeContext) != e.shiftKey) {
+                        return action.onConfirmAction(action.previousTestData);
+                    }
+                    return oneSourceTest();
+                }}
+                type={type}
+            />
+        </ButtonProgress>
     );
 }
 

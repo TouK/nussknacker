@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useDebounce } from "use-debounce";
-import { NodeOrPropertiesType } from "../../../types";
 import { useSelector } from "react-redux";
-import { getProcessName } from "./NodeDetailsContent/selectors";
+import { useDebounce } from "use-debounce";
+
+import type { NodeOrPropertiesType } from "../../../types";
 import { MarkdownStyled } from "./MarkdownStyled";
+import { getProcessName } from "./NodeDetailsContent/selectors";
 
 interface Props {
     node: NodeOrPropertiesType;
@@ -37,7 +38,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
             const controller = new AbortController();
             handleGetAdditionalInfo(processName, debouncedNode, controller).then((data) => {
                 // signal should cancel request, but for some reason it doesn't in dev
-                if (!controller.signal.aborted && data) {
+                if (!controller.signal.aborted) {
                     setAdditionalInfo(data);
                 }
             });

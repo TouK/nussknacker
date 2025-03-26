@@ -1,14 +1,15 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
+
 import ProcessUtils from "../../common/ProcessUtils";
+import type { StickyNote } from "../../common/StickyNote";
+import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
-import { ScenarioGraph } from "../../types";
-import { ProcessCounts } from "../graph";
-import { RootState } from "../index";
+import type { ScenarioGraph } from "../../types";
+import type { ProcessCounts, TestData } from "../graph";
+import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
-import { TestFormParameters } from "../../common/TestResultUtils";
-import { StickyNote } from "../../common/StickyNote";
 import { getStickyNotesSettings } from "./settings";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
@@ -17,6 +18,8 @@ export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
     memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
 });
+
+export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
@@ -72,6 +75,8 @@ export const isArchivePossible = createSelector(
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
+export const getTestResultsLoading = createSelector(getGraph, (g) => g.testResultsLoading);
+export const getTestData = createSelector(getGraph, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
 export const getStickyNotes = createSelector(

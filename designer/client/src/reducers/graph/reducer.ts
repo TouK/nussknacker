@@ -1,19 +1,20 @@
 /* eslint-disable i18next/no-literal-string */
 import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
-import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
-import { Action, Reducer } from "../../actions/reduxTypes";
+import type { StateWithHistory } from "redux-undo";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
+
+import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import * as GraphUtils from "../../components/graph/utils/graphUtils";
-import { ValidationResult } from "../../types";
+import type { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
-import { NestedKeyOf } from "./nestedKeyOf";
+import type { NestedKeyOf } from "./nestedKeyOf";
 import { selectionState } from "./selectionState";
-import { GraphState } from "./types";
+import type { GraphState } from "./types";
 import {
     addNodesWithLayout,
     addStickyNotesWithLayout,
@@ -58,6 +59,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 scenarioLoading: true,
+            };
+        }
+        case "TEST_RESULTS_LOADING": {
+            return {
+                ...state,
+                testResultsLoading: true,
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
@@ -122,6 +129,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
+        case "TEST_RESULTS_FAILED": {
+            return {
+                ...state,
+                testResultsLoading: false,
+            };
+        }
         case "LOADING_FAILED": {
             return {
                 ...state,
@@ -171,15 +184,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
-                const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);
-                const scenarioGraph = GraphUtils.deleteNode(stateAfterNodeDelete.scenario.scenarioGraph, idToDelete);
-                return {
-                    ...stateAfterNodeDelete,
-                    scenario: {
-                        ...stateAfterNodeDelete.scenario,
-                        scenarioGraph: scenarioGraph,
-                    },
-                };
+                return updateAfterNodeDelete(state, idToDelete);
             }, state);
         }
         case "NODES_CONNECTED": {
@@ -301,7 +306,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testResults: action.testResults,
+                testData: {
+                    ...state.testData,
+                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                },
                 scenarioLoading: false,
+                testResultsLoading: false,
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {

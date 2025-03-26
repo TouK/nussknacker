@@ -1,8 +1,9 @@
+import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { setSettings, toggleSettings } from "../actions/nk/userSettings";
 import { getUserSettings } from "../reducers/selectors/userSettings";
-import { UserSettings } from "../reducers/userSettings";
-import { useCallback, useMemo } from "react";
+import type { UserSettings } from "../reducers/userSettings";
 
 export const useUserSettings: () => [UserSettings, (keys: Array<keyof UserSettings>) => void, (value: UserSettings) => void] = () => {
     const dispatch = useDispatch();

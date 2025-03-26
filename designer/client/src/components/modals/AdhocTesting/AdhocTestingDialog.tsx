@@ -1,15 +1,19 @@
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { ElementType, ReactElement, useCallback, useMemo, useState } from "react";
+import { Box } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { ElementType, ReactElement} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScenarioGraph, UIParameter, VariableTypes } from "../../../types";
-import { WindowContent, WindowKind } from "../../../windowManager";
-import { ContentSize } from "../../graph/node-modal/node/ContentSize";
+
+import type { ScenarioGraph, UIParameter, VariableTypes } from "../../../types";
+import type { WindowKind } from "../../../windowManager";
+import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
+import type { ActionValues} from "./AdhocTestingFormContext";
+import { AdhocTestingFormContext } from "./AdhocTestingFormContext";
 import { MarkdownForm } from "./MarkdownForm";
-import { ActionValues, AdhocTestingFormContext } from "./AdhocTestingFormContext";
-import { Box } from "@mui/material";
 import { useAdhocTestingParametersValidation } from "./useAdhocTestingParametersValidation";
 
 type DocsLink = {
@@ -35,6 +39,7 @@ export interface AdhocTestingParameters {
     onConfirmAction: (values: ActionValues) => void;
     sourceId: string;
     scenarioGraph: ScenarioGraph;
+    previousTestData?: ActionValues;
 }
 
 export interface AdhocTestingData {

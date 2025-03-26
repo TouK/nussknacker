@@ -1,10 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
 import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
-import { Scenario } from "src/components/Process/types";
-import { ScenarioLabelValidationError } from "../components/Labels/types";
-import { RootState } from "../reducers";
+import type { Scenario } from "src/components/Process/types";
+
+import type { ScenarioLabelValidationError } from "../components/Labels/types";
+import type { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
-import {
+import type {
     ComponentDefinition,
     NodeId,
     NodeResults,
@@ -21,7 +22,7 @@ import {
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
-        const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
+        const savedProcessState = state.graphReducer.history.past?.[0]?.scenario || state.graphReducer.history.present.scenario;
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 

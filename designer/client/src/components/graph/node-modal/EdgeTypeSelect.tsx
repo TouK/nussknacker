@@ -1,6 +1,8 @@
-import { Edge, EdgeKind } from "../../../types";
 import React from "react";
+
 import { getStringEnumElement } from "../../../common/enumUtils";
+import type { Edge} from "../../../types";
+import { EdgeKind } from "../../../types";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
 
 export interface EdgeTypeOption {
@@ -23,7 +25,7 @@ export function EdgeTypeSelect(props: Props): JSX.Element {
         <TypeSelect
             id={id}
             onChange={(value) => onChange(getStringEnumElement(EdgeKind, value))}
-            value={options.find((option) => option.value === edge.edgeType.type)}
+            value={options.find((option) => option.value === edge.edgeType?.type)}
             options={options.map((option) => ({ ...option, isDisabled: option.disabled }))}
             fieldErrors={[]}
             readOnly={readOnly}

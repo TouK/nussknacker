@@ -1,25 +1,34 @@
 import { css } from "@emotion/css";
-import DataEditor, {
-    CompactSelection,
+import type {
     DataEditorProps,
     DataEditorRef,
     GridCell,
-    GridCellKind,
     GridColumn,
     GridSelection,
     GroupHeaderClickedEventArgs,
     HeaderClickedEventArgs,
     Item,
-    Rectangle,
+    Rectangle} from "@glideapps/glide-data-grid";
+import DataEditor, {
+    CompactSelection,
+    GridCellKind
 } from "@glideapps/glide-data-grid";
+import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { Box } from "@mui/material";
-import { PopoverPosition } from "@mui/material/Popover/Popover";
+import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
+import { find, head, orderBy } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { getProcessDefinitionData } from "../../../../../../reducers/selectors/processDefinitionData";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import { EditorProps, ExtendedEditor } from "../Editor";
+import type { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
+import { editorsParameters } from "../editorsParameters";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
+import { isDatePickerCell } from "./customCells";
+import { customRenderers } from "./customRenderers";
 import { useErrorHighlights } from "./errorHighlights";
 import { Sizer } from "./Sizer";
 import { ActionTypes } from "./state/action";
@@ -27,14 +36,7 @@ import { longestRow } from "./state/helpers";
 import { useTableState } from "./state/tableState";
 import { useTableTheme } from "./tableTheme";
 import { TypesMenu } from "./TypesMenu";
-import { customRenderers } from "./customRenderers";
-import { isDatePickerCell } from "./customCells";
-import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
-import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../../../common/ProcessUtils";
-import { find, head, orderBy } from "lodash";
-import { editorsParameters } from "../editorsParameters";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
