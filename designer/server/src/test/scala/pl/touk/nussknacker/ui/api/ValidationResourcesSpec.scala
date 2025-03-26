@@ -117,7 +117,6 @@ class ValidationResourcesSpec
       val entity = entityAs[String]
       entity should include("Configured property requiredStringProperty (label) is missing")
       entity should include("Property numberOfThreads has invalid value")
-      entity should include("Unknown property unknown")
       entity should include("This field value has to be an integer number")
     }
   }

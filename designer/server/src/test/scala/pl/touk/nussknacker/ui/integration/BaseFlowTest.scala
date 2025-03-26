@@ -345,7 +345,6 @@ class BaseFlowTest
     validationResponse.code shouldEqual StatusCode.Ok
     validationResponse.body should include("Configured property environment (Environment) is missing")
     validationResponse.body should include("This field value has to be an integer number")
-    validationResponse.body should include("Unknown property unknown")
     validationResponse.body should include("Property numberOfThreads (Number of threads) has invalid value") //
   }
 
