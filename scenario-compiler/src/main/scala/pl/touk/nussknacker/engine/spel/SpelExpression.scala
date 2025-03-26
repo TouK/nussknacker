@@ -142,7 +142,6 @@ class SpelExpression(
     def renderExpression(expression: Expression): List[TemplateRenderedPart] = expression match {
       case literal: LiteralExpression => List(RenderedLiteral(literal.getExpressionString))
       case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-        // TODO: Should we use the same trick with re-parsing after ClassCastException as we use in ParsedSpelExpression?
         List(RenderedSubExpression(spelExpr.getValue(evaluationContext)))
       case composite: CompositeStringExpression => composite.getExpressions.toList.flatMap(renderExpression)
       case other =>
@@ -332,7 +331,7 @@ object SpelExpressionParser extends LazyLogging {
       extends org.springframework.expression.spel.standard.SpelExpressionParser(configuration) {
 
     // Override for: org.springframework.expression.common.TemplateAwareExpressionParser.parseTemplate, because
-    // spring should return only StringExpression for template
+    // the spring should return only the StringExpression for a template
     override def parseExpression(expressionString: String, context: ParserContext): Expression = {
       val expression = super.parseExpression(expressionString, context)
       if (context != null && context.isTemplate) {
