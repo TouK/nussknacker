@@ -39,15 +39,10 @@ object JsonSchemaBasedParameter {
       isRequired = None
     )
 
-  def withEmptySchemaSupport(schema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(
+  def emptySchemaBasedParameter(defaultParamName: FieldName, validationMode: ValidationMode)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    ParameterRetriever(schema, defaultParamName, validationMode).toSchemaBasedParameterWithEmptySchemaSupport(
-      schema,
-      paramName = None,
-      defaultValue = None,
-      isRequired = None
-    )
+    ParameterRetriever(EmptySchema.INSTANCE, defaultParamName, validationMode).getJsonEditorInputParameter
 
   private case class ParameterRetriever(
       rootSchema: Schema,
@@ -75,45 +70,30 @@ object JsonSchemaBasedParameter {
       }
     }
 
-    def toSchemaBasedParameterWithEmptySchemaSupport(
-        schema: Schema,
-        paramName: Option[ParameterName],
-        defaultValue: Option[Expression],
-        isRequired: Option[Boolean]
-    ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-      schema match {
-        case _: EmptySchema =>
-          // In a case of an empty JSON schema we want to present the user with Json editor and not standard SpEL one
-          Valid(
-            createJsonSinkSingleValueParameter(
-              schema,
-              paramName.getOrElse(defaultParamName),
-              defaultValue,
-              Some(true),
-              editor = Some(JsonParameterEditor)
-            )
-          )
-        case jsonSchema => toSchemaBasedParameter(jsonSchema, paramName, defaultValue, isRequired)
-      }
+    def getJsonEditorInputParameter: ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+      val typing = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(rootSchema, None).typingResult
+      val parameter = Parameter(defaultParamName, typing)
+        .copy(isLazyParameter = true, editors = List(JsonParameterEditor))
+      Valid(
+        SingleSchemaBasedParameter(
+          parameter,
+          new JsonSchemaOutputValidator(validationMode).validate(_, rootSchema, None)
+        )
+      )
     }
 
     private def createJsonSinkSingleValueParameter(
         schema: Schema,
         paramName: ParameterName,
         defaultValue: Option[Expression],
-        isRequired: Option[Boolean],
-        editor: Option[ParameterEditor] = None
+        isRequired: Option[Boolean]
     ): SingleSchemaBasedParameter = {
       val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema))
       val typing       = swaggerTyped.typingResult
       // By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
       val isOptional = !isRequired.getOrElse(false)
       val parameter = (if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing))
-        .copy(
-          isLazyParameter = true,
-          defaultValue = defaultValue,
-          editors = editor.map(List(_)).getOrElse(swaggerTyped.editorList)
-        )
+        .copy(isLazyParameter = true, defaultValue = defaultValue, editors = swaggerTyped.editorList)
 
       SingleSchemaBasedParameter(
         parameter,
