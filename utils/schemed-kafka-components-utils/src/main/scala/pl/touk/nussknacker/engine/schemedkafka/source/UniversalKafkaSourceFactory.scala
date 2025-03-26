@@ -25,15 +25,19 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  schemaVersionParamName,
+  sinkValueParamName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{EmptySchemaJsonSupport, UniversalSchemaSupport}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{NoSchemaJsonSupport, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 
 /**
@@ -248,13 +252,17 @@ class UniversalKafkaSourceFactory(
         NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
       )
       .andThen { runtimeSchema =>
-        val universalSchemaSupport = runtimeSchema.schema match {
-          // For ad hoc tests we want to present the user with json editor when schemaless topic with Json content type was selected
-          case ContentTypesSchemas.schemaForJson => EmptySchemaJsonSupport
-          case _ => schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        val parsedSchema = runtimeSchema.schema
+        val universalSchemaSupport: UniversalSchemaSupport =
+          schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+
+        val extractedParameters = parsedSchema match {
+          // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
+          case ContentTypesSchemas.schemaForJson => NoSchemaJsonSupport.extractJsonInputParameter()
+          case _                                 => universalSchemaSupport.extractParameters(parsedSchema)
         }
-        universalSchemaSupport
-          .extractParameters(runtimeSchema.schema)
+
+        extractedParameters
           .map { params =>
             KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
           }

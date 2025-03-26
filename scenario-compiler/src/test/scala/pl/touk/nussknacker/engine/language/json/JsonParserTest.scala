@@ -30,6 +30,7 @@ class JsonParserTest extends AnyFunSuite with Matchers {
                        |]""".stripMargin
 
     val resultType = parser.parse(validJson, ValidationContext.empty, Unknown).validValue.typingInfo.typingResult
+    // TODO: Right now we just use Unknown but we should create appropriate typing for Jsons in the future
     resultType shouldBe Unknown
   }
 
