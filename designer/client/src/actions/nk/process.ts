@@ -2,7 +2,7 @@ import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";

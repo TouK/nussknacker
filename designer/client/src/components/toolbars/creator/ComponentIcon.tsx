@@ -2,7 +2,7 @@ import { memoize } from "lodash";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";

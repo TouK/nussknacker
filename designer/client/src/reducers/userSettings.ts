@@ -1,18 +1,36 @@
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { Reducer } from "../actions/reduxTypes";
+import { isDev } from "../devHelpers";
 
 type SettingsNames =
-    | `${string}.showLines`
-    | `${string}.noWrap`
+    | `editor.${string}.showLines`
+    | `editor.${string}.noWrap`
+    | `survey.${string}.closed`
+    | "node.showAggregateSwitcher"
     | "node.shortCounts"
-    | `survey-panel(${string}).closed`
+    | "node.showInputsAndOutputs"
+    | "node.showFragmentCreator"
+    | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
-    | "debug.forceDisableModals";
+    | "debug.forceDisableModals"
+    | "debug.userSettingsVisible";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
-const reducer: Reducer<UserSettings> = (state = {}, action) => {
+const reducer: Reducer<UserSettings> = (
+    state = {
+        "node.showAggregateSwitcher": false,
+        "node.shortCounts": false,
+        "node.showInputsAndOutputs": false,
+        "node.showFragmentCreator": false,
+        "cloud.showIntegrationsCreators": false,
+        "debug.nodesAsJson": false,
+        "debug.forceDisableModals": false,
+        "debug.userSettingsVisible": isDev,
+    },
+    action,
+) => {
     switch (action.type) {
         case "SET_SETTINGS":
             return action.settings;

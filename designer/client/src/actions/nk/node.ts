@@ -3,8 +3,8 @@ import { flushSync } from "react-dom";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
-import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { EditNodeAction, EditScenarioLabels } from "./editNode";
@@ -128,8 +128,8 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
         // We need to disable automatic React batching https://react.dev/blog/2022/03/29/react-v18#new-feature-automatic-batching
         // since it breaks redux undo in this case
         flushSync(() => {
-            const scenarioGraph = getScenarioGraph(getState());
-            const { nodes, layout } = prepareNewNodesWithLayout(scenarioGraph.nodes, [{ node, position }], false);
+            const currentNodes = getNodes(getState());
+            const { nodes, layout } = prepareNewNodesWithLayout(currentNodes, [{ node, position }], false);
 
             dispatch({
                 type: "NODE_ADDED",

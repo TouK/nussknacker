@@ -1,6 +1,6 @@
-import { CSSProperties } from "react";
 import { alpha, css, styled, Theme } from "@mui/material";
 import { blend } from "@mui/system";
+import { CSSProperties } from "react";
 import { blendLighten } from "../../containers/theme/helpers";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
@@ -31,7 +31,7 @@ const nodeStyles = (theme: Theme) => {
         ".joint-type-esp-model": {
             "&, .body, .background, .joint-port-body": {
                 strokeWidth: 0.5,
-                transition: "filter 0.5s, fill 0.25s, stroke 0.25s",
+                transition: "filter 0.25s, fill 0.25s, stroke 0.25s",
             },
         },
         ".joint-layers": {
@@ -69,8 +69,13 @@ const nodeStyles = (theme: Theme) => {
     });
 };
 
-export const GraphStyledWrapper = styled("div")(({ theme }) =>
-    css([
+export const getShadow = (color = `red`, size = 2, size2 = 2 * size) => {
+    return `drop-shadow(${size}px ${size}px ${size2}px ${color}) drop-shadow(${size}px -${size}px ${size2}px ${color}) drop-shadow(-${size}px ${size}px ${size2}px ${color}) drop-shadow(-${size}px -${size}px ${size2}px ${color})`;
+};
+
+export const GraphStyledWrapper = styled("div")(({ theme }) => {
+    const dropAllowedColor = theme.palette.warning.main;
+    return css([
         {
             color: theme.palette.common.white,
         },
@@ -100,6 +105,21 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                     ".marker-arrowhead": {
                         opacity: 0,
                         transform: "scale(0.3)",
+                    },
+                },
+            },
+            [`.joint-cells-layer:has(.${dragHovered})`]: {
+                ".joint-theme-default.joint-link": {
+                    [`&.${dragHovered}`]: {
+                        filter: getShadow(alpha(dropAllowedColor, 0.5)),
+                    },
+                },
+                ".joint-type-esp-model": {
+                    "&:hover": {
+                        filter: `drop-shadow(0 4px 8px ${alpha(theme.palette.common.black, 0.5)})`,
+                    },
+                    [`&.${dragHovered}`]: {
+                        filter: `opacity(90%) ${getShadow(alpha(dropAllowedColor, 0.25))}`,
                     },
                 },
             },
@@ -137,12 +157,6 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 },
                 // simple method to get dragging state
                 '&[style*="pointer"]': {
-                    ".connection": {
-                        strokeWidth: "3",
-                        strokeDasharray: "3 0 3",
-                    },
-                },
-                [`&.${dragHovered}`]: {
                     ".connection": {
                         strokeWidth: "3",
                         strokeDasharray: "3 0 3",
@@ -217,5 +231,5 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 display: "none",
             },
         },
-    ]),
-);
+    ]);
+});

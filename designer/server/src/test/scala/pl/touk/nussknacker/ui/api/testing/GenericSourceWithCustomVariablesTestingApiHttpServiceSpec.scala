@@ -49,7 +49,7 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       |    ],
       |    "defaultValue": {
       |      "language": "spel",
-      |      "expression": ""
+      |      "expression": "{}"
       |    },
       |    "additionalVariables": {
       |    },

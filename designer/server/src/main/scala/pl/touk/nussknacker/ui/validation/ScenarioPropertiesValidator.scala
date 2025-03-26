@@ -5,7 +5,7 @@ import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, UnknownProperty}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingRequiredProperty
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -34,9 +34,8 @@ class ScenarioPropertiesValidator(
     val validated = (
       getConfiguredValidationsResults(finalizedScenarioPropertiesConfig, scenarioProperties),
       getMissingRequiredPropertyValidationResults(finalizedScenarioPropertiesConfig, scenarioProperties),
-      getUnknownPropertyValidationResults(finalizedScenarioPropertiesConfig, scenarioProperties)
     )
-      .mapN { (_, _, _) => () }
+      .mapN { (_, _) => () }
 
     val processPropertiesErrors = validated match {
       case Invalid(e) => e.map(error => PrettyValidationErrors.formatErrorMessage(error)).toList
@@ -96,19 +95,6 @@ class ScenarioPropertiesValidator(
       .map(_ => ())
   }
 
-  private def getUnknownPropertyValidationResults(
-      config: PropertyConfig,
-      scenarioProperties: List[(String, String)]
-  ) = {
-    scenarioProperties
-      .map(property => (property._1, UnknownPropertyValidator(config)))
-      .map { case (propertyName, validator) =>
-        validator.isValid(propertyName).toValidatedNel
-      }
-      .sequence
-      .map(_ => ())
-  }
-
 }
 
 private final case class MissingRequiredPropertyValidator(actualPropertyNames: List[String]) {
@@ -120,18 +106,6 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
       valid(())
     } else {
       invalid(MissingRequiredProperty(ParameterName(propertyName), label))
-    }
-  }
-
-}
-
-private final case class UnknownPropertyValidator(config: Map[String, ScenarioPropertyConfig]) {
-
-  def isValid(propertyName: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    if (config.contains(propertyName)) {
-      valid(())
-    } else {
-      invalid(UnknownProperty(ParameterName(propertyName)))
     }
   }
 

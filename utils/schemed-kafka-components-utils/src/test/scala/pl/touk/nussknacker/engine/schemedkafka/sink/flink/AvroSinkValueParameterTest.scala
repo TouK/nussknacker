@@ -71,7 +71,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0"))),
       Parameter(name = ParameterName("c"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
-        defaultValue = Some(Expression.spel("'c-field-default'")),
+        defaultValue = Some(Expression.spelTemplate("c-field-default")),
         editors = List(SpelTemplateParameterEditor, SpelParameterEditor),
       ),
       Parameter(name = ParameterName("d"), typ = typing.Typed[Long])

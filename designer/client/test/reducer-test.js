@@ -126,12 +126,6 @@ const reduceAll = (actions) => {
     return currentState;
 };
 
-describe("Reducer suite", () => {
-    it("Display process", () => {
-        expect(baseStateWithProcess.graphReducer.scenario.name).toEqual(baseProcessState.name);
-    });
-});
-
 const testNode = {
     type: "Enricher",
     id: "Enricher ID",
@@ -152,6 +146,12 @@ const testNode = {
 
 const testPosition = { x: 10, y: 20 };
 
+describe("Reducer", () => {
+    it("should display process", () => {
+        expect(baseStateWithProcess.graphReducer.scenario.name).toEqual(baseProcessState.name);
+    });
+});
+
 describe("Nodes added", () => {
     it("should add single node", () => {
         const result = reduceAll([nodeAdded(testNode, testPosition)]);
@@ -168,24 +168,24 @@ describe("Nodes added", () => {
     });
 
     it("should add multiple nodes with unique id", () => {
-        const result = reduceAll([
-            nodesWithEdgesAdded(
-                [
-                    {
-                        node: { ...testNode, id: "kafka-transaction" },
-                        position: testPosition,
-                    },
-                    {
-                        node: { ...testNode, id: "kafka-transaction" },
-                        position: testPosition,
-                    },
-                ],
-                [],
-            ),
-        ]);
+        const action = nodesWithEdgesAdded(
+            [
+                {
+                    node: { ...testNode, id: "kafka-transaction" },
+                    position: { x: 10, y: 20 },
+                },
+                {
+                    node: { ...testNode, id: "filter" },
+                    position: { x: 10, y: 20 },
+                },
+            ],
+            [],
+        );
+        const result = reduceAll([action, action]);
 
         expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
         expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
+        expect(NodeUtils.getNodeById("filter (copy 2)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
     });
 
     it("should add nodes with edges", () => {

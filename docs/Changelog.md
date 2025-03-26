@@ -129,6 +129,8 @@
   * Made changes to the Component API regarding editors. For details, please see the Migration Guide.
   * Extract `StaticParameterEditor` as a set of editors for scenario properties and action parameters that handle only
     static values.
+  * JsonDefaultExpression and AvroDefaultExpression default string values changed to SpEL template.
+  * For now on, default values are provided for dry run parameters.
 
 ## 1.18
 
