@@ -143,6 +143,12 @@ By default, an environment for Scala 2.13 is prepared. To run one for Scala 2.12
 * run: `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --scalaV scala212"`
 * or run: `docker compose -f examples/dev/local-testing.docker-compose.yml up -d` 
 
+By default, an environment doesn't start grafana and nginx reverse proxy. If you want to test Nussknacker with grafana run:
+* `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --customizeYaml=examples/dev/nginx.override.yaml"`
+* or this: `docker compose -f examples/dev/local-testing.docker-compose.yml -f examples/dev/nginx.override.yaml up -d`
+Warning: the designer should be running on 8080 port before you do this, because otherwise nginx won't start.
+After you do this, Nussknacker will be available at http://localhost:3080 and grafana will work like expected
+
 #### Running Designer with model classes on the same classes as designer
 
 To shorten loopback loop during testing of your locally developed components, you can run Nussknacker UI 

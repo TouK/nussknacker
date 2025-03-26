@@ -10,8 +10,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      grafana:
-        condition: service_healthy
       influxdb:
         condition: service_healthy
       kafka:
@@ -46,30 +44,6 @@ services:
           memory: 256M
 
   ### Nussknacker metrics-related services:
-
-  grafana:
-    image: grafana/grafana:10.1.10
-    restart: unless-stopped
-    ports:
-      - 8081:3000
-    environment:
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:/grafana"
-      GF_SECURITY_ALLOW_EMBEDDING: "true"
-    depends_on:
-      influxdb:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 3000"]
-      interval: 10s
-      retries: 10
-    volumes:
-      - ./grafana:/etc/grafana/provisioning
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
   influxdb:
     image: influxdb:1.8.10
