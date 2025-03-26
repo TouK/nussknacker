@@ -1,15 +1,16 @@
-import { cx } from "@emotion/css";
+import type { Ace } from "ace-builds";
 import i18next from "i18next";
-import { debounce, flatMap, uniq } from "lodash";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactAce from "react-ace/lib/ace";
-import { ExtendedEditor } from "./Editor";
-import { Formatter } from "./Formatter";
-import { SpelEditor, SpelEditorProps } from "./SpelEditor";
-import { EditorMode, ExpressionLang, ExpressionObj } from "./types";
-import { Ace } from "ace-builds";
+import React, { useCallback, useLayoutEffect, useRef } from "react";
+import type ReactAce from "react-ace/lib/ace";
+
+import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import type { Formatter } from "./Formatter";
+import type { SpelEditorProps } from "./SpelEditor";
+import { SpelEditor } from "./SpelEditor";
 import { isQuoted } from "./SpelQuotesUtils";
+import type { ExpressionObj } from "./types";
+import { EditorMode, ExpressionLang } from "./types";
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -31,67 +32,54 @@ export interface Props extends Omit<SpelEditorProps, "language"> {
     formatter: Formatter;
 }
 
-const CLASSNAME = "tokenizer-working";
-
 function useAliasUsageHighlight(token = "alias") {
-    const [keywords, setKeywords] = useState<string>("");
     const ref = useRef<ReactAce>();
-    const editor = ref.current?.editor;
-    const session = useMemo(() => editor?.getSession() as unknown as EditSession, [editor]);
 
-    const getValuesForToken = useCallback(
-        (line: string, index: number) =>
-            session
-                ?.getTokens(index)
-                .filter(({ type }) => type === token)
-                .map(({ value }) => value.trim().toLowerCase()),
-        [session, token],
-    );
+    const toggleTokenizerWorkingClass = useCallback((value: boolean) => {
+        ref.current?.refEditor?.classList.toggle("tokenizer-working", value);
+    }, []);
 
-    const toggleClassname = useMemo(
-        () =>
-            debounce(
-                (classname: string, enabled: boolean): void => {
-                    const el = ref.current?.refEditor;
+    const getNextKeywords = useCallback(() => {
+        const keywordsSet = new Set<string>();
+        const session: EditSession = ref.current?.editor?.getSession() as any;
+        session?.bgTokenizer.lines.forEach((line, index) => {
+            session.getTokens(index).forEach(({ value, type }) => {
+                if (type === token) {
+                    keywordsSet.add(value.trim().toLowerCase());
+                }
+            });
+        });
+        return [...keywordsSet].join("|");
+    }, [token]);
 
-                    if (el) {
-                        if (!enabled) {
-                            el.className = el.className.replace(classname, "");
-                        }
+    useLayoutEffect(() => {
+        const session: EditSession = ref.current?.editor?.getSession() as any;
+        if (!session?.getMode().$highlightRules?.setAliases) return;
 
-                        if (!el.className.includes(classname)) {
-                            el.className = cx(el.className, { [classname]: enabled });
-                        }
-                    }
-                },
-                1000,
-                { trailing: true, leading: true },
-            ),
-        [],
-    );
-
-    useEffect(() => {
-        if (session?.getMode().$highlightRules.setAliases) {
-            // for cypress tests only, we need some "still working" state
-            toggleClassname(CLASSNAME, true);
-            session.bgTokenizer.stop();
-            session.getMode().$highlightRules.setAliases(keywords);
-            session.bgTokenizer.start(0);
-        }
-    }, [toggleClassname, session, keywords]);
-
-    useEffect(() => {
-        const callback = () => {
-            const allLines = session.bgTokenizer.lines;
-            const next = uniq(flatMap(allLines, getValuesForToken)).join("|");
-            setKeywords(next);
-            toggleClassname(CLASSNAME, false);
+        let prevKeywords = "";
+        const tokenizerUpdate = () => {
+            const nextKeywords = getNextKeywords();
+            if (prevKeywords === nextKeywords) {
+                toggleTokenizerWorkingClass(false);
+            } else {
+                toggleTokenizerWorkingClass(true);
+                session.bgTokenizer.stop();
+                prevKeywords = nextKeywords;
+                session.getMode().$highlightRules.setAliases(nextKeywords);
+                session.bgTokenizer.start(0);
+            }
         };
-        session?.on(`tokenizerUpdate`, callback);
+
+        session.on(`tokenizerUpdate`, tokenizerUpdate);
+
+        toggleTokenizerWorkingClass(true);
+        tokenizerUpdate();
+
         return () => {
-            session?.off(`tokenizerUpdate`, callback);
+            session.off(`tokenizerUpdate`, tokenizerUpdate);
+            toggleTokenizerWorkingClass(false);
         };
-    }, [toggleClassname, session, getValuesForToken]);
+    }, [getNextKeywords, toggleTokenizerWorkingClass]);
 
     return ref;
 }
