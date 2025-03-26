@@ -188,7 +188,7 @@ class StreamingEmbeddedDeploymentManagerTest
         |""".stripMargin
 
     val FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
-    val testInfoProvider                                          = new ModelDataTestInfoProvider(modelData)
+    val testInfoProvider                                          = ModelDataTestInfoProvider.create(modelData)
 
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 

@@ -53,6 +53,8 @@ object TestInfoProvider {
   sealed trait ScenarioTestDataGenerationError extends TestDataError
 
   object ScenarioTestDataGenerationError {
+    final case class SourcesCompilationError(nodeId: String, errors: List[ProcessCompilationError])
+        extends ScenarioTestDataGenerationError
     final case object NoDataGenerated                 extends ScenarioTestDataGenerationError
     final case object NoSourcesWithTestDataGeneration extends ScenarioTestDataGenerationError
   }

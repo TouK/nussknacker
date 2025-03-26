@@ -88,7 +88,7 @@ class ModelDataTestInfoProviderSpec
 
   }
 
-  private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
+  private val testInfoProvider: TestInfoProvider = ModelDataTestInfoProvider.create(modelData)
 
   test("should detect capabilities for empty scenario") {
     val scenario     = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)

@@ -129,6 +129,8 @@ class TestingApiHttpService(
                       error match {
                         case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
                           cause match {
+                            case ScenarioTestDataGenerationError.SourcesCompilationError(nodeId, errors) =>
+                              SourceNotCompiled(nodeId)
                             case ScenarioTestDataGenerationError.NoDataGenerated =>
                               NoDataGenerated
                             case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
@@ -186,6 +188,7 @@ object TestingApiHttpService {
       final case class NoScenario(scenarioName: ProcessName) extends NotFoundTestingError
       final case object NoDataGenerated                      extends NotFoundTestingError
       final case object NoSourcesWithTestDataGeneration      extends NotFoundTestingError
+      final case class SourceNotCompiled(nodeId: String)     extends NotFoundTestingError
 
       implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
@@ -193,12 +196,19 @@ object TestingApiHttpService {
           case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
           case NoSourcesWithTestDataGeneration =>
             TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
+          case SourceNotCompiled(nodeId) => s"Source $nodeId compilation failed"
         }
       }
 
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
           s"No scenario ${e.scenarioName} found"
+        )
+      }
+
+      implicit val sourceNotCompiledCodec: Codec[String, SourceNotCompiled, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[SourceNotCompiled](e =>
+          s"Source ${e.nodeId} compilation failed"
         )
       }
 
