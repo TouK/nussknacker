@@ -1,14 +1,15 @@
-import { css } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import { DefaultComponents as Window, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import React, { createContext, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import urljoin from "url-join";
 import { editNode } from "../../../../actions/nk";
+import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { RootState } from "../../../../reducers";
+import { getCreatorType } from "../../../../reducers/selectors/getCreator";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
@@ -16,6 +17,9 @@ import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
+import { InputOutputContent } from "../io/InputOutputContent";
+import { InputOutputContextProvider } from "../io/InputOutputContext";
+import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
@@ -39,13 +43,17 @@ type NodeState = {
     isTouched: boolean;
 };
 
+export function getEdgesForNode(scenario: Scenario, node: NodeType) {
+    return scenario.scenarioGraph.edges.filter(({ from }) => from === node.id);
+}
+
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useDispatch();
     const scenarioFromGlobalStore = useSelector(getScenario);
 
     const { node, scenario = scenarioFromGlobalStore } = data;
     const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => scenario.scenarioGraph.edges.filter(({ from }) => from === node.id));
+    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
 
     const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]> = (v) => v) => {
         setEditedNode(node);
@@ -115,6 +123,23 @@ export function useNodeDetailsButtons({
     return { apply, cancel };
 }
 
+function useTitleData(node: NodeType) {
+    const creatorType = node.type === "VariableBuilder" ? getCreatorType(node) : null;
+    if (creatorType) {
+        return {
+            title: `${creatorType} creator`,
+            icon: <NodeDetailsModalIcon node={node} />,
+        };
+    }
+    return {
+        title: getNodeDetailsModalTitle(node),
+        icon: <NodeDetailsModalIcon node={node} />,
+        subheader: <NodeDetailsModalSubheader node={node} />,
+    };
+}
+
+export const NodeContext = createContext<NodeType>(null);
+
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
@@ -130,16 +155,38 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
         };
     }, [node.id]);
 
+    const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
+
     const openFragment = useMemo<WindowButtonProps | false>(() => {
-        if (!NodeUtils.nodeIsFragment(editedNode)) return false;
+        if (!nodeIsFragment) return false;
         return {
             title: t("dialog.button.fragment.edit", "edit fragment"),
             action: () => {
-                window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
+                window.open(urljoin(BASE_PATH, visualizationUrl(editedNode?.ref?.id)));
             },
             className: "tertiary-button",
         };
-    }, [editedNode, t]);
+    }, [editedNode?.ref?.id, nodeIsFragment, t]);
+
+    const titleData = useTitleData(node);
+    const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
+
+    const [settings] = useUserSettings();
+    const [PortalWrapper, portalRef] = usePortal();
+    const components = useMemo(
+        () =>
+            settings["node.showInputsAndOutputs"]
+                ? {
+                      Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
+                      Footer: (props) => (
+                          <PortalWrapper>
+                              <Window.Footer {...props} />
+                          </PortalWrapper>
+                      ),
+                  }
+                : undefined,
+        [settings, portalRef, PortalWrapper],
+    );
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
@@ -147,19 +194,13 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }
 
     return (
-        <WindowContent
-            {...props}
-            closeWithEsc
-            buttons={[openFragment, cancel, apply]}
-            title={getNodeDetailsModalTitle(node)}
-            icon={<NodeDetailsModalIcon node={node} />}
-            subheader={<NodeDetailsModalSubheader node={node} />}
-            classnames={{
-                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
-            }}
-        >
-            <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-        </WindowContent>
+        <NodeContext.Provider value={editedNode}>
+            <InputOutputContextProvider nodeId={editedNode.id}>
+                <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
+                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+                </WindowContent>
+            </InputOutputContextProvider>
+        </NodeContext.Provider>
     );
 }
 

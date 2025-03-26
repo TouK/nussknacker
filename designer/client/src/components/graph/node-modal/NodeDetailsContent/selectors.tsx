@@ -1,6 +1,6 @@
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
 import { NodeId, NodeType, NodeValidationError, UiScenarioProperties, UIParameter } from "../../../../types";

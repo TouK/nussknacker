@@ -1,4 +1,4 @@
-import type { ReactEventHandler } from "react";
+import { MouseEventHandler } from "react";
 import type { DropEvent } from "react-dropzone";
 import { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons";
 
@@ -10,9 +10,9 @@ export interface ToolbarButtonProps {
     disabled?: boolean;
     title?: string;
     onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
-    onMouseOver?: ReactEventHandler;
-    onMouseOut?: ReactEventHandler;
-    onClick?: ReactEventHandler;
+    onMouseOver?: MouseEventHandler;
+    onMouseOut?: MouseEventHandler;
+    onClick?: MouseEventHandler;
     hasError?: boolean;
     isActive?: boolean;
 }

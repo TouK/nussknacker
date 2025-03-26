@@ -1,17 +1,19 @@
 import { NotificationsState, reducer as notifications } from "react-notification-system-redux";
 import { combineReducers } from "redux";
+import { StateWithHistory } from "redux-undo";
+import { ProcessStateType } from "../components/Process/types";
+import { reducer as cloudData } from "./cloudData";
+import { reducer as scenarios } from "./scenarios";
 import { GraphState, reducerWithUndo as graphReducer } from "./graph";
 import { reducer as httpErrorHandler } from "./httpErrorHandler";
+import { NodeDetailsState, reducer as nodeDetails } from "./nodeDetailsState";
+import { backendNotifications, BackendNotificationState } from "./notifications";
 import { ProcessActivityState, reducer as processActivity } from "./processActivity";
+import { reducer as scenarioState } from "./scenarioState";
 import { reducer as settings, SettingsState } from "./settings";
 import { toolbars, ToolbarsStates } from "./toolbars";
-import { NodeDetailsState, reducer as nodeDetails } from "./nodeDetailsState";
 import { reducer as ui, UiState } from "./ui";
 import { UserSettings, userSettings } from "./userSettings";
-import { StateWithHistory } from "redux-undo";
-import { backendNotifications, BackendNotificationState } from "./notifications";
-import { reducer as scenarioState } from "./scenarioState";
-import { ProcessStateType } from "../components/Process/types";
 
 export const reducer = combineReducers<RootState>({
     httpErrorHandler,
@@ -25,6 +27,8 @@ export const reducer = combineReducers<RootState>({
     userSettings,
     nodeDetails,
     scenarioState,
+    cloudData,
+    scenarios,
 });
 
 export type RootState = {
@@ -39,6 +43,8 @@ export type RootState = {
     userSettings: UserSettings;
     nodeDetails: NodeDetailsState;
     scenarioState: ProcessStateType;
+    cloudData: ReturnType<typeof cloudData>;
+    scenarios: ReturnType<typeof scenarios>;
 };
 
 export default reducer;

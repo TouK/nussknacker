@@ -56,6 +56,7 @@ export function useWindows(parent?: WindowId) {
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
+            const margin = 30;
             return open({
                 id: node.id,
                 title: node.id,
@@ -63,9 +64,17 @@ export function useWindows(parent?: WindowId) {
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, scenario },
                 shouldCloseOnEsc: false,
+                layoutData: settings["node.showInputsAndOutputs"]
+                    ? {
+                          width: window.innerWidth - 2 * margin,
+                          height: window.innerHeight - 2 * margin,
+                          top: margin,
+                          left: margin,
+                      }
+                    : undefined,
             });
         },
-        [open],
+        [open, settings],
     );
 
     const inform = useCallback(

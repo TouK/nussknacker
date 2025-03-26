@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/processDefinitionData";
 import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item";
 import { fieldLabel } from "./StyledSettingsComponnets";
 import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
@@ -7,7 +8,6 @@ import EditableEditor from "../../../../editors/EditableEditor";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/settings";
 import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 import Input from "../../../../editors/field/Input";
 

@@ -1,12 +1,12 @@
+import InfoIcon from "@mui/icons-material/Info";
 import { Box, FormLabel, styled } from "@mui/material";
 import React from "react";
-import { UIParameter } from "../../../types";
-import NodeTip from "./NodeTip";
-import InfoIcon from "@mui/icons-material/Info";
-import ProcessUtils from "../../../common/ProcessUtils";
-import { findParamDefinitionByName } from "./parameterHelpers";
 import { ErrorBoundary } from "react-error-boundary";
+import ProcessUtils from "../../../common/ProcessUtils";
+import { UIParameter } from "../../../types";
 import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
+import NodeTip from "./NodeTip";
+import { findParamDefinitionByName } from "./parameterHelpers";
 
 export const StyledNodeTip = styled(NodeTip)({
     margin: "0 8px",
@@ -18,7 +18,7 @@ export const StyledNodeTip = styled(NodeTip)({
 });
 
 type FieldLabelProps = {
-    title: string;
+    title?: string;
     label?: string;
     type?: string;
     hintText?: string;
@@ -27,7 +27,7 @@ type FieldLabelProps = {
 export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): JSX.Element {
     return (
         <>
-            <FormLabel title={title}>
+            <FormLabel title={title || label}>
                 <Box>
                     {label ? <Box sx={{ "::after": { content: "':'" } }}>{label}</Box> : null}
                     {type ? (

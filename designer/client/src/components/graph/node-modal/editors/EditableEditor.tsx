@@ -42,8 +42,8 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     );
 
     const formatter = useMemo(
-        () => (expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
-        [expressionObj.language, param?.typ?.refClazzName],
+        () => (expressionObj?.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
+        [expressionObj?.language, param?.typ?.refClazzName],
     );
 
     return (

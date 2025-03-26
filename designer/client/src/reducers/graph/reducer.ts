@@ -4,7 +4,6 @@ import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction
 import { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import * as GraphUtils from "../../components/graph/utils/graphUtils";
 import { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
@@ -58,6 +57,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 scenarioLoading: true,
+            };
+        }
+        case "TEST_RESULTS_LOADING": {
+            return {
+                ...state,
+                testResultsLoading: true,
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
@@ -122,6 +127,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
+        case "TEST_RESULTS_FAILED": {
+            return {
+                ...state,
+                testResultsLoading: false,
+            };
+        }
         case "LOADING_FAILED": {
             return {
                 ...state,
@@ -171,15 +182,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
-                const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);
-                const scenarioGraph = GraphUtils.deleteNode(stateAfterNodeDelete.scenario.scenarioGraph, idToDelete);
-                return {
-                    ...stateAfterNodeDelete,
-                    scenario: {
-                        ...stateAfterNodeDelete.scenario,
-                        scenarioGraph: scenarioGraph,
-                    },
-                };
+                return updateAfterNodeDelete(state, idToDelete);
             }, state);
         }
         case "NODES_CONNECTED": {
@@ -301,7 +304,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testResults: action.testResults,
+                testData: {
+                    ...state.testData,
+                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                },
                 scenarioLoading: false,
+                testResultsLoading: false,
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {

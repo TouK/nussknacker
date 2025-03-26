@@ -5,7 +5,7 @@ import { useClashedNames } from "./useClashedNames";
 
 //TODO: move this validation to backend to simplify FE code
 export function useProcessNameValidators(): Validator[] {
-    const clashedNames = useClashedNames(true);
+    const clashedNames = useClashedNames();
 
     const alreadyExistsValidator = useMemo(
         (): Validator => ({
