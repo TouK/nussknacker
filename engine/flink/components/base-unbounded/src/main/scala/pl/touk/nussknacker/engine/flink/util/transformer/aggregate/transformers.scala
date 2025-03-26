@@ -124,6 +124,7 @@ object transformers {
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
+                // TODO_PAWEL tutaj cos jest nie teges
                 .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream

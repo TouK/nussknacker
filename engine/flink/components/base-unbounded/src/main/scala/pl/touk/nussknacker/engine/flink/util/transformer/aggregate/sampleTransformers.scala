@@ -76,6 +76,7 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
+  // TODO_PAWEL jest to jednak ten
   class TumblingAggregateTransformer(config: AggregateWindowsConfig)
       extends CustomStreamTransformer
       with UnboundedStreamComponent
