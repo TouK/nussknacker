@@ -76,6 +76,8 @@ object ManagementResources {
       GenerateTestDataDesignerError(generateTestDataError match {
         case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
           cause match {
+            case ScenarioTestDataGenerationError.SourcesCompilationError(nodeId, errors) =>
+              s"Source $nodeId compilation failed"
             case ScenarioTestDataGenerationError.NoDataGenerated =>
               TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
             case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>

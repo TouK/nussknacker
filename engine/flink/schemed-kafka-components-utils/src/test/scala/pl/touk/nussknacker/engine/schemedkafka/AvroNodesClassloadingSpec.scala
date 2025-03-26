@@ -45,7 +45,8 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     val processVersion = ProcessVersion.empty.copy(processName = scenario.metaData.name)
     // we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
-      new ModelDataTestInfoProvider(modelData)
+      ModelDataTestInfoProvider
+        .create(modelData)
         .getTestingCapabilities(processVersion, scenario) shouldBe TestingCapabilities.Disabled
     }
   }

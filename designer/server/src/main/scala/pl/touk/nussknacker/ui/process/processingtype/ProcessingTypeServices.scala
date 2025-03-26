@@ -94,7 +94,7 @@ object ProcessingTypeServices {
     val scenarioResolver  = new ScenarioResolver(fragmentResolver, processingTypeData.processingType)
     val deploymentManager = processingTypeData.deploymentData.validDeploymentManagerOrStub
     val scenarioTestService = new ScenarioTestService(
-      new ModelDataTestInfoProvider(processingTypeData.designerModelData.modelData),
+      ModelDataTestInfoProvider.create(processingTypeData.designerModelData.modelData),
       processResolver,
       designerConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),

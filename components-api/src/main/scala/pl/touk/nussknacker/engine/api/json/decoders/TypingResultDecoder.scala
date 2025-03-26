@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.json.decoders
 import cats.data.NonEmptyList
 import io.circe._
 import pl.touk.nussknacker.engine.api.json.TypingType
-import pl.touk.nussknacker.engine.api.json.TypingType.{TypingType, typeField}
+import pl.touk.nussknacker.engine.api.json.TypingType.{typeField, TypingType}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.collection.immutable.ListMap

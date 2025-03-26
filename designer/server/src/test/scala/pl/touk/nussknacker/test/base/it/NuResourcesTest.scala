@@ -256,7 +256,7 @@ trait NuResourcesTest
     )
 
   protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
-    createScenarioTestService(new ModelDataTestInfoProvider(modelData))
+    createScenarioTestService(ModelDataTestInfoProvider.create(modelData))
 
   protected def createScenarioTestService(
       testInfoProvider: TestInfoProvider
