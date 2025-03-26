@@ -183,6 +183,8 @@ services:
       test: [ "CMD-SHELL", "curl -f http://localhost:8087/write" ]
       interval: 10s
       retries: 10
+    ports:
+      - 3087:8087
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
     deploy:
