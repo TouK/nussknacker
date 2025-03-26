@@ -56,6 +56,6 @@ object JsonParser extends ExpressionParser {
 
 case object JsonExpressionTypingInfo extends ExpressionTypingInfo {
 
-  // TODO: Right now we just use Unknown but we should create appropriate typing in the future
+  // TODO: Right now we just use Unknown but we should create appropriate typing for Jsons in the future
   override def typingResult: TypingResult = Unknown
 }
