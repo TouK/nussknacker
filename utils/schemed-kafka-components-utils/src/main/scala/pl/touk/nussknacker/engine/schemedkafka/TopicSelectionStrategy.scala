@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.ListTopicsOptions
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
@@ -31,7 +32,7 @@ class TopicsWithExistingSubjectSelectionStrategy extends TopicSelectionStrategy 
 
 }
 
-class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy {
+class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy with LazyLogging {
 
   override def getTopics(
       schemaRegistryClient: SchemaRegistryClient,
@@ -55,7 +56,8 @@ class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy {
         // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
         case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
           List.empty
-        case _: KafkaException =>
+        case ex: KafkaException =>
+          logger.error("Kafka exception while getting topics", ex)
           List.empty
       }
     }
