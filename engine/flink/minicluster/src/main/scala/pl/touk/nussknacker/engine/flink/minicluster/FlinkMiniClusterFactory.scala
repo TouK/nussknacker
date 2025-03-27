@@ -69,11 +69,13 @@ object FlinkMiniClusterFactory extends LazyLogging {
     miniClusterConfig.addAll(miniClusterConfigOverrides)
 
     logger.debug(s"Creating MiniCluster with configuration: $miniClusterConfig")
-    val miniCluster = createMiniCluster(miniClusterConfig)
     // We have to setup classloader that contains flink-runtime as a context classloader,
     // because otherwise sometimes MiniCluster couldn't load any RpcSystemLoader
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      miniCluster.start()
+    // On the same classpath, there should be extensions such as MetricReporterFactory
+    val miniCluster = ThreadUtils.withThisAsContextClassLoader(modelClassLoader) {
+      val mc = createMiniCluster(miniClusterConfig)
+      mc.start()
+      mc
     }
 
     def createStreamExecutionEnv(attached: Boolean): StreamExecutionEnvironment = {

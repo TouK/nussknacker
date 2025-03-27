@@ -240,6 +240,7 @@ lazy val commonSettings =
         "org.apache.commons" % "commons-compress" % flinkCommonsCompressV, // dependency of avro
         "org.apache.commons" % "commons-text"     % flinkCommonsTextV,     // dependency of commons-lang3, avro via commons-compress
         "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
+        "org.influxdb"       % "influxdb-java"    % filnkInfluxdbJavaV,
         "io.circe"          %% "circe-core"       % circeV,
         "io.circe"          %% "circe-parser"     % circeV,
 
@@ -298,6 +299,7 @@ val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
+val filnkInfluxdbJavaV    = "2.17"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
 val avroV                 = "1.11.4"
@@ -767,6 +769,8 @@ lazy val flinkExecutor = (project in flink("executor"))
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
         "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
+        // This is needed when flink minicluster is used for deployment
+        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV % Provided,
       )
     },
     prepareItLibs               := {
@@ -786,6 +790,12 @@ lazy val flinkExecutor = (project in flink("executor"))
           "io.dropwizard.metrics",
           "metrics-core",
           "flink-dropwizard-metrics-deps/dropwizard-metrics-core.jar"
+        ) ++
+        createClasspathBasedMapping(
+          (Compile / managedClasspath).value,
+          "org.apache.flink",
+          "flink-metrics-influxdb",
+          "flink-influxdb-metrics-deps/flink-metrics-influxdb.jar"
         )
     }.toList,
   )
@@ -1680,7 +1690,7 @@ lazy val processReports = (project in file("designer/processReports"))
       Seq(
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-influxdb"  % testContainersScalaV % "it,test",
-        "org.influxdb"  % "influxdb-java"                  % "2.24"               % "it,test"
+        "org.influxdb"  % "influxdb-java"                  % filnkInfluxdbJavaV   % "it,test"
       )
     }
   )
