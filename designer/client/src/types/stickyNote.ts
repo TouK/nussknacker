@@ -1,4 +1,12 @@
-export const StickyNoteType = "StickyNote";
-export function createStickyNoteId(noteId: number) {
-    return StickyNoteType + "_" + noteId;
-}
+import type { ComponentDefinition } from "./scenarioGraph";
+
+export const StickyNoteType = "StickyNoteNode";
+
+export const StickyNoteDefinition: ComponentDefinition = {
+    parameters: [],
+    returnType: null,
+    icon: `/assets/components/${StickyNoteType}.svg`,
+    docsUrl: null,
+    outputParameters: null,
+    label: "",
+};
