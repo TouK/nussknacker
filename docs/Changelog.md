@@ -131,6 +131,8 @@
     static values.
   * JsonDefaultExpression and AvroDefaultExpression default string values changed to SpEL template.
   * For now on, default values are provided for dry run parameters.
+* [#7764](https://github.com/TouK/nussknacker/pull/7764) Fix SpEL template evaluation on runtime. For now on, there is
+  no need to pass .toString on variable in SpEL template expression. 
 
 ## 1.18
 

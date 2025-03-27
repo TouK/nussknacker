@@ -5,11 +5,11 @@ case class TemplateEvaluationResult(renderedParts: List[TemplateRenderedPart]) {
 }
 
 sealed trait TemplateRenderedPart {
-  def value: String
+  def value: AnyRef
 }
 
 object TemplateRenderedPart {
   case class RenderedLiteral(value: String) extends TemplateRenderedPart
 
-  case class RenderedSubExpression(value: String) extends TemplateRenderedPart
+  case class RenderedSubExpression(value: AnyRef) extends TemplateRenderedPart
 }
