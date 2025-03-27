@@ -18,18 +18,19 @@ import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.{Input, elementHolder, stateDescriptorName, timestampToOverrideHolder}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.HackedWindowOperator.{Input, elementHolder, stateDescriptorName, timestampToOverrideHolder}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
 
 import java.lang
 
-object OnEventTriggerWindowOperator {
+object HackedWindowOperator {
   type Input[A] = ValueWithContext[StringKeyedValue[A]]
 
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
   val elementHolder = new ThreadLocal[api.Context]
+  // TODO_PAWEL make this and other holder private here, and pass lambda to set it to trigger, add callback to trigger in other words. Yes, it is possible
   val timestampToOverrideHolder = new ThreadLocal[Long]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
@@ -39,15 +40,22 @@ object OnEventTriggerWindowOperator {
       implicit fctx: FlinkCustomNodeContext
   ) {
 
-    def eventTriggerWindow(
+    def hackedEventTriggerWindow(
         assigner: WindowAssigner[_ >: Input[A], TimeWindow],
         types: AggregatorTypeInformations,
         aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
         trigger: Trigger[_ >: Input[A], TimeWindow]
-    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream.transform(
+    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = hackedWindow(assigner, types, aggregateFunction, FireOnEachEvent[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger))
+
+    def hackedWindow(
+                            assigner: WindowAssigner[_ >: Input[A], TimeWindow],
+                            types: AggregatorTypeInformations,
+                            aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
+                            trigger: Trigger[_ >: Input[A], TimeWindow]
+                          ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream.transform(
       assigner.getClass.getSimpleName,
       types.returnedValueTypeInfo,
-      new OnEventTriggerWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger)
+      new HackedWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger)
     )
 
   }
@@ -55,7 +63,7 @@ object OnEventTriggerWindowOperator {
 }
 
 @silent("deprecated")
-class OnEventTriggerWindowOperator[A](
+class HackedWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,
     assigner: WindowAssigner[_ >: Input[A], TimeWindow],
@@ -75,7 +83,7 @@ class OnEventTriggerWindowOperator[A](
       new InternalSingleValueProcessWindowFunction(
         new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId)
       ),
-      FireOnEachEvent[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger),
+      trigger,
       0L,  // lateness,
       null // tag
     ) {

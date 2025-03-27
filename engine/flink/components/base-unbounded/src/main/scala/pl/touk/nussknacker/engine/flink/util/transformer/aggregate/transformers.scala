@@ -8,13 +8,13 @@ import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
-import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, _}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.OnEventOperatorKeyedStream
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.HackedWindowOperator.OnEventOperatorKeyedStream
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
 import pl.touk.nussknacker.engine.util.KeyedValue
 
@@ -124,7 +124,7 @@ object transformers {
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
-                .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
+                .hackedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                 .window(windowDefinition)
@@ -192,18 +192,9 @@ object transformers {
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>
-              keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
+              keyedStream.hackedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
-              keyedStream
-                .window(windowDefinition)
-                .trigger(baseTrigger)
-                .aggregate(
-                  aggregatingFunction,
-                  EnrichingWithKeyFunction(fctx),
-                  typeInfos.storedTypeInfo,
-                  typeInfos.returnTypeInfo,
-                  typeInfos.returnedValueTypeInfo
-                )
+              keyedStream.hackedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
           }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         })
       )

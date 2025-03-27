@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.Window
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.timestampToOverrideHolder
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.HackedWindowOperator.timestampToOverrideHolder
 
 object triggers {
 
@@ -62,6 +62,7 @@ object triggers {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       if (endFunction(element)) {
+        timestampToOverrideHolder.set(timestamp)
         TriggerResult.FIRE_AND_PURGE
       } else super.onElement(element, timestamp, window, ctx)
 
