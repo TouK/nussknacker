@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 
@@ -48,7 +47,7 @@ trait UniversalSchemaSupport {
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
 
-  protected def extractParameter(
+  def extractParameterForSink(
       schema: ParsedSchema,
       rawMode: Boolean,
       validationMode: ValidationMode,
@@ -56,31 +55,9 @@ trait UniversalSchemaSupport {
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
 
-  def extractParameterForSink(
-      schema: ParsedSchema,
-      rawMode: Boolean,
-      validationMode: ValidationMode,
-      rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(
-      schema: ParsedSchema,
-      rawMode: Boolean,
-      validationMode: ValidationMode,
-      rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName]
-    )
-
   def extractParameterForTests(
       schema: ParsedSchema
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(
-      schema,
-      rawMode = false,
-      validationMode = ValidationMode.lax,
-      rawParameter = Parameter[AnyRef](sinkValueParamName),
-      restrictedParamNames = Set.empty
-    )
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
 
   final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
     val recordFormatter = recordFormatterSupport(schemaRegistryClient)

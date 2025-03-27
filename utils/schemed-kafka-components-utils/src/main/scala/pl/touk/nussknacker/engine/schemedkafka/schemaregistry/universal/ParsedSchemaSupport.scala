@@ -81,25 +81,6 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
   override def typeDefinition(schema: ParsedSchema): TypingResult =
     AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def extractParameter(
-      schema: ParsedSchema,
-      rawMode: Boolean,
-      validationMode: ValidationMode,
-      rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-    if (rawMode) {
-      Validated.Valid(
-        SingleSchemaBasedParameter(
-          rawParameter,
-          new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-        )
-      )
-    } else {
-      AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames)
-    }
-  }
-
   override def formValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
     val encoder = ToAvroSchemaBasedEncoder(validationMode)
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
@@ -121,6 +102,45 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     }
   }
 
+  override def extractParameterForSink(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+
+  override def extractParameterForTests(schema: ParsedSchema)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    extractParameter(
+      schema,
+      rawMode = false,
+      validationMode = ValidationMode.lax,
+      rawParameter = Parameter[AnyRef](sinkValueParamName),
+      restrictedParamNames = Set.empty
+    )
+
+  private def extractParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    if (rawMode) {
+      Validated.Valid(
+        SingleSchemaBasedParameter(
+          rawParameter,
+          new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+        )
+      )
+    } else {
+      AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames)
+    }
+  }
+
 }
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
@@ -135,7 +155,36 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
 
-  override def extractParameter(
+  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
+    val encoder   = new ToJsonSchemaBasedEncoder(mode)
+    val rawSchema = schema.cast().rawSchema()
+    (value: Any) => encoder.encodeOrError(value, rawSchema)
+  }
+
+  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+    JsonPayloadRecordFormatterSupport
+
+  override def extractParameterForSink(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+
+  override def extractParameterForTests(schema: ParsedSchema)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    extractParameter(
+      schema,
+      rawMode = false,
+      validationMode = ValidationMode.lax,
+      rawParameter = Parameter[AnyRef](sinkValueParamName),
+      restrictedParamNames = Set.empty
+    )
+
+  private def extractParameter(
       schema: ParsedSchema,
       rawMode: Boolean,
       validationMode: ValidationMode,
@@ -155,14 +204,6 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     }
   }
 
-  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
-    val encoder   = new ToJsonSchemaBasedEncoder(mode)
-    val rawSchema = schema.cast().rawSchema()
-    (value: Any) => encoder.encodeOrError(value, rawSchema)
-  }
-
-  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
-    JsonPayloadRecordFormatterSupport
 }
 
 object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
@@ -182,14 +223,14 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
     jsonSupport.recordFormatterSupport(schemaRegistryClient)
 
-  override def extractParameter(
+  override def extractParameterForSink(
       schema: ParsedSchema,
       rawMode: Boolean,
       validationMode: ValidationMode,
       rawParameter: Parameter,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    jsonSupport.extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+    jsonSupport.extractParameterForSink(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
 
   override def extractParameterForTests(schema: ParsedSchema)(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
     val parameter =
