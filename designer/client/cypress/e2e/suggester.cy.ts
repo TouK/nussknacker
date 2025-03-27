@@ -12,6 +12,27 @@ describe("Expression suggester", () => {
         cy.deleteAllTestProcesses({ filter: seed });
     });
 
+    it("should display colorfull and sorted completions", () => {
+        cy.visitNewProcess(seed, "variables");
+        cy.layoutScenario();
+        cy.get("[model-id=kafka-string]").trigger("dblclick");
+        cy.get("[data-testid=window]").as("modal");
+        cy.get("[title=Value]").next().find(".ace_editor").click().type(".").contains(/\.$/);
+        cy.get(".ace_autocomplete")
+            .should("be.visible")
+            .matchImage({
+                maxDiffThreshold: 0.0025,
+                screenshotConfig: { padding: [25, 1, 1] },
+            });
+        cy.get("[title=Value]").next().find(".ace_editor").click().type("c").contains(/\.c$/);
+        cy.get(".ace_autocomplete")
+            .should("be.visible")
+            .matchImage({
+                maxDiffThreshold: 0.0025,
+                screenshotConfig: { padding: [25, 1, 1] },
+            });
+    });
+
     it("should display javadocs", () => {
         cy.viewport(1600, 1200);
         cy.visitNewProcess(seed, "variables");
