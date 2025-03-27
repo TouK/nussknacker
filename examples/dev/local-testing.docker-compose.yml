@@ -8,6 +8,10 @@ services:
     image: busybox:1.36.1
     entrypoint: /bin/sh -c "tail -f /dev/null"
     depends_on:
+      nginx:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       influxdb:
@@ -44,6 +48,51 @@ services:
           memory: 256M
 
   ### Nussknacker metrics-related services:
+
+  nginx:
+    image: nginx:1.26.0-alpine
+    restart: unless-stopped
+    ports:
+      - 3080:8080
+      - 3181:8181
+    depends_on:
+      grafana:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/nginx-healthcheck || exit 1" ]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/additional:/etc/nginx/additional
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:10.1.10
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:/grafana"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3000"]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   influxdb:
     image: influxdb:1.8.10
