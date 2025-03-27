@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components
 
+import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import org.apache.avro
 import org.apache.avro.generic.GenericData
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroTestData, JsonTestData}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
@@ -24,7 +26,11 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util.Optional
 
-class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class UniversalCrossSourceLiteTest
+    extends AnyFunSuite
+    with KafkaSpec
+    with Matchers
+    with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -218,6 +224,9 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     resultRecord shouldBe expectedRecord
   }
 
-  private def createRunner = TestScenarioRunner.kafkaLiteBased().build()
+  private def createRunner =
+    TestScenarioRunner
+      .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .build()
 
 }

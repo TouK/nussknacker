@@ -22,11 +22,10 @@ class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvid
     Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, StaticParameterConfig]]]
   ] = {
     val jobData = JobData(scenario.metaData, processVersion)
-    modelData.withThisAsContextClassLoader {
-      commonModelDataInfoProvider
-        .compileAllCustomNodes(scenario)(jobData)
-        .map(nodes => extractParametersFromCustomNodes(nodes))
-    }
+    commonModelDataInfoProvider
+      .compileAllCustomNodes(scenario)(jobData)
+      .map(nodes => extractParametersFromCustomNodes(nodes))
+
   }
 
   private def extractParametersFromCustomNodes(
