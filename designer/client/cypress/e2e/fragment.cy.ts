@@ -238,16 +238,16 @@ describe("Fragment", () => {
 
         cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
-            if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#fragmentResult.") {
+            if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#fragmentResult.o") {
                 request.alias = "validation";
             }
         });
         cy.intercept("POST", "/api/parameters/*/suggestions", (request) => {
-            if (request?.body.expression.expression == "#fragmentResult.") {
+            if (request?.body.expression.expression == "#fragmentResult.o") {
                 request.alias = "suggestions";
             }
         });
-        cy.get("[data-testid=window]").find('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get("[data-testid=window]").find('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.o");
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation")
             .its("response.statusCode")
