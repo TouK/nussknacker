@@ -61,7 +61,6 @@ The workaround here is to use the #CONV.toAny() helper to trick the typing subsy
 
 Often, we are interested in the first element of the list. If the list is empty and we try to access the first element, we will get a runtime error. The obvious way out is to use the Elvis operator:
 
-
 `myList.size == 0 ? null : myList[0]`
 
 There is a shorter way to achieve exactly the same:
