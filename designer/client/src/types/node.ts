@@ -1,6 +1,7 @@
-import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
-import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
-import { StickyNoteType } from "./stickyNote";
+import type { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
+import type { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
+import type { StickyNoteType } from "./stickyNote";
+import type { NodeValidationError } from "./validation";
 
 type Type = "FragmentInput" | typeof StickyNoteType | string;
 
@@ -42,6 +43,17 @@ export type NodeType<F extends Field = Field> = {
     nodeType?: string;
     //TODO: Remove me and add correct properties
     [key: string]: any;
+};
+
+export type Dimensions = { width: number; height: number };
+
+export type ColorValueHex = `#${string}`;
+
+export type StickyNoteNodeType = NodeType & {
+    content: string;
+    dimensions: Dimensions;
+    color: ColorValueHex;
+    errors?: NodeValidationError[];
 };
 
 export type FragmentNodeType = NodeType;

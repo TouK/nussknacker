@@ -81,6 +81,8 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
        |    }
        |  ],
        |  "additionalBranches" : [
+       |  ],
+       |  "stickyNotes" : [
        |  ]
        |}""".stripMargin
 

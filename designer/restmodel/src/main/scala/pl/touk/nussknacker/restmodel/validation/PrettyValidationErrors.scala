@@ -93,6 +93,23 @@ object PrettyValidationErrors {
           description,
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
+      case StickyNoteContentTooLong(_, length, max) =>
+        val message     = "Sticky note content too Long"
+        val description = s"Maximum allowed length of sticky note is: $max - found: $length"
+        node(
+          message,
+          description,
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case StickyNotesLimitExceeded(_, count, limit) =>
+        val message = "Number of sticky notes exceeded"
+        val description =
+          s"Too many sticky notes. Limit is set to: $limit, but found $count sticky note${if (count > 1) "s" else ""}"
+        node(
+          message,
+          description,
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
       case DisabledNode(nodeId) =>
         node(
           message = s"Node $nodeId is disabled",

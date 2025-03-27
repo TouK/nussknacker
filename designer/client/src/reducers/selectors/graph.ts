@@ -1,15 +1,14 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
+
 import ProcessUtils from "../../common/ProcessUtils";
-import { StickyNote } from "../../common/StickyNote";
-import { TestFormParameters } from "../../common/TestResultUtils";
+import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
-import { ScenarioGraph } from "../../types";
-import { ProcessCounts, TestData } from "../graph";
-import { RootState } from "../index";
+import type { ScenarioGraph } from "../../types";
+import type { ProcessCounts, TestData } from "../graph";
+import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
-import { getStickyNotesSettings } from "./settings";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
@@ -78,10 +77,7 @@ export const getTestResultsLoading = createSelector(getGraph, (g) => g.testResul
 export const getTestData = createSelector(getGraph, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
-export const getStickyNotes = createSelector(
-    [getGraph, getStickyNotesSettings],
-    (g, settings) => (settings?.enabled ? g.stickyNotes || ([] as StickyNote[]) : []) as StickyNote[],
-);
+
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],
     (testResults, processCounts) => testResults || processCounts,
