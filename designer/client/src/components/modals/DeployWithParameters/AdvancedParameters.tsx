@@ -1,15 +1,18 @@
-import React, { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { groupBy, mapValues } from "lodash";
 import { Typography } from "@mui/material";
-import { AdvancedParametersSection } from "./AdvancedParametersSection";
+import { groupBy, mapValues } from "lodash";
+import React, { useEffect } from "react";
+import { useErrorBoundary } from "react-error-boundary";
+import { useTranslation } from "react-i18next";
+import { useLocalstorageState } from "rooks";
+import { clear, suspend } from "suspend-react";
+
+import type { NodesDeploymentData } from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService";
+import type { ActionNodeParameters } from "../../../types/action";
+import { Expandable } from "../../common/Expandable";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { GroupedActionParameter } from "./GroupedActionParameter";
-import HttpService, { NodesDeploymentData } from "../../../http/HttpService";
-import { ActionNodeParameters } from "../../../types/action";
-import { useErrorBoundary } from "react-error-boundary";
-import { clear, suspend } from "suspend-react";
-import { useLocalstorageState } from "rooks";
+
 
 interface AdvancedParametersProps {
     processName: string;
@@ -57,20 +60,14 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processN
 
     return (
         <div>
-            <Typography
-                sx={(theme) => ({
-                    color: theme.palette.primary.main,
-                    pt: "1em",
-                    textTransform: "uppercase",
-                    textDecoration: "none",
-                })}
-            >
+            <Typography sx={{ typography: "body1", color: "text.secondary" }}>
                 {t("dialog.advancedParameters.title", "Advanced parameters")}
             </Typography>
             {Object.entries(groupBy(parametersDefinition, (def) => def.componentId)).map(([componentId, nodeParameters]) => (
-                <AdvancedParametersSection
+                <Expandable
                     key={componentId}
                     componentId={componentId}
+                    expandableTitle={componentId}
                     expanded={(expandedState[componentId] ??= false)}
                     onChange={(isExpanded) =>
                         setExpandedState((prevState) => ({
@@ -107,7 +104,7 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processN
                             );
                         })}
                     </NodeTable>
-                </AdvancedParametersSection>
+                </Expandable>
             ))}
         </div>
     );
