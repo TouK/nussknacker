@@ -62,7 +62,8 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
          |    "additionalFields" : null
          |  },
          |  "nodes" : [],
-         |  "edges" : []
+         |  "edges" : [],
+         |  "stickyNotes" : []
          |}""".stripMargin
 
     val parsedLegacy = parser.parse(legacyJsonWithNoFields).rightValue

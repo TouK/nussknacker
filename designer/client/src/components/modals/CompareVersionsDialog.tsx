@@ -1,28 +1,31 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
+import { FormControl, FormLabel } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
+import i18next from "i18next";
 import { keys } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { WindowContent, WindowKind } from "../../windowManager";
+
+import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
+import type { NodeType, StickyNoteNodeType } from "../../types";
+import { StickyNoteType } from "../../types/stickyNote";
+import { WindowContent, WindowKind } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
-import { ProcessVersionType } from "../Process/types";
+import type { Option } from "../graph/node-modal/fragment-input-definition/TypeSelect";
+import { TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
+import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
-import { NodeType } from "../../types";
-import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
-import { FormControl, FormLabel } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { Option, TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
-import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
-import Icon from "../../assets/img/toolbarButtons/compare.svg";
-import i18next from "i18next";
+import type { ProcessVersionType } from "../Process/types";
 import { PropertiesForm } from "../properties";
+import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 const initState: State = {
     otherVersion: null,
@@ -114,10 +117,21 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [versionDisplayString],
     );
 
+    const enrichStickyNoteNode = (node: NodeType): StickyNoteNodeType => {
+        return {
+            ...node,
+            type: StickyNoteType,
+        } as StickyNoteNodeType;
+    };
+
     const printDiff = (diffId: string) => {
         const diff = state.difference[diffId];
 
         switch (diff.type) {
+            case "StickyNotePresentInOther":
+            case "StickyNotePresentInCurrent":
+            case "StickyNoteDifferent":
+                return renderDiff(enrichStickyNoteNode(diff.currentStickyNote), enrichStickyNoteNode(diff.otherStickyNote), printNode);
             case "NodeNotPresentInOther":
             case "NodeNotPresentInCurrent":
             case "NodeDifferent":
@@ -158,7 +172,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     };
 
     const printNode = (node: NodeType) => {
-        return node ? <NodeDetailsContent node={node} /> : <div className="notPresent">Node not present</div>;
+        return node?.id ? <NodeDetailsContent node={node} /> : <div className="notPresent">Node not present</div>;
     };
 
     const stubOnChange = () => {

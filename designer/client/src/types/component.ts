@@ -1,4 +1,4 @@
-import { BranchParametersTemplate, NodeType } from "./node";
+import type { BranchParametersTemplate, NodeType } from "./node";
 
 export type Component = {
     branchParametersTemplate?: BranchParametersTemplate;
@@ -6,6 +6,7 @@ export type Component = {
     label: string;
     componentId: string;
     disabled?: () => boolean;
+    tooltip?: string;
 };
 export type ComponentGroup = {
     components: Component[];
