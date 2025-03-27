@@ -39,10 +39,21 @@ object JsonSchemaBasedParameter {
       isRequired = None
     )
 
-  def emptySchemaBasedParameter(defaultParamName: FieldName, validationMode: ValidationMode)(
-      implicit nodeId: NodeId
-  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    ParameterRetriever(EmptySchema.INSTANCE, defaultParamName, validationMode).getJsonEditorInputParameter
+  def emptySchemaBasedParameter(
+      defaultParamName: FieldName,
+      validationMode: ValidationMode
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    val emptyJsonSchema = EmptySchema.INSTANCE
+    val typing          = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(emptyJsonSchema, None).typingResult
+    val parameter = Parameter(defaultParamName, typing)
+      .copy(isLazyParameter = true, editors = List(JsonParameterEditor))
+    Valid(
+      SingleSchemaBasedParameter(
+        parameter,
+        new JsonSchemaOutputValidator(validationMode).validate(_, emptyJsonSchema, None)
+      )
+    )
+  }
 
   private case class ParameterRetriever(
       rootSchema: Schema,
@@ -68,18 +79,6 @@ object JsonSchemaBasedParameter {
             createJsonSinkSingleValueParameter(schema, paramName.getOrElse(defaultParamName), defaultValue, isRequired)
           )
       }
-    }
-
-    def getJsonEditorInputParameter: ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-      val typing = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(rootSchema, None).typingResult
-      val parameter = Parameter(defaultParamName, typing)
-        .copy(isLazyParameter = true, editors = List(JsonParameterEditor))
-      Valid(
-        SingleSchemaBasedParameter(
-          parameter,
-          new JsonSchemaOutputValidator(validationMode).validate(_, rootSchema, None)
-        )
-      )
     }
 
     private def createJsonSinkSingleValueParameter(

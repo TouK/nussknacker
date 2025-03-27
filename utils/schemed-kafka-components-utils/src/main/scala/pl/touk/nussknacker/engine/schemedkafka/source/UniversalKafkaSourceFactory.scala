@@ -252,17 +252,11 @@ class UniversalKafkaSourceFactory(
         NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
       )
       .andThen { runtimeSchema =>
-        val parsedSchema = runtimeSchema.schema
-        val universalSchemaSupport: UniversalSchemaSupport =
-          schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        val parsedSchema                                   = runtimeSchema.schema
+        val universalSchemaSupport: UniversalSchemaSupport = schemaSupportDispatcher.forParsedSchema(parsedSchema)
 
-        val extractedParameters = parsedSchema match {
-          // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
-          case ContentTypesSchemas.schemaForJson => NoSchemaJsonSupport.extractJsonInputParameter()
-          case _                                 => universalSchemaSupport.extractParameters(parsedSchema)
-        }
-
-        extractedParameters
+        universalSchemaSupport
+          .extractParameters(parsedSchema)
           .map { params =>
             KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
           }

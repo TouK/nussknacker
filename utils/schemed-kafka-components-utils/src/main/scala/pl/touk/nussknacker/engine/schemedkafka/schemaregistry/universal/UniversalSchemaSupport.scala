@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 
 class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
@@ -24,6 +24,13 @@ class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 
   def forSchemaType(schemaType: String): UniversalSchemaSupport =
     supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))
+
+  def forParsedSchema(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
+    // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
+    case ContentTypesSchemas.schemaForJson => NoSchemaJsonSupport
+    case _                                 => forSchemaType(parsedSchema.schemaType())
+  }
+
 }
 
 object UniversalSchemaSupportDispatcher {
