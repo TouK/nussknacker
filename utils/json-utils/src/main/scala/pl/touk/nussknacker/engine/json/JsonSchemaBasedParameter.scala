@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.json
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
-import org.everit.json.schema.{EmptySchema, ObjectSchema, Schema}
+import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -38,22 +38,6 @@ object JsonSchemaBasedParameter {
       defaultValue = None,
       isRequired = None
     )
-
-  def emptySchemaBasedParameter(
-      defaultParamName: FieldName,
-      validationMode: ValidationMode
-  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-    val emptyJsonSchema = EmptySchema.INSTANCE
-    val typing          = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(emptyJsonSchema, None).typingResult
-    val parameter = Parameter(defaultParamName, typing)
-      .copy(isLazyParameter = true, editors = List(JsonParameterEditor))
-    Valid(
-      SingleSchemaBasedParameter(
-        parameter,
-        new JsonSchemaOutputValidator(validationMode).validate(_, emptyJsonSchema, None)
-      )
-    )
-  }
 
   private case class ParameterRetriever(
       rootSchema: Schema,
