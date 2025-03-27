@@ -5,6 +5,7 @@ import org.apache.flink.api.common.functions.{AggregateFunction, OpenContext, Ru
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
 import org.apache.flink.streaming.api.datastream.{KeyedStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
+import org.apache.flink.streaming.api.operators.TimestampedCollector
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.Trigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
@@ -17,11 +18,7 @@ import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.{
-  elementHolder,
-  stateDescriptorName,
-  Input
-}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.{Input, elementHolder, stateDescriptorName, timestampToOverrideHolder}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
 
@@ -33,6 +30,7 @@ object OnEventTriggerWindowOperator {
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
   val elementHolder = new ThreadLocal[api.Context]
+  val timestampToOverrideHolder = new ThreadLocal[Long]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
@@ -88,6 +86,7 @@ class OnEventTriggerWindowOperator[A](
       super.processElement(element)
     } finally {
       elementHolder.remove()
+      timestampToOverrideHolder.remove()
     }
   }
 
@@ -117,6 +116,13 @@ private class ValueEmittingWindowFunction(
     // tylko jak mam odroznic sytuacje gdy window jest jakby przerwany wczesniej, w tym triggerze. mam jakis stan trzymac?
     elements.forEach { element =>
       val ctx = Option(elementHolder.get()).getOrElse(api.Context(contextIdGenerator.nextContextId()))
+
+      out match {
+        case timedOut: TimestampedCollector[_] =>
+          Option(timestampToOverrideHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
+        case _ =>
+      }
+
       out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))
     }
   }

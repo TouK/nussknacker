@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.Window
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.timestampToOverrideHolder
 
 object triggers {
 
@@ -31,11 +32,17 @@ object triggers {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       val result = super.onElement(element, timestamp, window, ctx)
-      result match {
+      val changedResult = result match {
         case TriggerResult.CONTINUE => TriggerResult.FIRE
         case TriggerResult.PURGE    => TriggerResult.FIRE_AND_PURGE
         case fire                   => fire
       }
+
+      if (!result.isFire && changedResult.isFire) {
+        timestampToOverrideHolder.set(timestamp)
+      }
+
+      changedResult
     }
 
     override def onProcessingTime(time: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
