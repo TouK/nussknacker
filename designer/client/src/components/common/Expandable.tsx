@@ -4,14 +4,27 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Typography } from "@mui/material";
 import AccordionDetails from "@mui/material/AccordionDetails";
+import { SxProps } from "@mui/system";
+import { Theme } from "@mui/material/styles";
 
 interface Props {
     componentId: string;
+    expandableTitle: string;
     onChange: (isExpanded: boolean) => void;
-    expanded: boolean;
+    expanded?: boolean;
+    expandIconSx?: SxProps<Theme>;
+    typographySx?: SxProps<Theme>;
 }
 
-export function AdvancedParametersSection({ children, componentId, onChange, expanded }: PropsWithChildren<Props>): JSX.Element {
+export function Expandable({
+    children,
+    componentId,
+    expandableTitle,
+    onChange,
+    expanded,
+    expandIconSx={ color: "inherit" },
+    typographySx,
+}: PropsWithChildren<Props>): JSX.Element {
     return (
         <Accordion
             disableGutters
@@ -21,12 +34,12 @@ export function AdvancedParametersSection({ children, componentId, onChange, exp
             expanded={expanded}
         >
             <AccordionSummary
-                expandIcon={<ExpandMoreIcon sx={{ color: "inherit" }} />}
+                expandIcon={<ExpandMoreIcon sx={expandIconSx} />}
                 aria-controls={`${componentId}-content`}
                 id={`${componentId}-header`}
-                sx={{ flexDirection: "row-reverse", border: 0 }}
+                sx={{ flexDirection: "row-reverse", border: 0, padding: 0 }}
             >
-                <Typography>{componentId}</Typography>
+                <Typography sx={typographySx}>{expandableTitle}</Typography>
             </AccordionSummary>
             <AccordionDetails>{children}</AccordionDetails>
         </Accordion>

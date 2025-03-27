@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { groupBy, mapValues } from "lodash";
 import { Typography } from "@mui/material";
-import { AdvancedParametersSection } from "./AdvancedParametersSection";
+import { Expandable } from "../../common/Expandable";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { GroupedActionParameter } from "./GroupedActionParameter";
 import HttpService, { NodesDeploymentData } from "../../../http/HttpService";
@@ -68,9 +68,10 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processN
                 {t("dialog.advancedParameters.title", "Advanced parameters")}
             </Typography>
             {Object.entries(groupBy(parametersDefinition, (def) => def.componentId)).map(([componentId, nodeParameters]) => (
-                <AdvancedParametersSection
+                <Expandable
                     key={componentId}
                     componentId={componentId}
+                    expandableTitle={componentId}
                     expanded={(expandedState[componentId] ??= false)}
                     onChange={(isExpanded) =>
                         setExpandedState((prevState) => ({
@@ -107,7 +108,7 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processN
                             );
                         })}
                     </NodeTable>
-                </AdvancedParametersSection>
+                </Expandable>
             ))}
         </div>
     );
