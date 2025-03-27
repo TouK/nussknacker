@@ -33,8 +33,8 @@ import { useAdhocTestingParametersValidation } from "../AdhocTesting/useAdhocTes
 import type { TestingData } from "./TestingDialog";
 
 export enum TestType {
-    "withParameters" = "Dry run with parameters",
-    "withGeneratedData" = "With generated data",
+    withParameters = "withParameters",
+    withGeneratedData = "withGeneratedData",
 }
 
 export type FormValue = { testType: string };

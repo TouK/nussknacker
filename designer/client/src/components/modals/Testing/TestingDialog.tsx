@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
-import type { ElementType, ReactElement } from "react";
-import React, { useState } from "react";
+import type { ElementType, ReactElement} from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
@@ -48,9 +48,11 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         .filter(([_, isAvailable]) => isAvailable)
         .map(([key]) => key as TestType);
 
-    const [testType, setState] = useState<FormValue>({
-        testType: availableTestTypes[0] ?? "",
-    });
+    const [testType, setState] = useValidatedLocalStorage<FormValue>(
+        "selectedTestTypeState",
+        { testType: availableTestTypes[0] },
+        (stored: FormValue) => availableTestTypes.includes(TestType[stored.testType]),
+    );
     const [touched, setTouched] = useState<TouchedValue>({
         testType: false,
     });
@@ -84,3 +86,24 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
 }
 
 export default TestingDialog;
+
+function useValidatedLocalStorage<T>(key: string, initialValue: T, validate: (value: any) => boolean) {
+    const [state, setState] = useState<T>(() => {
+        try {
+            const storedValue = localStorage.getItem(key);
+            if (storedValue !== null) {
+                const parsedValue = JSON.parse(storedValue);
+                return validate(parsedValue) ? parsedValue : initialValue;
+            }
+        } catch (error) {
+            console.error("Error reading localStorage:", error);
+        }
+        return initialValue;
+    });
+
+    useEffect(() => {
+        localStorage.setItem(key, JSON.stringify(state));
+    }, [key, state]);
+
+    return [state, setState] as const;
+}
