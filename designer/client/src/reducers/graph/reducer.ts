@@ -1,26 +1,26 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
-import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
-import { Action, Reducer } from "../../actions/reduxTypes";
+import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick, sortBy } from "lodash";
+import type { StateWithHistory } from "redux-undo";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
+
+import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { ValidationResult } from "../../types";
+import type { Dimensions, ValidationResult } from "../../types";
+import { StickyNoteType } from "../../types/stickyNote";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
-import { NestedKeyOf } from "./nestedKeyOf";
+import type { NestedKeyOf } from "./nestedKeyOf";
 import { selectionState } from "./selectionState";
-import { GraphState } from "./types";
+import type { GraphState } from "./types";
 import {
     addNodesWithLayout,
-    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
-    prepareNewStickyNotesWithLayout,
-    removeStickyNoteFromLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -242,16 +242,48 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: action.layout,
             });
         }
-        case "STICKY_NOTES_UPDATED": {
-            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+        case "STICKY_NOTE_UPDATED": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const updatedNodes = nodes.map((node) =>
+                node.id === action.element.id
+                    ? {
+                          ...node,
+                          dimensions: action.element.attributes.size as Dimensions,
+                          content: action.content ? action.content : node.content,
+                      }
+                    : node,
+            );
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: updatedNodes,
+                    },
+                },
             };
         }
-        case "STICKY_NOTE_DELETED": {
-            const { stickyNotes, layout } = removeStickyNoteFromLayout(state, action.stickyNoteId);
+        case "STICKY_NOTE_SET_ERRORS": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const [stickyNotes, graphNodes] = partition(nodes, (node) => node.type === StickyNoteType);
+            const stickyNotesUpdated = stickyNotes.map((stickyNote) => {
+                return action.stickyNoteErrors[stickyNote.id]
+                    ? {
+                          ...stickyNote,
+                          errors: action.stickyNoteErrors[stickyNote.id],
+                      }
+                    : stickyNote;
+            });
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: [...graphNodes, ...stickyNotesUpdated],
+                    },
+                },
             };
         }
         case "NODES_WITH_EDGES_ADDED": {

@@ -1,14 +1,17 @@
-import { Dictionary } from "lodash";
+import type { dia } from "jointjs";
+import type { Dictionary } from "lodash";
 import { flushSync } from "react-dom";
+
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
-import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
-import { ThunkAction } from "../reduxTypes";
-import { EditNodeAction, EditScenarioLabels } from "./editNode";
-import { layoutChanged, NodePosition, Position } from "./ui/layout";
+import type { Edge, EdgeType, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ValidationResult } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
+import type { EditNodeAction, EditScenarioLabels } from "./editNode";
+import type { NodePosition, Position } from "./ui/layout";
+import { layoutChanged } from "./ui/layout";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -49,6 +52,12 @@ type NodeAddedAction = {
     type: "NODE_ADDED";
     nodes: NodeType[];
     layout: NodePosition[];
+};
+
+type StickyNoteUpdatedAction = {
+    type: "STICKY_NOTE_UPDATED";
+    element: dia.Element;
+    content?: string;
 };
 
 export function deleteNodes(ids: NodeId[]): ThunkAction {
@@ -142,6 +151,30 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
     };
 }
 
+export function stickyNoteUpdated(element: dia.Element, content?: string): ThunkAction {
+    return (dispatch) => {
+        batchGroupBy.startOrContinue();
+        flushSync(() => {
+            dispatch({
+                type: "STICKY_NOTE_UPDATED",
+                element,
+                content,
+            });
+            dispatch(layoutChanged());
+        });
+        batchGroupBy.end();
+    };
+}
+
+export function stickyNoteSetErrors(stickyNoteErrors: Record<string, NodeValidationError[] | null>): ThunkAction {
+    return (dispatch) => {
+        dispatch({
+            type: "STICKY_NOTE_SET_ERRORS",
+            stickyNoteErrors,
+        });
+    };
+}
+
 export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[]): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
@@ -165,6 +198,7 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
 
 export type NodeActions =
     | NodeAddedAction
+    | StickyNoteUpdatedAction
     | DeleteNodesAction
     | NodesConnectedAction
     | NodesDisonnectedAction

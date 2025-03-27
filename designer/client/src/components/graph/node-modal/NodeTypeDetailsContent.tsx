@@ -1,16 +1,18 @@
 import { cloneDeep, isEqual, set } from "lodash";
-import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
+import type { SetStateAction } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
-import { Edge, NodeType, NodeValidationError } from "../../../types";
+import type { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { ParamFieldLabel } from "./FieldLabel";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
-import { FragmentInputParameter } from "./fragment-input-definition/item";
+import type { FragmentInputParameter } from "./fragment-input-definition/item";
 import { FragmentInput } from "./fragmentInput";
 import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { JoinNode } from "./joinNode";
@@ -27,6 +29,7 @@ import { adjustParameters } from "./ParametersUtils";
 import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
+import { StickyNote } from "./stickyNote";
 import { Switch } from "./switch";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
@@ -358,6 +361,17 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
         case "Split":
             return (
                 <Split
+                    errors={errors}
+                    isEditMode={isEditMode}
+                    node={node}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    showValidation={showValidation}
+                />
+            );
+        case "StickyNoteNode":
+            return (
+                <StickyNote
                     errors={errors}
                     isEditMode={isEditMode}
                     node={node}

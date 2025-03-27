@@ -1,9 +1,9 @@
-import { ThunkAction } from "../reduxTypes";
-import { displayTestCapabilities, fetchStickyNotesForScenario } from "./process";
-import { fetchProcessDefinition } from "./processDefinitionData";
+import type { ProcessName } from "../../components/Process/types";
+import HttpService, { addStickyNotesToNodes } from "../../http/HttpService";
+import type { ThunkAction } from "../reduxTypes";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
-import { ProcessName } from "../../components/Process/types";
-import HttpService from "../../http/HttpService";
+import { displayTestCapabilities } from "./process";
+import { fetchProcessDefinition } from "./processDefinitionData";
 
 // This function is responsible for the initial fetching of scenario visualization
 // 1. Fetch (blocking, with await) latest scenario, but without validation, which makes it very quick.
@@ -22,7 +22,7 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
         try {
             dispatch({ type: "PROCESS_FETCH" });
             const response = await HttpService.fetchLatestProcessDetailsWithoutValidation(processName);
-            const scenario = response.data;
+            const scenario = addStickyNotesToNodes(response.data);
             const { name, isFragment, processingType } = scenario;
             await dispatch(fetchProcessDefinition(processingType, isFragment)).then((processDefinitionData) => {
                 dispatch({ type: "DISPLAY_PROCESS", scenario: scenario });
@@ -30,7 +30,6 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
             });
             dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayTestCapabilities(name, scenario.scenarioGraph));
-            dispatch(fetchStickyNotesForScenario(name, scenario.processVersionId));
             HttpService.validateProcess(name, name, scenario.scenarioGraph).then(({ data }) =>
                 dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
             );

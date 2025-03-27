@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesSettings
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.config.DesignerConfig.{ConfigurationMalformedException, HttpConfig}
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.{
