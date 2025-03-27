@@ -1,14 +1,15 @@
 import loadable from "@loadable/component";
-import { WindowContentProps } from "@touk/window-manager";
+import type { WindowContentProps } from "@touk/window-manager";
 import React from "react";
+
 import FrameDialog from "../components/FrameDialog";
+import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
+import RemoteModuleDialog from "../components/RemoteModuleDialog";
 import LoaderSpinner from "../components/spinner/Spinner";
 import { Debug } from "../containers/Debug";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
-import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
-import RemoteModuleDialog from "../components/RemoteModuleDialog";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -62,6 +63,10 @@ const PropertiesDialog = loadable(() => import("../components/modals/PropertiesD
     fallback: <LoaderSpinner show />,
 });
 
+const AiAssistantModal = loadable(() => import("../components/aiAssistant/components/AiAssistantModal"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -110,6 +115,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <AddAttachmentDialog {...props} />;
         case WindowKind.editProperties:
             return <PropertiesDialog {...props} />;
+        case WindowKind.aiAssistant:
+            return <AiAssistantModal {...props} />;
         default:
             return (
                 <WindowContent {...props}>

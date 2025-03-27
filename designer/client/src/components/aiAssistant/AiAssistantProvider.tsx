@@ -1,5 +1,6 @@
-import React, { ReactNode } from "react";
 import { AssistantRuntimeProvider, useLocalRuntime, type ChatModelAdapter } from "@assistant-ui/react";
+import type { ReactNode } from "react";
+import React from "react";
 
 const backendApi = async function* ({ messages, abortSignal, context }) {
     const response = await fetch("http://0.0.0.0:8080/sse", {
@@ -60,7 +61,7 @@ const MyModelAdapter: ChatModelAdapter = {
     },
 };
 
-export function MyRuntimeProvider({
+export function AiAssistantProvider({
     children,
 }: Readonly<{
     children: ReactNode;

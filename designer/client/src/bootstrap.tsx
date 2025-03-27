@@ -2,6 +2,8 @@ import { css } from "@emotion/css";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
+import { AiAssistantProvider } from "./components/aiAssistant/AiAssistantProvider";
 import { ErrorBoundary } from "./components/common/error-boundary";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 import { BASE_PATH } from "./config";
@@ -12,8 +14,6 @@ import { SettingsProvider } from "./containers/SettingsInitializer";
 import "./i18n";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
 import { StoreProvider } from "./store/provider";
-import { AiAssistantButton } from "./components/aiAsistant/components/AiAssistantButton";
-import { MyRuntimeProvider } from "./components/aiAsistant/MyRuntimeProvider";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -29,13 +29,12 @@ const root = createRoot(rootContainer);
 
 const Root = () => (
     <>
-        <MyRuntimeProvider>
+        <AiAssistantProvider>
             <NuThemeProvider>
                 <ErrorBoundary>
                     <StoreProvider>
                         <SettingsProvider>
                             <NussknackerInitializer>
-                                <AiAssistantButton />
                                 <BuildInfoProvider>
                                     <RouterProvider router={router} />
                                 </BuildInfoProvider>
@@ -44,7 +43,7 @@ const Root = () => (
                     </StoreProvider>
                 </ErrorBoundary>
             </NuThemeProvider>
-        </MyRuntimeProvider>
+        </AiAssistantProvider>
 
         <GlideGridPortal />
     </>
