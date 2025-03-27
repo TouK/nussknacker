@@ -1,24 +1,25 @@
-import { ToolbarsSide } from "../../reducers/toolbars";
-import {
-    Draggable,
+import { cx } from "@emotion/css";
+import type {
     DraggableChildrenFn,
     DraggableLocation,
     DraggableProvided,
     DraggableRubric,
     DraggableStateSnapshot,
-    Droppable,
     DroppableProps,
     DroppableProvided,
     DroppableStateSnapshot,
 } from "@hello-pangea/dnd";
-import React, { CSSProperties, Suspense, useCallback, useMemo } from "react";
-import { useSelector } from "react-redux";
-import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
-import { getOrderForPosition } from "../../reducers/selectors/toolbars";
-import { Toolbar } from "./toolbar";
-import { cx } from "@emotion/css";
+import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { alpha, styled } from "@mui/material";
-import { TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
+import type { CSSProperties, PropsWithChildren } from "react";
+import React, { Suspense, useCallback, useContext, useMemo } from "react";
+import { useSelector } from "react-redux";
+
+import { getOrderForPosition } from "../../reducers/selectors/toolbars";
+import { ToolbarsSide } from "../../reducers/toolbars";
+import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
+import { DraggableIdContext, TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
+import type { Toolbar } from "./toolbar";
 
 export const StyledDraggableItem = styled("div")(({ theme }) => ({
     [`&.${DRAGGING_CLASSNAME}`]: {
@@ -97,47 +98,100 @@ const DroppableContainer = styled("div")({
     flexDirection: "column",
     flexGrow: 1,
     justifyContent: "space-around",
-    "&:first-of-type": {
+    "&:first-of-type:not(&:last-child)": {
         justifyContent: "flex-start",
     },
-    "&:last-child": {
+    "&:last-child:not(&:first-of-type)": {
         justifyContent: "flex-end",
     },
 });
 
+const isHorizontal = (side) =>
+    ![ToolbarsSide.LeftBottom, ToolbarsSide.LeftTop, ToolbarsSide.RightBottom, ToolbarsSide.RightTop].includes(side);
+
+const CloneWrapper = (
+    props: PropsWithChildren<{
+        snapshot: DraggableStateSnapshot;
+        draggable: DraggableProvided;
+        toolbar: Toolbar;
+    }>,
+) => {
+    return <div>{props.children}</div>;
+};
+
+function CloneWrapper2(props) {
+    return <CloneWrapper {...props} />;
+}
+
 export function ToolbarsContainer(props: Props): JSX.Element {
     const { side, availableToolbars, className } = props;
+
     const selector = useMemo(() => getOrderForPosition(side), [side]);
     const order = useSelector(selector);
 
-    const ordered = availableToolbars.filter(({ id }) => order.includes(id)).sort(sortByIdsFrom(order));
+    const ordered = useMemo(
+        () => availableToolbars.filter(({ id }) => order.includes(id)).sort(sortByIdsFrom(order)),
+        [availableToolbars, order],
+    );
 
     const renderDraggable: DraggableChildrenFn = useCallback(
-        (p: DraggableProvided, s: DraggableStateSnapshot, r: Rubric) => (
-            <div ref={p.innerRef} {...p.draggableProps} style={getStyle(p.draggableProps.style, s)} className={DRAGGABLE_CLASSNAME}>
-                <DragHandlerContext.Provider value={p.dragHandleProps}>
-                    <StyledDraggableItem
-                        className={cx(
-                            s.isDragging && DRAGGING_CLASSNAME,
-                            s.draggingOver && DRAGGING_OVER_CLASSNAME,
-                            s.isDropAnimating && ANIMATING_CLASSNAME,
-                        )}
-                    >
-                        <Suspense fallback={<SimpleDragHandle />}>{ordered[r.source.index].component}</Suspense>
-                    </StyledDraggableItem>
-                </DragHandlerContext.Provider>
-            </div>
-        ),
-        [ordered],
+        (p: DraggableProvided, s: DraggableStateSnapshot, r: Rubric) => {
+            const toolbar = ordered[r.source.index];
+            const { component, horizontalComponent } = toolbar;
+            const finalElement = isHorizontal(side) ? horizontalComponent : component;
+            return (
+                <div ref={p.innerRef} {...p.draggableProps} style={getStyle(p.draggableProps.style, s)} className={DRAGGABLE_CLASSNAME}>
+                    <DragHandlerContext.Provider value={p.dragHandleProps}>
+                        <StyledDraggableItem
+                            className={cx(
+                                s.isDragging && DRAGGING_CLASSNAME,
+                                s.draggingOver && DRAGGING_OVER_CLASSNAME,
+                                s.isDropAnimating && ANIMATING_CLASSNAME,
+                            )}
+                            sx={
+                                s.isClone
+                                    ? {
+                                          "&, & *": {
+                                              pointerEvents: "none",
+                                          },
+                                      }
+                                    : null
+                            }
+                        >
+                            <Suspense fallback={<SimpleDragHandle />}>
+                                {s.isClone ? (
+                                    <CloneWrapper2 draggable={p} snapshot={s} toolbar={toolbar}>
+                                        {finalElement}
+                                    </CloneWrapper2>
+                                ) : (
+                                    finalElement
+                                )}
+                            </Suspense>
+                        </StyledDraggableItem>
+                    </DragHandlerContext.Provider>
+                </div>
+            );
+        },
+        [ordered, side],
     );
+
+    const draggedId = useContext(DraggableIdContext);
+    const draggedToolbar = useMemo(
+        () => (draggedId ? availableToolbars.find(({ id }) => draggedId === id) : null),
+        [availableToolbars, draggedId],
+    );
+
+    const dropDisabled = useMemo(() => {
+        return !(isHorizontal(side) ? draggedToolbar?.horizontalComponent : draggedToolbar?.component);
+    }, [draggedToolbar?.component, draggedToolbar?.horizontalComponent, side]);
 
     const renderDroppable: DroppableProps["children"] = useCallback(
         (p: DroppableProvided, s: DroppableStateSnapshot) => (
             <DroppableContainer
                 ref={p.innerRef}
                 className={cx(
-                    DROPPABLE_CLASSNAME,
-                    s.isDraggingOver && DRAGGING_OVER_CLASSNAME,
+                    !dropDisabled && DROPPABLE_CLASSNAME,
+                    s.isDraggingOver && !dropDisabled && DRAGGING_OVER_CLASSNAME,
                     s.draggingFromThisWith && DRAGGING_FROM_CLASSNAME,
                     className,
                 )}
@@ -157,11 +211,17 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                 </DraggableList>
             </DroppableContainer>
         ),
-        [className, ordered, renderDraggable],
+        [className, dropDisabled, ordered, renderDraggable],
     );
 
     return (
-        <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE} renderClone={renderDraggable}>
+        <Droppable
+            direction={isHorizontal(side) ? "horizontal" : "vertical"}
+            droppableId={side}
+            type={TOOLBAR_DRAGGABLE_TYPE}
+            renderClone={renderDraggable}
+            isDropDisabled={dropDisabled}
+        >
             {renderDroppable}
         </Droppable>
     );

@@ -1,15 +1,16 @@
+import { Box, Typography } from "@mui/material";
 import i18next from "i18next";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
-import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import ProcessStateIcon from "../../Process/ProcessStateIcon";
-import { Box, Typography } from "@mui/material";
-import ProcessStateUtils from "../../Process/ProcessStateUtils";
+
+import type { RootState } from "../../../reducers";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import ProcessStateIcon from "../../Process/ProcessStateIcon";
+import ProcessStateUtils from "../../Process/ProcessStateUtils";
+import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
+import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 
 const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));

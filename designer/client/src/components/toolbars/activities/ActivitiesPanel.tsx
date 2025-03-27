@@ -1,20 +1,21 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "./types";
-import { VariableSizeList } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
 import { Box, CircularProgress, styled } from "@mui/material";
-import { useActivitiesSearch } from "./useActivitiesSearch";
-import { ActivitiesSearch } from "./ActivitiesSearch";
-import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
-import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName } from "../../../reducers/selectors/graph";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { VariableSizeList } from "react-window";
+
 import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
+import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
+import { getProcessName } from "../../../reducers/selectors/graph";
+import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
+import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
+import { ActivitiesSearch } from "./ActivitiesSearch";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
+import type { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "./types";
+import { useActivitiesSearch } from "./useActivitiesSearch";
 
 const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
     "::-webkit-scrollbar": {

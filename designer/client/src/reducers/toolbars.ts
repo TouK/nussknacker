@@ -1,14 +1,18 @@
 import { combineReducers } from "redux";
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import { Reducer } from "../actions/reduxTypes";
-import { Panels, panels } from "./panel";
+
+import type { Reducer } from "../actions/reduxTypes";
+import type { Panels } from "./panel";
+import { panels } from "./panel";
 
 export enum ToolbarsSide {
-    TopRight = "topRight",
-    BottomRight = "bottomRight",
-    TopLeft = "topLeft",
-    BottomLeft = "bottomLeft",
+    RightTop = "topRight",
+    RightBottom = "bottomRight",
+    LeftTop = "topLeft",
+    LeftBottom = "bottomLeft",
+    TopCenter = "centerTop",
+    BottomCenter = "centerBottom",
 }
 
 type ComponentGroupToolbox = {
@@ -58,8 +62,8 @@ function setupPositions(positions: Positions, toolbars: Array<[string, ToolbarsS
     const groups = Object.values(positions);
     const newToolbars = toolbars.filter(([id]) => !groups.some((g) => g.includes(id)));
     return newToolbars.reduce((nextState, [id, side]) => {
-        const currentValues = nextState[side || ToolbarsSide.TopRight] || [];
-        return { ...nextState, [side || ToolbarsSide.TopRight]: [...currentValues, id] };
+        const currentValues = nextState[side || ToolbarsSide.RightTop] || [];
+        return { ...nextState, [side || ToolbarsSide.RightTop]: [...currentValues, id] };
     }, positions);
 }
 

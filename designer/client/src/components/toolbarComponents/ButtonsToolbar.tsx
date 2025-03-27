@@ -1,13 +1,15 @@
-import React, { PropsWithChildren, ReactElement } from "react";
+import type { PropsWithChildren, ReactElement } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
+
 import { RemoteComponent } from "../RemoteComponent";
-import { ToolbarConfig } from "../toolbarSettings/types";
+import type { ToolbarConfig } from "../toolbarSettings/types";
 import { ToolbarButtons } from "./toolbarButtons";
 import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 
 export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons">>;
 
-export function DefaultToolbarPanel(props: ToolbarPanelProps): ReactElement {
+export function ButtonsToolbar(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
     const { children, title, id, buttonsVariant, componentUrl, ...passProps } = props;
 
