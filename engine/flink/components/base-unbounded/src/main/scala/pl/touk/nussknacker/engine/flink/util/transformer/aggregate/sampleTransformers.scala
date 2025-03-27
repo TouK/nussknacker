@@ -77,7 +77,7 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
-  // TODO_PAWEL inny ktory byc moze nie dziala
+  // TODO_PAWEL inny ktory tez nie dziala
   class TumblingAggregateTransformer(config: AggregateWindowsConfig)
       extends CustomStreamTransformer
       with UnboundedStreamComponent
@@ -139,7 +139,7 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
-  // TODO_PAWEL o tym mowil zbyszek ze nie dziala.
+  // TODO_PAWEL o tym mowil zbyszek ze nie dziala, i rzeczywiscie nie dziala
   object SessionWindowAggregateTransformer
       extends CustomStreamTransformer
       with UnboundedStreamComponent

@@ -124,8 +124,6 @@ object transformers {
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
-                // TODO_PAWEL tutaj cos jest nie teges
-                // TODO_PAWEL important tu jest ten co dziala
                 .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
@@ -194,7 +192,6 @@ object transformers {
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>
-              // TODO_PAWEL important a tu jest to co nie dziala
               keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
               keyedStream

@@ -41,7 +41,6 @@ object OnEventTriggerWindowOperator {
       implicit fctx: FlinkCustomNodeContext
   ) {
 
-    // TODO_PAWEL jest ok to jak ta funkcja jes tuzyta jest pewnie problemem
     def eventTriggerWindow(
         assigner: WindowAssigner[_ >: Input[A], TimeWindow],
         types: AggregatorTypeInformations,
