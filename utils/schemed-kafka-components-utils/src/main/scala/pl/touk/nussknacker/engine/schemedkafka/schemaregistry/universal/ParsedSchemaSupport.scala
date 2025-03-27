@@ -163,10 +163,30 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     JsonPayloadRecordFormatterSupport
 }
 
-object NoSchemaJsonSupport {
+object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
-  def extractJsonInputParameter(
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] =
-    JsonSchemaBasedParameter.emptySchemaBasedParameter(sinkValueParamName, ValidationMode.lax).map(_.toParameters)
+  private final val jsonSupport = JsonSchemaSupport
+
+  override def payloadDeserializer: UniversalSchemaPayloadDeserializer = jsonSupport.payloadDeserializer
+
+  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
+    jsonSupport.serializer(schemaOpt, c, isKey)
+
+  override def typeDefinition(schema: ParsedSchema): TypingResult = jsonSupport.typeDefinition(schema)
+
+  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
+    jsonSupport.formValueEncoder(schema, mode)
+
+  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+    jsonSupport.recordFormatterSupport(schemaRegistryClient)
+
+  override def extractParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    JsonSchemaBasedParameter.emptySchemaBasedParameter(sinkValueParamName, ValidationMode.lax)
 
 }
