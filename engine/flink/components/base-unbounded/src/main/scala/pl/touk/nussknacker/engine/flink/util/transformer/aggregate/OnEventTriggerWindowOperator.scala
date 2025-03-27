@@ -120,6 +120,7 @@ private class ValueEmittingWindowFunction(
       out match {
         case timedOut: TimestampedCollector[_] =>
           Option(timestampToOverrideHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
+        // TODO_PAWEL maybe we should throw in other case?
         case _ =>
       }
 
