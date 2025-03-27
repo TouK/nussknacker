@@ -19,6 +19,7 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
+  // TODO_PAWEL ten dzial prawidlowo
   object SlidingAggregateTransformerV2
       extends CustomStreamTransformer
       with UnboundedStreamComponent

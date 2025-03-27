@@ -41,6 +41,7 @@ object OnEventTriggerWindowOperator {
       implicit fctx: FlinkCustomNodeContext
   ) {
 
+    // TODO_PAWEL jest ok to jak ta funkcja jes tuzyta jest pewnie problemem
     def eventTriggerWindow(
         assigner: WindowAssigner[_ >: Input[A], TimeWindow],
         types: AggregatorTypeInformations,
@@ -111,6 +112,10 @@ private class ValueEmittingWindowFunction(
       elements: lang.Iterable[AnyRef],
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
+    // TODO_PAWEL tu mozna by ten out scastowac na timestampedcollector i mu ustawic timestamp, tylko problem jest taki ze nie wiadomo jaki
+    // tutaj niby widze, ze te elements maja typ StreamRecord, mozna z nich wiec wziac timestamp
+    // wiec moge ustawic np timestamp ostatniego z nich, ale nie zawsze. czasem jest juz ustawiony prawidlowy w tym 'out' timestampcollector
+    // tylko jak mam odroznic sytuacje gdy window jest jakby przerwany wczesniej, w tym triggerze. mam jakis stan trzymac?
     elements.forEach { element =>
       val ctx = Option(elementHolder.get()).getOrElse(api.Context(contextIdGenerator.nextContextId()))
       out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))

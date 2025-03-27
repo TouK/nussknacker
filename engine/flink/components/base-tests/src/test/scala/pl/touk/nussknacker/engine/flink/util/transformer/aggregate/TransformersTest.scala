@@ -751,7 +751,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val testRecords =
+      val testRecords = {
+        // TODO_PAWEL to jest
         List(
           TestRecordHours(id, 0, 1, "a"),
           TestRecordHours(id, 2, 2, "d"),
@@ -761,6 +762,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           // stop condition
           TestRecordHours(id, 6, 5, "a")
         )
+      }
       val model        = modelData(collectingListener, testRecords)
       val testScenario = session("#AGG.list", "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
 
