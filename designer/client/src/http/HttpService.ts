@@ -31,6 +31,7 @@ import { handleAxiosError } from "../devHelpers";
 import { Dimensions, StickyNote } from "../common/StickyNote";
 import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
 import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import { ProcessVersionValidationResponse } from "../components/versionControl/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -592,6 +593,17 @@ class HttpService {
             .catch((error) =>
                 Promise.reject(
                     this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
+                ),
+            );
+    }
+
+    validateProcessVersion(processName: string, localVersion: number): Promise<AxiosResponse<ProcessVersionValidationResponse>> {
+        const data = { localVersion: localVersion };
+        return api
+            .post<ProcessVersionValidationResponse>(`/versionControl/${processName}/versionValidation`, data)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotValidateProcessVersion", "Cannot validate process version"), error),
                 ),
             );
     }
