@@ -188,13 +188,16 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       validationMode: ValidationMode,
       rawParameter: Parameter,
       restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    jsonSupport.extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+
+  override def extractParameterForTests(schema: ParsedSchema)(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
     val parameter =
       Parameter(sinkValueParamName, Unknown).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
     Valid(
       SingleSchemaBasedParameter(
         parameter,
-        new JsonSchemaOutputValidator(validationMode).validate(_, EmptySchema.INSTANCE, None)
+        new JsonSchemaOutputValidator(ValidationMode.lax).validate(_, EmptySchema.INSTANCE, None)
       )
     )
   }

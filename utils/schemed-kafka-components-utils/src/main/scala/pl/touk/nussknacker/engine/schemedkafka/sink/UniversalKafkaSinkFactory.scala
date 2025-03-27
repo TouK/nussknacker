@@ -136,7 +136,7 @@ class UniversalKafkaSinkFactory(
         .andThen { runtimeSchemaData =>
           schemaSupportDispatcher
             .forSchemaType(runtimeSchemaData.schema.schemaType())
-            .extractParameter(
+            .extractParameterForSink(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
@@ -171,7 +171,7 @@ class UniversalKafkaSinkFactory(
       val runtimeSchemaData = runtimeSchemaDataForContentType(contentType)
       schemaSupportDispatcher
         .forSchemaType(runtimeSchemaData.schema.schemaType())
-        .extractParameter(
+        .extractParameterForSink(
           runtimeSchemaData.schema,
           rawMode = true,
           validationMode = extractValidationMode(mode),
@@ -226,7 +226,7 @@ class UniversalKafkaSinkFactory(
         .andThen { schemaData =>
           schemaSupportDispatcher
             .forSchemaType(schemaData.schema.schemaType())
-            .extractParameter(
+            .extractParameterForSink(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
@@ -257,7 +257,7 @@ class UniversalKafkaSinkFactory(
 
       schemaSupportDispatcher
         .forSchemaType(schemaData.schema.schemaType())
-        .extractParameter(
+        .extractParameterForSink(
           schemaData.schema,
           rawMode = false,
           validationMode = ValidationMode.lax,

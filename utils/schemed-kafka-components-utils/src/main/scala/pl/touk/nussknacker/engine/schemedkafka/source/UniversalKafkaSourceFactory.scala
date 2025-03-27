@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
@@ -37,7 +36,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{NoSchemaJsonSupport, UniversalSchemaSupport}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 
 /**
@@ -256,7 +255,8 @@ class UniversalKafkaSourceFactory(
         val universalSchemaSupport: UniversalSchemaSupport = schemaSupportDispatcher.forParsedSchema(parsedSchema)
 
         universalSchemaSupport
-          .extractParameters(parsedSchema)
+          .extractParameterForTests(parsedSchema)
+          .map(_.toParameters)
           .map { params =>
             KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
           }

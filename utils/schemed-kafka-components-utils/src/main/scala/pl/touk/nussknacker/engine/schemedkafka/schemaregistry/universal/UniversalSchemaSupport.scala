@@ -48,7 +48,7 @@ trait UniversalSchemaSupport {
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
 
-  def extractParameter(
+  protected def extractParameter(
       schema: ParsedSchema,
       rawMode: Boolean,
       validationMode: ValidationMode,
@@ -56,17 +56,31 @@ trait UniversalSchemaSupport {
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
 
-  final def extractParameters(
+  def extractParameterForSink(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    extractParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+    )
+
+  def extractParameterForTests(
       schema: ParsedSchema
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
     extractParameter(
       schema,
       rawMode = false,
       validationMode = ValidationMode.lax,
       rawParameter = Parameter[AnyRef](sinkValueParamName),
       restrictedParamNames = Set.empty
-    ).map(_.toParameters)
-  }
+    )
 
   final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
     val recordFormatter = recordFormatterSupport(schemaRegistryClient)
