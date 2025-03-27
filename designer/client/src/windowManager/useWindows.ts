@@ -1,11 +1,13 @@
-import { useWindowManager, WindowId, WindowType } from "@touk/window-manager";
+import type { WindowId, WindowType } from "@touk/window-manager";
+import { useWindowManager } from "@touk/window-manager";
 import { defaults } from "lodash";
 import { useCallback, useEffect, useMemo } from "react";
+
 import { useUserSettings } from "../common/userSettings";
-import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
-import { InfoDialogData } from "../components/modals/GenericInfoDialog";
-import { Scenario } from "../components/Process/types";
-import { NodeType } from "../types";
+import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
+import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
+import type { Scenario } from "../components/Process/types";
+import type { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
@@ -84,6 +86,7 @@ export function useWindows(parent?: WindowId) {
                 title: data.text,
                 kind: WindowKind.confirm,
                 meta: defaults(data, { confirmText: "Yes", denyText: "No" }),
+                ...(data.width != null && { layoutData: { width: data.width } }),
             });
         },
         [open],
