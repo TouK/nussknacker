@@ -25,15 +25,15 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV2,
   MigrateScenarioRequestDtoV3
 }
-import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
-import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError.{
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationError
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationError.{
   CannotMigrateArchivedScenario,
   CannotTransformMigrateScenarioRequestIntoMigrationDomain,
   InsufficientPermission,
   InvalidScenario
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.security.api.RealLoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import sttp.model.StatusCode._
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
@@ -59,6 +59,20 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         // currently when examples are given, the validation in tests fails due to two schemas matching the example json
 //          .examples(
 //            List(
+//              Example.of(
+//                summary = Some("Migrate given scenario from version 3 to current Nu instance"),
+//                value = MigrateScenarioRequestDtoV3(
+//                  version = 2,
+//                  sourceEnvironmentId = "testEnv",
+//                  processingMode = ProcessingMode.UnboundedStream,
+//                  engineSetupName = EngineSetupName("Flink"),
+//                  processCategory = "Category1",
+//                  scenarioLabels = List("tag1", "tag2"),
+//                  scenarioGraph = exampleGraph,
+//                  processName = ProcessName("test"),
+//                  isFragment = false
+//                )
+//              ),
 //              Example.of(
 //                summary = Some("Migrate given scenario from version 2 to current Nu instance"),
 //                value = MigrateScenarioRequestDtoV2(
@@ -237,10 +251,9 @@ object MigrationApiEndpoints {
     Remember to uncomment the class definition after implementation.
 
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestDtoV3(
+    final case class MigrateScenarioRequestDtoV4(
         override val version: Int,
         sourceEnvironmentId: String,
-        remoteUserName: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
@@ -250,6 +263,15 @@ object MigrationApiEndpoints {
         isFragment: Boolean,
     ) extends MigrateScenarioRequestDto*/
 
+  }
+
+  sealed trait MigrationError
+
+  object MigrationError {
+    final case class InvalidScenario(errors: ValidationErrors)                                    extends MigrationError
+    final case class CannotMigrateArchivedScenario(processName: ProcessName, environment: String) extends MigrationError
+    final case class InsufficientPermission(user: LoggedUser)                                     extends MigrationError
+    case object CannotTransformMigrateScenarioRequestIntoMigrationDomain                          extends MigrationError
   }
 
   object Codecs {

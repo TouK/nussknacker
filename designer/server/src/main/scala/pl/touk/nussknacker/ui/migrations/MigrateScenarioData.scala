@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV2,
   MigrateScenarioRequestDtoV3
 }
-import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationError
 import pl.touk.nussknacker.ui.util.VersionedData
 
 sealed trait MigrateScenarioData extends VersionedData
@@ -232,10 +232,11 @@ Remember to uncomment the class definition after implementation.
 
 final case class MigrateScenarioDataV4(
     sourceEnvironmentId: String,
-    remoteUserName: String,
+    sourceScenarioVersionId: Option[VersionId],
     processingMode: ProcessingMode,
     engineSetupName: EngineSetupName,
     processCategory: String,
+    scenarioLabels: List[String],
     scenarioGraph: ScenarioGraph,
     processName: ProcessName,
     isFragment: Boolean,

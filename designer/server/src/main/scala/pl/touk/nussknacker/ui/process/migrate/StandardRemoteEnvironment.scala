@@ -12,8 +12,9 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV3, MigrationApiAdapterService}
+import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationApiAdapterError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 
 import scala.collection.parallel.ExecutionContextTaskSupport
@@ -144,35 +145,22 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
-  protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = ???
+  protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int]
 
   protected def migrateScenario(migrateScenarioData: MigrateScenarioData)(
       implicit loggedUser: LoggedUser
-  ): FutureE[Unit] = ???
+  ): FutureE[Unit]
 
-  protected def fetchProcesses: FutureE[List[ScenarioWithDetailsForMigrations]] = ???
+  protected def fetchProcesses: FutureE[List[ScenarioWithDetailsForMigrations]]
 
   protected def fetchProcessVersion(
       name: ProcessName,
       remoteProcessVersion: Option[VersionId]
-  ): FutureE[ScenarioWithDetailsForMigrations] = ???
+  ): FutureE[ScenarioWithDetailsForMigrations]
 
-  protected def fetchProcessesDetails(names: List[ProcessName]): FutureE[List[ScenarioWithDetailsForMigrations]] = ???
+  protected def fetchProcessesDetails(names: List[ProcessName]): FutureE[List[ScenarioWithDetailsForMigrations]]
 
 }
-
-final case class MigrationApiAdapterError(apiAdapterError: ApiAdapterServiceError)
-    extends FatalError(
-      apiAdapterError match {
-        case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
-          signedNoOfVersionsLeftToApply match {
-            case n if n >= 0 =>
-              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
-            case _ =>
-              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
-          }
-      }
-    )
 
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String)
     extends FatalError(message)

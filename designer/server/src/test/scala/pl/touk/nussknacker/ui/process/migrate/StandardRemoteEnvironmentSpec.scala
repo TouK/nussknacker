@@ -7,7 +7,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
@@ -115,7 +115,6 @@ class StandardRemoteEnvironmentSpec
     }
   }
 
-  // TODO: separate test to check response without labels to test decoder fallback
   it should "test migration" in {
     val remoteEnvironment = environmentForTestMigration(
       processes = ProcessTestData.validScenarioDetailsForMigrations :: Nil,
@@ -167,6 +166,21 @@ object StandardRemoteEnvironmentSpec {
       ),
       mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
     )
+
+    protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = ???
+
+    protected def migrateScenario(migrateScenarioData: MigrateScenarioData)(
+        implicit loggedUser: LoggedUser
+    ): FutureE[Unit] = ???
+
+    protected def fetchProcesses: FutureE[List[ScenarioWithDetailsForMigrations]] = ???
+
+    protected def fetchProcessVersion(
+        name: ProcessName,
+        remoteProcessVersion: Option[VersionId]
+    ): FutureE[ScenarioWithDetailsForMigrations] = ???
+
+    protected def fetchProcessesDetails(names: List[ProcessName]): FutureE[List[ScenarioWithDetailsForMigrations]] = ???
 
   }
 

@@ -121,7 +121,7 @@ class HttpRemoteEnvironment(
     )
   }
 
-  private def request(
+  protected def request(
       uri: Uri,
       method: HttpMethod,
       request: MessageEntity,
