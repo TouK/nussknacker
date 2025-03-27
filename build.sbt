@@ -771,6 +771,7 @@ lazy val flinkExecutor = (project in flink("executor"))
         "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
         // This is needed when flink minicluster is used for deployment
         "org.apache.flink" % "flink-metrics-influxdb"     % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV % Provided,
       )
     },
     prepareItLibs               := {
@@ -795,7 +796,13 @@ lazy val flinkExecutor = (project in flink("executor"))
           (Compile / managedClasspath).value,
           "org.apache.flink",
           "flink-metrics-influxdb",
-          "flink-influxdb-metrics-deps/flink-metrics-influxdb.jar"
+          "flink-metrics-plugins/flink-metrics-influxdb.jar"
+        ) ++
+        createClasspathBasedMapping(
+          (Compile / managedClasspath).value,
+          "org.apache.flink",
+          "flink-metrics-prometheus",
+          "flink-metrics-plugins/flink-metrics-prometheus.jar"
         )
     }.toList,
   )
