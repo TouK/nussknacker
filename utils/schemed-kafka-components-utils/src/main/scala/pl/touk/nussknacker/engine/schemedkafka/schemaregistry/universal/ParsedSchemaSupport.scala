@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Serializer
+import org.everit.json.schema.EmptySchema
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
@@ -186,7 +188,15 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       validationMode: ValidationMode,
       rawParameter: Parameter,
       restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    JsonSchemaBasedParameter.emptySchemaBasedParameter(sinkValueParamName, ValidationMode.lax)
+  )(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
+    val parameter =
+      Parameter(sinkValueParamName, Unknown).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
+    Valid(
+      SingleSchemaBasedParameter(
+        parameter,
+        new JsonSchemaOutputValidator(validationMode).validate(_, EmptySchema.INSTANCE, None)
+      )
+    )
+  }
 
 }
