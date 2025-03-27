@@ -3787,6 +3787,99 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/versionControl/{scenarioName}/versionValidation:
+    post:
+      tags:
+      - Version Control
+      summary: Checks if local scenario version is the newest one
+      operationId: postApiVersioncontrolScenarionameVersionvalidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessVersionValidationRequestDto'
+            example:
+              localVersion: 24
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessVersionValidationResponseDto'
+              examples:
+                Newer process version is available:
+                  value:
+                    processName: p1
+                    isLatest: false
+                    localVersion: 51
+                    latestVersion: 52
+                    modifiedBy: nussknacker
+                Process local version is the latest one:
+                  value:
+                    processName: p2
+                    isLatest: true
+                    localVersion: 52
+                    latestDeployedVersion: 48
+                    latestVersion: 52
+                    modifiedBy: nussknacker
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/processes/{scenarioName}/{versionId}/activity/attachments:
     post:
       tags:
@@ -6939,6 +7032,42 @@ components:
       properties:
         additionalFields:
           $ref: '#/components/schemas/ProcessAdditionalFields'
+    ProcessVersionValidationRequestDto:
+      title: ProcessVersionValidationRequestDto
+      type: object
+      required:
+      - localVersion
+      properties:
+        localVersion:
+          type: integer
+          format: int32
+    ProcessVersionValidationResponseDto:
+      title: ProcessVersionValidationResponseDto
+      type: object
+      required:
+      - processName
+      - isLatest
+      - localVersion
+      - latestVersion
+      - modifiedBy
+      properties:
+        processName:
+          type: string
+        isLatest:
+          type: boolean
+        localVersion:
+          type: integer
+          format: int64
+        latestDeployedVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        latestVersion:
+          type: integer
+          format: int64
+        modifiedBy:
+          type: string
     PropertiesValidationRequestDto:
       title: PropertiesValidationRequestDto
       type: object

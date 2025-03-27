@@ -71,6 +71,11 @@ object TapirHttpServiceFactory {
       categories = processingTypeServicesProvider.mapValues(_.category)
     )
 
+    val versionControlApiHttpService = new VersionControlApiHttpService(
+      authManager = authManager,
+      processService = processService
+    )
+
     val scenarioLabelsApiHttpService = new ScenarioLabelsApiHttpService(
       authManager = authManager,
       service = new ScenarioLabelsService(
@@ -239,6 +244,7 @@ object TapirHttpServiceFactory {
       scenarioParametersHttpService,
       stickyNotesApiHttpService,
       userApiHttpService,
+      versionControlApiHttpService,
       statisticsApiHttpService
     )
   }

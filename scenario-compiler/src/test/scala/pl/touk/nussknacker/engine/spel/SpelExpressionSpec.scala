@@ -2288,6 +2288,19 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     Await.result(firstFailureOrCompletion, 15.seconds)
   }
 
+  test("should evaluate spelTemplate without passing .toString on input") {
+    forAll(
+      Table(
+        ("expression", "result"),
+        ("#{ #mapValue } #{ #obj }", "{foo=bar} Test(1,2,[Test(3,4,[],0), Test(5,6,[],0)],4187338076)"),
+        ("#{ #mapValue }", "{foo=bar}"),
+      )
+    ) { (expression, result) =>
+      val parsed = parse[String](expr = expression, flavour = SpelExpressionParser.Template).validValue
+      parsed.evaluateSync[String]() shouldBe result
+    }
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
