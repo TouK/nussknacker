@@ -57,6 +57,22 @@ The workaround here is to use the #CONV.toAny() helper to trick the typing subsy
 
 ![img](img/enumToAnyConversion.png)
 
+### Safe list navigation
+
+Often, we are interested in the first element of the list. If the list is empty and we try to access the first element, we will get a runtime error. The obvious way out is to use the Elvis operator:
+
+
+`myList.size == 0 ? null : myList[0]`
+
+There is a shorter way to achieve exactly the same:
+
+`myList.^[true]`
+
+How does it work? The `.^` returns a first element of a filtered list. In our case the filtering predicate is simply `true`, so the filter will return the original list. The `.^` will safely return the first element of the list - if it exists, or `null` if the list is empty. 
+If you want the last element of the list - and you are not certain whether list is empty or not - just use:
+
+`myList.$[true]`
+
 ### Non-trivial operations on JSON records and lists
 
 The `!` operator is truly powerful; one can achieve a lot of magic with it. A few examples.
