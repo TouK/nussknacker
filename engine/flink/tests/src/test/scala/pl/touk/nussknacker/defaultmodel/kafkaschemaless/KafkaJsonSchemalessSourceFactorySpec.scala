@@ -38,14 +38,6 @@ class KafkaJsonSchemalessSourceFactorySpec
   private val inputNodeId             = NodeId("input")
   private val dataSampleParameterName = ParameterName("Data sample")
 
-  test("Should handle an empty data sample") {
-    val dataSample = ""
-    val result     = typingResultForDataSample(dataSample)
-    result shouldBe Invalid(
-      NonEmptyList.of(CustomNodeError(inputNodeId.id, "The sample is not a valid JSON", Some(dataSampleParameterName)))
-    )
-  }
-
   test("Should handle an empty object data sample") {
     val dataSample = "{}"
     val result     = typingResultForDataSample(dataSample)
@@ -166,7 +158,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   }
 
   private def typingResultForDataSample(
-      dataSample: Any,
+      dataSample: String,
   ): ValidatedNel[ProcessCompilationError, TypingResult] = {
     val outputName = "dummy"
     val params = {
@@ -174,7 +166,7 @@ class KafkaJsonSchemalessSourceFactorySpec
         Map(
           KafkaUniversalComponentTransformer.topicParamName       -> "topicName",
           KafkaUniversalComponentTransformer.contentTypeParamName -> "JSON",
-          dataSampleParameterName                                 -> dataSample
+          dataSampleParameterName                                 -> io.circe.parser.parse(dataSample).toOption.get
         )
       )
     }

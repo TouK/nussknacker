@@ -85,8 +85,8 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     sendAsJson(jsonRecord.toString, ForSource(inputTopic), Instant.now.toEpochMilli)
 
     val dataSampleExpressions = List(
-      "null".spel,
-      "'{}'".spel
+      Expression.json("null"),
+      Expression.json("{}")
     )
 
     dataSampleExpressions.foreach { dataSampleExpression =>
@@ -134,7 +134,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     kafkaClient.createTopic(outputTopic, 1)
     sendAsJson(jsonRecord.toString, ForSource(inputTopic), Instant.now.toEpochMilli)
 
-    val exampleInputExpression = s"""'${jsonRecord.toString()}'""".spel
+    val exampleInputExpression = Expression.json(jsonRecord.toString())
 
     val process =
       ScenarioBuilder

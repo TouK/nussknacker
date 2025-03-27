@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
 import cats.data.{NonEmptyList, Validated}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
 import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
@@ -15,23 +15,18 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  schemaVersionParamName,
-  sinkValueParamName
-}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
@@ -70,34 +65,16 @@ class UniversalKafkaSourceFactory(
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) ::
-          (`dataSampleParamName`, DefinedEagerParameter(dataSample, _)) :: _,
+          (`dataSampleParamName`, DefinedEagerParameter(_, typingResult)) :: _,
           _
         ) if contentType == ContentTypes.JSON.toString =>
       val preparedTopic = prepareTopic(topic)
-      val valueValidationResult = dataSample match {
-        case jsonString: String =>
-          typingResultDerivedFromJsonDataSample(jsonString)
-            .map { typingResult =>
-              (
-                Some(runtimeDataForJsonSchema),
-                typingResult
-              )
-            }
-        case null =>
-          Valid(
-            (
-              Some(runtimeDataForJsonSchema),
-              Unknown
-            )
-          )
-        case other =>
-          Invalid(
-            ProcessCompilationError.CustomNodeError(
-              s"Unexpected type of param, expected json string, got ${other.getClass.getSimpleName}",
-              Some(dataSampleParamName)
-            )
-          )
-      }
+      val valueValidationResult = Valid(
+        (
+          Some(runtimeDataForJsonSchema),
+          typingResultWithoutValues(typingResult)
+        )
+      )
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
@@ -312,7 +289,7 @@ class UniversalKafkaSourceFactory(
           (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: Nil,
           _
-        ) if contentType == ContentTypes.JSON.toString =>
+        ) if contentType == ContentTypes.JSON.toString && enableSchemaDerivationFromDataSampleForSchemalessJsonTopics =>
       val dataSampleParam = getJsonDataSampleParam
       NextParameters(parameters = dataSampleParam.createParameter() :: nextParams)
     case TransformationStep(
@@ -334,31 +311,14 @@ class UniversalKafkaSourceFactory(
       .optional[Any](dataSampleParamName)
       .withCreator(
         modify = _.copy(
-          // todo change editor to JsonEditor and expression to Json after introducing JSON Expression language
-          editors = List(SpelTemplateParameterEditor),
-          validators = List(JsonValidator),
-          defaultValue = Some(Expression.spelTemplate("{}")),
+          editors = List(JsonParameterEditor),
+          defaultValue = Some(Expression.json("{}")),
           hintText = Some(
             "Provide an example JSON data sample. It will be analyzed to determine field types and generate a schema for easier data access in the subsequent nodes."
           ),
         )
       )
   }
-
-  private def typingResultDerivedFromJsonDataSample(jsonString: String)(implicit nodeId: NodeId) =
-    Validated.fromEither {
-      io.circe.parser
-        .parse(jsonString)
-        .left
-        .map(_ => CustomNodeError("The sample is not a valid JSON", Some(dataSampleParamName)))
-        .map(FromJsonSimpleDecoder.jsonToAny)
-        .map(any => Typed.fromInstanceWithNullsAsUnknowns(any))
-        .map(_.withoutValue)
-        .map {
-          case obj: TypedObjectTypingResult if obj.fields.isEmpty => Unknown
-          case other                                              => other
-        }
-    }
 
   private def runtimeDataForPlainSchema = {
     RuntimeSchemaData[ParsedSchema](
@@ -372,6 +332,19 @@ class UniversalKafkaSourceFactory(
       new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
       Some(SchemaId.fromString(ContentTypes.JSON.toString))
     )
+  }
+
+  private def typingResultWithoutValues(typingResult: TypingResult) = {
+    typingResult.withoutValue match {
+      case obj: TypedObjectTypingResult if obj.fields.isEmpty => Unknown
+      case other                                              => other
+    }
+  }
+
+  private def enableSchemaDerivationFromDataSampleForSchemalessJsonTopics: Boolean = {
+    val paramPath =
+      s"${KafkaConfig.DefaultGlobalKafkaConfigPath}.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource"
+    modelDependencies.config.hasPath(paramPath) && modelDependencies.config.getBoolean(paramPath)
   }
 
   override def nodeDependencies: List[NodeDependency] =
