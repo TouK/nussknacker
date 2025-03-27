@@ -133,6 +133,7 @@
   * For now on, default values are provided for dry run parameters.
 * [#7764](https://github.com/TouK/nussknacker/pull/7764) Fix SpEL template evaluation on runtime. For now on, there is
   no need to pass .toString on variable in SpEL template expression. 
+* [#7690](https://github.com/TouK/nussknacker/pull/7690) Add JSON validation for ad hoc tests with schemaless topics.
 
 ## 1.18
 

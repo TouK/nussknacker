@@ -13,8 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 
 class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
@@ -24,6 +23,13 @@ class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 
   def forSchemaType(schemaType: String): UniversalSchemaSupport =
     supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))
+
+  def forParsedSchema(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
+    // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
+    case ContentTypesSchemas.schemaForJson => NoSchemaJsonSupport
+    case _                                 => forSchemaType(parsedSchema.schemaType())
+  }
+
 }
 
 object UniversalSchemaSupportDispatcher {
@@ -41,7 +47,7 @@ trait UniversalSchemaSupport {
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
 
-  def extractParameter(
+  def extractParameterForSink(
       schema: ParsedSchema,
       rawMode: Boolean,
       validationMode: ValidationMode,
@@ -49,17 +55,9 @@ trait UniversalSchemaSupport {
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
 
-  final def extractParameters(
+  def extractParameterForTests(
       schema: ParsedSchema
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
-    extractParameter(
-      schema,
-      rawMode = false,
-      validationMode = ValidationMode.lax,
-      rawParameter = Parameter[AnyRef](sinkValueParamName),
-      restrictedParamNames = Set.empty
-    ).map(_.toParameters)
-  }
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
 
   final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
     val recordFormatter = recordFormatterSupport(schemaRegistryClient)
