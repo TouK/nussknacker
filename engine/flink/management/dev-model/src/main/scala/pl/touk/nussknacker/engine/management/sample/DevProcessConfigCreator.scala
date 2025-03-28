@@ -129,7 +129,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   validators = None,
                   label = None,
                   hintText = None,
-                  section = None,
+                  category = None,
                 ),
                 ParameterName("bar") -> ParameterConfig(
                   None,
@@ -181,7 +181,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
                   hintText = None,
-                  section = None,
+                  category = None,
                 ),
                 ParameterName("overriddenByFileConfigParam") -> ParameterConfig(
                   defaultValue = None,
@@ -189,7 +189,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
                   hintText = None,
-                  section = None,
+                  category = None,
                 )
               )
             )

@@ -83,7 +83,7 @@ object Parameter {
       javaOptionalParameter = false,
       hintText = None,
       labelOpt = None,
-      section = ParameterSection.Standard
+      category = ParameterCategory.Standard
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -106,7 +106,7 @@ object Parameter {
       javaOptionalParameter = false,
       hintText = None,
       labelOpt = None,
-      section = ParameterSection.Standard,
+      category = ParameterCategory.Standard,
     )
 
 }
@@ -138,7 +138,7 @@ case class Parameter(
     javaOptionalParameter: Boolean,
     hintText: Option[String],
     labelOpt: Option[String],
-    section: ParameterSection,
+    category: ParameterCategory,
 ) extends NodeDependency {
 
   def copy(
@@ -185,7 +185,7 @@ case class Parameter(
       javaOptionalParameter: Boolean = this.javaOptionalParameter,
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
-      parameterSection: ParameterSection = this.section,
+      category: ParameterCategory = this.category,
   ): Parameter = {
     new Parameter(
       name,
@@ -201,7 +201,7 @@ case class Parameter(
       javaOptionalParameter,
       hintText,
       labelOpt,
-      parameterSection,
+      category,
     )
   }
 
@@ -219,7 +219,7 @@ case class Parameter(
       javaOptionalParameter: Boolean,
       hintText: Option[String],
       labelOpt: Option[String],
-      parameterSection: ParameterSection,
+      category: ParameterCategory,
   ): Parameter = {
     new Parameter(
       name,
@@ -235,7 +235,7 @@ case class Parameter(
       javaOptionalParameter,
       hintText,
       labelOpt,
-      parameterSection,
+      category,
     )
   }
 
@@ -266,7 +266,7 @@ case class Parameter(
       javaOptionalParameter,
       hintText = None,
       labelOpt = None,
-      section = ParameterSection.Standard,
+      category = ParameterCategory.Standard,
     )
   }
 
@@ -321,9 +321,9 @@ object AdditionalVariableWithFixedValue {
 
 case class AdditionalVariableWithFixedValue(value: Any, typingResult: TypingResult) extends AdditionalVariable
 
-@ConfiguredJsonCodec sealed trait ParameterSection
+@ConfiguredJsonCodec sealed trait ParameterCategory
 
-object ParameterSection {
-  case object Standard   extends ParameterSection
-  case object Additional extends ParameterSection
+object ParameterCategory {
+  case object Standard extends ParameterCategory
+  case object Advanced extends ParameterCategory
 }
