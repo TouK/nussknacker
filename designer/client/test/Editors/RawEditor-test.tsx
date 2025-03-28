@@ -21,10 +21,10 @@ const store = mockStore({
             defaultAsyncInterpretation: true,
         },
     },
-    graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },
+    graphReducer: { present: { scenario: {} } },
 });
 
-describe(SpelEditor.name, () => {
+describe("SpelEditor", () => {
     it("should display validation error when the field is required", () => {
         const { container } = render(
             <NuThemeProvider>
