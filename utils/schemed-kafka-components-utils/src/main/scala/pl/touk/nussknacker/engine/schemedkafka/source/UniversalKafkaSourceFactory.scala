@@ -341,7 +341,7 @@ class UniversalKafkaSourceFactory(
     }
   }
 
-  private def enableSchemaDerivationFromDataSampleForSchemalessJsonTopics: Boolean = {
+  protected lazy val enableSchemaDerivationFromDataSampleForSchemalessJsonTopics: Boolean = {
     val paramPath =
       s"${KafkaConfig.DefaultGlobalKafkaConfigPath}.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource"
     modelDependencies.config.hasPath(paramPath) && modelDependencies.config.getBoolean(paramPath)

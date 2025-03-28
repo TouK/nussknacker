@@ -6,20 +6,20 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TopicName}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
+import pl.touk.nussknacker.engine.language.json.JsonParser
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
-import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, WithConfig}
 
 class KafkaJsonSchemalessSourceFactorySpec
@@ -161,26 +161,31 @@ class KafkaJsonSchemalessSourceFactorySpec
       dataSample: String,
   ): ValidatedNel[ProcessCompilationError, TypingResult] = {
     val outputName = "dummy"
-    val params = {
-      Params(
-        Map(
-          KafkaUniversalComponentTransformer.topicParamName       -> "topicName",
-          KafkaUniversalComponentTransformer.contentTypeParamName -> "JSON",
-          dataSampleParameterName                                 -> io.circe.parser.parse(dataSample).toOption.get
+    val dataSampleParam: DefinedEagerParameter = JsonParser
+      .parse(dataSample, ValidationContext.empty, Unknown)
+      .map { typedExpression =>
+        DefinedEagerParameter(
+          typedExpression.expression.evaluate(Context("dummy-context"), Map.empty),
+          typedExpression.returnType
         )
+      }
+      .validValue
+    val params =
+      List[(ParameterName, DefinedEagerParameter)](
+        KafkaUniversalComponentTransformer.topicParamName       -> DefinedEagerParameter("topicName", Typed[String]),
+        KafkaUniversalComponentTransformer.contentTypeParamName -> DefinedEagerParameter("JSON", Typed[String]),
+        dataSampleParameterName                                 -> dataSampleParam
       )
-    }
     validateParamsAndGetValidationContext(universalSourceFactory, params, outputName)
       .map(_.localVariables.getOrElse(outputName, throw new IllegalStateException(s"Missing variable $outputName")))
   }
 
   private def validateParamsAndGetValidationContext(
       sourceFactory: KafkaSource,
-      params: Params,
+      parameters: List[(ParameterName, DefinedEagerParameter)],
       outputName: String
   ): Validated[NonEmptyList[ProcessCompilationError], ValidationContext] = {
     implicit val nodeId: NodeId = inputNodeId
-    val parameters              = params.nameToValueMap.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue(outputName)))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {

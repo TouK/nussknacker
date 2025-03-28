@@ -1,22 +1,11 @@
 package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 
-import cats.data.{NonEmptyList, Validated}
-import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.{parser, Json}
 import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  OutputVariableNameValue,
-  TypedNodeDependencyValue
-}
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator, TopicName}
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -34,6 +23,11 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     "last"   -> Json.fromString("Kowalski"),
     "age"    -> Json.fromInt(30),
   )
+
+  override def kafkaComponentsConfig: Config = {
+    super.kafkaComponentsConfig
+      .withValue("config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource", ConfigValueFactory.fromAnyRef(true))
+  }
 
   def shouldRoundTripJsonMessageWithoutProvidedSchema(): Unit = {
 
