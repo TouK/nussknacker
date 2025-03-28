@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.HackedWindowOperator.OnEventOperatorKeyedStream
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.OnEventOperatorKeyedStream
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.collection.immutable.SortedMap
@@ -124,7 +123,7 @@ object transformers {
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
-                .hackedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
+                .extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                 .window(windowDefinition)
@@ -178,7 +177,7 @@ object transformers {
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val baseTrigger = {
-            HackedWindowOperator.closingEndEventTriggerWrapper[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+            ExtendedWindowOperator.closingEndEventTriggerWrapper[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
               EventTimeTrigger.create(),
               _.value.value._2)
           }
@@ -192,9 +191,9 @@ object transformers {
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>
-              keyedStream.hackedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
+              keyedStream.extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
-              keyedStream.hackedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext = false)
+              keyedStream.extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext = false)
           }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         })
       )

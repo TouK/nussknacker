@@ -30,18 +30,18 @@ object triggers {
   case class FireOnEachEvent[T, W <: Window](delegate: Trigger[_ >: T, W], onOverrideFireOnElementAtTimestamp: Long => Unit) extends DelegatingTrigger[T, W](delegate) {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
-      val result = super.onElement(element, timestamp, window, ctx)
-      val changedResult = result match {
+      val previousResult = super.onElement(element, timestamp, window, ctx)
+      val result = previousResult match {
         case TriggerResult.CONTINUE => TriggerResult.FIRE
         case TriggerResult.PURGE    => TriggerResult.FIRE_AND_PURGE
         case fire                   => fire
       }
 
-      if (!result.isFire && changedResult.isFire) {
+      if (!previousResult.isFire && result.isFire) {
         onOverrideFireOnElementAtTimestamp(timestamp)
       }
 
-      changedResult
+      result
     }
 
     override def onProcessingTime(time: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {

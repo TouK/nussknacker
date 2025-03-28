@@ -18,25 +18,27 @@ import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.HackedWindowOperator.{Input, elementHolder, stateDescriptorName, timestampToOverrideHolder}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{Input, elementHolder, stateDescriptorName, overriddenResultEventTimeHolder}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 
 import java.lang
 
-object HackedWindowOperator {
+object ExtendedWindowOperator {
   type Input[A] = ValueWithContext[StringKeyedValue[A]]
 
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
   val elementHolder = new ThreadLocal[api.Context]
-  val timestampToOverrideHolder = new ThreadLocal[Long]
+  // This ThreadLocal is also used to pass information between two distant places in flink code without
+  // modifying it
+  val overriddenResultEventTimeHolder = new ThreadLocal[Long]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
 
   private def overrideResultEventTime(timestamp: Long): Unit = {
-    timestampToOverrideHolder.set(timestamp)
+    overriddenResultEventTimeHolder.set(timestamp)
   }
 
   def fireOnEachEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W]): FireOnEachEvent[T, W]  = {
@@ -51,15 +53,15 @@ object HackedWindowOperator {
       implicit fctx: FlinkCustomNodeContext
   ) {
 
-    def hackedEventTriggerWindow(
+    def extendedEventTriggerWindow(
         assigner: WindowAssigner[_ >: Input[A], TimeWindow],
         types: AggregatorTypeInformations,
         aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
         trigger: Trigger[_ >: Input[A], TimeWindow]
-    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = hackedWindow(assigner, types, aggregateFunction,
+    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = extendedWindow(assigner, types, aggregateFunction,
       fireOnEachEventTriggerWrapper[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger), preserveContext = true)
 
-    def hackedWindow(
+    def extendedWindow(
                             assigner: WindowAssigner[_ >: Input[A], TimeWindow],
                             types: AggregatorTypeInformations,
                             aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
@@ -68,7 +70,7 @@ object HackedWindowOperator {
                           ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream.transform(
       assigner.getClass.getSimpleName,
       types.returnedValueTypeInfo,
-      new HackedWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger, preserveContext)
+      new ExtendedWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger, preserveContext)
     )
 
   }
@@ -76,7 +78,7 @@ object HackedWindowOperator {
 }
 
 @silent("deprecated")
-class HackedWindowOperator[A](
+class ExtendedWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,
     assigner: WindowAssigner[_ >: Input[A], TimeWindow],
@@ -110,7 +112,7 @@ class HackedWindowOperator[A](
       super.processElement(element)
     } finally {
       elementHolder.remove()
-      timestampToOverrideHolder.remove()
+      overriddenResultEventTimeHolder.remove()
     }
   }
 
@@ -134,17 +136,13 @@ private class ValueEmittingWindowFunction(
       elements: lang.Iterable[AnyRef],
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
-    // TODO_PAWEL tu mozna by ten out scastowac na timestampedcollector i mu ustawic timestamp, tylko problem jest taki ze nie wiadomo jaki
-    // tutaj niby widze, ze te elements maja typ StreamRecord, mozna z nich wiec wziac timestamp
-    // wiec moge ustawic np timestamp ostatniego z nich, ale nie zawsze. czasem jest juz ustawiony prawidlowy w tym 'out' timestampcollector
-    // tylko jak mam odroznic sytuacje gdy window jest jakby przerwany wczesniej, w tym triggerze. mam jakis stan trzymac?
     elements.forEach { element =>
       val ctx = Option(elementHolder.get()).getOrElse(api.Context(contextIdGenerator.nextContextId()))
 
       out match {
+        // it should always be an instance of this class
         case timedOut: TimestampedCollector[_] =>
-          Option(timestampToOverrideHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
-        // TODO_PAWEL maybe we should throw in other case?
+          Option(overriddenResultEventTimeHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
         case _ =>
       }
 
