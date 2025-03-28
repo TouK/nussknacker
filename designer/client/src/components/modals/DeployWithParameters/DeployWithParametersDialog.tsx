@@ -4,7 +4,6 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { useLocalstorageState } from "rooks";
 
 import type { NodesDeploymentData } from "../../../http/HttpService";
 import { getProcessName, getProcessVersionId } from "../../../reducers/selectors/graph";
@@ -24,7 +23,7 @@ import { AdvancedParameters } from "./AdvancedParameters";
 export function DeployWithParametersDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {
     // TODO: get rid of meta
     const {
-        meta: { action, displayWarnings },
+        meta: { action, displayWarnings, actionName },
     } = props.data;
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
@@ -94,6 +93,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                     >
                         <AdvancedParameters
                             processName={processName}
+                            actionName={actionName}
                             setParametersValues={setParametersValues}
                             parametersValues={parametersValues}
                         />

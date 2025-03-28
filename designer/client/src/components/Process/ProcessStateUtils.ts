@@ -9,7 +9,13 @@ const archivedIcon = "/assets/process/archived.svg";
 
 @WrapAllMethods(memoizeByArgsWithTTL)
 class ProcessStateUtils {
+    public canSeeDeploy = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.Deploy);
+
     public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Deploy);
+
+    public canSeeRedeploy = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.Redeploy);
+
+    public canRedeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Redeploy);
 
     public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Cancel);
 
