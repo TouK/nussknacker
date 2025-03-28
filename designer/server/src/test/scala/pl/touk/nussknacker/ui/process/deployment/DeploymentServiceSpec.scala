@@ -1304,7 +1304,7 @@ class DeploymentServiceSpec
   }
 
   private def getAllowedActions(status: StateStatus, deploymentManager: MockDeploymentManager = deploymentManager1) = {
-    deploymentManager.processStateDefinitionManager.statusActions(
+    deploymentManager.processStateDefinitionManager.allowedActions(
       ScenarioStatusWithScenarioContext(
         scenarioStatus = status,
         deployedVersionId = None,

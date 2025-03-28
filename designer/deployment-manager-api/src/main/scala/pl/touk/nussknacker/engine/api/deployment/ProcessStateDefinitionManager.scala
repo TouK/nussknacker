@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
-  DefaultVisibleActions,
   ScenarioStatusPresentationDetails,
   ScenarioStatusWithScenarioContext
 }
@@ -46,9 +45,14 @@ trait ProcessStateDefinitionManager {
     stateDefinitions(status.name).icon
 
   /**
-   * Actions that are applicable to scenario in general. They may be available only in particular states, as defined by `def statusActions`
+   * Actions that are applicable to scenario in given state. They may be available to execute only in particular states, as defined by `def allowedActions`
    */
-  def visibleActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] = DefaultVisibleActions
+  def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName]
+
+  /**
+   * Allowed transitions between states.
+   */
+  def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName]
 
   /**
    * Custom tooltips for actions
@@ -56,17 +60,12 @@ trait ProcessStateDefinitionManager {
   def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] = Map.empty
 
   /**
-    * Allowed transitions between states.
-    */
-  def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName]
-
-  /**
     * Returns presentations details of status
     */
   def statusPresentation(input: ScenarioStatusWithScenarioContext): ScenarioStatusPresentationDetails = {
     ScenarioStatusPresentationDetails(
       visibleActions(input),
-      statusActions(input),
+      allowedActions(input),
       actionTooltips(input),
       statusIcon(input),
       statusTooltip(input),
@@ -92,7 +91,7 @@ object ProcessStateDefinitionManager {
   )
 
   final case class ScenarioStatusPresentationDetails(
-      visibleActions: List[ScenarioActionName],
+      visibleActions: Set[ScenarioActionName],
       // This one is not exactly a part of presentation, it is rather a thing related with scenario lifecycle but for now it is kept here
       allowedActions: Set[ScenarioActionName],
       actionTooltips: Map[ScenarioActionName, String],

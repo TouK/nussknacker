@@ -156,7 +156,7 @@ class ScenarioStatusProvider(
     dispatcher
       .deploymentManagerUnsafe(processDetails.processingType)
       .processStateDefinitionManager
-      .statusActions(
+      .allowedActions(
         ScenarioStatusWithScenarioContext(
           scenarioStatus = scenarioStatus,
           deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId),
