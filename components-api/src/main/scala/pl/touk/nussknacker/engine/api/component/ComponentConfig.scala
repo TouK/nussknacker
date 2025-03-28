@@ -4,8 +4,8 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{
+  ParameterCategory,
   ParameterEditor,
-  ParameterSection,
   ParameterValidator,
   StaticParameterEditor,
   StaticStringParameterEditor
@@ -71,7 +71,7 @@ case class ParameterConfig(
     validators: Option[List[ParameterValidator]],
     label: Option[String],
     hintText: Option[String],
-    section: Option[ParameterSection],
+    category: Option[ParameterCategory],
 )
 
 case class StaticParameterConfig(

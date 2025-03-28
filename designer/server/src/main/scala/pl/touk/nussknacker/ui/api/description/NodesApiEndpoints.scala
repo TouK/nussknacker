@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
-  ParameterEditor,
-  ParameterSection
+  ParameterCategory,
+  ParameterEditor
 }
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
@@ -1390,10 +1390,10 @@ object NodesApiEndpoints {
       Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]   = Schema.derived
-      implicit lazy val durationSchema: Schema[Duration]                 = Schema.schemaForJavaDuration
-      implicit lazy val uiParameterSchema: Schema[UIParameter]           = Schema.derived
-      implicit lazy val parameterSectionSchema: Schema[ParameterSection] = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]     = Schema.derived
+      implicit lazy val durationSchema: Schema[Duration]                   = Schema.schemaForJavaDuration
+      implicit lazy val uiParameterSchema: Schema[UIParameter]             = Schema.derived
+      implicit lazy val parameterCategorySchema: Schema[ParameterCategory] = Schema.derived
 
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema(
         SProduct(

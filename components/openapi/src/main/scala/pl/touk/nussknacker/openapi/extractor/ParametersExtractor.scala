@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterSection}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterCategory}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerObject, SwaggerTyped}
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
@@ -54,7 +54,7 @@ object ParametersExtractor {
         javaOptionalParameter = false,
         hintText = None,
         labelOpt = None,
-        section = ParameterSection.Standard
+        category = ParameterCategory.Standard
       ),
       isBodyPart = isBodyPart
     )

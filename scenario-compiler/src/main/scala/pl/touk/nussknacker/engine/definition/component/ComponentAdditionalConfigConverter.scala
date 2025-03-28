@@ -54,7 +54,7 @@ object ComponentAdditionalConfigConverter {
       validators = if (validators.nonEmpty) Some(validators) else None,
       label = None,
       hintText = paramAdditionalConfig.hintText,
-      section = None
+      category = None
     )
   }
 
