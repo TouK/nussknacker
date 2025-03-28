@@ -8,6 +8,7 @@ import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../contain
 import { getScenario } from "../../../../reducers/selectors/graph";
 import type { Edge, NodeType } from "../../../../types";
 import type { Scenario } from "../../../Process/types";
+import type { EditedNode } from "../IdField";
 import { applyIdFromFakeName } from "../IdField";
 import type { NodeDetailsMeta } from "./NodeDetails";
 
@@ -18,9 +19,9 @@ export function mergeQuery(changes: Record<string, string[]>) {
 type NodeState = {
     scenario: Scenario;
     node: NodeType;
-    editedNode: NodeType;
+    editedNode: EditedNode;
     outputEdges: Edge[];
-    onChange: (node: React.SetStateAction<NodeType>, edges?: React.SetStateAction<Edge[]>) => void;
+    onChange: (node: React.SetStateAction<EditedNode>, edges?: React.SetStateAction<Edge[]>) => void;
     performNodeEdit: () => Promise<void>;
     isTouched: boolean;
 };
@@ -34,10 +35,10 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const scenarioFromGlobalStore = useSelector(getScenario);
 
     const { node, scenario = scenarioFromGlobalStore } = data;
-    const [editedNode, setEditedNode] = useState<NodeType>(node);
+    const [editedNode, setEditedNode] = useState<EditedNode>(node);
     const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
 
-    const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]> = (v) => v) => {
+    const onChange = useCallback((node: SetStateAction<EditedNode>, edges: SetStateAction<Edge[]> = (v) => v) => {
         setEditedNode(node);
         setOutputEdges(edges);
     }, []);
