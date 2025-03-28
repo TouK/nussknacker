@@ -226,7 +226,10 @@ trait TestingApiHttpServiceSpec
              |                "branchParam": false,
              |                "hintText": null,
              |                "label": "paramFixedString",
-             |                "requiredParam": false
+             |                "requiredParam": false,
+             |                "parameterSection": {
+             |                    "type": "Standard"
+             |                }
              |            }
              |        ]
              |    }
@@ -282,7 +285,10 @@ trait TestingApiHttpServiceSpec
              |                "branchParam": false,
              |                "hintText": null,
              |                "label": "paramRawString",
-             |                "requiredParam": false
+             |                "requiredParam": false,
+             |                "parameterSection": {
+             |                    "type": "Standard"
+             |                }
              |            }
              |        ]
              |    }

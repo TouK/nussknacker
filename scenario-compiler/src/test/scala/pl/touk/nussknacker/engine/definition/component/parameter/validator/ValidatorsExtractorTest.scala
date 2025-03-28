@@ -199,7 +199,7 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   }
 
   test("determine validators based on config") {
-    val config = ParameterConfig(None, None, Some(List(NotBlankParameterValidator)), None, None)
+    val config = ParameterConfig(None, None, Some(List(NotBlankParameterValidator)), None, None, None)
 
     ValidatorsExtractor.extract(validatorParams(notAnnotatedParam, parameterConfig = config)) shouldBe
       List(MandatoryParameterValidator, NotBlankParameterValidator)
