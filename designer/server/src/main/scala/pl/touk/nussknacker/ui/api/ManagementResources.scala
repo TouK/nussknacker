@@ -21,9 +21,12 @@ import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
 }
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.{BadRequestError, OtherError}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
+import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
@@ -76,8 +79,14 @@ object ManagementResources {
       GenerateTestDataDesignerError(generateTestDataError match {
         case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
           cause match {
-            case ScenarioTestDataGenerationError.SourcesCompilationError(nodeId, errors) =>
-              s"Source $nodeId compilation failed"
+            case ScenarioTestDataGenerationError.ScenarioGraphValidationError(nodesWithErrors) =>
+              ValidationErrors(
+                invalidNodes = nodesWithErrors.toList.toMap.map { case (nodeId, errors) =>
+                  (nodeId.id, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
+                },
+                processPropertiesErrors = List.empty,
+                globalErrors = List.empty
+              ).toHumanReadableMessage
             case ScenarioTestDataGenerationError.NoDataGenerated =>
               TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
             case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
@@ -115,7 +124,7 @@ object ManagementResources {
         case PerformTestError.TestDataPreparationError(cause) =>
           cause match {
             case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
-              TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId)
+              TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
             case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
               TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
           }

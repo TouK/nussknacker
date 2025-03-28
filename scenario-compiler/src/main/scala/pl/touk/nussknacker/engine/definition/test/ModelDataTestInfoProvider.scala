@@ -124,10 +124,10 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
         .compileSourceNode(sourceNodeData)(jobData, nodeId)
         .toEither
         .left
-        .map(errors => SourceTestDataGenerationError.SourceCompilationError(sourceNodeData.id, errors.toList))
+        .map(errors => SourceTestDataGenerationError.SourceCompilationError(nodeId, errors))
       testDataGenerator <- compiledSource
         .cast[TestDataGenerator]
-        .toRight(SourceTestDataGenerationError.UnsupportedSourceError(sourceNodeData.id))
+        .toRight(SourceTestDataGenerationError.UnsupportedSourceError(nodeId))
       result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), size)
         .toRight(SourceTestDataGenerationError.NoDataGenerated)
     } yield result
@@ -153,13 +153,14 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     commonModelDataInfoProvider
       .collectAllSources(scenario)
       .map { source =>
+        val nodeId = NodeId(source.id)
         commonModelDataInfoProvider
-          .compileSourceNode(source)(jobData, NodeId(source.id))
+          .compileSourceNode(source)(jobData, nodeId)
           .leftMap[ScenarioTestDataGenerationError] { compilationErrors =>
-            ScenarioTestDataGenerationError.SourcesCompilationError(source.id, compilationErrors.toList)
+            ScenarioTestDataGenerationError.ScenarioGraphValidationError(NonEmptyList.one(nodeId -> compilationErrors))
           }
           .leftMap(NonEmptyList.one)
-          .map(_.cast[TestDataGenerator].map(testDataGenerator => (NodeId(source.id), testDataGenerator)))
+          .map(_.cast[TestDataGenerator].map(testDataGenerator => (nodeId, testDataGenerator)))
       }
       .sequence
       .map(_.flatten)
@@ -190,7 +191,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
         case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
-          Left(TestDataPreparationError.MissingSource(sourceId, recordIdx))
+          Left(TestDataPreparationError.MissingSource(NodeId(sourceId), recordIdx))
         case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
           val sourceId = allScenarioSourceIds.head
           Right(ScenarioTestJsonRecord(sourceId, record))

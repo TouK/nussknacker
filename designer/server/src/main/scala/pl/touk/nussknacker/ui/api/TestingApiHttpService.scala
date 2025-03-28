@@ -6,6 +6,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.ScenarioTestDataGenerationError
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError._
@@ -14,6 +16,7 @@ import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTes
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodesError, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.description.TestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
+import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
@@ -129,8 +132,19 @@ class TestingApiHttpService(
                       error match {
                         case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
                           cause match {
-                            case ScenarioTestDataGenerationError.SourcesCompilationError(nodeId, errors) =>
-                              SourceNotCompiled(nodeId)
+                            case ScenarioTestDataGenerationError.ScenarioGraphValidationError(nodesWithErrors) =>
+                              ScenarioGraphValidationError(
+                                ValidationErrors(
+                                  invalidNodes = nodesWithErrors
+                                    .map { case (nodeId, errors) =>
+                                      (nodeId.id, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
+                                    }
+                                    .toList
+                                    .toMap,
+                                  processPropertiesErrors = List.empty,
+                                  globalErrors = List.empty
+                                )
+                              )
                             case ScenarioTestDataGenerationError.NoDataGenerated =>
                               NoDataGenerated
                             case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
@@ -168,11 +182,14 @@ object TestingApiHttpService {
     sealed trait BadRequestTestingError extends TestingError
 
     object BadRequestTestingError {
-      final case class TooManyCharactersGenerated(length: Int, limit: Int) extends BadRequestTestingError
-      final case class TooManySamplesRequested(maxSamples: Int)            extends BadRequestTestingError
+      final case class TooManyCharactersGenerated(length: Int, limit: Int)    extends BadRequestTestingError
+      final case class TooManySamplesRequested(maxSamples: Int)               extends BadRequestTestingError
+      final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestTestingError
 
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
+          case ScenarioGraphValidationError(errors) =>
+            errors.toHumanReadableMessage
           case TooManyCharactersGenerated(length, limit) =>
             TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
           case TooManySamplesRequested(maxSamples) =>
