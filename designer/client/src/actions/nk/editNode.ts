@@ -1,4 +1,4 @@
-import { getEdgesForNode } from "../../components/graph/node-modal/node/NodeDetails";
+import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";

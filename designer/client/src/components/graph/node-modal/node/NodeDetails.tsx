@@ -1,94 +1,38 @@
-import { DefaultComponents as Window, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { createContext, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { DefaultComponents as Window } from "@touk/window-manager";
+import React, { createContext, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import urljoin from "url-join";
-import { editNode } from "../../../../actions/nk";
+
 import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
-import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
-import { RootState } from "../../../../reducers";
+import { parseWindowsQueryParams } from "../../../../containers/hooks/useSearchQuery";
+import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { Edge, NodeType } from "../../../../types";
-import { WindowContent, WindowKind } from "../../../../windowManager";
+import type { NodeType } from "../../../../types";
+import type { WindowKind } from "../../../../windowManager";
+import { WindowContent } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
-import { Scenario } from "../../../Process/types";
+import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
-import { applyIdFromFakeName } from "../IdField";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
+import { mergeQuery, useNodeState } from "./useNodeState";
 
-function mergeQuery(changes: Record<string, string[]>) {
-    return replaceSearchQuery((current) => ({ ...current, ...changes }));
-}
+export type NodeDetailsMeta = {
+    node: NodeType;
+    scenario: Scenario;
+};
 
-type NodeDetailsMeta = { node: NodeType; scenario: Scenario };
-type NodeDetailsProps = WindowContentProps<WindowKind, NodeDetailsMeta> & {
+export type NodeDetailsProps = WindowContentProps<WindowKind, NodeDetailsMeta> & {
     readOnly?: boolean;
 };
-
-type NodeState = {
-    scenario: Scenario;
-    node: NodeType;
-    editedNode: NodeType;
-    outputEdges: Edge[];
-    onChange: (node: React.SetStateAction<NodeType>, edges?: React.SetStateAction<Edge[]>) => void;
-    performNodeEdit: () => Promise<void>;
-    isTouched: boolean;
-};
-
-export function getEdgesForNode(scenario: Scenario, node: NodeType) {
-    return scenario.scenarioGraph.edges.filter(({ from }) => from === node.id);
-}
-
-export function useNodeState(data: NodeDetailsMeta): NodeState {
-    const dispatch = useDispatch();
-    const scenarioFromGlobalStore = useSelector(getScenario);
-
-    const { node, scenario = scenarioFromGlobalStore } = data;
-    const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
-
-    const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]> = (v) => v) => {
-        setEditedNode(node);
-        setOutputEdges(edges);
-    }, []);
-
-    const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
-
-    const performNodeEdit = useCallback(async () => {
-        try {
-            //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-
-            // Webpack yield that awaits is unnecessary,
-            // but in fact without this await,
-            // we don't wait to editNode finish and the dialog is closed before resolve of the call,
-            // which causes a bug with a form update
-            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-        } catch (e) {
-            console.error(e);
-            //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
-            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
-        }
-    }, [node, dispatch, scenario, editedNode, outputEdges]);
-
-    return {
-        scenario,
-        node,
-        editedNode,
-        outputEdges,
-        onChange,
-        performNodeEdit,
-        isTouched,
-    };
-}
 
 export function useNodeDetailsButtons({
     editedNode,
