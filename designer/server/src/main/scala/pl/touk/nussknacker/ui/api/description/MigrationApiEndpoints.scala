@@ -62,7 +62,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 //              Example.of(
 //                summary = Some("Migrate given scenario from version 3 to current Nu instance"),
 //                value = MigrateScenarioRequestDtoV3(
-//                  version = 2,
+//                  version = 3,
 //                  sourceEnvironmentId = "testEnv",
 //                  processingMode = ProcessingMode.UnboundedStream,
 //                  engineSetupName = EngineSetupName("Flink"),

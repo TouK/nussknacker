@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
-import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationApiAdapterError
+import pl.touk.nussknacker.ui.migrations.MigrationService.{toMigrationError, MigrationApiAdapterError}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
@@ -102,7 +102,7 @@ class MigrationService(
     )
 
     val result: EitherT[Future, MigrationError, Unit] = for {
-      processingType <- EitherT.fromEither[Future](processingTypeValidated.toEither).leftMap(MigrationService.from)
+      processingType <- EitherT.fromEither[Future](processingTypeValidated.toEither).leftMap(toMigrationError)
       validationResult <-
         validateProcessingTypeAndUIProcessResolver(
           scenarioGraph,
@@ -134,7 +134,7 @@ class MigrationService(
         case true  => Right(())
         case false => Left(new UnauthorizedError(loggedUser))
       }
-      .leftMap(MigrationService.from)
+      .leftMap(toMigrationError)
   }
 
   private def migrateProcessAndNotifyListeners(
@@ -150,7 +150,7 @@ class MigrationService(
           )
           .map(_.validationResult)
       )
-      .leftMap(MigrationService.from)
+      .leftMap(toMigrationError)
   }
 
   private def getProcessId(processName: ProcessName): EitherT[Future, MigrationError, ProcessId] = {
@@ -183,12 +183,12 @@ class MigrationService(
                   Left(MigrationError.CannotMigrateArchivedScenario(scenarioWithDetails.name, targetEnvironmentId))
                 )
               case Success(_)                  => Future.successful(Right(()))
-              case Failure(e: NuDesignerError) => Future.successful(Left(MigrationService.from(e)))
+              case Failure(e: NuDesignerError) => Future.successful(Left(toMigrationError(e)))
               case Failure(e)                  => Future.failed(e)
             }
         case None =>
           createProcess(processName, parameters, isFragment, useLegacyCreateScenarioApi)
-            .map(_.left.map(MigrationService.from))
+            .map(_.left.map(toMigrationError))
 
       }
     )
@@ -223,7 +223,7 @@ class MigrationService(
             )
         }
       )
-      .leftMap(MigrationService.from)
+      .leftMap(toMigrationError)
   }
 
   private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
@@ -278,7 +278,7 @@ class MigrationService(
 
 object MigrationService {
 
-  private[MigrationService] def from(
+  private[MigrationService] def toMigrationError(
       nuDesignerError: NuDesignerError
   )(implicit loggedUser: LoggedUser): MigrationError =
     nuDesignerError match {
