@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api;
 
-public enum ParameterSectionType {
+public enum ParameterCategoryType {
     STANDARD,
-    ADDITIONAL,
+    ADVANCED,
 }

@@ -347,7 +347,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "requiredParam": true,
              |      "hintText": null,
              |      "label": "Topic",
-             |      "parameterSection": {
+             |      "category": {
              |          "type": "Standard"
              |      }
              |    },
@@ -372,7 +372,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "requiredParam": true,
              |      "hintText": null,
              |      "label": "Value",
-             |      "parameterSection": {
+             |      "category": {
              |          "type": "Standard"
              |      }
              |    }

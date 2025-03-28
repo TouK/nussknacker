@@ -3645,7 +3645,7 @@ paths:
                       branchParam: false
                       label: name
                       requiredParam: true
-                      parameterSection:
+                      category:
                         type: Standard
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
@@ -5456,9 +5456,6 @@ paths:
       - httpAuth: []
 components:
   schemas:
-    Additional:
-      title: Additional
-      type: object
     AdditionalField:
       title: AdditionalField
       type: object
@@ -5485,6 +5482,9 @@ components:
           $ref: '#/components/schemas/TestSourceParameters'
         scenarioGraph:
           type: object
+    Advanced:
+      title: Advanced
+      type: object
     ApiVersion:
       title: ApiVersion
       type: object
@@ -6944,6 +6944,11 @@ components:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
+    ParameterCategory:
+      title: ParameterCategory
+      oneOf:
+      - $ref: '#/components/schemas/Advanced'
+      - $ref: '#/components/schemas/Standard'
     ParameterDto:
       title: ParameterDto
       type: object
@@ -6983,11 +6988,6 @@ components:
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
-    ParameterSection:
-      title: ParameterSection
-      oneOf:
-      - $ref: '#/components/schemas/Additional'
-      - $ref: '#/components/schemas/Standard'
     ParameterValueCompileTimeValidation:
       title: ParameterValueCompileTimeValidation
       type: object
@@ -7897,7 +7897,7 @@ components:
       - additionalVariables
       - branchParam
       - label
-      - parameterSection
+      - category
       properties:
         name:
           type: string
@@ -7936,8 +7936,8 @@ components:
           type:
           - boolean
           - 'null'
-        parameterSection:
-          $ref: '#/components/schemas/ParameterSection'
+        category:
+          $ref: '#/components/schemas/ParameterCategory'
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object
