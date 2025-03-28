@@ -176,6 +176,7 @@ object DefinitionsService {
       hintText = parameter.hintText,
       label = parameter.label,
       requiredParam = Some(!parameter.isOptional),
+      parameterSection = parameter.section
     )
   }
 
