@@ -45,17 +45,18 @@ object HackedWindowOperator {
         types: AggregatorTypeInformations,
         aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
         trigger: Trigger[_ >: Input[A], TimeWindow]
-    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = hackedWindow(assigner, types, aggregateFunction, FireOnEachEvent[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger))
+    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = hackedWindow(assigner, types, aggregateFunction, FireOnEachEvent[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger), preserveContext = true)
 
     def hackedWindow(
                             assigner: WindowAssigner[_ >: Input[A], TimeWindow],
                             types: AggregatorTypeInformations,
                             aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
-                            trigger: Trigger[_ >: Input[A], TimeWindow]
+                            trigger: Trigger[_ >: Input[A], TimeWindow],
+                            preserveContext: Boolean,
                           ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream.transform(
       assigner.getClass.getSimpleName,
       types.returnedValueTypeInfo,
-      new HackedWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger)
+      new HackedWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger, preserveContext)
     )
 
   }
@@ -69,7 +70,8 @@ class HackedWindowOperator[A](
     assigner: WindowAssigner[_ >: Input[A], TimeWindow],
     types: AggregatorTypeInformations,
     aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
-    trigger: Trigger[_ >: Input[A], TimeWindow]
+    trigger: Trigger[_ >: Input[A], TimeWindow],
+    preserveContext: Boolean,
 ) extends WindowOperator[String, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
@@ -89,7 +91,9 @@ class HackedWindowOperator[A](
     ) {
 
   override def processElement(element: StreamRecord[ValueWithContext[StringKeyedValue[A]]]): Unit = {
-    elementHolder.set(element.getValue.context)
+    if (preserveContext) {
+      elementHolder.set(element.getValue.context)
+    }
     try {
       super.processElement(element)
     } finally {

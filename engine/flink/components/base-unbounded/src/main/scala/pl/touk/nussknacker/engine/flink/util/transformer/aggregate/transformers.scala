@@ -194,7 +194,7 @@ object transformers {
             case SessionWindowTrigger.OnEvent =>
               keyedStream.hackedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
-              keyedStream.hackedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
+              keyedStream.hackedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext = false)
           }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         })
       )
