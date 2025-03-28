@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.data.EitherT
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResources(
@@ -78,30 +79,36 @@ class RemoteEnvironmentResources(
                 processIdWithName,
                 version,
                 details =>
-                  for {
-                    result <- remoteEnvironment.migrate(
-                      details.processingMode,
-                      details.engineSetupName,
-                      details.processCategory,
-                      details.labels,
-                      details.scenarioGraphUnsafe,
-                      details.processVersionId,
-                      details.name,
-                      details.isFragment
-                    )
-                    _ <- dbioActionRunner.run(
-                      scenarioActivityRepository.addActivity(
-                        ScenarioActivity.OutgoingMigration(
-                          scenarioId = ScenarioId(processIdWithName.id.value),
-                          scenarioActivityId = ScenarioActivityId.random,
-                          user = user.scenarioUser,
-                          date = clock.instant(),
-                          scenarioVersionId = Some(ScenarioVersionId.from(details.processVersionId)),
-                          destinationEnvironment = Environment(remoteEnvironment.environmentId)
+                  {
+                    for {
+                      result <- EitherT(
+                        remoteEnvironment.migrate(
+                          details.processingMode,
+                          details.engineSetupName,
+                          details.processCategory,
+                          details.labels,
+                          details.scenarioGraphUnsafe,
+                          details.processVersionId,
+                          details.name,
+                          details.isFragment
                         )
                       )
-                    )
-                  } yield result
+                      _ <- EitherT.right[NuDesignerError](
+                        dbioActionRunner.run(
+                          scenarioActivityRepository.addActivity(
+                            ScenarioActivity.OutgoingMigration(
+                              scenarioId = ScenarioId(processIdWithName.id.value),
+                              scenarioActivityId = ScenarioActivityId.random,
+                              user = user.scenarioUser,
+                              date = clock.instant(),
+                              scenarioVersionId = Some(ScenarioVersionId.from(details.processVersionId)),
+                              destinationEnvironment = Environment(remoteEnvironment.environmentId)
+                            )
+                          )
+                        )
+                      )
+                    } yield result
+                  }.value
               )
             }
           }

@@ -166,8 +166,8 @@ object ScenarioActivityAuditLog {
       s"AttachmentAdded(fileName=${stringify(attachment)})"
     case ScenarioActivity.ChangedProcessingMode(_, _, _, _, _, from, to) =>
       s"ChangedProcessingMode(from=$from,to=$to)"
-    case ScenarioActivity.IncomingMigration(_, _, _, _, _, sourceEnvironment, sourceUser, sourceVersionId, _) =>
-      s"IncomingMigration(sourceEnvironment=${sourceEnvironment.name},sourceUser=${sourceUser.value},sourceVersionId=${sourceVersionId
+    case ScenarioActivity.IncomingMigration(_, _, user, _, _, sourceEnvironment, sourceVersionId, _) =>
+      s"IncomingMigration(sourceEnvironment=${sourceEnvironment.name},sourceUser=${user.name.value},sourceVersionId=${sourceVersionId
           .map(_.value.toString)
           .getOrElse("[none]")})"
     case ScenarioActivity.OutgoingMigration(_, _, _, _, _, destinationEnvironment) =>
