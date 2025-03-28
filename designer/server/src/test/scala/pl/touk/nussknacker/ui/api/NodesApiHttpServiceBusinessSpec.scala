@@ -346,7 +346,10 @@ class NodesApiHttpServiceBusinessSpec
              |      "branchParam": false,
              |      "requiredParam": true,
              |      "hintText": null,
-             |      "label": "Topic"
+             |      "label": "Topic",
+             |      "parameterSection": {
+             |          "type": "Standard"
+             |      }
              |    },
              |    {
              |      "name": "Value",
@@ -368,7 +371,10 @@ class NodesApiHttpServiceBusinessSpec
              |      "branchParam": false,
              |      "requiredParam": true,
              |      "hintText": null,
-             |      "label": "Value"
+             |      "label": "Value",
+             |      "parameterSection": {
+             |          "type": "Standard"
+             |      }
              |    }
              |  ],
              |  "expressionType": null,

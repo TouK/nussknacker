@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import io.circe.{Decoder, Json, JsonObject}
-import io.circe.Json.{arr, fromBoolean, fromFields, fromString, fromValues, obj, Null}
+import io.circe.Json.{arr, fromBoolean, fromFields, fromJsonObject, fromString, fromValues, obj, Null}
 import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
@@ -125,8 +125,9 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> fromString("hint-text-from-additional-ui-config-provider"),
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           ),
           obj(
             "name"  -> fromString("tariffType"),
@@ -150,8 +151,9 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> Null,
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),
@@ -168,8 +170,9 @@ class BaseFlowTest
                 encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> Null,
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           ),
           obj(
             "name"         -> fromString("bar"),
@@ -180,8 +183,9 @@ class BaseFlowTest
                 encodeEditor(SpelTemplateParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> Null,
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           ),
           obj(
             "name"         -> fromString("baz"),
@@ -194,8 +198,9 @@ class BaseFlowTest
                 )
               )
             ),
-            "hintText"      -> fromString("some hint text"),
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> fromString("some hint text"),
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           ),
           obj(
             "name"         -> fromString("quax"),
@@ -207,8 +212,9 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> Null,
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           ),
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -231,8 +237,9 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
+            "hintText"         -> Null,
+            "requiredParam"    -> fromBoolean(true),
+            "parameterSection" -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
           )
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
