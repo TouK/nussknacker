@@ -7,7 +7,6 @@ import org.apache.flink
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.MetricGroup
-import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.util.metrics._
 
 import java.util.concurrent.TimeUnit
@@ -53,8 +52,7 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
   }
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
-    val namespaceTags = extractTags(NkGlobalParameters.fromMap(runtimeContext.getGlobalJobParameters))
-    tagMode(nameParts, tags ++ namespaceTags)
+    tagMode(nameParts, tags)
   }
 
   private def tagMode(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
@@ -67,13 +65,6 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
       case (group, (tag, tagValue)) => group.addGroup(tag, tagValue)
     }
     (finalGroup, lastName)
-  }
-
-  private def extractTags(nkGlobalParameters: Option[NkGlobalParameters]): Map[String, String] = {
-    nkGlobalParameters.map(_.namespaceParameters) match {
-      case Some(Some(params)) => params.tags
-      case _                  => Map()
-    }
   }
 
 }
