@@ -1,31 +1,29 @@
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import { WindowContent, WindowKind } from "../../windowManager";
 import { css } from "@emotion/css";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { useTranslation } from "react-i18next";
-import { editProperties } from "../../actions/nk";
-import { useDispatch, useSelector } from "react-redux";
-import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
-import { NodeValidationError, PropertiesType } from "../../types";
-import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { debounce, isEqual } from "lodash";
-import { getProcessUnsavedNewName, getScenario } from "../../reducers/selectors/graph";
-import NodeUtils from "../graph/NodeUtils";
-import { set } from "lodash/fp";
-import HttpService from "../../http/HttpService";
-import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
-import PropertiesSvg from "../../assets/img/properties.svg";
 import { styled } from "@mui/material";
-import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
-import { PropertiesForm } from "../properties";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { debounce, isEqual } from "lodash";
+import { set } from "lodash/fp";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+
+import { editProperties } from "../../actions/nk";
+import PropertiesSvg from "../../assets/img/properties.svg";
+import HttpService from "../../http/HttpService";
+import type { RootState } from "../../reducers";
+import { getProperties, getScenario } from "../../reducers/selectors/graph";
+import type { NodeValidationError, PropertiesType } from "../../types";
+import { WindowContent, WindowKind } from "../../windowManager";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
-import { RootState } from "../../reducers";
+import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
+import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
+import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
+import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { PropertiesForm } from "../properties";
 
 export const usePropertiesState = () => {
-    const scenario = useSelector(getScenario);
-    const name = useSelector(getProcessUnsavedNewName);
-    const currentProperties = useMemo(() => NodeUtils.getProcessProperties(scenario, name), [name, scenario]);
+    const currentProperties = useSelector(getProperties);
     const [editedProperties, setEditedProperties] = useState<PropertiesType>(currentProperties);
     const isTouched = useMemo(() => !isEqual(currentProperties, editedProperties), [currentProperties, editedProperties]);
 

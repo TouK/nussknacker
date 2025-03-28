@@ -8,8 +8,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { ValidationResult } from "../../types";
-import * as LayoutUtils from "../layoutUtils";
-import { nodes } from "../layoutUtils";
+import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
@@ -45,7 +44,6 @@ const emptyGraphState: GraphState = {
     selectionState: [],
     processCounts: {},
     testResults: null,
-    unsavedNewName: null,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -107,7 +105,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario,
                 scenarioLoading: false,
-                layout: LayoutUtils.fromMeta(scenario.scenarioGraph),
+                layout: fromMeta(scenario.scenarioGraph),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
@@ -172,12 +170,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     scenarioGraph: { ...action.scenarioGraphAfterChange },
                     validationResult: updateValidationResult(state, action),
                 },
-            };
-        }
-        case "PROCESS_RENAME": {
-            return {
-                ...state,
-                unsavedNewName: action.name,
             };
         }
         case "EDIT_LABELS": {
@@ -348,7 +340,7 @@ export type GraphStateWithHistory = StateWithHistory<GraphState>;
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
-const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "unsavedNewName", "layout", "selectionState"];
+const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];
 
 const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.validationResult"]));
