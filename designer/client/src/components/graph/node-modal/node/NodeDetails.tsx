@@ -17,6 +17,7 @@ import { WindowContent } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
+import type { EditedNode } from "../IdField";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
@@ -40,7 +41,7 @@ export function useNodeDetailsButtons({
     close,
     readOnly,
 }: {
-    editedNode: NodeType;
+    editedNode: EditedNode;
     performNodeEdit: () => Promise<void>;
     close: () => void;
     readOnly?: boolean;
@@ -82,7 +83,7 @@ function useTitleData(node: NodeType) {
     };
 }
 
-export const NodeContext = createContext<NodeType>(null);
+export const NodeContext = createContext<EditedNode>(null);
 
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
