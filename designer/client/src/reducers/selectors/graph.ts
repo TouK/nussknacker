@@ -1,17 +1,18 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
+
 import ProcessUtils from "../../common/ProcessUtils";
-import { StickyNote } from "../../common/StickyNote";
-import { TestFormParameters } from "../../common/TestResultUtils";
+import type { StickyNote } from "../../common/StickyNote";
+import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
-import { ScenarioGraph } from "../../types";
-import { ProcessCounts, TestData } from "../graph";
-import { RootState } from "../index";
+import type { ScenarioGraph } from "../../types";
+import type { ProcessCounts, TestData } from "../graph";
+import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 import { getStickyNotesSettings } from "./settings";
 
-export const getGraph = (state: RootState) => state.graphReducer.history.present;
+export const getGraph = (state: RootState) => state.graphReducer.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
@@ -39,8 +40,8 @@ export const getScenarioLabelsErrors = createSelector(getScenario, (p) => Proces
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-export const getHistoryPast = (state: RootState) => state.graphReducer.history.past;
-export const getHistoryFuture = (state: RootState) => state.graphReducer.history.future;
+export const getHistoryPast = (state: RootState) => state.graphReducer.past;
+export const getHistoryFuture = (state: RootState) => state.graphReducer.future;
 
 export const isProcessRenamed = createSelector(
     getProcessName,

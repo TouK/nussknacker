@@ -1,10 +1,10 @@
-import { ThunkAction } from "../reduxTypes";
-import HttpService from "../../http/HttpService";
-import { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResult, UIParameter, VariableTypes } from "../../types";
-
 import { debounce } from "lodash";
-import NodeUtils from "../../components/graph/NodeUtils";
+
 import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
+import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/selectors";
+import HttpService from "../../http/HttpService";
+import type { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResult, UIParameter, VariableTypes } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string };
@@ -71,7 +71,7 @@ export function validateNodeData(processName: string, validationRequestData: Val
     return (dispatch, getState) => {
         validate(processName, validationRequestData, (nodeId, data) => {
             // node details view creates this on open and removes after close
-            if (data && getState().nodeDetails[nodeId]) {
+            if (data && getNodeDetails(getState())(nodeId)) {
                 dispatch(nodeValidationDataUpdated(nodeId, data));
             }
         });
