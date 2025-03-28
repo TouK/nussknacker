@@ -1,18 +1,21 @@
 /* eslint-disable i18next/no-literal-string */
 import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
-import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
-import { Action, Reducer } from "../../actions/reduxTypes";
+import type { StateWithHistory } from "redux-undo";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
+
+import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { ValidationResult } from "../../types";
+import type { Scenario } from "../../components/Process/types";
+import type { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
-import { NestedKeyOf } from "./nestedKeyOf";
+import type { NestedKeyOf } from "./nestedKeyOf";
 import { selectionState } from "./selectionState";
-import { GraphState } from "./types";
+import type { GraphState } from "./types";
 import {
     addNodesWithLayout,
     addStickyNotesWithLayout,
@@ -29,7 +32,13 @@ import {
 
 const emptyGraphState: GraphState = {
     scenarioLoading: false,
-    scenario: null,
+    scenario: {
+        scenarioGraph: {
+            nodes: [],
+            edges: [],
+            properties: null,
+        },
+    } as Scenario,
     layout: [],
     testCapabilities: null,
     testFormParameters: null,
@@ -364,8 +373,8 @@ function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action)
     return nextState;
 }
 
-//TODO: replace this with use of selectors everywhere
-export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
-    const history = fixUndoableHistory(state?.history, action);
-    return { ...history.present, history };
+export const reducerWithUndo: Reducer<StateWithHistory<GraphState>> = (state, action) => {
+    const history = fixUndoableHistory(state, action);
+
+    return history;
 };
