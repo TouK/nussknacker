@@ -24,7 +24,7 @@ export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
-export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
+export const getProcessUnsavedNewName = createSelector(getScenarioGraph, (g) => g.properties?.name);
 export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId);
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
@@ -43,16 +43,16 @@ export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !
 export const getHistoryPast = (state: RootState) => state.graphReducer.past;
 export const getHistoryFuture = (state: RootState) => state.graphReducer.future;
 
+export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
+    return unsavedNewName || currentName;
+});
+
 export const isProcessRenamed = createSelector(
     getProcessName,
-    getProcessUnsavedNewName,
-    (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
+    getUnsavedOrCurrentName,
+    (currentName, unsavedNewName) => unsavedNewName !== currentName,
 );
-export const getUnsavedOrCurrentName = createSelector(
-    getProcessName,
-    getProcessUnsavedNewName,
-    (currentName, unsavedNewName) => (unsavedNewName && unsavedNewName !== currentName && unsavedNewName) || currentName,
-);
+
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
@@ -90,7 +90,10 @@ export const getShowRunProcessDetails = createSelector(
 
 export const getVersions = createSelector(getScenario, (details) => details?.history || []);
 export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);
-export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.properties?.additionalFields);
+export const getProperties = createSelector(getProcessName, getScenarioGraph, (name, graph) => {
+    return { name, ...graph.properties };
+});
+export const getAdditionalFields = createSelector(getProperties, (p) => p?.additionalFields);
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);

@@ -1,8 +1,8 @@
-import { Layout, RefreshData } from "../../actions/nk";
-import { StickyNote } from "../../common/StickyNote";
-import { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
-import { Scenario } from "../../components/Process/types";
-import { SourceWithParametersTest } from "../../http/HttpService";
+import type { Layout, RefreshData } from "../../actions/nk";
+import type { StickyNote } from "../../common/StickyNote";
+import type { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
+import type { Scenario } from "../../components/Process/types";
+import type { SourceWithParametersTest } from "../../http/HttpService";
 
 export interface NodeCounts {
     errors?: number;
@@ -29,5 +29,4 @@ export type GraphState = {
     testData?: TestData;
     processCountsRefresh?: RefreshData;
     processCounts: ProcessCounts;
-    unsavedNewName: string | null;
 };
