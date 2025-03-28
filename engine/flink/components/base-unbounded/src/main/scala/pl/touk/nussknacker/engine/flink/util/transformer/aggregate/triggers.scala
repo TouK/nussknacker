@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.Window
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.HackedWindowOperator.timestampToOverrideHolder
 
 object triggers {
 
@@ -28,7 +27,7 @@ object triggers {
 
   // Window won't be emitted on end, but after each event. This would be useful e.g. when we want to have
   // daily (i.e. for current day) aggregate for each incoming event, but we're not interested in daily summary on each midnight
-  case class FireOnEachEvent[T, W <: Window](delegate: Trigger[_ >: T, W]) extends DelegatingTrigger[T, W](delegate) {
+  case class FireOnEachEvent[T, W <: Window](delegate: Trigger[_ >: T, W], onOverrideFireOnElementAtTimestamp: Long => Unit) extends DelegatingTrigger[T, W](delegate) {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       val result = super.onElement(element, timestamp, window, ctx)
@@ -39,7 +38,7 @@ object triggers {
       }
 
       if (!result.isFire && changedResult.isFire) {
-        timestampToOverrideHolder.set(timestamp)
+        onOverrideFireOnElementAtTimestamp(timestamp)
       }
 
       changedResult
@@ -57,12 +56,12 @@ object triggers {
 
   }
 
-  case class ClosingEndEventTrigger[T, W <: Window](delegate: Trigger[_ >: T, W], endFunction: T => Boolean)
+  case class ClosingEndEventTrigger[T, W <: Window](delegate: Trigger[_ >: T, W], endFunction: T => Boolean, onEndEventAtTimestamp: Long => Unit)
       extends DelegatingTrigger[T, W](delegate) {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       if (endFunction(element)) {
-        timestampToOverrideHolder.set(timestamp)
+        onEndEventAtTimestamp(timestamp)
         TriggerResult.FIRE_AND_PURGE
       } else super.onElement(element, timestamp, window, ctx)
 

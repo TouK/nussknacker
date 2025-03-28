@@ -177,11 +177,11 @@ object transformers {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
-          val baseTrigger =
-            ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+          val baseTrigger = {
+            HackedWindowOperator.closingEndEventTriggerWrapper[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
               EventTimeTrigger.create(),
-              _.value.value._2
-            )
+              _.value.value._2)
+          }
           val groupByValue = aggregateBy.product(endSessionCondition)
 
           val keyedStream = start
