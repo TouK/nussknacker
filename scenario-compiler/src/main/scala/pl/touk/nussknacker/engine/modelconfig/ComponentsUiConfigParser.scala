@@ -26,9 +26,9 @@ object ComponentsUiConfigParser {
 
   private implicit val parameterCategoryReader: ValueReader[ParameterCategory] =
     ValueReader[String].map {
-      case "Standard"   => ParameterCategory.Standard
-      case "Additional" => ParameterCategory.Advanced
-      case other        => throw new IllegalArgumentException(s"Unrecognized parameter category: $other")
+      case "Standard" => ParameterCategory.Standard
+      case "Advanced" => ParameterCategory.Advanced
+      case other      => throw new IllegalArgumentException(s"Unrecognized parameter category: $other")
     }
 
   implicit val componentsGroupNameReader: ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] =
