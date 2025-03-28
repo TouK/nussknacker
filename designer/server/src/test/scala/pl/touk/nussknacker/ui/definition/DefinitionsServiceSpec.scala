@@ -290,7 +290,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
                                    |  service-enricher: {
                                    |    params {
                                    |      paramDualEditor {
-                                   |        category: "Additional"
+                                   |        category: "Advanced"
                                    |      }
                                    |    }
                                    |  }
