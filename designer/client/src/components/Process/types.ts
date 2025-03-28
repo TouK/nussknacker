@@ -1,10 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
-import { Instant } from "../../types/common";
-import { ScenarioGraph, ValidationResult } from "../../types";
-import { ProcessingMode } from "../../http/HttpService";
+import type { ProcessingMode } from "../../http/HttpService";
+import type { ScenarioGraph, ValidationResult } from "../../types";
+import type { Instant } from "../../types/common";
 
 export enum PredefinedActionName {
     Deploy = "DEPLOY",
+    Redeploy = "REDEPLOY",
     Cancel = "CANCEL",
     Archive = "ARCHIVE",
     UnArchive = "UNARCHIVE",

@@ -1,13 +1,14 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
+
 import ProcessUtils from "../../common/ProcessUtils";
-import { StickyNote } from "../../common/StickyNote";
-import { TestFormParameters } from "../../common/TestResultUtils";
+import type { StickyNote } from "../../common/StickyNote";
+import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
-import { ScenarioGraph } from "../../types";
-import { ProcessCounts, TestData } from "../graph";
-import { RootState } from "../index";
+import type { ScenarioGraph } from "../../types";
+import type { ProcessCounts, TestData } from "../graph";
+import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 import { getStickyNotesSettings } from "./settings";
 
@@ -53,9 +54,15 @@ export const getUnsavedOrCurrentName = createSelector(
     (currentName, unsavedNewName) => (unsavedNewName && unsavedNewName !== currentName && unsavedNewName) || currentName,
 );
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
+export const isDeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeDeploy(state));
 export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
     (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+);
+export const isRedeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRedeploy(state));
+export const isRedeployPossible = createSelector(
+    [isSaveDisabled, hasError, getProcessState, isFragment],
+    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canRedeploy(state),
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));

@@ -3,15 +3,15 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
-import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
+import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import type { NodesDeploymentData } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
     hasError,
-    isDeployPossible,
-    isDeployVisible,
+    isRedeployPossible,
+    isRedeployVisible,
     isSaveDisabled,
     isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
@@ -24,10 +24,10 @@ import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
-export default function DeployButton(props: ToolbarButtonProps) {
+export default function RedeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
-    const isVisible = useSelector(isDeployVisible);
-    const isPossible = useSelector(isDeployPossible);
+    const isVisible = useSelector(isRedeployVisible);
+    const isPossible = useSelector(isRedeployPossible);
     const saveDisabled = useSelector(isSaveDisabled);
     const hasErrors = useSelector(hasError);
     const validationResultPresent = useSelector(isValidationResultPresent);
@@ -39,18 +39,18 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
     const deployToolTip = !capabilities.deploy
-        ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
+        ? t("panels.actions.redeploy.tooltips.forbidden", "Redeploy forbidden for current scenario.")
         : hasErrors
-        ? t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.")
+        ? t("panels.actions.redeploy.tooltips.error", "Cannot redeploy due to errors. Please look at the left panel for more details.")
         : !saveDisabled
-        ? t("panels.actions.deploy.tooltips.unsaved", "You have unsaved changes.")
+        ? t("panels.actions.redeploy.tooltips.unsaved", "You have unsaved changes.")
         : null;
     const deployMouseOver = hasErrors ? () => dispatch(enableToolTipsHighlight()) : null;
     const deployMouseOut = hasErrors ? () => dispatch(disableToolTipsHighlight()) : null;
 
     const { open, confirm } = useWindows();
 
-    const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
+    const message = t("panels.actions.redeploy.dialog", "Redeploy scenario {{name}}", { name: processName });
     const action = (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
         HttpService.deploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId)));
 
@@ -72,7 +72,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                                 title: message,
                                 kind: WindowKind.deployWithParameters,
                                 width: ACTION_DIALOG_WIDTH,
-                                meta: { action, displayWarnings: true, actionName: "DEPLOY" },
+                                meta: { action, displayWarnings: true, actionName: "REDEPLOY" },
                             });
                         }
                     },
@@ -83,7 +83,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     title: message,
                     kind: WindowKind.deployWithParameters,
                     width: ACTION_DIALOG_WIDTH,
-                    meta: { action, displayWarnings: true, actionName: "DEPLOY" },
+                    meta: { action, displayWarnings: true, actionName: "REDEPLOY" },
                 });
             }
         });
@@ -92,7 +92,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     if (isVisible) {
         return (
             <ToolbarButton
-                name={t("panels.actions.deploy.button", "deploy")}
+                name={t("panels.actions.redeploy.button", "redeploy")}
                 disabled={!available}
                 icon={<Icon />}
                 title={deployToolTip}

@@ -1,18 +1,21 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { FormHelperText, Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
+import type { NodesDeploymentData } from "../../http/HttpService";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { ProcessName, ProcessVersionId } from "../Process/types";
-import { PromptContent, WindowKind } from "../../windowManager";
-import CommentInput from "../comment/CommentInput";
-import ProcessDialogWarnings from "./ProcessDialogWarnings";
-import { FormHelperText, Typography } from "@mui/material";
+import type { WindowKind } from "../../windowManager";
+import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { ScenarioActionResult, ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/types";
-import { NodesDeploymentData } from "../../http/HttpService";
+import CommentInput from "../comment/CommentInput";
+import type { ProcessName, ProcessVersionId } from "../Process/types";
+import type { ScenarioActionResult} from "../toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/types";
+import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
 export type ToggleProcessActionModalData = {
     action: (
@@ -22,6 +25,7 @@ export type ToggleProcessActionModalData = {
         nodeData?: NodesDeploymentData,
     ) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
+    actionName?: string;
 };
 
 export function DeployProcessDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {

@@ -1,11 +1,18 @@
-import { ActionName, PredefinedActionName, ProcessStateType, Scenario } from "./types";
 import { descriptionProcessArchived, unknownDescription, unknownTooltip } from "./messages";
+import type { ActionName, ProcessStateType, Scenario } from "./types";
+import { PredefinedActionName } from "./types";
 
 export const unknownIcon = "/assets/states/status-unknown.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
 class ProcessStateUtils {
+    public canSeeDeploy = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.Deploy);
+
     public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Deploy);
+
+    public canSeeRedeploy = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.Redeploy);
+
+    public canRedeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Redeploy);
 
     public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Cancel);
 

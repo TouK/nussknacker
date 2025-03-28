@@ -1,28 +1,29 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { FormHelperText, Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
+import type { NodesDeploymentData } from "../../../http/HttpService";
 import { getProcessName, getProcessVersionId } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
-import { PromptContent, WindowKind } from "../../../windowManager";
-import CommentInput from "../../comment/CommentInput";
-import ProcessDialogWarnings from "../ProcessDialogWarnings";
-import { FormHelperText, Typography } from "@mui/material";
+import type { WindowKind } from "../../../windowManager";
+import { PromptContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
-import { ScenarioActionResultType } from "../../toolbars/scenarioActions/buttons/types";
-import { NodesDeploymentData } from "../../../http/HttpService";
-import { ToggleProcessActionModalData } from "../DeployProcessDialog";
-import { useLocalstorageState } from "rooks";
-import { AdvancedParameters } from "./AdvancedParameters";
+import CommentInput from "../../comment/CommentInput";
 import { ErrorBoundary } from "../../common/error-boundary";
 import { TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
 import LoaderSpinner from "../../spinner/Spinner";
+import { ScenarioActionResultType } from "../../toolbars/scenarioActions/buttons/types";
+import type { ToggleProcessActionModalData } from "../DeployProcessDialog";
+import ProcessDialogWarnings from "../ProcessDialogWarnings";
+import { AdvancedParameters } from "./AdvancedParameters";
 
 export function DeployWithParametersDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {
     // TODO: get rid of meta
     const {
-        meta: { action, displayWarnings },
+        meta: { action, displayWarnings, actionName },
     } = props.data;
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
@@ -92,6 +93,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                     >
                         <AdvancedParameters
                             processName={processName}
+                            actionName={actionName}
                             setParametersValues={setParametersValues}
                             parametersValues={parametersValues}
                         />
