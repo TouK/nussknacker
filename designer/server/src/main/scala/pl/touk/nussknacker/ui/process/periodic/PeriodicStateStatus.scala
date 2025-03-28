@@ -30,6 +30,8 @@ object PeriodicStateStatus {
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
+  val customVisibleActions: Set[ScenarioActionName] = Set(ScenarioActionName.RunOffSchedule)
+
   val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] =
     Function.unlift((input: ScenarioStatusWithScenarioContext) =>
       (input.scenarioStatus, input.deployedVersionId, input.currentlyPresentedVersionId) match {

@@ -932,7 +932,7 @@ class DeploymentServiceSpec
     ProcessName("proces_" + UUID.randomUUID())
   }
 
-  private def getAllowedActions(status: StateStatus) = deploymentManager.processStateDefinitionManager.statusActions(
+  private def getAllowedActions(status: StateStatus) = deploymentManager.processStateDefinitionManager.allowedActions(
     ScenarioStatusWithScenarioContext(
       scenarioStatus = status,
       deployedVersionId = None,

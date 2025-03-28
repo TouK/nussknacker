@@ -28,7 +28,7 @@ class SimpleScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Ins
 
   test("scenario state should be running") {
     val state = statusPresentation(SimpleStateStatus.Running)
-    state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
+    state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
   }
 
   test("scenario state should be finished") {

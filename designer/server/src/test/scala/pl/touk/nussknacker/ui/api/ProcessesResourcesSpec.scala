@@ -56,7 +56,12 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   NotAvailable
 }
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{
+  CustomLink,
+  ProcessDeploy,
+  ProcessRedeploy,
+  ProcessSave
+}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   CreatorPanel,
   ProcessActionsPanel,
@@ -1314,6 +1319,7 @@ class ProcessesResourcesSpec
               List(
                 ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
                 ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
+                ToolbarButton(ProcessRedeploy, None, None, None, None, disabled = false),
                 ToolbarButton(
                   CustomLink,
                   Some("custom"),

@@ -45,6 +45,7 @@ object ToolbarButtonConfigType extends Enumeration {
   val ProcessSave: Value           = Value("process-save")
   val ProcessCancel: Value         = Value("process-cancel")
   val ProcessDeploy: Value         = Value("process-deploy")
+  val ProcessRedeploy: Value       = Value("process-redeploy")
   val ProcessRunOffSchedule: Value = Value("process-run-off-schedule")
 
   val EditUndo: Value   = Value("edit-undo")

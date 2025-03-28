@@ -147,7 +147,7 @@ class PeriodicDeploymentManagerTest
         scenarioStatus: StateStatus
     ): Set[ScenarioActionName] = {
       periodicDeploymentManager.processStateDefinitionManager
-        .statusActions(
+        .allowedActions(
           ScenarioStatusWithScenarioContext(
             scenarioStatus = scenarioStatus,
             deployedVersionId = None,
