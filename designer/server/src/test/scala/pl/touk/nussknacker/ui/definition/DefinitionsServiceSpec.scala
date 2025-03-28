@@ -52,7 +52,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         param2: String,
         @ParamName("paramRawEditor")
         @Editor(`type` = EditorType.SPEL_EDITOR)
-        @pl.touk.nussknacker.engine.api.ParameterSection(`type` = ParameterSectionType.ADDITIONAL)
+        @pl.touk.nussknacker.engine.api.ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
         param3: String
     ): Future[String] = ???
 
@@ -290,7 +290,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
                                    |  service-enricher: {
                                    |    params {
                                    |      paramDualEditor {
-                                   |        section: "Additional"
+                                   |        category: "Additional"
                                    |      }
                                    |    }
                                    |  }
@@ -304,11 +304,11 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     definitions
       .components(ComponentId(ComponentType.Service, "enricher"))
       .parameters
-      .map(p => (p.name, p.parameterSection))
+      .map(p => (p.name, p.category))
       .toMap shouldBe Map(
-      "paramDualEditor"   -> definition.ParameterSection.Additional,
-      "paramStringEditor" -> definition.ParameterSection.Standard,
-      "paramRawEditor"    -> definition.ParameterSection.Additional,
+      "paramDualEditor"   -> definition.ParameterCategory.Advanced,
+      "paramStringEditor" -> definition.ParameterCategory.Standard,
+      "paramRawEditor"    -> definition.ParameterCategory.Advanced,
     )
   }
 
