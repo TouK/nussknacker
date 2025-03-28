@@ -343,6 +343,8 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     selectionState,
 });
 
+export type GraphStateWithHistory = StateWithHistory<GraphState>;
+
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
@@ -362,7 +364,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
 });
 
 // apply only undoable changes for undo actions
-function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action): StateWithHistory<GraphState> {
+function fixUndoableHistory(state: GraphStateWithHistory, action: Action): GraphStateWithHistory {
     const nextState = undoableReducer(state, action);
 
     if (Object.values(UndoActionTypes).includes(action.type)) {
@@ -373,7 +375,7 @@ function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action)
     return nextState;
 }
 
-export const reducerWithUndo: Reducer<StateWithHistory<GraphState>> = (state, action) => {
+export const reducerWithUndo: Reducer<GraphStateWithHistory> = (state, action) => {
     const history = fixUndoableHistory(state, action);
 
     return history;

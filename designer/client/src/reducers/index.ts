@@ -1,11 +1,10 @@
 import type { NotificationsState } from "react-notification-system-redux";
 import { reducer as notifications } from "react-notification-system-redux";
 import { combineReducers } from "redux";
-import type { StateWithHistory } from "redux-undo";
 
 import type { ProcessStateType } from "../components/Process/types";
 import { reducer as cloudData } from "./cloudData";
-import type { GraphState } from "./graph";
+import type { GraphStateWithHistory } from "./graph";
 import { reducerWithUndo as graphReducer } from "./graph";
 import { reducer as httpErrorHandler } from "./httpErrorHandler";
 import type { NodeDetailsState } from "./nodeDetailsState";
@@ -43,7 +42,7 @@ export const reducer = combineReducers<RootState>({
 
 export type RootState = {
     httpErrorHandler: ReturnType<typeof httpErrorHandler>;
-    graphReducer: StateWithHistory<GraphState>;
+    graphReducer: GraphStateWithHistory;
     settings: SettingsState;
     ui: UiState;
     processActivity: ProcessActivityState;
