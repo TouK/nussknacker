@@ -3645,6 +3645,8 @@ paths:
                       branchParam: false
                       label: name
                       requiredParam: true
+                      parameterSection:
+                        type: Standard
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
@@ -5454,6 +5456,9 @@ paths:
       - httpAuth: []
 components:
   schemas:
+    Additional:
+      title: Additional
+      type: object
     AdditionalField:
       title: AdditionalField
       type: object
@@ -6937,6 +6942,11 @@ components:
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
+    ParameterSection:
+      title: ParameterSection
+      oneOf:
+      - $ref: '#/components/schemas/Additional'
+      - $ref: '#/components/schemas/Standard'
     ParameterValueCompileTimeValidation:
       title: ParameterValueCompileTimeValidation
       type: object
@@ -7403,6 +7413,9 @@ components:
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
+    Standard:
+      title: Standard
+      type: object
     StaticParameterEditor:
       title: StaticParameterEditor
       oneOf:
@@ -7843,6 +7856,7 @@ components:
       - additionalVariables
       - branchParam
       - label
+      - parameterSection
       properties:
         name:
           type: string
@@ -7881,6 +7895,8 @@ components:
           type:
           - boolean
           - 'null'
+        parameterSection:
+          $ref: '#/components/schemas/ParameterSection'
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object
