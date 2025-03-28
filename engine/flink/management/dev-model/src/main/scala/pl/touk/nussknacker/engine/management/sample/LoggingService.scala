@@ -21,7 +21,9 @@ object LoggingService extends EagerService {
 
   @MethodToInvoke(returnType = classOf[Void])
   def prepare(
+      @ParameterSection(`type` = ParameterSectionType.ADDITIONAL)
       @ParamName("logger") @Nullable loggerName: String,
+      @ParameterSection(`type` = ParameterSectionType.ADDITIONAL)
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
       @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =

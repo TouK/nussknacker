@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ParameterConfig
 }
+import pl.touk.nussknacker.engine.api.definition.ParameterSection
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object ComponentsUiConfigParser {
@@ -22,6 +23,13 @@ object ComponentsUiConfigParser {
 
   private implicit val componentsUiComponentIdReader: ValueReader[DesignerWideComponentId] =
     ValueReader[String].map(DesignerWideComponentId.apply)
+
+  private implicit val parameterSectionReader: ValueReader[ParameterSection] =
+    ValueReader[String].map {
+      case "Standard"   => ParameterSection.Standard
+      case "Additional" => ParameterSection.Additional
+      case other        => throw new IllegalArgumentException(s"Unrecognized parameter section: $other")
+    }
 
   implicit val componentsGroupNameReader: ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] =
     ValueReader[Map[String, Option[String]]]

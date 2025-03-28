@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import io.circe.generic.extras.ConfiguredJsonCodec
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   OutputVariableNameValue,
@@ -80,7 +82,8 @@ object Parameter {
       scalaOptionParameter = false,
       javaOptionalParameter = false,
       hintText = None,
-      labelOpt = None
+      labelOpt = None,
+      section = ParameterSection.Standard
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -102,7 +105,8 @@ object Parameter {
       scalaOptionParameter = false,
       javaOptionalParameter = false,
       hintText = None,
-      labelOpt = None
+      labelOpt = None,
+      section = ParameterSection.Standard,
     )
 
 }
@@ -134,6 +138,7 @@ case class Parameter(
     javaOptionalParameter: Boolean,
     hintText: Option[String],
     labelOpt: Option[String],
+    section: ParameterSection,
 ) extends NodeDependency {
 
   def copy(
@@ -180,6 +185,7 @@ case class Parameter(
       javaOptionalParameter: Boolean = this.javaOptionalParameter,
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
+      parameterSection: ParameterSection = this.section,
   ): Parameter = {
     new Parameter(
       name,
@@ -194,7 +200,8 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText,
-      labelOpt
+      labelOpt,
+      parameterSection,
     )
   }
 
@@ -211,7 +218,8 @@ case class Parameter(
       scalaOptionParameter: Boolean,
       javaOptionalParameter: Boolean,
       hintText: Option[String],
-      labelOpt: Option[String]
+      labelOpt: Option[String],
+      parameterSection: ParameterSection,
   ): Parameter = {
     new Parameter(
       name,
@@ -226,7 +234,8 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText,
-      labelOpt
+      labelOpt,
+      parameterSection,
     )
   }
 
@@ -256,7 +265,8 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText = None,
-      labelOpt = None
+      labelOpt = None,
+      section = ParameterSection.Standard,
     )
   }
 
@@ -310,3 +320,10 @@ object AdditionalVariableWithFixedValue {
 }
 
 case class AdditionalVariableWithFixedValue(value: Any, typingResult: TypingResult) extends AdditionalVariable
+
+@ConfiguredJsonCodec sealed trait ParameterSection
+
+object ParameterSection {
+  case object Standard   extends ParameterSection
+  case object Additional extends ParameterSection
+}
