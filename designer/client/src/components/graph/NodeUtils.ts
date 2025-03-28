@@ -1,9 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
 import { isEqual, uniqBy } from "lodash";
+
 import ProcessUtils from "../../common/ProcessUtils";
 import { createEdge } from "../../reducers/graph/utils";
-import { Edge, EdgeKind, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
-import { Scenario } from "../Process/types";
+import type { Edge, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { EdgeKind } from "../../types";
 
 class NodeUtils {
     nodeIsFragment = (node: NodeType): node is FragmentNodeType => {
@@ -17,11 +18,6 @@ class NodeUtils {
     nodesFromScenarioGraph = (scenarioGraph?: ScenarioGraph): NodeType[] => scenarioGraph?.nodes || [];
 
     edgesFromScenarioGraph = (scenarioGraph: ScenarioGraph) => scenarioGraph.edges || [];
-
-    getProcessProperties = ({ name, scenarioGraph: { properties } }: Scenario, unsavedName?: string) => ({
-        name: name || unsavedName,
-        ...properties,
-    });
 
     getNodeById = (nodeId: NodeId, scenarioGraph?: ScenarioGraph) =>
         this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.id === nodeId);
