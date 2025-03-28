@@ -115,7 +115,6 @@ class DeploymentServiceTest
           canonicalProcess = scenario,
           processingType = Streaming.stringify,
           isFragment = false,
-          forwardedUserName = None
         )
       )(TestFactory.adminUser())
       .dbioActionValues

@@ -129,7 +129,6 @@ abstract class InitializationOnDbItSpec
       canonicalProcess = sampleCanonicalProcess(processName),
       processingType = "streaming",
       isFragment = fragment,
-      forwardedUserName = None
     )
 
     dbioRunner

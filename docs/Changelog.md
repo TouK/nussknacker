@@ -121,6 +121,11 @@
   * [#7626](https://github.com/TouK/nussknacker/pull/7626) tests from file
   * [#7663](https://github.com/TouK/nussknacker/pull/7663) ad-hoc tests
 * [#7590](https://github.com/TouK/nussknacker/pull/7590) Replaced Akka and Akka HTTP libraries with Apache Pekko (1.0.3) and Apache Pekko HTTP (1.0.1)
+* [#7693](https://github.com/TouK/nussknacker/pull/7693) Fixes for incoming/outgoing migration activities:
+    * displayed username refers to the user that executes migration
+    * correct source and target environment names
+    * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
+      Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
 
 ## 1.18
 

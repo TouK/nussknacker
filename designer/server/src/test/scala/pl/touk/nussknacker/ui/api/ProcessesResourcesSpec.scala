@@ -699,7 +699,7 @@ class ProcessesResourcesSpec
       nodes = List.empty,
       edges = List.empty
     )
-    val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
+    val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")))
 
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
@@ -738,7 +738,6 @@ class ProcessesResourcesSpec
         scenarioGraph = scenarioGraph,
         comment = None,
         scenarioLabels = Some(List("tag2", "tag1")),
-        forwardedUserName = None
       )
       doUpdateProcess(command1, processName) {
         forScenarioReturned(processName) { scenario =>
@@ -750,7 +749,6 @@ class ProcessesResourcesSpec
         scenarioGraph = scenarioGraph,
         comment = None,
         scenarioLabels = Some(List("tag3", "tag1", "tag4")),
-        forwardedUserName = None
       )
       doUpdateProcess(command2, processName) {
         forScenarioReturned(processName) { scenario =>
@@ -762,7 +760,6 @@ class ProcessesResourcesSpec
         scenarioGraph = scenarioGraph,
         comment = None,
         scenarioLabels = Some(List("tag3")),
-        forwardedUserName = None
       )
       doUpdateProcess(command3, processName) {
         forScenarioReturned(processName) { scenario =>
@@ -980,7 +977,6 @@ class ProcessesResourcesSpec
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post(s"/api/processes", command.toJsonRequestEntity()) ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.Unauthorized
@@ -994,7 +990,6 @@ class ProcessesResourcesSpec
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post(s"/api/processes", command.toJsonRequestEntity()) ~>
       withAllPermUser() ~>
@@ -1012,7 +1007,6 @@ class ProcessesResourcesSpec
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post(s"/api/processes", command.toJsonRequestEntity()) ~>
       withWriterUser() ~>
@@ -1031,7 +1025,6 @@ class ProcessesResourcesSpec
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post(s"/api/processes", command.toJsonRequestEntity()) ~>
       withAllPermUser() ~>
@@ -1206,7 +1199,6 @@ class ProcessesResourcesSpec
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
       true
@@ -1226,7 +1218,6 @@ class ProcessesResourcesSpec
       processingMode = Some(processingModeUsedInMoreThanOneProcessingTypes),
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
       true
@@ -1549,7 +1540,6 @@ class ProcessesResourcesSpec
         CanonicalProcessConverter.toScenarioGraph(process),
         comment,
         Some(List.empty),
-        None
       ),
       process.name
     )(
@@ -1596,7 +1586,6 @@ class ProcessesResourcesSpec
       processingMode = None,
       engineSetupName = None,
       isFragment = isFragment,
-      forwardedUserName = None
     )
     Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
       callback(status)
@@ -1607,7 +1596,7 @@ class ProcessesResourcesSpec
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(process, comment = None, scenarioLabels = Some(List.empty), forwardedUserName = None),
+      UpdateScenarioCommand(process, comment = None, scenarioLabels = Some(List.empty)),
       name
     )(
       testCode
