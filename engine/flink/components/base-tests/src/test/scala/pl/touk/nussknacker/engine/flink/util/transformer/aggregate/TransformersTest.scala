@@ -746,7 +746,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }
   }
 
-  // TODO_PAWEL jest ok tu jest jakis test
   test("sum session aggregate on event with context") {
     val id = "1"
 
