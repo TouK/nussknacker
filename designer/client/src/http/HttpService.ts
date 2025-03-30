@@ -1,36 +1,36 @@
 /* eslint-disable i18next/no-literal-string */
-import { AxiosError, AxiosResponse } from "axios";
+import type { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
-import { Moment } from "moment";
-import { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
-import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
+import type { Moment } from "moment";
+
+import type { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import type { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
-import { UserData } from "../common/models/User";
-import { TestResults } from "../common/TestResultUtils";
-import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
-import {
-    ActivitiesResponse,
-    ActivityMetadataResponse,
-    ActivityType,
-    ActivityTypesRelatedToExecutions,
-} from "../components/toolbars/activities/types";
-import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
-import { BackendNotification } from "../containers/Notifications";
-import { ProcessCounts } from "../reducers/graph";
-import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
-import { Instant, WithId } from "../types/common";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
-import { handleAxiosError } from "../devHelpers";
-import { Dimensions, StickyNote } from "../common/StickyNote";
+import type { UserData } from "../common/models/User";
+import type { Dimensions, StickyNote } from "../common/StickyNote";
+import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
+import type { TestResults } from "../common/TestResultUtils";
 import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
-import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
+import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
+import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
+import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import { API_URL } from "../config";
+import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
+import type { BackendNotification } from "../containers/Notifications";
+import { handleAxiosError } from "../devHelpers";
+import type { ProcessCounts } from "../reducers/graph";
+import type { AuthenticationSettings } from "../reducers/settings";
+import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import type { Instant, WithId } from "../types/common";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -1006,6 +1006,21 @@ class HttpService {
 
     fetchActivities(scenarioName: string) {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
+    }
+
+    sendChatMessage(message: string) {
+        const headers = { "Content-Type": "application/json" };
+
+        if (SystemUtils.hasAccessToken()) {
+            headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
+        }
+
+        const URL = "/custom/assistant/chat";
+        return fetch(`${API_URL}/${URL}`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ message }),
+        });
     }
 
     #addInfo(message: string) {

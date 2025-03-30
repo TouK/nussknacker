@@ -65,10 +65,6 @@ export const Composer = () => {
                     top: scrollContainer.scrollHeight - scrollContainer.clientHeight,
                     behavior: "smooth",
                 });
-
-                console.log("scrollContainer.scrollHeight", scrollContainer.scrollHeight);
-                console.log("scrollContainer.clientHeight", scrollContainer.clientHeight);
-                // Insert the bottom spacer if it doesn't exist
             }
         });
     }, [onScrollToBottom]);

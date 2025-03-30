@@ -1,28 +1,31 @@
 import { AssistantRuntimeProvider, useLocalRuntime, type ChatModelAdapter } from "@assistant-ui/react";
+import { createParser } from "eventsource-parser";
 import type { ReactNode } from "react";
 import React from "react";
 
+import httpService from "../../http/HttpService";
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const backendApi = async function* ({ messages, abortSignal, context }) {
-    const response = await fetch("http://0.0.0.0:8080/sse", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
+    const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0]);
+    const responseParts: string[] = [];
+
+    const parser = createParser({
+        onEvent({ event, data }) {
+            if (event === "delta") {
+                responseParts.push(JSON.parse(data).text);
+            }
         },
-        body: JSON.stringify({ question: messages[messages.length - 1].content[0].text, userId: "12345" }),
     });
 
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-    const responseParts = [];
-
     const readStream = async () => {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-            value.split("data: ").forEach((line) => {
-                const chunk = line.replace(/\r?\n\r?\n$/, "");
-                responseParts.push(chunk);
-            });
+            parser.feed(value);
         }
     };
 
@@ -40,6 +43,8 @@ const backendApi = async function* ({ messages, abortSignal, context }) {
             yield {
                 choices: [{ delta: { content: part } }],
             };
+
+            await delay(100);
         } else {
             await new Promise((resolve) => setTimeout(resolve, 100));
         }
