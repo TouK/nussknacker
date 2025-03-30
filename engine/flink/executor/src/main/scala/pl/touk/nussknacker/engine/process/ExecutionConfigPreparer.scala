@@ -7,9 +7,8 @@ import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.api.{NamespaceMetricsTags, NkGlobalParameters}
+import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.process.util.Serializers
 
@@ -47,8 +46,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  class ProcessSettingsPreparer(modelConfig: Config, namingStrategy: NamingStrategy, modelInfo: ModelInfo)
-      extends ExecutionConfigPreparer {
+  class ProcessSettingsPreparer(modelConfig: Config, modelInfo: ModelInfo) extends ExecutionConfigPreparer {
 
     override def prepareExecutionConfig(
         config: ExecutionConfig
@@ -59,7 +57,6 @@ object ExecutionConfigPreparer extends LazyLogging {
           deploymentData.deploymentId.value,
           jobData.processVersion,
           modelConfig,
-          namespaceTags = NamespaceMetricsTags(jobData.metaData.name.value, namingStrategy),
           prepareMap(deploymentData)
         )
       )
@@ -75,7 +72,7 @@ object ExecutionConfigPreparer extends LazyLogging {
   object ProcessSettingsPreparer {
 
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
-      new ProcessSettingsPreparer(modelData.modelConfig, modelData.namingStrategy, modelData.info)
+      new ProcessSettingsPreparer(modelData.modelConfig, modelData.info)
     }
 
   }
