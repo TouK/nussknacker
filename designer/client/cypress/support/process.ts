@@ -1,4 +1,5 @@
 import Chainable = Cypress.Chainable;
+
 import { padStart } from "lodash";
 
 declare global {
@@ -37,7 +38,7 @@ declare global {
 const processIndexes = {};
 
 function getTestProcessName(name: string, index: string) {
-    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
+    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`, { log: false });
 }
 
 function createTestProcessName(name?: string) {
@@ -57,6 +58,11 @@ function createProcess(
     return cy.createTestProcessName(name).then((processName) => {
         const url = `/api/processes`;
 
+        Cypress.log({
+            name: "createProcess",
+            message: processName,
+        });
+
         cy.request({
             method: "POST",
             url,
@@ -67,10 +73,11 @@ function createProcess(
                 processingMode: processingMode,
                 engineSetupName,
             },
+            log: false,
         })
-            .its("status")
+            .its("status", { log: false })
             .should("equal", 201);
-        return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName);
+        return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName, { log: false });
     });
 }
 
@@ -80,26 +87,25 @@ const createTestProcess = (name?: string, fixture?: string, category = "Category
 const createTestFragment = (name?: string, fixture?: string, category = "Category1", processingMode?: string, engineSetupName?: string) =>
     createProcess(name, fixture, category, true, processingMode, engineSetupName);
 
-function visitProcess(processName: string) {
-    cy.visit(`/visualization/${processName}`);
-    cy.wait("@fetch").its("response.statusCode").should("eq", 200);
-    // lazy loaded panel moves other toolbars/button just before click
-    cy.contains(/we are happy/i).should("exist");
-    return cy.wrap(processName);
+function visitProcess(nameOrAlias: string) {
+    cy.intercept("POST", "/api/processValidation/*", { log: false }).as("fetch");
+    return getWrappedName(nameOrAlias).then((name) => {
+        cy.visit(`/visualization/${name}`);
+        cy.wait("@fetch", { timeout: 20000 }).its("response.statusCode").should("eq", 200);
+        // lazy loaded panel moves other toolbars/button just before click
+        cy.contains(/we are happy/i).should("be.visible");
+        return cy.wrap(name);
+    });
 }
 
 function visitNewProcess(name?: string, fixture?: string, category?: string) {
-    cy.intercept("POST", "/api/processValidation/*").as("fetch");
-    return cy.createTestProcess(name, fixture, category).then((processName) => {
-        return cy.visitProcess(processName);
-    });
+    cy.createTestProcess(name, fixture, category).as("processName", { type: "static" });
+    return cy.visitProcess("@processName");
 }
 
 function visitNewFragment(name?: string, fixture?: string, category?: string) {
-    cy.intercept("POST", "/api/processValidation/*").as("fetch");
-    return cy.createTestFragment(name, fixture, category).then((processName) => {
-        return cy.visitProcess(processName);
-    });
+    cy.createTestFragment(name, fixture, category).as("processName", { type: "static" });
+    return cy.visitProcess("@processName");
 }
 
 function addLabelsToNewProcess(name?: string, labels?: string[]) {
@@ -169,8 +175,10 @@ function deleteTestProcess(processName: string, force?: boolean) {
     }
 
     return archiveThenDeleteProcess()
-        .then((response) => (force && response.status === 409 ? cancelProcess().then(archiveThenDeleteProcess) : cy.wrap(response)))
-        .its("status")
+        .then((response) =>
+            force && response.status === 409 ? cancelProcess().then(archiveThenDeleteProcess) : cy.wrap(response, { log: false }),
+        )
+        .its("status", { log: false })
         .should("be.oneOf", [200, 404]);
 }
 
@@ -194,10 +202,15 @@ function postFormData(
                 .then((res) => res.json())
                 .then(resolve, reject);
         }),
+        { log: false },
     );
 }
 
 function importTestProcess(name: string, fixture = "testProcess") {
+    Cypress.log({
+        message: fixture,
+    });
+
     return cy
         .fixture(fixture, null)
         .then((json) => {
@@ -210,12 +223,17 @@ function importTestProcess(name: string, fixture = "testProcess") {
             return cy.postFormData(`/api/processes/import/${name}`, auth, formData);
         })
         .then((response) => {
-            cy.request("PUT", `/api/processes/${name}`, {
-                comment: "import test data",
-                scenarioGraph: response.scenarioGraph,
-                scenarioLabels: [],
+            cy.request({
+                method: "PUT",
+                url: `/api/processes/${name}`,
+                body: {
+                    comment: "import test data",
+                    scenarioGraph: response.scenarioGraph,
+                    scenarioLabels: [],
+                },
+                log: false,
             });
-            return cy.wrap(name);
+            return cy.wrap(name, { log: false });
         });
 }
 
@@ -274,8 +292,14 @@ function removeSchema(subject: string) {
     });
 }
 
-function getNode(name: string, end?: boolean) {
-    return cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000 });
+function getWrappedName(nameOrAlias: string) {
+    return nameOrAlias.startsWith("@") ? cy.get<string>(nameOrAlias, { log: false }) : cy.wrap(nameOrAlias, { log: false });
+}
+
+function getNode(nameOrAlias: string, end?: boolean) {
+    return getWrappedName(nameOrAlias).then((name) =>
+        cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000, log: false }).should("be.visible"),
+    );
 }
 
 function dragNode(
@@ -301,7 +325,6 @@ function dragNode(
 function layoutScenario(waitTime = 600) {
     // prevents random clicks on metrics
     // lazy loaded panel moves layout button just before click
-    cy.contains(/we are happy/i).should("exist");
     cy.contains(/^layout$/).click();
     //wait for graph view (zoom, pan) to settle
     cy.wait(waitTime);
