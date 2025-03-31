@@ -1,6 +1,6 @@
 import type { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
+import type { StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
-import type { StickyNoteType } from "./stickyNote";
 import type { NodeValidationError } from "./validation";
 
 type Type = "FragmentInput" | typeof StickyNoteType | string;

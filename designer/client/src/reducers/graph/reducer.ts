@@ -3,11 +3,12 @@ import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick,
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
+
 import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
+import { StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Dimensions, ValidationResult } from "../../types";
-import { StickyNoteType } from "../../types/stickyNote";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";

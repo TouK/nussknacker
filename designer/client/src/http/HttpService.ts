@@ -2,7 +2,6 @@
 import type { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
-import { partition } from "lodash";
 import type { Moment } from "moment";
 
 import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
@@ -13,6 +12,7 @@ import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
@@ -20,6 +20,7 @@ import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activit
 import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
 import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
@@ -27,9 +28,7 @@ import type { ProcessCounts } from "../reducers/graph";
 import type { AuthenticationSettings } from "../reducers/settings";
 import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import type { Instant, WithId } from "../types/common";
-import { StickyNoteType } from "../types/stickyNote";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
-import { ProcessVersionValidationResponse } from "../components/versionControl/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -168,34 +167,6 @@ type DictOption = {
 };
 
 type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
-
-// We add sticky notes to nodes to treat them as nodes on the front-end (FE), but on the back-end (BE), they are only present to be saved. We do not process them as nodes on the BE.
-// This allows us to avoid handling edge cases with 'loose nodes'.
-// `addStickyNotesToNodes` - Merges sticky notes with nodes.
-// `extractStickyNotesFromNodes` - Separates sticky notes from nodes.
-export function addStickyNotesToNodes(data: Scenario): Scenario {
-    const stickyNotesWithType = data.scenarioGraph.stickyNotes.map((name) => ({
-        ...name,
-        type: StickyNoteType,
-        errors: [],
-    }));
-    return {
-        ...data,
-        scenarioGraph: {
-            ...data.scenarioGraph,
-            nodes: [...data.scenarioGraph.nodes, ...stickyNotesWithType],
-        },
-    };
-}
-
-export function extractStickyNotesFromNodes(graph: ScenarioGraph): ScenarioGraph {
-    const [stickyNotes, nodes] = partition(graph.nodes, (node) => node.type === StickyNoteType);
-    return {
-        ...graph,
-        nodes: nodes,
-        stickyNotes: stickyNotes,
-    };
-}
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.

@@ -2,8 +2,8 @@ import type { Many } from "lodash";
 import { compact, flow } from "lodash";
 import { createSelector } from "reselect";
 
+import { StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { ComponentGroup } from "../../types";
-import { StickyNoteType } from "../../types/stickyNote";
 import { appendAdditionalCreators } from "./appendAdditionalCreators";
 import { appendFragmentCreator } from "./appendFragmentCreator";
 import { appendStickyNotes } from "./appendStickyNotes";

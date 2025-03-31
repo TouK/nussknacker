@@ -2,6 +2,7 @@
 import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
 import type { Scenario } from "src/components/Process/types";
 
+import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ScenarioLabelValidationError } from "../components/Labels/types";
 import type { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
@@ -18,7 +19,6 @@ import type {
     ValidationResult,
     VariableTypes,
 } from "../types";
-import { StickyNoteDefinition, StickyNoteType } from "../types/stickyNote";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
