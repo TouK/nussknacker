@@ -30,7 +30,10 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecor
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  schemaVersionParamName,
+  sinkValueParamName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
@@ -248,10 +251,12 @@ class UniversalKafkaSourceFactory(
         NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
       )
       .andThen { runtimeSchema =>
-        val universalSchemaSupport: UniversalSchemaSupport =
-          schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        val parsedSchema                                   = runtimeSchema.schema
+        val universalSchemaSupport: UniversalSchemaSupport = schemaSupportDispatcher.forParsedSchema(parsedSchema)
+
         universalSchemaSupport
-          .extractParameters(runtimeSchema.schema)
+          .extractParameterForTests(parsedSchema)
+          .map(_.toParameters)
           .map { params =>
             KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
           }

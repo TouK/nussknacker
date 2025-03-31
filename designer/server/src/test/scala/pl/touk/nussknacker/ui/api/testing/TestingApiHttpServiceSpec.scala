@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import io.circe.Encoder
-import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -27,9 +25,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
@@ -44,25 +40,15 @@ trait TestingApiHttpServiceSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with PatientScalaFutures {
+    with PatientScalaFutures
+    with WithAdHocTestParameters
+    with WithAdHocTestsLogic {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
-
-  protected def exampleScenarioSourceId: String
-
-  protected def exampleScenario: CanonicalProcess
-
-  protected def validParameters: TestSourceParameters
-
-  protected def invalidParameters: TestSourceParameters
-
-  protected def parametersProvidedForDryRun: String
 
   protected def expectedSourceTestingParametersJson: String
 
   protected def expectedTestDataJson: String
-
-  protected def expectedValidationErrorsOnInvalidParametersJson: String
 
   private val fragmentFixedParameter = FragmentParameter(
     ParameterName("paramFixedString"),
@@ -240,7 +226,8 @@ trait TestingApiHttpServiceSpec
              |                "branchParam": false,
              |                "hintText": null,
              |                "label": "paramFixedString",
-             |                "requiredParam": false
+             |                "requiredParam": false,
+             |                "category": "Standard"
              |            }
              |        ]
              |    }
@@ -296,7 +283,8 @@ trait TestingApiHttpServiceSpec
              |                "branchParam": false,
              |                "hintText": null,
              |                "label": "paramRawString",
-             |                "requiredParam": false
+             |                "requiredParam": false,
+             |                "category": "Standard"
              |            }
              |        ]
              |    }
@@ -343,82 +331,19 @@ trait TestingApiHttpServiceSpec
 
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
-      val request = AdhocTestParametersRequest(
-        validParameters,
-        exampleScenarioGraph
-      ).asJson.toString()
-
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(request)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |    "validationErrors": [],
-             |    "validationPerformed": true
-             |}""".stripMargin
-        )
+      shouldValidateParametersProperly()
     }
     "return errors if passed parameter is not valid" in {
-      val request = AdhocTestParametersRequest(
-        invalidParameters,
-        exampleScenarioGraph
-      ).asJson.toString()
-
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(request)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |    "validationErrors": $expectedValidationErrorsOnInvalidParametersJson,
-             |    "validationPerformed": true
-             |}
-             |""".stripMargin
-        )
+      shouldReturnErrorsForInvalidParameters()
     }
   }
 
   "The endpoint for adhoc test run should" - {
     "run scenario and return result" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(s"""{
-                     |  "sourceParameters": {
-                     |    "sourceId": "$exampleScenarioSourceId",
-                     |    "parameterExpressions": { $parametersProvidedForDryRun }
-                     |  },
-                     |  "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
-                     |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
-        .Then()
-        .statusCode(200)
-        .body(
-          s"counts.$exampleScenarioSourceId.all",
-          equalTo(1),
-          "counts.end.all",
-          equalTo(1)
-        )
+      shouldProperlyRunAdHocTest()
     }
   }
 
-  private def exampleScenarioGraph    = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
   private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =

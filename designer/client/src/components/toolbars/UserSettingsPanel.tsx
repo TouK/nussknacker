@@ -2,12 +2,14 @@ import { Typography, useTheme } from "@mui/material";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
+
 import { useUserSettings } from "../../common/userSettings";
-import { UserSettings } from "../../reducers/userSettings";
-import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
+import type { UserSettings } from "../../reducers/userSettings";
+import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
+import { ToolbarButtons } from "../toolbarComponents/toolbarButtons";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 
-export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
+export function UserSettingsPanel({ buttonsVariant, children, ...props }: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
     const theme = useTheme();
     const [settings, , reset] = useUserSettings();
@@ -64,6 +66,7 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
                     MultiValueLabel,
                 }}
             />
+            <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>
         </ToolbarWrapper>
     );
 }

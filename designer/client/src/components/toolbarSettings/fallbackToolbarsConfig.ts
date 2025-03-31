@@ -1,9 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import { ToolbarsSide } from "../../reducers/toolbars";
-import { WithId } from "../../types/common";
+import type { WithId } from "../../types/common";
 import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { BuiltinButtonTypes } from "./buttons";
-import { ToolbarsConfig } from "./types";
+import type { ToolbarsConfig } from "./types";
 
 //It's only to local development
 export function fallbackToolbarsConfig(isFragment: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
@@ -18,7 +18,7 @@ export function fallbackToolbarsConfig(isFragment: boolean, isArchived: boolean)
 
     return {
         id: "a7334f9b-87aa-43d4-82ce-a9ac9dd3e5dc",
-        [ToolbarsSide.TopRight]: [
+        [ToolbarsSide.RightTop]: [
             {
                 id: "process-info-panel",
             },
@@ -71,6 +71,6 @@ export function fallbackToolbarsConfig(isFragment: boolean, isArchived: boolean)
                 ],
             },
         ],
-        [ToolbarsSide.TopLeft]: [{ id: "tips-panel" }, { id: "creator-panel" }, { id: "activities-panel" }],
+        [ToolbarsSide.LeftTop]: [{ id: "tips-panel" }, { id: "creator-panel" }, { id: "activities-panel" }],
     };
 }

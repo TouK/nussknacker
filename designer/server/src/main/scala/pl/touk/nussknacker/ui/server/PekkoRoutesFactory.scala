@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.process.{ConfigScenarioToolbarService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService => LegacyDeploymentService}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, ImpersonationSupport, LoggedUser}
 
 import scala.concurrent.ExecutionContext
 
@@ -34,7 +34,8 @@ object PekkoRoutesFactory {
         designerConfig,
         infrastructureServices,
         domainServices,
-        customHttpServiceProviders
+        customHttpServiceProviders,
+        authenticationResources.impersonationSupport
       )
 
       routesWithoutAuthentication =
@@ -47,7 +48,8 @@ object PekkoRoutesFactory {
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
-      customHttpServiceProviders: Map[String, CustomHttpServiceProvider]
+      customHttpServiceProviders: Map[String, CustomHttpServiceProvider],
+      impersonationSupport: ImpersonationSupport
   ): List[RouteWithUser] = {
     import domainServices._
     import infrastructureServices._
@@ -113,16 +115,18 @@ object PekkoRoutesFactory {
 
     val optionalRoutes = List(
       designerConfig.remoteEnvironment
-        .map { migrationConfig =>
+        .map { remoteEnvironmentConfig =>
           val remoteEnvironment = new HttpRemoteEnvironment(
-            migrationConfig,
+            remoteEnvironmentConfig,
             new TestModelMigrations(
               processingTypeServicesProvider
                 .mapValues(_.designerModelData.modelData.migrations)
                 .mapValues(new ProcessModelMigrator(_)),
               processingTypeServicesProvider.mapValues(_.scenarioValidator)
             ),
-            designerConfig.environment
+            designerConfig.environment,                  // local
+            remoteEnvironmentConfig.targetEnvironmentId, // remote
+            impersonationSupport
           )
           new RemoteEnvironmentResources(
             remoteEnvironment,

@@ -9,7 +9,6 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
 
@@ -26,7 +25,6 @@ case class NkGlobalParameters(
     // if we still need them for example for some diagnosis purpose, or we should remove them from here
     processVersion: ProcessVersion,
     configParameters: Option[ConfigGlobalParameters],
-    namespaceParameters: Option[NamespaceMetricsTags],
     additionalInformation: Map[String, String]
 ) extends GlobalJobParameters {
 
@@ -46,26 +44,6 @@ case class ConfigGlobalParameters(
     forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
 )
 
-case class NamespaceMetricsTags(tags: Map[String, String])
-
-object NamespaceMetricsTags {
-
-  private val originalNameTag = "originalProcessName"
-  private val namespaceTag    = "namespace"
-
-  def apply(scenarioName: String, namingStrategy: NamingStrategy): Option[NamespaceMetricsTags] = {
-    namingStrategy.namespace.map { namespace =>
-      NamespaceMetricsTags(
-        Map(
-          originalNameTag -> scenarioName,
-          namespaceTag    -> namespace.value
-        )
-      )
-    }
-  }
-
-}
-
 object NkGlobalParameters extends LazyLogging {
 
   def create(
@@ -73,7 +51,6 @@ object NkGlobalParameters extends LazyLogging {
       deploymentId: String, // TODO: Pass here DeploymentId?
       processVersion: ProcessVersion,
       modelConfig: Config,
-      namespaceTags: Option[NamespaceMetricsTags],
       additionalInformation: Map[String, String]
   ): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
@@ -82,7 +59,6 @@ object NkGlobalParameters extends LazyLogging {
       deploymentId,
       processVersion,
       configGlobalParameters,
-      namespaceTags,
       additionalInformation
     )
   }
@@ -113,14 +89,10 @@ object NkGlobalParameters extends LazyLogging {
         .map(ConfigGlobalParametersToMapEncoder.encode)
         .getOrElse(Map.empty)
 
-      val namespaceTagsMap = parameters.namespaceParameters
-        .map(p => encodeWithKeyPrefix(p.tags, namespaceTagsMapPrefix))
-        .getOrElse(Map.empty)
-
       val additionalInformationMap =
         encodeWithKeyPrefix(parameters.additionalInformation, additionalInformationMapPrefix)
 
-      baseProperties ++ additionalInformationMap ++ configMap ++ namespaceTagsMap
+      baseProperties ++ additionalInformationMap ++ configMap
     }
 
     def decode(map: Map[String, String]): Option[NkGlobalParameters] = {
@@ -154,11 +126,7 @@ object NkGlobalParameters extends LazyLogging {
           )
         )
 
-      val configParameters = ConfigGlobalParametersToMapEncoder.decode(map)
-      val namespaceTags = {
-        val namespaceTagsMap = decodeWithKeyPrefix(map, namespaceTagsMapPrefix)
-        if (namespaceTagsMap.isEmpty) None else Some(NamespaceMetricsTags(namespaceTagsMap))
-      }
+      val configParameters      = ConfigGlobalParametersToMapEncoder.decode(map)
       val additionalInformation = decodeWithKeyPrefix(map, additionalInformationMapPrefix)
 
       for {
@@ -170,7 +138,6 @@ object NkGlobalParameters extends LazyLogging {
         deploymentId,
         processVersion,
         configParameters,
-        namespaceTags,
         additionalInformation
       )
     }
@@ -210,7 +177,6 @@ object NkGlobalParameters extends LazyLogging {
       private val prefix = "configParameters"
     }
 
-    private val namespaceTagsMapPrefix         = "namespaceTags"
     private val additionalInformationMapPrefix = "additionalInformation"
   }
 

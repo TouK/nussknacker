@@ -194,7 +194,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       scenario,
       processingTypeBy(category),
       isFragment,
-      forwardedUserName = None
     )
     for {
       // FIXME: Using method `runInSerializableTransactionWithRetry` is a workaround for problem with flaky tests
@@ -217,7 +216,6 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
         comment = None,
         labels = List.empty,
         increaseVersionWhenJsonNotChanged = true,
-        forwardedUserName = None
       )
       processUpdated <- dbioRunner.runInTransaction(writeScenarioRepository.updateProcess(action))
     } yield processUpdated

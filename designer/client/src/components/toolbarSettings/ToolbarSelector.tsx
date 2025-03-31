@@ -1,7 +1,9 @@
 import React from "react";
-import { TOOLBAR_BUTTONS_MAP, ToolbarButton } from "./buttons";
-import { TOOLBAR_COMPONENTS_MAP } from "./TOOLBAR_COMPONENTS_MAP";
-import { ToolbarConfig } from "./types";
+
+import type { ToolbarButton } from "./buttons";
+import { TOOLBAR_BUTTONS_MAP } from "./buttons";
+import { getToolbarComponent, getToolbarHorizontalComponent } from "./getToolbarComponent";
+import type { ToolbarConfig } from "./types";
 
 function buttonSelector(btn: ToolbarButton, i: number) {
     // this type have to be specified to avoid type errors
@@ -10,7 +12,15 @@ function buttonSelector(btn: ToolbarButton, i: number) {
     return <Component key={i} {...btn} />;
 }
 
-export const ToolbarSelector = ({ buttons, ...props }: ToolbarConfig): JSX.Element => {
-    const Component = TOOLBAR_COMPONENTS_MAP[props.id] || TOOLBAR_COMPONENTS_MAP.DefaultPanel;
-    return <Component {...props}>{buttons?.map(buttonSelector)}</Component>;
+export type ToolbarSelectorProps = ToolbarConfig & {
+    horizontal?: boolean;
+};
+
+export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps): JSX.Element => {
+    const Component = horizontal ? getToolbarHorizontalComponent(props) : getToolbarComponent(props);
+
+    if (!Component) return null;
+
+    const { buttons, ...passProps } = props;
+    return <Component {...passProps}>{buttons?.map(buttonSelector)}</Component>;
 };

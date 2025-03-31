@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NamespaceMetricsTags, NkGlobalParameters}
+import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalParameters}
 
 class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
 
@@ -23,7 +23,6 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
         Some(1)
       ),
       configParameters = Some(ConfigGlobalParameters(Some(true), Some(true), Some(true))),
-      namespaceParameters = Some(NamespaceMetricsTags(Map("metricTag" -> "metricVal"))),
       additionalInformation = Map("additionalInfoKey" -> "additionalInfoVal")
     )
 
@@ -39,7 +38,6 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
         None
       ),
       configParameters = None,
-      namespaceParameters = None,
       additionalInformation = Map.empty
     )
 
@@ -50,7 +48,6 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
       decodedParams.deploymentId shouldBe params.deploymentId
       decodedParams.processVersion shouldBe params.processVersion
       decodedParams.configParameters shouldBe params.configParameters
-      decodedParams.namespaceParameters shouldBe params.namespaceParameters
       decodedParams.additionalInformation shouldBe params.additionalInformation
     }
   }

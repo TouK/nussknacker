@@ -333,7 +333,6 @@ class NotificationServiceTest
         canonicalProcess = sampleScenario,
         processingType = Streaming.stringify,
         isFragment = false,
-        forwardedUserName = None
       )
     writeProcessRepository
       .saveNewProcess(action)(TestFactory.adminUser())
