@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.source
+package pl.touk.nussknacker.engine.schemedkafka.typed
 
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult, Unknown}
 
