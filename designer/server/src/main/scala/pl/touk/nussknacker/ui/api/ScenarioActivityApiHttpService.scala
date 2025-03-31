@@ -393,7 +393,6 @@ class ScenarioActivityApiHttpService(
             date,
             scenarioVersionId,
             sourceEnvironment,
-            sourceUser,
             sourceScenarioVersionId,
             targetEnvironment,
           ) =>

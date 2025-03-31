@@ -49,6 +49,7 @@ class BasicAuthenticationResources(
           }
         }
 
+    override def toImpersonatedUserIdentity(userData: ImpersonatedUserData): String = userData.id
   }
 
   override def getAnonymousRole: Option[String] = configuration.anonymousUserRole

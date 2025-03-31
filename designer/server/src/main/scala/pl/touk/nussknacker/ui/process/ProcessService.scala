@@ -53,20 +53,17 @@ object ProcessService {
       processingMode: Option[ProcessingMode],
       engineSetupName: Option[EngineSetupName],
       override val isFragment: Boolean,
-      forwardedUserName: Option[RemoteUserName]
   ) extends BaseCreateScenarioCommand
 
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
       comment: Option[String],
       scenarioLabels: Option[List[String]],
-      forwardedUserName: Option[RemoteUserName]
   )
 
   final case class MigrateScenarioCommand(
       scenarioGraph: ScenarioGraph,
       scenarioLabels: Option[List[String]],
-      forwardedUserName: Option[RemoteUserName],
       sourceEnvironment: String,
       targetEnvironment: String,
       sourceScenarioVersionId: Option[VersionId],
@@ -433,7 +430,6 @@ class DBProcessService(
           emptyCanonicalProcess,
           processingType,
           command.isFragment,
-          command.forwardedUserName
         )
 
         val propertiesErrors =
@@ -476,7 +472,6 @@ class DBProcessService(
         comment = action.comment.flatMap(Comment.from),
         labels = scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
-        forwardedUserName = action.forwardedUserName
       )
       dbioRunner
         .runInTransaction(processRepository.updateProcess(updateProcessAction))
@@ -511,7 +506,6 @@ class DBProcessService(
         canonicalProcess = substituted,
         labels = scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
-        forwardedUserName = action.forwardedUserName,
         sourceEnvironment = action.sourceEnvironment,
         targetEnvironment = action.targetEnvironment,
         sourceScenarioVersionId = action.sourceScenarioVersionId,
