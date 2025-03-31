@@ -70,6 +70,7 @@ class UniversalKafkaSourceFactory(
           _
         ) if contentType == ContentTypes.JSON.toString =>
       val preparedTopic = prepareTopic(topic)
+
       val valueValidationResult = Valid(
         (
           Some(runtimeDataForJsonSchema),
