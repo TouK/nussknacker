@@ -33,7 +33,10 @@ export const AiAssistantButton = () => {
                 layoutData: {
                     right: ASSISTANT_BUTTON.right,
                     bottom: ASSISTANT_BUTTON.bottom + ASSISTANT_BUTTON.height + 20,
-                    width: 500,
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    width: "30vw",
+                    minWidth: 500,
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     height: "80vh",
