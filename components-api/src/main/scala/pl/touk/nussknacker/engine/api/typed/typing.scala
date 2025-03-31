@@ -158,7 +158,7 @@ object typing {
   //   We can avoid this case by changing this folding logic - see the comment there
   case object TypedNull extends TypingResult {
 
-    override val withoutValue: TypingResult = this
+    override val withoutValue: TypingResult = Unknown
 
     // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value
     override val valueOpt: Some[Null] = Some(null)
@@ -346,21 +346,15 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
-    def fromInstance(obj: Any): TypingResult =
-      fromInstance(obj, TypedNull)
-
-    def fromInstanceWithNullsAsUnknowns(obj: Any): TypingResult =
-      fromInstance(obj, Unknown)
-
-    private def fromInstance(obj: Any, onNull: => TypingResult): TypingResult = {
+    def fromInstance(obj: Any): TypingResult = {
       obj match {
         case null =>
-          onNull
+          TypedNull
         case map: Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(map, onNull)
+          val fieldTypes = typeMapFields(map)
           Typed.record(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
         case javaMap: java.util.Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(javaMap.asScala.toMap, onNull)
+          val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           Typed.record(fieldTypes)
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
@@ -387,8 +381,8 @@ object typing {
       }
     }
 
-    private def typeMapFields(map: Map[String, Any], onNull: => TypingResult) = map.map { case (k, v) =>
-      k -> fromInstance(v, onNull)
+    private def typeMapFields(map: Map[String, Any]) = map.map { case (k, v) =>
+      k -> fromInstance(v)
     }
 
     // This is a factory method allowing to create TypedUnion, but also ensuring that none of type will be duplicated,

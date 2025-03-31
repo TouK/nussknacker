@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
+import pl.touk.nussknacker.engine.util.typing.TypingResultFromJsonTypeDeterminer
 
 /**
   * This is universal kafka source - it will handle both avro and json
@@ -72,7 +73,7 @@ class UniversalKafkaSourceFactory(
       val valueValidationResult = Valid(
         (
           Some(runtimeDataForJsonSchema),
-          typingResultWithoutValues(typingResult)
+          TypingResultFromJsonTypeDeterminer(typingResult)
         )
       )
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
@@ -332,13 +333,6 @@ class UniversalKafkaSourceFactory(
       new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
       Some(SchemaId.fromString(ContentTypes.JSON.toString))
     )
-  }
-
-  private def typingResultWithoutValues(typingResult: TypingResult) = {
-    typingResult.withoutValue match {
-      case obj: TypedObjectTypingResult if obj.fields.isEmpty => Unknown
-      case other                                              => other
-    }
   }
 
   protected lazy val enableSchemaDerivationFromDataSampleForSchemalessJsonTopics: Boolean = {
