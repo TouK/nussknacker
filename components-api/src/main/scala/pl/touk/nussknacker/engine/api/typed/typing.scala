@@ -175,6 +175,14 @@ object typing {
     override val display = "Unknown"
   }
 
+  case object TypedJson extends TypingResult {
+    override def withoutValue: TypingResult = this
+
+    override val valueOpt: None.type = None
+
+    override val display = "Json"
+  }
+
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
   final class TypedUnion private[typing] (
@@ -409,6 +417,7 @@ object typing {
       //       which can generate a long unions of types
       def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
         case Unknown                    => None
+        case TypedJson                  => None
         case TypedNull                  => Some(Set.empty)
         case single: SingleTypingResult => Some(Set(single))
         case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)

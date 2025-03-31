@@ -211,6 +211,12 @@ class SpelExpressionSuggester(
                 .map(c => filterClassMethods(c, p.getName, staticContext))
                 .getOrElse(Nil)
             )
+          case TypingResultWithContext(TypedJson, staticContext) =>
+            Future.successful(
+              clssDefinitions.typedJson
+                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .getOrElse(Nil)
+            )
         }
         .getOrElse(successfulNil)
     }

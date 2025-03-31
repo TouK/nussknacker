@@ -13,12 +13,12 @@ import com.typesafe.scalalogging.StrictLogging
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
@@ -135,10 +135,10 @@ object JsonSchemalessAdHocTestsSpec {
     }
 
     protected def validParameters: TestSourceParameters =
-      TestSourceParameters(exampleScenarioSourceId, Map(inputParameterName -> Expression.json(validJson)))
+      TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(validJson)))
 
     protected def invalidParameters: TestSourceParameters =
-      TestSourceParameters(exampleScenarioSourceId, Map(inputParameterName -> Expression.json(invalidJson)))
+      TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
 
     protected def parametersProvidedForDryRun: String = AdhocTestParametersRequest(
       sourceParameters = validParameters,
@@ -151,8 +151,8 @@ object JsonSchemalessAdHocTestsSpec {
          |  {
          |    "typ": "ExpressionParserCompilationError",
          |    "message": "Failed to parse expression: expected } or , got 'a0.00}...' (line 3, column 45)",
-         |    "description": "There is problem with expression in field Some(Value) - it could not be parsed.",
-         |    "fieldName": "Value",
+         |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
+         |    "fieldName": "Input",
          |    "errorType": "SaveAllowed",
          |    "details": null
          |  }
@@ -182,8 +182,6 @@ object JsonSchemalessAdHocTestsSpec {
                                  |    {"id": 3, "name": "Tablet", "price": 450.75}
                                  |  ]
                                  |}""".stripMargin
-
-    private val inputParameterName = ParameterName("Value")
 
   }
 

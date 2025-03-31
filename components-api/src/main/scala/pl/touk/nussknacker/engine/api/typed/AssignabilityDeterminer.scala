@@ -37,6 +37,8 @@ object AssignabilityDeterminer {
 
   private def isAssignable(from: TypingResult, to: TypingResult, conversionChecker: ConversionChecker) = {
     (from, to) match {
+      case (_, TypedJson)     => ().validNel
+      case (TypedJson, _)     => ().validNel
       case (_, Unknown)       => ().validNel
       case (Unknown, _)       => ().validNel
       case (TypedNull, other) => isNullAsignableTo(other)

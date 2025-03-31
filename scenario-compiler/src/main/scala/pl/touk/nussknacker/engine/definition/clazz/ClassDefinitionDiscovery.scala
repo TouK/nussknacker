@@ -67,6 +67,8 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
       Set.empty
     case Unknown =>
       Set.empty
+    case TypedJson =>
+      Set.empty
   }
 
   private def typesFromTypedClass(typedClass: TypedClass): Set[TypingResult] =

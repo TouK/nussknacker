@@ -23,6 +23,8 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     (left, right) match {
       case (Unknown, _)   => Some(Unknown) // can't be sure intention of user - union is more secure than intersection
       case (_, Unknown)   => Some(Unknown)
+      case (TypedJson, _) => Some(TypedJson)
+      case (_, TypedJson) => Some(TypedJson)
       case (TypedNull, r) => Some(commonSupertypeWithNull(r))
       case (r, TypedNull) => Some(commonSupertypeWithNull(r))
       case (l: SingleTypingResult, r: TypedUnion) =>

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedJson, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -57,5 +57,5 @@ object JsonParser extends ExpressionParser {
 case object JsonExpressionTypingInfo extends ExpressionTypingInfo {
 
   // TODO: Right now we just use Unknown but we should create appropriate typing for Jsons in the future
-  override def typingResult: TypingResult = Unknown
+  override def typingResult: TypingResult = TypedJson
 }

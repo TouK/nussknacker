@@ -70,6 +70,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.ErrorOutputs._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
+import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedJsonSchemaHelper.typedJsonTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedNullSchemaHelper.typedNullTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectSchemaHelper.typedObjectTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectTypingResultSchemaHelper.typedObjectTypingResultTypeSchema
@@ -1641,6 +1642,7 @@ object TypingDtoSchemas {
       SchemaType.SCoproduct(
         List(
           unknownSchema,
+          typedJsonSchema,
           typedNullSchema,
           typedObjectTypingResultSchema,
           typedDictSchema,
@@ -1652,6 +1654,7 @@ object TypingDtoSchemas {
         None
       ) {
         case Unknown                              => Some(SchemaWithValue(unknownSchema, Unknown))
+        case TypedJson                            => Some(SchemaWithValue(typedJsonSchema, TypedJson))
         case TypedNull                            => Some(SchemaWithValue(typedNullSchema, TypedNull))
         case typedObject: TypedObjectTypingResult => Some(SchemaWithValue(typedObjectTypingResultSchema, typedObject))
         case typedDict: TypedDict                 => Some(SchemaWithValue(typedDictSchema, typedDict))
@@ -1875,6 +1878,45 @@ object TypingDtoSchemas {
       Some(SName("Unknown")),
     )
       .title("Unknown")
+      .as
+
+  object TypedJsonSchemaHelper {
+    sealed trait Types
+
+    object Types {
+      case object Json extends Types
+    }
+
+    implicit val typedJsonTypeSchema: Schema[Types] = Schema.derivedEnumeration[Types].defaultStringBased
+  }
+
+  implicit lazy val typedJsonSchema: Schema[TypedJson.type] =
+    Schema(
+      SchemaType.SProduct(
+        List(
+          sProductFieldForDisplay,
+          SProductField[TypingResult, TypedJsonSchemaHelper.Types](
+            FieldName("type"),
+            typedJsonTypeSchema,
+            _ => Some(TypedJsonSchemaHelper.Types.Json)
+          ),
+          SProductField[TypingResult, String](
+            FieldName("refClazzName"),
+            Schema(SString(), isOptional = true),
+            _ => None
+          ),
+          SProductField[TypingResult, List[TypingResult]](
+            FieldName("params"),
+            Schema.schemaForIterable[TypingResult, List](
+              Schema.derived[TypingResult]
+            ),
+            _ => Some(List(TypedJson))
+          )
+        )
+      ),
+      Some(SName("Json")),
+    )
+      .title("Json")
       .as
 
   object TypedUnionSchemaHelper {

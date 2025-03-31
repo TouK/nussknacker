@@ -25,6 +25,11 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
           case Right(Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(Unknown))
           case result @ _                                          => result
         }
+      case TypedJson =>
+        typeFromClazzDefinitions(classDefinitionSet.typedJson.toList) match {
+          case Right(TypedJson) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(TypedJson))
+          case result @ _                                            => result
+        }
     }
   }
 

@@ -11,7 +11,8 @@ object ClassDefinitionSet {
 }
 
 case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition]) {
-  lazy val unknown: Option[ClassDefinition] = get(classOf[java.lang.Object])
+  lazy val unknown: Option[ClassDefinition]   = get(classOf[java.lang.Object])
+  lazy val typedJson: Option[ClassDefinition] = unknown
 
   private lazy val parameterlessMethodsByDeclaringTypes: Map[DeclaringClassWithMethodName, ParameterlessMethodInfo] = {
     def getParameterlessMethods(staticMethods: Boolean) = {

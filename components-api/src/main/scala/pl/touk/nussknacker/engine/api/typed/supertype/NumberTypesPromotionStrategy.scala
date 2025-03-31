@@ -44,6 +44,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
       case s: SingleTypingResult => Right(NonEmptyList.one(s))
       case u: TypedUnion         => Right(u.possibleTypes)
       case TypedNull             => Left(Unknown)
+      case TypedJson             => Left(Unknown)
       case Unknown               => Left(Unknown)
     }
 

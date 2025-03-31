@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TopicName
 }
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedJson, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
@@ -84,7 +84,7 @@ class UniversalKafkaSourceFactory(
               )
             ),
             // This is the type after it leaves source
-            Unknown
+            TypedJson
           )
         )
       } else {
@@ -97,7 +97,7 @@ class UniversalKafkaSourceFactory(
               )
             ),
             // This is the type after it leaves source
-            Unknown
+            TypedJson
           )
         )
       }
