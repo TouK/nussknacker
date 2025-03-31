@@ -1,5 +1,5 @@
 import { useMessage } from "@assistant-ui/react";
-import { Box, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import React from "react";
 import ReactMarkdown from "react-markdown";
 
@@ -8,9 +8,14 @@ export const AssistantMessage = () => {
 
     return (
         <Box my={2}>
-            {content.map((part, index) => (
-                <ReactMarkdown key={index}>{part.text}</ReactMarkdown>
-            ))}
+            {status.type === "running" ? (
+                <Box display="flex" alignItems="center" gap={1}>
+                    <CircularProgress size="1rem" />
+                    <Typography>Running...</Typography>
+                </Box>
+            ) : (
+                content.map((part, index) => <ReactMarkdown key={index}>{part.text}</ReactMarkdown>)
+            )}
         </Box>
     );
 };

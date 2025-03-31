@@ -1,3 +1,4 @@
+import type { ChatModelRunOptions, TextContentPart } from "@assistant-ui/react";
 import { AssistantRuntimeProvider, useLocalRuntime, type ChatModelAdapter } from "@assistant-ui/react";
 import { createParser } from "eventsource-parser";
 import type { ReactNode } from "react";
@@ -5,8 +6,8 @@ import React from "react";
 
 import httpService from "../../http/HttpService";
 
-const backendApi = async function* ({ messages, abortSignal, context }) {
-    const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0]);
+const backendApi = async function* ({ messages, abortSignal }: ChatModelRunOptions) {
+    const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0] as TextContentPart, abortSignal);
     const responseParts: string[] = [];
 
     const parser = createParser({
@@ -22,7 +23,10 @@ const backendApi = async function* ({ messages, abortSignal, context }) {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const { value, done } = await reader.read();
-            if (done) break;
+            if (done) {
+                console.log("done", "true");
+                break;
+            }
             parser.feed(value);
         }
     };
@@ -48,8 +52,13 @@ const backendApi = async function* ({ messages, abortSignal, context }) {
 };
 
 const MyModelAdapter: ChatModelAdapter = {
-    async *run({ messages, abortSignal, context }) {
-        const stream = await backendApi({ messages, abortSignal, context });
+    async *run(chatModelOptions) {
+        const stream = backendApi(chatModelOptions);
+
+        yield {
+            content: [],
+            status: { type: "running" },
+        };
 
         let text = "";
         for await (const part of stream) {
@@ -57,8 +66,14 @@ const MyModelAdapter: ChatModelAdapter = {
 
             yield {
                 content: [{ type: "text", text }],
+                status: { type: "incomplete", reason: "other" },
             };
         }
+
+        yield {
+            content: [{ type: "text", text }],
+            status: { type: "complete", reason: "unknown" },
+        };
     },
 };
 
