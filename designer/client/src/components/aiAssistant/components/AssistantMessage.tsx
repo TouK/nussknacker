@@ -1,6 +1,7 @@
 import { useMessage } from "@assistant-ui/react";
 import { Box, Typography } from "@mui/material";
 import React from "react";
+import ReactMarkdown from "react-markdown";
 
 export const AssistantMessage = () => {
     const { status, content } = useMessage();
@@ -8,7 +9,7 @@ export const AssistantMessage = () => {
     return (
         <Box my={2}>
             {content.map((part, index) => (
-                <Typography key={index}>{part.text}</Typography>
+                <ReactMarkdown key={index}>{part.text}</ReactMarkdown>
             ))}
         </Box>
     );
