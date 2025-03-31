@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
@@ -31,7 +30,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
-import pl.touk.nussknacker.engine.util.typing.TypingResultFromJsonTypeDeterminer
 
 /**
   * This is universal kafka source - it will handle both avro and json
@@ -73,7 +71,7 @@ class UniversalKafkaSourceFactory(
       val valueValidationResult = Valid(
         (
           Some(runtimeDataForJsonSchema),
-          TypingResultFromJsonTypeDeterminer(typingResult)
+          TypingResultFromJsonSampleTypeDeterminer(typingResult)
         )
       )
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)

@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.util.typing
+package pl.touk.nussknacker.engine.schemedkafka.source
 
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult, Unknown}
 
-object TypingResultFromJsonTypeDeterminer {
+object TypingResultFromJsonSampleTypeDeterminer {
 
   def apply(typingResult: TypingResult): TypingResult = {
     typingResult.withoutValue match {
