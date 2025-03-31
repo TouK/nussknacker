@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -19,7 +18,6 @@ import java.util.Optional
 
 class UniversalSourceJsonSchemaLiteTest
     extends AnyFunSuite
-    with KafkaSpec
     with Matchers
     with ValidatedValuesDetailedMessage
     with FunctionalTestMixin {
