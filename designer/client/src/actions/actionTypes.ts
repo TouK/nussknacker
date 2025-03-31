@@ -10,8 +10,6 @@ export type ActionTypes =
     | "DELETE_NODES"
     | "NODES_CONNECTED"
     | "NODES_DISCONNECTED"
-    | "STICKY_NOTE_UPDATED"
-    | "STICKY_NOTE_SET_ERRORS"
     | "VALIDATION_RESULT"
     | "COPY_SELECTION"
     | "CUT_SELECTION"
