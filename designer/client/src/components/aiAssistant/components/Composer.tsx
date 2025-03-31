@@ -1,4 +1,5 @@
 import { useComposerRuntime, useThreadViewport } from "@assistant-ui/react";
+import { useOnScrollToBottom } from "@assistant-ui/react/dist/utils/hooks/useOnScrollToBottom";
 import { styled } from "@mui/material";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
@@ -6,6 +7,7 @@ import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { TextAreaNode } from "../../FormElements";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeInput, nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { UseScrollToBottom } from "./useScrollToBottom";
 
 const StyledRoot = styled("div")(({ theme }) => ({
     display: "flex",
@@ -59,7 +61,7 @@ const adjustInputHeight = (textarea: HTMLTextAreaElement) => {
 
 export const Composer = () => {
     const { send, setText } = useComposerRuntime();
-    const { scrollToBottom, onScrollToBottom } = useThreadViewport();
+    const { scrollToBottom, provideBottomSpacer } = UseScrollToBottom();
 
     const [message, setMessage] = useState("");
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,11 +82,12 @@ export const Composer = () => {
             return;
         }
 
+        provideBottomSpacer();
         scrollToBottom();
         send();
         setMessage("");
         resetInputHeight(textAreaRef.current);
-    }, [isSendDisabled, scrollToBottom, send]);
+    }, [isSendDisabled, provideBottomSpacer, scrollToBottom, send]);
 
     const handleKeyDownOnInput = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === "Enter" && !event.shiftKey) {
@@ -94,27 +97,8 @@ export const Composer = () => {
     };
 
     useEffect(() => {
-        onScrollToBottom(() => {
-            const scrollContainer = document.querySelector(`[data-testid="window"] section`);
-            if (
-                scrollContainer &&
-                !document.getElementById("bottom-spacer") &&
-                scrollContainer.scrollHeight > scrollContainer.clientHeight
-            ) {
-                const spacer = document.createElement("div");
-                spacer.id = "bottom-spacer";
-                spacer.style.height = `${scrollContainer.clientHeight}px`;
-                spacer.style.width = "100%";
-                scrollContainer.appendChild(spacer);
-            }
-            if (scrollContainer) {
-                scrollContainer.scrollTo({
-                    top: scrollContainer.scrollHeight - scrollContainer.clientHeight,
-                    behavior: "smooth",
-                });
-            }
-        });
-    }, [onScrollToBottom]);
+        scrollToBottom();
+    }, [scrollToBottom]);
 
     return (
         <StyledRoot>

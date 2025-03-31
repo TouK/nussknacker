@@ -5,8 +5,6 @@ import React from "react";
 
 import httpService from "../../http/HttpService";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const backendApi = async function* ({ messages, abortSignal, context }) {
     const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0]);
     const responseParts: string[] = [];
@@ -43,8 +41,6 @@ const backendApi = async function* ({ messages, abortSignal, context }) {
             yield {
                 choices: [{ delta: { content: part } }],
             };
-
-            await delay(100);
         } else {
             await new Promise((resolve) => setTimeout(resolve, 100));
         }

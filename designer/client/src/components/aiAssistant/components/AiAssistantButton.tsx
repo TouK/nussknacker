@@ -35,7 +35,7 @@ export const AiAssistantButton = () => {
                     bottom: ASSISTANT_BUTTON.bottom + ASSISTANT_BUTTON.height + 20,
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    width: "30vw",
+                    width: "50vw",
                     minWidth: 500,
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
