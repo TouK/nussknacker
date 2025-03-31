@@ -5,7 +5,7 @@ import cats.data.Validated.Valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectWithValue, Unknown}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.JsonParsingError
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -58,7 +58,7 @@ class JsonParserTest extends AnyFunSuite with Matchers {
   test("Should parse null") {
     val dataSample = "null"
     val result     = parse(dataSample)
-    result shouldBe Valid(Unknown)
+    result shouldBe Valid(TypedNull)
   }
 
   test("Should parse object") {
