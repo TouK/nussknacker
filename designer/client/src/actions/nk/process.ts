@@ -1,7 +1,6 @@
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
-import { addStickyNotesToNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
@@ -18,13 +17,12 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            const scenario = addStickyNotesToNodes(response.data);
-            dispatch(displayTestCapabilities(processName, scenario.scenarioGraph));
+            dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
             dispatch({
                 type: "DISPLAY_PROCESS",
-                scenario: scenario,
+                scenario: response.data,
             });
-            return scenario;
+            return response.data;
         });
     };
 }

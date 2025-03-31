@@ -1,4 +1,3 @@
-import { addStickyNotesToNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { ProcessName } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import type { ThunkAction } from "../reduxTypes";
@@ -13,7 +12,7 @@ import { fetchProcessDefinition } from "./processDefinitionData";
 //    - fetch scenario validation data
 //    - fetch toolbars configuration
 //    - fetch test capabilities
-//    - fetch sticky notes
+//
 // IMPORTANT: The initial fetch of the scenario graph is performed with flag `skipValidateAndResolve=true`.
 //            There are 2 effects of that:
 //            - there is no validation result in the response (it is fetched later, asynchronously)
@@ -23,7 +22,7 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
         try {
             dispatch({ type: "PROCESS_FETCH" });
             const response = await HttpService.fetchLatestProcessDetailsWithoutValidation(processName);
-            const scenario = addStickyNotesToNodes(response.data);
+            const scenario = response.data;
             const { name, isFragment, processingType } = scenario;
             await dispatch(fetchProcessDefinition(processingType, isFragment)).then((processDefinitionData) => {
                 dispatch({ type: "DISPLAY_PROCESS", scenario: scenario });
