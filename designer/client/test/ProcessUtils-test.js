@@ -182,6 +182,7 @@ const process = {
             { from: "someFilterNode", to: "aggregateId" },
             { from: "aggregateId", to: "endEnriched" },
         ],
+        stickyNotes: [],
     },
     validationResult: { errors: { invalidNodes: {} } },
 };
