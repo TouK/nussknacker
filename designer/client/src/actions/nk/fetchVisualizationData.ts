@@ -1,5 +1,6 @@
+import { addStickyNotesToNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { ProcessName } from "../../components/Process/types";
-import HttpService, { addStickyNotesToNodes } from "../../http/HttpService";
+import HttpService from "../../http/HttpService";
 import type { ThunkAction } from "../reduxTypes";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
 import { displayTestCapabilities } from "./process";
