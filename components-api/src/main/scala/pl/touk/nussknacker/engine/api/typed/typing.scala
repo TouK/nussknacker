@@ -158,6 +158,7 @@ object typing {
   //   We can avoid this case by changing this folding logic - see the comment there
   case object TypedNull extends TypingResult {
 
+    // Unknown is our Any and null value can be a subclass of any class so we return it
     override val withoutValue: TypingResult = Unknown
 
     // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value

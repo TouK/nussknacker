@@ -115,6 +115,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Renamed a `SimpleEditor` to the `Editor` in components API.
     * For now on, you can add multiple editors on a single param. The first editor annotation is treated as a default
       editor.
+* [#7711](https://github.com/TouK/nussknacker/pull/7711)
+  * `TypingResult` API changes - `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
 
 ### Other changes
 
