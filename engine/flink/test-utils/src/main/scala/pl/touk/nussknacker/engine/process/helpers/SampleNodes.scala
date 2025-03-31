@@ -30,12 +30,15 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, TypedMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
+  StandardTimestampWatermarkHandler,
+  TimestampWatermarkHandler
+}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -313,6 +316,7 @@ object SampleNodes {
   }
 
   object CustomTimestampExtractingTransformation extends CustomStreamTransformer with Serializable {
+    val timestampVariableName = "eventTimeTimestamp"
 
     @MethodToInvoke(returnType = classOf[Void])
     def execute(): ContextTransformation = {
@@ -322,12 +326,16 @@ object SampleNodes {
           (start: DataStream[Context], context: FlinkCustomNodeContext) =>
             start
               .process(new ProcessFunction[Context, Context] {
-                override def processElement(value: api.Context, ctx: ProcessFunction[api.Context, api.Context]#Context, out: Collector[api.Context]): Unit = {
-                  val timestamp = ctx.timestamp()
-                  out.collect(value)
+                override def processElement(
+                    value: api.Context,
+                    ctx: ProcessFunction[api.Context, api.Context]#Context,
+                    out: Collector[api.Context]
+                ): Unit = {
+                  out.collect(
+                    value.withVariable(timestampVariableName, ctx.timestamp())
+                  )
                 }
               })
-
               .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
         })
     }

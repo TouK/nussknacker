@@ -10,12 +10,15 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CannotCreateObjectError,
+  ExpressionParserCompilationError
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
@@ -29,7 +32,10 @@ import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinitio
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{CustomFilterContextTransformation, CustomTimestampExtractingTransformation}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{
+  CustomFilterContextTransformation,
+  CustomTimestampExtractingTransformation
+}
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -43,6 +49,8 @@ import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
+
+  private val eventTimeExtractionComponentName = "customTimestampExtractingTransformation"
 
   def modelData(
       collectingListener: => ResultsCollectingListener[Any],
@@ -59,7 +67,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         aggregateWindowsConfig
         // TODO_PAWEL tutaj trzeba go sobie dodac ten transformer definition.
       ) ::: FlinkBaseComponentProvider.Components
-        ::: List(ComponentDefinition("customTimestampExtractingTransformation", CustomTimestampExtractingTransformation)),
+        ::: List(ComponentDefinition(eventTimeExtractionComponentName, CustomTimestampExtractingTransformation)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
@@ -488,10 +496,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val inputRecords =
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
       val model =
         modelData(
           collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+          inputRecords
         )
       val testScenario = tumbling(
         "#AGG.list",
@@ -508,6 +518,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       val aggregateVariables = nodeResults.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get)
       // TODO: reverse order in aggregate
       aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(5))
+      nodeResults.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe inputRecords.map(e => e.timestamp)
     }
   }
 
@@ -743,6 +756,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       val nodeResults = collectingListener.endVariablesForKey(id)
       nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+
+      val timeMultiplier = 3600 * 1000
+
+      nodeResults.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+          // session timeout is 2
+      ) shouldBe List((3 + 2) * timeMultiplier - 1, 6 * timeMultiplier, (6 + 2) * timeMultiplier - 1)
     }
   }
 
@@ -773,6 +793,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         asList(5)
       )
       outputVariables.map(_.variableTyped[TestRecordHours]("input").get) shouldBe testRecords
+      outputVariables.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe
+        testRecords.map(e => e.timestamp)
     }
   }
 
@@ -994,9 +1018,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             definition.afterAggregateExpression.spel
           )
       }
-     .customNodeNoOutput(
+      .customNodeNoOutput(
         "custom",
-        "customTimestampExtractingTransformation",
+        eventTimeExtractionComponentName,
       )
       .emptySink("end", "dead-end")
   }
