@@ -1834,7 +1834,6 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
 lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(commonSettings)
   .settings(
-    // TODO_PAWEL ten
     name := "nussknacker-flink-base-components-tests",
     libraryDependencies ++= Seq(
       "org.apache.flink" % "flink-connector-files" % flinkV % Test,

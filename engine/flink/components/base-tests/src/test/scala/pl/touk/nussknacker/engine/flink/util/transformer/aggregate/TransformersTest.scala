@@ -32,10 +32,7 @@ import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinitio
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{
-  CustomFilterContextTransformation,
-  CustomTimestampExtractingTransformation
-}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.CustomTimestampExtractingTransformation
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -65,7 +62,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig
-        // TODO_PAWEL tutaj trzeba go sobie dodac ten transformer definition.
       ) ::: FlinkBaseComponentProvider.Components
         ::: List(ComponentDefinition(eventTimeExtractionComponentName, CustomTimestampExtractingTransformation)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
@@ -359,6 +355,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
       aggregateVariables shouldBe List(3, 5)
+
+      collectingListener.endVariablesForKey(id).flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+      collectingListener
+        .endVariablesForKey(id)
+        .map(
+          _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+        ) shouldBe List(2 * 3600 * 1000 - 1, 4 * 3600 * 1000 - 1)
     }
   }
 
@@ -521,6 +524,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       nodeResults.map(
         _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
       ) shouldBe inputRecords.map(e => e.timestamp)
+      nodeResults.map(_.variableTyped[TestRecordHours]("input").get) shouldBe inputRecords
     }
   }
 
