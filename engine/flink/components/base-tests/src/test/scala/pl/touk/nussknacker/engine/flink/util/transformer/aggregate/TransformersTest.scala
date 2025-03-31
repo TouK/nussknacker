@@ -10,15 +10,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CannotCreateObjectError,
-  ExpressionParserCompilationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
@@ -32,6 +29,7 @@ import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinitio
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{CustomFilterContextTransformation, CustomTimestampExtractingTransformation}
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -59,7 +57,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig
-      ) ::: FlinkBaseComponentProvider.Components,
+        // TODO_PAWEL tutaj trzeba go sobie dodac ten transformer definition.
+      ) ::: FlinkBaseComponentProvider.Components
+        ::: List(ComponentDefinition("customTimestampExtractingTransformation", CustomTimestampExtractingTransformation)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
@@ -994,6 +994,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             definition.afterAggregateExpression.spel
           )
       }
+     .customNodeNoOutput(
+        "custom",
+        "customTimestampExtractingTransformation",
+      )
       .emptySink("end", "dead-end")
   }
 

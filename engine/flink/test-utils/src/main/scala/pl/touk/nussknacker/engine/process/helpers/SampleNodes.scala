@@ -9,6 +9,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
@@ -16,6 +17,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, StreamRecord}
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context._
@@ -28,15 +30,12 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, TypedMap}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -307,6 +306,28 @@ object SampleNodes {
                   override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
                 }
               )
+              .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
+        })
+    }
+
+  }
+
+  object CustomTimestampExtractingTransformation extends CustomStreamTransformer with Serializable {
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): ContextTransformation = {
+      ContextTransformation
+        .definedBy(Valid(_))
+        .implementedBy(FlinkCustomStreamTransformation {
+          (start: DataStream[Context], context: FlinkCustomNodeContext) =>
+            start
+              .process(new ProcessFunction[Context, Context] {
+                override def processElement(value: api.Context, ctx: ProcessFunction[api.Context, api.Context]#Context, out: Collector[api.Context]): Unit = {
+                  val timestamp = ctx.timestamp()
+                  out.collect(value)
+                }
+              })
+
               .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
         })
     }
