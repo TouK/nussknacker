@@ -1,12 +1,13 @@
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
+import { addStickyNotesToNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
-import HttpService, { addStickyNotesToNodes } from "./../../http/HttpService";
+import HttpService from "./../../http/HttpService";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }

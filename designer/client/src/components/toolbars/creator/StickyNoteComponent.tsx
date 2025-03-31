@@ -1,7 +1,7 @@
 import type { StickyNotesSettings } from "../../../actions/nk";
 import type { ComponentGroup, NodeType, StickyNoteNodeType } from "../../../types";
-import { StickyNoteType } from "../../../types/stickyNote";
 import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "../../graph/EspNode/stickyNote";
+import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 
 const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT };
 const noteModel: StickyNoteNodeType = {
@@ -12,6 +12,7 @@ const noteModel: StickyNoteNodeType = {
     dimensions: dimensions,
     color: STICKY_NOTE_DEFAULT_COLOR,
 };
+
 export const stickyNoteComponentGroup = (stickyNotesSetting: StickyNotesSettings, stickyNotesCount: number) => {
     const disabled = stickyNotesSetting.maxNotesCount && stickyNotesCount >= stickyNotesSetting.maxNotesCount;
     return [

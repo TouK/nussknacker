@@ -4,11 +4,11 @@ import { defaults } from "lodash";
 import { useCallback, useEffect, useMemo } from "react";
 
 import { useUserSettings } from "../common/userSettings";
+import { StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
 import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import type { Scenario } from "../components/Process/types";
 import type { NodeType } from "../types";
-import { StickyNoteType } from "../types/stickyNote";
 import { WindowKind } from "./WindowKind";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {

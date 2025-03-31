@@ -5,11 +5,11 @@ import { flatMap, groupBy, isEqual } from "lodash";
 import { partition } from "lodash";
 
 import type { ScenarioGraph, ProcessDefinitionData } from "../../../types";
-import { StickyNoteType } from "../../../types/stickyNote";
 import { makeElement, makeLink } from "../EspNode";
 import type { ModelWithTool } from "../EspNode/stickyNoteElements";
 import { makeStickyNoteElement } from "../EspNode/stickyNoteElements";
 import NodeUtils from "../NodeUtils";
+import { StickyNoteType } from "../utils/stickyNotesUtils";
 import { isEdgeConnected } from "./EdgeUtils";
 import { updateChangedCells } from "./updateChangedCells";
 
@@ -23,7 +23,7 @@ export function applyCellChanges(
 
     const [stickyNoteElements, scenarioNodeElements] = partition(
         NodeUtils.nodesFromScenarioGraph(scenarioGraph),
-        (n) => n.type == StickyNoteType,
+        (n) => n.type === StickyNoteType,
     );
 
     const nodeElements = scenarioNodeElements.map(makeElement(processDefinitionData, theme));

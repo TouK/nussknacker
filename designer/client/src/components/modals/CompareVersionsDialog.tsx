@@ -15,7 +15,6 @@ import HttpService from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import type { NodeType, StickyNoteNodeType } from "../../types";
-import { StickyNoteType } from "../../types/stickyNote";
 import { WindowContent, WindowKind } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import type { Option } from "../graph/node-modal/fragment-input-definition/TypeSelect";
@@ -23,6 +22,7 @@ import { TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSe
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
+import { StickyNoteType } from "../graph/utils/stickyNotesUtils";
 import type { ProcessVersionType } from "../Process/types";
 import { PropertiesForm } from "../properties";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
