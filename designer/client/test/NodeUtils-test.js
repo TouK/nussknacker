@@ -219,4 +219,5 @@ const createSimpleProcess = (edges) => ({
         { type: "Sink", id: "sink2", ref: { typ: "sendSms", parameters: [] } },
     ],
     edges: edges,
+    stickyNotes: [],
 });
