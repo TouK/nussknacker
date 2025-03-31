@@ -5952,6 +5952,7 @@ components:
           type: string
         refClazz:
           oneOf:
+          - $ref: '#/components/schemas/Json'
           - $ref: '#/components/schemas/TypedClass'
           - $ref: '#/components/schemas/TypedDict'
           - $ref: '#/components/schemas/TypedNull'
@@ -6176,6 +6177,22 @@ components:
           uniqueItems: true
           items:
             type: string
+    Json:
+      title: Json
+      type: object
+      required:
+      - type
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types6'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
@@ -6262,6 +6279,7 @@ components:
       type: object
       additionalProperties:
         oneOf:
+        - $ref: '#/components/schemas/Json'
         - $ref: '#/components/schemas/TypedClass'
         - $ref: '#/components/schemas/TypedDict'
         - $ref: '#/components/schemas/TypedNull'
@@ -6874,6 +6892,7 @@ components:
         expressionType:
           anyOf:
           - oneOf:
+            - $ref: '#/components/schemas/Json'
             - $ref: '#/components/schemas/TypedClass'
             - $ref: '#/components/schemas/TypedDict'
             - $ref: '#/components/schemas/TypedNull'
@@ -6950,6 +6969,7 @@ components:
           type: string
         refClazz:
           oneOf:
+          - $ref: '#/components/schemas/Json'
           - $ref: '#/components/schemas/TypedClass'
           - $ref: '#/components/schemas/TypedDict'
           - $ref: '#/components/schemas/TypedNull'
@@ -7749,7 +7769,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/Types6'
+          $ref: '#/components/schemas/Types7'
         refClazzName:
           type: string
         params:
@@ -7818,7 +7838,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/Types7'
+          $ref: '#/components/schemas/Types8'
         union:
           type: array
           items:
@@ -7857,8 +7877,13 @@ components:
       title: Types
       type: string
       enum:
-      - TypedNull
+      - Json
     Types7:
+      title: Types
+      type: string
+      enum:
+      - TypedNull
+    Types8:
       title: Types
       type: string
       enum:
@@ -7866,6 +7891,7 @@ components:
     TypingResult:
       title: TypingResult
       oneOf:
+      - $ref: '#/components/schemas/Json'
       - $ref: '#/components/schemas/TypedClass'
       - $ref: '#/components/schemas/TypedDict'
       - $ref: '#/components/schemas/TypedNull'
@@ -7889,6 +7915,7 @@ components:
           type: string
         typ:
           oneOf:
+          - $ref: '#/components/schemas/Json'
           - $ref: '#/components/schemas/TypedClass'
           - $ref: '#/components/schemas/TypedDict'
           - $ref: '#/components/schemas/TypedNull'
@@ -7934,6 +7961,7 @@ components:
           type: string
         typ:
           oneOf:
+          - $ref: '#/components/schemas/Json'
           - $ref: '#/components/schemas/TypedClass'
           - $ref: '#/components/schemas/TypedDict'
           - $ref: '#/components/schemas/TypedNull'

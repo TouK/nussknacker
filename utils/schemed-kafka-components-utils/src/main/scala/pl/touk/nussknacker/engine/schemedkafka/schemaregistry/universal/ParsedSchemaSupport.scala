@@ -234,7 +234,7 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def extractParameterForTests(schema: ParsedSchema)(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
     val parameter =
-      Parameter(sinkValueParamName, TypedJson).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
+      Parameter(inputParamName, TypedJson).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
     Valid(
       SingleSchemaBasedParameter(
         parameter,

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.language.json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedJson, Unknown}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.JsonParsingError
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -29,9 +29,9 @@ class JsonParserTest extends AnyFunSuite with Matchers {
                        |  }
                        |]""".stripMargin
 
-    val resultType = parser.parse(validJson, ValidationContext.empty, Unknown).validValue.typingInfo.typingResult
+    val resultType = parser.parse(validJson, ValidationContext.empty, TypedJson).validValue.typingInfo.typingResult
     // TODO: Right now we just use Unknown but we should create appropriate typing for Jsons in the future
-    resultType shouldBe Unknown
+    resultType shouldBe TypedJson
   }
 
   test("should return error when JSON cannot be parsed") {
@@ -43,7 +43,7 @@ class JsonParserTest extends AnyFunSuite with Matchers {
                          |    {"id": 3, "name": "Tablet", "price": 450.75}
                          |  ]
                          |}""".stripMargin
-    val parsingErrors = parser.parse(invalidJson, ValidationContext.empty, Unknown).invalidValue
+    val parsingErrors = parser.parse(invalidJson, ValidationContext.empty, TypedJson).invalidValue
     parsingErrors.size shouldBe 1
     parsingErrors.head shouldBe JsonParsingError("expected ] or , got '{\"id\":...' (line 4, column 5)")
   }
