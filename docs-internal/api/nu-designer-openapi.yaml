@@ -3645,6 +3645,7 @@ paths:
                       branchParam: false
                       label: name
                       requiredParam: true
+                      category: Standard
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
@@ -5480,6 +5481,9 @@ components:
           $ref: '#/components/schemas/TestSourceParameters'
         scenarioGraph:
           type: object
+    Advanced:
+      title: Advanced
+      type: object
     ApiVersion:
       title: ApiVersion
       type: object
@@ -6939,6 +6943,11 @@ components:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
+    ParameterCategory:
+      title: ParameterCategory
+      oneOf:
+      - $ref: '#/components/schemas/Advanced'
+      - $ref: '#/components/schemas/Standard'
     ParameterDto:
       title: ParameterDto
       type: object
@@ -7444,6 +7453,9 @@ components:
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
+    Standard:
+      title: Standard
+      type: object
     StaticParameterEditor:
       title: StaticParameterEditor
       oneOf:
@@ -7884,6 +7896,7 @@ components:
       - additionalVariables
       - branchParam
       - label
+      - category
       properties:
         name:
           type: string
@@ -7922,6 +7935,8 @@ components:
           type:
           - boolean
           - 'null'
+        category:
+          $ref: '#/components/schemas/ParameterCategory'
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object
