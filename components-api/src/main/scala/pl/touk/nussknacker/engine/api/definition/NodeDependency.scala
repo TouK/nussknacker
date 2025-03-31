@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import io.circe.generic.extras.ConfiguredJsonCodec
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import enumeratum._
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   OutputVariableNameValue,
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import scala.collection.immutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
@@ -321,9 +322,16 @@ object AdditionalVariableWithFixedValue {
 
 case class AdditionalVariableWithFixedValue(value: Any, typingResult: TypingResult) extends AdditionalVariable
 
-@ConfiguredJsonCodec sealed trait ParameterCategory
+sealed trait ParameterCategory extends EnumEntry
 
-object ParameterCategory {
+object ParameterCategory extends Enum[ParameterCategory] {
   case object Standard extends ParameterCategory
   case object Advanced extends ParameterCategory
+
+  override def values: immutable.IndexedSeq[ParameterCategory] = findValues
+
+  implicit val parameterCategoryEncoder: Encoder[ParameterCategory] = Encoder.encodeString.contramap(_.entryName)
+
+  implicit val parameterCategoryDecoder: Decoder[ParameterCategory] = Decoder.decodeString
+    .map(name => ParameterCategory.withNameInsensitive(name))
 }

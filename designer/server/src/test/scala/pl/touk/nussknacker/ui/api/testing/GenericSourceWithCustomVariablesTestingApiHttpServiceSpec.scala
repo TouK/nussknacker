@@ -59,9 +59,7 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       |    "requiredParam": true,
       |    "hintText": null,
       |    "label": "elements",
-      |    "category": {
-      |        "type": "Standard"
-      |    }
+      |    "category": "Standard"
       |  }
       |""".stripMargin
 

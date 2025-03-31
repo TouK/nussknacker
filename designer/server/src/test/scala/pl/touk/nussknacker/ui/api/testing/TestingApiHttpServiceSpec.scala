@@ -227,9 +227,7 @@ trait TestingApiHttpServiceSpec
              |                "hintText": null,
              |                "label": "paramFixedString",
              |                "requiredParam": false,
-             |                "category": {
-             |                    "type": "Standard"
-             |                }
+             |                "category": "Standard"
              |            }
              |        ]
              |    }
@@ -286,9 +284,7 @@ trait TestingApiHttpServiceSpec
              |                "hintText": null,
              |                "label": "paramRawString",
              |                "requiredParam": false,
-             |                "category": {
-             |                    "type": "Standard"
-             |                }
+             |                "category": "Standard"
              |            }
              |        ]
              |    }

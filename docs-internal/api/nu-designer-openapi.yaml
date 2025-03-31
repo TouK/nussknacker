@@ -3645,8 +3645,7 @@ paths:
                       branchParam: false
                       label: name
                       requiredParam: true
-                      category:
-                        type: Standard
+                      category: Standard
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'

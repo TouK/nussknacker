@@ -284,7 +284,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
-  test("should read parameter's section from configuration") {
+  test("should read parameter's category from configuration") {
     val model: ModelData = LocalModelData(
       ConfigFactory.parseString(s"""componentsUiConfig {
                                    |  service-enricher: {

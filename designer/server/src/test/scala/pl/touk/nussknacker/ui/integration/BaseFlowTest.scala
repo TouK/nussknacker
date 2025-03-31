@@ -127,7 +127,7 @@ class BaseFlowTest
             ),
             "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           ),
           obj(
             "name"  -> fromString("tariffType"),
@@ -153,7 +153,7 @@ class BaseFlowTest
             ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),
@@ -172,7 +172,7 @@ class BaseFlowTest
             ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           ),
           obj(
             "name"         -> fromString("bar"),
@@ -185,7 +185,7 @@ class BaseFlowTest
             ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           ),
           obj(
             "name"         -> fromString("baz"),
@@ -200,7 +200,7 @@ class BaseFlowTest
             ),
             "hintText"      -> fromString("some hint text"),
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           ),
           obj(
             "name"         -> fromString("quax"),
@@ -214,7 +214,7 @@ class BaseFlowTest
             ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           ),
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -239,7 +239,7 @@ class BaseFlowTest
             ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
-            "category"      -> fromJsonObject(JsonObject("type" -> Json.fromString("Standard"))),
+            "category"      -> fromString("Standard"),
           )
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
