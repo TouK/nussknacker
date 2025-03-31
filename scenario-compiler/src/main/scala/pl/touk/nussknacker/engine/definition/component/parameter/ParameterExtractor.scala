@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariable,
   AdditionalVariableProvidedInRuntime,
   AdditionalVariableWithFixedValue,
-  Parameter
+  Parameter,
+  ParameterCategory
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
@@ -56,6 +57,11 @@ object ParameterExtractor {
     val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(
       DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, editors)
     )
+
+    val category = ParameterCategoryExtractor
+      .extract(parameterData, parameterConfig)
+      .getOrElse(ParameterCategory.Standard)
+
     Parameter(
       name,
       paramType,
@@ -69,7 +75,8 @@ object ParameterExtractor {
       scalaOptionParameter = isScalaOptionParameter,
       javaOptionalParameter = isJavaOptionalParameter,
       hintText = parameterConfig.hintText,
-      labelOpt = parameterConfig.label
+      labelOpt = parameterConfig.label,
+      category = category
     )
   }
 

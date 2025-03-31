@@ -52,6 +52,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         param2: String,
         @ParamName("paramRawEditor")
         @Editor(`type` = EditorType.SPEL_EDITOR)
+        @pl.touk.nussknacker.engine.api.ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
         param3: String
     ): Future[String] = ???
 
@@ -281,6 +282,34 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     uiDefinitions.scenarioProperties.propertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
       .mapValuesNow(createUIScenarioPropertyConfig)
+  }
+
+  test("should read parameter's category from configuration") {
+    val model: ModelData = LocalModelData(
+      ConfigFactory.parseString(s"""componentsUiConfig {
+                                   |  service-enricher: {
+                                   |    params {
+                                   |      paramDualEditor {
+                                   |        category: "Advanced"
+                                   |      }
+                                   |    }
+                                   |  }
+                                   |}
+                                   |""".stripMargin),
+      List(ComponentDefinition("enricher", TestService))
+    )
+
+    val definitions = prepareDefinitions(model, List.empty)
+
+    definitions
+      .components(ComponentId(ComponentType.Service, "enricher"))
+      .parameters
+      .map(p => (p.name, p.category))
+      .toMap shouldBe Map(
+      "paramDualEditor"   -> definition.ParameterCategory.Advanced,
+      "paramStringEditor" -> definition.ParameterCategory.Standard,
+      "paramRawEditor"    -> definition.ParameterCategory.Advanced,
+    )
   }
 
   private def prepareDefinitions(
