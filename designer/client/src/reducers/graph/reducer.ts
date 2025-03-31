@@ -8,7 +8,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { Dimensions, ValidationResult } from "../../types";
-import { StickyNoteType } from "../../types/stickyNote";
+import { StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -34,6 +34,7 @@ const emptyGraphState: GraphState = {
             nodes: [],
             edges: [],
             properties: null,
+            stickyNotes: []
         },
     } as Scenario,
     layout: [],
