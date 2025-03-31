@@ -7,7 +7,16 @@ import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
-import type { Edge, EdgeType, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ValidationResult } from "../../types";
+import type {
+    Dimensions,
+    Edge,
+    EdgeType,
+    NodeId,
+    NodeType,
+    NodeValidationError,
+    ProcessDefinitionData,
+    ValidationResult,
+} from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import type { EditNodeAction, EditScenarioLabels } from "./editNode";
 import type { NodePosition, Position } from "./ui/layout";
@@ -56,8 +65,14 @@ type NodeAddedAction = {
 
 type StickyNoteUpdatedAction = {
     type: "STICKY_NOTE_UPDATED";
-    element: dia.Element;
+    id: string;
+    dimensions: Dimensions;
     content?: string;
+};
+
+type StickyNoteSetErrorsAction = {
+    type: "STICKY_NOTE_SET_ERRORS";
+    stickyNoteErrors: Record<string, NodeValidationError[] | null>;
 };
 
 export function deleteNodes(ids: NodeId[]): ThunkAction {
@@ -154,10 +169,13 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
 export function stickyNoteUpdated(element: dia.Element, content?: string): ThunkAction {
     return (dispatch) => {
         batchGroupBy.startOrContinue();
+        const id = element.id.toString();
+        const dimensions = element.attributes.size as Dimensions;
         flushSync(() => {
             dispatch({
                 type: "STICKY_NOTE_UPDATED",
-                element,
+                id,
+                dimensions,
                 content,
             });
             dispatch(layoutChanged());
@@ -199,6 +217,7 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
 export type NodeActions =
     | NodeAddedAction
     | StickyNoteUpdatedAction
+    | StickyNoteSetErrorsAction
     | DeleteNodesAction
     | NodesConnectedAction
     | NodesDisonnectedAction
