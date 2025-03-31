@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.test
 
-import cats.data.{EitherNel, NonEmptyList, ValidatedNel}
+import cats.data.{EitherNel, NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   SourceTestDataGenerationError,
   TestDataPreparationError
 }
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
@@ -104,9 +105,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       size: Int
   ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData] = {
     for {
-      generators <- prepareTestDataGenerators(processVersion, scenario).toEither
-        .leftMap(_.head) // todo return all errors
-        .flatMap(_.toRight(ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration))
+      generators <- prepareTestDataGenerators(processVersion, scenario)
       result <- createPreliminaryTestData(generators, size)
         .toRight(ScenarioTestDataGenerationError.NoDataGenerated)
     } yield result
@@ -148,7 +147,10 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def prepareTestDataGenerators(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): ValidatedNel[ScenarioTestDataGenerationError, Option[NonEmptyList[(NodeId, TestDataGenerator)]]] = {
+  ): Either[
+    ScenarioTestDataGenerationError,
+    NonEmptyList[(NodeId, TestDataGenerator)]
+  ] = {
     val jobData = JobData(scenario.metaData, processVersion)
     commonModelDataInfoProvider
       .collectAllSources(scenario)
@@ -156,15 +158,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
         val nodeId = NodeId(source.id)
         commonModelDataInfoProvider
           .compileSourceNode(source)(jobData, nodeId)
-          .leftMap[ScenarioTestDataGenerationError] { compilationErrors =>
-            ScenarioTestDataGenerationError.ScenarioGraphValidationError(NonEmptyList.one(nodeId -> compilationErrors))
+          .leftMap { compilationErrors =>
+            NonEmptyList.one(nodeId -> compilationErrors)
           }
-          .leftMap(NonEmptyList.one)
           .map(_.cast[TestDataGenerator].map(testDataGenerator => (nodeId, testDataGenerator)))
       }
       .sequence
-      .map(_.flatten)
-      .map(NonEmptyList.fromList)
+      .leftMap[ScenarioTestDataGenerationError](ScenarioTestDataGenerationError.ScenarioGraphValidationError)
+      .toEither
+      .flatMap(_.flatten.toNel.toRight(ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration))
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
