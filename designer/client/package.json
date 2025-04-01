@@ -276,7 +276,7 @@
         "@comment script versions updating image snapshots": "",
         "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
         "coverage": "npx merge-cypress-jest-coverage",
-        "commit": "lint-staged",
+        "commit": "lint-staged --allow-empty",
         "make-types": "make-federated-types --outputDir ./.federated-types",
         "prepare": "cd ../.. && husky install"
     }
