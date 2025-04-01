@@ -15,6 +15,7 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 
 import scala.jdk.CollectionConverters._
 
+// TODO_PAWEL jest ok
 class FinkExactlyOnceItSpec
     extends FlinkWithKafkaSuite
     with PatientScalaFutures
@@ -65,6 +66,10 @@ class FinkExactlyOnceItSpec
         KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel
       )
+
+      // TODO_PAWEL move to some dedicated test
+      .buildSimpleVariable("someId", "someVarName", s"#input.![#this.key]".spel)
+
       .emptySink(
         "end",
         "kafka",
