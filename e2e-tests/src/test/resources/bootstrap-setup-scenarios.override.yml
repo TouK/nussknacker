@@ -1,3 +1,9 @@
+x-flink-service-with-postgres-driver: &flink-with-postgres-driver
+  build:
+    context: ./flink-with-postgres/
+    args:
+      FLINK_VERSION: "1.19.2-scala_2.12-java11"
+
 services:
 
   bootstrap-setup:
@@ -5,3 +11,11 @@ services:
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
       - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
       - ../../e2e-tests/src/test/resources/loan-request:/scenario-examples/loan-request
+      - ../../e2e-tests/src/test/resources/offer-customer-proposal-based-on-activity-event:/scenario-examples/offer-customer-proposal-based-on-activity-event
+      - ../../e2e-tests/src/test/resources/rtm-client-near-pos:/scenario-examples/rtm-client-near-pos
+
+  flink-jobmanager:
+    <<: *flink-with-postgres-driver
+
+  flink-taskmanager:
+    <<: *flink-with-postgres-driver

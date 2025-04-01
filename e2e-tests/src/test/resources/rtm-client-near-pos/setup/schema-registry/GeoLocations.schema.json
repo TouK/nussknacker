@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "required": [
+    "clientId",
+    "geo",
+    "eventTime"
+  ],
+  "properties": {
+    "geo": {
+      "type": "object",
+      "description": "This property contains geographical coordinates (latitude and longitude).",
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "lon": {
+          "type": "number",
+          "description": "Longitude coordinate."
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude coordinate."
+        }
+      }
+    },
+    "clientId": {
+      "type": "integer",
+      "description": "A unique identifier for the client."
+    },
+    "eventTime": {
+      "type": "integer",
+      "description": "A timestamp indicating the time of the event."
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+    "request": {
+        "urlPattern": "/customer/(.+)/profile",
+        "method": "GET"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "bodyFileName": "customer-api/responses/CustomerProfile.json"
+    }
+}
