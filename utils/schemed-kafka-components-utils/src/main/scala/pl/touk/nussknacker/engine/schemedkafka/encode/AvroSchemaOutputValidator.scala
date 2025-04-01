@@ -69,6 +69,10 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         invalid(typingResult, schema, path)
       case (TypedNull, _) if schema.isNullable =>
         valid
+      case (Unknown, Type.NULL) if !schema.isNullable =>
+        invalid(typingResult, schema, path)
+      case (Unknown, Type.NULL) if schema.isNullable =>
+        valid
       case (typingResult, Type.ENUM) =>
         validateEnum(typingResult, schema, path)
       case (typingResult, Type.FIXED) =>

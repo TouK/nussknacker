@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json._
 
@@ -193,9 +193,14 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
 
   private def error(runtimeObject: Any, schema: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] = {
     val runtimeType = Typed.fromInstance(runtimeObject)
+    val runtimeTypeName = runtimeType match {
+      // TypedNull.withoutValue is displayed as Unknown
+      case typedNull @ TypedNull => typedNull.display
+      case other                 => other.withoutValue.display
+    }
     Invalid(
       NonEmptyList.of(
-        s"Not expected type: ${runtimeType.withoutValue.display} for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."
+        s"Not expected type: $runtimeTypeName for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."
       )
     )
   }
