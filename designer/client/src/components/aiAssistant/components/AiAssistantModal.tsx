@@ -6,6 +6,7 @@ import React, { useMemo } from "react";
 import { WindowContent } from "../../../windowManager";
 import { AssistantMessage } from "./AssistantMessage";
 import { Composer } from "./Composer";
+import { ScrollToBottomButton } from "./ScrollToBottomButton";
 import { UserMessage } from "./UserMessage";
 
 const StyledAiAssistant = styled("div")(({ theme }) => ({
@@ -43,6 +44,7 @@ const AiAssistantModal = ({ ...props }: WindowContentProps) => {
                         AssistantMessage,
                     }}
                 />
+                <ScrollToBottomButton />
             </StyledAiAssistant>
         </WindowContent>
     );
