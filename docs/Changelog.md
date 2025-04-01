@@ -139,6 +139,7 @@
   * correct source and target environment names
   * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
   Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
+* [#7824](https://github.com/TouK/nussknacker/pull/7824) Add Json type support for schemaless topic data with Json content type.
 
 ## 1.18
 
