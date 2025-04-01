@@ -11,7 +11,12 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValueWithIcon, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  FixedExpressionValue,
+  FixedExpressionValueWithIcon,
+  ParameterCategory,
+  ParameterEditor
+}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
@@ -1386,9 +1391,10 @@ object NodesApiEndpoints {
       Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor] = Schema.derived
-      implicit lazy val durationSchema: Schema[Duration]               = Schema.schemaForJavaDuration
-      implicit lazy val uiParameterSchema: Schema[UIParameter]         = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]     = Schema.derived
+      implicit lazy val durationSchema: Schema[Duration]                   = Schema.schemaForJavaDuration
+      implicit lazy val uiParameterSchema: Schema[UIParameter]             = Schema.derived
+      implicit lazy val parameterCategorySchema: Schema[ParameterCategory] = Schema.derived
 
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema(
         SProduct(

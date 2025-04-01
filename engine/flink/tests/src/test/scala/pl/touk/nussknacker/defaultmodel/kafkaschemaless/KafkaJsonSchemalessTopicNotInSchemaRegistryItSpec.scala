@@ -6,6 +6,14 @@ class KafkaJsonSchemalessTopicNotInSchemaRegistryItSpec extends BaseKafkaJsonSch
     shouldRoundTripJsonMessageWithoutProvidedSchema()
   }
 
+  test("should round-trip json message without schema derived from data sample") {
+    shouldRoundTripJsonMessageWithSchemaDerivedFromProvidedDataSample()
+  }
+
+  test("should round-trip json message with schema derived from data sample") {
+    shouldRoundTripJsonMessageWithoutSchemaDerivedFromProvidedDataSample()
+  }
+
   ignore("should round-trip plain message when topic is not in schema registry") {
     shouldRoundTripPlainMessageWithoutProvidedSchema()
   }
