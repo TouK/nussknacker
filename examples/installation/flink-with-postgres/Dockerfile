@@ -16,7 +16,7 @@ RUN echo '#!/bin/sh' > /ex-docker-entrypoint.sh && \
 COPY --from=lib_provider /libs/ /opt/flink/lib/
 
 USER flink
-COPY ../flink/flink-properties.yml /opt/flink/conf/
+COPY flink-properties.yml /opt/flink/conf/
 RUN mkdir -p /opt/flink/data && \
     chmod -R 777 /opt/flink/data
 
