@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TopicName}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedJson, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.language.json.JsonParser
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -41,7 +41,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   test("Should handle an empty object data sample") {
     val dataSample = "{}"
     val result     = typingResultForDataSample(dataSample)
-    result shouldBe Valid(Unknown)
+    result shouldBe Valid(TypedJson)
   }
 
   test("Should handle integer data sample") {
