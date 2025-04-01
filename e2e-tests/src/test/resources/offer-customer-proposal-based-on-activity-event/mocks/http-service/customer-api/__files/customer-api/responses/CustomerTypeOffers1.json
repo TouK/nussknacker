@@ -1,0 +1,9 @@
+[
+    {
+        "id": "{{randomValue length=10 type='NUMERIC'}}",
+        "name": "{{random 'Commerce.productName'}} promotion",
+        "message": "{{random 'Lorem.sentence'}} {{random 'Lorem.sentence'}} {{random 'Lorem.sentence'}}",
+        "price": {{randomInt lower=10 upper=50}},
+        "validity": "{{dateFormat (now offset='3 days') format='yyyy-MM-dd\'T\'HH:mm:ss\'Z\''}}"
+    }
+]

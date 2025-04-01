@@ -1,0 +1,26 @@
+{
+    "mappings": [
+        {
+            "request": {
+                "urlPattern": "/customer/(.+)/offers",
+                "method": "GET"
+            },
+            "response": {
+                "status": 404
+            }
+        },
+        {
+            "request": {
+                "urlPattern": "/customer/(?i)(Freemium|Regular|VIP)/offers",
+                "method": "GET"
+            },
+            "response": {
+                "status": 200,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "bodyFileName": "customer-api/responses/CustomerTypeOffers{{{pickRandom '0' '1' '2'}}}.json"
+            }
+        }
+    ]
+}

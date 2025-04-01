@@ -1,0 +1,446 @@
+{
+  "metaData" : {
+    "id" : "OfferCustomerProposalBasedOnActivityEvent",
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+        "parallelism" : "1",
+        "spillStateToDisk" : "true",
+        "useAsyncInterpretation" : "",
+        "checkpointIntervalInSeconds" : ""
+      },
+      "metaDataType" : "StreamMetaData"
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "Customers-related events",
+      "ref" : {
+        "typ" : "kafka",
+        "parameters" : [
+          {
+            "name" : "Topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'CustomerEvents'"
+            }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 180,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "nextFalse" : [
+      ],
+      "id" : "May client be interested in the new offer?",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#input.eventType.toString == \"ClientBrowseOffers\" || \n#input.eventType.toString == \"ClientSentTerminationLetter\""
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : "We are interested only in two types of events: \"ClientSentTerminationLetter\", \"ClientBrowseOffers\"",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 180
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "Get Customer Profile from API",
+      "service" : {
+        "id" : "getCustomerProfile",
+        "parameters" : [
+          {
+            "name" : "customerId",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#input.customerId"
+            }
+          }
+        ]
+      },
+      "output" : "profile",
+      "additionalFields" : {
+        "description" : "HTTP service is called to get customer profile using the \"customerId\" value from the event",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 360
+        }
+      },
+      "type" : "Enricher"
+    },
+    {
+      "nextFalse" : [
+      ],
+      "id" : "Is adult customer?",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#profile.customerAge > 18"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : "We are not interested in non-adult customers",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 540
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "Get Offers for a given Customer Type from API",
+      "service" : {
+        "id" : "getOffersForCustomerType",
+        "parameters" : [
+          {
+            "name" : "customerType",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#profile.customerType"
+            }
+          }
+        ]
+      },
+      "output" : "offers",
+      "additionalFields" : {
+        "description" : "HTTP service is called to get offers for a passed customer type (taken from the response from the previous HTTP service call)",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 720
+        }
+      },
+      "type" : "Enricher"
+    },
+    {
+      "nextFalse" : [
+      ],
+      "id" : "At least one offer exists?",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#offers.size > 0"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : "We can continue if at least one offer is returned",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 900
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "Pick the best offer",
+      "varName" : "offer",
+      "value" : {
+        "language" : "spel",
+        "expression" : "#offers.?[price == #COLLECTION.min(#offers.![price])][0]"
+      },
+      "additionalFields" : {
+        "description" : "The offer with the best price is taken",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 1080
+        }
+      },
+      "type" : "Variable"
+    },
+    {
+      "nextFalse" : [
+        {
+          "id" : "Random 4% discount",
+          "varName" : "specialDiscountPercentage",
+          "value" : {
+            "language" : "spel",
+            "expression" : "#RANDOM.nextInt(0,1000) == 0 ? 4 : 0"
+          },
+          "additionalFields" : {
+            "description" : "1/1000 events will receive a 4% discount",
+            "layoutData" : {
+              "x" : 0,
+              "y" : 1620
+            }
+          },
+          "type" : "Variable"
+        },
+        {
+          "definition" : {
+            "id" : "Random 4% discount",
+            "joinId" : "Union"
+          },
+          "type" : "BranchEndData"
+        }
+      ],
+      "id" : "Is premium customer?",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#profile.isPremiumCustomer"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : "We will give premium customers different discounts than regular customers.",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 1260
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "Special discount depending on day of week (decision table)",
+      "service" : {
+        "id" : "decision-table",
+        "parameters" : [
+          {
+            "name" : "Decision Table",
+            "expression" : {
+              "language" : "tabularDataDefinition",
+              "expression" : "{\n  \"rows\": [\n    [\n      \"MONDAY\",\n      \"0\"\n    ],\n    [\n      \"TUESDAY\",\n      \"0\"\n    ],\n    [\n      \"WEDNESDAY\",\n      \"3\"\n    ],\n    [\n      \"THURSDAY\",\n      \"0\"\n    ],\n    [\n      \"FRIDAY\",\n      \"5\"\n    ],\n    [\n      \"SATURDAY\",\n      \"5\"\n    ],\n    [\n      \"SUNDAY\",\n      \"5\"\n    ],\n    [\n      null,\n      null\n    ]\n  ],\n  \"columns\": [\n    {\n      \"name\": \"DayOfWeek\",\n      \"type\": \"java.lang.String\"\n    },\n    {\n      \"name\": \"DiscountPercentage\",\n      \"type\": \"java.lang.Integer\"\n    }\n  ]\n}"
+            }
+          },
+          {
+            "name" : "Match condition",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#ROW.DayOfWeek == #DATE.nowAtDefaultTimeZone.getDayOfWeek.toString.toUpperCase"
+            }
+          }
+        ]
+      },
+      "output" : "specialDiscountPercentages",
+      "additionalFields" : {
+        "description" : "Customer receives 5% discount on weekends and 3% discount on Wednesdays",
+        "layoutData" : {
+          "x" : 360,
+          "y" : 1440
+        }
+      },
+      "type" : "Enricher"
+    },
+    {
+      "id" : "Extract the special discount",
+      "varName" : "specialDiscountPercentage",
+      "value" : {
+        "language" : "spel",
+        "expression" : "#specialDiscountPercentages.isEmpty ? \n0 : #specialDiscountPercentages[0].DiscountPercentage"
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 360,
+          "y" : 1620
+        }
+      },
+      "type" : "Variable"
+    },
+    {
+      "definition" : {
+        "id" : "Extract the special discount",
+        "joinId" : "Union"
+      },
+      "type" : "BranchEndData"
+    }
+  ],
+  "additionalBranches" : [
+    [
+      {
+        "id" : "Union",
+        "outputVar" : "context",
+        "nodeType" : "union",
+        "parameters" : [
+        ],
+        "branchParameters" : [
+          {
+            "branchId" : "Random 4% discount",
+            "parameters" : [
+              {
+                "name" : "Output expression",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "{ specialDiscountPercentage: #specialDiscountPercentage, offer: #offer, profile: #profile }"
+                }
+              }
+            ]
+          },
+          {
+            "branchId" : "Extract the special discount",
+            "parameters" : [
+              {
+                "name" : "Output expression",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "{ specialDiscountPercentage: #specialDiscountPercentage, offer: #offer, profile: #profile }"
+                }
+              }
+            ]
+          }
+        ],
+        "additionalFields" : {
+          "description" : "it's workaround to unify context after the split: \nhttps://nussknacker.io/documentation/docs/next/scenarios_authoring/DesignerTipsAndTricks/#passing-the-context-after-the-union-node",
+          "layoutData" : {
+            "x" : 180,
+            "y" : 1800
+          }
+        },
+        "type" : "Join"
+      },
+      {
+        "id" : "Calculate final price of the offer",
+        "varName" : "finalPrice",
+        "value" : {
+          "language" : "spel",
+          "expression" : "#context.offer.price - #context.specialDiscountPercentage * #context.offer.price"
+        },
+        "additionalFields" : {
+          "description" : "Final price of the offer is calculated here",
+          "layoutData" : {
+            "x" : 180,
+            "y" : 1980
+          }
+        },
+        "type" : "Variable"
+      },
+      {
+        "id" : "Prepare full offer message",
+        "varName" : "offerMessage",
+        "value" : {
+          "language" : "spel",
+          "expression" : "'Hello ' + #context.profile.customerName + \"! \\n\" + #context.offer.name + \"\\n\\n\" + #context.offer.message + \"\\nValid to \" + #DATE_FORMAT.formatter('yyyy-MM-dd HH:mm').format(#context.offer.validity) + \". Don't miss it!\""
+        },
+        "additionalFields" : {
+          "description" : "Offer message is prepared here",
+          "layoutData" : {
+            "x" : 180,
+            "y" : 2160
+          }
+        },
+        "type" : "Variable"
+      },
+      {
+        "id" : "Offer proposal to customer",
+        "ref" : {
+          "typ" : "kafka",
+          "parameters" : [
+            {
+              "name" : "Topic",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "'OfferProposalsBasedOnCustomerEvents'"
+              }
+            },
+            {
+              "name" : "Schema version",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "'latest'"
+              }
+            },
+            {
+              "name" : "Key",
+              "expression" : {
+                "language" : "spel",
+                "expression" : ""
+              }
+            },
+            {
+              "name" : "Raw editor",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "false"
+              }
+            },
+            {
+              "name" : "amount",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.offer.price"
+              }
+            },
+            {
+              "name" : "offerName",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.offer.name"
+              }
+            },
+            {
+              "name" : "clientName",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.profile.customerName"
+              }
+            },
+            {
+              "name" : "profileId",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.profile.id"
+              }
+            },
+            {
+              "name" : "offerDescription",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.offer.message"
+              }
+            },
+            {
+              "name" : "dueDate",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.offer.validity"
+              }
+            },
+            {
+              "name" : "customerId",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.profile.customerId"
+              }
+            },
+            {
+              "name" : "clientMsisdn",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#context.profile.customerMsisdn"
+              }
+            },
+            {
+              "name" : "preparedMessageReadyToSend",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#offerMessage"
+              }
+            }
+          ]
+        },
+        "endResult" : null,
+        "isDisabled" : null,
+        "additionalFields" : {
+          "description" : "We put the offer in a Kafka topic. Some other system will take care of sending it.",
+          "layoutData" : {
+            "x" : 180,
+            "y" : 2340
+          }
+        },
+        "type" : "Sink"
+      }
+    ]
+  ]
+}
