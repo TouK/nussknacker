@@ -1,5 +1,4 @@
-import { useComposerRuntime, useThreadViewport } from "@assistant-ui/react";
-import { useOnScrollToBottom } from "@assistant-ui/react/dist/utils/hooks/useOnScrollToBottom";
+import { useComposerRuntime, useThread } from "@assistant-ui/react";
 import { styled } from "@mui/material";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
@@ -65,7 +64,8 @@ export const Composer = () => {
 
     const [message, setMessage] = useState("");
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
-    const isSendDisabled = !message;
+    const { isRunning } = useThread();
+    const isSendDisabled = !message || isRunning;
 
     const handleChange = useCallback(
         (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -119,7 +119,7 @@ export const Composer = () => {
                     />
                 </div>
             </NodeTable>
-            <LoadingButton disabled={!message} title="Send" action={handleSend} />
+            <LoadingButton disabled={isSendDisabled} title="Send" action={handleSend} />
         </StyledRoot>
     );
 };
