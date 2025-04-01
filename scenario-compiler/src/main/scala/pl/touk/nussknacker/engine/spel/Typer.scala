@@ -624,25 +624,15 @@ private[spel] class Typer(
   }
 
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
-    case Unknown =>
-      val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
+    case typing @ (Unknown | TypedJson) =>
+      val w = Writer.value[List[ExpressionParseError], TypingResult](typing)
       if (anyMethodExecutionForUnknownAllowed) {
         w
       } else {
         // we allow some methods to be used on unknown
         unknownPropertyTypeBasedOnMethod(e)
           .map(valid)
-          .getOrElse(w.tell(List(IllegalPropertyAccessError(Unknown))))
-      }
-    case TypedJson =>
-      val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
-      if (anyMethodExecutionForUnknownAllowed) {
-        w
-      } else {
-        // we allow some methods to be used on TypedJson which is an alias for Unknown for now
-        unknownPropertyTypeBasedOnMethod(e)
-          .map(valid)
-          .getOrElse(w.tell(List(IllegalPropertyAccessError(TypedJson))))
+          .getOrElse(w.tell(List(IllegalPropertyAccessError(typing))))
       }
     case TypedNull =>
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
@@ -714,11 +704,8 @@ private[spel] class Typer(
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
 
-  private def unknownPropertyTypeBasedOnMethod(
-      e: PropertyOrFieldReference,
-      invocationTarget: TypingResult = Unknown
-  ): Option[TypingResult] =
-    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(Unknown, e.getName))
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult

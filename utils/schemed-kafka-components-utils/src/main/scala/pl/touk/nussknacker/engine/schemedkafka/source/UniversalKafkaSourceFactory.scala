@@ -97,7 +97,7 @@ class UniversalKafkaSourceFactory(
               )
             ),
             // This is the type after it leaves source
-            TypedJson
+            Unknown
           )
         )
       }
