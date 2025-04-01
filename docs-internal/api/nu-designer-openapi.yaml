@@ -3523,6 +3523,12 @@ paths:
                   summary: Too many samples requested
                   value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
                     to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:

@@ -7,7 +7,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.{process, CirceUtil, MetaData, Params, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{process, CirceUtil, MetaData, NodeId, Params, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
@@ -302,7 +302,7 @@ class ModelDataTestInfoProviderSpec
     forEvery(testingData) { scenario =>
       val error = testInfoProvider.prepareTestData(preliminaryTestData, scenario).leftValue
 
-      error shouldBe MissingSource("non-existing source", 1)
+      error shouldBe MissingSource(NodeId("non-existing source"), 1)
     }
   }
 

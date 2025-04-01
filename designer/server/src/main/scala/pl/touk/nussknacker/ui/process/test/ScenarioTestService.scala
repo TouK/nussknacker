@@ -100,9 +100,9 @@ class ScenarioTestService(
         .generateTestDataForSource(metaData, sourceNodeData, size)
         .leftMap {
           case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
-            SourceTestError.SourceCompilationError(nodeId, errors.map(_.toString))
+            SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString))
           case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
-            SourceTestError.UnsupportedSourcePreviewError(nodeId)
+            SourceTestError.UnsupportedSourcePreviewError(nodeId.id)
           case SourceTestDataGenerationError.NoDataGenerated =>
             SourceTestError.NoDataGeneratedError
         }
