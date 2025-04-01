@@ -13,7 +13,6 @@ import { Expandable } from "../../common/Expandable";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { GroupedActionParameter } from "./GroupedActionParameter";
 
-
 interface AdvancedParametersProps {
     processName: string;
     setParametersValues: (values: NodesDeploymentData) => void;
@@ -75,6 +74,7 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processN
                             [componentId]: isExpanded,
                         }))
                     }
+                    detailsSx={{ padding: 0 }}
                 >
                     <NodeTable>
                         {Object.entries(nodeParameters[0].parameters).map(([paramName, paramConfig]) => {

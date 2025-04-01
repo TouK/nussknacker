@@ -19,6 +19,7 @@ describe("Deploy advanced section", () => {
         cy.get("[data-testid=window]").matchImage();
 
         cy.contains("log").should("be.visible").click();
-        cy.get("[data-testid=window]").matchImage();
+        // a click on the window header is on a purpose because we don't want to have a focus on the expandable section
+        cy.get("[data-testid=window]").find("h3").click().matchImage();
     });
 });

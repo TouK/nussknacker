@@ -15,6 +15,7 @@ interface Props {
     expanded?: boolean;
     expandIconSx?: SxProps<Theme>;
     typographySx?: SxProps<Theme>;
+    detailsSx?: SxProps<Theme>;
 }
 
 export function Expandable({
@@ -25,6 +26,7 @@ export function Expandable({
     expanded,
     expandIconSx = { color: "text.secondary" },
     typographySx = { typography: "body2", color: "text.secondary" },
+    detailsSx,
 }: PropsWithChildren<Props>): JSX.Element {
     const accordionOnChange = onChange ? (_: any, isExpanded: boolean) => onChange(isExpanded) : undefined;
     return (
@@ -43,7 +45,7 @@ export function Expandable({
             >
                 <Typography sx={typographySx}>{expandableTitle}</Typography>
             </AccordionSummary>
-            <AccordionDetails>{children}</AccordionDetails>
+            <AccordionDetails sx={detailsSx}>{children}</AccordionDetails>
         </Accordion>
     );
 }

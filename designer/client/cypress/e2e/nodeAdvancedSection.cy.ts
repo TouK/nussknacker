@@ -19,9 +19,11 @@ describe("Nodes advanced section", () => {
         cy.get("[data-testid=window]").should("be.visible");
 
         cy.contains("Advanced parameters").should("be.visible").click();
-        cy.get("[data-testid=window]").matchImage();
+        // a click on the window header is on a purpose because we don't want to have a focus on the expandable section
+        cy.get("[data-testid=window]").find("header").click().matchImage();
 
         cy.contains("Advanced parameters").click();
-        cy.get("[data-testid=window]").matchImage();
+        // a click on the window header is on a purpose because we don't want to have a focus on the expandable section
+        cy.get("[data-testid=window]").find("header").click().matchImage();
     });
 });
