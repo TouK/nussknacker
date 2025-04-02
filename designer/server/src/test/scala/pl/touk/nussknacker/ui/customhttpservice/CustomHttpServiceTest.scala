@@ -4,11 +4,12 @@ import com.typesafe.config.Config
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.test.WithTestHttpClient
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
-import sttp.client3.{quickRequest, UriContext}
+import sttp.client3.{asString, asStringAlways, quickRequest, UriContext}
 import sttp.model.StatusCode
+import sttp.tapir.paths
 
 class CustomHttpServiceTest
     extends AnyFreeSpecLike
@@ -16,7 +17,8 @@ class CustomHttpServiceTest
     with WithDesignerConfig
     with WithTestHttpClient
     with Matchers
-    with OptionValues {
+    with OptionValues
+    with EitherValuesDetailedMessage {
 
   override def designerRawConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
@@ -76,11 +78,26 @@ class CustomHttpServiceTest
             .get(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/public")
         )
         response.code shouldEqual StatusCode.Ok
-        response.body shouldEqual "Hello!"
+        response.body shouldEqual "Hello from public endpoint!"
       }
     }
 
-    // TODO: swagger
+    "when request send to API docs" - {
+      "should return also docs of custom http service" in {
+        val response = httpClient.send(
+          quickRequest
+            .get(uri"$nuDesignerHttpAddress/api/docs/nu-designer-openapi.yaml")
+            .response(asStringAlways.map(io.circe.yaml.parser.parse))
+        )
+        response.code shouldEqual StatusCode.Ok
+        val customServicesPaths =
+          response.body.rightValue.hcursor.downField("paths").keys.value.filter(_.contains("/api/custom"))
+        customServicesPaths should contain(
+          "/api/custom/tapirTestProvider/public",
+          // TODO: more
+        )
+      }
+    }
   }
 
 }

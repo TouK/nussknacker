@@ -55,13 +55,18 @@ class SecondTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvid
 class TestTapirCustomHttpServiceProvider(tapirEndpointSupport: TapirEndpointSupport)
     extends TapirCustomHttpServiceProvider {
 
+  private val tag = "Tapir based custom HTTP service"
+
   private lazy val publicEndpoint =
-    endpoint.get
+    endpoint
+      .tag("tag")
+      .description("Public endpoint")
+      .get
       .in("public")
       .out(stringBody)
 
   private lazy val publicServerEndpoint =
-    publicEndpoint.serverLogicSuccess(_ => Future.successful("Hello!"))
+    publicEndpoint.serverLogicSuccess(_ => Future.successful("Hello from public endpoint!"))
 
   override def serverEndpoints: List[ServerEndpoint[PekkoStreams with WebSockets, Future]] = List(
     publicServerEndpoint,
