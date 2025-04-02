@@ -5,3 +5,10 @@ org.apache.avro.generic.GenericRecord
 teraz pytanie czy nu powinien obsugiwac ja, czy na wstepie juz ja zamieniac na zwykla mape?
 
 kurcze, to co niby dziala ja sie pytam i jak to dziala
+
+jeszcze jest kwestia tego, ze taki GenericRecord nie ma metody na listowanie wszystkich pol
+
+pytanie:
+jak to dziala ze #input.field
+no bo to ewidentnie musi odpalac get na tym, no dobra
+jest ten jakis dziwny akcesor ktory szuka metody "get" po refleksji.

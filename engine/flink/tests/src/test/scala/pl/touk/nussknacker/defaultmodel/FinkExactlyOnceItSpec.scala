@@ -69,9 +69,9 @@ class FinkExactlyOnceItSpec
       )
 
       // TODO_PAWEL move to some dedicated test
-      .buildSimpleVariable("someId", "someVarName", s"#input.![#this.key]".spel)
+//      .buildSimpleVariable("someId", "someVarName", s"#input.![#this.key]".spel)
 //      .buildSimpleVariable("someId", "someVarName", s"#COLLECTION.merge(#input, {aaa: 5})".spel)
-//      .buildSimpleVariable("someId", "someVarName", s"#input.first".spel)
+      .buildSimpleVariable("someId", "someVarName", s"#input.first".spel)
 
       .emptySink(
         "end",
