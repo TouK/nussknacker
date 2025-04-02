@@ -10,36 +10,57 @@ import com.dimafeng.testcontainers.{
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromMap
 import com.typesafe.scalalogging.StrictLogging
+import io.circe.{Decoder, Json, JsonObject}
+import io.circe.parser._
 import io.circe.syntax.EncoderOps
+import io.restassured.RestAssured.`given`
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedJson, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.test.{PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  PatientScalaFutures,
+  RestAssuredVerboseLoggingIfValidationFails
+}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.containers.WithDockerContainers
+import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
+import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
-import pl.touk.nussknacker.ui.api.testing.JsonSchemalessAdHocTestsSpec.{
+import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
+  ageVariable,
+  isAdultVariable,
   kafkaContainerAlias,
+  nameVariable,
+  scenarioWithEmptyDataSample,
   sinkTopicName,
   sourceTopicName,
+  variablesNodeName,
   WithSchemalessAdHocTestParameters
 }
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.Arrays.asList
 import java.util.Collections
 import scala.jdk.CollectionConverters._
 
-class JsonSchemalessAdHocTestsSpec
+class SchemalessKafkaJsonTypeTests
     extends AnyFreeSpecLike
     with NuItTest
+    with NuRestAssureExtensions
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with RestAssuredVerboseLoggingIfValidationFails
@@ -67,6 +88,37 @@ class JsonSchemalessAdHocTestsSpec
   "The endpoint for adhoc test run should" - {
     "run scenario and return result" in {
       shouldProperlyRunAdHocTest()
+    }
+  }
+
+  "The endpoint for process validation should" - {
+    "validate scenario properly with Json data and return proper typing" in {
+      val request =
+        ScenarioValidationRequest(
+          scenarioWithEmptyDataSample.name,
+          CanonicalProcessConverter.toScenarioGraph(scenarioWithEmptyDataSample)
+        ).asJson.toString()
+
+      val response = given()
+        .applicationState {
+          createSavedScenario(scenarioWithEmptyDataSample)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(request)
+        .post(s"$nuDesignerHttpAddress/api/processValidation/${exampleScenario.name}")
+        .getBody
+        .asString()
+
+      val typingResult = getTypingResultFromValidationResponse(response)
+      typingResult("input") shouldBe TypedJson
+      typingResult(variablesNodeName) match {
+        case TypedObjectTypingResult(fields, _, _) =>
+          fields(nameVariable) shouldBe TypedJson
+          fields(ageVariable) shouldBe Typed.typedClass[Int]
+          fields(isAdultVariable) shouldBe Typed.typedClass[Boolean]
+        case _ => fail
+      }
     }
   }
 
@@ -104,11 +156,37 @@ class JsonSchemalessAdHocTestsSpec
     }
   }
 
+  private def getTypingResultFromValidationResponse(jsonString: String): Map[String, TypingResult] = {
+    val decoder                                             = new TypingResultDecoder(getClass.getClassLoader.loadClass)
+    implicit val typingResultDecoder: Decoder[TypingResult] = decoder.decodeTypingResults
+
+    val parsed = for {
+      json        <- parse(jsonString)
+      nodeResults <- json.hcursor.downField("nodeResults").as[JsonObject]
+    } yield {
+      nodeResults.toMap.flatMap { case (_, nodeJson) =>
+        val cursor = nodeJson.hcursor.downField("variableTypes")
+        cursor.keys.getOrElse(Nil).map { key =>
+          key -> cursor.downField(key).focus.getOrElse(Json.Null)
+        }
+      }
+    }
+
+    parsed
+      .getOrElse(throw new IllegalStateException("Could not parse validation response"))
+      .map { case (name, jsonValue) =>
+        val result = typingResultDecoder
+          .decodeJson(jsonValue)
+          .getOrElse(throw new IllegalStateException("Could not parse typing result"))
+        name -> result
+      }
+  }
+
 }
 
-object JsonSchemalessAdHocTestsSpec {
+object SchemalessKafkaJsonTypeTests {
 
-  private[JsonSchemalessAdHocTestsSpec] trait WithSchemalessAdHocTestParameters extends WithAdHocTestParameters {
+  private[SchemalessKafkaJsonTypeTests] trait WithSchemalessAdHocTestParameters extends WithAdHocTestParameters {
 
     protected def exampleScenarioSourceId: String = "start"
 
@@ -190,5 +268,40 @@ object JsonSchemalessAdHocTestsSpec {
   private val sinkTopicName = "someOutputTopic"
 
   private val kafkaContainerAlias = "kafka"
+
+  private val variablesNodeName = "vars"
+  private val nameVariable      = "name"
+  private val ageVariable       = "age"
+  private val isAdultVariable   = "isAdult"
+
+  private val scenarioWithEmptyDataSample =
+    ScenarioBuilder
+      .streaming("without-schema")
+      .parallelism(1)
+      .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
+      .source(
+        "start",
+        "kafka",
+        KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$sourceTopicName'".spel,
+        KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
+        KafkaUniversalComponentTransformer.dataSampleParamName.value  -> Expression.json("{}")
+      )
+      .buildVariable(
+        "bv1",
+        variablesNodeName,
+        nameVariable    -> "#input[0]['name']".spel,
+        ageVariable     -> "#input[0]['age'].toInteger()".spel,
+        isAdultVariable -> "#input[0]['age'].toInteger() >= 18".spel
+      )
+      .emptySink(
+        "end",
+        "kafka",
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value            -> "".spel,
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> "true".spel,
+        KafkaUniversalComponentTransformer.sinkValueParamName.value          -> "#input".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value              -> s"'$sinkTopicName'".spel,
+        KafkaUniversalComponentTransformer.contentTypeParamName.value        -> s"'${ContentTypes.JSON.toString}'".spel,
+        KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel
+      )
 
 }

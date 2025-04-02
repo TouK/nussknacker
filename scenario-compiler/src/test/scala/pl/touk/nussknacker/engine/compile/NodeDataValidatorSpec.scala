@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
 }
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedJson, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
@@ -1187,6 +1187,21 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) { case ValidationPerformed(errors, None, None) =>
       errors shouldBe List(FragmentParamClassLoadError(ParameterName("param1"), "Map[String, Foo]", "in"))
+    }
+  }
+
+  test("should properly validate Json type parameters") {
+    val ctx = ValidationContext(Map("input" -> TypedJson))
+    val expressionsWithExpectedTypes = List(
+      ("#input", TypedJson),
+      ("#input[0]['products'][1]['id']", TypedJson),
+      ("#input[0]['products'][1]['id'].toInteger()", Typed.typedClass[Int])
+    )
+    expressionsWithExpectedTypes.foreach { case (expression, expectedType) =>
+      inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) {
+        case ValidationPerformed(Nil, None, expressionType) =>
+          expressionType shouldBe Some(expectedType)
+      }
     }
   }
 
