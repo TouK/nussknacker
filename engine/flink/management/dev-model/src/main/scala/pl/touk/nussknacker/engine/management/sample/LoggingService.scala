@@ -62,8 +62,8 @@ object LoggingService extends EagerService {
             defaultValue = "false".some,
             editor = BoolParameterEditor,
             validators = None,
-            label = "Enable debugging with logging components".some,
-            hintText = None
+            label = "Debugging".some,
+            hintText = "Enable debugging with logging components".some
           )
         )
       )
