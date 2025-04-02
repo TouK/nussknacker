@@ -8,9 +8,10 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.customhttpservice.{
-  CustomHttpServiceProvider,
   CustomHttpServiceProviderFactory,
+  PekkoCustomHttpServiceProvider,
   ProcessServiceBasedScenarioServiceAdapter,
+  TapirCustomHttpServiceProvider,
   TapirEndpointSupportAdapter
 }
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
@@ -20,7 +21,7 @@ object CustomHttpServiceProvidersLoader {
 
   def loadCustomHttpServiceProviders(designerConfig: DesignerConfig, domainServices: DomainServices)(
       implicit ec: ExecutionContextWithIORuntime
-  ): Resource[IO, Map[String, CustomHttpServiceProvider]] = {
+  ): Resource[IO, CustomHttpServiceProviders] = {
     val customHttpServiceProviderFactories = Multiplicity(
       ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
     ) match {
@@ -40,9 +41,20 @@ object CustomHttpServiceProvidersLoader {
       new TapirEndpointSupportAdapter
     )
     customHttpServiceProviderFactories
-      .map { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
-      .sequence
-      .map(_.toMap)
+      .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
+      .map { namedProviders =>
+        namedProviders.foldLeft(CustomHttpServiceProviders(Map.empty, Map.empty)) {
+          case (acc, (name, provider: PekkoCustomHttpServiceProvider)) =>
+            acc.copy(pekko = acc.pekko + (name -> provider))
+          case (acc, (name, provider: TapirCustomHttpServiceProvider)) =>
+            acc.copy(tapir = acc.tapir + (name -> provider))
+        }
+      }
   }
+
+  final case class CustomHttpServiceProviders(
+      pekko: Map[String, PekkoCustomHttpServiceProvider],
+      tapir: Map[String, TapirCustomHttpServiceProvider]
+  )
 
 }
