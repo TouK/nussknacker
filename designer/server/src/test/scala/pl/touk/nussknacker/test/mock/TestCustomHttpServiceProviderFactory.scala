@@ -59,7 +59,7 @@ class TestTapirCustomHttpServiceProvider(tapirEndpointSupport: TapirEndpointSupp
 
   private lazy val publicEndpoint =
     endpoint
-      .tag("tag")
+      .tag(tag)
       .description("Public endpoint")
       .get
       .in("public")

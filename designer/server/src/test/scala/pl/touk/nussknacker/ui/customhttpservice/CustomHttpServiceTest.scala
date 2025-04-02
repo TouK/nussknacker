@@ -7,9 +7,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
-import sttp.client3.{asString, asStringAlways, quickRequest, UriContext}
+import sttp.client3.{asStringAlways, quickRequest, UriContext}
 import sttp.model.StatusCode
-import sttp.tapir.paths
 
 class CustomHttpServiceTest
     extends AnyFreeSpecLike
