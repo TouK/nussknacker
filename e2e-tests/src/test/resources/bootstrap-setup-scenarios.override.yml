@@ -1,3 +1,4 @@
+# We need to add postgres jdbc driver to the Flink container in order to use DB integrations in example scenarios
 x-flink-service-with-postgres-driver: &flink-with-postgres-driver
   build:
     context: ./flink-with-postgres/
@@ -19,3 +20,7 @@ services:
 
   flink-taskmanager:
     <<: *flink-with-postgres-driver
+
+  # E2E tests should use ephemeral storage, and not use the persistent volume, that is defined in underlying docker-compose file
+  postgres:
+    volumes: []
