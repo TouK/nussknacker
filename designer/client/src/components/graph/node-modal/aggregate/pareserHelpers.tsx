@@ -1,5 +1,5 @@
 import { parse } from "ts-spel";
-import { Ast } from "ts-spel/lib/lib/Ast";
+import type { Ast } from "ts-spel/lib/lib/Ast";
 
 function getAst(input: string) {
     try {
@@ -23,8 +23,6 @@ function mapToList(input: string, ast?: Ast): string[] | null {
 
 function mapToObject(input: string, ast?: Ast): Record<string, string> | null {
     switch (ast?.type) {
-        case "InlineList":
-            return ast.elements.length < 1 ? {} : null;
         case "InlineMap":
             return Object.fromEntries(Object.entries(ast.elements).map(([key, el]) => [key, printFragment(input, el)]));
         case "CompoundExpression":

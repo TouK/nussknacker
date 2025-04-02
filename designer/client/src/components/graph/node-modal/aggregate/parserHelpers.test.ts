@@ -39,8 +39,9 @@ describe("parseHelpers", () => {
         it.each([
             [`aaa`, null],
             [`"aaa"`, null],
-            [`{}`, {}],
-            [`#AGG.map({})`, {}],
+            [`{}`, null],
+            [`{:}`, {}],
+            [`#AGG.map({})`, null],
             [`#AGG.map({:})`, {}],
             [`#AGG2.map({})`, null],
             [`{aaa:123}`, { aaa: "123" }],
