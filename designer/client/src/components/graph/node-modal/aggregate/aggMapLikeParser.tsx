@@ -1,4 +1,5 @@
 import { createToken, EmbeddedActionsParser, Lexer } from "chevrotain";
+
 import { withLogs } from "../../../../devHelpers";
 
 const LCurly = createToken({ name: "LCurly", pattern: /\{/, push_mode: "inside" });
@@ -12,11 +13,6 @@ const CollectionOpen = createToken({
 const CollectionClose = createToken({
     name: "CollectionClose",
     pattern: /}, "|"\)/,
-    pop_mode: true,
-});
-const ListClose = createToken({
-    name: "ListClose",
-    pattern: /}\.toString/,
     pop_mode: true,
 });
 const MapOpen = createToken({
@@ -79,7 +75,6 @@ const aggMapTokens = {
             MapOpen,
             CollectionClose,
             MapClose,
-            ListClose,
             LCurly,
             RCurly,
             Comma,
@@ -95,7 +90,6 @@ const aggMapTokens = {
             DoubleQuoted,
             CollectionClose,
             MapClose,
-            ListClose,
             RCurly,
             Comma,
             Colon,
@@ -202,7 +196,7 @@ export class AggMapLikeParser extends EmbeddedActionsParser {
                 arr.push(item);
             },
         });
-        this.CONSUME(ListClose);
+        this.CONSUME(RCurly);
         return arr;
     });
     private groupBy = this.RULE("groupBy", () => {

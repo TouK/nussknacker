@@ -36,8 +36,7 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
 
     const deserialize = useCallback(
         (input: string) => {
-            const parsed = parser.parseList(input + ".toString");
-            if (input.lastIndexOf(".toString") == input.length - ".toString".length) return [input];
+            const parsed = parser.parseList(input);
             if (parsed) return parsed;
             return [input];
         },
