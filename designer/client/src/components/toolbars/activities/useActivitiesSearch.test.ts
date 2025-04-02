@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 
 import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
-import { getActivityId } from "./ActivitiesPanel";
 import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
 import type { ActivitiesResponse } from "./types";
@@ -119,12 +118,12 @@ const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadat
 
 describe("useActivitiesSearch", () => {
     it.each<[string, string[]]>([
-        ["atta", [getActivityId(mockedActivities[4]), getActivityId(mockedActivities[9])]],
-        ["3 saved", [getActivityId(mockedActivities[3])]],
-        ["2024-09-27", [getActivityId(mockedActivities[1])]],
-        ["tests save", [getActivityId(mockedActivities[3])]],
-        ["newName: old marketing campaign", [getActivityId(mockedActivities[7])]],
-        [".png", [getActivityId(mockedActivities[9])]],
+        ["atta", [mockedActivities[4].uiGeneratedId, mockedActivities[9].uiGeneratedId]],
+        ["3 saved", [mockedActivities[3].uiGeneratedId]],
+        ["2024-09-27", [mockedActivities[1].uiGeneratedId]],
+        ["tests save", [mockedActivities[3].uiGeneratedId]],
+        ["newName: old marketing campaign", [mockedActivities[7].uiGeneratedId]],
+        [".png", [mockedActivities[9].uiGeneratedId]],
     ])("should find elements when query is '%s'", (searchQuery, expected) => {
         const handleScrollToItemMock = jest.fn();
         const handleUpdateScenarioActivitiesMock = jest.fn();

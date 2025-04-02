@@ -1,14 +1,22 @@
 import moment from "moment/moment";
-import { v4 as uuid4 } from "uuid";
-import { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
+import { v4 as uuid4, v5 as uuid5 } from "uuid";
+
+import type { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
 import { formatDate } from "./date";
+
+const NAMESPACE = uuid4();
+
+function generateStableId(obj: any): string {
+    const jsonString = JSON.stringify(obj, Object.keys(obj).sort());
+    return uuid5(jsonString, NAMESPACE);
+}
 
 const createUiActivity = (activity: Activity) => {
     const uiActivity: UIActivity = {
         ...activity,
         isActiveFound: false,
         isFound: false,
-        uiGeneratedId: uuid4(),
+        uiGeneratedId: generateStableId(activity),
         uiType: "item",
         isHidden: false,
     };

@@ -1,7 +1,6 @@
 import { createSelector } from "reselect";
 
 import type { UIActivity } from "../../components/toolbars/activities";
-import { getActivityId } from "../../components/toolbars/activities";
 import type { RootState } from "../index";
 
 export function applySearchResults(activity: UIActivity, foundActivities: string[], selectedResult: number) {
@@ -11,8 +10,8 @@ export function applySearchResults(activity: UIActivity, foundActivities: string
 
     return {
         ...activity,
-        isFound: foundActivities.some((foundResult) => foundResult === getActivityId(activity)),
-        isActiveFound: getActivityId(activity) === foundActivities[selectedResult],
+        isFound: foundActivities.some((foundResult) => foundResult === activity.uiGeneratedId),
+        isActiveFound: activity.uiGeneratedId === foundActivities[selectedResult],
     };
 }
 

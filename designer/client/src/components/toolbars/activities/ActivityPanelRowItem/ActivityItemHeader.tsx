@@ -1,6 +1,6 @@
 import CircleIcon from "@mui/icons-material/Circle";
 import { Button, styled, Tooltip, Typography } from "@mui/material";
-import type { PropsWithChildren} from "react";
+import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,7 +19,6 @@ import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsD
 import UrlIcon from "../../../UrlIcon";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import type { ItemActivity } from "../ActivitiesPanel";
-import { getActivityId } from "../ActivitiesPanel";
 import { getHeaderColors } from "../helpers/activityItemColors";
 import type { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
@@ -313,7 +312,7 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
             isActiveFound={isActiveFound}
             isVersionSelected={isVersionSelected}
         >
-            <StyledHeaderIcon src={activity.activities.icon} id={getActivityId(activity)} />
+            <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
             <StyledHeaderActionRoot>
                 {activity.actions.map((activityAction) => (
