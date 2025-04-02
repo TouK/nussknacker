@@ -65,7 +65,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   test("Should handle an empty array data sample") {
     val dataSample = "[]"
     val result     = typingResultForDataSample(dataSample)
-    result shouldBe Valid(Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown)))
+    result shouldBe Valid(TypedJson)
   }
 
   test("Should handle boolean data sample") {
@@ -77,7 +77,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   test("Should handle null data sample") {
     val dataSample = "null"
     val result     = typingResultForDataSample(dataSample)
-    result shouldBe Valid(Unknown)
+    result shouldBe Valid(TypedJson)
   }
 
   test("Should handle object data sample") {

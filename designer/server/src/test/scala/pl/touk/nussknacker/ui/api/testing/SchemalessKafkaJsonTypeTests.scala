@@ -41,10 +41,10 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
 import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
   ageVariable,
+  getScenarioWithDataSample,
   isAdultVariable,
   kafkaContainerAlias,
   nameVariable,
-  scenarioWithEmptyDataSample,
   sinkTopicName,
   sourceTopicName,
   variablesNodeName,
@@ -53,8 +53,8 @@ import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
+import java.util.{Collections, UUID}
 import java.util.Arrays.asList
-import java.util.Collections
 import scala.jdk.CollectionConverters._
 
 class SchemalessKafkaJsonTypeTests
@@ -93,31 +93,34 @@ class SchemalessKafkaJsonTypeTests
 
   "The endpoint for process validation should" - {
     "validate scenario properly with Json data and return proper typing" in {
-      val request =
-        ScenarioValidationRequest(
-          scenarioWithEmptyDataSample.name,
-          CanonicalProcessConverter.toScenarioGraph(scenarioWithEmptyDataSample)
-        ).asJson.toString()
+      val typedJsonDataSamples = List("{}", "[]", "null").map(getScenarioWithDataSample)
+      typedJsonDataSamples.foreach { scenarioWithEmptyDataSample =>
+        val request =
+          ScenarioValidationRequest(
+            scenarioWithEmptyDataSample.name,
+            CanonicalProcessConverter.toScenarioGraph(scenarioWithEmptyDataSample)
+          ).asJson.toString()
 
-      val response = given()
-        .applicationState {
-          createSavedScenario(scenarioWithEmptyDataSample)
+        val response = given()
+          .applicationState {
+            createSavedScenario(scenarioWithEmptyDataSample)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(request)
+          .post(s"$nuDesignerHttpAddress/api/processValidation/${scenarioWithEmptyDataSample.name}")
+          .getBody
+          .asString()
+
+        val typingResult = getTypingResultFromValidationResponse(response)
+        typingResult("input") shouldBe TypedJson
+        typingResult(variablesNodeName) match {
+          case TypedObjectTypingResult(fields, _, _) =>
+            fields(nameVariable) shouldBe TypedJson
+            fields(ageVariable) shouldBe Typed.typedClass[Int]
+            fields(isAdultVariable) shouldBe Typed.typedClass[Boolean]
+          case _ => fail
         }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(request)
-        .post(s"$nuDesignerHttpAddress/api/processValidation/${exampleScenario.name}")
-        .getBody
-        .asString()
-
-      val typingResult = getTypingResultFromValidationResponse(response)
-      typingResult("input") shouldBe TypedJson
-      typingResult(variablesNodeName) match {
-        case TypedObjectTypingResult(fields, _, _) =>
-          fields(nameVariable) shouldBe TypedJson
-          fields(ageVariable) shouldBe Typed.typedClass[Int]
-          fields(isAdultVariable) shouldBe Typed.typedClass[Boolean]
-        case _ => fail
       }
     }
   }
@@ -274,9 +277,9 @@ object SchemalessKafkaJsonTypeTests {
   private val ageVariable       = "age"
   private val isAdultVariable   = "isAdult"
 
-  private val scenarioWithEmptyDataSample =
+  private def getScenarioWithDataSample(dataSample: String) =
     ScenarioBuilder
-      .streaming("without-schema")
+      .streaming(UUID.randomUUID().toString)
       .parallelism(1)
       .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
       .source(
@@ -284,7 +287,7 @@ object SchemalessKafkaJsonTypeTests {
         "kafka",
         KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$sourceTopicName'".spel,
         KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
-        KafkaUniversalComponentTransformer.dataSampleParamName.value  -> Expression.json("{}")
+        KafkaUniversalComponentTransformer.dataSampleParamName.value  -> Expression.json(dataSample)
       )
       .buildVariable(
         "bv1",
