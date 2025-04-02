@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { VariableSizeList } from "react-window";
 
-import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
+import { getScenarioActivities, updateScenarioActivities, updateSearchResults } from "../../../actions/nk/scenarioActivities";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
 import { getProcessName } from "../../../reducers/selectors/graph";
@@ -64,6 +64,10 @@ export type UIActivity = ItemActivity | ButtonActivity | DateActivity;
 const estimatedItemSize = 150;
 const panelHeight = "500px";
 
+export function getActivityId(activity: UIActivity): string {
+    return "id" in activity && activity.id.length > 0 ? activity.id : activity.uiGeneratedId;
+}
+
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
 
@@ -97,22 +101,23 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         activities: uiActivities,
         handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),
         handleUpdateScenarioActivities,
+        handleUpdateActivitiesSearch: (foundActivities, selectedResult) => dispatch(updateSearchResults(foundActivities, selectedResult)),
     });
 
-    const handleHideRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
+    const handleHideRows = (id: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "collapse");
+                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, id, sameItemOccurrence, "collapse");
                 listRef.current.scrollToItem(buttonPosition - 2);
                 return uiActivities;
             }),
         );
     };
 
-    const handleShowRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
+    const handleShowRows = (id: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                const { uiActivities } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "expand");
+                const { uiActivities } = handleToggleActivities(prevState, id, sameItemOccurrence, "expand");
                 return uiActivities;
             }),
         );
@@ -157,7 +162,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                 width={width}
                                 estimatedItemSize={estimatedItemSize}
                                 itemKey={(index) => {
-                                    return uiActivities[index].uiGeneratedId;
+                                    return getActivityId(uiActivities[index]);
                                 }}
                             >
                                 {({ index, style }) => (

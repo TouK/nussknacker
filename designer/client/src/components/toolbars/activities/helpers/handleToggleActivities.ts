@@ -1,17 +1,13 @@
-import { UIActivity } from "../ActivitiesPanel";
+import type { UIActivity } from "../ActivitiesPanel";
+import { getActivityId } from "../ActivitiesPanel";
 
-export const handleToggleActivities = (
-    activities: UIActivity[],
-    uiGeneratedId: string,
-    sameItemOccurrence: number,
-    type: "expand" | "collapse",
-) => {
+export const handleToggleActivities = (activities: UIActivity[], id: string, sameItemOccurrence: number, type: "expand" | "collapse") => {
     const newState = [...activities];
 
     const isHidden = type === "collapse";
     const isClicked = type !== "collapse";
 
-    const buttonIndex = newState.findIndex((uiActivity) => uiActivity.uiGeneratedId === uiGeneratedId);
+    const buttonIndex = newState.findIndex((uiActivity) => getActivityId(uiActivity) === id);
 
     if (buttonIndex === -1) return { activities, buttonPosition: -1 };
 
