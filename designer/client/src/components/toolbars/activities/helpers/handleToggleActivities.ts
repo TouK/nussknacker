@@ -1,4 +1,4 @@
-import type { UIActivity } from "../ActivitiesPanel";
+import { UIActivity } from "../ActivitiesPanel";
 
 export const handleToggleActivities = (
     activities: UIActivity[],

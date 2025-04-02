@@ -1,10 +1,8 @@
 import CircleIcon from "@mui/icons-material/Circle";
 import { Button, styled, Tooltip, Typography } from "@mui/material";
-import type { PropsWithChildren } from "react";
-import React, { useCallback, useMemo } from "react";
+import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-
 import { displayScenarioVersion } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import * as DialogMessages from "../../../../common/DialogMessages";
@@ -18,9 +16,9 @@ import { useWindows } from "../../../../windowManager";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import UrlIcon from "../../../UrlIcon";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import type { ItemActivity } from "../ActivitiesPanel";
+import { ItemActivity } from "../ActivitiesPanel";
 import { getHeaderColors } from "../helpers/activityItemColors";
-import type { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
+import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 import { StyledActionIcon } from "./StyledActionIcon";
 

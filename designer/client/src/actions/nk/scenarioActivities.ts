@@ -1,26 +1,18 @@
-import type { UIActivity } from "../../components/toolbars/activities";
+import { UIActivity } from "../../components/toolbars/activities";
 import { extendActivitiesWithUIData } from "../../components/toolbars/activities/helpers/extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "../../components/toolbars/activities/helpers/mergeActivityDataWithMetadata";
 import httpService from "../../http/HttpService";
-import type { ThunkAction } from "../reduxTypes";
+import { ThunkAction } from "../reduxTypes";
 
-type GetScenarioActivitiesAction = {
+export type GetScenarioActivitiesAction = {
     type: "GET_SCENARIO_ACTIVITIES";
     activities: UIActivity[];
 };
 
-type UpdateScenarioActivitiesAction = {
+export type UpdateScenarioActivitiesAction = {
     type: "UPDATE_SCENARIO_ACTIVITIES";
     activities: UIActivity[];
 };
-
-type UpdateActivitiesSearchResultsAction = {
-    type: "UPDATE_ACTIVITIES_SEARCH_RESULTS";
-    foundActivities: string[];
-    selectedResult: number;
-};
-
-export type ScenarioActivitiesActions = GetScenarioActivitiesAction | UpdateScenarioActivitiesAction | UpdateActivitiesSearchResultsAction;
 
 export function getScenarioActivities(scenarioName: string): ThunkAction {
     return (dispatch) => {
@@ -46,16 +38,6 @@ export function updateScenarioActivities(activities: (activities: UIActivity[]) 
         return dispatch({
             type: "UPDATE_SCENARIO_ACTIVITIES",
             activities: activities(getState().processActivity.activities),
-        });
-    };
-}
-
-export function updateSearchResults(foundActivities: string[], selectedResult: number): ThunkAction {
-    return (dispatch) => {
-        return dispatch({
-            type: "UPDATE_ACTIVITIES_SEARCH_RESULTS",
-            foundActivities,
-            selectedResult,
         });
     };
 }
