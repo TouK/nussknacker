@@ -64,10 +64,6 @@ export type UIActivity = ItemActivity | ButtonActivity | DateActivity;
 const estimatedItemSize = 150;
 const panelHeight = "500px";
 
-export function getActivityId(activity: UIActivity): string {
-    return "id" in activity && activity.id.length > 0 ? activity.id : activity.uiGeneratedId;
-}
-
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
 
@@ -104,20 +100,20 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         handleUpdateActivitiesSearch: (foundActivities, selectedResult) => dispatch(updateSearchResults(foundActivities, selectedResult)),
     });
 
-    const handleHideRows = (id: string, sameItemOccurrence: number) => {
+    const handleHideRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, id, sameItemOccurrence, "collapse");
+                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "collapse");
                 listRef.current.scrollToItem(buttonPosition - 2);
                 return uiActivities;
             }),
         );
     };
 
-    const handleShowRows = (id: string, sameItemOccurrence: number) => {
+    const handleShowRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                const { uiActivities } = handleToggleActivities(prevState, id, sameItemOccurrence, "expand");
+                const { uiActivities } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "expand");
                 return uiActivities;
             }),
         );
@@ -162,7 +158,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                 width={width}
                                 estimatedItemSize={estimatedItemSize}
                                 itemKey={(index) => {
-                                    return getActivityId(uiActivities[index]);
+                                    return uiActivities[index].uiGeneratedId;
                                 }}
                             >
                                 {({ index, style }) => (

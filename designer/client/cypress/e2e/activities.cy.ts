@@ -18,7 +18,6 @@ const addAttachmentActivity = (path: string) => {
 const findActivity = (query: string) => {
     cy.contains("Activities").scrollIntoView();
     cy.get('input[placeholder="type here to find past event"]').should("be.visible").clear().type(query);
-    cy.wait(500);
 };
 
 const makeScreenshot = () => {
