@@ -101,7 +101,7 @@ export const Composer = () => {
     }, [scrollToBottom]);
 
     return (
-        <StyledRoot>
+        <StyledRoot data-no-focus-lock>
             <NodeTable sx={{ margin: 0, width: "100%" }}>
                 <div className={nodeValue}>
                     <StyledTextArea
