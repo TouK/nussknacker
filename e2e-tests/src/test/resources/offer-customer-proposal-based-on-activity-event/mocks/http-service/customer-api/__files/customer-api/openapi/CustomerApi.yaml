@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: Customer API
+  version: 1.0.0
+  description: API for retrieving customer profiles and offers based on customer type.
+
+paths:
+  '/customer/{customerId}/profile':
+    get:
+      summary: Get customer profile by customer's ID
+      description: Retrieve detailed profile information for a customer using their unique customer ID.
+      operationId: getCustomerProfile
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: The unique identifier of the customer.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer profile found successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+        '404':
+          description: No customer profile found for the given ID.
+
+  '/customer/{customerType}/offers':
+    get:  
+      summary: Get offers by customer type
+      description: Retrieve offers available for a specific type of customer.
+      operationId: getOffersForCustomerType
+      parameters:
+        - name: customerType
+          in: path
+          required: true
+          description: The type/category of the customer.
+          schema: 
+            type: string
+      responses:
+        '200': 
+          description: Offers found for the specified customer type.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerTypeOffer'
+        '404':
+          description: No offer found for the specified customer type.
+
+components:
+  schemas:
+    CustomerProfile:
+      title: CustomerProfile
+      type: object
+      description: Schema representing a customer's profile information.
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the customer profile.
+        customerId: 
+          type: string 
+          description: The identifier of customer
+        customerType:
+          type: string
+          description: The type or category of the customer.
+        customerName:
+          type: string
+          description: The customer's name
+        customerMsisdn:
+          type: string
+          description: The customer's phone number
+        customerAge:
+          type: integer
+          description: The customer's age
+        customerSex:
+          type: string
+          description: The customer's sex
+        isPremiumCustomer:
+          type: boolean
+          description: Indicates if the customer is a premium one
+
+    CustomerTypeOffer:
+      title: CustomerTypeOffer
+      type: object
+      description: Schema representing an offer available for a specific type of customer.
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the offer.
+        name:
+          type: string
+          description: The name or title of the offer.
+        message:
+          type: string
+          description: A human-readable offer description
+        price:
+          type: integer
+          description: Price of the offer
+        validity:
+          type: string
+          format: date-time
+          description: The validity date of the offer.
