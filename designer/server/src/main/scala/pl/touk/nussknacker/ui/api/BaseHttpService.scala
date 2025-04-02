@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
+import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, LogicResult, NoRequirementServerEndpoint}
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.api.SecurityError.InsufficientPermission
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
@@ -14,8 +14,7 @@ abstract class BaseHttpService(
     authManager: AuthManager
 )(implicit executionContext: ExecutionContext) {
 
-  // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
-  type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
+  private val httpServiceSupport = new HttpServiceSupport(authManager)
 
   private val allServerEndpoints = new AtomicReference(List.empty[NoRequirementServerEndpoint])
 
@@ -39,36 +38,17 @@ abstract class BaseHttpService(
 
   protected def authorizeAdminUser[BUSINESS_ERROR](
       credentials: AuthCredentials
-  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
-    authorizeKnownUser[BUSINESS_ERROR](credentials)
-      .map {
-        case right @ Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser)           => securityError(InsufficientPermission)
-        case Right(_: ImpersonatedUser)     => securityError(InsufficientPermission)
-        case error @ Left(_)                => error
-      }
-  }
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = httpServiceSupport.authorizeAdminUser(credentials)
 
   protected def authorizeKnownUser[BUSINESS_ERROR](
       credentials: AuthCredentials
-  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
-    authManager
-      .authenticate(credentials)
-      .map {
-        case Left(authenticationError) => securityError(authenticationError)
-        case Right(authenticatedUser) =>
-          authManager.authorize(authenticatedUser) match {
-            case Right(loggedUser)        => success(loggedUser)
-            case Left(authorizationError) => securityError(authorizationError)
-          }
-      }
-  }
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = httpServiceSupport.authorizeKnownUser(credentials)
 
-  protected def success[RESULT](value: RESULT) = Right(value)
+  protected def success[RESULT](value: RESULT) = httpServiceSupport.success(value)
 
-  protected def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = Left(Left(error))
+  protected def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = httpServiceSupport.businessError(error)
 
-  protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
+  protected def securityError[SE <: SecurityError](error: SE) = httpServiceSupport.securityError(error)
 
   private type PartialEndpoint[INPUT, OUTPUT, BUSINESS_ERROR, -R] =
     PartialServerEndpoint[_, LoggedUser, INPUT, Either[BUSINESS_ERROR, SecurityError], OUTPUT, R, Future]
@@ -104,10 +84,51 @@ abstract class BaseHttpService(
 }
 
 object BaseHttpService {
+  // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
+  type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
 
   // we assume that our endpoints have no special requirements (in the Tapir sense)
   type NoRequirementServerEndpoint = ServerEndpoint[Any, Future]
 
   // it's marker interface which simplifies error handling when serverLogicEitherT is used
   trait CustomAuthorizationError
+}
+
+class HttpServiceSupport(
+    authManager: AuthManager
+)(implicit executionContext: ExecutionContext) {
+
+  def authorizeAdminUser[BUSINESS_ERROR](
+      credentials: AuthCredentials
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
+    authorizeKnownUser[BUSINESS_ERROR](credentials)
+      .map {
+        case right @ Right(AdminUser(_, _)) => right
+        case Right(_: CommonUser)           => securityError(InsufficientPermission)
+        case Right(_: ImpersonatedUser)     => securityError(InsufficientPermission)
+        case error @ Left(_)                => error
+      }
+  }
+
+  def authorizeKnownUser[BUSINESS_ERROR](
+      credentials: AuthCredentials
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
+    authManager
+      .authenticate(credentials)
+      .map {
+        case Left(authenticationError) => securityError(authenticationError)
+        case Right(authenticatedUser) =>
+          authManager.authorize(authenticatedUser) match {
+            case Right(loggedUser)        => success(loggedUser)
+            case Left(authorizationError) => securityError(authorizationError)
+          }
+      }
+  }
+
+  def success[RESULT](value: RESULT) = Right(value)
+
+  def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = Left(Left(error))
+
+  def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
+
 }
