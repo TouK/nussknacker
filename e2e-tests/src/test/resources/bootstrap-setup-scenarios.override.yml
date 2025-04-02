@@ -18,6 +18,8 @@ services:
     volumes:
       - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
       - ../../e2e-tests/src/test/resources/batch-data-generation/transactions:/transactions
+      # batch-customizations.conf needs to be added on Nu startup, and not later by nussknacker-example-scenarios-library, because it defines new processing type
+      - ../../e2e-tests/src/test/resources/batch-data-generation/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
     deploy:
       resources:
         limits:
@@ -25,7 +27,6 @@ services:
 
   bootstrap-setup:
     volumes:
-      - ../../e2e-tests/src/test/resources/batch-data-generation:/scenario-examples/batch-data-generation
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
       - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
       - ../../e2e-tests/src/test/resources/loan-request:/scenario-examples/loan-request
