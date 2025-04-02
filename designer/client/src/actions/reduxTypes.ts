@@ -8,7 +8,7 @@ import type { ActionTypes } from "./actionTypes";
 import type { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
 import type { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
 import type { NotificationActions } from "./nk/notifications";
-import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
+import type { ScenarioActivitiesActions } from "./nk/scenarioActivities";
 import type { ToolbarActions } from "./nk/toolbars";
 import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";
@@ -18,18 +18,17 @@ type TypedAction =
     | CloudDataActions
     | CountsActions
     | DisplayTestResultsDetailsAction
-    | GetScenarioActivitiesAction
     | NodeActions
     | NodeDetailsActions
     | NotificationActions
     | PropertiesActions
     | ScenarioActions
+    | ScenarioActivitiesActions
     | ScenariosActions
     | SelectionActions
     | SettingsActions
     | ToolbarActions
     | UiActions
-    | UpdateScenarioActivitiesAction
     | UserSettingsActions;
 
 interface UntypedAction extends AnyAction {

@@ -1,7 +1,7 @@
-import { Action } from "../actions/reduxTypes";
-import { Instant } from "../types/common";
-import { ProcessVersionId } from "../components/Process/types";
-import { UIActivity } from "../components/toolbars/activities";
+import type { Action } from "../actions/reduxTypes";
+import type { ProcessVersionId } from "../components/Process/types";
+import type { UIActivity } from "../components/toolbars/activities";
+import type { Instant } from "../types/common";
 
 export type User = string;
 
@@ -23,10 +23,14 @@ export type Comment = {
 
 export type ProcessActivityState = {
     activities: UIActivity[];
+    foundActivities: string[];
+    selectedResult: number;
 };
 
 const emptyProcessActivity: ProcessActivityState = {
     activities: [],
+    foundActivities: [],
+    selectedResult: 0,
 };
 
 export function reducer(state: ProcessActivityState = emptyProcessActivity, action: Action): ProcessActivityState {
@@ -41,6 +45,13 @@ export function reducer(state: ProcessActivityState = emptyProcessActivity, acti
             return {
                 ...state,
                 activities: action.activities,
+            };
+        }
+        case "UPDATE_ACTIVITIES_SEARCH_RESULTS": {
+            return {
+                ...state,
+                foundActivities: action.foundActivities,
+                selectedResult: action.selectedResult,
             };
         }
         default:

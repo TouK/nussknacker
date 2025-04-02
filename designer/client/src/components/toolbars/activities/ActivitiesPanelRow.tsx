@@ -1,18 +1,23 @@
-import React, { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
-import { DateItem, ActivityItem, ToggleButtonItem } from "./ActivityPanelRowItem";
-import { UIActivity } from "./ActivitiesPanel";
+import type { CSSProperties} from "react";
+import React, { memo, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
+
+import type { RootState } from "../../../reducers";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import type { UIActivity } from "./ActivitiesPanel";
+import { getActivityId } from "./ActivitiesPanel";
+import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
 
 interface Props {
     index: number;
     style?: CSSProperties | undefined;
     setRowHeight: (index: number, height: number) => void;
-    handleShowRows(uiGeneratedId: string, sameItemOccurrence: number): void;
-    handleHideRows(uiGeneratedId: string, sameItemOccurrence: number): void;
+
+    handleShowRows(id: string, sameItemOccurrence: number): void;
+
+    handleHideRows(id: string, sameItemOccurrence: number): void;
     activities: UIActivity[];
     searchQuery: string;
 }
@@ -53,11 +58,11 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return (
                     <div ref={rowRef}>
                         {activity.isClicked ? (
-                            <ToggleButtonItem handleHideRow={() => handleHideRows(activity.uiGeneratedId, activity.sameItemOccurrence)}>
+                            <ToggleButtonItem handleHideRow={() => handleHideRows(getActivityId(activity), activity.sameItemOccurrence)}>
                                 {t("activitiesPanel.buttons.showLess", "Show less")}
                             </ToggleButtonItem>
                         ) : (
-                            <ToggleButtonItem handleHideRow={() => handleShowRows(activity.uiGeneratedId, activity.sameItemOccurrence)}>
+                            <ToggleButtonItem handleHideRow={() => handleShowRows(getActivityId(activity), activity.sameItemOccurrence)}>
                                 {t("activitiesPanel.buttons.showMore", "Show {{sameItemOccurrence}} more", {
                                     sameItemOccurrence: activity.sameItemOccurrence,
                                 })}

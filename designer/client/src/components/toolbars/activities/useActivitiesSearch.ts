@@ -1,53 +1,38 @@
-import { useCallback, useState } from "react";
-import { Activity, UIActivity } from "./ActivitiesPanel";
-import { Align } from "react-window";
-import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get, uniq } from "lodash";
-import { ActivityAdditionalFields } from "./types";
+import { useCallback, useState } from "react";
+import type { Align } from "react-window";
+
+import type { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
+import type { Activity, UIActivity } from "./ActivitiesPanel";
+import { getActivityId } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
+import type { ActivityAdditionalFields } from "./types";
 
 interface Props {
     activities: UIActivity[];
     handleScrollToItem: (index: number, align: Align) => void;
     handleUpdateScenarioActivities: (activities: (activities: UIActivity[]) => UIActivity[]) => void;
+    handleUpdateActivitiesSearch: (foundActivities: string[], selectedResult: number) => void;
 }
-export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpdateScenarioActivities }: Props) => {
+
+export const useActivitiesSearch = ({
+    activities,
+    handleScrollToItem,
+    handleUpdateScenarioActivities,
+    handleUpdateActivitiesSearch,
+}: Props) => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
 
     const handleSetFoundResults = useCallback((activities: UIActivity[]) => {
-        const uniqueFoundResults = uniq(activities).map((activity) => activity.uiGeneratedId);
+        const uniqueFoundResults = uniq(activities).map((activity) => getActivityId(activity));
         setFoundResults(uniqueFoundResults);
 
         return uniqueFoundResults;
     }, []);
 
-    const handleUpdateSearchResults = useCallback(
-        (foundActivities: string[], selectedResult: number) => {
-            handleUpdateScenarioActivities((prevState) => {
-                return prevState.map((activity) => {
-                    if (activity.uiType !== "item") {
-                        return activity;
-                    }
-
-                    activity.isFound = false;
-                    activity.isActiveFound = false;
-
-                    if (foundActivities.some((foundResult) => foundResult === activity.uiGeneratedId)) {
-                        activity.isFound = true;
-                    }
-
-                    if (activity.uiGeneratedId === foundActivities[selectedResult]) {
-                        activity.isActiveFound = true;
-                    }
-
-                    return activity;
-                });
-            });
-        },
-        [handleUpdateScenarioActivities],
-    );
+    const handleUpdateSearchResults = handleUpdateActivitiesSearch;
 
     const handleExpandAllResults = useCallback(() => {
         handleUpdateScenarioActivities((prevState) => {
@@ -55,7 +40,12 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
             for (const activity of newState) {
                 if (activity.uiType === "toggleItemsButton") {
-                    newState = handleToggleActivities(newState, activity.uiGeneratedId, activity.sameItemOccurrence, "expand").uiActivities;
+                    newState = handleToggleActivities(
+                        newState,
+                        getActivityId(activity),
+                        activity.sameItemOccurrence,
+                        "expand",
+                    ).uiActivities;
                 }
             }
 
@@ -71,7 +61,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
                 if (activity.uiType === "toggleItemsButton") {
                     newState = handleToggleActivities(
                         newState,
-                        activity.uiGeneratedId,
+                        getActivityId(activity),
                         activity.sameItemOccurrence,
                         "collapse",
                     ).uiActivities;
@@ -141,7 +131,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
             const uniqueFoundResults = handleSetFoundResults(foundActivities);
             handleUpdateSearchResults(uniqueFoundResults, selectedResult);
-            const indexToScroll = activities.findIndex((item) => item.uiGeneratedId === foundActivities[0]?.uiGeneratedId);
+            const indexToScroll = activities.findIndex((item) => getActivityId(item) === getActivityId(foundActivities[0]));
             handleScrollToItem(indexToScroll, "center");
         },
         [
@@ -166,7 +156,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
         const foundResult = foundResults[selectedResultNewValue];
         handleScrollToItem(
-            activities.findIndex((item) => item.uiGeneratedId === foundResult),
+            activities.findIndex((item) => getActivityId(item) === foundResult),
             "center",
         );
         setSelectedResult(selectedResultNewValue);
