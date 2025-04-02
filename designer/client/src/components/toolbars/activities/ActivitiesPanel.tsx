@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { VariableSizeList } from "react-window";
 
-import { getScenarioActivities, updateScenarioActivities, updateSearchResults } from "../../../actions/nk/scenarioActivities";
+import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
 import { getProcessName } from "../../../reducers/selectors/graph";
@@ -97,7 +97,6 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         activities: uiActivities,
         handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),
         handleUpdateScenarioActivities,
-        handleUpdateActivitiesSearch: (foundActivities, selectedResult) => dispatch(updateSearchResults(foundActivities, selectedResult)),
     });
 
     const handleHideRows = (uiGeneratedId: string, sameItemOccurrence: number) => {

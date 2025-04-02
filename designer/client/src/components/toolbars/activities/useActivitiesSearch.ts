@@ -1,25 +1,18 @@
 import { get, uniq } from "lodash";
 import { useCallback, useState } from "react";
-import type { Align } from "react-window";
-
-import type { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
-import type { Activity, UIActivity } from "./ActivitiesPanel";
+import { Align } from "react-window";
+import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
+import { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
-import type { ActivityAdditionalFields } from "./types";
+import { ActivityAdditionalFields } from "./types";
 
 interface Props {
     activities: UIActivity[];
     handleScrollToItem: (index: number, align: Align) => void;
     handleUpdateScenarioActivities: (activities: (activities: UIActivity[]) => UIActivity[]) => void;
-    handleUpdateActivitiesSearch: (foundActivities: string[], selectedResult: number) => void;
 }
 
-export const useActivitiesSearch = ({
-    activities,
-    handleScrollToItem,
-    handleUpdateScenarioActivities,
-    handleUpdateActivitiesSearch,
-}: Props) => {
+export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpdateScenarioActivities }: Props) => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
@@ -31,7 +24,31 @@ export const useActivitiesSearch = ({
         return uniqueFoundResults;
     }, []);
 
-    const handleUpdateSearchResults = handleUpdateActivitiesSearch;
+    const handleUpdateSearchResults = useCallback(
+        (foundActivities: string[], selectedResult: number) => {
+            handleUpdateScenarioActivities((prevState) => {
+                return prevState.map((activity) => {
+                    if (activity.uiType !== "item") {
+                        return activity;
+                    }
+
+                    activity.isFound = false;
+                    activity.isActiveFound = false;
+
+                    if (foundActivities.some((foundResult) => foundResult === activity.uiGeneratedId)) {
+                        activity.isFound = true;
+                    }
+
+                    if (activity.uiGeneratedId === foundActivities[selectedResult]) {
+                        activity.isActiveFound = true;
+                    }
+
+                    return activity;
+                });
+            });
+        },
+        [handleUpdateScenarioActivities],
+    );
 
     const handleExpandAllResults = useCallback(() => {
         handleUpdateScenarioActivities((prevState) => {

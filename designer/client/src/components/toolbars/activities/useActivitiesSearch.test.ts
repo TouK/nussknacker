@@ -1,9 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-
 import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
 import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
-import type { ActivitiesResponse } from "./types";
+import { ActivitiesResponse } from "./types";
 import { useActivitiesSearch } from "./useActivitiesSearch";
 
 const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
@@ -116,7 +115,7 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
 
 const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadata(sampleActivitiesResponse, sampleMetadataResponse));
 
-describe("useActivitiesSearch", () => {
+describe(useActivitiesSearch.name, () => {
     it.each<[string, string[]]>([
         ["atta", [mockedActivities[4].uiGeneratedId, mockedActivities[9].uiGeneratedId]],
         ["3 saved", [mockedActivities[3].uiGeneratedId]],
@@ -133,7 +132,6 @@ describe("useActivitiesSearch", () => {
                 activities: mockedActivities,
                 handleScrollToItem: handleScrollToItemMock,
                 handleUpdateScenarioActivities: handleUpdateScenarioActivitiesMock,
-                handleUpdateActivitiesSearch: () => null,
             }),
         );
 

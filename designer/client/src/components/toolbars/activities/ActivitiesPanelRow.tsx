@@ -1,11 +1,9 @@
-import type { CSSProperties } from "react";
-import React, { memo, useEffect, useMemo, useRef } from "react";
+import React, { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-
-import type { RootState } from "../../../reducers";
+import { RootState } from "../../../reducers";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
-import type { UIActivity } from "./ActivitiesPanel";
+import { UIActivity } from "./ActivitiesPanel";
 import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
 
@@ -13,9 +11,7 @@ interface Props {
     index: number;
     style?: CSSProperties | undefined;
     setRowHeight: (index: number, height: number) => void;
-
     handleShowRows(uiGeneratedId: string, sameItemOccurrence: number): void;
-
     handleHideRows(uiGeneratedId: string, sameItemOccurrence: number): void;
     activities: UIActivity[];
     searchQuery: string;
