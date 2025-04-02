@@ -1,10 +1,13 @@
 import { get, uniqBy } from "lodash";
-import React, { createContext, PropsWithChildren, useCallback, useMemo, useState } from "react";
-import { NodeValidationError } from "../../../../types";
+import type { PropsWithChildren} from "react";
+import React, { createContext, useCallback, useMemo, useState } from "react";
+
+import type { NodeValidationError } from "../../../../types";
 import { useParameterPath } from "../parameterHelpers";
-import { ParametersListProps } from "../parametersList";
+import type { ParametersListProps } from "../parametersList";
 import { useDiffMark } from "../PathsToMark";
-import { AggregateValue, AggRow, appendUuid } from "./aggregatorField";
+import type { AggregateValue, AggRow} from "./aggregatorField";
+import { appendUuid } from "./aggregatorField";
 import { useAggParamsSerializer, useGroupByParamsSerializer } from "./useAggParamsSerializer";
 
 type AggregateContextProviderProps = PropsWithChildren<Pick<ParametersListProps, "node" | "setProperty" | "errors">>;
@@ -66,7 +69,7 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
     );
 
     const [groupByValues, setGroupByValues] = useState<string[]>(() => {
-        const value: string = get(node, groupByPath) || serializeGroupBy("groupBy", []);
+        const value: string = get(node, groupByPath) || serializeGroupBy([]);
         return value ? deserializeGroupBy(value) : [];
     });
 
@@ -75,7 +78,7 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
             values: groupByValues,
             onChange: (values) => {
                 setGroupByValues(values);
-                setProperty(groupByPath, serializeGroupBy("groupBy", values));
+                setProperty(groupByPath, serializeGroupBy(values));
             },
             isMarked: diffMark(groupByPath),
             fieldErrors: errors.filter(({ fieldName }) => ["groupBy"].includes(fieldName)),

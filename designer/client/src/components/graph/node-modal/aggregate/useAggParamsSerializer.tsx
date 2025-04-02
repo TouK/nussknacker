@@ -31,7 +31,7 @@ export function useAggParamsSerializer(): [
     return [deserialize, serialize];
 }
 
-export function useGroupByParamsSerializer(): [(text: string) => string[], (paramName: string, arr: string[]) => string] {
+export function useGroupByParamsSerializer(): [(text: string) => string[], (arr: string[]) => string] {
     const parser = useMemo(() => new AggMapLikeParser(), []);
 
     const deserialize = useCallback(
@@ -43,7 +43,7 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
         [parser],
     );
 
-    const serialize = useCallback((paramName: string, arr: string[]): string => {
+    const serialize = useCallback((arr: string[]): string => {
         const entries = arr.map((value) => {
             return value?.trim();
         });
@@ -53,15 +53,9 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (para
         if (!content) return "";
 
         if (entries.length > 1) {
-            switch (paramName) {
-                case "groupBy":
-                    return `{ ${content} }`;
-            }
+            return `{ ${content} }`;
         } else {
-            switch (paramName) {
-                case "groupBy":
-                    return `${content}`;
-            }
+            return `${content}`;
         }
     }, []);
 
