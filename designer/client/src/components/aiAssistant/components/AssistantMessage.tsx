@@ -7,7 +7,7 @@ export const AssistantMessage = () => {
     const { status, content } = useMessage();
 
     return (
-        <Box my={2}>
+        <Box>
             {status.type === "running" ? (
                 <Box display="flex" alignItems="center" gap={1}>
                     <CircularProgress size="1rem" />
