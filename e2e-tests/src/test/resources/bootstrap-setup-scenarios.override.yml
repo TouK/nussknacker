@@ -9,12 +9,25 @@ x-flink-service-with-postgres-driver: &flink-with-postgres-driver
 services:
 
   bootstrap-setup:
+    environment:
+      EXAMPLE_SCENARIOS_LIBRARY_SERVICE_NAME: bootstrap-setup
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf,/opt/nussknacker/conf/additional-configuration.conf"
+      # Batch adds 2 new processing types, each of them add MiniCluster for scenario testing purpose. Also batch components itself use MiniCluster.
+      # It increases memory footprint significantly
+      JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=500M -XX:MaxDirectMemorySize=200M"
     volumes:
+      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
+      - ../../e2e-tests/src/test/resources/batch-data-generation/transactions:/transactions
+      - ../../e2e-tests/src/test/resources/batch-data-generation:/scenario-examples/batch-data-generation
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
       - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
       - ../../e2e-tests/src/test/resources/loan-request:/scenario-examples/loan-request
       - ../../e2e-tests/src/test/resources/offer-customer-proposal-based-on-activity-event:/scenario-examples/offer-customer-proposal-based-on-activity-event
       - ../../e2e-tests/src/test/resources/rtm-client-near-pos:/scenario-examples/rtm-client-near-pos
+    deploy:
+      resources:
+        limits:
+          memory: 1300M
 
   flink-jobmanager:
     <<: *flink-with-postgres-driver
