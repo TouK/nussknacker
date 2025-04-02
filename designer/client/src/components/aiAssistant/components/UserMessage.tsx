@@ -3,7 +3,8 @@ import { styled } from "@mui/material";
 import { Box, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 
-import { CopyContent } from "./CopyContent";
+import { ActionsContainer, useHandleActions } from "./actions/ActionsContainer";
+import { CopyContent } from "./actions/CopyContent";
 
 const Container = styled(Box)(({ theme }) => ({
     display: "flex",
@@ -12,9 +13,6 @@ const Container = styled(Box)(({ theme }) => ({
     width: "100%",
     position: "relative",
     paddingBottom: theme.spacing(2),
-    "&:hover .copyIcon": {
-        display: "flex",
-    },
 }));
 
 const MessageBubble = styled(Box)(({ theme }) => ({
@@ -28,15 +26,20 @@ const MessageBubble = styled(Box)(({ theme }) => ({
 
 export const UserMessage = () => {
     const { content } = useMessage();
+    const { showActions, handleShowActions, handleHideActions } = useHandleActions();
 
     const messageText = useMemo(() => content.map((part) => part.text).join("\n"), [content]);
 
     return (
-        <Container>
+        <Container onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
             <MessageBubble>
-                <Typography sx={{ whiteSpace: "pre-line" }}>{messageText}</Typography>
+                <Typography variant={"body2"} sx={{ whiteSpace: "pre-line" }}>
+                    {messageText}
+                </Typography>
             </MessageBubble>
-            <CopyContent text={messageText} />
+            <ActionsContainer show={showActions}>
+                <CopyContent text={messageText} />
+            </ActionsContainer>
         </Container>
     );
 };

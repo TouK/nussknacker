@@ -21,7 +21,6 @@ const StyledAiAssistant = styled("div")(({ theme }) => ({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        overflowY: "auto",
     },
     ".aui-thread-viewport-footer": {
         marginTop: "auto",

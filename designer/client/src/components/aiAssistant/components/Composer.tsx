@@ -59,7 +59,7 @@ const adjustInputHeight = (textarea: HTMLTextAreaElement) => {
 };
 
 export const Composer = () => {
-    const { send, setText } = useComposerRuntime();
+    const { send, setText } = useComposerRuntime({ optional: true });
     const { scrollToBottom, provideBottomSpacer } = UseScrollToBottom();
 
     const [message, setMessage] = useState("");
