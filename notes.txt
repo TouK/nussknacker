@@ -12,3 +12,6 @@ pytanie:
 jak to dziala ze #input.field
 no bo to ewidentnie musi odpalac get na tym, no dobra
 jest ten jakis dziwny akcesor ktory szuka metody "get" po refleksji.
+
+dobra a teraz inna kwestia: czy da sie GenericRecord przerobic latwo na mape?
+cos tam jest, choc nie wiem czy to jest deep

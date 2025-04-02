@@ -15,6 +15,7 @@ class GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled: Bo
         val readerSchemaId = readerSchemaData.schemaIdOpt.getOrElse(
           throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data")
         )
+        // TODO_PAWEL widac, ze jest tutaj jakis specjalny support dla tego genericRecord
         new GenericRecordWithSchemaId(genericRecord, readerSchemaId, false)
       case _ => data
     }
