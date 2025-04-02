@@ -142,7 +142,7 @@ object PekkoRoutesFactory {
       },
     ).flatten
 
-    val customHttpServiceRoutes = customHttpServiceProviders.map {
+    val customHttpServiceRoutes = customHttpServiceProviders.collect {
       case (name, provider: PekkoCustomHttpServiceProvider) =>
         new RouteWithUser {
           override protected def securedRoute(implicit user: LoggedUser): Route =

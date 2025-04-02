@@ -10,7 +10,8 @@ import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProvider,
   CustomHttpServiceProviderFactory,
-  ProcessServiceBasedScenarioServiceAdapter
+  ProcessServiceBasedScenarioServiceAdapter,
+  TapirEndpointSupportAdapter
 }
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.factory.DomainServices
@@ -35,7 +36,8 @@ object CustomHttpServiceProvidersLoader {
         )
     }
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
-      new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService)
+      new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
+      new TapirEndpointSupportAdapter
     )
     customHttpServiceProviderFactories
       .map { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
