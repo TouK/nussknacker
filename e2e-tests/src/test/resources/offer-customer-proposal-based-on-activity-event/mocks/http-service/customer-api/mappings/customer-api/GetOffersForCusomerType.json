@@ -19,7 +19,7 @@
                 "headers": {
                     "Content-Type": "application/json"
                 },
-                "bodyFileName": "customer-api/responses/CustomerTypeOffers{{{pickRandom '0' '1' '2'}}}.json"
+                "bodyFileName": "customer-api/responses/CustomerTypeOffers.json"
             }
         }
     ]
