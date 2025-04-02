@@ -100,6 +100,7 @@ describe("Activities", () => {
 
         addAttachmentActivity("cypress/fixtures/testProcess.json");
         findActivity("Attachment");
+        cy.contains(/^show less/i).should("be.visible");
         makeScreenshot();
 
         // modify comment
