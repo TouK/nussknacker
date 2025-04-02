@@ -11,6 +11,8 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
+    volumes:
+      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
     environment:
       DISABLE_EMBEDDED_EXAMPLES: true
       NU_DESIGNER_ADDRESS: "nginx:8080"

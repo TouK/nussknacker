@@ -250,3 +250,5 @@ volumes:
     name: nussknacker_designer_data
   nussknacker_flink_data:
     name: nussknacker_flink_data
+  nussknacker_designer_shared_configuration:
+    name: nussknacker_designer_shared_configuration
