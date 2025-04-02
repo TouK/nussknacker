@@ -147,6 +147,7 @@
   * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
 * [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
 * [#7937](https://github.com/TouK/nussknacker/pull/7937) Data sample from Kafka Source as initial input for Ad-Hoc test
+* [#7864](https://github.com/TouK/nussknacker/pull/7864) Add forbidden hosts feature to http client configuration.
 
 ## 1.18
 
