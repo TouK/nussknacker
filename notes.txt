@@ -1,0 +1,7 @@
+
+to jest ta klasa
+org.apache.avro.generic.GenericRecord
+
+teraz pytanie czy nu powinien obsugiwac ja, czy na wstepie juz ja zamieniac na zwykla mape?
+
+kurcze, to co niby dziala ja sie pytam i jak to dziala

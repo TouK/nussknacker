@@ -36,6 +36,7 @@ class FinkExactlyOnceItSpec
       |}
       |""".stripMargin
 
+  // TODO_PAWEL jest ok moj test
   test("should read message from kafka and write message in transaction to kafka on checkpoint") {
     val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions", RecordSchemas)
     kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
@@ -69,6 +70,8 @@ class FinkExactlyOnceItSpec
 
       // TODO_PAWEL move to some dedicated test
       .buildSimpleVariable("someId", "someVarName", s"#input.![#this.key]".spel)
+//      .buildSimpleVariable("someId", "someVarName", s"#COLLECTION.merge(#input, {aaa: 5})".spel)
+//      .buildSimpleVariable("someId", "someVarName", s"#input.first".spel)
 
       .emptySink(
         "end",

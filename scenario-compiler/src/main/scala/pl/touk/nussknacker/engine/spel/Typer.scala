@@ -710,7 +710,9 @@ private[spel] class Typer(
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
           tc.runtimeObjType.klass.isArray =>
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
+    // TODO_PAWEL jest ok to jest miejsce ktore nie spodziewa sie tego generic czegos
     case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
+    // TODO_PAWEL jest ok only for test, not ok
       valid(
         Typed.record(
           Map(
