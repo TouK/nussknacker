@@ -49,7 +49,7 @@ const StyledAiAssistantButton = styled(Box)<{ isOpenedAiAssistantDialog: boolean
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: isOpenedAiAssistantDialog ? theme.zIndex.modal : theme.zIndex.modal + 1,
+        zIndex: isOpenedAiAssistantDialog ? theme.zIndex.modal : theme.zIndex.modal + 1, // In case of modal full screen we want to hide button to not overlap other elements
     };
 });
 
