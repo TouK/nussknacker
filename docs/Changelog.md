@@ -141,7 +141,7 @@
   Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
 * [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
 * [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
-* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Added Tapir variant of 'Custom HTTP Service' SPI
+* [#7871](https://github.com/TouK/nussknacker/pull/7871) Added Tapir variant of 'Custom HTTP Service' SPI
   * Use `TapirCustomHttpServiceProvider` to implement custom Tapir based HTTP services
   * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
 
