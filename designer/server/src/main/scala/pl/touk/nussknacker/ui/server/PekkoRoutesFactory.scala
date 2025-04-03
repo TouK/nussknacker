@@ -136,14 +136,13 @@ object PekkoRoutesFactory {
       },
     ).flatten
 
-    val customHttpServiceRoutes = customHttpServiceProviders.map {
-      case (name, provider: PekkoCustomHttpServiceProvider) =>
-        new RouteWithUser {
-          override protected def securedRoute(implicit user: LoggedUser): Route =
-            pathPrefix("custom" / name) {
-              provider.provideRouteWithUser(user)
-            }
-        }
+    val customHttpServiceRoutes = customHttpServiceProviders.map { case (name, provider) =>
+      new RouteWithUser {
+        override protected def securedRoute(implicit user: LoggedUser): Route =
+          pathPrefix("custom" / name) {
+            provider.provideRouteWithUser(user)
+          }
+      }
     }
 
     routes ++ optionalRoutes ++ customHttpServiceRoutes
