@@ -13,7 +13,6 @@ async function initializeChatStream(
     responseParts: string[];
     state: { isAborted: boolean; isFinished: boolean };
 }> {
-    // Send message and initialize variables
     const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0] as TextContentPart, abortSignal);
     const responseParts: string[] = [];
     const state = { isAborted: false, isFinished: false };
