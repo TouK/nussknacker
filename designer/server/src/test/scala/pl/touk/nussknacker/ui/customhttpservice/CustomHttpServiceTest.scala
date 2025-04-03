@@ -24,35 +24,35 @@ class CustomHttpServiceTest
   "For the Pekko based CustomHttpService" - {
     "when request send with authentication data" - {
       "should return 200 OK response" in {
-        val response1 = httpClient.send(
+        val response = httpClient.send(
           quickRequest
             .get(uri"$nuDesignerHttpAddress/api/custom/testProvider/testPathPart")
             .auth
             .basic("admin", "admin")
         )
-        response1.code shouldEqual StatusCode.Ok
-        response1.body shouldEqual "testResponse"
+        response.code shouldEqual StatusCode.Ok
+        response.body shouldEqual "testResponse"
       }
 
       "should return 200 OK response send to second CustomHttpService" in {
-        val response1 = httpClient.send(
+        val response = httpClient.send(
           quickRequest
             .get(uri"$nuDesignerHttpAddress/api/custom/secondTestProvider/testPathPart")
             .auth
             .basic("admin", "admin")
         )
-        response1.code shouldEqual StatusCode.Ok
-        response1.body shouldEqual "testResponse"
+        response.code shouldEqual StatusCode.Ok
+        response.body shouldEqual "testResponse"
       }
     }
 
     "when request send without authentication data" - {
       "should return 401 Unauthorized response" in {
-        val response1 = httpClient.send(
+        val response = httpClient.send(
           quickRequest.get(uri"$nuDesignerHttpAddress/api/custom/testProvider/testPathPart")
         )
-        response1.code shouldEqual StatusCode.Unauthorized
-        response1.body shouldEqual "The resource requires authentication, which was not supplied with the request"
+        response.code shouldEqual StatusCode.Unauthorized
+        response.body shouldEqual "The resource requires authentication, which was not supplied with the request"
       }
     }
   }
@@ -60,13 +60,51 @@ class CustomHttpServiceTest
   "For the Tapir based CustomHttpService" - {
     "when request send to secured endpoint with authentication data" - {
       "should return 200 OK response" in {
-        // TODO
+        val response = httpClient.send(
+          quickRequest
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .body("""{"message":"Hello"}""")
+            .auth
+            .basic("admin", "admin")
+        )
+        response.code shouldEqual StatusCode.Ok
+        response.body shouldEqual """{"message":"You send message: 'Hello''","username":"admin"}"""
+      }
+
+      "should return business error" in {
+        val response = httpClient.send(
+          quickRequest
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .body("""{"message":"Hello","returnBusinessError":true}""")
+            .auth
+            .basic("admin", "admin")
+        )
+        response.code shouldEqual StatusCode.UnprocessableEntity
+        response.body shouldEqual "Sample error"
+      }
+
+      "should return internal error" in {
+        val response = httpClient.send(
+          quickRequest
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .body("""{"message":"Hello","returnInternalError":true}""")
+            .auth
+            .basic("admin", "admin")
+        )
+        response.code shouldEqual StatusCode.InternalServerError
+        response.body shouldEqual "Internal error"
       }
     }
 
     "when request send to secured endpoint without authentication data" - {
       "should return 401 Unauthorized response" in {
-        // TODO
+        val response = httpClient.send(
+          quickRequest
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .body("""{"message":"Hello"}""")
+        )
+        response.code shouldEqual StatusCode.Unauthorized
+        response.body shouldEqual "Invalid value (missing)"
       }
     }
 
@@ -91,9 +129,9 @@ class CustomHttpServiceTest
         response.code shouldEqual StatusCode.Ok
         val customServicesPaths =
           response.body.rightValue.hcursor.downField("paths").keys.value.filter(_.contains("/api/custom"))
-        customServicesPaths should contain(
+        customServicesPaths should contain allOf (
           "/api/custom/tapirTestProvider/public",
-          // TODO: more
+          "/api/custom/tapirTestProvider/secured",
         )
       }
     }

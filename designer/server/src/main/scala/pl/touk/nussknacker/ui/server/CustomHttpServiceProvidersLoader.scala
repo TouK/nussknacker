@@ -16,10 +16,15 @@ import pl.touk.nussknacker.ui.customhttpservice.{
 }
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.factory.DomainServices
+import pl.touk.nussknacker.ui.security.api.AuthManager
 
 object CustomHttpServiceProvidersLoader {
 
-  def loadCustomHttpServiceProviders(designerConfig: DesignerConfig, domainServices: DomainServices)(
+  def loadCustomHttpServiceProviders(
+      designerConfig: DesignerConfig,
+      domainServices: DomainServices,
+      authManager: AuthManager
+  )(
       implicit ec: ExecutionContextWithIORuntime
   ): Resource[IO, CustomHttpServiceProviders] = {
     val customHttpServiceProviderFactories = Multiplicity(
@@ -38,7 +43,7 @@ object CustomHttpServiceProvidersLoader {
     }
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
-      new TapirEndpointSupportAdapter
+      new TapirEndpointSupportAdapter(authManager)
     )
     customHttpServiceProviderFactories
       .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
