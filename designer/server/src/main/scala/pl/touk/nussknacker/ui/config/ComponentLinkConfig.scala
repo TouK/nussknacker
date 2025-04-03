@@ -4,8 +4,8 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.component.ComponentLink
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 
 import java.net.URI
 

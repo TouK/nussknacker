@@ -119,7 +119,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   test("determine editor by config") {
     val fixedValuesEditor = FixedValuesParameterEditor(List(FixedExpressionValue("'expression'", "label")))
-    val config            = ParameterConfig(None, Some(List(fixedValuesEditor)), None, None, None)
+    val config            = ParameterConfig(None, Some(List(fixedValuesEditor)), None, None, None, None)
 
     EditorExtractor.extract(paramNotAnnotated, config) shouldBe List(fixedValuesEditor)
   }

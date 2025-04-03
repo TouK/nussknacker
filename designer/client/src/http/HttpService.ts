@@ -23,6 +23,7 @@ import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activit
 import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
 import { API_URL } from "../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import type { BackendNotification } from "../containers/Notifications";
@@ -593,6 +594,17 @@ class HttpService {
             .catch((error) =>
                 Promise.reject(
                     this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
+                ),
+            );
+    }
+
+    validateProcessVersion(processName: string, localVersion: number): Promise<AxiosResponse<ProcessVersionValidationResponse>> {
+        const data = { localVersion: localVersion };
+        return api
+            .post<ProcessVersionValidationResponse>(`/versionControl/${processName}/versionValidation`, data)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotValidateProcessVersion", "Cannot validate process version"), error),
                 ),
             );
     }

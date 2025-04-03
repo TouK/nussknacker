@@ -1,9 +1,11 @@
-import { alpha, createTheme, Palette, PaletteMode } from "@mui/material";
+import type { Palette, PaletteMode } from "@mui/material";
+import { alpha, createTheme } from "@mui/material";
 import { deepmerge } from "@mui/utils";
-import { Dispatch, SetStateAction } from "react";
-import { NodeType } from "../../types";
-import { WindowKind } from "../../windowManager/WindowKind";
-import { EnvironmentTagColor } from "../EnvironmentTag";
+import type { Dispatch, SetStateAction } from "react";
+
+import type { NodeType } from "../../types";
+import { WindowKind } from "../../windowManager";
+import type { EnvironmentTagColor } from "../EnvironmentTag";
 import { darkModePalette } from "./darkModePalette";
 import { blendDarken, blendLighten } from "./helpers";
 import { lightModePalette } from "./lightModePalette";
@@ -192,6 +194,9 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                                         maxWidth: "20em",
                                         overflowWrap: "anywhere",
                                         marginTop: "9px",
+                                    },
+                                    ".MuiFormLabel-root:has(+ .MuiBox-root [role='tablist'])": {
+                                        marginTop: "27px",
                                     },
                                 };
                             }

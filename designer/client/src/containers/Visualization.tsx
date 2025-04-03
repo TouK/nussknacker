@@ -14,6 +14,7 @@ import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
+import { usePortal } from "../components/graph/node-modal/io/usePortal";
 import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import SelectionContextProvider from "../components/graph/SelectionContextProvider";
 import type { Scenario } from "../components/Process/types";
@@ -163,6 +164,7 @@ function Visualization() {
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
     const { windows } = useWindowManager();
+    const [Portal, portalRef] = usePortal();
 
     return (
         <DndProvider options={HTML5toTouch}>
@@ -174,12 +176,13 @@ function Visualization() {
                 <GraphProvider graph={getGraphInstance}>
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
-                        <Toolbars isReady={dataResolved}>
+                        <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
                             <ScenarioDescription />
                         </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>
             </GraphPage>
+            <div data-testid="toolbar-portal" ref={portalRef} />
         </DndProvider>
     );
 }

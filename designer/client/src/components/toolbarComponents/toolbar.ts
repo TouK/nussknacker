@@ -1,9 +1,12 @@
-import { ReactChild } from "react";
-import { ToolbarsSide } from "../../reducers/toolbars";
+import type { ReactElement } from "react";
 
-export interface Toolbar {
+import type { ToolbarsSide } from "../../reducers/toolbars";
+import type { ToolbarConfig } from "../toolbarSettings/types";
+
+export interface Toolbar extends ToolbarConfig {
     id: string;
-    component: ReactChild;
+    component: ReactElement;
+    horizontalComponent: ReactElement | null;
     isHidden?: boolean;
     defaultSide?: ToolbarsSide;
 }

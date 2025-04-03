@@ -33,10 +33,8 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
         service.TransformationStep(
           List(
             DatabaseQueryEnricher.resultStrategyParamName -> eagerValueParameter(SingleResultStrategy.name),
-            DatabaseQueryEnricher.queryParamName -> eagerValueParameter(
-              TemplateEvaluationResult(List(RenderedLiteral("select from")))
-            ),
-            DatabaseQueryEnricher.cacheTTLParamName -> eagerValueParameter(Duration.ofMinutes(1)),
+            DatabaseQueryEnricher.queryParamName          -> eagerValueParameter("select from"),
+            DatabaseQueryEnricher.cacheTTLParamName       -> eagerValueParameter(Duration.ofMinutes(1)),
           ),
           None
         )
@@ -65,10 +63,8 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
         service.TransformationStep(
           List(
             DatabaseQueryEnricher.resultStrategyParamName -> eagerValueParameter(ResultSetStrategy.name),
-            DatabaseQueryEnricher.queryParamName -> eagerValueParameter(
-              TemplateEvaluationResult(List(RenderedLiteral("select * from persons")))
-            ),
-            DatabaseQueryEnricher.cacheTTLParamName -> eagerValueParameter(Duration.ofMinutes(1)),
+            DatabaseQueryEnricher.queryParamName          -> eagerValueParameter("select * from persons"),
+            DatabaseQueryEnricher.cacheTTLParamName       -> eagerValueParameter(Duration.ofMinutes(1)),
           ),
           None
         )

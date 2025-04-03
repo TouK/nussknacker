@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ParameterConfig
 }
+import pl.touk.nussknacker.engine.api.definition.ParameterCategory
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object ComponentsUiConfigParser {
@@ -22,6 +23,9 @@ object ComponentsUiConfigParser {
 
   private implicit val componentsUiComponentIdReader: ValueReader[DesignerWideComponentId] =
     ValueReader[String].map(DesignerWideComponentId.apply)
+
+  private implicit val parameterCategoryReader: ValueReader[ParameterCategory] =
+    ValueReader[String].map(name => ParameterCategory.withNameInsensitive(name))
 
   implicit val componentsGroupNameReader: ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] =
     ValueReader[Map[String, Option[String]]]

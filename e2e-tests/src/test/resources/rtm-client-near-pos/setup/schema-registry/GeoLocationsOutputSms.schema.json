@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "description": "A schema for a topic used to send smses.",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "required": [
+    "msisdn",
+    "content"
+  ],
+  "properties": {
+    "msisdn": {
+      "type": "string",
+      "description": "The phone number of the client."
+    },
+    "content": {
+      "type": "string",
+      "description": "The content or message to be associated with the email."
+    }
+  }
+}

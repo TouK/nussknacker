@@ -1,0 +1,660 @@
+{
+  "metaData": {
+    "id": "RTMClientNearPOS",
+    "additionalFields": {
+      "description": null,
+      "properties": {
+        "parallelism": "1",
+        "spillStateToDisk": "true",
+        "useAsyncInterpretation": "",
+        "checkpointIntervalInSeconds": ""
+      },
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "id": "stream of given clients geo location",
+      "ref": {
+        "typ": "kafka",
+        "parameters": [
+          {
+            "name": "Topic",
+            "expression": {
+              "language": "spel",
+              "expression": "'GeoLocations'"
+            }
+          },
+          {
+            "name": "Schema version",
+            "expression": {
+              "language": "spel",
+              "expression": "'latest'"
+            }
+          }
+        ]
+      },
+      "additionalFields": {
+        "description": "geo locations stream",
+        "layoutData": {
+          "x": 360,
+          "y": 0
+        }
+      },
+      "type": "Source"
+    },
+    {
+      "id": "enrich with contact history data",
+      "service": {
+        "id": "customers-data-query-enricher",
+        "parameters": [
+          {
+            "name": "Result strategy",
+            "expression": {
+              "language": "spel",
+              "expression": "'Result set'"
+            }
+          },
+          {
+            "name": "Query",
+            "expression": {
+              "language": "spelTemplate",
+              "expression": "select 'x' from contact_history where client_id = ? and event_time > NOW() - INTERVAL '5 minutes'"
+            }
+          },
+          {
+            "name": "Cache TTL",
+            "expression": {
+              "language": "spel",
+              "expression": "T(java.time.Duration).parse('PT1M')"
+            }
+          },
+          {
+            "name": "arg1",
+            "expression": {
+              "language": "spel",
+              "expression": "#input.clientId"
+            }
+          }
+        ]
+      },
+      "output": "contact_history_entry",
+      "additionalFields": {
+        "description": "Wer are fetching given client contact history from the last X days.\nFor the purpose of example we are fetching entries from the last 5 minutes instead of days or longer period.",
+        "layoutData": {
+          "x": 360,
+          "y": 180
+        }
+      },
+      "type": "Enricher"
+    },
+    {
+      "nextFalse": [
+      ],
+      "id": "client is not contacted in last X Days",
+      "expression": {
+        "language": "spel",
+        "expression": "#contact_history_entry.empty"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": "The main goal is not to send too many notifications to the given client.",
+        "layoutData": {
+          "x": 360,
+          "y": 360
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "id": "enrich with data from list of blocked clients",
+      "service": {
+        "id": "customers-data-lookup-enricher",
+        "parameters": [
+          {
+            "name": "Table",
+            "expression": {
+              "language": "spel",
+              "expression": "'blocked_list'"
+            }
+          },
+          {
+            "name": "Cache TTL",
+            "expression": {
+              "language": "spel",
+              "expression": "T(java.time.Duration).parse('PT1M')"
+            }
+          },
+          {
+            "name": "Key column",
+            "expression": {
+              "language": "spel",
+              "expression": "'client_id'"
+            }
+          },
+          {
+            "name": "Key value",
+            "expression": {
+              "language": "spel",
+              "expression": "#input.clientId"
+            }
+          }
+        ]
+      },
+      "output": "is_client_on_blocked_list",
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 360,
+          "y": 540
+        }
+      },
+      "type": "Enricher"
+    },
+    {
+      "nextFalse": [
+      ],
+      "id": "client is not blocked",
+      "expression": {
+        "language": "spel",
+        "expression": "#is_client_on_blocked_list == null"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 360,
+          "y": 720
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "id": "enrich with client data",
+      "service": {
+        "id": "customers-data-lookup-enricher",
+        "parameters": [
+          {
+            "name": "Table",
+            "expression": {
+              "language": "spel",
+              "expression": "'client'"
+            }
+          },
+          {
+            "name": "Cache TTL",
+            "expression": {
+              "language": "spel",
+              "expression": "T(java.time.Duration).parse('PT5M')"
+            }
+          },
+          {
+            "name": "Key column",
+            "expression": {
+              "language": "spel",
+              "expression": "'id'"
+            }
+          },
+          {
+            "name": "Key value",
+            "expression": {
+              "language": "spel",
+              "expression": "#input.clientId"
+            }
+          }
+        ]
+      },
+      "output": "clientData",
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 360,
+          "y": 900
+        }
+      },
+      "type": "Enricher"
+    },
+    {
+      "id": "extract consents from client data",
+      "varName": "consents",
+      "value": {
+        "language": "spel",
+        "expression": "#clientData.consents != null ? #UTIL.split(#clientData.consents, '_') : {}"
+      },
+      "additionalFields": {
+        "description": "We are transforming and then assigning consents to variable consents",
+        "layoutData": {
+          "x": 360,
+          "y": 1080
+        }
+      },
+      "type": "Variable"
+    },
+    {
+      "nextFalse": [
+      ],
+      "id": "client has marketing consents",
+      "expression": {
+        "language": "spel",
+        "expression": "NOT #consents.isEmpty"
+      },
+      "isDisabled": false,
+      "additionalFields": {
+        "description": "#clientData?.consents?",
+        "layoutData": {
+          "x": 360,
+          "y": 1260
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "id": "enrich with POS info",
+      "service": {
+        "id": "pos-data-lookup-enricher",
+        "parameters": [
+          {
+            "name": "Table",
+            "expression": {
+              "language": "spel",
+              "expression": "'pos'"
+            }
+          },
+          {
+            "name": "Cache TTL",
+            "expression": {
+              "language": "spel",
+              "expression": "T(java.time.Duration).parse('PT10M')"
+            }
+          },
+          {
+            "name": "Key column",
+            "expression": {
+              "language": "spel",
+              "expression": "'id'"
+            }
+          },
+          {
+            "name": "Key value",
+            "expression": {
+              "language": "spel",
+              "expression": "#clientData.pos_id"
+            }
+          }
+        ]
+      },
+      "output": "pos_data",
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 360,
+          "y": 1440
+        }
+      },
+      "type": "Enricher"
+    },
+    {
+      "nextFalse": [
+      ],
+      "id": "POS is currently opened",
+      "expression": {
+        "language": "spel",
+        "expression": "#pos_data != null AND #pos_data.open_hour != null AND #pos_data.close_hour != null AND #DATE.isBetween(#DATE.nowAtZone('Europe/Warsaw').toLocalTime, #pos_data.open_hour, #pos_data.close_hour)"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": "POS open weekdays should be checked too",
+        "layoutData": {
+          "x": 360,
+          "y": 1620
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "id": "Count when distance to POS is lower than 1 km",
+      "outputVar": "agg_out",
+      "nodeType": "aggregate-session",
+      "parameters": [
+        {
+          "name": "groupBy",
+          "expression": {
+            "language": "spel",
+            "expression": "#input.clientId + ''"
+          }
+        },
+        {
+          "name": "aggregator",
+          "expression": {
+            "language": "spel",
+            "expression": "#AGG.countWhen"
+          }
+        },
+        {
+          "name": "aggregateBy",
+          "expression": {
+            "language": "spel",
+            "expression": "#GEO.distanceInKm(#input.geo.lat, #input.geo.lon, #pos_data.location_lat, #pos_data.location_lon) <= 1"
+          }
+        },
+        {
+          "name": "endSessionCondition",
+          "expression": {
+            "language": "spel",
+            "expression": "false"
+          }
+        },
+        {
+          "name": "sessionTimeout",
+          "expression": {
+            "language": "spel",
+            "expression": "T(java.time.Duration).parse('PT10S')"
+          }
+        },
+        {
+          "name": "emitWhen",
+          "expression": {
+            "language": "spel",
+            "expression": "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
+          }
+        }
+      ],
+      "additionalFields": {
+        "description": "We are counting events when a customer is within one kilometre of the point of sale assigned to that customer. For the purpose of the example we set the timeout to 10 seconds, in the real scenario the value should be higher.",
+        "layoutData": {
+          "x": 360,
+          "y": 1800
+        }
+      },
+      "type": "CustomNode"
+    },
+    {
+      "nextFalse": [
+      ],
+      "id": "2 events received with location near POS from session of X time",
+      "expression": {
+        "language": "spel",
+        "expression": "#agg_out == 2"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": "If we receive at least 2 events where the customer location meets our requirements within 10 seconds, we process further.",
+        "layoutData": {
+          "x": 360,
+          "y": 1980
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "id": "decisions priorities and notification content by consent and client type",
+      "service": {
+        "id": "decision-table",
+        "parameters": [
+          {
+            "name": "Decision Table",
+            "expression": {
+              "language": "tabularDataDefinition",
+              "expression": "{\n  \"rows\": [\n    [\n      \"SMS\",\n      \"INDIVIDUAL\",\n      \"3\",\n      \"You are close to our shop come and see new offers!\"\n    ],\n    [\n      \"EMAIL\",\n      \"INDIVIDUAL\",\n      \"1\",\n      \"You are close to our shop come and see new offers!\"\n    ],\n    [\n      \"PUSH\",\n      \"INDIVIDUAL\",\n      \"2\",\n      \"You are close to our shop come and see new offers!\"\n    ],\n    [\n      \"SMS\",\n      \"BUSINESS\",\n      \"2\",\n      \"You are close to our shop come and see new business offers!\"\n    ],\n    [\n      \"EMAIL\",\n      \"BUSINESS\",\n      \"3\",\n      \"You are close to our shop come and see new business offers!\"\n    ],\n    [\n      \"PUSH\",\n      \"BUSINESS\",\n      \"1\",\n      \"You are close to our shop come and see new business offers!\"\n    ]\n  ],\n  \"columns\": [\n    {\n      \"name\": \"Consent\",\n      \"type\": \"java.lang.String\"\n    },\n    {\n      \"name\": \"Client type\",\n      \"type\": \"java.lang.String\"\n    },\n    {\n      \"name\": \"Priority\",\n      \"type\": \"java.lang.Integer\"\n    },\n    {\n      \"name\": \"Notification content\",\n      \"type\": \"java.lang.String\"\n    }\n  ]\n}"
+            }
+          },
+          {
+            "name": "Match condition",
+            "expression": {
+              "language": "spel",
+              "expression": "#consents.^[#this == #ROW.Consent] != null AND #clientData.client_type == #ROW['Client type']"
+            }
+          }
+        ]
+      },
+      "output": "decisionsWithPrioritiesAndNotificationContent",
+      "additionalFields": {
+        "description": "In the decision table, we define the business rules that we are trying to match with the 'matching condition' and then pass the matched decisions on.",
+        "layoutData": {
+          "x": 360,
+          "y": 2160
+        }
+      },
+      "type": "Enricher"
+    },
+    {
+      "id": "choose best decision",
+      "varName": "decision",
+      "value": {
+        "language": "spel",
+        "expression": "#decisionsWithPrioritiesAndNotificationContent?.^[#this.Priority == 3] ?: (#decisionsWithPrioritiesAndNotificationContent?.^[#this.Priority == 2] ?: (#decisionsWithPrioritiesAndNotificationContent?.^[#this.Priority == 1]))"
+      },
+      "additionalFields": {
+        "description": "We can apply various business rules to choose best decisions here",
+        "layoutData": {
+          "x": 360,
+          "y": 2340
+        }
+      },
+      "type": "Variable"
+    },
+    {
+      "defaultNext": [
+      ],
+      "nexts": [
+        {
+          "expression": {
+            "language": "spel",
+            "expression": "#decision?.Consent == \"SMS\""
+          },
+          "nodes": [
+            {
+              "id": "SMS",
+              "ref": {
+                "typ": "kafka",
+                "parameters": [
+                  {
+                    "name": "Topic",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "'GeoLocationsOutputSms'"
+                    }
+                  },
+                  {
+                    "name": "Schema version",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "'latest'"
+                    }
+                  },
+                  {
+                    "name": "Key",
+                    "expression": {
+                      "language": "spel",
+                      "expression": ""
+                    }
+                  },
+                  {
+                    "name": "Raw editor",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "false"
+                    }
+                  },
+                  {
+                    "name": "msisdn",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "#clientData.msisdn"
+                    }
+                  },
+                  {
+                    "name": "content",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "#decision['Notification content']"
+                    }
+                  }
+                ]
+              },
+              "endResult": null,
+              "isDisabled": null,
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": 0,
+                  "y": 2700
+                }
+              },
+              "type": "Sink"
+            }
+          ]
+        },
+        {
+          "expression": {
+            "language": "spel",
+            "expression": "#decision?.Consent == \"EMAIL\""
+          },
+          "nodes": [
+            {
+              "id": "EMAIL",
+              "ref": {
+                "typ": "kafka",
+                "parameters": [
+                  {
+                    "name": "Topic",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "'GeoLocationsOutputEmail'"
+                    }
+                  },
+                  {
+                    "name": "Schema version",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "'latest'"
+                    }
+                  },
+                  {
+                    "name": "Key",
+                    "expression": {
+                      "language": "spel",
+                      "expression": ""
+                    }
+                  },
+                  {
+                    "name": "Raw editor",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "false"
+                    }
+                  },
+                  {
+                    "name": "email",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "#clientData.email"
+                    }
+                  },
+                  {
+                    "name": "content",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "#decision['Notification content']"
+                    }
+                  }
+                ]
+              },
+              "endResult": null,
+              "isDisabled": null,
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": 360,
+                  "y": 2700
+                }
+              },
+              "type": "Sink"
+            }
+          ]
+        },
+        {
+          "expression": {
+            "language": "spel",
+            "expression": "#decision?.Consent == 'PUSH'"
+          },
+          "nodes": [
+            {
+              "id": "PUSH",
+              "ref": {
+                "typ": "kafka",
+                "parameters": [
+                  {
+                    "name": "Topic",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "'GeoLocationsOutputPush'"
+                    }
+                  },
+                  {
+                    "name": "Schema version",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "'latest'"
+                    }
+                  },
+                  {
+                    "name": "Key",
+                    "expression": {
+                      "language": "spel",
+                      "expression": ""
+                    }
+                  },
+                  {
+                    "name": "Raw editor",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "false"
+                    }
+                  },
+                  {
+                    "name": "msisdn",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "#clientData.msisdn"
+                    }
+                  },
+                  {
+                    "name": "content",
+                    "expression": {
+                      "language": "spel",
+                      "expression": "#decision['Notification content']"
+                    }
+                  }
+                ]
+              },
+              "endResult": null,
+              "isDisabled": null,
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": 720,
+                  "y": 2700
+                }
+              },
+              "type": "Sink"
+            }
+          ]
+        }
+      ],
+      "id": "split by notification type",
+      "expression": null,
+      "exprVal": null,
+      "additionalFields": {
+        "description": "We direct the results to the appropriate topic",
+        "layoutData": {
+          "x": 360,
+          "y": 2520
+        }
+      },
+      "type": "Switch"
+    }
+  ],
+  "additionalBranches": [
+  ]
+}

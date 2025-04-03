@@ -1,9 +1,12 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { PropsWithChildren, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { PromptContent, WindowKind } from "../../windowManager";
 import { Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { PropsWithChildren } from "react";
+import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
+import type { WindowKind } from "../../windowManager";
+import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export interface ConfirmDialogData {
@@ -12,6 +15,7 @@ export interface ConfirmDialogData {
     denyText?: string;
     //TODO: get rid of callbacks in store
     onConfirmCallback: (confirmed: boolean) => void;
+    width?: number;
 }
 
 export function GenericConfirmDialog({

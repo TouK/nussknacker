@@ -135,15 +135,13 @@ class ProcessesResources(
             }
           } ~ (put & canWrite(processId)) {
             entity(as[UpdateScenarioCommand]) { updateCommand =>
-              canOverrideUsername(processId.id, updateCommand.forwardedUserName)(ec, user) {
-                complete {
-                  processService
-                    .updateProcess(processId, updateCommand)
-                    .withSideEffect(response =>
-                      response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
-                    )
-                    .map(_.validationResult)
-                }
+              complete {
+                processService
+                  .updateProcess(processId, updateCommand)
+                  .withSideEffect(response =>
+                    response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+                  )
+                  .map(_.validationResult)
               }
             }
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {

@@ -1,9 +1,10 @@
-import { ModuleUrl } from "@touk/federated-component";
+import type { ModuleUrl } from "@touk/federated-component";
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
@@ -12,7 +13,7 @@ import { getProcessDefinitionData } from "../../../reducers/selectors/processDef
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
 

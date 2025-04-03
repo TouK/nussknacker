@@ -1,0 +1,10 @@
+{
+    "id": "111",
+    "customerId": "{{request.path.[1]}}",
+    "customerType": "{{{pickRandom 'Freemium' 'Regular' 'VIP'}}}",
+    "customerName": "{{random 'Name.fullName'}}",
+    "customerMsisdn": "{{random 'PhoneNumber.phoneNumber'}}",
+    "customerAge": 21,
+    "customerSex": "{{{pickRandom 'Male' 'Female' 'N/A'}}}",
+    "isPremiumCustomer": {{random 'Bool.bool'}}
+}

@@ -140,11 +140,10 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   ): ContextTransformationDefinition = {
     case TransformationStep(
           (`resultStrategyParamName`, DefinedEagerParameter(strategyName: String, _)) ::
-          (`queryParamName`, DefinedEagerParameter(query: TemplateEvaluationResult, _)) ::
+          (`queryParamName`, DefinedEagerParameter(renderedQuery: String, _)) ::
           (`cacheTTLParamName`, _) :: Nil,
           None
         ) =>
-      val renderedQuery = query.renderedTemplate
       if (renderedQuery.isEmpty) {
         FinalResults(context, errors = CustomNodeError("Query is missing", Some(queryParamName)) :: Nil, state = None)
       } else {

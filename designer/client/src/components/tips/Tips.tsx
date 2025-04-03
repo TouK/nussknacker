@@ -3,12 +3,13 @@ import React, { useCallback } from "react";
 import { Scrollbars } from "react-custom-scrollbars";
 import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
+
 import ProcessUtils from "../../common/ProcessUtils";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
-import { NodeType } from "../../types";
+import type { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";
-import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
+import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import Errors from "./error/Errors";
 import { TipPanelStyled } from "./Styled";

@@ -1,13 +1,15 @@
-import React, { PropsWithChildren, useMemo } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useMemo } from "react";
+
 import ProcessUtils from "../../../common/ProcessUtils";
-import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
+import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
 import { AggregateParametersList } from "./aggregateParametersList";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { isAggregate } from "./isAggregate";
 import { NodeField } from "./NodeField";
-import { ParametersList } from "./parametersList";
+import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 export type CustomNodeProps = {
     errors: NodeValidationError[];
@@ -41,7 +43,7 @@ export function CustomNode({
     );
 
     const ParametersComponent = useMemo(() => {
-        return isAggregate(node) ? AggregateParametersList : ParametersList;
+        return isAggregate(node) ? AggregateParametersList : ParametersListAdvanced;
     }, [node]);
 
     return (
@@ -80,15 +82,16 @@ export function CustomNode({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `parameters[${index}]`}
-            />
-            <DescriptionField
-                node={node}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            >
+                <DescriptionField
+                    node={node}
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    errors={errors}
+                />
+            </ParametersComponent>
         </>
     );
 }

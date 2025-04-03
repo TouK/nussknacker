@@ -39,6 +39,8 @@ const reducer: Reducer<UserSettings> = (
             return action.settings;
         case "TOGGLE_SETTINGS":
             return action.settings.reduce((value, key) => ({ ...value, [key]: !state[key] }), state);
+        case "RESET_TOOLBARS":
+            return { ...state, "debug.userSettingsVisible": isDev };
         default:
             return state;
     }

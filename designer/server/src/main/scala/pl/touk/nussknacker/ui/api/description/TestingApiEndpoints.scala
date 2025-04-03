@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api.description
 
 import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -12,7 +13,12 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationErrors
+}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
@@ -21,6 +27,7 @@ import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{noScenarioErro
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
 import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError.{
+  ScenarioGraphValidationError,
   TooManyCharactersGenerated,
   TooManySamplesRequested
 }
@@ -30,7 +37,6 @@ import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTes
 }
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.model.StatusCode.Ok
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
@@ -225,7 +231,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
                 )
               )
           ),
-          oneOfVariantFromMatchType[BadRequestTestingError](
+          oneOfVariant[BadRequestTestingError](
             BadRequest,
             plainBody[BadRequestTestingError]
               .examples(
@@ -237,6 +243,27 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
                   Example.of(
                     summary = Some("Too many samples requested"),
                     value = TooManySamplesRequested(maxSamples = 1000)
+                  ),
+                  Example.of(
+                    summary = Some("Scenario validation error"),
+                    value = ScenarioGraphValidationError(
+                      ValidationErrors(
+                        invalidNodes = Map(
+                          "source" -> List(
+                            PrettyValidationErrors.formatErrorMessage(
+                              ExpressionParserCompilationError(
+                                message = "Bad expression",
+                                paramName = None,
+                                originalExpr = "",
+                                details = None
+                              )(NodeId("source"))
+                            )
+                          )
+                        ),
+                        globalErrors = List.empty,
+                        processPropertiesErrors = List.empty
+                      )
+                    )
                   )
                 )
               )

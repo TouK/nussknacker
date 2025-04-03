@@ -32,7 +32,6 @@
         "eventsource-parser": "3.0.1",
         "file-saver": "2.0.5",
         "flattenizer": "1.1.1",
-        "humanize-string": "3.0.0",
         "i18next": "23.2.7",
         "i18next-browser-languagedetector": "7.1.0",
         "i18next-xhr-backend": "3.2.2",

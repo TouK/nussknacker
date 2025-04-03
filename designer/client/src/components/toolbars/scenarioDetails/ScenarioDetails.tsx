@@ -2,17 +2,22 @@ import i18next from "i18next";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
 import { SwitchTransition } from "react-transition-group";
+
 import BatchIcon from "../../../assets/img/batch.svg";
 import RequestResponseIcon from "../../../assets/img/request-response.svg";
 import StreamingIcon from "../../../assets/img/streaming.svg";
 import { ProcessingMode } from "../../../http/HttpService";
-import { RootState } from "../../../reducers";
+import type { RootState } from "../../../reducers";
 import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { getLoggedUser } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
+import { CategoryDetails } from "./CategoryDetails";
+import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
 import {
     PanelScenarioDetails,
     PanelScenarioDetailsIcon,
@@ -20,11 +25,7 @@ import {
     ProcessRename,
     ScenarioDetailsItemWrapper,
 } from "./ScenarioDetailsComponents";
-import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
-import { CategoryDetails } from "./CategoryDetails";
 import { ScenarioLabels } from "./ScenarioLabels";
-import { getLoggedUser } from "../../../reducers/selectors/settings";
-import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
 
 const ScenarioDetails = memo((props: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));

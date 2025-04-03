@@ -19,6 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7568](https://github.com/TouK/nussknacker/pull/7568) The `process-json` button in `processToolbarConfig` was renamed to `process-export`
 * [#7590](https://github.com/TouK/nussknacker/pull/7590) All `akka.*` configuration options and `AKKA_*` and Akka environment
   variables were replaced with their `pekko.*` and `PEKKO_*` counterparts - it's enough to do a quick search and replace
+* [#7693](https://github.com/TouK/nussknacker/pull/7693) Configuration entry `secondaryEnvironment.remoteConfig.uri` is moved to `secondaryEnvironment.uri`.
 
 ### REST API changes
 
@@ -29,6 +30,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Deploy and cancel http request requires valid json in request body (see `DeployRequest` and `CancelRequest`) instead of plain text, e.g. `{"comment": "example text"}`.
     * For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "ToLatest"}}}`.
 * [#7658](https://github.com/TouK/nussknacker/pull/7658) `/app/processingtype/reload` endpoint doesn't reload Deployment Managers
+* [#7693](https://github.com/TouK/nussknacker/pull/7693) Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. To provide username use impersonation mechanism.
 
 ### Code API changes
 
@@ -113,6 +115,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Renamed a `SimpleEditor` to the `Editor` in components API.
     * For now on, you can add multiple editors on a single param. The first editor annotation is treated as a default
       editor.
+* [#7711](https://github.com/TouK/nussknacker/pull/7711)
+  * `TypingResult` API changes - `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
 
 ### Other changes
 
