@@ -154,6 +154,6 @@ class TapirTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvide
       config: Config,
       services: NussknackerServicesForCustomHttpService
   )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
-    Resource.pure(new TestTapirCustomHttpServiceProvider(services.tapirAuthService))
+    Resource.pure(new TestTapirCustomHttpServiceProvider(services.tapirEndpointSupport))
 
 }
