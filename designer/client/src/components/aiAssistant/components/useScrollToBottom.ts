@@ -24,7 +24,7 @@ export const UseScrollToBottom = () => {
         if (scrollContainer && !document.getElementById("bottom-spacer") && scrollContainer.scrollHeight > scrollContainer.clientHeight) {
             const spacer = document.createElement("div");
             spacer.id = "bottom-spacer";
-            spacer.style.height = `${scrollContainer.clientHeight - 300}px`;
+            spacer.style.height = `${Math.max(scrollContainer.clientHeight - 300, 0)}px`;
             spacer.style.width = "100%";
             scrollContainer.appendChild(spacer);
         }
