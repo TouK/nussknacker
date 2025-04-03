@@ -1,9 +1,12 @@
 import { Box, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
 import React, { useCallback } from "react";
+import { useSelector } from "react-redux";
 
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
+import { useUserSettings } from "../../../common/userSettings";
 import { blendDarken } from "../../../containers/theme/helpers";
+import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { useWindows, WindowKind } from "../../../windowManager";
 
 function convertViewportUnitToPixels(unitString: string): number {
@@ -34,6 +37,8 @@ export const AI_ASSISTANT_MODAL_ID = "AI_ASSISTANT";
 export const AiAssistantButton = () => {
     const { open } = useWindows();
     const { windows, close } = useWindowManager();
+    const [userSettings] = useUserSettings();
+    const isCloud = useSelector(isCloudInstance);
 
     const handleClick = useCallback(() => {
         const openedAiAssistantDialog = windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID);
@@ -59,6 +64,10 @@ export const AiAssistantButton = () => {
         }
     }, [close, open, windows]);
 
+    if (!isCloud || !userSettings["cloud.showAiAssistant"]) {
+        return null;
+    }
+
     return (
         <Box
             id={"ai-assistant-button"}
@@ -78,6 +87,7 @@ export const AiAssistantButton = () => {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
+                zIndex: theme.zIndex.modal + 1,
             })}
         >
             <NuIcon />
