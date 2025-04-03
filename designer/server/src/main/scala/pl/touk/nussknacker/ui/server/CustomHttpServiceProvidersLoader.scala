@@ -25,22 +25,42 @@ object CustomHttpServiceProvidersLoader {
       domainServices: DomainServices,
       authManager: AuthManager
   )(
-      implicit ec: ExecutionContextWithIORuntime
-  ): Resource[IO, CustomHttpServiceProviders] = {
-    val customHttpServiceProviderFactories = Multiplicity(
-      ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
-    ) match {
-      case Empty() =>
-        List.empty[CustomHttpServiceProviderFactory]
-      case One(providerFactory) =>
-        List(providerFactory)
-      case Many(moreThanOne) if moreThanOne.map(_.name).distinct.size == moreThanOne.size =>
-        moreThanOne
-      case Many(moreThanOne) =>
-        throw new IllegalArgumentException(
-          s"CustomHttpServiceProviderFactory instances with conflicting names found: $moreThanOne"
-        )
+      implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
+  ): Resource[IO, CustomHttpServiceProviders] = for {
+    providerFactories <- Resource.eval(loadHttpServiceProviderFactories)
+    customHttpServiceProviders <- createHttpServiceProviders(
+      providerFactories,
+      designerConfig,
+      domainServices,
+      authManager
+    )
+  } yield customHttpServiceProviders
+
+  private def loadHttpServiceProviderFactories: IO[List[CustomHttpServiceProviderFactory]] = {
+    IO {
+      Multiplicity(
+        ScalaServiceLoader.load[CustomHttpServiceProviderFactory](getClass.getClassLoader)
+      ) match {
+        case Empty() =>
+          List.empty[CustomHttpServiceProviderFactory]
+        case One(providerFactory) =>
+          List(providerFactory)
+        case Many(moreThanOne) if moreThanOne.map(_.name).distinct.size == moreThanOne.size =>
+          moreThanOne
+        case Many(moreThanOne) =>
+          throw new IllegalArgumentException(
+            s"CustomHttpServiceProviderFactory instances with conflicting names found: $moreThanOne"
+          )
+      }
     }
+  }
+
+  private def createHttpServiceProviders(
+      customHttpServiceProviderFactories: List[CustomHttpServiceProviderFactory],
+      designerConfig: DesignerConfig,
+      domainServices: DomainServices,
+      authManager: AuthManager
+  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
       new TapirEndpointSupportAdapter(authManager)
