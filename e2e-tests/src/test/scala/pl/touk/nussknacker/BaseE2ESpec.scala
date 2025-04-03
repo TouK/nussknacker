@@ -28,7 +28,6 @@ object BaseE2ESpec extends LazyLogging {
       nussknackerImageVersion = BuildInfo.version,
       dockerComposeTweakFiles = List(
         new JFile(Resource.getUrl("bootstrap-setup-scenarios.override.yml").toURI),
-        new JFile(Resource.getUrl("batch-nu-designer.override.yml").toURI),
         new JFile(Resource.getUrl("debuggable-nu-designer.override.yml").toURI)
       )
     )

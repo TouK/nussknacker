@@ -1,7 +1,54 @@
+# We need to add postgres jdbc driver to the Flink container in order to use DB integrations in example scenarios
+x-flink-service-with-postgres-driver: &flink-with-postgres-driver
+  build:
+    context: ./flink/
+    dockerfile: FlinkWithPostgresDriverDockerfile
+    args:
+      FLINK_VERSION: "1.19.2-scala_2.12-java11"
+
 services:
+
+  designer:
+    environment:
+      EXAMPLE_SCENARIOS_LIBRARY_SERVICE_NAME: bootstrap-setup
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf,/opt/nussknacker/conf/batch-customizations.conf,/opt/nussknacker/conf/additional-configuration.conf"
+      # Batch adds 2 new processing types, each of them add MiniCluster for scenario testing purpose. Also batch components itself use MiniCluster.
+      # It increases memory footprint significantly
+      JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=500M -XX:MaxDirectMemorySize=200M"
+    volumes:
+      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
+      - ../../e2e-tests/src/test/resources/batch-data-generation/transactions:/transactions
+      # batch-customizations.conf needs to be added on Nu startup, and not later by nussknacker-example-scenarios-library, because it defines new processing type
+      - ../../e2e-tests/src/test/resources/batch-data-generation/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
+    deploy:
+      resources:
+        limits:
+          memory: 1300M
 
   bootstrap-setup:
     volumes:
+      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
       - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
       - ../../e2e-tests/src/test/resources/loan-request:/scenario-examples/loan-request
+      - ../../e2e-tests/src/test/resources/offer-customer-proposal-based-on-activity-event:/scenario-examples/offer-customer-proposal-based-on-activity-event
+      - ../../e2e-tests/src/test/resources/rtm-client-near-pos:/scenario-examples/rtm-client-near-pos
+    deploy:
+      resources:
+        limits:
+          memory: 1300M
+
+  flink-jobmanager:
+    <<: *flink-with-postgres-driver
+
+  flink-taskmanager:
+    <<: *flink-with-postgres-driver
+
+  # E2E tests should use ephemeral storage, and not use the persistent volume, that is defined in underlying docker-compose file
+  postgres:
+    volumes:
+      - /var/lib/postgresql/data
+
+volumes:
+  nussknacker_designer_shared_configuration:
+    name: nussknacker_designer_shared_configuration

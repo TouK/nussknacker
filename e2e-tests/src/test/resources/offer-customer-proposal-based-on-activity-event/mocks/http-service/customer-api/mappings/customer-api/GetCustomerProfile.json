@@ -1,0 +1,30 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPattern": "/customer/1/profile",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "customer-api/responses/OfAgeCustomerProfile.json"
+      }
+    },
+    {
+      "request": {
+        "urlPattern": "/customer/2/profile",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "customer-api/responses/NotOfAgeCustomerProfile.json"
+      }
+    }
+  ]
+}

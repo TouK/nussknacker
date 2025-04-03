@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "title": "OfferProposal",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "required": [
+    "offerName",
+    "offerDescription",
+    "clientName",
+    "amount",
+    "dueDate"
+  ],
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "profileId": {
+      "type": "string"
+    },
+    "clientName": {
+      "type": "string",
+      "description": "The person's full name"
+    },
+    "clientMsisdn": {
+      "type": "string",
+      "description": "Client's phone number"
+    },
+    "offerName": {
+      "type": "string",
+      "description": "The assigned offer for the person"
+    },
+    "offerDescription": {
+      "type": "string",
+      "description": "The assigned offer human readable description"
+    },
+    "amount": {
+      "type": "integer",
+      "description": "The offer price"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The expiration date for the offer"
+    },
+    "preparedMessageReadyToSend": {
+      "type": "string",
+      "description": "The human-readable message. It should be prepared to be sent without further modifications."
+    }
+  }
+}
