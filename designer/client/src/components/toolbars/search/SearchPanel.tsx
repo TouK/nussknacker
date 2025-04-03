@@ -44,7 +44,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
             >
                 <SearchIcon isEmpty={isEmpty(filter)} />
             </SearchInputWithIcon>
-            <Collapse in={advancedOptionsCollapsed} timeout="auto" unmountOnExit={false}>
+            <Collapse in={advancedOptionsCollapsed} unmountOnExit>
                 <SearchPanelStyled>
                     <AdvancedSearchFilters
                         filterFields={filterFields}

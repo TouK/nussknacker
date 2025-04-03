@@ -17,13 +17,15 @@ describe("Search Panel View", () => {
 
     beforeEach(() => {
         cy.visitNewProcess(seed, "testProcess");
+        cy.contains(/^tips$/i).click();
+        cy.contains(/^creator panel$/i).click();
+        cy.contains(/^activities$/i).click();
     });
 
     it("should collapse advanced search filters", () => {
         cy.get("[data-testid=search-panel]").should("be.visible");
         cy.get("[data-testid=search-panel]").contains(/^search$/i);
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
-        //cy.realType("se");
         cy.get("[data-testid=search-panel]").contains("Advanced Search");
         cy.get("[data-testid=search-panel]").contains("Name");
         cy.get("[data-testid=search-panel]").contains("Description");
@@ -35,9 +37,7 @@ describe("Search Panel View", () => {
     });
 
     it("should filter nodes when typing search query with selectors manually and editing it later in form", () => {
-        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
-
-        cy.realType("type:(sink) se");
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click().type("type:(sink) se");
 
         cy.get("[data-testid=search-panel]").contains("dynamicService").should("not.exist");
         cy.get("[data-testid=search-panel]").contains("sendSms");
@@ -45,8 +45,7 @@ describe("Search Panel View", () => {
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
         cy.get("[data-testid=search-panel]").find("input[name='type']").should("have.value", "sink");
 
-        cy.get("[data-testid=search-panel]").find("input[name='type']").click();
-        cy.realType(",dynamicService");
+        cy.get("[data-testid=search-panel]").find("input[name='type']").click().type(",dynamicService");
 
         cy.get("[data-testid=search-panel]").find("button[type='submit']").click();
 
@@ -55,13 +54,10 @@ describe("Search Panel View", () => {
     });
 
     it("should filter nodes when performing simple search and adding selectors using form", () => {
-        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
-        cy.realType("se");
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click().type("se");
 
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
-        cy.get("[data-testid=search-panel]").find("input[name='type']").click();
-
-        cy.realType("sink,dynamicSe");
+        cy.get("[data-testid=search-panel]").find("input[name='type']").click().type("sink,dynamicSe");
 
         cy.get("[data-testid=search-panel]").find("button[type='submit']").click();
 
@@ -76,11 +72,9 @@ describe("Search Panel View", () => {
     it("should filter nodes when setting up multiple selectors using form", () => {
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
 
-        cy.get("[data-testid=search-panel]").find("input[name='name']").click();
-        cy.realType("bounded,dynamic,send,enricher");
+        cy.get("[data-testid=search-panel]").find("input[name='name']").click().type("bounded,dynamic,send,enricher");
 
-        cy.get("[data-testid=search-panel]").find("input[name='type']").click();
-        cy.realType("sink,enricher");
+        cy.get("[data-testid=search-panel]").find("input[name='type']").click().type("sink,enricher");
 
         cy.get("[data-testid=search-panel]").find("button[type='submit']").click();
 
@@ -93,8 +87,7 @@ describe("Search Panel View", () => {
     });
 
     it("should synchronize the form input state with manually provided query with selectors", () => {
-        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
-        cy.realType("type:(sink)");
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click().type("type:(sink)");
 
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
         cy.get("[data-testid=search-panel]").find("input[name='type']").should("have.value", "sink");
@@ -111,8 +104,7 @@ describe("Search Panel View", () => {
     });
 
     it("should clear search filters", () => {
-        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
-        cy.realType("type:(sink) se");
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click().type("type:(sink) se");
 
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
         cy.get("[data-testid=search-panel]").find("button[type='button']").click();
@@ -128,8 +120,7 @@ describe("Search Panel View", () => {
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
         cy.get("[data-testid=search-panel]").find("button[type='button']").click();
 
-        cy.get("[data-testid=search-panel]").find("input[name='name']").click();
-        cy.realType("sink");
+        cy.get("[data-testid=search-panel]").find("input[name='name']").click().type("sink");
 
         cy.get("[data-testid=search-panel]").find("button[type='button']").click();
 
@@ -137,13 +128,10 @@ describe("Search Panel View", () => {
     });
 
     it("should clear filters when clear all button clicked", () => {
-        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
-        cy.realType("se");
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click().type("se");
 
         cy.get("[data-testid=search-panel]").find("svg[id='advanced-search-icon']").click();
-        cy.get("[data-testid=search-panel]").find("input[name='type']").click();
-
-        cy.realType("sink,processor");
+        cy.get("[data-testid=search-panel]").find("input[name='type']").click().type("sink,processor");
 
         cy.get("[data-testid=search-panel]").find("button[type='submit']").click();
         cy.get("[data-testid=search-panel]").find("svg[id='clear-icon']").click();
