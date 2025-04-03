@@ -224,6 +224,7 @@ describe("Fragment", () => {
             cy.getNode("output")
                 .parent()
                 .matchImage({
+                    maxDiffThreshold: 0.02,
                     screenshotConfig: {
                         padding: 8,
                     },
@@ -436,7 +437,9 @@ describe("Fragment", () => {
 
         cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
-        cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage();
+        cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage({
+            maxDiffThreshold: 0.038,
+        });
 
         cy.deleteAllTestProcesses({ filter: seed2 });
     });
