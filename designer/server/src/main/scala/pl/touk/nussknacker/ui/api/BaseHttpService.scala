@@ -125,10 +125,12 @@ class HttpServiceSupport(
       }
   }
 
-  def success[RESULT](value: RESULT) = Right(value)
+  def success[RESULT](value: RESULT): Right[Nothing, RESULT] = Right(value)
 
-  def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = Left(Left(error))
+  def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR): Left[Left[BUSINESS_ERROR, Nothing], Nothing] = Left(
+    Left(error)
+  )
 
-  def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
+  def securityError[SE <: SecurityError](error: SE): Left[Right[Nothing, SE], Nothing] = Left(Right(error))
 
 }

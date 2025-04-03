@@ -30,7 +30,8 @@ object PekkoHttpBasedRouteFactory {
     for {
       customHttpServiceProviders <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
         designerConfig,
-        domainServices
+        domainServices,
+        authManager
       )
       pekkoRoutes = PekkoRoutesFactory.createRoutes(
         designerConfig,
