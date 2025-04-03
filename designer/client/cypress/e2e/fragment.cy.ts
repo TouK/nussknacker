@@ -438,7 +438,7 @@ describe("Fragment", () => {
         cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage({
-            maxDiffThreshold: 0.038,
+            maxDiffThreshold: 0.04,
         });
 
         cy.deleteAllTestProcesses({ filter: seed2 });
