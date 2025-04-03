@@ -16,7 +16,7 @@ describe("Fragment", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     beforeEach(() => {
@@ -220,7 +220,14 @@ describe("Fragment", () => {
                 .click() //drop focus from input - avoid random scrolling/reszing of window contents
                 .matchImage();
 
-            cy.get("[data-testid=window]").find("section").scrollTo("bottom").find('[id="nk-graph-fragment"]').matchImage();
+            cy.get("[data-testid=window]").find("section").scrollTo("bottom").find('[id="nk-graph-fragment"]').should("be.visible");
+            cy.getNode("output")
+                .parent()
+                .matchImage({
+                    screenshotConfig: {
+                        padding: 8,
+                    },
+                });
         });
 
         it("should validate and save changes", function () {
