@@ -1028,8 +1028,12 @@ class HttpService {
             headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
         }
 
-        const URL = "/custom/assistant/chat";
-        return fetch(`${API_URL}/${URL}`, {
+        const PATHNAME = "/custom/assistant/chat";
+
+        /**
+         * Axios doesn't support stream response, even with fetch adapter, there are problems in safari https://github.com/axios/axios/issues/5806
+         */
+        return fetch(`${API_URL}/${PATHNAME}`, {
             method: "POST",
             headers,
             body: JSON.stringify({ message }),
