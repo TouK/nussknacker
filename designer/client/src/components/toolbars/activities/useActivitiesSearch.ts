@@ -1,17 +1,16 @@
-import { get, uniq } from "lodash";
 import { useCallback, useState } from "react";
+import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
-import { Activity, UIActivity } from "./ActivitiesPanel";
-import { handleToggleActivities } from "./helpers/handleToggleActivities";
+import { get, uniq } from "lodash";
 import { ActivityAdditionalFields } from "./types";
+import { handleToggleActivities } from "./helpers/handleToggleActivities";
 
 interface Props {
     activities: UIActivity[];
     handleScrollToItem: (index: number, align: Align) => void;
     handleUpdateScenarioActivities: (activities: (activities: UIActivity[]) => UIActivity[]) => void;
 }
-
 export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpdateScenarioActivities }: Props) => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);

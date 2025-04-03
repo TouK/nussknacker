@@ -1,26 +1,26 @@
-import CircleIcon from "@mui/icons-material/Circle";
-import { Button, styled, Tooltip, Typography } from "@mui/material";
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { displayScenarioVersion } from "../../../../actions/nk";
-import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
-import * as DialogMessages from "../../../../common/DialogMessages";
-import { unsavedProcessChanges } from "../../../../common/DialogMessages";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
-import HttpService from "../../../../http/HttpService";
-import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
-import { getCapabilities } from "../../../../reducers/selectors/other";
-import { getLoggedUser } from "../../../../reducers/selectors/settings";
-import { useWindows } from "../../../../windowManager";
-import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
-import UrlIcon from "../../../UrlIcon";
+import { Button, styled, Tooltip, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import { ItemActivity } from "../ActivitiesPanel";
-import { getHeaderColors } from "../helpers/activityItemColors";
+import HttpService from "../../../../http/HttpService";
 import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
-import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import UrlIcon from "../../../UrlIcon";
+import { unsavedProcessChanges } from "../../../../common/DialogMessages";
+import { useDispatch, useSelector } from "react-redux";
+import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import { useWindows } from "../../../../windowManager";
+import { displayScenarioVersion } from "../../../../actions/nk";
+import { ItemActivity } from "../ActivitiesPanel";
+import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
+import { getHeaderColors } from "../helpers/activityItemColors";
+import { useTranslation } from "react-i18next";
+import * as DialogMessages from "../../../../common/DialogMessages";
 import { StyledActionIcon } from "./StyledActionIcon";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { getCapabilities } from "../../../../reducers/selectors/other";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import CircleIcon from "@mui/icons-material/Circle";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",

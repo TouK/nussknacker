@@ -1,5 +1,5 @@
-import { createSelector } from "reselect";
 import { RootState } from "../index";
+import { createSelector } from "reselect";
 
 export const getActivity = (state: RootState) => state.processActivity;
 

@@ -1,10 +1,10 @@
 import React, { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
+import { DateItem, ActivityItem, ToggleButtonItem } from "./ActivityPanelRowItem";
+import { UIActivity } from "./ActivitiesPanel";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
-import { UIActivity } from "./ActivitiesPanel";
-import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
 
 interface Props {

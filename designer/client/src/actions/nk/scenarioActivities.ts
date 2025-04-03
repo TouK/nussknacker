@@ -1,8 +1,8 @@
-import type { UIActivity } from "../../components/toolbars/activities";
-import { extendActivitiesWithUIData } from "../../components/toolbars/activities/helpers/extendActivitiesWithUIData";
-import { mergeActivityDataWithMetadata } from "../../components/toolbars/activities/helpers/mergeActivityDataWithMetadata";
+import { ThunkAction } from "../reduxTypes";
 import httpService from "../../http/HttpService";
-import type { ThunkAction } from "../reduxTypes";
+import { mergeActivityDataWithMetadata } from "../../components/toolbars/activities/helpers/mergeActivityDataWithMetadata";
+import { extendActivitiesWithUIData } from "../../components/toolbars/activities/helpers/extendActivitiesWithUIData";
+import { UIActivity } from "../../components/toolbars/activities";
 
 export type GetScenarioActivitiesAction = {
     type: "GET_SCENARIO_ACTIVITIES";
@@ -15,7 +15,7 @@ export type UpdateScenarioActivitiesAction = {
 };
 
 export function getScenarioActivities(scenarioName: string): ThunkAction {
-    return (dispatch, getState) => {
+    return (dispatch) => {
         return Promise.all([httpService.fetchActivitiesMetadata(scenarioName), httpService.fetchActivities(scenarioName)]).then(
             ([
                 { data: activitiesMetadata },
@@ -24,10 +24,9 @@ export function getScenarioActivities(scenarioName: string): ThunkAction {
                 },
             ]) => {
                 const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
-                const currentActivities = getState().processActivity.activities;
                 return dispatch({
                     type: "GET_SCENARIO_ACTIVITIES",
-                    activities: extendActivitiesWithUIData(mergedActivitiesDataWithMetadata, currentActivities),
+                    activities: extendActivitiesWithUIData(mergedActivitiesDataWithMetadata),
                 });
             },
         );

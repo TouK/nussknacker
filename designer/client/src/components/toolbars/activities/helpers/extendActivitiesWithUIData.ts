@@ -1,32 +1,14 @@
 import moment from "moment/moment";
-import { v4 as uuid4, v5 as uuid5 } from "uuid";
-
-import type { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
+import { v4 as uuid4 } from "uuid";
+import { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
 import { formatDate } from "./date";
 
-function extractKeys(obj: Record<string, any>, depth = 3): string[] {
-    if (!obj || depth < 0) return [];
-    const keys = Object.keys(obj);
-    if (depth <= 0) return keys;
-    return keys.flatMap((key) => [key, ...extractKeys(obj[key], depth - 1)]);
-}
-
-const NAMESPACE = "785062d6-79e5-46fc-b41b-3564e02b5c9c";
-
-function generateStableId(obj: Record<string, any>): string {
-    const jsonString = JSON.stringify(obj, extractKeys(obj).sort());
-    return uuid5(jsonString, NAMESPACE);
-}
-
-const createUiActivity = (activity: Activity, previousActivities: UIActivity[] = []) => {
-    const uiGeneratedId = generateStableId(activity);
-    const previousActivity = previousActivities.find((a) => a.uiGeneratedId === uiGeneratedId);
+const createUiActivity = (activity: Activity) => {
     const uiActivity: UIActivity = {
+        ...activity,
         isActiveFound: false,
         isFound: false,
-        ...previousActivity,
-        ...activity,
-        uiGeneratedId,
+        uiGeneratedId: uuid4(),
         uiType: "item",
         isHidden: false,
     };
@@ -51,7 +33,7 @@ const getLatestDateItem = (uiActivities: UIActivity[]) => {
     return previousDateItem;
 };
 
-export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[], previousActivities: UIActivity[] = []) => {
+export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
     const uiActivities: UIActivity[] = [];
     const maxAllowedTypesDuplicatesToItemsHide = 2;
 
@@ -158,7 +140,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
             const toggleItemsButton = recursiveToggleItemsButtonDesignation(activity, index);
             dateLabel && uiActivities.push(dateLabel);
 
-            uiActivities.push(createUiActivity(activity, previousActivities));
+            uiActivities.push(createUiActivity(activity));
 
             if (toggleItemsButton) {
                 initiallyHideItems(toggleItemsButton.sameItemOccurrence);
