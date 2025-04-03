@@ -1,6 +1,7 @@
-import { Box, Typography } from "@mui/material";
+import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
@@ -32,17 +33,37 @@ const ASSISTANT_BUTTON = {
     width: 75,
     height: 75,
 };
+
+const StyledAiAssistantButton = styled(Box)<{ isOpenedAiAssistantDialog: boolean }>(({ theme, isOpenedAiAssistantDialog }) => {
+    return {
+        position: "fixed",
+        bottom: ASSISTANT_BUTTON.bottom,
+        right: ASSISTANT_BUTTON.right,
+        padding: theme.spacing(2),
+        background: blendDarken(theme.palette.primary.main, 0.6),
+        cursor: "pointer",
+        width: ASSISTANT_BUTTON.width,
+        height: ASSISTANT_BUTTON.height,
+        borderRadius: "50%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: isOpenedAiAssistantDialog ? theme.zIndex.modal : theme.zIndex.modal + 1,
+    };
+});
+
 export const AI_ASSISTANT_MODAL_ID = "AI_ASSISTANT";
 
 export const AiAssistantButton = () => {
+    const { t } = useTranslation();
     const { open } = useWindows();
     const { windows, close } = useWindowManager();
     const [userSettings] = useUserSettings();
     const isCloud = useSelector(isCloudInstance);
+    const openedAiAssistantDialog = useMemo(() => windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID), [windows]);
 
     const handleClick = useCallback(() => {
-        const openedAiAssistantDialog = windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID);
-
         if (openedAiAssistantDialog) {
             close(AI_ASSISTANT_MODAL_ID);
         } else {
@@ -62,38 +83,23 @@ export const AiAssistantButton = () => {
                 },
             });
         }
-    }, [close, open, windows]);
+    }, [close, open, openedAiAssistantDialog]);
 
     if (!isCloud || !userSettings["cloud.showAiAssistant"]) {
         return null;
     }
 
     return (
-        <Box
-            id={"ai-assistant-button"}
+        <StyledAiAssistantButton
+            id="ai-assistant-button"
             role="button"
-            bottom={ASSISTANT_BUTTON.bottom}
-            right={ASSISTANT_BUTTON.right}
-            position={"fixed"}
-            p={2}
             onClick={handleClick}
-            sx={(theme) => ({
-                background: blendDarken(theme.palette.primary.main, 0.6),
-                cursor: "pointer",
-                width: ASSISTANT_BUTTON.width,
-                height: ASSISTANT_BUTTON.height,
-                borderRadius: "50%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: theme.zIndex.modal + 1,
-            })}
+            isOpenedAiAssistantDialog={Boolean(openedAiAssistantDialog)}
         >
             <NuIcon />
             <Typography component="span" variant={"overline"} fontWeight={"bold"} pt={0.5}>
-                Assistant
+                {t("aiAssistant.buttonText", "Assistant")}
             </Typography>
-        </Box>
+        </StyledAiAssistantButton>
     );
 };
