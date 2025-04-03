@@ -21,12 +21,13 @@ const findActivity = (query: string) => {
 };
 
 const makeScreenshot = () => {
-    cy.get('[data-testid="activities-panel"]').matchImage({
-        maxDiffThreshold: 0.01,
-        screenshotConfig: {
-            blackout: [":has(>[data-testid='activity-date'])"],
-        },
-    });
+    // FIXME: disabled snapshots because of styles blink problems (look for state & uuid)
+    // cy.get('[data-testid="activities-panel"]').matchImage({
+    //     maxDiffThreshold: 0.01,
+    //     screenshotConfig: {
+    //         blackout: [":has(>[data-testid='activity-date'])"],
+    //     },
+    // });
 };
 
 // TODO: disabled snapshots - testing almost nothing now
@@ -91,17 +92,16 @@ describe("Activities", () => {
         cy.get("[data-testid=window]").should("not.exist");
 
         findActivity("comment 6");
-        // FIXME: disabled snapshots because of styles blink problems (look for state & uuid)
-        // makeScreenshot();
+        makeScreenshot();
 
         findActivity("comment 1");
-        // makeScreenshot();
+        makeScreenshot();
         cy.contains(/^show less/i).click();
-        // makeScreenshot();
+        makeScreenshot();
 
         addAttachmentActivity("cypress/fixtures/testProcess.json");
         findActivity("Attachment");
-        // makeScreenshot();
+        makeScreenshot();
 
         // modify comment
         cy.intercept("/api/processes/*/activity/comment/*").as("editComment");
