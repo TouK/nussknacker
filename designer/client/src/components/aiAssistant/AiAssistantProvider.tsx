@@ -6,14 +6,24 @@ import React from "react";
 
 import httpService from "../../http/HttpService";
 
-const backendApi = async function* ({ messages, abortSignal }: ChatModelRunOptions) {
+async function initializeChatStream(
+    messages: ChatModelRunOptions["messages"],
+    abortSignal?: AbortSignal,
+): Promise<{
+    responseParts: string[];
+    state: { isAborted: boolean; isFinished: boolean };
+}> {
     const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0] as TextContentPart, abortSignal);
     const responseParts: string[] = [];
+    const state = { isAborted: false, isFinished: false };
 
     const parser = createParser({
         onEvent({ event, data }) {
             if (event === "delta") {
                 responseParts.push(JSON.parse(data).text);
+            }
+            if (event === "stop") {
+                state.isFinished = true;
             }
         },
     });
@@ -23,36 +33,26 @@ const backendApi = async function* ({ messages, abortSignal }: ChatModelRunOptio
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const { value, done } = await reader.read();
-            if (done) {
-                break;
-            }
+            if (done) break;
             parser.feed(value);
         }
     };
-
     readStream();
 
     if (abortSignal) {
         abortSignal.addEventListener("abort", () => {
+            console.log("Message aborted");
+            state.isAborted = true;
             reader.cancel();
         });
     }
 
-    while (true) {
-        if (responseParts.length > 0) {
-            const part = responseParts.shift();
-            yield {
-                choices: [{ delta: { content: part } }],
-            };
-        } else {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-    }
-};
+    return { responseParts, state };
+}
 
-const MyModelAdapter: ChatModelAdapter = {
+const ModelAdapter: ChatModelAdapter = {
     async *run(chatModelOptions) {
-        const stream = backendApi(chatModelOptions);
+        const { responseParts, state } = await initializeChatStream(chatModelOptions.messages, chatModelOptions.abortSignal);
 
         yield {
             content: [],
@@ -60,19 +60,31 @@ const MyModelAdapter: ChatModelAdapter = {
         };
 
         let text = "";
-        for await (const part of stream) {
-            text += part.choices[0]?.delta?.content || "";
-
-            yield {
-                content: [{ type: "text", text }],
-                status: { type: "incomplete", reason: "other" },
-            };
+        while (true) {
+            if (state.isAborted) {
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "incomplete", reason: "cancelled" },
+                };
+                return;
+            }
+            if (responseParts.length > 0) {
+                const part = responseParts.shift();
+                text += part;
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "running" },
+                };
+            } else if (state.isFinished && responseParts.length === 0) {
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "complete", reason: "stop" },
+                };
+                return;
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            }
         }
-
-        yield {
-            content: [{ type: "text", text }],
-            status: { type: "complete", reason: "unknown" },
-        };
     },
 };
 
@@ -81,7 +93,7 @@ export function AiAssistantProvider({
 }: Readonly<{
     children: ReactNode;
 }>) {
-    const runtime = useLocalRuntime(MyModelAdapter);
+    const runtime = useLocalRuntime(ModelAdapter);
 
     return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>;
 }

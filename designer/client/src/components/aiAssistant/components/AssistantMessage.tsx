@@ -13,22 +13,28 @@ export const AssistantMessage = () => {
 
     const messageText = useMemo(() => content.map((part) => part.text).join("\n"), [content]);
 
+    if (status.type === "running") {
+        return (
+            <Box display="flex" alignItems="center" gap={1}>
+                <CircularProgress size="0.75rem" />
+                <Typography variant={"body2"}>Running...</Typography>
+            </Box>
+        );
+    }
+
+    if ((messageText.length === 0 && status.type === "complete") || status.reason === "cancelled") {
+        return null;
+    }
+
     return (
         <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
-            {status.type === "running" ? (
-                <Box display="flex" alignItems="center" gap={1}>
-                    <CircularProgress size="0.75rem" />
-                    <Typography variant={"body2"}>Running...</Typography>
-                </Box>
-            ) : (
-                <Box position={"relative"} pb={0.5}>
-                    <MarkdownStyled>{messageText}</MarkdownStyled>
-                    <ActionsContainer show={showActions} placement={"left"}>
-                        <CopyContent text={messageText} />
-                        <RefreshAssistantAnswer />
-                    </ActionsContainer>
-                </Box>
-            )}
+            <Box position={"relative"} pb={0.5}>
+                <MarkdownStyled>{messageText}</MarkdownStyled>
+                <ActionsContainer show={showActions} placement={"left"}>
+                    <CopyContent text={messageText} />
+                    <RefreshAssistantAnswer />
+                </ActionsContainer>
+            </Box>
         </Box>
     );
 };

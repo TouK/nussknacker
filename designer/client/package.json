@@ -19,7 +19,7 @@
         "@mui/material": "5.16.14",
         "@mui/system": "5.16.14",
         "@touk/federated-component": "1.1.0",
-        "@touk/window-manager": "1.9.1",
+        "@touk/window-manager": "1.10.0-beta.1",
         "ace-builds": "1.34.2",
         "allotment": "1.20.3",
         "axios": "1.7.5",
