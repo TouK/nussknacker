@@ -11,6 +11,7 @@ import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 import scala.concurrent.Future
+import scala.language.higherKinds
 
 class NuDesignerExposedApiHttpService(
     customHttpServiceProviders: Map[String, TapirCustomHttpServiceProvider],
