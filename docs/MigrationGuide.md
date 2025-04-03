@@ -31,7 +31,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "ToLatest"}}}`.
 * [#7658](https://github.com/TouK/nussknacker/pull/7658) `/app/processingtype/reload` endpoint doesn't reload Deployment Managers
 * [#7693](https://github.com/TouK/nussknacker/pull/7693) Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. To provide username use impersonation mechanism.
-* [#7871](https://github.com/TouK/nussknacker/pull/7871) `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
+* [#7871](https://github.com/TouK/nussknacker/pull/7871) `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`.
+  `ExecutionContextWithIORuntime` was added `CustomHttpServiceProviderFactory.create` method.
 
 ### Code API changes
 
