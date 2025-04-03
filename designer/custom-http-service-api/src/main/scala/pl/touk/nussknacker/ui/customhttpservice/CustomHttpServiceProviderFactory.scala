@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
+
+import scala.concurrent.ExecutionContext
 
 trait CustomHttpServiceProviderFactory {
 
@@ -12,6 +14,6 @@ trait CustomHttpServiceProviderFactory {
   def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService,
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider]
+  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider]
 
 }
