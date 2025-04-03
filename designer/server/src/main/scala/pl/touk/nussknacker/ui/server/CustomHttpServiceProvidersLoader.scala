@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.server
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.effect.unsafe.IORuntime
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -18,6 +19,8 @@ import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForC
 import pl.touk.nussknacker.ui.factory.DomainServices
 import pl.touk.nussknacker.ui.security.api.AuthManager
 
+import scala.concurrent.ExecutionContext
+
 object CustomHttpServiceProvidersLoader {
 
   def loadCustomHttpServiceProviders(
@@ -33,7 +36,7 @@ object CustomHttpServiceProvidersLoader {
       designerConfig,
       domainServices,
       authManager
-    )
+    )(executionContextWithIORuntime, executionContextWithIORuntime.ioRuntime)
   } yield customHttpServiceProviders
 
   private def loadHttpServiceProviderFactories: IO[List[CustomHttpServiceProviderFactory]] = {
@@ -60,7 +63,7 @@ object CustomHttpServiceProvidersLoader {
       designerConfig: DesignerConfig,
       domainServices: DomainServices,
       authManager: AuthManager
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProviders] = {
+  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
       new TapirEndpointSupportAdapter(authManager)

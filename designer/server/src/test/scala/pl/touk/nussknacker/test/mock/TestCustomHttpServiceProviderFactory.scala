@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.test.mock
 
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProvider,
   CustomHttpServiceProviderFactory,
@@ -21,7 +21,7 @@ import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFactory {
 
@@ -30,7 +30,7 @@ class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFact
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
@@ -51,7 +51,7 @@ class SecondTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvid
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
@@ -153,7 +153,7 @@ class TapirTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvide
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime): Resource[IO, CustomHttpServiceProvider] =
+  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(new TestTapirCustomHttpServiceProvider(services.tapirAuthService))
 
 }
