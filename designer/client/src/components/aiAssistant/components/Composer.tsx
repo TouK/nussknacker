@@ -59,7 +59,7 @@ const adjustInputHeight = (textarea: HTMLTextAreaElement) => {
 };
 
 export const Composer = () => {
-    const { send, setText } = useComposerRuntime({ optional: true });
+    const { send, setText, cancel } = useComposerRuntime();
     const { scrollToBottom, provideBottomSpacer } = UseScrollToBottom();
 
     const [message, setMessage] = useState("");
@@ -89,6 +89,10 @@ export const Composer = () => {
         resetInputHeight(textAreaRef.current);
     }, [isSendDisabled, provideBottomSpacer, scrollToBottom, send]);
 
+    const handleCancel = useCallback(() => {
+        cancel();
+    }, [cancel]);
+
     const handleKeyDownOnInput = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
@@ -102,7 +106,7 @@ export const Composer = () => {
 
     return (
         <StyledRoot data-no-focus-lock>
-            <NodeTable sx={{ margin: 0, width: "100%" }}>
+            <NodeTable sx={{ margin: 0, marginRight: "16px", width: "100%" }}>
                 <div className={nodeValue}>
                     <StyledTextArea
                         autoFocus
@@ -119,7 +123,11 @@ export const Composer = () => {
                     />
                 </div>
             </NodeTable>
-            <LoadingButton disabled={isSendDisabled} title="Send" action={handleSend} />
+            {isRunning ? (
+                <LoadingButton title="Cancel" action={handleCancel} />
+            ) : (
+                <LoadingButton disabled={!message} title="Send" action={handleSend} />
+            )}
         </StyledRoot>
     );
 };

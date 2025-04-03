@@ -1,5 +1,5 @@
 import { ActionBarPrimitive } from "@assistant-ui/react";
-import { Box, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import { debounce } from "lodash";
 import type { PropsWithChildren } from "react";
 import { useCallback, useMemo } from "react";
@@ -20,16 +20,16 @@ export const useHandleActions = () => {
 
     return { showActions, handleShowActions, handleHideActions };
 };
-const StyledActionContainer = styled(ActionBarPrimitive.Root)<{ placement: Props["placement"]; show: Props["show"] }>(
-    ({ theme, placement, show }) => ({
-        display: show ? "flex" : "none",
-        position: "absolute",
-        alignSelf: "flex-end",
-        bottom: theme.spacing(-1.25),
-        padding: theme.spacing(0.5),
-        ...(placement === "left" ? { left: theme.spacing(0) } : { right: theme.spacing(0) }),
-    }),
-);
+const StyledActionContainer = styled(ActionBarPrimitive.Root, {
+    shouldForwardProp: (prop) => prop !== "show",
+})<{ placement: Props["placement"]; show: Props["show"] }>(({ theme, placement, show }) => ({
+    display: show ? "flex" : "none",
+    position: "absolute",
+    alignSelf: "flex-end",
+    bottom: theme.spacing(-1.25),
+    padding: theme.spacing(0.5),
+    ...(placement === "left" ? { left: theme.spacing(0) } : { right: theme.spacing(0) }),
+}));
 
 interface Props {
     show: boolean;
