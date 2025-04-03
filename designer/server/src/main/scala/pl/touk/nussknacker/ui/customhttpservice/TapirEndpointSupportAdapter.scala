@@ -15,12 +15,6 @@ class TapirEndpointSupportAdapter(authManager: AuthManager)(implicit executionCo
 
   private val httpServiceSupport = new HttpServiceSupport(authManager)
 
-  override def success[RESULT](value: RESULT): Right[Nothing, RESULT] =
-    httpServiceSupport.success(value)
-
-  override def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR): Left[Left[BUSINESS_ERROR, Nothing], Nothing] =
-    httpServiceSupport.businessError(error)
-
   override def authorizeAdminUser[BUSINESS_ERROR](
       credentials: AuthCredentials
   ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] =

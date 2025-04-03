@@ -9,9 +9,10 @@ import scala.concurrent.Future
 
 trait TapirEndpointSupport {
 
-  def success[RESULT](value: RESULT): Right[Nothing, RESULT]
+  def success[RESULT](value: RESULT): Right[Nothing, RESULT] = Right(value)
 
-  def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR): Left[Left[BUSINESS_ERROR, Nothing], Nothing]
+  def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR): Left[Left[BUSINESS_ERROR, Nothing], Nothing] =
+    Left(Left(error))
 
   def authorizeAdminUser[BUSINESS_ERROR](credentials: AuthCredentials): Future[LogicResult[BUSINESS_ERROR, LoggedUser]]
 
