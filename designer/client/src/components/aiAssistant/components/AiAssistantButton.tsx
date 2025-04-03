@@ -79,7 +79,7 @@ export const AiAssistantButton = () => {
                     width: convertViewportUnitToPixels("35vw"),
                     minWidth: 500,
                     height: convertViewportUnitToPixels("80vh"),
-                    zIndex: 3,
+                    zIndex: 2,
                 },
             });
         }
