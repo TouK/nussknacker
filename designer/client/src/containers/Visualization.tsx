@@ -12,7 +12,6 @@ import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import ProcessUtils from "../common/ProcessUtils";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
-import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
 import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
@@ -180,7 +179,6 @@ function Visualization() {
                         </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>
-                <AiAssistantButton />
             </GraphPage>
         </DndProvider>
     );

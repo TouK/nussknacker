@@ -24,7 +24,7 @@ function convertViewportUnitToPixels(unitString: string): number {
 }
 
 const ASSISTANT_BUTTON = {
-    right: 24,
+    right: 12,
     bottom: 8,
     width: 75,
     height: 75,
@@ -32,14 +32,14 @@ const ASSISTANT_BUTTON = {
 export const AI_ASSISTANT_MODAL_ID = "AI_ASSISTANT";
 
 export const AiAssistantButton = () => {
-    const { open, close } = useWindows();
-    const { windows } = useWindowManager();
+    const { open } = useWindows();
+    const { windows, close } = useWindowManager();
 
     const handleClick = useCallback(() => {
         const openedAiAssistantDialog = windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID);
 
         if (openedAiAssistantDialog) {
-            close();
+            close(AI_ASSISTANT_MODAL_ID);
         } else {
             open({
                 id: AI_ASSISTANT_MODAL_ID,
@@ -61,11 +61,11 @@ export const AiAssistantButton = () => {
 
     return (
         <Box
+            id={"ai-assistant-button"}
             role="button"
             bottom={ASSISTANT_BUTTON.bottom}
             right={ASSISTANT_BUTTON.right}
             position={"fixed"}
-            zIndex={1800}
             p={2}
             onClick={handleClick}
             sx={(theme) => ({
