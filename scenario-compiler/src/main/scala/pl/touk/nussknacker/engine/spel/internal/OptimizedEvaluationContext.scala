@@ -29,6 +29,8 @@ class EvaluationContextPreparer(
     val optimized = new OptimizedEvaluationContext(ctx, globals)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
+    // TODO_PAWEL jest ok moze tutaj trzeba wsadzic odpowiedni converter?
+    // tylko jak wowczas zapewnimy to ze to bedzie leniwe? moze byc ciezko
     optimized.setTypeConverter(new StandardTypeConverter(conversionService))
     optimized.setMethodResolvers(optimizedMethodResolvers)
     optimized
@@ -67,7 +69,7 @@ class EvaluationContextPreparer(
 
 }
 
-// TODO_PAWEL jest ok o tej cos mowil Arek
+// TODO_PAWEL jest ok o tej cos mowil Arek,
 class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extends StandardEvaluationContext {
 
   // We *don't* want to initialize any Maps here, as this code is in our tightest loop

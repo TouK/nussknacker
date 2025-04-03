@@ -15,3 +15,17 @@ jest ten jakis dziwny akcesor ktory szuka metody "get" po refleksji.
 
 dobra a teraz inna kwestia: czy da sie GenericRecord przerobic latwo na mape?
 cos tam jest, choc nie wiem czy to jest deep
+
+https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/collection-projection.html
+to sie nazywa projection
+no tak, ono dziala na
+
+jest klasa Projection w ast, brzmi jak miejsce ktore trzeba trgetowac
+w debuggerze widze tam OptimizedEvaluationContext
+
+ciekawe, nie widze w outpucie testu tego spel costam exception wychodzacego z projection.
+
+hmm, w sumie to problem jest taki, ze to nie jest mapa
+a moze to powinna byc mapa
+moze chociaz bysmy puszczali downstream taki wrapper na ten genericRecord ktory czyni go mapa?
+na to tez za pozno juz jest niestety
