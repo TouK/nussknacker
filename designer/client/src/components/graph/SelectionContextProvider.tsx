@@ -1,19 +1,11 @@
 import { min } from "lodash";
-import React, {
-    createContext,
-    PropsWithChildren,
-    ReactElement,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import type { PropsWithChildren, ReactElement } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
-import { useDebouncedCallback } from "use-debounce";
+import { useDebounceFn } from "rooks";
+
 import {
     copySelection,
     cutSelection,
@@ -187,7 +179,7 @@ export default function SelectionContextProvider(
         return randomizedNodePosition;
     }
 
-    const [parseInsertNodes] = useDebouncedCallback((clipboardText) => {
+    const [parseInsertNodes] = useDebounceFn((clipboardText) => {
         const selection = parse(clipboardText);
         if (selection) {
             const { x, y } = props.pastePosition();

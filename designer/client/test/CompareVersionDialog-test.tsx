@@ -31,28 +31,26 @@ jest.mock("../src/components/graph/node-modal/NodeDetailsContent", () => ({
 
 const mockStore = configureMockStore([thunk]);
 const graphReducer = {
-    history: {
-        present: {
-            scenario: {
-                name: "proc1",
-                processVersionId: 4,
-                history: [
-                    {
-                        processVersionId: 35,
-                        createDate: "2024-05-31",
-                        user: "admin",
-                        modelVersion: 4,
-                        actions: [],
-                    },
-                    {
-                        processVersionId: 34,
-                        createDate: "2024-05-31",
-                        user: "admin",
-                        modelVersion: 4,
-                        actions: [],
-                    },
-                ],
-            },
+    present: {
+        scenario: {
+            name: "proc1",
+            processVersionId: 4,
+            history: [
+                {
+                    processVersionId: 35,
+                    createDate: "2024-05-31",
+                    user: "admin",
+                    modelVersion: 4,
+                    actions: [],
+                },
+                {
+                    processVersionId: 34,
+                    createDate: "2024-05-31",
+                    user: "admin",
+                    modelVersion: 4,
+                    actions: [],
+                },
+            ],
         },
     },
 };
@@ -62,9 +60,11 @@ const store = mockStore({
     settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
 });
 
+const scenario = graphReducer.present.scenario;
+
 const DOWN_ARROW = { keyCode: 40 };
 
-describe(CompareVersionsDialog.name, () => {
+describe("CompareVersionsDialog", () => {
     afterAll(() => {
         mock.resetHandlers();
     });
@@ -78,9 +78,9 @@ describe(CompareVersionsDialog.name, () => {
             },
         ];
 
-        mock.onGet(`/remoteEnvironment/${graphReducer.history.present.scenario.name}/versions`).replyOnce(200, remoteVersions);
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, remoteVersions);
         mock.onGet(
-            `/remoteEnvironment/${graphReducer.history.present.scenario.name}/${graphReducer.history.present.scenario.processVersionId}/compare/${remoteVersions[0].processVersionId}`,
+            `/remoteEnvironment/${scenario.name}/${scenario.processVersionId}/compare/${remoteVersions[0].processVersionId}`,
         ).replyOnce(200, {});
 
         render(
@@ -121,10 +121,11 @@ describe(CompareVersionsDialog.name, () => {
             },
         ];
 
-        mock.onGet(`/remoteEnvironment/${graphReducer.history.present.scenario.name}/versions`).replyOnce(200, remoteVersions);
-        mock.onGet(
-            `/processes/${graphReducer.history.present.scenario.name}/${graphReducer.history.present.scenario.processVersionId}/compare/${graphReducer.history.present.scenario.history[1].processVersionId}`,
-        ).replyOnce(200, {});
+        mock.onGet(`/remoteEnvironment/${scenario.name}/versions`).replyOnce(200, remoteVersions);
+        mock.onGet(`/processes/${scenario.name}/${scenario.processVersionId}/compare/${scenario.history[1].processVersionId}`).replyOnce(
+            200,
+            {},
+        );
 
         render(
             <NuThemeProvider>
