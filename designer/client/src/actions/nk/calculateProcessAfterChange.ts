@@ -1,15 +1,16 @@
 import { cleanupNodeInputEdges, mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
-import { Scenario } from "../../components/Process/types";
+import type { Scenario } from "../../components/Process/types";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
-import { Edge, NodeType, ScenarioGraphWithName } from "../../types";
-import { ThunkAction } from "../reduxTypes";
+import type { Edge, NodeType, ScenarioGraph } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 
+// FIXME: this is not an action,
 export function calculateProcessAfterChange(
     scenario: Scenario,
     before: NodeType,
     after: NodeType,
     outputEdges: Edge[],
-): ThunkAction<Promise<ScenarioGraphWithName>> {
+): ThunkAction<Promise<ScenarioGraph>> {
     return async (_, getState) => {
         let changedGraph = scenario.scenarioGraph;
 
@@ -29,9 +30,6 @@ export function calculateProcessAfterChange(
 
         changedGraph = mapProcessWithNewNode(changedGraph, before, after);
 
-        return {
-            processName: scenario.name,
-            scenarioGraph: changedGraph,
-        };
+        return changedGraph;
     };
 }

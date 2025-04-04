@@ -22,7 +22,7 @@ const store = mockStore({
             edgesForNodes: [],
         },
     },
-    graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },
+    graphReducer: { present: { scenario: {} } },
 });
 
 describe("SqlEditor", () => {
