@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, StaticParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{ParameterCategory, ParameterEditor, StaticParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -49,6 +49,7 @@ package object definition {
       // The option is for decoder backward compatibility to decode responses from older versions
       // The option can be removed in future releases
       requiredParam: Option[Boolean],
+      category: ParameterCategory,
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(

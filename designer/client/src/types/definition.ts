@@ -1,6 +1,6 @@
 //types from pl.touk.nussknacker.ui.definition
 
-import { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
+import type { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
 
 interface TypingResultBase {
     value?: string | number | boolean;
@@ -56,4 +56,10 @@ export interface UIParameter {
     branchParam: boolean;
     hintText?: string;
     label: string;
+    category?: ParameterCategory;
+}
+
+export enum ParameterCategory {
+    Standard = "Standard",
+    Advanced = "Advanced",
 }

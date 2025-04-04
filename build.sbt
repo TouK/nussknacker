@@ -1330,7 +1330,12 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
       )
     },
   )
-  .dependsOn(liteEngineKafkaComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
+  .dependsOn(
+    liteEngineKafkaComponentsApi % Test,
+    componentsUtils              % Test,
+    liteComponentsTestkit        % Test,
+    kafkaTestUtils               % Test
+  )
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response"))
   .settings(commonSettings)

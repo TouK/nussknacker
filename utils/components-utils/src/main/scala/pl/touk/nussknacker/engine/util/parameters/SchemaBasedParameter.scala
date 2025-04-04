@@ -38,10 +38,9 @@ case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultV
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     val paramName       = value.name
     val paramResultType = resultTypes(paramName)
-    val converter       = new OutputValidatorErrorsConverter(paramName)
     validator
       .validate(paramResultType.returnType)
-      .leftMap(converter.convertValidationErrors)
+      .leftMap(errors => new OutputValidatorErrorsConverter(paramName).convertValidationErrors(errors))
       .leftMap(NonEmptyList.one)
       .map(_ => ())
   }

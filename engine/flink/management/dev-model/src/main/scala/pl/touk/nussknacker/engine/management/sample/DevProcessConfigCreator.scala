@@ -139,16 +139,25 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   editors = Some(List(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))),
                   validators = None,
                   label = None,
-                  hintText = None
+                  hintText = None,
+                  category = None,
                 ),
                 ParameterName("bar") -> ParameterConfig(
                   None,
                   Some(List(SpelTemplateParameterEditor)),
                   None,
                   None,
-                  None
+                  None,
+                  None,
                 ),
-                ParameterName("baz") -> ParameterConfig(None, Some(List(SpelTemplateParameterEditor)), None, None, None)
+                ParameterName("baz") -> ParameterConfig(
+                  None,
+                  Some(List(SpelTemplateParameterEditor)),
+                  None,
+                  None,
+                  None,
+                  None,
+                )
               )
             )
           )
@@ -158,7 +167,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None, None)
               )
             )
           )
@@ -182,14 +191,16 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   editors = None,
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
-                  hintText = None
+                  hintText = None,
+                  category = None,
                 ),
                 ParameterName("overriddenByFileConfigParam") -> ParameterConfig(
                   defaultValue = None,
                   editors = None,
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
-                  hintText = None
+                  hintText = None,
+                  category = None,
                 )
               )
             )

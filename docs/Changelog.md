@@ -139,6 +139,8 @@
   * correct source and target environment names
   * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
   Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
+* [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
+* [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
 
 ## 1.18
 

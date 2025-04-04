@@ -1,10 +1,12 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { PropsWithChildren } from "react";
-import { IdField } from "./IdField";
+import type { PropsWithChildren } from "react";
+import React from "react";
+
+import type ProcessUtils from "../../../common/ProcessUtils";
+import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
-import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
-import { ParametersList } from "./parametersList";
+import { IdField } from "./IdField";
+import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];
@@ -40,7 +42,7 @@ export const SourceSinkCommon = ({
                 setProperty={setProperty}
                 errors={errors}
             />
-            <ParametersList
+            <ParametersListAdvanced
                 parameters={node.ref.parameters}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -52,16 +54,17 @@ export const SourceSinkCommon = ({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `ref.parameters[${index}]`}
-            />
-            {children}
-            <DescriptionField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            >
+                {children}
+                <DescriptionField
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    node={node}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    errors={errors}
+                />
+            </ParametersListAdvanced>
         </>
     );
 };

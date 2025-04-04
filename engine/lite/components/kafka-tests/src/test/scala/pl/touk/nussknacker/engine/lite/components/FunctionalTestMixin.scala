@@ -2,8 +2,11 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.config.ConfigFactory
+import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
@@ -11,12 +14,16 @@ import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScena
 
 import java.util.UUID
 
-trait FunctionalTestMixin {
+trait FunctionalTestMixin extends KafkaSpec { self: Suite =>
   import LiteKafkaTestScenarioRunner._
 
-  protected val runner: LiteKafkaTestScenarioRunner = TestScenarioRunner.kafkaLiteBased().build()
-  protected val sourceName                          = "my-source"
-  protected val sinkName                            = "my-sink"
+  protected lazy val runner: LiteKafkaTestScenarioRunner =
+    TestScenarioRunner
+      .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .build()
+
+  protected val sourceName = "my-source"
+  protected val sinkName   = "my-sink"
 
   protected def randomTopic: String = UUID.randomUUID().toString
 

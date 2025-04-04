@@ -53,16 +53,22 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
   def compileSourceNode(
       source: SourceNodeData
   )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
-    nodeCompiler.compileSource(source).compiledObject
+    // We have to wrap this block with model's class loader because it invokes node compilation
+    modelData.withThisAsContextClassLoader {
+      nodeCompiler.compileSource(source).compiledObject
+    }
   }
 
   def compileAllCustomNodes(
       scenario: CanonicalProcess
   )(implicit jobData: JobData): ValidatedNel[ProcessCompilationError, Map[NodeComponentInfo, Any]] =
-    scenarioCompiler
-      .compile(scenario)
-      .result
-      .map(compiledParts => extractCustomComponents(compiledParts.sources.toList))
+    // We have to wrap this block with model's class loader because it invokes node compilation
+    modelData.withThisAsContextClassLoader {
+      scenarioCompiler
+        .compile(scenario)
+        .result
+        .map(compiledParts => extractCustomComponents(compiledParts.sources.toList))
+    }
 
   private def extractCustomComponents(
       parts: List[ProcessPart]

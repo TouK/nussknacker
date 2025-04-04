@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -15,7 +16,11 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOptio
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class UniversalSourceAvroSchemaLiteTest
+    extends AnyFunSuite
+    with KafkaSpec
+    with Matchers
+    with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -60,8 +65,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
 
   test("should read data with json payload on avro schema based topic") {
     // Given
-    val config = ConfigFactory
-      .load()
+    val config = resolveConfig(ConfigFactory.load())
       .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
     val runner = TestScenarioRunner.kafkaLiteBased(config).build()
     runner.registerAvroSchema(inputTopic.toUnspecialized, schema)
