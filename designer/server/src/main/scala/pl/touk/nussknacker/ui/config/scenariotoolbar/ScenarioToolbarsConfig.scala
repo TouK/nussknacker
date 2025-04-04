@@ -27,7 +27,9 @@ final case class ScenarioToolbarsConfig(
     topLeft: List[ToolbarPanelConfig],
     bottomLeft: List[ToolbarPanelConfig],
     topRight: List[ToolbarPanelConfig],
-    bottomRight: List[ToolbarPanelConfig]
+    bottomRight: List[ToolbarPanelConfig],
+    centerTop: List[ToolbarPanelConfig],
+    centerBottom: List[ToolbarPanelConfig]
 ) {
   lazy val uuidCode: UUID = uuid.getOrElse(UUID.nameUUIDFromBytes(hashCode().toString.getBytes))
 }

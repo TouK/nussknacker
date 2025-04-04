@@ -251,6 +251,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
             )
           ),
           List.empty,
+          List.empty,
+          List.empty
         )
       case (false, true, "Category1") =>
         ScenarioToolbarSettings(
@@ -296,6 +298,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
+          List.empty,
+          List.empty,
           List.empty,
         )
       case (true, false, "Category1") =>
@@ -365,6 +369,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
             )
           ),
           List.empty,
+          List.empty,
+          List.empty,
         )
       case (true, true, "Category1") =>
         ScenarioToolbarSettings(
@@ -422,6 +428,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
             )
           ),
           List.empty,
+          List.empty,
+          List.empty,
         )
       case (false, false, "Category2") =>
         ScenarioToolbarSettings(
@@ -477,7 +485,9 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          Nil
+          List.empty,
+          List.empty,
+          List.empty,
         )
       case (false, false, "Category3") =>
         ScenarioToolbarSettings(
@@ -534,9 +544,11 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
             )
           ),
           List.empty,
+          List.empty,
+          List.empty,
         )
       case (_, _, _) =>
-        ScenarioToolbarSettings("not-exist", Nil, Nil, Nil, Nil)
+        ScenarioToolbarSettings("not-exist", Nil, Nil, Nil, Nil, Nil, Nil)
     }
   }
 

@@ -31,17 +31,23 @@ object ScenarioToolbarSettings {
       scenario: ScenarioWithDetailsEntity[_]
   ): ScenarioToolbarSettings =
     ScenarioToolbarSettings(
-      createScenarioToolbarId(scenarioToolbarConfig, scenario),
-      scenarioToolbarConfig.topLeft
+      id = createScenarioToolbarId(scenarioToolbarConfig, scenario),
+      topLeft = scenarioToolbarConfig.topLeft
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      scenarioToolbarConfig.bottomLeft
+      bottomLeft = scenarioToolbarConfig.bottomLeft
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      scenarioToolbarConfig.topRight
+      topRight = scenarioToolbarConfig.topRight
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      scenarioToolbarConfig.bottomRight
+      bottomRight = scenarioToolbarConfig.bottomRight
+        .filterNot(tp => verifyCondition(tp.hidden, scenario))
+        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
+      centerTop = scenarioToolbarConfig.centerTop
+        .filterNot(tp => verifyCondition(tp.hidden, scenario))
+        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
+      centerBottom = scenarioToolbarConfig.centerBottom
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario))
     )
@@ -54,7 +60,9 @@ final case class ScenarioToolbarSettings(
     topLeft: List[ToolbarPanel],
     bottomLeft: List[ToolbarPanel],
     topRight: List[ToolbarPanel],
-    bottomRight: List[ToolbarPanel]
+    bottomRight: List[ToolbarPanel],
+    centerTop: List[ToolbarPanel],
+    centerBottom: List[ToolbarPanel],
 )
 
 object ToolbarPanel {
