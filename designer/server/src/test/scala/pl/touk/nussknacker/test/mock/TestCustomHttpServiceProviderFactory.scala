@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   PekkoCustomHttpServiceProvider,
   TapirCustomHttpServiceProvider
 }
+import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpoint
 import pl.touk.nussknacker.ui.customhttpservice.services.{NussknackerServicesForCustomHttpService, TapirEndpointSupport}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.capabilities.WebSockets
@@ -113,7 +114,7 @@ class TestTapirCustomHttpServiceProvider(tapirEndpointSupport: TapirEndpointSupp
         }
       }
 
-  override def serverEndpoints: List[ServerEndpoint[PekkoStreams with WebSockets, Future]] = List(
+  override def serverEndpoints: List[CustomHttpServiceServerEndpoint] = List(
     publicServerEndpoint,
     securedServerEndpoint,
   )
