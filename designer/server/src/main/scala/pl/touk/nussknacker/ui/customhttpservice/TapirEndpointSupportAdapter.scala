@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.LogicResult
 import pl.touk.nussknacker.ui.api.HttpServiceSupport
@@ -25,11 +26,10 @@ class TapirEndpointSupportAdapter(authManager: AuthManager)(implicit executionCo
   ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] =
     httpServiceSupport.authorizeKnownUser(credentials)
 
-  override protected def withSecurity_[INPUT, BUSINESS_ERROR, OUTPUT, R](
+  override protected def addSecurity[INPUT, BUSINESS_ERROR, OUTPUT, R](
       endpoint: PublicEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]
   ): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
-    import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.toSecuredEndpoint
-    toSecuredEndpoint(endpoint).withSecurity(authManager.authenticationEndpointInput())
+    new BaseEndpointDefinitions.ToSecure(endpoint).withSecurity(authManager.authenticationEndpointInput())
   }
 
 }

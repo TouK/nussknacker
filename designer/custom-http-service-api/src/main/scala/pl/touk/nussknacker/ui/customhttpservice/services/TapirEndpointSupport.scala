@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.customhttpservice.services
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.customhttpservice.services.TapirEndpointSupport.{LogicResult, SecuredEndpoint}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, SecurityError}
-import sttp.tapir.{Endpoint, EndpointInput, PublicEndpoint}
+import sttp.tapir.{Endpoint, PublicEndpoint}
 
 import scala.concurrent.Future
 
@@ -18,7 +18,7 @@ trait TapirEndpointSupport {
 
   def authorizeKnownUser[BUSINESS_ERROR](credentials: AuthCredentials): Future[LogicResult[BUSINESS_ERROR, LoggedUser]]
 
-  protected def withSecurity_[INPUT, BUSINESS_ERROR, OUTPUT, R](
+  protected def addSecurity[INPUT, BUSINESS_ERROR, OUTPUT, R](
       endpoint: PublicEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]
   ): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]
 
@@ -26,8 +26,8 @@ trait TapirEndpointSupport {
       val endpoint: PublicEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]
   ) {
 
-    def secure: SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
-      withSecurity_(endpoint)
+    def secured: SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
+      addSecurity(endpoint)
     }
 
   }

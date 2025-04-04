@@ -89,7 +89,7 @@ class TestTapirCustomHttpServiceProvider(tapirEndpointSupport: TapirEndpointSupp
         statusCode(UnprocessableEntity)
           .and(plainBody[SampleError])
       )
-      .secure
+      .secured
 
   private lazy val securedServerEndpoint =
     securedEndpoint

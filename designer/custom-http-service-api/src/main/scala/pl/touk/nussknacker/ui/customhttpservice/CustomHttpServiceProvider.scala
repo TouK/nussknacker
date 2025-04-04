@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
 import org.apache.pekko.http.scaladsl.server.Route
+import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpoint
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.capabilities.WebSockets
 import sttp.capabilities.pekko.PekkoStreams
@@ -15,5 +16,9 @@ trait PekkoCustomHttpServiceProvider extends CustomHttpServiceProvider {
 }
 
 trait TapirCustomHttpServiceProvider extends CustomHttpServiceProvider {
-  def serverEndpoints: List[ServerEndpoint[PekkoStreams with WebSockets, Future]]
+  def serverEndpoints: List[CustomHttpServiceServerEndpoint]
+}
+
+object TapirCustomHttpServiceProvider {
+  type CustomHttpServiceServerEndpoint = ServerEndpoint[PekkoStreams with WebSockets, Future]
 }
