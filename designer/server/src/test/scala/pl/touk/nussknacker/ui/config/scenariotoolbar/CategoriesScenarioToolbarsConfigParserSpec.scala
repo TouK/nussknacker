@@ -110,7 +110,9 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           None
         )
       ),
-      Nil
+      List.empty,
+      List.empty,
+      List.empty,
     )
 
     val categoryToolbarConfig = ScenarioToolbarsConfig(
@@ -142,7 +144,9 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           None
         )
       ),
-      List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None, None))
+      List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None, None)),
+      List.empty,
+      List.empty,
     )
 
     val testingConfigs = Table(
