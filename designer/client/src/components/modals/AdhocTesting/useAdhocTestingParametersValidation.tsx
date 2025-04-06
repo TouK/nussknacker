@@ -1,38 +1,44 @@
-import { NodeValidationError } from "../../../types";
 import { useCallback, useEffect, useState } from "react";
-import { ActionValues } from "./AdhocTestingFormContext";
+
 import { validateAdhocTestParameters } from "../../../actions/nk/adhocTesting";
-import { AdhocTestingParameters } from "./AdhocTestingDialog";
+import type { NodeValidationError } from "../../../types";
+import type { AdhocTestingParameters } from "./AdhocTestingDialog";
+import type { ActionValues } from "./AdhocTestingFormContext";
 
 export function useAdhocTestingParametersValidation(
     action: Pick<AdhocTestingParameters, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
     value: ActionValues,
+    enabled = true,
 ): {
-    isValid: boolean;
-    errors: NodeValidationError[];
+    adhocTestingIsValid: boolean;
+    adhocTestingErrors: NodeValidationError[];
 } {
     const { scenarioName, parameters, sourceId, scenarioGraph } = action;
     const [errors, setErrors] = useState<NodeValidationError[]>([]);
 
     const validate = useCallback(
         (value: ActionValues) => {
-            validateAdhocTestParameters(
-                scenarioName,
-                {
-                    sourceId,
-                    parameterExpressions: parameters.reduce(
-                        (obj, param) => ({
-                            ...obj,
-                            [param.name]: value[param.name],
-                        }),
-                        {},
-                    ),
-                },
-                scenarioGraph,
-                ({ validationErrors }) => setErrors(validationErrors),
-            );
+            if (enabled) {
+                return validateAdhocTestParameters(
+                    scenarioName,
+                    {
+                        sourceId,
+                        parameterExpressions: parameters.reduce(
+                            (obj, param) => ({
+                                ...obj,
+                                [param.name]: value[param.name],
+                            }),
+                            {},
+                        ),
+                    },
+                    scenarioGraph,
+                    ({ validationErrors }) => setErrors(validationErrors),
+                );
+            } else {
+                return;
+            }
         },
-        [parameters, scenarioName, scenarioGraph, sourceId],
+        [parameters, scenarioName, scenarioGraph, sourceId, enabled],
     );
 
     useEffect(() => {
@@ -40,7 +46,7 @@ export function useAdhocTestingParametersValidation(
     }, [validate, value]);
 
     return {
-        errors,
-        isValid: errors.length < 1,
+        adhocTestingErrors: errors,
+        adhocTestingIsValid: errors.length < 1,
     };
 }
