@@ -8,37 +8,32 @@ import type { ActionValues } from "./AdhocTestingFormContext";
 export function useAdhocTestingParametersValidation(
     action: Pick<AdhocTestingParameters, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
     value: ActionValues,
-    enabled = true,
 ): {
-    adhocTestingIsValid: boolean;
-    adhocTestingErrors: NodeValidationError[];
+    isValid: boolean;
+    errors: NodeValidationError[];
 } {
     const { scenarioName, parameters, sourceId, scenarioGraph } = action;
     const [errors, setErrors] = useState<NodeValidationError[]>([]);
 
     const validate = useCallback(
         (value: ActionValues) => {
-            if (enabled) {
-                return validateAdhocTestParameters(
-                    scenarioName,
-                    {
-                        sourceId,
-                        parameterExpressions: parameters.reduce(
-                            (obj, param) => ({
-                                ...obj,
-                                [param.name]: value[param.name],
-                            }),
-                            {},
-                        ),
-                    },
-                    scenarioGraph,
-                    ({ validationErrors }) => setErrors(validationErrors),
-                );
-            } else {
-                return;
-            }
+            validateAdhocTestParameters(
+                scenarioName,
+                {
+                    sourceId,
+                    parameterExpressions: parameters.reduce(
+                        (obj, param) => ({
+                            ...obj,
+                            [param.name]: value[param.name],
+                        }),
+                        {},
+                    ),
+                },
+                scenarioGraph,
+                ({ validationErrors }) => setErrors(validationErrors),
+            );
         },
-        [parameters, scenarioName, scenarioGraph, sourceId, enabled],
+        [parameters, scenarioName, scenarioGraph, sourceId],
     );
 
     useEffect(() => {
@@ -46,7 +41,7 @@ export function useAdhocTestingParametersValidation(
     }, [validate, value]);
 
     return {
-        adhocTestingErrors: errors,
-        adhocTestingIsValid: errors.length < 1,
+        errors,
+        isValid: errors.length < 1,
     };
 }

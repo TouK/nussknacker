@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import type { ElementType, ReactElement} from "react";
+import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +11,7 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
-import type { ActionValues} from "./AdhocTestingFormContext";
+import type { ActionValues } from "./AdhocTestingFormContext";
 import { AdhocTestingFormContext } from "./AdhocTestingFormContext";
 import { MarkdownForm } from "./MarkdownForm";
 import { useAdhocTestingParametersValidation } from "./useAdhocTestingParametersValidation";
@@ -57,7 +57,7 @@ function AdhocTestingDialog(props: WindowContentProps<WindowKind, AdhocTestingDa
     const { variableTypes, parameters = [], initialValues, onConfirmAction } = action;
 
     const [value, setValue] = useState(initialValues);
-    const { adhocTestingErrors, adhocTestingIsValid } = useAdhocTestingParametersValidation(action, value);
+    const { errors, isValid } = useAdhocTestingParametersValidation(action, value);
 
     const confirm = useCallback(async () => {
         onConfirmAction(value);
@@ -74,10 +74,10 @@ function AdhocTestingDialog(props: WindowContentProps<WindowKind, AdhocTestingDa
             {
                 title: t(`dialog.adhoc-testing.button.test`, "Test"),
                 action: () => confirm(),
-                disabled: !adhocTestingIsValid,
+                disabled: !isValid,
             },
         ];
-    }, [close, confirm, adhocTestingIsValid, t]);
+    }, [close, confirm, isValid, t]);
 
     return (
         <WindowContent
@@ -94,7 +94,7 @@ function AdhocTestingDialog(props: WindowContentProps<WindowKind, AdhocTestingDa
                             setValue,
                             parameters,
                             variableTypes,
-                            errors: adhocTestingErrors,
+                            errors,
                         }}
                     >
                         <MarkdownForm content={view.markdownContent} />

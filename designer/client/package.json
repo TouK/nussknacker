@@ -11,7 +11,7 @@
         "@hello-pangea/dnd": "16.6.0",
         "@juggle/resize-observer": "3.3.1",
         "@loadable/component": "5.15.2",
-        "@mui/icons-material": "7.0.1",
+        "@mui/icons-material": "5.16.14",
         "@mui/lab": "5.0.0-alpha.173",
         "@mui/material": "5.16.14",
         "@mui/system": "5.16.14",

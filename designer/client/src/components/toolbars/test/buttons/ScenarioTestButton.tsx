@@ -3,14 +3,8 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import {
-    getTestCapabilities,
-    getTestParameters,
-    getTestResultsLoading,
-    isLatestProcessVersion,
-} from "../../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestResultsLoading, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
-import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -47,18 +41,24 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             isResizable: true,
             kind: WindowKind.scenarioTest,
             meta: {
-                view: { Icon: TestingIcon, docs, markdownContent },
+                viewParams: { Icon: TestingIcon, docs, markdownContent },
             },
         });
     }, [docs, markdownContent, open, t]);
 
     const isLoading = useSelector(getTestResultsLoading);
 
+    const tooltip: string = disabled
+        ? "Scenario testing is not supported for scenario in current state"
+        : !atLeastOneTypeOfTestIsAvailable
+        ? "Scenario testing is not supported for currently configured sources"
+        : title;
+
     return (
         <ButtonProgress enabled={isLoading}>
             <ToolbarButton
                 name={name || t("panels.actions.scenarioTest.button.name", "test")}
-                title={title || t("panels.actions.scenarioTest.button.title", "run test")}
+                title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
                 icon={<TestingIcon />}
                 disabled={!atLeastOneTypeOfTestIsAvailable}
                 onClick={openDialog}
