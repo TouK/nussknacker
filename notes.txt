@@ -25,6 +25,7 @@ jest klasa Projection w ast, brzmi jak miejsce ktore trzeba trgetowac
 w debuggerze widze tam OptimizedEvaluationContext
 
 ciekawe, nie widze w outpucie testu tego spel costam exception wychodzacego z projection.
+no dobra, cos go pewnie lapie, ale i tak dziko
 
 hmm, w sumie to problem jest taki, ze to nie jest mapa
 a moze to powinna byc mapa
@@ -53,6 +54,9 @@ nie wesoło, nie fajnie
 wydaje sie, ze nie unikne tworzenia Projection chyba ze bym wielki kawal kodu nadpisal z spela
 a tego robic raczej nie chce.
 
+chyba ze jest jakies cos co moge zdecydowac, ze .! to jest prywatna metoda, a nie spelowy projection
+to moze byc jakis trop
+
 Inny pomysl byl taki, ze jak sobie powstaje ten caly expression, juz mam w rece to cale drzewko expressionow
 i tam sa projection, to moze podmienic tam jakos sprytnie Projection na jakies OurCustomProjection
 tylko to nie jest robialne, bo to jest juz gotowe drzewko zrobione z instancji jakichs klas ktore nie chcha sie dac
@@ -63,3 +67,7 @@ ktora potrafi juz obsluzyc tamta. Tylko tyle, że jest skopiowanie...
 
 oczywiscie mozna by na wstepie zawsze zamieniac jakos GenericRecord na Mape, ale to nie jest akceptowalne wydajnościowo
 trzeba taka zamiane robic dopiero jak jest potrzebna
+
+jeszcze inny pomysl: a moze jakby na potrzeby tego projection on myslal ze to jest mapa, to znaczy typ by byl napisany ze to
+mapa a nie generic record, ciekawe co wowczas by sie stalo.
+to nie zadziala, bo patrzy na typ operanda, czyli tej samej generic recordu

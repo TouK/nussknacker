@@ -32,6 +32,7 @@ class EvaluationContextPreparer(
     // TODO_PAWEL jest ok moze tutaj trzeba wsadzic odpowiedni converter?
     // tylko jak wowczas zapewnimy to ze to bedzie leniwe? moze byc ciezko
     optimized.setTypeConverter(new StandardTypeConverter(conversionService))
+    // TODO_PAWEL moze method resolver bedzie w stanie to jakos ogarnac
     optimized.setMethodResolvers(optimizedMethodResolvers)
     optimized
   }

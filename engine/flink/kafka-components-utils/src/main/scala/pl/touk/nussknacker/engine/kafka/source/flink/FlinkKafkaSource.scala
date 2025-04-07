@@ -141,6 +141,7 @@ class FlinkKafkaSource[T](
   ): SourceFunction[T] = {
     // TODO_PAWEL jest ok kurcze, czy to gdzies tutaj jest robione? czy nie wypadalo by jakos tam zrobic jakies toMap na wstepie? czy tam to record
     // no wlasnie bo to sie wykrzacza na poziomie kompilowania scenariuszy
+    // no ale nie mozna tutaj wrzucic wrapowania inputu w mapy niestety
     new FlinkKafkaConsumerHandlingExceptions[T](
       topics.map(_.name).toList.asJava,
       wrapToFlinkDeserializationSchema(deserializationSchema),
