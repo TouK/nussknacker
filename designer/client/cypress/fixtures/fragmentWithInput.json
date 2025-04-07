@@ -1,6 +1,6 @@
 {
     "metaData": {
-        "id": "e2e-004-fragment-test-process",
+        "id": "e2e-003-fragment-test-process",
         "additionalFields": {
             "description": null,
             "properties": {
@@ -191,5 +191,6 @@
             "type": "FragmentOutputDefinition"
         }
     ],
-    "additionalBranches": []
+    "additionalBranches": [],
+    "stickyNotes": []
 }
