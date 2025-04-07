@@ -49,9 +49,15 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const isLoading = useSelector(getTestResultsLoading);
 
     const tooltip: string = disabled
-        ? "Scenario testing is not supported for scenario in current state"
+        ? t(
+              "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
+              "Scenario testing is not supported for scenario in current state",
+          )
         : !atLeastOneTypeOfTestIsAvailable
-        ? "Scenario testing is not supported for currently configured sources"
+        ? t(
+              "panels.actions.scenarioTest.button.testing-not-available-for-current-sources-title",
+              "Scenario testing is not supported for currently configured sources",
+          )
         : title;
 
     return (

@@ -2,7 +2,7 @@ import { css, cx } from "@emotion/css";
 import loadable from "@loadable/component";
 import { FormGroup, FormLabel, Link, Typography } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -36,16 +36,23 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
     const { t } = useTranslation();
 
     const testCapabilities = useSelector(getTestCapabilities);
+    const testWithParametersIsAvailable = useMemo(() => testCapabilities.canTestWithForm, [testCapabilities]);
+    const testWithGeneratedDataIsAvailable = useMemo(
+        () => testCapabilities.canGenerateTestData && testCapabilities.canBeTested,
+        [testCapabilities],
+    );
 
-    const availabilityMap: Record<TestType, boolean> = {
-        [TestType.withParameters]: testCapabilities.canTestWithForm,
-        [TestType.withGeneratedData]: testCapabilities.canGenerateTestData && testCapabilities.canBeTested,
-    };
+    const availabilityMap: Record<TestType, boolean> = useMemo(() => {
+        return {
+            [TestType.withParameters]: testWithParametersIsAvailable,
+            [TestType.withGeneratedData]: testWithGeneratedDataIsAvailable,
+        };
+    }, [testWithParametersIsAvailable, testWithGeneratedDataIsAvailable]);
     const availableTestTypes = Object.entries(availabilityMap)
         .filter(([_, isAvailable]) => isAvailable)
         .map(([key]) => key as TestType);
 
-    const [testType, setState] = useValidatedLocalStorage<FormValue>(
+    const [formValue, setState] = useValidatedLocalStorage<FormValue>(
         "selectedTestTypeState",
         { testType: availableTestTypes[0] },
         (stored: FormValue) => availableTestTypes.includes(TestType[stored.testType]),
@@ -67,18 +74,15 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
     );
     const onFieldChange = useCallback(
         (field: keyof FormValue, next: string) => {
-            onChange({ ...testType, [field]: next });
+            onChange({ ...formValue, [field]: next });
             handleSetTouched({ ...touched, [field]: true });
         },
-        [handleSetTouched, onChange, touched, testType],
+        [handleSetTouched, onChange, touched, formValue],
     );
     const onBlurChange = useCallback(
         (field: keyof TouchedValue, next: boolean) => handleSetTouched({ ...touched, [field]: next }),
         [handleSetTouched, touched],
     );
-
-    const testWithParametersIsAvailable = testCapabilities.canTestWithForm;
-    const testWithGeneratedDataIsAvailable = testCapabilities.canGenerateTestData && testCapabilities.canBeTested;
 
     return (
         <div className={cx(css({ paddingTop: 10, paddingBottom: 20 }))}>
@@ -90,7 +94,7 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                         sx={(theme) => ({ flexWrap: "flex", alignItems: "center", gap: theme.spacing(1.5) })}
                         onChange={(event) => {
                             const target = event.target as HTMLInputElement;
-                            onFieldChange("testType", target.checked ? target.value : target.value);
+                            onFieldChange("testType", target.value);
                         }}
                         onBlur={() => {
                             onBlurChange("testType", true);
@@ -100,14 +104,14 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                             label={t("testingForm.label.withParameters", "Form")}
                             value={TestType.withParameters}
                             Icon={DryRunTestingIcon}
-                            active={testType.testType === TestType.withParameters}
+                            active={formValue.testType === TestType.withParameters}
                             disabled={!testWithParametersIsAvailable}
                         />
                         <CustomRadio
                             label={t("testingForm.label.withGeneratedData", "Live samples")}
                             value={TestType.withGeneratedData}
                             Icon={GenerateAndTestIcon}
-                            active={testType.testType === TestType.withGeneratedData}
+                            active={formValue.testType === TestType.withGeneratedData}
                             disabled={!testWithGeneratedDataIsAvailable}
                         />
                     </FormGroup>
@@ -125,7 +129,9 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                         </Trans>
                     </Typography>
                 </span>
-                <TestVariantForm testType={testType.testType} testingData={testingData} closeDialog={closeDialog}></TestVariantForm>
+                <div className={cx(css({ paddingTop: 10, paddingBottom: 20 }))}>
+                    <TestVariantForm testType={formValue.testType} testingData={testingData} closeDialog={closeDialog}></TestVariantForm>
+                </div>
             </NodeTable>
         </div>
     );

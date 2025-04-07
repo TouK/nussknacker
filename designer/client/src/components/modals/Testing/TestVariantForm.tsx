@@ -1,6 +1,5 @@
-import { css, cx } from "@emotion/css";
 import type { WindowType } from "@touk/window-manager";
-import React from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { getTestParameters } from "../../../reducers/selectors/graph";
@@ -20,30 +19,22 @@ interface TestVariantFormProps {
 export function TestVariantForm({ testType, testingData, closeDialog }: TestVariantFormProps): JSX.Element {
     const testParameters = useSelector(getTestParameters);
     const sourcesFound = testParameters.length;
-    const thereAreMultipleSources = sourcesFound > 1;
 
-    const testWithParametersElementWhenSingleSource =
-        testType === TestType.withParameters && !thereAreMultipleSources ? (
-            <TestWithParametersSingleSourceForm testingData={testingData} closeDialog={closeDialog}></TestWithParametersSingleSourceForm>
-        ) : (
-            <></>
-        );
-
-    const testWithParametersElementWhenMultipleSources =
-        testType === TestType.withParameters && thereAreMultipleSources ? (
-            <TestWithParametersMultipleSourcesForm numberOfSources={sourcesFound}></TestWithParametersMultipleSourcesForm>
-        ) : (
-            <></>
-        );
-
-    const testWithGeneratedDataElement =
-        testType === TestType.withGeneratedData ? <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm> : <></>;
-
-    return (
-        <div className={cx(css({ paddingTop: 10, paddingBottom: 20 }))}>
-            {testWithParametersElementWhenSingleSource}
-            {testWithParametersElementWhenMultipleSources}
-            {testWithGeneratedDataElement}
-        </div>
-    );
+    return useMemo(() => {
+        switch (testType) {
+            case TestType.withParameters:
+                if (sourcesFound > 1) {
+                    return <TestWithParametersMultipleSourcesForm numberOfSources={sourcesFound}></TestWithParametersMultipleSourcesForm>;
+                } else {
+                    return (
+                        <TestWithParametersSingleSourceForm
+                            testingData={testingData}
+                            closeDialog={closeDialog}
+                        ></TestWithParametersSingleSourceForm>
+                    );
+                }
+            case TestType.withGeneratedData:
+                return <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm>;
+        }
+    }, [testType, sourcesFound, closeDialog, testingData]);
 }
