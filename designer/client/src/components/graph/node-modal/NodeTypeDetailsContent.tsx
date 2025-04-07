@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
+import { removeHistorySnapshot, takeHistorySnapshot } from "../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, NodeValidationError } from "../../../types";
@@ -126,6 +127,13 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
             dispatch(nodeDetailsClosed(node.id));
         };
     }, [dispatch, node.id]);
+
+    useEffect(() => {
+        dispatch(takeHistorySnapshot());
+        return () => {
+            dispatch(removeHistorySnapshot());
+        };
+    }, [dispatch]);
 
     useEffect(() => {
         if (showValidation) {

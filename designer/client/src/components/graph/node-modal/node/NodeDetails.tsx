@@ -11,7 +11,7 @@ import { BASE_PATH } from "../../../../config";
 import { parseWindowsQueryParams } from "../../../../containers/hooks/useSearchQuery";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
-import type { NodeType } from "../../../../types";
+import type { Edge, NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
 import { WindowContent } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
@@ -24,6 +24,7 @@ import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
+import type { EditState } from "./useNodeState";
 import { mergeQuery, useNodeState } from "./useNodeState";
 
 export type NodeDetailsMeta = {
@@ -37,33 +38,38 @@ export type NodeDetailsProps = WindowContentProps<WindowKind, NodeDetailsMeta> &
 
 export function useNodeDetailsButtons({
     editedNode,
+    outputEdges,
     performNodeEdit,
     close,
     readOnly,
 }: {
     editedNode: EditedNode;
-    performNodeEdit: () => Promise<void>;
+    outputEdges: Edge[];
+    performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
     close: () => void;
     readOnly?: boolean;
 }) {
     const { t } = useTranslation();
+    const [settings] = useUserSettings();
 
+    const autoApply = settings["node.autoApply"];
     const apply = useMemo<WindowButtonProps | false>(() => {
         if (readOnly) return false;
+        if (autoApply) return false;
         return {
             title: t("dialog.button.apply", "apply"),
-            action: () => performNodeEdit().then(() => close()),
+            action: () => performNodeEdit(editedNode, outputEdges).then(() => close()),
             disabled: !editedNode.id?.length,
         };
-    }, [close, editedNode.id?.length, performNodeEdit, readOnly, t]);
+    }, [autoApply, close, editedNode, outputEdges, performNodeEdit, readOnly, t]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
         return {
-            title: t("dialog.button.cancel", "cancel"),
+            title: autoApply ? t("dialog.button.close", "close") : t("dialog.button.cancel", "cancel"),
             action: () => close(),
             className: LoadingButtonTypes.secondaryButton,
         };
-    }, [close, t]);
+    }, [autoApply, close, t]);
 
     return { apply, cancel };
 }
@@ -91,7 +97,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit } = useNodeState(data.meta);
-    const { cancel, apply } = useNodeDetailsButtons({ editedNode, performNodeEdit, close, readOnly });
+    const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
     useEffect(() => {
         mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
