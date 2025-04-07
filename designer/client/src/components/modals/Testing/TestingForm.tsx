@@ -104,6 +104,14 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                     >
                         <CustomRadio
                             label={t("testingForm.label.withParameters", "Form")}
+                            title={
+                                testWithParametersIsAvailable
+                                    ? null
+                                    : t(
+                                          "testingForm.label.withParametersNotAvailable",
+                                          "Currently configured scenario sources do not support testing with form",
+                                      )
+                            }
                             value={TestType.withParameters}
                             Icon={DryRunTestingIcon}
                             active={formValue.testType === TestType.withParameters}
@@ -111,6 +119,14 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                         />
                         <CustomRadio
                             label={t("testingForm.label.withGeneratedData", "Live samples")}
+                            title={
+                                testWithGeneratedDataIsAvailable
+                                    ? null
+                                    : t(
+                                          "testingForm.label.withGeneratedDataNotAvailable",
+                                          "Currently configured scenario sources do not support testing with live samples",
+                                      )
+                            }
                             value={TestType.withGeneratedData}
                             Icon={GenerateAndTestIcon}
                             active={formValue.testType === TestType.withGeneratedData}
