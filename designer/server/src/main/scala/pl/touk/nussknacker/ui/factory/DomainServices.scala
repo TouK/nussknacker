@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.factory
 
 import cats.effect.{IO, Resource}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
@@ -57,7 +58,8 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 final class DomainServices(
     val futureProcessRepository: FetchingProcessRepository[Future],
@@ -83,7 +85,7 @@ final class DomainServices(
     val processAuthorizer: AuthorizeProcess,
 )
 
-object DomainServices {
+object DomainServices extends LazyLogging {
 
   def create(
       designerConfigLoader: DesignerConfigLoader,
@@ -128,10 +130,7 @@ object DomainServices {
         deploymentManagersClassLoader,
         modelClassLoaderProvider,
         modelDataProvider.mapValues(_.modelData),
-        getDeploymentManagerDependencies(
-          infrastructureServices,
-          _
-        ),
+        infrastructureServices.deploymentManagerDependencies,
         Some(
           getSchedulingDependencies(
             infrastructureServices,
@@ -298,9 +297,10 @@ object DomainServices {
         futureProcessRepository,
         dbioRunner
       )
-      _ <- Resource.eval(
-        IO.fromFuture(IO(reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart)))
-      )
+      _ = {
+        // We don't wait for recovery because it may take a while, and we don't want health check to detect that we have problem with application starting
+        recoverNotRunningDeploymentsThatShouldBeRunning(reconciler)
+      }
       _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         reconciler,
@@ -395,18 +395,6 @@ object DomainServices {
       )
   }
 
-  private def getDeploymentManagerDependencies(
-      infrastructureServices: InfrastructureServices,
-      processingType: ProcessingType
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
-    new DeploymentManagerDependencies(
-      executionContextWithIORuntime,
-      executionContextWithIORuntime.ioRuntime,
-      infrastructureServices.actorSystem,
-      infrastructureServices.futureSttpBackend
-    )
-  }
-
   private def getSchedulingDependencies(
       infrastructureServices: InfrastructureServices,
       actionServiceProvider: Supplier[ActionService],
@@ -437,6 +425,18 @@ object DomainServices {
     )
   }
 
+  private def recoverNotRunningDeploymentsThatShouldBeRunning(
+      reconciler: ScenarioDeploymentReconciler
+  )(implicit ec: ExecutionContext): Unit = {
+    reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart).onComplete {
+      case Success(_) =>
+      case Failure(
+            exception
+          ) => // It is done jus in case, it rather shouldn't happen because we have exception handling for each recovered deployment
+        logger.error("Error while deployments recovery", exception)
+    }
+  }
+
   // This hack with delayed init is needed because we have a cycle of dependencies:
   // DeploymentManagerDispatcher -> DeploymentData -> PeriodicDeploymentManagerDecorator -> ProcessingTypeActionService.markActionExecutionFinished ->
   // ActionService -> ProcessChangeListener -> FetchScenarioActivityService ->
@@ -455,6 +455,19 @@ object DomainServices {
     }
 
     def set(actionService: ActionService): Unit = actionServiceRef.set(Some(actionService))
+  }
+
+  private implicit class InfrastructureServicesOps(infrastructureServices: InfrastructureServices) {
+
+    lazy val deploymentManagerDependencies: DeploymentManagerDependencies = {
+      new DeploymentManagerDependencies(
+        infrastructureServices.executionContextWithIORuntime,
+        infrastructureServices.executionContextWithIORuntime.ioRuntime,
+        infrastructureServices.actorSystem,
+        infrastructureServices.futureSttpBackend
+      )
+    }
+
   }
 
 }
