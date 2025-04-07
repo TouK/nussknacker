@@ -11,12 +11,12 @@ services:
   designer:
     environment:
       EXAMPLE_SCENARIOS_LIBRARY_SERVICE_NAME: bootstrap-setup
-      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf,/opt/nussknacker/conf/batch-customizations.conf,/opt/nussknacker/conf/additional-configuration.conf"
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf,/opt/nussknacker/conf/batch-customizations.conf,/opt/nussknacker/conf/additional/additional-configuration.conf"
       # Batch adds 2 new processing types, each of them add MiniCluster for scenario testing purpose. Also batch components itself use MiniCluster.
       # It increases memory footprint significantly
       JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=500M -XX:MaxDirectMemorySize=200M"
     volumes:
-      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
+      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/additional
       - ../../e2e-tests/src/test/resources/batch-data-generation/transactions:/transactions
       # batch-customizations.conf needs to be added on Nu startup, and not later by nussknacker-example-scenarios-library, because it defines new processing type
       - ../../e2e-tests/src/test/resources/batch-data-generation/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
@@ -27,7 +27,7 @@ services:
 
   bootstrap-setup:
     volumes:
-      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/
+      - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/additional
       - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
       - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
       - ../../e2e-tests/src/test/resources/loan-request:/scenario-examples/loan-request
