@@ -162,6 +162,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
             return {
                 ...state,
+                selectionState: state.selectionState.map((current) => (current === action.before.id ? action.after.id : current)),
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
@@ -376,7 +377,7 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
 });
 
 export type GraphStateWithHistory = StateWithHistory<GraphState> & {
-    lastIndexes: number[];
+    snapshots: number[];
 };
 
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
@@ -411,5 +412,5 @@ const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action
 
 export const reducerWithUndo: Reducer<GraphStateWithHistory> = (state, action) => {
     const history = fixUndoableHistory(state, action);
-    return appendHistorySquashLogic({ ...history, lastIndexes: state?.lastIndexes }, action);
+    return appendHistorySquashLogic({ ...history, snapshots: state?.snapshots }, action);
 };
