@@ -1,5 +1,6 @@
 import type { WindowType } from "@touk/window-manager";
 import React, { useMemo } from "react";
+import { useErrorBoundary } from "react-error-boundary";
 import { useSelector } from "react-redux";
 
 import { getTestParameters } from "../../../reducers/selectors/graph";
@@ -19,6 +20,7 @@ interface TestVariantFormProps {
 export function TestVariantForm({ testType, testingData, closeDialog }: TestVariantFormProps): JSX.Element {
     const testParameters = useSelector(getTestParameters);
     const sourcesFound = testParameters.length;
+    const { showBoundary } = useErrorBoundary();
 
     return useMemo(() => {
         switch (testType) {
@@ -35,6 +37,8 @@ export function TestVariantForm({ testType, testingData, closeDialog }: TestVari
                 }
             case TestType.withGeneratedData:
                 return <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm>;
+            default:
+                showBoundary(`There is no form available for test type ${testType}`);
         }
-    }, [testType, sourcesFound, closeDialog, testingData]);
+    }, [testType, sourcesFound, closeDialog, testingData, showBoundary]);
 }

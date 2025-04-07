@@ -4,16 +4,15 @@ import { FormGroup, FormLabel, Link, Typography } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import { getTestCapabilities } from "../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import { CustomRadio } from "../../customRadio/CustomRadio";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import type { TestingData } from "./TestingDialog";
 import { TestVariantForm } from "./TestVariantForm";
-import { useValidatedLocalStorage } from "./useValidatedLocalStorage";
 
 export enum TestType {
     withParameters = "withParameters",
@@ -34,6 +33,7 @@ const GenerateAndTestIcon = loadable(() => import("../../../assets/img/icons/tes
 
 export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX.Element {
     const { t } = useTranslation();
+    const dispatch = useDispatch();
 
     const testCapabilities = useSelector(getTestCapabilities);
     const testWithParametersIsAvailable = useMemo(() => testCapabilities.canTestWithForm, [testCapabilities]);
@@ -52,19 +52,22 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
         .filter(([_, isAvailable]) => isAvailable)
         .map(([key]) => key as TestType);
 
-    const [formValue, setState] = useValidatedLocalStorage<FormValue>(
-        "selectedTestTypeState",
-        { testType: availableTestTypes[0] },
-        (stored: FormValue) => availableTestTypes.includes(TestType[stored.testType]),
-    );
+    const predefinedTestType = useSelector(getTestType);
+    const [formValue, setState] = useState<FormValue>({
+        testType: predefinedTestType ?? availableTestTypes[0],
+    });
     const [touched, setTouched] = useState<TouchedValue>({
         testType: false,
     });
     const onChange = useCallback(
         (value: FormValue) => {
+            dispatch({
+                type: "UPDATE_TEST_TYPE",
+                testType: value.testType,
+            });
             setState(value);
         },
-        [setState],
+        [setState, dispatch],
     );
     const handleSetTouched = useCallback(
         (touched: TouchedValue) => {
