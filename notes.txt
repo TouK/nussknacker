@@ -77,4 +77,9 @@ to nie zadziala, bo patrzy na typ operanda, czyli tej samej generic recordu
 podsumowujac jakie sa obiecujace tropy
 - jakis dac custom method na generic recordzie ktory jest projectionem, moze wowczas nie zrobi sie ten projection ast w przypadku
     generic recordu
+  tego sie nie zrobi, bo wcale sie nie odpali ten
+  private val optimizedMethodResolvers: java.util.List[MethodResolver]
 - nadpisac caly Projection i dodac w nim ifa
+
+-------------
+zrobmy poca nadpisywania projection
