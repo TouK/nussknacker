@@ -53,9 +53,9 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
         .map(([key]) => key as TestType);
 
     const predefinedTestType = useSelector(getTestType);
-    const [formValue, setState] = useState<FormValue>({
-        testType: predefinedTestType ?? availableTestTypes[0],
-    });
+    const formValue = useMemo<FormValue>(() => {
+        return { testType: predefinedTestType ?? availableTestTypes[0] };
+    }, [predefinedTestType, availableTestTypes]);
     const [touched, setTouched] = useState<TouchedValue>({
         testType: false,
     });
@@ -65,9 +65,8 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                 type: "UPDATE_TEST_TYPE",
                 testType: value.testType,
             });
-            setState(value);
         },
-        [setState, dispatch],
+        [dispatch],
     );
     const handleSetTouched = useCallback(
         (touched: TouchedValue) => {
