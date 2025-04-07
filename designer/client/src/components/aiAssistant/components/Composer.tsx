@@ -110,6 +110,10 @@ export const Composer = () => {
                 <div className={nodeValue}>
                     <StyledTextArea
                         autoFocus
+                        onFocus={(e) => {
+                            // Disable nk-windows focus event which move second window when opened, to the background on input clicks
+                            e.stopPropagation();
+                        }}
                         ref={textAreaRef}
                         autoComplete="off"
                         name="message"
