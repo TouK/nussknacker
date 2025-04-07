@@ -82,6 +82,7 @@ import pl.touk.nussknacker.test.mock.{
 }
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -1680,7 +1681,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
-      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     )
 
     val process = processWithOptionalParameterService("")
@@ -1738,7 +1740,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
-      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     )
 
     val process = processWithOptionalParameterService("'Barabasz'")
@@ -2716,7 +2719,8 @@ private object UIProcessValidatorSpec {
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
     scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
     additionalValidators = List.empty,
-    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+    stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
   )
 
   def mockedProcessValidator(
@@ -2753,7 +2757,8 @@ private object UIProcessValidatorSpec {
         new StubFragmentRepository(
           fragmentsByProcessingType.mapValuesNow(List(_))
         )
-      )
+      ),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     )
   }
 

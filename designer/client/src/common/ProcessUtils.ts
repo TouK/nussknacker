@@ -2,6 +2,7 @@
 import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
 import type { Scenario } from "src/components/Process/types";
 
+import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ScenarioLabelValidationError } from "../components/Labels/types";
 import type { RootState } from "../reducers";
 import { getHistoryPast, getScenario, isProcessRenamed } from "../reducers/selectors/graph";
@@ -210,7 +211,7 @@ class ProcessUtils {
     };
 
     extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
-        return components?.[this.determineComponentId(node)];
+        return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
     };
 
     determineComponentId = (node?: NodeType): string | null => {

@@ -7,16 +7,15 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSp
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote}
 
 @JsonCodec final case class ScenarioGraph(
     properties: ProcessProperties,
     nodes: List[NodeData],
-    edges: List[Edge]
+    edges: List[Edge],
+    stickyNotes: List[StickyNote] = Nil
 ) {
-
   def toMetaData(name: ProcessName): MetaData = properties.toMetaData(name)
-
 }
 
 @JsonCodec final case class Edge(from: String, to: String, edgeType: Option[EdgeType])
