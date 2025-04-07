@@ -7,6 +7,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.JobRuntimeData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, ProcessValidator}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.function.ProcessFunctionInterceptor
@@ -459,7 +460,9 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
+    val jobData          = jobDataFor(process)
+    val jobRuntimeData   = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val validationResult = processValidator.validate(process, isFragment = false)(jobRuntimeData).result
     assert(validationResult.isInvalid)
   }
 
@@ -504,7 +507,9 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
+    val jobData          = jobDataFor(process)
+    val jobRuntimeData   = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val validationResult = processValidator.validate(process, isFragment = false)(jobRuntimeData).result
     assert(validationResult.isInvalid)
   }
 

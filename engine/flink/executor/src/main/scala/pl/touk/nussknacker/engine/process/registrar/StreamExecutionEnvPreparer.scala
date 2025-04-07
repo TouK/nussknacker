@@ -58,7 +58,7 @@ class DefaultStreamExecutionEnvPreparer(
       deploymentData: DeploymentData
   ): Unit = {
 
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(compilerData.jobRuntimeData.jobData, deploymentData)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(compilerData.jobData, deploymentData)
 
     val streamMetaData =
       MetaDataExtractor

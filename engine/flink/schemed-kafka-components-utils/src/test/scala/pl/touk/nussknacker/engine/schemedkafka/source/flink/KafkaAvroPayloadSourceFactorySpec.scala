@@ -6,11 +6,13 @@ import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import pl.touk.nussknacker.engine.JobRuntimeData
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.EngineNodeDependencies
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -377,9 +379,10 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val validator = DynamicNodeValidator(modelData)
     val metaData  = MetaData("processId", StreamMetaData())
 
-    implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    implicit val nodeId: NodeId   = NodeId("id")
-    val paramsList                = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
+    val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    implicit val nodeId: NodeId                 = NodeId("id")
+    val paramsList                              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
     validator
       .validateNode(
         universalSourceFactory(useStringForKey = true),
