@@ -1022,7 +1022,10 @@ class HttpService {
     }
 
     sendChatMessage(message: TextContentPart, abortSignal: AbortSignal) {
-        const headers = { "Content-Type": "application/json" };
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+        };
 
         if (SystemUtils.hasAccessToken()) {
             headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();

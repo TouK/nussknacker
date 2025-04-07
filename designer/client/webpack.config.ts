@@ -1,4 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
+import path from "path";
+
 import ReactRefreshWebpackPlugin from "@pmmmwh/react-refresh-webpack-plugin";
 import PreloadWebpackPlugin from "@vue/preload-webpack-plugin";
 import autoprefixer from "autoprefixer";
@@ -7,9 +9,10 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import HtmlWebpackHarddiskPlugin from "html-webpack-harddisk-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MomentLocalesPlugin from "moment-locales-webpack-plugin";
-import path from "path";
 import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image-query";
-import webpack, { Configuration } from "webpack";
+import type { Configuration } from "webpack";
+import webpack from "webpack";
+
 import { withModuleFederationPlugins } from "./configs/withModuleFederationPlugins";
 import { dependencies } from "./package.json";
 import progressBar from "./progressBar.js";
@@ -90,6 +93,10 @@ const config: Configuration = {
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
                         proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
+                    // Do not buffer SSE endpoints, based on: https://github.com/chimurai/http-proxy-middleware/issues/371
+                    if (req.headers?.accept === "text/event-stream") {
+                        proxyRes.headers["Cache-Control"] = "no-transform";
                     }
                 },
             },
