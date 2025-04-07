@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{api, CustomProcessValidatorLoader, InterpretationResult, RuntimeMode}
+import pl.touk.nussknacker.engine.{api, CustomProcessValidatorLoader, InterpretationResult, JobRuntimeData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessCompilerData
+import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, ProcessCompilerData}
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -41,7 +41,9 @@ class InterpreterSetup[T: ClassTag] {
     val parts        = failOnErrors(compilerData.compile(process))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
+      failOnErrors(
+        compilerData.subPartCompiler.compile(part.node, part.validationContext)(compilerData.jobRuntimeData).result
+      )
 
     val compiled = compileNode(parts.sources.head)
     (initialCtx: Context, ec: ServiceExecutionContext) => interpreter.interpret[F](compiled, jobData, initialCtx, ec)
@@ -70,8 +72,10 @@ class InterpreterSetup[T: ClassTag] {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
+    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+
     ProcessCompilerData.prepare(
-      jobData,
+      jobRuntimeData,
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       List.empty,

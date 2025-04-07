@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import pl.touk.nussknacker.engine.JobRuntimeData
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -19,7 +20,12 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
-import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{
+  CompilationResult,
+  EngineNodeDependencies,
+  FragmentResolver,
+  ProcessValidator
+}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -325,7 +331,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testScenario =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = processValidator.validate(testScenario, isFragment = false)(jobDataFor(testScenario))
+    val jobData        = jobDataFor(testScenario)
+    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val result         = processValidator.validate(testScenario, isFragment = false)(jobRuntimeData)
 
     inside(result.result) {
       case Invalid(
@@ -883,8 +891,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
-    processValidator.validate(scenario, isFragment = false)(jobDataFor(scenario))
+    val scenario       = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
+    val jobData        = jobDataFor(scenario)
+    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    processValidator.validate(scenario, isFragment = false)(jobRuntimeData)
   }
 
   private def tumbling(

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.{CustomProcessValidator, JobRuntimeData}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -137,8 +137,10 @@ class UIProcessValidator(
       isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult = {
     def validateAndFormatResult(scenario: CanonicalProcess) = {
-      implicit val jobData: JobData = JobData(scenario.metaData, processVersion)
-      val validated                 = validator.validate(scenario, isFragment)
+      val jobData: JobData = JobData(scenario.metaData, processVersion)
+      // FIXME abr
+      implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+      val validated                               = validator.validate(scenario, isFragment)
       validated.result
         .fold(formatErrors, _ => ValidationResult.success)
         .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))

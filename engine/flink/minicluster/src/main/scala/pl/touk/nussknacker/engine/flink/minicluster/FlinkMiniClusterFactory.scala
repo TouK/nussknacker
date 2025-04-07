@@ -1,15 +1,18 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
 import cats.Applicative
-import cats.effect.kernel.Resource
 import cats.effect.{Sync, SyncIO}
+import cats.effect.kernel.Resource
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{ScenarioStateVerificationConfig, ScenarioTestingConfig}
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
+  ScenarioStateVerificationConfig,
+  ScenarioTestingConfig
+}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.language.higherKinds
@@ -96,7 +99,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
 
 class FlinkMiniClusterWithServices(
     val miniCluster: MiniCluster,
-    modelClassLoader: URLClassLoader
+    modelClassLoader: ModelClassLoader
 ) extends AutoCloseable {
 
   def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {

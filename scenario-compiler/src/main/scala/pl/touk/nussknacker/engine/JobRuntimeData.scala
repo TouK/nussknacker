@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.compile.EngineNodeDependencies
 
 // It contains data available during job runtime - basically it is a combination of data passed from designer (JobData)
 // and data enriched by runtime job (currently EngineNodeDependencies)
+// FIXME abr: rename to Node(Scenario?)CompilationDependencies, and + extract NodeCompilationDependencies with NodeId
 class JobRuntimeData(val jobData: JobData, engineNodeDependencies: EngineNodeDependencies) {
   def metaData: MetaData             = jobData.metaData
   def processVersion: ProcessVersion = jobData.processVersion

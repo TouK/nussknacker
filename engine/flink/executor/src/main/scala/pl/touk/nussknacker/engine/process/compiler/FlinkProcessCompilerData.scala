@@ -38,7 +38,7 @@ class FlinkProcessCompilerData(
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl(jobRuntimeData.jobData, runtimeContext, runtimeMode))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode))
     }
   }
 
@@ -54,6 +54,8 @@ class FlinkProcessCompilerData(
     case Valid(r)     => r
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
+
+  def jobData: JobData = jobRuntimeData.jobData
 
   def jobRuntimeData: JobRuntimeData = compilerData.jobRuntimeData
 
@@ -74,7 +76,7 @@ class FlinkProcessCompilerData(
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
     exceptionHandler.open(
-      FlinkEngineRuntimeContextImpl(jobRuntimeData, runtimeContext, runtimeMode)
+      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode)
     )
     exceptionHandler
   }
