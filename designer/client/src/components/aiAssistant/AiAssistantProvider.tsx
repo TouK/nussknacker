@@ -23,7 +23,6 @@ async function* initializeChatStream(
         }
 
         const { done, value } = await reader.read();
-        console.log("Received from stream ", value);
 
         if (done) {
             return;
@@ -63,26 +62,21 @@ const ModelAdapter: ChatModelAdapter = {
 
         let text = "";
         for await (const event of chatStream) {
-            console.log("Received event ", event);
             const { responsePart, state } = event;
             if (state.isAborted) {
-                console.log("Aborted");
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "incomplete", reason: "cancelled" },
                 };
                 return;
             } else if (state.isFinished) {
-                console.log("Finished");
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "complete", reason: "stop" },
                 };
                 return;
             } else if (responsePart !== null) {
-                console.log("Part ", responsePart);
                 text += responsePart;
-                console.log("Current text", text);
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "running" },
