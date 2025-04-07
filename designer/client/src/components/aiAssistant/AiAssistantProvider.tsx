@@ -1,58 +1,60 @@
 import type { ChatModelRunOptions, TextContentPart } from "@assistant-ui/react";
-import { AssistantRuntimeProvider, useLocalRuntime, type ChatModelAdapter } from "@assistant-ui/react";
+import { AssistantRuntimeProvider, type ChatModelAdapter, useLocalRuntime } from "@assistant-ui/react";
 import { createParser } from "eventsource-parser";
 import type { ReactNode } from "react";
 import React from "react";
 
 import httpService from "../../http/HttpService";
 
-async function initializeChatStream(
+async function* initializeChatStream(
     messages: ChatModelRunOptions["messages"],
     abortSignal?: AbortSignal,
-): Promise<{
-    responseParts: string[];
+): AsyncGenerator<{
+    responsePart?: string;
     state: { isAborted: boolean; isFinished: boolean };
 }> {
     const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0] as TextContentPart, abortSignal);
-    const responseParts: string[] = [];
-    const state = { isAborted: false, isFinished: false };
-
-    const parser = createParser({
-        onEvent({ event, data }) {
-            if (event === "delta") {
-                responseParts.push(JSON.parse(data).text);
-            }
-            if (event === "stop") {
-                state.isFinished = true;
-            }
-        },
-    });
-
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-    const readStream = async () => {
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            parser.feed(value);
+    while (true) {
+        if (abortSignal?.aborted) {
+            yield { state: { isAborted: true, isFinished: false } };
+            await reader.cancel();
+            return;
         }
-    };
-    readStream();
 
-    if (abortSignal) {
-        abortSignal.addEventListener("abort", () => {
-            console.log("Message aborted");
-            state.isAborted = true;
-            reader.cancel();
+        const { done, value } = await reader.read();
+        console.log("Received from stream ", value);
+
+        if (done) {
+            return;
+        }
+
+        const events = [];
+        const parser = createParser({
+            onEvent({ event, data }) {
+                if (event === "delta") {
+                    events.push({
+                        responsePart: JSON.parse(data).text,
+                        state: { isAborted: false, isFinished: false },
+                    });
+                }
+                if (event === "stop") {
+                    events.push({
+                        state: { isAborted: false, isFinished: true },
+                    });
+                }
+            },
         });
+        parser.feed(value);
+        for (const event of events) {
+            yield event;
+        }
     }
-
-    return { responseParts, state };
 }
 
 const ModelAdapter: ChatModelAdapter = {
     async *run(chatModelOptions) {
-        const { responseParts, state } = await initializeChatStream(chatModelOptions.messages, chatModelOptions.abortSignal);
+        const chatStream = initializeChatStream(chatModelOptions.messages, chatModelOptions.abortSignal);
 
         yield {
             content: [],
@@ -60,29 +62,31 @@ const ModelAdapter: ChatModelAdapter = {
         };
 
         let text = "";
-        while (true) {
+        for await (const event of chatStream) {
+            console.log("Received event ", event);
+            const { responsePart, state } = event;
             if (state.isAborted) {
+                console.log("Aborted");
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "incomplete", reason: "cancelled" },
                 };
                 return;
-            }
-            if (responseParts.length > 0) {
-                const part = responseParts.shift();
-                text += part;
-                yield {
-                    content: [{ type: "text", text }],
-                    status: { type: "running" },
-                };
-            } else if (state.isFinished && responseParts.length === 0) {
+            } else if (state.isFinished) {
+                console.log("Finished");
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "complete", reason: "stop" },
                 };
                 return;
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 100));
+            } else if (responsePart !== null) {
+                console.log("Part ", responsePart);
+                text += responsePart;
+                console.log("Current text", text);
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "running" },
+                };
             }
         }
     },
