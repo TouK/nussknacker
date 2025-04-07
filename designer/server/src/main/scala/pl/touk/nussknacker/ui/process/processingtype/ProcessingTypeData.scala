@@ -71,11 +71,11 @@ object ProcessingTypeData {
       processingType: ProcessingType,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
-    val scenarioProperties = modelData.modelConfig
+    val scenarioProperties = deploymentScenarioPropertiesConfig ++ modelData.modelConfig
       .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]](
         "scenarioPropertiesConfig",
         Map.empty
-      ) ++ deploymentScenarioPropertiesConfig
+      )
     val fragmentProperties = modelData.modelConfig
       .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
