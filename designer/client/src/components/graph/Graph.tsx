@@ -766,22 +766,21 @@ export class Graph extends React.Component<Props> {
             }
         });
 
-        if (this.props.stickyNoteSetErrors) {
-            const stickyNotes: Record<string, NodeValidationError[]> = elements
-                .filter((n) => isStickyNoteElement(n))
-                .reduce((acc, user) => {
-                    acc[user.id.toString()] = [];
-                    return acc;
-                }, {});
-            this.props.stickyNoteSetErrors(stickyNotes);
-        }
-
         const validationErrors = ProcessUtils.getValidationErrors(scenario);
         const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 
-        if (this.props.stickyNoteSetErrors) this.props?.stickyNoteSetErrors(validationErrors?.invalidNodes);
+        if (this.props.stickyNoteSetErrors) {
+            const stickyNotes: Record<string, NodeValidationError[]> = elements
+                .filter((n) => isStickyNoteElement(n))
+                .reduce((acc, user) => {
+                    acc[user.id.toString()] = validationErrors?.invalidNodes[user.id.toString()] ?? [];
+                    return acc;
+                }, {});
+            if (Object.keys(stickyNotes).length > 0) this.props.stickyNoteSetErrors(stickyNotes);
+        }
+
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {
             const nodeId = el.id.toString();
