@@ -71,3 +71,10 @@ trzeba taka zamiane robic dopiero jak jest potrzebna
 jeszcze inny pomysl: a moze jakby na potrzeby tego projection on myslal ze to jest mapa, to znaczy typ by byl napisany ze to
 mapa a nie generic record, ciekawe co wowczas by sie stalo.
 to nie zadziala, bo patrzy na typ operanda, czyli tej samej generic recordu
+
+-------------------
+
+podsumowujac jakie sa obiecujace tropy
+- jakis dac custom method na generic recordzie ktory jest projectionem, moze wowczas nie zrobi sie ten projection ast w przypadku
+    generic recordu
+- nadpisac caly Projection i dodac w nim ifa
