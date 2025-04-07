@@ -96,7 +96,7 @@ object TestProcessingTypeDataProviderFactory {
         deploymentManagersClassLoader,
         modelClassLoaderProvider,
         modelDataProvider,
-        _ => deploymentManagerDependencies,
+        deploymentManagerDependencies,
         schedulingDepsProvider = None
       )
   }
