@@ -1,11 +1,13 @@
-import Field, { FieldType } from "./editors/field/Field";
-import { getValidationErrorsForField } from "./editors/Validators";
-import { get, isEmpty } from "lodash";
-import React from "react";
-import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
-import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { cx } from "@emotion/css";
+import { get, isEmpty } from "lodash";
+import React, { useCallback, useMemo } from "react";
+
+import type { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
+import type { FieldType } from "./editors/field/Field";
+import Field from "./editors/field/Field";
+import { getValidationErrorsForField } from "./editors/Validators";
+import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
+import { useDiffMark } from "./PathsToMark";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
@@ -39,11 +41,14 @@ export function NodeField<N extends string, V>({
     description,
 }: NodeFieldProps<N, V>): JSX.Element {
     const readOnly = !isEditMode || readonly;
-    const value = get(node, fieldName, null) ?? defaultValue;
-    const fieldErrors = getValidationErrorsForField(errors, fieldName);
+    const value = useMemo(() => get(node, fieldName, null) ?? defaultValue, [defaultValue, fieldName, node]);
+    const fieldErrors = useMemo(() => getValidationErrorsForField(errors, fieldName), [errors, fieldName]);
 
-    const className = cx({ [nodeInput]: true, [nodeInputWithError]: showValidation && !isEmpty(fieldErrors) });
-    const onChange = (newValue) => setProperty(fieldName, newValue, defaultValue);
+    const className = useMemo(
+        () => cx({ [nodeInput]: true, [nodeInputWithError]: showValidation && !isEmpty(fieldErrors) }),
+        [fieldErrors, showValidation],
+    );
+    const onChange = useCallback((newValue) => setProperty(fieldName, newValue, defaultValue), [defaultValue, fieldName, setProperty]);
     const [isMarked] = useDiffMark();
 
     return (
