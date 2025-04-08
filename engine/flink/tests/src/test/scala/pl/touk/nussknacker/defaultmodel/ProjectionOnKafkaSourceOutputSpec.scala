@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 
 import scala.jdk.CollectionConverters._
 
-class FinkExactlyOnceItSpec
+class ProjectionOnKafkaSourceOutputSpec
     extends FlinkWithKafkaSuite
     with PatientScalaFutures
     with LazyLogging
@@ -23,11 +23,7 @@ class FinkExactlyOnceItSpec
 
   override val avroAsJsonSerialization: Boolean = true
 
-  override def kafkaComponentsConfig: Config = super.kafkaComponentsConfig
-    .withValue("config.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
-    .withValue(KafkaConfigProperties.property("config", "isolation.level"), fromAnyRef("read_committed"))
-
-  private val inputOutputMessage =
+  private val inputMessage =
     """
       |{
       |  "first": "Jan",
@@ -35,23 +31,26 @@ class FinkExactlyOnceItSpec
       |}
       |""".stripMargin
 
-  test("should read message from kafka and write message in transaction to kafka on checkpoint") {
+  private val outputMessage =
+    """
+      |{
+      |  "first": "first_Jan,last_Kowalski",
+      |  "last": "Kowalski"
+      |}
+      |""".stripMargin
+
+  test("should perform projection on kafka source output") {
     val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions", RecordSchemas)
     kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
-    val sendResult = sendAsJson(inputOutputMessage, topicConfig.input).futureValue
+    val sendResult = sendAsJson(inputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")
 
     run(buildScenario(topicConfig)) {
       val consumer = kafkaClient.createConsumer()
       val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
-      result.message() shouldEqual parseJson(inputOutputMessage)
-      eventually(timeout(Span(2, Seconds)), interval(Span(100, Millis))) {
-        // https://stackoverflow.com/a/56183132
-        // if message is committed with transaction there is additional control batch in a log
-        consumer.getEndOffsets(topicConfig.output.name).values().asScala.head shouldEqual 2
-      }
+      result.message() shouldEqual parseJson(outputMessage)
     }
   }
 
@@ -65,6 +64,11 @@ class FinkExactlyOnceItSpec
         KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel
       )
+      .buildSimpleVariable(
+        "someId",
+        "someVarName",
+        s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""".spel
+      )
       .emptySink(
         "end",
         "kafka",
@@ -72,8 +76,8 @@ class FinkExactlyOnceItSpec
         KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel,
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"false".spel,
-        "first"                                                         -> "#input.first".spel,
-        "last"                                                          -> "#input.last".spel
+        "first"                                                         -> "#someVarName".spel,
+        "last"                                                          -> "#input.last".spel,
       )
 
 }

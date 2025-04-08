@@ -19,7 +19,7 @@ package org.springframework.expression.spel.ast;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -79,7 +79,7 @@ public class Projection extends SpelNodeImpl {
 
         if (operand instanceof GenericRecord) {
             var genericRecord = (GenericRecord) operand;
-            var resultMap = new HashMap<>();
+            var resultMap = new LinkedHashMap<>();
 
             for (var field : genericRecord.getSchema().getFields()) {
                 var fieldName = field.name();
