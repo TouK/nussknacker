@@ -511,6 +511,8 @@ Toolbars and buttons at process window are configurable, you can configure param
 * bottomLeft - optional bottom left panel, default: empty list
 * topRight - optional top right panel, default: empty list
 * bottomRight - optional bottom right panel, default: empty list
+* centerTop - optional center top panel, default: empty list
+* centerBottom - optional center bottom panel, default: empty list
 
 Example configuration:
 
