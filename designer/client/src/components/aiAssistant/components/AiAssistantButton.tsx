@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
 import { useUserSettings } from "../../../common/userSettings";
 import { blendDarken } from "../../../containers/theme/helpers";
-import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { useWindows, WindowKind } from "../../../windowManager";
 
 function convertViewportUnitToPixels(unitString: string): number {
@@ -60,7 +60,7 @@ export const AiAssistantButton = () => {
     const { open } = useWindows();
     const { windows, close } = useWindowManager();
     const [userSettings] = useUserSettings();
-    const isCloud = useSelector(isCloudInstance);
+    const featureSettings = useSelector(getFeatureSettings);
     const openedAiAssistantDialog = useMemo(() => windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID), [windows]);
 
     const handleClick = useCallback(() => {
@@ -85,7 +85,7 @@ export const AiAssistantButton = () => {
         }
     }, [close, open, openedAiAssistantDialog]);
 
-    if (!isCloud || !userSettings["cloud.showAiAssistant"]) {
+    if (!featureSettings.assistant.enabled || !userSettings["cloud.showAiAssistant"]) {
         return null;
     }
 
