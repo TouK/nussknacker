@@ -1,4 +1,3 @@
-import { Fade, Box } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
 import React, { createContext, useEffect, useMemo } from "react";
@@ -25,9 +24,9 @@ import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { EditStateFeedback } from "./EditStateFeedback";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import type { EditState } from "./useNodeState";
 import { mergeQuery, useNodeState } from "./useNodeState";
 
 export type NodeDetailsMeta = {
@@ -103,7 +102,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { close, data } = props;
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
-    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit } = useNodeState(data.meta);
+    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
     const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
@@ -162,6 +161,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return (
         <NodeContext.Provider value={editedNode}>
             <InputOutputContextProvider nodeId={editedNode.id}>
+                {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
                 <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
                     <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
                 </WindowContent>

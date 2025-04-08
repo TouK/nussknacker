@@ -20,7 +20,7 @@ export function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
 }
 
-export type EditState = "idle" | "processing" | "pending";
+export type EditState = "idle" | "processing" | "pending" | "error";
 export type NodeState = {
     scenario: Scenario;
     node: NodeType;
@@ -87,11 +87,11 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
                 if (autoApply) {
                     setNodeId(after.id);
                 }
+                setStatus("idle");
             } catch (e) {
                 console.error(e);
+                setStatus("error");
             }
-
-            setStatus("idle");
         },
         [dispatch, scenario, node, autoApply],
     );
@@ -101,7 +101,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
 
     const onChange = useCallback(
         (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = (e) => e) => {
-            performNodeEditDebounced.cancel();
             const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
             const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
