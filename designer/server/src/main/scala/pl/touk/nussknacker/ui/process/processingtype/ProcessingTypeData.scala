@@ -72,12 +72,12 @@ object ProcessingTypeData {
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
     val scenarioProperties = deploymentScenarioPropertiesConfig ++ modelData.modelConfig
-      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]](
+      .getOrElse[Map[String, ScenarioPropertyConfig]](
         "scenarioPropertiesConfig",
         Map.empty
       )
     val fragmentProperties = modelData.modelConfig
-      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
+      .getOrElse[Map[String, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     val staticDefinitionForDynamicComponents =
       createDynamicComponentsStaticDefinitions(modelData, metaDataInitializer, componentDefinitionExtractionMode)
