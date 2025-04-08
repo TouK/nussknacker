@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { useDebounce } from "use-debounce";
-import { NodeOrPropertiesType } from "../../../types";
+import { useDebouncedValue } from "rooks";
+
+import type { NodeOrPropertiesType } from "../../../types";
 import { MarkdownStyled } from "./MarkdownStyled";
 import { getProcessName } from "./NodeDetailsContent/selectors";
 
@@ -30,7 +31,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
 
     //We don't use redux here since this additionalInfo is local to this component. We use debounce, as
     //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
-    const [debouncedNode] = useDebounce(node, 1000);
+    const [debouncedNode] = useDebouncedValue(node, 1000);
 
     const getAdditionalInfo = useCallback(
         (processName: string, debouncedNode: NodeOrPropertiesType) => {

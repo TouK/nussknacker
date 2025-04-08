@@ -1,12 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
+import { useDispatch } from "react-redux";
 import { applyMiddleware, createStore } from "redux";
 import { composeWithDevTools } from "redux-devtools-extension";
-import thunk from "redux-thunk";
 import { persistStore } from "redux-persist";
-import { reducer } from "../reducers";
-import { ThunkDispatch } from "../actions/reduxTypes";
-import { useDispatch } from "react-redux";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
+import thunk from "redux-thunk";
+
+import type { ThunkDispatch } from "../actions/reduxTypes";
+import { reducer } from "../reducers";
 import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
 export default function configureStore() {
@@ -28,7 +29,14 @@ export default function configureStore() {
                         "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                     ],
                 }),
-                nodeValidationMiddleware(["NODE_ADDED", "DELETE_NODES", "NODES_CONNECTED", "NODES_DISCONNECTED", "NODES_WITH_EDGES_ADDED"]),
+                nodeValidationMiddleware([
+                    "NODE_ADDED",
+                    "DELETE_NODES",
+                    "NODES_CONNECTED",
+                    "NODES_DISCONNECTED",
+                    "NODES_WITH_EDGES_ADDED",
+                    "STICKY_NOTE_UPDATED",
+                ]),
             ),
         ),
     );
