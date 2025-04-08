@@ -141,6 +141,7 @@
   Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
 * [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
 * [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
+* [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
 
 ## 1.18
 
