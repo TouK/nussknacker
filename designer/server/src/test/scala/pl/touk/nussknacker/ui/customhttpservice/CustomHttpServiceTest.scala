@@ -108,17 +108,6 @@ class CustomHttpServiceTest
       }
     }
 
-    "when request send to public endpoint without authentication data" - {
-      "should return 200 OK response" in {
-        val response = httpClient.send(
-          quickRequest
-            .get(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/public")
-        )
-        response.code shouldEqual StatusCode.Ok
-        response.body shouldEqual "Hello from public endpoint!"
-      }
-    }
-
     "when request send to API docs" - {
       "should return also docs of custom http service" in {
         val response = httpClient.send(

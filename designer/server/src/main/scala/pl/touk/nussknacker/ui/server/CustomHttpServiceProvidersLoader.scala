@@ -2,9 +2,7 @@ package pl.touk.nussknacker.ui.server
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import cats.effect.unsafe.IORuntime
 import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.ui.config.DesignerConfig
@@ -12,12 +10,10 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProviderFactory,
   PekkoCustomHttpServiceProvider,
   ProcessServiceBasedScenarioServiceAdapter,
-  TapirCustomHttpServiceProvider,
-  TapirEndpointSupportAdapter
+  TapirCustomHttpServiceProvider
 }
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.factory.DomainServices
-import pl.touk.nussknacker.ui.security.api.AuthManager
 
 import scala.concurrent.ExecutionContext
 
@@ -26,17 +22,15 @@ object CustomHttpServiceProvidersLoader {
   def loadCustomHttpServiceProviders(
       designerConfig: DesignerConfig,
       domainServices: DomainServices,
-      authManager: AuthManager
   )(
-      implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
+      implicit executionContext: ExecutionContext
   ): Resource[IO, CustomHttpServiceProviders] = for {
     providerFactories <- Resource.eval(loadHttpServiceProviderFactories)
     customHttpServiceProviders <- createHttpServiceProviders(
       providerFactories,
       designerConfig,
       domainServices,
-      authManager
-    )(executionContextWithIORuntime, executionContextWithIORuntime.ioRuntime)
+    )(executionContext)
   } yield customHttpServiceProviders
 
   private def loadHttpServiceProviderFactories: IO[List[CustomHttpServiceProviderFactory]] = {
@@ -62,11 +56,9 @@ object CustomHttpServiceProvidersLoader {
       customHttpServiceProviderFactories: List[CustomHttpServiceProviderFactory],
       designerConfig: DesignerConfig,
       domainServices: DomainServices,
-      authManager: AuthManager
-  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProviders] = {
+  )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
-      new TapirEndpointSupportAdapter(authManager)
     )
     customHttpServiceProviderFactories
       .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }

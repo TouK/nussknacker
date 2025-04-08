@@ -233,6 +233,7 @@ object TapirHttpServiceFactory {
 
     new NuDesignerExposedApiHttpService(
       customHttpServiceProviders,
+      authManager,
       appApiHttpService,
       componentsApiHttpService,
       dictApiHttpService,

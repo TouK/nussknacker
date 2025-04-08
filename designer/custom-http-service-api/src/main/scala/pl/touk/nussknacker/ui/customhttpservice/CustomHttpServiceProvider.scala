@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.customhttpservice
 
+import cats.effect.IO
 import org.apache.pekko.http.scaladsl.server.Route
-import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpoint
+import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpointDefinition
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.capabilities.WebSockets
 import sttp.capabilities.pekko.PekkoStreams
-import sttp.tapir.server.ServerEndpoint
-
-import scala.concurrent.Future
+import sttp.tapir.Endpoint
 
 sealed trait CustomHttpServiceProvider
 
@@ -16,9 +15,21 @@ trait PekkoCustomHttpServiceProvider extends CustomHttpServiceProvider {
 }
 
 trait TapirCustomHttpServiceProvider extends CustomHttpServiceProvider {
-  def serverEndpoints: List[CustomHttpServiceServerEndpoint]
+  def serverEndpointDefinitions: List[CustomHttpServiceServerEndpointDefinition]
 }
 
 object TapirCustomHttpServiceProvider {
-  type CustomHttpServiceServerEndpoint = ServerEndpoint[PekkoStreams with WebSockets, Future]
+
+  trait CustomHttpServiceServerEndpointDefinition {
+
+    type REQUEST
+    type ERROR
+    type RESPONSE
+
+    def definition: Endpoint[Unit, REQUEST, ERROR, RESPONSE, Any with PekkoStreams]
+
+    def logic(user: LoggedUser, request: REQUEST): IO[Either[ERROR, RESPONSE]]
+
+  }
+
 }
