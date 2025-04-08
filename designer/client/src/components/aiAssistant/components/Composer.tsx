@@ -117,7 +117,7 @@ export const Composer = () => {
                         ref={textAreaRef}
                         autoComplete="off"
                         name="message"
-                        placeholder="Message AI Assistant"
+                        placeholder="Message AI Assistant, e.g. what is a scenario?"
                         value={message}
                         className={nodeInput}
                         onChange={handleChange}
