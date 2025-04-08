@@ -78,12 +78,12 @@ public class Projection extends SpelNodeImpl {
         }
 
         if (operand instanceof GenericRecord) {
-            var mapData = (GenericRecord) operand;
+            var genericRecord = (GenericRecord) operand;
             var resultMap = new HashMap<>();
 
-            for (var field : mapData.getSchema().getFields()) {
+            for (var field : genericRecord.getSchema().getFields()) {
                 var fieldName = field.name();
-                var fieldValue = mapData.get(fieldName);
+                var fieldValue = genericRecord.get(fieldName);
                 resultMap.put(fieldName, fieldValue);
             }
             return handleMap(state, resultMap);

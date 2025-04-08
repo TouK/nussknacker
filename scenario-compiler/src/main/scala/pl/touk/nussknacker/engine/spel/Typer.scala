@@ -7,6 +7,7 @@ import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.avro.generic.GenericRecord
 import org.springframework.expression.{EvaluationContext, Expression}
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.{standard, SpelNode}
@@ -714,9 +715,9 @@ private[spel] class Typer(
     // TODO_PAWEL jest ok to jest miejsce ktore nie spodziewa sie tego generic czegos
     // TODO_PAWEL dziwne ze to robi to sprawdzenie, ktore glownie dla numberow i stringow dizlaa
     // TODO_PAWEL hack comment and change
-//    case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
-    case tc: SingleTypingResult =>
-    // TODO_PAWEL jest ok only for test, not ok
+    case tc: SingleTypingResult
+        if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) ||
+          classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>
       valid(
         Typed.record(
           Map(
@@ -725,9 +726,8 @@ private[spel] class Typer(
           )
         )
       )
-    // TODO_PAWEL hack uncomment
-//    case tc: SingleTypingResult =>
-//      invalid(IllegalProjectionSelectionError(tc))
+    case tc: SingleTypingResult =>
+      invalid(IllegalProjectionSelectionError(tc))
     // FIXME: what if more results are present?
     case _ => valid(Unknown)
   }
