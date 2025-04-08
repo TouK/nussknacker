@@ -1,9 +1,9 @@
-import { ProcessDefinitionData, PropertiesType, ScenarioGraph, ScenarioGraphWithName, ValidationResult } from "../../types";
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
-import { fetchProcessDefinition } from "./processDefinitionData";
-import { Scenario } from "../../components/Process/types";
+import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
-import { ThunkAction } from "../reduxTypes";
+import type { ProcessDefinitionData, PropertiesType, ScenarioGraph, ValidationResult } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
+import { fetchProcessDefinition } from "./processDefinitionData";
 
 type EditPropertiesAction = {
     type: "EDIT_PROPERTIES";
@@ -11,12 +11,7 @@ type EditPropertiesAction = {
     scenarioGraphAfterChange: ScenarioGraph;
 };
 
-type RenameProcessAction = {
-    type: "PROCESS_RENAME";
-    name: string;
-};
-
-export type PropertiesActions = EditPropertiesAction | RenameProcessAction;
+export type PropertiesActions = EditPropertiesAction;
 
 // TODO: We synchronize fragment changes with a scenario in case of properties changes. We need to find a better way to hande it
 function alignFragmentsNodeWithSchema(scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
@@ -28,26 +23,19 @@ function alignFragmentsNodeWithSchema(scenarioGraph: ScenarioGraph, processDefin
     };
 }
 
-const calculateProperties = (scenario: Scenario, changedProperties: PropertiesType): ThunkAction<Promise<ScenarioGraphWithName>> => {
+const calculateProperties = (scenario: Scenario, changedProperties: PropertiesType): ThunkAction<Promise<ScenarioGraph>> => {
     return async (dispatch) => {
         const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
         const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.scenarioGraph, processDefinitionData);
 
-        if (scenario.name !== changedProperties.name) {
-            dispatch({ type: "PROCESS_RENAME", name: changedProperties.name });
-        }
-
-        return {
-            processName: changedProperties.name,
-            scenarioGraph: { ...processWithNewFragmentSchema, properties: changedProperties },
-        };
+        return { ...processWithNewFragmentSchema, properties: changedProperties };
     };
 };
 
 export function editProperties(scenario: Scenario, changedProperties: PropertiesType): ThunkAction {
     return async (dispatch) => {
-        const { processName, scenarioGraph } = await dispatch(calculateProperties(scenario, changedProperties));
-        const response = await HttpService.validateProcess(scenario.name, processName, scenarioGraph);
+        const scenarioGraph = await dispatch(calculateProperties(scenario, changedProperties));
+        const response = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph);
 
         dispatch({
             type: "EDIT_PROPERTIES",

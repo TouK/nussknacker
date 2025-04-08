@@ -1,7 +1,7 @@
-import { GraphState } from "./types";
+import type { NodesWithPositions } from "../../actions/nk";
 import { ProcessingMode } from "../../http/HttpService";
 import { EdgeKind } from "../../types";
-import { NodesWithPositions } from "../../actions/nk";
+import type { GraphState } from "./types";
 
 export const state: GraphState = {
     scenario: {
@@ -164,6 +164,7 @@ export const state: GraphState = {
                     edgeType: null,
                 },
             ],
+            stickyNotes: [],
         },
         state: {
             status: {
@@ -631,7 +632,6 @@ export const state: GraphState = {
             },
         ],
     },
-    unsavedNewName: null,
     layout: [
         {
             id: "choice",

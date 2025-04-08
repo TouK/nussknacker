@@ -86,6 +86,7 @@ const baseProcessState = {
                 to: "sendSms",
             },
         ],
+        stickyNotes: [],
     },
     validationResult: {
         errors: {
@@ -145,10 +146,11 @@ const testNode = {
 };
 
 const testPosition = { x: 10, y: 20 };
+const getGraph = (state) => state.graphReducer.present;
 
 describe("Reducer", () => {
     it("should display process", () => {
-        expect(baseStateWithProcess.graphReducer.scenario.name).toEqual(baseProcessState.name);
+        expect(getGraph(baseStateWithProcess).scenario.name).toEqual(baseProcessState.name);
     });
 });
 
@@ -156,15 +158,15 @@ describe("Nodes added", () => {
     it("should add single node", () => {
         const result = reduceAll([nodeAdded(testNode, testPosition)]);
 
-        expect(NodeUtils.getNodeById(testNode.id, result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
-        expect(result.graphReducer.layout.find((n) => n.id === testNode.id).position).toEqual(testPosition);
+        expect(NodeUtils.getNodeById(testNode.id, getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
+        expect(getGraph(result).layout.find((n) => n.id === testNode.id).position).toEqual(testPosition);
     });
 
     it("should add single node with unique id", () => {
         const result = reduceAll([nodeAdded({ ...testNode, id: "kafka-transaction" }, testPosition)]);
 
-        expect(NodeUtils.getNodeById("kafka-transaction 1", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
-        expect(result.graphReducer.layout.find((n) => n.id === "kafka-transaction 1").position).toEqual(testPosition);
+        expect(NodeUtils.getNodeById("kafka-transaction 1", getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
+        expect(getGraph(result).layout.find((n) => n.id === "kafka-transaction 1").position).toEqual(testPosition);
     });
 
     it("should add multiple nodes with unique id", () => {
@@ -183,9 +185,9 @@ describe("Nodes added", () => {
         );
         const result = reduceAll([action, action]);
 
-        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
-        expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
-        expect(NodeUtils.getNodeById("filter (copy 2)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
+        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
+        expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
+        expect(NodeUtils.getNodeById("filter (copy 2)", getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
     });
 
     it("should add nodes with edges", () => {
@@ -205,9 +207,9 @@ describe("Nodes added", () => {
             ),
         ]);
 
-        expect(NodeUtils.getNodeById("newNode", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
-        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.scenario.scenarioGraph)).toMatchSnapshot();
-        expect(NodeUtils.getEdgeById("newNode-kafka-transaction (copy 1)", result.graphReducer.scenario.scenarioGraph)).toEqual({
+        expect(NodeUtils.getNodeById("newNode", getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
+        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", getGraph(result).scenario.scenarioGraph)).toMatchSnapshot();
+        expect(NodeUtils.getEdgeById("newNode-kafka-transaction (copy 1)", getGraph(result).scenario.scenarioGraph)).toEqual({
             from: "newNode",
             to: "kafka-transaction (copy 1)",
         });

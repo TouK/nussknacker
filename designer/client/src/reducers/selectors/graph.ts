@@ -1,17 +1,16 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
+
 import ProcessUtils from "../../common/ProcessUtils";
-import { StickyNote } from "../../common/StickyNote";
-import { TestFormParameters } from "../../common/TestResultUtils";
+import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
-import { ScenarioGraph } from "../../types";
-import { ProcessCounts, TestData } from "../graph";
-import { RootState } from "../index";
+import type { ScenarioGraph } from "../../types";
+import type { ProcessCounts, TestData } from "../graph";
+import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
-import { getStickyNotesSettings } from "./settings";
 
-export const getGraph = (state: RootState) => state.graphReducer.history.present;
+export const getGraph = (state: RootState) => state.graphReducer.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
@@ -23,7 +22,7 @@ export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
-export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
+export const getProcessUnsavedNewName = createSelector(getScenarioGraph, (g) => g.properties?.name);
 export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId);
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
@@ -39,19 +38,19 @@ export const getScenarioLabelsErrors = createSelector(getScenario, (p) => Proces
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-export const getHistoryPast = (state: RootState) => state.graphReducer.history.past;
-export const getHistoryFuture = (state: RootState) => state.graphReducer.history.future;
+export const getHistoryPast = (state: RootState) => state.graphReducer.past;
+export const getHistoryFuture = (state: RootState) => state.graphReducer.future;
+
+export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
+    return unsavedNewName || currentName;
+});
 
 export const isProcessRenamed = createSelector(
     getProcessName,
-    getProcessUnsavedNewName,
-    (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
+    getUnsavedOrCurrentName,
+    (currentName, unsavedNewName) => unsavedNewName !== currentName,
 );
-export const getUnsavedOrCurrentName = createSelector(
-    getProcessName,
-    getProcessUnsavedNewName,
-    (currentName, unsavedNewName) => (unsavedNewName && unsavedNewName !== currentName && unsavedNewName) || currentName,
-);
+
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
@@ -78,10 +77,7 @@ export const getTestResultsLoading = createSelector(getGraph, (g) => g.testResul
 export const getTestData = createSelector(getGraph, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
-export const getStickyNotes = createSelector(
-    [getGraph, getStickyNotesSettings],
-    (g, settings) => (settings?.enabled ? g.stickyNotes || ([] as StickyNote[]) : []) as StickyNote[],
-);
+
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],
     (testResults, processCounts) => testResults || processCounts,
@@ -89,7 +85,10 @@ export const getShowRunProcessDetails = createSelector(
 
 export const getVersions = createSelector(getScenario, (details) => details?.history || []);
 export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);
-export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.properties?.additionalFields);
+export const getProperties = createSelector(getProcessName, getScenarioGraph, (name, graph) => {
+    return { name, ...graph.properties };
+});
+export const getAdditionalFields = createSelector(getProperties, (p) => p?.additionalFields);
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);

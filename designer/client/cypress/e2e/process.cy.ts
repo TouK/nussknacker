@@ -111,7 +111,9 @@ describe("Process", () => {
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.contains(/^ok$/i).should("not.exist");
-            cy.get("#nk-graph-main").wait(200).matchImage();
+
+            cy.contains(/^counts/i).scrollIntoView();
+            cy.get("#nk-graph-main").matchImage();
         });
     });
 

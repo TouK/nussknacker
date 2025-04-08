@@ -11,7 +11,6 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.ScenarioMetadataRepository
-import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.{
@@ -123,18 +122,6 @@ object TapirHttpServiceFactory {
       scenarioService = processService,
     )
 
-    val stickyNotesApiHttpService = {
-      val stickyNotesRepository = DbStickyNotesRepository.create(dbRef, clock)
-      new StickyNotesApiHttpService(
-        authManager = authManager,
-        stickyNotesRepository = stickyNotesRepository,
-        scenarioService = processService,
-        scenarioAuthorizer = processAuthorizer,
-        dbioRunner,
-        stickyNotesSettings = designerConfig.stickyNotesSettings
-      )
-    }
-
     val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
       authManager = authManager,
       fetchScenarioActivityService = fetchScenarioActivityService,
@@ -242,7 +229,6 @@ object TapirHttpServiceFactory {
       scenarioActivityApiHttpService,
       scenarioLabelsApiHttpService,
       scenarioParametersHttpService,
-      stickyNotesApiHttpService,
       userApiHttpService,
       versionControlApiHttpService,
       statisticsApiHttpService

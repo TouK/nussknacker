@@ -1,6 +1,8 @@
-import { alpha, css, styled, Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+import { alpha, css, styled } from "@mui/material";
 import { blend } from "@mui/system";
-import { CSSProperties } from "react";
+import type { CSSProperties } from "react";
+
 import { blendLighten } from "../../containers/theme/helpers";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
@@ -226,6 +228,16 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
             },
             ".joint-sticky-note-remove-tool > circle": {
                 fill: "#ca344c",
+            },
+            ".sticky-note-errors": {
+                fontFamily: theme.typography.fontFamily,
+                fontSize: theme.typography.body1.fontSize,
+                color: theme.palette.text.primary,
+            },
+            ".sticky-note-error": {
+                backgroundColor: theme.palette.error.main,
+                marginTop: "5px",
+                padding: "0px 5px",
             },
             ".sticky-note-markdown-editor:disabled": {
                 display: "none",

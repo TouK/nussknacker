@@ -1,14 +1,14 @@
 import { Description } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import type { WindowType } from "@touk/window-manager";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getProcessUnsavedNewName, getScenario, getScenarioDescription } from "../reducers/selectors/graph";
+
+import type { Scenario } from "../components/Process/types";
+import { getProperties, getScenario, getScenarioDescription } from "../reducers/selectors/graph";
+import type { NodeOrPropertiesType } from "../types";
 import { useWindows, WindowKind } from "../windowManager";
-import { WindowType } from "@touk/window-manager";
-import { Scenario } from "../components/Process/types";
-import NodeUtils from "../components/graph/NodeUtils";
-import { NodeOrPropertiesType } from "../types";
 
 const measureText = (text: string, font: string, elementWidth: number): { width: number; height: number } => {
     const canvas = document.createElement("canvas");
@@ -76,8 +76,7 @@ export function useOpenDescription() {
 export const ScenarioDescription = () => {
     const [description, showDescription] = useSelector(getScenarioDescription);
     const scenario = useSelector(getScenario);
-    const name = useSelector(getProcessUnsavedNewName);
-    const processProperties = useMemo(() => NodeUtils.getProcessProperties(scenario, name), [name, scenario]);
+    const processProperties = useSelector(getProperties);
 
     const openDescription = useOpenDescription();
 

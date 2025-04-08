@@ -46,7 +46,7 @@ class DockerBasedInstallationExampleNuEnvironment(
       waitingFor = Some(
         WaitingForService(
           "bootstrap-setup",
-          new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofSeconds(150))
+          new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofSeconds(300))
         )
       ),
       // Change to 'true' to enable logging
