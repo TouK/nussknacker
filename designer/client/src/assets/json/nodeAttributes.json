@@ -38,9 +38,6 @@
     "Aggregate": {
         "name": "Aggregate"
     },
-    "StickyNote": {
-        "name": "StickyNote"
-    },
     "CustomNode": {
         "name": "CustomNode"
     },

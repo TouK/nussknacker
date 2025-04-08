@@ -7,7 +7,7 @@ import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, NoSchedulingSupport, SchedulingSupported}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, ModelClassLoader}
@@ -26,7 +26,7 @@ object DeploymentManagersLoader {
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       modelClassLoaderProvider: ModelClassLoaderProvider,
       modelDataProviders: ProcessingTypeDataProvider[ModelData, _],
-      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
       schedulingDepsProvider: Option[ProcessingType => SchedulingDependencies],
   ): Resource[IO, Map[ProcessingType, ValueWithRestriction[DeploymentData]]] = {
     processingTypeConfigs.configByProcessingType.toList
@@ -37,7 +37,7 @@ object DeploymentManagersLoader {
           deploymentManagersClassLoader,
           modelClassLoaderProvider,
           modelDataProviders,
-          getDeploymentManagerDependencies(processingType),
+          deploymentManagerDependencies,
           schedulingDepsProvider.map(_(processingType)),
         ).map(processingType -> _)
       }

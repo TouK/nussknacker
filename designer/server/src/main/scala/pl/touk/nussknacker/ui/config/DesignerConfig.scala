@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.StringUtils._
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesSettings
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.config.DesignerConfig.{ConfigurationMalformedException, HttpConfig}
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.{
@@ -65,6 +65,7 @@ final class DesignerConfig private (
     val ssl: Option[KeyStoreConfig],
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
+    val assistantSettings: AssistantSettings,
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -153,6 +154,8 @@ object DesignerConfig {
     val ssl                           = SslConfigParser.parseSslConfig(resolvedConfig)
     val http                          = resolvedConfig.as[HttpConfig]("http")
     val attachments                   = AttachmentsConfig.parse(resolvedConfig)
+    val assistantSettings =
+      resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
 
     new DesignerConfig(
       rawConfigWithUnresolvedVersion = rawConfig,
@@ -189,6 +192,7 @@ object DesignerConfig {
       ssl = ssl,
       http = http,
       attachments = attachments,
+      assistantSettings = assistantSettings,
     )
   }
 

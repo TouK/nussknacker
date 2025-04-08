@@ -283,6 +283,16 @@ object node {
     override val componentId: String = ref.id
   }
 
+  @JsonCodec final case class Dimensions(width: Long, height: Long)
+
+  @JsonCodec final case class StickyNote(
+      id: String,
+      content: String,
+      color: String,
+      dimensions: Dimensions,
+      additionalFields: Option[UserDefinedAdditionalNodeFields]
+  )
+
   // this is used after resolving fragment, used for detecting when fragment ends and context should change
   case class FragmentUsageOutput(
       id: String,
