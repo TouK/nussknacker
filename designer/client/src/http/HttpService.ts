@@ -969,7 +969,7 @@ class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
-    sendChatMessage(message: TextContentPart, abortSignal: AbortSignal) {
+    sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
         const headers = {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
@@ -987,7 +987,7 @@ class HttpService {
         return fetch(`${API_URL}/${PATHNAME}`, {
             method: "POST",
             headers,
-            body: JSON.stringify({ message }),
+            body: JSON.stringify({ message, threadId }),
             signal: abortSignal,
         });
     }

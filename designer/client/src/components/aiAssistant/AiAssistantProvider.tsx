@@ -6,6 +6,19 @@ import React from "react";
 
 import httpService from "../../http/HttpService";
 
+//TODO: Find out how to pass threadId to the AiAssistant and use it instead of this variable
+const ThreadIdManager = {
+    _threadId: undefined as string | undefined,
+
+    get THREAD_ID() {
+        return this._threadId;
+    },
+
+    set THREAD_ID(value: string | undefined) {
+        this._threadId = value;
+    },
+};
+
 async function initializeChatStream(
     messages: ChatModelRunOptions["messages"],
     abortSignal?: AbortSignal,
@@ -13,7 +26,11 @@ async function initializeChatStream(
     responseParts: string[];
     state: { isAborted: boolean; isFinished: boolean };
 }> {
-    const response = await httpService.sendChatMessage(messages[messages.length - 1].content[0] as TextContentPart, abortSignal);
+    const response = await httpService.sendChatMessage(
+        messages[messages.length - 1].content[0] as TextContentPart,
+        abortSignal,
+        ThreadIdManager.THREAD_ID,
+    );
     const responseParts: string[] = [];
     const state = { isAborted: false, isFinished: false };
 
@@ -24,6 +41,7 @@ async function initializeChatStream(
             }
             if (event === "stop") {
                 state.isFinished = true;
+                ThreadIdManager.THREAD_ID = JSON.parse(data).threadId;
             }
         },
     });
