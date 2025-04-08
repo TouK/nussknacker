@@ -38,7 +38,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const openDialog = useCallback(() => {
         open<TestingData>({
             title: t("dialog.title.scenarioTest", "Scenario test"),
-            isResizable: true,
+            isResizable: false,
             kind: WindowKind.scenarioTest,
             meta: {
                 viewParams: { Icon: TestingIcon, docs, markdownContent },

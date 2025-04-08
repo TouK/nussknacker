@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import React from "react";
@@ -9,6 +9,10 @@ import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { TestingForm } from "./TestingForm";
+
+const StyledContentSize = styled(ContentSize)(({ theme }) => ({
+    padding: theme.spacing(0, 1.5, 1.5, 1.5),
+}));
 
 type DocsLink = {
     url: string;
@@ -39,11 +43,9 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             icon={<WindowHeaderIconStyled as={viewParams.Icon} type={kind} />}
             subheader={<NodeDocs name={viewParams.docs?.label} href={viewParams.docs?.url} />}
         >
-            <ContentSize>
-                <Box mx={3}>
-                    <TestingForm testingData={props.data} closeDialog={close} />
-                </Box>
-            </ContentSize>
+            <StyledContentSize>
+                <TestingForm testingData={props.data} closeDialog={close} />
+            </StyledContentSize>
         </WindowContent>
     );
 }

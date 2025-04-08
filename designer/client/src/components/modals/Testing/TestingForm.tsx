@@ -1,6 +1,5 @@
-import { css, cx } from "@emotion/css";
 import loadable from "@loadable/component";
-import { FormGroup, FormLabel, Link, Typography } from "@mui/material";
+import { Box, FormGroup, FormLabel, Link, Typography } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -87,7 +86,7 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
     );
 
     return (
-        <div className={cx(css({ paddingTop: 10, paddingBottom: 20 }))}>
+        <Box pt={1.5}>
             <NodeTable>
                 <FormLabel required>{t("addProcessForm.label.testMode", "Data used in scenario sources")}</FormLabel>
                 <span className={nodeValue}>
@@ -147,10 +146,10 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                         </Trans>
                     </Typography>
                 </span>
-                <div className={cx(css({ paddingTop: 10, paddingBottom: 20 }))}>
+                <Box pt={1.5}>
                     <TestVariantForm testType={formValue.testType} testingData={testingData} closeDialog={closeDialog}></TestVariantForm>
-                </div>
+                </Box>
             </NodeTable>
-        </div>
+        </Box>
     );
 }

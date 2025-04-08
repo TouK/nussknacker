@@ -34,7 +34,7 @@ export function TestWithParametersSingleSourceForm({ testingData, closeDialog }:
     }, [closeDialog, onConfirmAction, adhocTestingCurrentValue]);
 
     return (
-        <div className={cx(css({ paddingTop: 10, paddingBottom: 20 }))}>
+        <Box mt={1.5}>
             <AdhocTestingFormContext.Provider
                 value={{
                     value: adhocTestingCurrentValue,
@@ -46,7 +46,7 @@ export function TestWithParametersSingleSourceForm({ testingData, closeDialog }:
             >
                 <ValidationLabels fieldErrors={getValidationErrorsForField(errors, "testType")} />
                 <MarkdownForm content={viewParams.markdownContent} />
-                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, width: "auto" }}>
+                <Box sx={(theme) => ({ display: "flex", justifyContent: "flex-end", gap: 1, width: "auto", marginTop: theme.spacing(5) })}>
                     <Button sx={{ width: "15%" }} size="medium" variant="outlined" onClick={() => closeDialog()}>
                         {t("testingForm.cancelButton.label", "Cancel")}
                     </Button>
@@ -62,6 +62,6 @@ export function TestWithParametersSingleSourceForm({ testingData, closeDialog }:
                     </Button>
                 </Box>
             </AdhocTestingFormContext.Provider>
-        </div>
+        </Box>
     );
 }

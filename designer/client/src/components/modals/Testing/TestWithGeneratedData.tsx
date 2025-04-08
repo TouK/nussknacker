@@ -50,7 +50,7 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
     const generatedDataTestingIsValid = isEmpty(generatedDataTestingErrors);
 
     return (
-        <div style={{ marginBottom: "16px", marginTop: "28px" }}>
+        <Box mt={1.5}>
             <FormLabel required>{t("testingForm.withGeneratedData.numberOfSamples.label", "Specify number of samples")}</FormLabel>
             <div className={nodeValue} style={{ marginTop: "4px" }}>
                 <NodeInput
@@ -61,7 +61,7 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
                 />
             </div>
             <ValidationLabels fieldErrors={getValidationErrorsForField(generatedDataTestingErrors, "testData")} />
-            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, width: "auto", marginTop: "24px" }}>
+            <Box sx={(theme) => ({ display: "flex", justifyContent: "flex-end", gap: 1, width: "auto", marginTop: theme.spacing(5) })}>
                 <Button sx={{ width: "15%" }} size="medium" variant="outlined" onClick={() => closeDialog()}>
                     {t("testingForm.cancelButton.label", "Cancel")}
                 </Button>
@@ -76,6 +76,6 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
                     {t("testingForm.testButton.label", "Test")}
                 </Button>
             </Box>
-        </div>
+        </Box>
     );
 }
