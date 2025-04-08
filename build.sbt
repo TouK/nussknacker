@@ -109,6 +109,8 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "Projection.class"             => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "Selection.class"              => MergeStrategy.first
   // merge Netty version information files
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.concat
   // due to swagger-parser dependencies having different schema definitions (json-schema-validator and json-schema-core)
