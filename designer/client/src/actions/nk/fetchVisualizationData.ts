@@ -1,9 +1,9 @@
-import { ThunkAction } from "../reduxTypes";
-import { displayTestCapabilities, fetchStickyNotesForScenario } from "./process";
-import { fetchProcessDefinition } from "./processDefinitionData";
-import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
-import { ProcessName } from "../../components/Process/types";
+import type { ProcessName } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
+import type { ThunkAction } from "../reduxTypes";
+import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
+import { displayTestCapabilities } from "./process";
+import { fetchProcessDefinition } from "./processDefinitionData";
 
 // This function is responsible for the initial fetching of scenario visualization
 // 1. Fetch (blocking, with await) latest scenario, but without validation, which makes it very quick.
@@ -12,7 +12,7 @@ import HttpService from "../../http/HttpService";
 //    - fetch scenario validation data
 //    - fetch toolbars configuration
 //    - fetch test capabilities
-//    - fetch sticky notes
+//
 // IMPORTANT: The initial fetch of the scenario graph is performed with flag `skipValidateAndResolve=true`.
 //            There are 2 effects of that:
 //            - there is no validation result in the response (it is fetched later, asynchronously)
@@ -30,7 +30,6 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
             });
             dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayTestCapabilities(name, scenario.scenarioGraph));
-            dispatch(fetchStickyNotesForScenario(name, scenario.processVersionId));
             HttpService.validateProcess(name, name, scenario.scenarioGraph).then(({ data }) =>
                 dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
             );

@@ -9,7 +9,7 @@ trait ProcessingTypeConfigsLoaderFactory {
 
   def create(
       configLoaderConfig: Config,
-      processingTypeConfigFromDesignerConfig: Config,
+      processingTypeConfigFromDesignerConfigLoader: IO[Config],
       sttpBackend: SttpBackend[IO, Any],
   )(implicit ioRuntime: IORuntime): ProcessingTypeConfigsLoader
 

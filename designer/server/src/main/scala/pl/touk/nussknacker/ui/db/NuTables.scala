@@ -10,8 +10,7 @@ trait NuTables
     with ScenarioActivityEntityFactory
     with ScenarioLabelsEntityFactory
     with AttachmentEntityFactory
-    with DeploymentEntityFactory
-    with StickyNotesEntityFactory {
+    with DeploymentEntityFactory {
 
   protected val profile: NuJdbcProfile
 }

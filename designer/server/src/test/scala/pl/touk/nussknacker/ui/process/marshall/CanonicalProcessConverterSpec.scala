@@ -44,7 +44,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
       ),
-      List(Edge("s", "e", None)),
+      List(Edge("s", "e", None))
     )
 
     scenarioGraphCanonicalRoundTrip(scenarioGraph).nodes.toSet shouldBe scenarioGraph.nodes.toSet

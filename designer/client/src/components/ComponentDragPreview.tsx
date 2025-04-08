@@ -3,9 +3,11 @@ import React, { forwardRef, useEffect, useMemo, useState } from "react";
 import { useDragDropManager, useDragLayer } from "react-dnd";
 import { createPortal } from "react-dom";
 import { useDebouncedValue } from "rooks";
-import { NodeType } from "../types";
-import { StickyNoteType } from "../types/stickyNote";
-import { ComponentPreview, ComponentPreviewProps } from "./ComponentPreview";
+
+import type { NodeType } from "../types";
+import type { ComponentPreviewProps } from "./ComponentPreview";
+import { ComponentPreview } from "./ComponentPreview";
+import { StickyNoteType } from "./graph/utils/stickyNotesUtils";
 import { StickyNotePreview } from "./StickyNotePreview";
 import { DndTypes } from "./toolbars/creator/Tool";
 

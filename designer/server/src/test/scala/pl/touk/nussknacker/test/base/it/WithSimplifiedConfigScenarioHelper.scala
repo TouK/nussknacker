@@ -6,8 +6,6 @@ import pl.touk.nussknacker.test.base.db.WithTestDb
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.domain.ScenarioHelper
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNoteAddRequest, StickyNoteCorrelationId}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessUpdated
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -39,14 +37,6 @@ trait WithSimplifiedConfigScenarioHelper {
 
   def createSavedFragment(scenario: CanonicalProcess): ProcessId = {
     rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = true)
-  }
-
-  def updateScenario(scenarioName: ProcessName, newVersion: CanonicalProcess): ProcessUpdated = {
-    rawScenarioHelper.updateScenario(scenarioName, newVersion)
-  }
-
-  def addStickyNote(scenarioName: ProcessName, request: StickyNoteAddRequest): StickyNoteCorrelationId = {
-    rawScenarioHelper.addStickyNote(scenarioName, request)
   }
 
 }
