@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
-import { useUserSettings } from "../../../common/userSettings";
 import { blendDarken } from "../../../containers/theme/helpers";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { useWindows, WindowKind } from "../../../windowManager";
@@ -59,7 +58,6 @@ export const AiAssistantButton = () => {
     const { t } = useTranslation();
     const { open } = useWindows();
     const { windows, close } = useWindowManager();
-    const [userSettings] = useUserSettings();
     const featureSettings = useSelector(getFeatureSettings);
     const openedAiAssistantDialog = useMemo(() => windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID), [windows]);
 
@@ -85,7 +83,7 @@ export const AiAssistantButton = () => {
         }
     }, [close, open, openedAiAssistantDialog]);
 
-    if (!featureSettings.assistant.enabled || !userSettings["cloud.showAiAssistant"]) {
+    if (!featureSettings.assistant.enabled) {
         return null;
     }
 

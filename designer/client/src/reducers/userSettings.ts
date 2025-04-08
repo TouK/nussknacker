@@ -13,7 +13,6 @@ type SettingsNames =
     | "node.showInputsAndOutputs"
     | "node.showFragmentCreator"
     | "cloud.showIntegrationsCreators"
-    | "cloud.showAiAssistant"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
     | "debug.userSettingsVisible";
@@ -27,7 +26,6 @@ const reducer: Reducer<UserSettings> = (
         "node.showInputsAndOutputs": false,
         "node.showFragmentCreator": false,
         "cloud.showIntegrationsCreators": false,
-        "cloud.showAiAssistant": false,
         "debug.nodesAsJson": false,
         "debug.forceDisableModals": false,
         "debug.userSettingsVisible": isDev,
