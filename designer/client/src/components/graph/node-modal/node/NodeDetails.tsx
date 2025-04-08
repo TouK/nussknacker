@@ -55,6 +55,8 @@ export function useNodeDetailsButtons({
     const [settings] = useUserSettings();
 
     const autoApply = settings["node.autoApply"];
+    const showInputsAndOutputs = settings["node.showInputsAndOutputs"];
+
     const apply = useMemo<WindowButtonProps | false>(() => {
         if (readOnly) return false;
         if (autoApply) return false;
@@ -70,12 +72,13 @@ export function useNodeDetailsButtons({
     }, [autoApply, close, editedNode, outputEdges, performNodeEdit, readOnly, t]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
+        if (autoApply && showInputsAndOutputs) return false;
         return {
             title: autoApply ? t("dialog.button.close", "close") : t("dialog.button.cancel", "cancel"),
             action: () => close(),
             className: LoadingButtonTypes.secondaryButton,
         };
-    }, [autoApply, close, t]);
+    }, [autoApply, close, showInputsAndOutputs, t]);
 
     return { apply, cancel };
 }
