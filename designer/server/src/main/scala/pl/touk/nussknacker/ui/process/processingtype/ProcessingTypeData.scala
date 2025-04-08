@@ -71,6 +71,7 @@ object ProcessingTypeData {
       processingType: ProcessingType,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
+    // TODO: consider using ParameterName for property names instead of String (for scenario and fragment properties)
     val scenarioProperties = deploymentScenarioPropertiesConfig ++ modelData.modelConfig
       .getOrElse[Map[String, ScenarioPropertyConfig]](
         "scenarioPropertiesConfig",
