@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
@@ -20,6 +20,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
@@ -34,6 +35,7 @@ class UIProcessValidator(
     scenarioLabelsValidator: ScenarioLabelsValidator,
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
+    stickyNotesSettings: StickyNotesSettings,
 ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -49,7 +51,8 @@ class UIProcessValidator(
       scenarioPropertiesConfigFinalizer,
       scenarioLabelsValidator,
       additionalValidators,
-      fragmentResolver
+      fragmentResolver,
+      stickyNotesSettings
     )
 
   def transformValidator(transform: ProcessValidator => ProcessValidator) =
@@ -60,7 +63,8 @@ class UIProcessValidator(
       scenarioPropertiesConfigFinalizer,
       scenarioLabelsValidator,
       additionalValidators,
-      fragmentResolver
+      fragmentResolver,
+      stickyNotesSettings
     )
 
   def validate(
@@ -120,6 +124,8 @@ class UIProcessValidator(
       .add(validateNodesId(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
+      .add(validateStickyNotesLength(scenarioGraph))
+      .add(validateStickyNotesLimit(scenarioGraph))
       .add(validateEdgeUniqueness(scenarioGraph))
       .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
       .add(warningValidation(scenarioGraph))
@@ -255,6 +261,36 @@ class UIProcessValidator(
     val edgeUniquenessErrors =
       edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(from, edges) }.filterNot(_._2.isEmpty)
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
+  }
+
+  private def validateStickyNotesLength(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val tooLongStickyNotes = scenarioGraph.stickyNotes
+      .filter(n => n.content.length > stickyNotesSettings.maxContentLength)
+
+    if (tooLongStickyNotes.isEmpty) {
+      ValidationResult.success
+    } else {
+      formatErrors(
+        NonEmptyList.fromListUnsafe(
+          tooLongStickyNotes.map(n =>
+            StickyNoteContentTooLong(n.id, n.content.length, stickyNotesSettings.maxContentLength)
+          )
+        )
+      )
+    }
+  }
+
+  private def validateStickyNotesLimit(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val numberOfStickyNotes = scenarioGraph.stickyNotes.length
+    stickyNotesSettings.maxNotesCount.fold(ValidationResult.success)(notesLimit => {
+      if (numberOfStickyNotes > notesLimit)
+        formatErrors(
+          NonEmptyList.fromListUnsafe(
+            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(n.id, numberOfStickyNotes, notesLimit))
+          )
+        )
+      else ValidationResult.success
+    })
   }
 
   private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {

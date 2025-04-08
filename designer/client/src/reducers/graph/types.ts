@@ -1,5 +1,4 @@
 import type { Layout, RefreshData } from "../../actions/nk";
-import type { StickyNote } from "../../common/StickyNote";
 import type { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
@@ -19,7 +18,6 @@ export type TestData = Record<Source, SourceTestData>;
 export type GraphState = {
     scenarioLoading: boolean;
     scenario?: Scenario;
-    stickyNotes?: StickyNote[];
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;

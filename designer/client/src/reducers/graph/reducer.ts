@@ -1,13 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
+import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
 import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
+import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { ValidationResult } from "../../types";
+import type { Dimensions, ValidationResult } from "../../types";
+import * as LayoutUtils from "../layoutUtils";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -17,12 +19,9 @@ import { selectionState } from "./selectionState";
 import type { GraphState } from "./types";
 import {
     addNodesWithLayout,
-    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
-    prepareNewStickyNotesWithLayout,
-    removeStickyNoteFromLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -36,6 +35,7 @@ const emptyGraphState: GraphState = {
             nodes: [],
             edges: [],
             properties: null,
+            stickyNotes: [],
         },
     } as Scenario,
     layout: [],
@@ -106,7 +106,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "DISPLAY_PROCESS": {
-            const { scenario } = action;
+            const scenario = addStickyNotesToNodes(action.scenario);
             return {
                 ...state,
                 scenario,
@@ -249,16 +249,48 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: action.layout,
             });
         }
-        case "STICKY_NOTES_UPDATED": {
-            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+        case "STICKY_NOTE_UPDATED": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const updatedNodes = nodes.map((node) =>
+                node.id === action.id
+                    ? {
+                          ...node,
+                          dimensions: action.dimensions,
+                          content: action.content ? action.content : node.content,
+                      }
+                    : node,
+            );
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: updatedNodes,
+                    },
+                },
             };
         }
-        case "STICKY_NOTE_DELETED": {
-            const { stickyNotes, layout } = removeStickyNoteFromLayout(state, action.stickyNoteId);
+        case "STICKY_NOTE_SET_ERRORS": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const [stickyNotes, graphNodes] = partition(nodes, (node) => node.type === StickyNoteType);
+            const stickyNotesUpdated = stickyNotes.map((stickyNote) => {
+                return action.stickyNoteErrors[stickyNote.id]
+                    ? {
+                          ...stickyNote,
+                          errors: action.stickyNoteErrors[stickyNote.id],
+                      }
+                    : stickyNote;
+            });
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: [...graphNodes, ...stickyNotesUpdated],
+                    },
+                },
             };
         }
         case "NODES_WITH_EDGES_ADDED": {
@@ -358,7 +390,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "UPDATE_TEST_FORM_PARAMETERS"])),
+    }, excludeAction(["VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "UPDATE_TEST_FORM_PARAMETERS"])),
 });
 
 // apply only undoable changes for undo actions

@@ -164,6 +164,7 @@ export const state: GraphState = {
                     edgeType: null,
                 },
             ],
+            stickyNotes: [],
         },
         state: {
             status: {

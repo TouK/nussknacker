@@ -14,7 +14,11 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-// Warning: Flink doesn't work correctly with 2.12.11
+// Warning: Flink doesn't work correctly with Scala 2.12.11 and higher.
+// Upgrading to a newer version of Scala 2.12 causes the JavaCollectionsSerializationTest to fail
+// because these versions switched to the same Java collection wrappers used in Scala 2.13.
+// These wrappers lack dedicated Kryo serializers, which we added in flink-scala-2.13 library https://github.com/TouK/flink-scala-2.13.
+// To bump Scala 2.12 we would need to do flink-scala-2.12 similar to flink-scala-2.13.
 val scala212 = "2.12.10"
 val scala213 = "2.13.15"
 

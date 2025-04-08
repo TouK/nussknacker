@@ -86,7 +86,8 @@ object ProcessingTypeServices {
       new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
       new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
       processingTypeData.deploymentData.additionalValidators,
-      fragmentResolver
+      fragmentResolver,
+      designerConfig.stickyNotesSettings
     )
     val substitutor =
       ProcessDictSubstitutor(processingTypeData.designerModelData.modelData.designerDictServices.dictRegistry)

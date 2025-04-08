@@ -86,6 +86,7 @@ const baseProcessState = {
                 to: "sendSms",
             },
         ],
+        stickyNotes: [],
     },
     validationResult: {
         errors: {

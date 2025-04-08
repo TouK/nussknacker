@@ -1,37 +1,34 @@
 /* eslint-disable i18next/no-literal-string */
-import { AxiosError, AxiosResponse } from "axios";
+import type { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
-import { Moment } from "moment";
-import { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
-import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
+import type { Moment } from "moment";
+
+import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import type { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
-import { UserData } from "../common/models/User";
-import { TestResults } from "../common/TestResultUtils";
+import type { UserData } from "../common/models/User";
+import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
-import {
-    ActivitiesResponse,
-    ActivityMetadataResponse,
-    ActivityType,
-    ActivityTypesRelatedToExecutions,
-} from "../components/toolbars/activities/types";
-import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
-import { BackendNotification } from "../containers/Notifications";
-import { ProcessCounts } from "../reducers/graph";
-import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
-import { Instant, WithId } from "../types/common";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
+import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
+import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
+import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
+import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
-import { Dimensions, StickyNote } from "../common/StickyNote";
-import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
-import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
-import { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import type { ProcessCounts } from "../reducers/graph";
+import type { AuthenticationSettings } from "../reducers/settings";
+import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import type { Instant, WithId } from "../types/common";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -732,57 +729,6 @@ class HttpService {
         return promise;
     }
 
-    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions) {
-        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
-            scenarioVersionId,
-            content: "",
-            layoutData: position,
-            color: STICKY_NOTE_DEFAULT_COLOR, //TODO add config for default sticky note color? For now this is default.
-            dimensions: dimensions,
-        });
-        promise.catch((error) => {
-            const errorMsg: string = error?.response?.data;
-            this.#addError("Failed to add sticky note" + (errorMsg ? ": " + errorMsg : ""), error, true);
-        });
-        return promise;
-    }
-
-    deleteStickyNote(scenarioName: string, stickyNoteId: number) {
-        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNoteId}`);
-        promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNoteId}`),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
-    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
-        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
-            noteId: stickyNote.noteId,
-            scenarioVersionId,
-            content: stickyNote.content,
-            layoutData: stickyNote.layoutData,
-            color: stickyNote.color,
-            dimensions: stickyNote.dimensions,
-        });
-        promise.catch((error) => {
-            const errorMsg = error?.response?.data;
-            this.#addError("Failed to update sticky note" + errorMsg ? ": " + errorMsg : "", error, true);
-        });
-        return promise;
-    }
-
-    getStickyNotes(scenarioName: string, scenarioVersionId: number): Promise<AxiosResponse<StickyNote[]>> {
-        const promise = api.get(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes?scenarioVersionId=${scenarioVersionId}`);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetStickyNotes", "Failed to get sticky notes"), error, true),
-        );
-        return promise;
-    }
-
     fetchProcessCounts(processName: string, dateFrom: Moment, dateTo: Moment): Promise<AxiosResponse<ProcessCounts>> {
         //we use offset date time instead of timestamp to pass info about user time zone to BE
         const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ");
@@ -1052,7 +998,8 @@ class HttpService {
     }
 
     #sanitizeScenarioGraph(scenarioGraph: ScenarioGraph) {
-        return withoutHackOfEmptyEdges(scenarioGraph);
+        const nodeStickyNoteSortedGraph = extractStickyNotesFromNodes(scenarioGraph);
+        return withoutHackOfEmptyEdges(nodeStickyNoteSortedGraph);
     }
 
     #requestCanceled(error: AxiosError<unknown>) {
