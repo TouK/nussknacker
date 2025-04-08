@@ -979,7 +979,7 @@ class HttpService {
             headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
         }
 
-        const PATHNAME = "/custom/assistant/chat";
+        const PATHNAME = "custom/assistant/chat";
 
         /**
          * Axios doesn't support stream response, even with fetch adapter, there are problems in safari https://github.com/axios/axios/issues/5806
