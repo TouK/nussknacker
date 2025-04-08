@@ -761,6 +761,7 @@ You can configure `secondaryEnvironment` to allow for
 | scenarioStateTimeout                                       | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
 | usageStatisticsReports.enabled                             | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
 | usageStatisticsReports.errorReportsEnabled                 | Low        | boolean  | true          | When enabled browser will send anonymous errors reports to `stats.nussknacker.io`                                                                                                                                           |
+| assistantSettings.enabled                                  | Low        | boolean  | false         | Whether the assistant should be enabled. If enabled, the FE can make requests to the assistant API extension, which should be exposed as a `CustomHttpServiceProvider`                                                      |
 
 ## Scenario type, categories
 
