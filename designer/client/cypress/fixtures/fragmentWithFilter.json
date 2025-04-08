@@ -74,7 +74,7 @@
                     "name": "o222",
                     "expression": {
                         "language": "spel",
-                        "expression": "#DATE.nowTimestamp"
+                        "expression": "#DATE.now.toEpochMilli"
                     }
                 }
             ],
