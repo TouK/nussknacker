@@ -82,7 +82,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                         overflow: "auto",
                     })}
                 >
-                    <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
+                    <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.CenterTop} />
                 </AbsoluteOverlayGrid9>
             </ExternalLayerWrapper>
 
@@ -104,7 +104,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     <StyledToolbarsContainer
                         sx={{ gridArea: "bottom" }}
                         availableToolbars={availableToolbars}
-                        side={ToolbarsSide.BottomCenter}
+                        side={ToolbarsSide.CenterBottom}
                     />
 
                     <Box gridArea="right" component={SidePanel} side={PanelSide.Right}>
