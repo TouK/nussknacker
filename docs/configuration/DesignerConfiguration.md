@@ -508,11 +508,11 @@ Toolbars and buttons at process window are configurable, you can configure param
 * uuid - optional uuid identifier which determines unique code for FE localstorage cache, default: null - we generate
   uuid from hashcode config
 * topLeft - optional top left panel, default: empty list
-* bottomLeft - optional bottom left panel, default: empty list
+* topCenter - optional center top panel, default: empty list
 * topRight - optional top right panel, default: empty list
+* bottomLeft - optional bottom left panel, default: empty list
+* bottomCenter - optional center bottom panel, default: empty list
 * bottomRight - optional bottom right panel, default: empty list
-* centerTop - optional center top panel, default: empty list
-* centerBottom - optional center bottom panel, default: empty list
 
 Example configuration:
 

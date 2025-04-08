@@ -35,19 +35,19 @@ object ScenarioToolbarSettings {
       topLeft = scenarioToolbarConfig.topLeft
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      bottomLeft = scenarioToolbarConfig.bottomLeft
+      topCenter = scenarioToolbarConfig.topCenter
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
       topRight = scenarioToolbarConfig.topRight
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
+      bottomLeft = scenarioToolbarConfig.bottomLeft
+        .filterNot(tp => verifyCondition(tp.hidden, scenario))
+        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
+      bottomCenter = scenarioToolbarConfig.bottomCenter
+        .filterNot(tp => verifyCondition(tp.hidden, scenario))
+        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
       bottomRight = scenarioToolbarConfig.bottomRight
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      centerTop = scenarioToolbarConfig.centerTop
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      centerBottom = scenarioToolbarConfig.centerBottom
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario))
     )
@@ -58,11 +58,11 @@ object ScenarioToolbarSettings {
 final case class ScenarioToolbarSettings(
     id: String,
     topLeft: List[ToolbarPanel],
-    bottomLeft: List[ToolbarPanel],
+    topCenter: List[ToolbarPanel],
     topRight: List[ToolbarPanel],
-    bottomRight: List[ToolbarPanel],
-    centerTop: List[ToolbarPanel],
-    centerBottom: List[ToolbarPanel],
+    bottomLeft: List[ToolbarPanel],
+    bottomCenter: List[ToolbarPanel],
+    bottomRight: List[ToolbarPanel]
 )
 
 object ToolbarPanel {

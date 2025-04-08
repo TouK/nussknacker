@@ -1299,13 +1299,13 @@ class ProcessesResourcesSpec
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
-        List(
+        topLeft = List(
           ToolbarPanel(SearchPanel, None, None, None, None),
           ToolbarPanel(TipsPanel, None, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None, None)
         ),
-        List(),
-        List(
+        bottomLeft = List(),
+        topRight = List(
           ToolbarPanel(
             ProcessActionsPanel,
             None,
@@ -1327,9 +1327,9 @@ class ProcessesResourcesSpec
             None
           )
         ),
-        List.empty,
-        List.empty,
-        List.empty,
+        bottomRight = List.empty,
+        topCenter = List.empty,
+        bottomCenter = List.empty,
       )
     }
   }

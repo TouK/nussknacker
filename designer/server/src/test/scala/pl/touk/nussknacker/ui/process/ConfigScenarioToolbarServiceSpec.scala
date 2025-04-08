@@ -197,13 +197,13 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     (process.isFragment, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") =>
         ScenarioToolbarSettings(
-          id,
-          List(
+          id = id,
+          topLeft = List(
             ToolbarPanel(CreatorPanel, None, None, None, None),
             ToolbarPanel(ActivitiesPanel, None, None, None, None),
           ),
-          Nil,
-          List(
+          bottomLeft = Nil,
+          topRight = List(
             ToolbarPanel(
               ProcessActionsPanel,
               Some(s"Process Actions ${process.name}"),
@@ -250,19 +250,19 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          List.empty,
-          List.empty,
-          List.empty
+          bottomRight = List.empty,
+          topCenter = List.empty,
+          bottomCenter = List.empty
         )
       case (false, true, "Category1") =>
         ScenarioToolbarSettings(
-          id,
-          List(
+          id = id,
+          topLeft = List(
             ToolbarPanel(CreatorPanel, None, None, None, None),
             ToolbarPanel(ActivitiesPanel, None, None, None, None)
           ),
-          Nil,
-          List(
+          bottomLeft = Nil,
+          topRight = List(
             ToolbarPanel(
               ProcessActionsPanel,
               Some(s"Process Actions ${process.name}"),
@@ -298,18 +298,18 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          List.empty,
-          List.empty,
-          List.empty,
+          bottomRight = List.empty,
+          topCenter = List.empty,
+          bottomCenter = List.empty,
         )
       case (true, false, "Category1") =>
         ScenarioToolbarSettings(
-          id,
-          List(
+          id = id,
+          topLeft = List(
             ToolbarPanel(ActivitiesPanel, None, None, None, None),
           ),
-          Nil,
-          List(
+          bottomLeft = Nil,
+          topRight = List(
             ToolbarPanel(
               ProcessActionsPanel,
               Some(s"Process Actions ${process.name}"),
@@ -368,19 +368,19 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          List.empty,
-          List.empty,
-          List.empty,
+          bottomRight = List.empty,
+          topCenter = List.empty,
+          bottomCenter = List.empty,
         )
       case (true, true, "Category1") =>
         ScenarioToolbarSettings(
-          id,
-          List(
+          id = id,
+          topLeft = List(
             ToolbarPanel(CreatorPanel, None, None, None, None),
             ToolbarPanel(ActivitiesPanel, None, None, None, None)
           ),
-          Nil,
-          List(
+          bottomLeft = Nil,
+          topRight = List(
             ToolbarPanel(
               ProcessActionsPanel,
               Some(s"Process Actions ${process.name}"),
@@ -427,18 +427,18 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          List.empty,
-          List.empty,
-          List.empty,
+          bottomRight = List.empty,
+          topCenter = List.empty,
+          bottomCenter = List.empty,
         )
       case (false, false, "Category2") =>
         ScenarioToolbarSettings(
-          id,
-          List(
+          id = id,
+          topLeft = List(
             ToolbarPanel(TipsPanel, None, None, None, None)
           ),
-          Nil,
-          List(
+          bottomLeft = Nil,
+          topRight = List(
             ToolbarPanel(
               ProcessActionsPanel,
               Some(s"Process Actions ${process.name}"),
@@ -485,18 +485,18 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          List.empty,
-          List.empty,
-          List.empty,
+          bottomRight = List.empty,
+          topCenter = List.empty,
+          bottomCenter = List.empty,
         )
       case (false, false, "Category3") =>
         ScenarioToolbarSettings(
-          id,
-          List(
+          id = id,
+          topLeft = List(
             ToolbarPanel(ActivitiesPanel, None, None, None, None)
           ),
-          Nil,
-          List(
+          bottomLeft = Nil,
+          topRight = List(
             ToolbarPanel(
               ProcessActionsPanel,
               Some(s"Process Actions ${process.name}"),
@@ -543,9 +543,9 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None
             )
           ),
-          List.empty,
-          List.empty,
-          List.empty,
+          bottomRight = List.empty,
+          topCenter = List.empty,
+          bottomCenter = List.empty,
         )
       case (_, _, _) =>
         ScenarioToolbarSettings("not-exist", Nil, Nil, Nil, Nil, Nil, Nil)
