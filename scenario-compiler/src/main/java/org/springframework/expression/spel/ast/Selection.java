@@ -20,9 +20,11 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.avro.generic.GenericRecord;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.TypedValue;
@@ -89,50 +91,20 @@ public class Selection extends SpelNodeImpl {
 
 		if (operand instanceof Map) {
 			Map<?, ?> mapdata = (Map<?, ?>) operand;
-			// TODO don't lose generic info for the new map
-			Map<Object, Object> result = new HashMap<>();
-			Object lastKey = null;
+            return handleMap(state, mapdata, selectionCriteria);
+        }
 
-			for (Map.Entry<?, ?> entry : mapdata.entrySet()) {
-				try {
-					TypedValue kvPair = new TypedValue(entry);
-					state.pushActiveContextObject(kvPair);
-					state.enterScope();
-					Object val = selectionCriteria.getValueInternal(state).getValue();
-					if (val instanceof Boolean) {
-						if ((Boolean) val) {
-							if (this.variant == FIRST) {
-								result.put(entry.getKey(), entry.getValue());
-								return new ValueRef.TypedValueHolderValueRef(new TypedValue(result), this);
-							}
-							result.put(entry.getKey(), entry.getValue());
-							lastKey = entry.getKey();
-						}
-					}
-					else {
-						throw new SpelEvaluationException(selectionCriteria.getStartPosition(),
-								SpelMessage.RESULT_OF_SELECTION_CRITERIA_IS_NOT_BOOLEAN);
-					}
-				}
-				finally {
-					state.popActiveContextObject();
-					state.exitScope();
-				}
-			}
+        if (operand instanceof GenericRecord) {
+            var genericRecord = (GenericRecord) operand;
+            var resultMap = new LinkedHashMap<>();
 
-			if ((this.variant == FIRST || this.variant == LAST) && result.isEmpty()) {
-				return new ValueRef.TypedValueHolderValueRef(new TypedValue(null), this);
-			}
-
-			if (this.variant == LAST) {
-				Map<Object, Object> resultMap = new HashMap<>();
-				Object lastValue = result.get(lastKey);
-				resultMap.put(lastKey,lastValue);
-				return new ValueRef.TypedValueHolderValueRef(new TypedValue(resultMap),this);
-			}
-
-			return new ValueRef.TypedValueHolderValueRef(new TypedValue(result),this);
-		}
+            for (var field : genericRecord.getSchema().getFields()) {
+                var fieldName = field.name();
+                var fieldValue = genericRecord.get(fieldName);
+                resultMap.put(fieldName, fieldValue);
+            }
+            return handleMap(state, resultMap, selectionCriteria);
+        }
 
 		if (operand instanceof Iterable || ObjectUtils.isArray(operand)) {
 			Iterable<?> data = (operand instanceof Iterable ?
@@ -203,7 +175,53 @@ public class Selection extends SpelNodeImpl {
 				operand.getClass().getName());
 	}
 
-	@Override
+    private ValueRef.TypedValueHolderValueRef handleMap(ExpressionState state, Map<?, ?> mapdata, SpelNodeImpl selectionCriteria) {
+        // TODO don't lose generic info for the new map
+        Map<Object, Object> result = new HashMap<>();
+        Object lastKey = null;
+
+        for (Map.Entry<?, ?> entry : mapdata.entrySet()) {
+            try {
+                TypedValue kvPair = new TypedValue(entry);
+                state.pushActiveContextObject(kvPair);
+                state.enterScope();
+                Object val = selectionCriteria.getValueInternal(state).getValue();
+                if (val instanceof Boolean) {
+                    if ((Boolean) val) {
+                        if (this.variant == FIRST) {
+                            result.put(entry.getKey(), entry.getValue());
+                            return new ValueRef.TypedValueHolderValueRef(new TypedValue(result), this);
+                        }
+                        result.put(entry.getKey(), entry.getValue());
+                        lastKey = entry.getKey();
+                    }
+                }
+                else {
+                    throw new SpelEvaluationException(selectionCriteria.getStartPosition(),
+                            SpelMessage.RESULT_OF_SELECTION_CRITERIA_IS_NOT_BOOLEAN);
+                }
+            }
+            finally {
+                state.popActiveContextObject();
+                state.exitScope();
+            }
+        }
+
+        if ((this.variant == FIRST || this.variant == LAST) && result.isEmpty()) {
+            return new ValueRef.TypedValueHolderValueRef(new TypedValue(null), this);
+        }
+
+        if (this.variant == LAST) {
+            Map<Object, Object> resultMap = new HashMap<>();
+            Object lastValue = result.get(lastKey);
+            resultMap.put(lastKey,lastValue);
+            return new ValueRef.TypedValueHolderValueRef(new TypedValue(resultMap), this);
+        }
+
+        return new ValueRef.TypedValueHolderValueRef(new TypedValue(result), this);
+    }
+
+    @Override
 	public String toStringAST() {
 		return prefix() + getChild(0).toStringAST() + "]";
 	}

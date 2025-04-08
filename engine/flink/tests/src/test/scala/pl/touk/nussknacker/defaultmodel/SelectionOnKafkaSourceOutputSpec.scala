@@ -62,7 +62,7 @@ class SelectionOnKafkaSourceOutputSpec
       .buildSimpleVariable(
         "someId",
         "someVarName",
-        s"""#input.?[#this.key == "first"]""".spel
+        s"""#input.?[#this.key == "first"].get("first")""".spel
       )
       .emptySink(
         "end",
@@ -71,7 +71,7 @@ class SelectionOnKafkaSourceOutputSpec
         KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel,
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"false".spel,
-        "first"                                                         -> "#input.first".spel,
+        "first"                                                         -> "#someVarName".spel,
         "last"                                                          -> "#input.last".spel,
       )
 
