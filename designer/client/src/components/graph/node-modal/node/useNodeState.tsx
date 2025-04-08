@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useDebounceFn } from "rooks";
+import { useDebounce, useDebounceFn } from "rooks";
 
 import { editNode } from "../../../../actions/nk";
 import { PendingPromise } from "../../../../common/PendingPromise";
@@ -40,6 +40,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useDispatch();
     const [nodeId, setNodeId] = useState<string>(data.node.id);
     const [settings] = useUserSettings();
+    const autoApply = settings["node.autoApply"];
 
     const scenarioFromGlobalStore = useSelector(getScenario);
     const nodeFromGlobalStore = useMemo(
@@ -47,8 +48,8 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         [nodeId, scenarioFromGlobalStore.scenarioGraph],
     );
 
-    const scenario = scenarioFromGlobalStore || data.scenario;
-    const node = nodeFromGlobalStore || data.node;
+    const scenario = useMemo(() => scenarioFromGlobalStore || data.scenario, [data.scenario, scenarioFromGlobalStore]);
+    const node = useMemo(() => nodeFromGlobalStore || data.node, [data.node, nodeFromGlobalStore]);
 
     const [editedNode, setEditedNode] = useState<EditedNode>(node);
     const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
@@ -57,6 +58,13 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         setEditedNode((currentNode) => (isEqual(currentNode, node) ? currentNode : node));
         setNodeId(node.id);
     }, [node]);
+
+    useEffect(() => {
+        mergeQuery(parseWindowsQueryParams({ nodeId: nodeId }));
+        return () => {
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: nodeId }));
+        };
+    }, [nodeId]);
 
     useEffect(() => {
         setOutputEdges((currentOutputEdges) => {
@@ -70,31 +78,30 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         async (editedNode: EditedNode, outputEdges: Edge[]) => {
             setStatus("processing");
             try {
-                //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
-                mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
                 const after = applyIdFromFakeName(editedNode);
                 // Webpack yield that awaits is unnecessary,
                 // but in fact without this await,
                 // we don't wait to editNode finish and the dialog is closed before resolve of the call,
                 // which causes a bug with a form update
                 await dispatch(editNode(scenario, node, after, outputEdges));
-                setNodeId(after.id);
+                if (autoApply) {
+                    setNodeId(after.id);
+                }
             } catch (e) {
                 console.error(e);
-                //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
-                mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
             }
 
             setStatus("idle");
         },
-        [node, dispatch, scenario],
+        [dispatch, scenario, node, autoApply],
     );
-    const [performNodeEditDebounced] = useDebounceFn(performNodeEdit, 500);
+    const performNodeEditDebounced = useDebounce(performNodeEdit, 750);
 
     const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
 
     const onChange = useCallback(
         (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = (e) => e) => {
+            performNodeEditDebounced.cancel();
             const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
             const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
@@ -119,14 +126,14 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
             });
 
             Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
-                if (!settings["node.autoApply"]) return;
+                if (!autoApply) return;
                 if (!nodeChanged && !edgesChanged) return;
 
                 setStatus("pending");
                 performNodeEditDebounced(node, edges);
             });
         },
-        [performNodeEditDebounced, settings],
+        [autoApply, performNodeEditDebounced],
     );
 
     return {

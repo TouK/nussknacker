@@ -1,15 +1,18 @@
+import { Fade, Box } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
 import React, { createContext, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import urljoin from "url-join";
 
+import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
 import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import { parseWindowsQueryParams } from "../../../../containers/hooks/useSearchQuery";
 import type { RootState } from "../../../../reducers";
+import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
 import type { Edge, NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
@@ -58,8 +61,12 @@ export function useNodeDetailsButtons({
         if (autoApply) return false;
         return {
             title: t("dialog.button.apply", "apply"),
-            action: () => performNodeEdit(editedNode, outputEdges).then(() => close()),
-            disabled: !editedNode.id?.length,
+            action: () =>
+                performNodeEdit(editedNode, outputEdges).then(() => {
+                    mergeQuery(parseWindowsQueryParams({}, { nodeId: editedNode.id }));
+                    close();
+                }),
+            disabled: !editedNode["$id" in editedNode ? "$id" : "id"]?.length,
         };
     }, [autoApply, close, editedNode, outputEdges, performNodeEdit, readOnly, t]);
 
@@ -99,13 +106,6 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
-    useEffect(() => {
-        mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
-        return () => {
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-        };
-    }, [node.id]);
-
     const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
 
     const openFragment = useMemo<WindowButtonProps | false>(() => {
@@ -138,6 +138,21 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                 : undefined,
         [settings, portalRef, PortalWrapper],
     );
+
+    const dispatch = useDispatch();
+    useEffect(() => {
+        dispatch(nodeDetailsOpened(node.id, data.id));
+        return () => {
+            dispatch(nodeDetailsClosed(node.id, data.id));
+        };
+    }, [data.id, dispatch, node.id]);
+
+    useEffect(() => {
+        dispatch(takeHistorySnapshot());
+        return () => {
+            dispatch(removeHistorySnapshot());
+        };
+    }, [dispatch]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {

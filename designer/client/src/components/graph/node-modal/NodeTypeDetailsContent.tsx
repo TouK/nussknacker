@@ -122,20 +122,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     );
 
     useEffect(() => {
-        dispatch(nodeDetailsOpened(node.id));
-        return () => {
-            dispatch(nodeDetailsClosed(node.id));
-        };
-    }, [dispatch, node.id]);
-
-    useEffect(() => {
-        dispatch(takeHistorySnapshot());
-        return () => {
-            dispatch(removeHistorySnapshot());
-        };
-    }, [dispatch]);
-
-    useEffect(() => {
         if (showValidation) {
             dispatch(
                 validateNodeData(processName, {
