@@ -68,7 +68,6 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       //      because canBeSubclassOf handles conversions and many more - see comment next to it
       case (l: TypedClass, r: TypedClass)                           => classCommonSupertype(l, r)
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
-        // TODO_PAWEL o co tu chodzi?
         // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
         // still we'll got a class here, so this getOrElse should occur in the rare situations
         looseFinder

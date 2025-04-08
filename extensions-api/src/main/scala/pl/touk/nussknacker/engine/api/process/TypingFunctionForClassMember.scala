@@ -25,7 +25,6 @@ object TypingFunctionForClassMember {
     new OneGenericParameterTypingFunction(genericParamPosition, wrapGenericParam)
 
   // In this case we assume that function will be typed base on record which generic parameters are unusable
-  // TODO_PAWEL jest ok cos tu jest
   // so we extract generic parameter based on field's type - it is for Avro's GenericRecord case purpose
   def returnRecordFieldsGenericParameterOnPositionWrapped(
       genericParamPosition: Int,

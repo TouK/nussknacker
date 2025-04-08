@@ -288,8 +288,6 @@ object propertyAccessors {
     override def getSpecificTargetClasses: Array[Class[_]] = Array(classOf[DictInstance])
   }
 
-  // TODO_PAWEL tutaj jest to jak sie dokopuje do pola w GenericRecord. Ciekawe, to dziala zawsze jak cos ma odpowiednie
-  // nazwy metod.
   // mainly for Avro's GenericRecord and Table API's Row purpose
   object MapLikePropertyAccessor extends PropertyAccessor with Caching with ReadOnly {
 

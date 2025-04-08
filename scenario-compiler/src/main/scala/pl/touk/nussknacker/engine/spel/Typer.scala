@@ -437,7 +437,6 @@ private[spel] class Typer(
       case e: OperatorMatches    => withChildrenOfType[String](Typed[Boolean])
       case e: OperatorNot        => withChildrenOfType[Boolean](Typed[Boolean])
 
-      // TODO_PAWEL tutaj sie ten typ wynikowy ekstraktuje jakos
       case e: Projection =>
         for {
           iterateType <- current.stackHead.map(valid).getOrElse(invalid(IllegalProjectionError))
@@ -712,9 +711,6 @@ private[spel] class Typer(
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
           tc.runtimeObjType.klass.isArray =>
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
-    // TODO_PAWEL jest ok to jest miejsce ktore nie spodziewa sie tego generic czegos
-    // TODO_PAWEL dziwne ze to robi to sprawdzenie, ktore glownie dla numberow i stringow dizlaa
-    // TODO_PAWEL hack comment and change
     case tc: SingleTypingResult
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) ||
           classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>

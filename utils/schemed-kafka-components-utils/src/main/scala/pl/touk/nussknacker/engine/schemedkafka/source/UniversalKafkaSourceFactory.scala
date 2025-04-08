@@ -48,7 +48,6 @@ class UniversalKafkaSourceFactory(
 
   override type State = UniversalKafkaSourceFactoryState
 
-  // TODO_PAWEL czyli tutaj jest powiedzinae, ze ten source wprowadza te typy.
   override def typesToExtract: List[TypedClass] =
     Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
 

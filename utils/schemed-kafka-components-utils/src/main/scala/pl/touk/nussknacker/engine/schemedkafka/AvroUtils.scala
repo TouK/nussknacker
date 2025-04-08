@@ -137,7 +137,6 @@ object AvroUtils extends LazyLogging {
 
   /**
     * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
-   // TODO_PAWEL jest ok to my tworzymy to gdzies samodzielnie?
     */
   def createRecord(schema: Schema, data: collection.Map[String, Any]): GenericRecord = {
     def createValue(value: Any, schema: Schema): Any = {

@@ -214,7 +214,6 @@ object typing {
 
   }
 
-  // TODO_PAWEL tego typu jest ten typing result
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
     override val valueOpt: None.type = None
 

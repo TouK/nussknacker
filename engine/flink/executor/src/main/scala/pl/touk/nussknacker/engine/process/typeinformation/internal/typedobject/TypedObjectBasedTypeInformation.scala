@@ -18,8 +18,6 @@ import scala.reflect.ClassTag
 /*
   This is base class for handling TypedObjectTypingResult, can be used to handle java Maps, scala Maps, classes based on Row etc.
   Not all TypedObjectTypingResults should be handled by subclasses, e.g. Avro GenericRecord should be handled by
-// TODO_PAWEL jest ok to jest bardzo ciekawe, mam wrazenie, ze nie jest uzywane to type info, czy to problem?
-// no wlasnie, czy to problem?
   GenericRecordAvroTypeInfo
 
   The idea is that we sort fields by name, keep names and respective serializers in TypeSerializerSnapshot,
