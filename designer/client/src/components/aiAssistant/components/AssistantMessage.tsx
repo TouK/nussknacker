@@ -13,7 +13,7 @@ export const AssistantMessage = () => {
 
     const messageText = useMemo(() => content.map((part) => part.text).join("\n"), [content]);
 
-    if (status.type === "running") {
+    if (status.type === "running" && messageText.length === 0) {
         return (
             <Box display="flex" alignItems="center" gap={1}>
                 <CircularProgress size="0.75rem" />
@@ -22,7 +22,7 @@ export const AssistantMessage = () => {
         );
     }
 
-    if ((messageText.length === 0 && status.type === "complete") || status.reason === "cancelled") {
+    if ((messageText.length === 0 && status.type === "complete") || status.type === "incomplete") {
         return null;
     }
 
