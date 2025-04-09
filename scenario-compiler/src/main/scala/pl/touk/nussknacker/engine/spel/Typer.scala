@@ -711,6 +711,10 @@ private[spel] class Typer(
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
           tc.runtimeObjType.klass.isArray =>
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
+    // TypedObjectTypingResult, jesli to jest takie cos to polegajmy na jego fields
+    // problem jedyny: jak jak wysnuc jego odpowiedni typ? No ale trudno, niech tak będzie
+    // tylko trzeba zaznaczyc tam, ze tylko w przypadku tego avro, bo w przypadku np custom klasy to nie chcemy tego miec
+    // tylko teraz wykminic skad wziac ten code snippet ktory ustala wynikowy typel
     case tc: SingleTypingResult
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) ||
           classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>

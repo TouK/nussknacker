@@ -67,7 +67,9 @@ class ProjectionOnKafkaSourceOutputSpec
       .buildSimpleVariable(
         "someId",
         "someVarName",
-        s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""".spel
+//        s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""".spel
+//          s"""#COLLECTION.join({first: "sth1", last: "sth2"}.![#this.key + "_" + #this.value], ",")""".spel
+          s"""#COLLECTION.join({"a", 1}, ",")""".spel
       )
       .emptySink(
         "end",

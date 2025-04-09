@@ -15,6 +15,7 @@ import scala.collection.immutable.ListMap
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
   */
+// TODO_PAWEL chyba to musze uzyc
 class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassResolutionStrategy) {
 
   // It returns None if none supertype found (it is possible only for SupertypeClassResolutionStrategy.Intersection)
