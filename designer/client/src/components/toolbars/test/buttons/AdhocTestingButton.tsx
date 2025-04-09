@@ -2,17 +2,19 @@ import loadable from "@loadable/component";
 import React, { useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import { getTestParameters, getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { NodeContext } from "../../../graph/node-modal/node/NodeDetails";
-import { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
+import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
 import { ButtonProgress } from "./ButtonProgress";
 
 export type AdhocTestingButtonProps = {
+    type: CustomButtonTypes.adhocTesting;
     name?: string;
     title?: string;
     docs?: AdhocTestingViewParams["docs"];
