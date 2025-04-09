@@ -1,8 +1,10 @@
-import { ProcessName } from "src/components/Process/types";
-import { TestResults } from "../../common/TestResultUtils";
-import HttpService, { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
-import { ScenarioGraph } from "../../types";
-import { ThunkAction } from "../reduxTypes";
+import type { ProcessName } from "src/components/Process/types";
+
+import type { TestResults } from "../../common/TestResultUtils";
+import type { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
+import HttpService from "../../http/HttpService";
+import type { ScenarioGraph } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
 
 export function testProcessFromFile(processName: ProcessName, testDataFile: File, scenarioGraph: ScenarioGraph): ThunkAction {
@@ -38,10 +40,14 @@ export function testScenarioWithGeneratedData(testSampleSize: string, processNam
         dispatch({
             type: "PROCESS_LOADING",
         });
+        dispatch({ type: "TEST_RESULTS_LOADING" });
 
         HttpService.testScenarioWithGeneratedData(processName, testSampleSize, scenarioGraph)
             .then((response) => dispatch(displayTestResults(response.data)))
-            .catch(() => dispatch({ type: "LOADING_FAILED" }));
+            .catch(() => {
+                dispatch({ type: "LOADING_FAILED" });
+                dispatch({ type: "TEST_RESULTS_FAILED" });
+            });
     };
 }
 

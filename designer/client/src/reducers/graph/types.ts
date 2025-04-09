@@ -21,6 +21,7 @@ export type GraphState = {
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;
+    testType?: string;
     testFormParameters?: TestFormParameters[];
     testResults: TestResults;
     testResultsLoading?: boolean;

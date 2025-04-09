@@ -1,7 +1,8 @@
-import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
-import { CustomButtonTypes } from "./CustomButtonTypes";
-import { LinkButtonProps } from "./LinkButton";
-import { AdhocTestingButtonProps } from "../../toolbars/test/buttons/AdhocTestingButton";
+import type { AdhocTestingButtonProps } from "../../toolbars/test/buttons/AdhocTestingButton";
+import type { ScenarioTestButtonProps } from "../../toolbars/test/buttons/ScenarioTestButton";
+import type { BuiltinButtonTypes } from "./BuiltinButtonTypes";
+import type { CustomButtonTypes } from "./CustomButtonTypes";
+import type { LinkButtonProps } from "./LinkButton";
 
 type GenericButton<T, P = unknown> = {
     type: T;
@@ -11,7 +12,8 @@ type GenericButton<T, P = unknown> = {
 type Button =
     | GenericButton<BuiltinButtonTypes>
     | GenericButton<CustomButtonTypes.customLink, LinkButtonProps>
-    | GenericButton<CustomButtonTypes.adhocTesting, AdhocTestingButtonProps>;
+    | GenericButton<CustomButtonTypes.adhocTesting, AdhocTestingButtonProps>
+    | GenericButton<CustomButtonTypes.scenarioTest, ScenarioTestButtonProps>;
 
 export type ToolbarButtonTypes = Button["type"];
 export type ToolbarButton = Button;
