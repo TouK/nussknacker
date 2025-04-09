@@ -5,8 +5,7 @@ import Dropzone from "react-dropzone";
 
 import { getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking";
 import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
-import { NodeInput } from "../../FormElements";
-import type { ToolbarButtonProps} from "./index";
+import type { ToolbarButtonProps } from "./index";
 import { ButtonsVariant, ToolbarButtonsContext } from "./index";
 import { Icon } from "./ToolbarButtonStyled";
 
@@ -94,7 +93,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
                 {({ getRootProps, getInputProps }) => (
                     <>
                         <div {...getRootProps(buttonProps)} />
-                        <NodeInput {...getInputProps()} />
+                        <input {...getInputProps()} />
                     </>
                 )}
             </Dropzone>

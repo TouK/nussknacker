@@ -1,18 +1,17 @@
-import { MouseEventHandler } from "react";
+import type React from "react";
 import type { DropEvent } from "react-dropzone";
-import { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons";
 
-export interface ToolbarButtonProps {
+import type { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons";
+
+type ButtonProps = React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
+type DivProps = React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
+type ElementProps = ButtonProps & DivProps;
+
+export type ToolbarButtonProps = Omit<ElementProps, "type" | "onDrop"> & {
     name: string;
     icon: React.JSX.Element | string;
     type: BuiltinButtonTypes | CustomButtonTypes;
-    className?: string;
-    disabled?: boolean;
-    title?: string;
     onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
-    onMouseOver?: MouseEventHandler;
-    onMouseOut?: MouseEventHandler;
-    onClick?: MouseEventHandler;
     hasError?: boolean;
     isActive?: boolean;
-}
+};

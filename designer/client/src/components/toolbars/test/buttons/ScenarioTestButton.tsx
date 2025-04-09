@@ -12,6 +12,7 @@ import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/
 import { ButtonProgress } from "./ButtonProgress";
 
 export type ScenarioTestButtonProps = {
+    type: CustomButtonTypes.scenarioTest;
     name?: string;
     title?: string;
     docs?: TestingViewParams["docs"];
