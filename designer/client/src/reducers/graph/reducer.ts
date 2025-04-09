@@ -74,17 +74,19 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
-            const newNodeids = sortBy(action.scenarioGraph.nodes.map((n) => n.id));
-            const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
+            const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
+            const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
+            const updatedScenario = {
+                ...state.scenario,
+                ...scenarioWithStickyNotes,
+            };
+            const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : fromMeta(updatedScenario.scenarioGraph);
 
             return {
                 ...state,
                 scenarioLoading: false,
                 layout: newLayout,
-                scenario: {
-                    ...state.scenario,
-                    ...action,
-                },
+                scenario: updatedScenario,
             };
         }
         case "UPDATE_TEST_CAPABILITIES": {
