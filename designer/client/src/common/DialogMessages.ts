@@ -1,5 +1,5 @@
 import i18next from "i18next";
-import { ProcessName } from "src/components/Process/types";
+import type { ProcessName } from "src/components/Process/types";
 
 export const unsavedProcessChanges = () => {
     return i18next.t("dialogMessages.unsavedProcessChanges", "There are some unsaved scenario changes. Discard unsaved changes?");
@@ -45,10 +45,6 @@ export const cantArchiveRunningProcess = () => {
         "dialogMessages.cantArchiveRunningProcess",
         "You can't archive running scenario! Stop it first and then click 'archive' button again.",
     );
-};
-
-export const deleteStickyNote = () => {
-    return i18next.t("dialogMessages.deleteStickyNote", "Are you sure you want to delete this note?");
 };
 
 export const valueAlreadyTaken = () => {

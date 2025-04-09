@@ -23,4 +23,5 @@ export enum WindowKind {
     addAttachment,
     editProperties,
     remote,
+    scenarioTest,
 }

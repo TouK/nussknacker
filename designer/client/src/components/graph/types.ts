@@ -1,4 +1,4 @@
-import {
+import type {
     editNode,
     injectNode,
     Layout,
@@ -8,16 +8,12 @@ import {
     nodesDisconnected,
     replaceNode,
     resetSelection,
-    stickyNoteAdded,
-    stickyNoteDeleted,
-    stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
-import { StickyNote } from "../../common/StickyNote";
-import { ProcessCounts } from "../../reducers/graph";
-import { Capabilities } from "../../reducers/selectors/other";
-import { NodeType } from "../../types";
-import { Scenario } from "../Process/types";
+import type { ProcessCounts } from "../../reducers/graph";
+import type { Capabilities } from "../../reducers/selectors/other";
+import type { NodeType } from "../../types";
+import type { Scenario } from "../Process/types";
 
 type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
@@ -27,13 +23,9 @@ type ScenarioGraphProps = {
     editNode: typeof editNode;
     replaceNode: typeof replaceNode;
     nodeAdded: typeof nodeAdded;
-    stickyNoteAdded: typeof stickyNoteAdded;
-    stickyNoteUpdated: typeof stickyNoteUpdated;
-    stickyNoteDeleted: typeof stickyNoteDeleted;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 
-    stickyNotes: StickyNote[];
     scenario: Scenario;
     divId: string;
     nodeIdPrefixForFragmentTests?: string;
@@ -52,7 +44,6 @@ type ScenarioGraphProps = {
 
 type FragmentGraphProps = {
     scenario: Scenario;
-    stickyNotes: StickyNote[];
     divId: string;
     nodeIdPrefixForFragmentTests: string;
     processCounts: ProcessCounts;
@@ -82,7 +73,6 @@ export enum Events {
     CELL_MOVED = "cellCustom:moved",
     CELL_RESIZED = "cellCustom:resized",
     CELL_CONTENT_UPDATED = "cellCustom:contentUpdated",
-    CELL_DELETED = "cellCustom:deleted",
     BLANK_POINTERCLICK = "blank:pointerclick",
     BLANK_POINTERDOWN = "blank:pointerdown",
     BLANK_POINTERUP = "blank:pointerup",

@@ -8,6 +8,7 @@ export type ScenarioGraph = {
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
+    stickyNotes: NodeType[];
 };
 
 export type Category = string;

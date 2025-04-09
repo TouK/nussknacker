@@ -23,7 +23,7 @@ object ProcessingTypeConfigsLoaderLoader extends LazyLogging {
         )
         factory.create(
           designerConfig.configLoaderConfig,
-          designerConfig.processingTypeConfigsRaw().resolved,
+          designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigsRaw().resolved),
           sttpBackend
         )
       }

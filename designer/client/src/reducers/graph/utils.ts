@@ -1,13 +1,13 @@
-import { cloneDeep, Dictionary, mapValues, reject, snakeCase, zipObject } from "lodash";
-import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
+import type { Dictionary } from "lodash";
+import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
+
+import type { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
-import { StickyNote } from "../../common/StickyNote";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { deleteNode } from "../../components/graph/utils/graphUtils";
-import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
-import { createStickyNoteId } from "../../types/stickyNote";
-import { GraphState } from "./types";
+import type { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
+import type { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
     if (oldId === newId) return layout;
@@ -100,33 +100,6 @@ export function prepareNewNodesWithLayout(
     };
 }
 
-export function removeStickyNoteFromLayout(state: GraphState, stickyNoteId: number): { layout: NodePosition[]; stickyNotes: StickyNote[] } {
-    const { layout } = state;
-    const stickyNoteLayoutId = createStickyNoteId(stickyNoteId);
-    const updatedStickyNotes = state.stickyNotes.filter((n) => n.noteId !== stickyNoteId);
-    const updatedLayout = updatedStickyNotes.map((stickyNote) => {
-        return { id: stickyNote.id, position: stickyNote.layoutData };
-    });
-    return {
-        stickyNotes: [...updatedStickyNotes],
-        layout: [...layout.filter((l) => l.id !== stickyNoteLayoutId), ...updatedLayout],
-    };
-}
-
-export function prepareNewStickyNotesWithLayout(
-    state: GraphState,
-    stickyNotes: StickyNote[],
-): { layout: NodePosition[]; stickyNotes: StickyNote[] } {
-    const { layout } = state;
-    const updatedLayout = stickyNotes.map((stickyNote) => {
-        return { id: createStickyNoteId(stickyNote.noteId), position: stickyNote.layoutData };
-    });
-    return {
-        stickyNotes: [...stickyNotes],
-        layout: [...layout, ...updatedLayout],
-    };
-}
-
 export function addNodesWithLayout(
     state: GraphState,
     changes: {
@@ -150,17 +123,6 @@ export function addNodesWithLayout(
             },
         },
         layout: nextLayout,
-    };
-}
-
-export function addStickyNotesWithLayout(
-    state: GraphState,
-    { stickyNotes, layout }: ReturnType<typeof prepareNewStickyNotesWithLayout>,
-): GraphState {
-    return {
-        ...state,
-        stickyNotes: stickyNotes,
-        layout,
     };
 }
 

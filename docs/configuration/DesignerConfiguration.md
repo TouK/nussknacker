@@ -508,8 +508,10 @@ Toolbars and buttons at process window are configurable, you can configure param
 * uuid - optional uuid identifier which determines unique code for FE localstorage cache, default: null - we generate
   uuid from hashcode config
 * topLeft - optional top left panel, default: empty list
-* bottomLeft - optional bottom left panel, default: empty list
+* topCenter - optional center top panel, default: empty list
 * topRight - optional top right panel, default: empty list
+* bottomLeft - optional bottom left panel, default: empty list
+* bottomCenter - optional center bottom panel, default: empty list
 * bottomRight - optional bottom right panel, default: empty list
 
 Example configuration:
@@ -761,6 +763,7 @@ You can configure `secondaryEnvironment` to allow for
 | scenarioStateTimeout                                       | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
 | usageStatisticsReports.enabled                             | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
 | usageStatisticsReports.errorReportsEnabled                 | Low        | boolean  | true          | When enabled browser will send anonymous errors reports to `stats.nussknacker.io`                                                                                                                                           |
+| assistantSettings.enabled                                  | Low        | boolean  | false         | Whether the assistant should be enabled. If enabled, the FE can make requests to the assistant API extension, which should be exposed as a `CustomHttpServiceProvider`                                                      |
 
 ## Scenario type, categories
 

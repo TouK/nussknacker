@@ -50,16 +50,4 @@ describe("Sticky notes", () => {
         cy.get("[model-id='request']").click();
         cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
     });
-
-    it("should disable sticky note when scenario is not saved", () => {
-        cy.layoutScenario();
-        cy.contains(/^Misc$/i)
-            .should("exist")
-            .scrollIntoView();
-
-        cy.dragNode("request", { x: 600, y: 300 });
-
-        cy.get("[data-testid='component:Sticky Note']").should("have.class", "tool disabled");
-        cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
-    });
 });
