@@ -362,6 +362,7 @@ val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
+val sttpSharedV               = "1.3.22"
 val tapirV                    = "1.11.7"
 val openapiCirceYamlV         = "0.11.3"
 //we use legacy version because this one supports Scala 2.12
@@ -1941,7 +1942,8 @@ lazy val customHttpServiceApi = (project in file("designer/custom-http-service-a
     name := "nussknacker-custom-http-service-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.pekko" %% "pekko-http" % pekkoHttpV,
+        "org.apache.pekko"             %% "pekko-http" % pekkoHttpV,
+        "com.softwaremill.sttp.shared" %% "pekko"      % sttpSharedV,
       )
     }
   )

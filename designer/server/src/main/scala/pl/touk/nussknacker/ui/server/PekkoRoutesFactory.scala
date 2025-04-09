@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.server
 
-import cats.effect.{IO, Resource}
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.customhttpservice.CustomHttpServiceProvider
+import pl.touk.nussknacker.ui.customhttpservice.PekkoCustomHttpServiceProvider
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.process.{ConfigScenarioToolbarService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService => LegacyDeploymentService}
@@ -20,35 +19,30 @@ object PekkoRoutesFactory {
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
-      authenticationResources: AuthenticationResources
-  ): Resource[IO, PekkoRoutes] = {
+      authenticationResources: AuthenticationResources,
+      customHttpServiceProviders: Map[String, PekkoCustomHttpServiceProvider]
+  ): PekkoRoutes = {
     import infrastructureServices._
 
-    for {
-      customHttpServiceProviders <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
-        designerConfig,
-        domainServices
-      )
+    val routesWithAuthentication = createRoutesWithAuthentication(
+      designerConfig,
+      infrastructureServices,
+      domainServices,
+      customHttpServiceProviders,
+      authenticationResources.impersonationSupport
+    )
 
-      routesWithAuthentication = createRoutesWithAuthentication(
-        designerConfig,
-        infrastructureServices,
-        domainServices,
-        customHttpServiceProviders,
-        authenticationResources.impersonationSupport
-      )
+    val routesWithoutAuthentication =
+      createRoutesWithoutAuthentication(designerConfig, domainServices, authenticationResources)
 
-      routesWithoutAuthentication =
-        createRoutesWithoutAuthentication(designerConfig, domainServices, authenticationResources)
-
-    } yield PekkoRoutes(routesWithAuthentication, routesWithoutAuthentication)
+    PekkoRoutes(routesWithAuthentication, routesWithoutAuthentication)
   }
 
   private def createRoutesWithAuthentication(
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
-      customHttpServiceProviders: Map[String, CustomHttpServiceProvider],
+      customHttpServiceProviders: Map[String, PekkoCustomHttpServiceProvider],
       impersonationSupport: ImpersonationSupport
   ): List[RouteWithUser] = {
     import domainServices._
