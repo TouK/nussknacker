@@ -4,7 +4,6 @@ import cats.effect.IO
 import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpointDefinition
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import sttp.capabilities.WebSockets
 import sttp.capabilities.pekko.PekkoStreams
 import sttp.tapir.Endpoint
 
