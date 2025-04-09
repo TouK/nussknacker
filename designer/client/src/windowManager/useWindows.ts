@@ -83,7 +83,11 @@ export function useWindows(parent?: WindowId) {
                           top: margin,
                           left: margin,
                       }
-                    : undefined,
+                    : {
+                          width: 820,
+                          top: margin,
+                          left: (window.innerWidth - 820) / 2,
+                      },
             });
         },
         [open, settings],
