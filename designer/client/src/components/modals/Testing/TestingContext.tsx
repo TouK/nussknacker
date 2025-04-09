@@ -9,6 +9,11 @@ interface TestingContextProps {
     handleSetAction: (action: TestingContextProps["action"]) => void;
 }
 
+/**
+ * Since we need to pass buttons to WindowContent and specific testing type component is rendered as a children to isolate logic sake
+ * The child component sets the button action and state, which are then passed to the WindowContent buttons
+ */
+
 const TestingContext = createContext<TestingContextProps>(null);
 
 export const TestingProvider = ({ children }: PropsWithChildren) => {
