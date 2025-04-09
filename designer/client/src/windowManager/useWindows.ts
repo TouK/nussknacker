@@ -35,6 +35,9 @@ const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
     }, [isWindowOpen]);
 };
 
+const DEFAULT_WINDOW_MARGIN = 30;
+export const DEFAULT_WINDOW_WIDTH = 820;
+
 export function useWindows(parent?: WindowId) {
     let windowManager: ReturnType<typeof useWindowManager>;
 
@@ -49,7 +52,6 @@ export function useWindows(parent?: WindowId) {
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
 
-    const margin = 30;
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
             const isModal = windowData.isModal === undefined ? !forceDisableModals : windowData.isModal && !forceDisableModals;
@@ -57,7 +59,7 @@ export function useWindows(parent?: WindowId) {
                 isResizable: false,
                 ...windowData,
                 layoutData: {
-                    top: margin * 2,
+                    top: DEFAULT_WINDOW_MARGIN * 2,
                     ...windowData.layoutData,
                 },
                 isModal,
@@ -78,12 +80,16 @@ export function useWindows(parent?: WindowId) {
                 shouldCloseOnEsc: false,
                 layoutData: settings["node.showInputsAndOutputs"]
                     ? {
-                          width: window.innerWidth - 2 * margin,
-                          height: window.innerHeight - 2 * margin,
-                          top: margin,
-                          left: margin,
+                          width: window.innerWidth - 2 * DEFAULT_WINDOW_MARGIN,
+                          height: window.innerHeight - 2 * DEFAULT_WINDOW_MARGIN,
+                          top: DEFAULT_WINDOW_MARGIN,
+                          left: DEFAULT_WINDOW_MARGIN,
                       }
-                    : undefined,
+                    : {
+                          width: DEFAULT_WINDOW_WIDTH,
+                          top: DEFAULT_WINDOW_MARGIN,
+                          left: (window.innerWidth - DEFAULT_WINDOW_WIDTH) / 2,
+                      },
             });
         },
         [open, settings],
