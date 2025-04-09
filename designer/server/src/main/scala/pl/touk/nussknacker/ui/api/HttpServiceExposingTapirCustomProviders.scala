@@ -11,6 +11,7 @@ import sttp.tapir.PublicEndpoint
 import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.Future
+import scala.language.higherKinds
 
 class HttpServiceExposingTapirCustomProviders(
     customHttpServiceProviders: Map[String, TapirCustomHttpServiceProvider],
