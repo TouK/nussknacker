@@ -8,7 +8,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { Dimensions, ValidationResult } from "../../types";
+import type { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
@@ -76,17 +76,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
             const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
             const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
-            const updatedScenario = {
-                ...state.scenario,
-                ...scenarioWithStickyNotes,
-            };
-            const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : fromMeta(updatedScenario.scenarioGraph);
+            const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
                 ...state,
                 scenarioLoading: false,
                 layout: newLayout,
-                scenario: updatedScenario,
+                scenario: {
+                    ...state.scenario,
+                    ...scenarioWithStickyNotes,
+                },
             };
         }
         case "UPDATE_TEST_CAPABILITIES": {
