@@ -1,18 +1,17 @@
-import { Box, styled } from "@mui/material";
-import type { WindowContentProps } from "@touk/window-manager";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
+import { useMemo } from "react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
+import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
+import { TestingProvider, useTesting } from "./TestingContext";
 import { TestingForm } from "./TestingForm";
-
-const StyledContentSize = styled(ContentSize)(({ theme }) => ({
-    padding: theme.spacing(0, 1.5, 1.5, 1.5),
-}));
 
 type DocsLink = {
     url: string;
@@ -31,23 +30,39 @@ export interface TestingData {
 }
 
 function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
+    const { t } = useTranslation();
     const { data, close } = props;
     const {
         meta: { viewParams },
         kind,
     } = data;
+    const { isValid, action } = useTesting();
+
+    const buttons: WindowButtonProps[] = useMemo(
+        () => [
+            { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
+            { title: t("testingForm.testButton.label", "Test"), action: () => action(), disabled: !isValid },
+        ],
+        [action, close, isValid, t],
+    );
 
     return (
         <WindowContent
             {...props}
             icon={<WindowHeaderIconStyled as={viewParams.Icon} type={kind} />}
             subheader={<NodeDocs name={viewParams.docs?.label} href={viewParams.docs?.url} />}
+            buttons={buttons}
         >
-            <StyledContentSize>
+            <ContentSize>
                 <TestingForm testingData={props.data} closeDialog={close} />
-            </StyledContentSize>
+            </ContentSize>
         </WindowContent>
     );
 }
 
-export default TestingDialog;
+const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, TestingData>) => (
+    <TestingProvider>
+        <TestingDialog {...props} />
+    </TestingProvider>
+);
+export default TestingDialogWithProvider;

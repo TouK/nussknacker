@@ -1,6 +1,6 @@
-import { Box, Button, FormLabel } from "@mui/material";
+import { Box, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -19,6 +19,7 @@ import {
 import { nodeInput, nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getProcessName } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import ValidationLabels from "../../modals/ValidationLabels";
+import { useTesting } from "./TestingContext";
 
 interface TestWithGeneratedDataFormProps {
     closeDialog: () => void;
@@ -27,6 +28,8 @@ interface TestWithGeneratedDataFormProps {
 export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedDataFormProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
+
+    const { handleSetAction, handleIsValid } = useTesting();
 
     const processName = useSelector(getProcessName);
     const scenarioGraph = useSelector(getScenarioGraph);
@@ -49,6 +52,11 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
     const generatedDataTestingErrors = extendErrors([], generatedDataTestSampleSize, "testData", generatedDataNumberOfSamplesValidators);
     const generatedDataTestingIsValid = isEmpty(generatedDataTestingErrors);
 
+    useEffect(() => {
+        handleIsValid(generatedDataTestingIsValid);
+        handleSetAction(generatedDataTestingConfirm);
+    }, [generatedDataTestingConfirm, generatedDataTestingIsValid, handleIsValid, handleSetAction]);
+
     return (
         <Box mt={1.5}>
             <FormLabel required>{t("testingForm.withGeneratedData.numberOfSamples.label", "Specify number of samples")}</FormLabel>
@@ -61,21 +69,6 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
                 />
             </div>
             <ValidationLabels fieldErrors={getValidationErrorsForField(generatedDataTestingErrors, "testData")} />
-            <Box sx={(theme) => ({ display: "flex", justifyContent: "flex-end", gap: 1, width: "auto", marginTop: theme.spacing(5) })}>
-                <Button sx={{ width: "15%" }} size="medium" variant="outlined" onClick={() => closeDialog()}>
-                    {t("testingForm.cancelButton.label", "Cancel")}
-                </Button>
-                <Button
-                    sx={{ width: "15%" }}
-                    size="medium"
-                    variant="contained"
-                    onClick={generatedDataTestingConfirm}
-                    type="submit"
-                    disabled={!generatedDataTestingIsValid}
-                >
-                    {t("testingForm.testButton.label", "Test")}
-                </Button>
-            </Box>
         </Box>
     );
 }
