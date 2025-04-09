@@ -137,6 +137,7 @@ object StatisticsApiEndpoints {
       case object ClickScenarioArchive                 extends StatisticName { override val shortName = "f_csa"   }
       case object ClickTestGenerated                   extends StatisticName { override val shortName = "f_ctg"   }
       case object ClickTestAdhoc                       extends StatisticName { override val shortName = "f_cta"   }
+      case object ClickScenarioTest                    extends StatisticName { override val shortName = "f_cst"   }
       case object ClickTestFromFile                    extends StatisticName { override val shortName = "f_ctff"  }
       case object ClickTestGenerateFile                extends StatisticName { override val shortName = "f_ctgt"  }
       case object ClickTestHide                        extends StatisticName { override val shortName = "f_cth"   }

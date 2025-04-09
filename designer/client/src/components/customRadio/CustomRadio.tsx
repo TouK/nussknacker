@@ -1,7 +1,9 @@
-import React, { ComponentType, ForwardedRef, forwardRef, SVGProps } from "react";
-import { Box, Checkbox, MenuItem, Paper, Typography } from "@mui/material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { SvgIconComponent } from "@mui/icons-material";
+import { Box, Checkbox, MenuItem, Paper, Typography } from "@mui/material";
+import type { ComponentType, ForwardedRef, SVGProps } from "react";
+import React, { forwardRef } from "react";
+
 import { getBorderColor } from "../../containers/theme/helpers";
 
 interface Props {
@@ -10,11 +12,12 @@ interface Props {
     Icon: SvgIconComponent | ComponentType<SVGProps<SVGSVGElement>>;
     disabled?: boolean;
     active?: boolean;
+    title?: string;
 }
 
-export const CustomRadio = forwardRef(({ label, value, Icon, disabled, active }: Props, ref: ForwardedRef<HTMLButtonElement>) => {
+export const CustomRadio = forwardRef(({ label, value, Icon, disabled, active, title }: Props, ref: ForwardedRef<HTMLButtonElement>) => {
     return (
-        <Box component={"label"} flex={1}>
+        <Box component={"label"} flex={1} title={title}>
             <Checkbox disabled={disabled} sx={{ display: "none" }} checked={active} value={value} ref={ref} />
             <Paper
                 component={MenuItem}

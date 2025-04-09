@@ -35,7 +35,7 @@ const emptyGraphState: GraphState = {
             nodes: [],
             edges: [],
             properties: null,
-            stickyNotes: []
+            stickyNotes: [],
         },
     } as Scenario,
     layout: [],
@@ -97,6 +97,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testFormParameters: action.testFormParameters,
+            };
+        }
+        case "UPDATE_TEST_TYPE": {
+            return {
+                ...state,
+                testType: action.testType,
             };
         }
         case "DISPLAY_PROCESS": {

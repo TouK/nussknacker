@@ -1,4 +1,4 @@
-import type { Dictionary} from "lodash";
+import type { Dictionary } from "lodash";
 import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
 
 import type { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
