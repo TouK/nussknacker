@@ -32,7 +32,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7658](https://github.com/TouK/nussknacker/pull/7658) `/app/processingtype/reload` endpoint doesn't reload Deployment Managers
 * [#7693](https://github.com/TouK/nussknacker/pull/7693) Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. To provide username use impersonation mechanism.
 * [#7871](https://github.com/TouK/nussknacker/pull/7871) `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`.
-  `ExecutionContext` and `IORuntime` implicits were added to `CustomHttpServiceProviderFactory.create` method.
 
 ### Code API changes
 
