@@ -16,9 +16,9 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.FlinkUniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
+import pl.touk.nussknacker.engine.schemedkafka.sink.{UniversalKafkaSinkFactory, WebhookKafkaSinkFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
-import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
+import pl.touk.nussknacker.engine.schemedkafka.source.{UniversalKafkaSourceFactory, WebhookKafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkKafkaComponentProvider extends ComponentProvider {
@@ -51,6 +51,24 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition(
         "kafka",
         new UniversalKafkaSinkFactory(
+          schemaRegistryClientFactory,
+          universalSerdeProvider,
+          finalComponentDependencies,
+          FlinkKafkaUniversalSinkImplFactory
+        )
+      ).withRelativeDocs(universal(ComponentType.Sink)),
+      ComponentDefinition(
+        "webhook",
+        new WebhookKafkaSourceFactory(
+          schemaRegistryClientFactory,
+          universalSerdeProvider,
+          finalComponentDependencies,
+          new FlinkKafkaSourceImplFactory(None)
+        )
+      ).withRelativeDocs(universal(ComponentType.Source)),
+      ComponentDefinition(
+        "webhook",
+        new WebhookKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
           finalComponentDependencies,

@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
   final val topicParamName              = ParameterName("Topic")
+  final val endpointParamName           = ParameterName("Endpoint")
   final val sinkKeyParamName            = ParameterName("Key")
   final val sinkValueParamName          = ParameterName("Value")
   final val sinkValidationModeParamName = ParameterName("Value validation mode")
