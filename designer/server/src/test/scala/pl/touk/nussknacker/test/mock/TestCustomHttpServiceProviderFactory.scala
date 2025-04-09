@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.test.mock
 
 import cats.effect.{IO, Resource}
-import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -12,17 +11,12 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   PekkoCustomHttpServiceProvider,
   TapirCustomHttpServiceProvider
 }
-import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpoint
-import pl.touk.nussknacker.ui.customhttpservice.services.{NussknackerServicesForCustomHttpService, TapirEndpointSupport}
+import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpointDefinition
+import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import sttp.capabilities.WebSockets
-import sttp.capabilities.pekko.PekkoStreams
 import sttp.model.StatusCode.UnprocessableEntity
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir.server.ServerEndpoint
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFactory {
 
@@ -31,7 +25,7 @@ class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFact
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
+  ): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
@@ -52,71 +46,81 @@ class SecondTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvid
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
+  ): Resource[IO, CustomHttpServiceProvider] =
     Resource.pure(TestCustomHttpServiceProvider)
 
 }
 
-class TestTapirCustomHttpServiceProvider(tapirEndpointSupport: TapirEndpointSupport)
-    extends TapirCustomHttpServiceProvider {
+class TestTapirCustomHttpServiceProvider extends TapirCustomHttpServiceProvider {
 
   import sttp.tapir._
-  import tapirEndpointSupport._
 
   import TestTapirCustomHttpServiceProvider._
 
   private val tag = "Tapir based custom HTTP service"
 
-  private lazy val publicEndpoint =
-    endpoint
-      .tag(tag)
-      .description("Public endpoint")
-      .get
-      .in("public")
-      .out(stringBody)
+  private lazy val publicServerEndpointDefinition = new CustomHttpServiceServerEndpointDefinition {
 
-  private lazy val publicServerEndpoint =
-    publicEndpoint.serverLogicSuccess(_ => Future.successful("Hello from public endpoint!"))
+    type REQUEST  = Unit
+    type ERROR    = Unit
+    type RESPONSE = String
 
-  private lazy val securedEndpoint =
-    endpoint
-      .tag(tag)
-      .description("Secured endpoint")
-      .post
-      .in("secured")
-      .in(jsonBody[SecuredRequest])
-      .out(jsonBody[SecuredResponse])
-      .errorOut(
-        statusCode(UnprocessableEntity)
-          .and(plainBody[SampleError])
-      )
-      .secured
+    override def definition: Endpoint[Unit, Unit, Unit, String, Any] =
+      endpoint
+        .tag(tag)
+        .description("Public endpoint")
+        .get
+        .in("public")
+        .out(stringBody)
 
-  private lazy val securedServerEndpoint =
-    securedEndpoint
-      .serverSecurityLogic(authorizeKnownUser[SampleError])
-      .serverLogic { loggedUser => request =>
+    override def logic(user: LoggedUser, request: Unit): IO[Either[Unit, String]] =
+      IO.delay(Right("Hello from public endpoint!"))
+
+  }
+
+  private lazy val securedServerEndpointDefinition =
+    new CustomHttpServiceServerEndpointDefinition {
+
+      type REQUEST  = SecuredRequest
+      type ERROR    = SampleError
+      type RESPONSE = SecuredResponse
+
+      override def definition: Endpoint[Unit, SecuredRequest, SampleError, SecuredResponse, Any] =
+        endpoint
+          .tag(tag)
+          .description("Secured endpoint")
+          .post
+          .in("secured")
+          .in(jsonBody[SecuredRequest])
+          .out(jsonBody[SecuredResponse])
+          .errorOut(
+            statusCode(UnprocessableEntity)
+              .and(plainBody[SampleError])
+          )
+
+      override def logic(user: LoggedUser, request: SecuredRequest): IO[Either[SampleError, SecuredResponse]] = {
         if (request.returnInternalError) {
-          Future.failed(new RuntimeException("Internal error"))
+          IO.raiseError(new RuntimeException("Internal error"))
         } else {
-          Future.successful(
+          IO.delay(
             if (request.returnBusinessError) {
-              businessError(SampleError("Sample error"))
+              Left(SampleError("Sample error"))
             } else {
-              success(
+              Right(
                 SecuredResponse(
                   message = s"You send message: '${request.message}''",
-                  username = loggedUser.username
+                  username = user.username
                 )
               )
             }
           )
         }
       }
+    }
 
-  override def serverEndpoints: List[CustomHttpServiceServerEndpoint] = List(
-    publicServerEndpoint,
-    securedServerEndpoint,
+  override def serverEndpointDefinitions: List[CustomHttpServiceServerEndpointDefinition] = List(
+    publicServerEndpointDefinition,
+    securedServerEndpointDefinition,
   )
 
 }
@@ -154,7 +158,7 @@ class TapirTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvide
   override def create(
       config: Config,
       services: NussknackerServicesForCustomHttpService
-  )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime): Resource[IO, CustomHttpServiceProvider] =
-    Resource.pure(new TestTapirCustomHttpServiceProvider(services.tapirEndpointSupport))
+  ): Resource[IO, CustomHttpServiceProvider] =
+    Resource.pure(new TestTapirCustomHttpServiceProvider)
 
 }

@@ -1,7 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.api.BaseHttpService.LogicResult
 import pl.touk.nussknacker.ui.api.NuDesignerExposedApiHttpService.prependPathForCustomHttpServicePath
 import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.pekko.PekkoStreams
 import sttp.tapir._
@@ -15,8 +21,9 @@ import scala.language.higherKinds
 
 class NuDesignerExposedApiHttpService(
     customHttpServiceProviders: Map[String, TapirCustomHttpServiceProvider],
+    authManager: AuthManager,
     services: BaseHttpService*,
-) {
+)(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) {
 
   private val apiEndpoints = services.flatMap(_.serverEndpoints) ++ customHttpServiceEndpoints
 
@@ -35,15 +42,42 @@ class NuDesignerExposedApiHttpService(
       "" // we don't want to have versioning of this API yet
     )
 
+  private val httpServiceSupport = new HttpServiceSupport(authManager)
+
   def allEndpoints: List[ServerEndpoint[PekkoStreams with WebSockets, Future]] = {
     swaggerEndpoints ::: apiEndpoints.toList
   }
 
   private def customHttpServiceEndpoints: Iterable[ServerEndpoint[PekkoStreams with WebSockets, Future]] = {
     customHttpServiceProviders.flatMap { case (name, provider) =>
-      provider.serverEndpoints.map(prependPathForCustomHttpServicePath(name, _))
+      val endpoints = provider.serverEndpointDefinitions.map { endpointDefinition =>
+        addSecurity(endpointDefinition.definition)
+          .serverSecurityLogic(authorizeKnownUser[endpointDefinition.ERROR])
+          .serverLogic(user =>
+            request =>
+              endpointDefinition
+                .logic(user, request)
+                .map {
+                  case Left(businessError) => Left(Left(businessError))
+                  case Right(value)        => Right(value)
+                }
+                .unsafeToFuture()(executionContextWithIORuntime.ioRuntime)
+          )
+      }
+      endpoints.map(prependPathForCustomHttpServicePath(name, _))
     }
   }
+
+  private def addSecurity[INPUT, BUSINESS_ERROR, OUTPUT, R](
+      endpoint: PublicEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]
+  ): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
+    new BaseEndpointDefinitions.ToSecure(endpoint).withSecurity(authManager.authenticationEndpointInput())
+  }
+
+  private def authorizeKnownUser[BUSINESS_ERROR](
+      credentials: AuthCredentials
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] =
+    httpServiceSupport.authorizeKnownUser(credentials)
 
 }
 
