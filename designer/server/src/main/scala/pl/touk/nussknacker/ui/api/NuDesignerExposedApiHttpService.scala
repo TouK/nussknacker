@@ -9,7 +9,7 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import scala.concurrent.Future
 
 class NuDesignerExposedApiHttpService(
-    services: BaseHttpService*,
+    services: BaseHttpService*
 ) {
 
   private val apiEndpoints = services.flatMap(_.serverEndpoints)
