@@ -448,7 +448,7 @@ object typing {
     superTypeOfTypes(list.map(fromInstance))
   }
 
-  private def superTypeOfTypes(list: Iterable[TypingResult]) = {
+  def superTypeOfTypes(list: Iterable[TypingResult]) = {
     list
       .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
       .getOrElse(Unknown)

@@ -715,10 +715,8 @@ private[spel] class Typer(
       valid(
         Typed.record(
           Map(
-            "key" -> Typed.genericTypeClass(classOf[String], List()),
-            "value" -> tc.fields.values
-              .reduceOption((a, b) => CommonSupertypeFinder.Default.commonSupertype(a, b))
-              .getOrElse(Unknown)
+            "key"   -> Typed.genericTypeClass(classOf[String], List()),
+            "value" -> superTypeOfTypes(tc.fields.values)
           )
         )
       )
