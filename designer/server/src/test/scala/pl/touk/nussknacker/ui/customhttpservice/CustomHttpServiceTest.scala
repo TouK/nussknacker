@@ -62,7 +62,7 @@ class CustomHttpServiceTest
       "should return 200 OK response" in {
         val response = httpClient.send(
           quickRequest
-            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/sample")
             .body("""{"message":"Hello"}""")
             .auth
             .basic("admin", "admin")
@@ -74,7 +74,7 @@ class CustomHttpServiceTest
       "should return business error" in {
         val response = httpClient.send(
           quickRequest
-            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/sample")
             .body("""{"message":"Hello","returnBusinessError":true}""")
             .auth
             .basic("admin", "admin")
@@ -86,7 +86,7 @@ class CustomHttpServiceTest
       "should return internal error" in {
         val response = httpClient.send(
           quickRequest
-            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/sample")
             .body("""{"message":"Hello","returnInternalError":true}""")
             .auth
             .basic("admin", "admin")
@@ -100,7 +100,7 @@ class CustomHttpServiceTest
       "should return 401 Unauthorized response" in {
         val response = httpClient.send(
           quickRequest
-            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/secured")
+            .post(uri"$nuDesignerHttpAddress/api/custom/tapirTestProvider/sample")
             .body("""{"message":"Hello"}""")
         )
         response.code shouldEqual StatusCode.Unauthorized
@@ -118,10 +118,7 @@ class CustomHttpServiceTest
         response.code shouldEqual StatusCode.Ok
         val customServicesPaths =
           response.body.rightValue.hcursor.downField("paths").keys.value.filter(_.contains("/api/custom"))
-        customServicesPaths should contain allOf (
-          "/api/custom/tapirTestProvider/public",
-          "/api/custom/tapirTestProvider/secured",
-        )
+        customServicesPaths should contain("/api/custom/tapirTestProvider/sample")
       }
     }
   }

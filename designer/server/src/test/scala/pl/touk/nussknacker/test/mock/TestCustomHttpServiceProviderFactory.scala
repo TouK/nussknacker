@@ -59,26 +59,7 @@ class TestTapirCustomHttpServiceProvider extends TapirCustomHttpServiceProvider 
 
   private val tag = "Tapir based custom HTTP service"
 
-  private lazy val publicServerEndpointDefinition = new CustomHttpServiceServerEndpointDefinition {
-
-    type REQUEST  = Unit
-    type ERROR    = Unit
-    type RESPONSE = String
-
-    override def definition: Endpoint[Unit, Unit, Unit, String, Any] =
-      endpoint
-        .tag(tag)
-        .description("Public endpoint")
-        .get
-        .in("public")
-        .out(stringBody)
-
-    override def logic(user: LoggedUser, request: Unit): IO[Either[Unit, String]] =
-      IO.delay(Right("Hello from public endpoint!"))
-
-  }
-
-  private lazy val securedServerEndpointDefinition =
+  private lazy val serverEndpointDefinition =
     new CustomHttpServiceServerEndpointDefinition {
 
       type REQUEST  = SecuredRequest
@@ -88,9 +69,9 @@ class TestTapirCustomHttpServiceProvider extends TapirCustomHttpServiceProvider 
       override def definition: Endpoint[Unit, SecuredRequest, SampleError, SecuredResponse, Any] =
         endpoint
           .tag(tag)
-          .description("Secured endpoint")
+          .description("A sample endpoint")
           .post
-          .in("secured")
+          .in("sample")
           .in(jsonBody[SecuredRequest])
           .out(jsonBody[SecuredResponse])
           .errorOut(
@@ -119,8 +100,7 @@ class TestTapirCustomHttpServiceProvider extends TapirCustomHttpServiceProvider 
     }
 
   override def serverEndpointDefinitions: List[CustomHttpServiceServerEndpointDefinition] = List(
-    publicServerEndpointDefinition,
-    securedServerEndpointDefinition,
+    serverEndpointDefinition,
   )
 
 }
