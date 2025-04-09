@@ -25,7 +25,10 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecor
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  schemaVersionParamName,
+  sinkValueParamName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
@@ -223,6 +226,17 @@ class UniversalKafkaSourceFactory(
       schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[Any, Any](kafkaConfig, None, None)
     val recordFormatter =
       schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[Any, Any](kafkaConfig, formatterSchema)
+
+    val defaultValuesForTestParameters: Map[ParameterName, Expression] =
+      if (params.isPresent(dataSampleParamName)) {
+        params
+          .extract[Json](dataSampleParamName)
+          .map { dataSample => sinkValueParamName -> Expression.json(dataSample.spaces2) }
+          .toMap
+      } else {
+        Map.empty
+      }
+
     implProvider.createSource(
       params,
       dependencies,
@@ -232,21 +246,22 @@ class UniversalKafkaSourceFactory(
       deserializationSchema,
       recordFormatter,
       kafkaContextInitializer,
-      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original),
+      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original, defaultValuesForTestParameters),
       modelDependencies.namingStrategy
     )
   }
 
   private def prepareKafkaTestParametersInfo(
       runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      topic: TopicName.ForSource
+      topic: TopicName.ForSource,
+      defaultValuesForTestParameters: Map[ParameterName, Expression]
   )(
       implicit nodeId: NodeId
   ): KafkaTestParametersInfo = {
     Validated
       .fromOption(
         runtimeSchemaOpt,
-        NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
+        NonEmptyList.one(CustomNodeError("Cannot generate test parameters: no runtime schema found", None))
       )
       .andThen { runtimeSchema =>
         val parsedSchema                                   = runtimeSchema.schema
@@ -256,7 +271,14 @@ class UniversalKafkaSourceFactory(
           .extractParameterForTests(parsedSchema)
           .map(_.toParameters)
           .map { params =>
-            KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
+            val enrichedParams = params.collect {
+              case param if defaultValuesForTestParameters.contains(param.name) =>
+                param.copy(
+                  defaultValue = Some(defaultValuesForTestParameters(param.name))
+                )
+              case other => other
+            }
+            KafkaTestParametersInfo(enrichedParams, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
           }
       }
       .valueOr(e => throw new RuntimeException(e.toList.mkString("")))

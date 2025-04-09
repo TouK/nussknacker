@@ -64,4 +64,15 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
       |]
       |""".stripMargin
 
+  override protected def expectedTestParametersJson: String = {
+    s"""
+       |[
+       |  {
+       |    "sourceId": "$exampleScenarioSourceId",
+       |    "parameters": []
+       |  }
+       |]
+       |""".stripMargin
+  }
+
 }
