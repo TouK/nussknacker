@@ -8,19 +8,24 @@ import { useInViewRef } from "rooks";
 import { TablePart } from "./list/tablePart";
 import { ListPart } from "./list/listPart";
 
-const StyledSpeedDial = styled(SpeedDial)(({ theme }) => ({
-    position: "fixed",
-    bottom: theme.spacing(2),
-    right: theme.spacing(2),
-    [theme.breakpoints.down("xl")]: {
-        bottom: theme.spacing(1.5),
-        right: theme.spacing(1.5),
-    },
-    [theme.breakpoints.down("md")]: {
-        bottom: theme.spacing(2),
-        right: theme.spacing(4),
-    },
-}));
+const StyledSpeedDial = styled(SpeedDial)(({ theme }) => {
+    const aiAssistantExists = Boolean(document.getElementById("ai-assistant-button"));
+
+    const additionalBottomPositionWhenAssistantExist = aiAssistantExists ? 10 : 0;
+    return {
+        position: "fixed",
+        bottom: theme.spacing(2 + additionalBottomPositionWhenAssistantExist),
+        right: theme.spacing(2),
+        [theme.breakpoints.down("xl")]: {
+            bottom: theme.spacing(1.5 + additionalBottomPositionWhenAssistantExist),
+            right: theme.spacing(1.5),
+        },
+        [theme.breakpoints.down("md")]: {
+            bottom: theme.spacing(2 + additionalBottomPositionWhenAssistantExist),
+            right: theme.spacing(4),
+        },
+    };
+});
 
 export interface ActionsProps {
     addScenario?: () => void;

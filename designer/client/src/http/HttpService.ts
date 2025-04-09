@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import type { TextContentPart } from "@assistant-ui/react";
 import type { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
@@ -8,6 +9,7 @@ import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } 
 import type { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import type { UserData } from "../common/models/User";
+import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
 import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
@@ -21,6 +23,7 @@ import type { ScenarioActionResult } from "../components/toolbars/scenarioAction
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";
 import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import { API_URL } from "../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
@@ -964,6 +967,29 @@ class HttpService {
 
     fetchActivities(scenarioName: string) {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
+    }
+
+    sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+        };
+
+        if (SystemUtils.hasAccessToken()) {
+            headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
+        }
+
+        const PATHNAME = "custom/assistant/chat";
+
+        /**
+         * Axios doesn't support stream response, even with fetch adapter, there are problems in safari https://github.com/axios/axios/issues/5806
+         */
+        return fetch(`${API_URL}/${PATHNAME}`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ message, threadId }),
+            signal: abortSignal,
+        });
     }
 
     #addInfo(message: string) {

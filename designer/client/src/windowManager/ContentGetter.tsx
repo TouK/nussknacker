@@ -66,6 +66,10 @@ const PropertiesDialog = loadable(() => import("../components/modals/PropertiesD
     fallback: <LoaderSpinner show />,
 });
 
+const AiAssistantModal = loadable(() => import("../components/aiAssistant/components/AiAssistantModal"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -116,6 +120,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <AddAttachmentDialog {...props} />;
         case WindowKind.editProperties:
             return <PropertiesDialog {...props} />;
+        case WindowKind.aiAssistant:
+            return <AiAssistantModal {...props} />;
         default:
             return (
                 <WindowContent {...props}>

@@ -1,4 +1,5 @@
-import { flatten, IFlattened } from "flattenizer";
+import type { IFlattened } from "flattenizer";
+import { flatten } from "flattenizer";
 import { isEqual, isObject, mapKeys, transform } from "lodash";
 
 export function tryParseOrNull<T = any>(input: string): T | null {

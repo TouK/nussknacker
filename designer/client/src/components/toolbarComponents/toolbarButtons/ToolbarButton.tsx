@@ -2,10 +2,12 @@ import { css, cx } from "@emotion/css";
 import { Typography, useTheme } from "@mui/material";
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
+
 import { getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking";
 import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
 import { NodeInput } from "../../FormElements";
-import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
+import type { ToolbarButtonProps} from "./index";
+import { ButtonsVariant, ToolbarButtonsContext } from "./index";
 import { Icon } from "./ToolbarButtonStyled";
 
 // TODO: use MUI button for consistency
@@ -20,7 +22,8 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
     const width = ([ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE) - 2 * margin;
     const styles = css({
         margin,
-        padding: variant === ButtonsVariant.horizontal ? "4px 8px" : [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? 0 : "4px 0",
+        padding:
+            variant === ButtonsVariant.horizontal ? "4px 8px" : [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? 0 : "4px 0",
         borderRadius: 6,
         display: "flex",
         flexDirection: variant === ButtonsVariant.horizontal ? "row" : "column",
@@ -66,7 +69,9 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
                               }
                             : null
                     }
-                >{icon}</Icon>
+                >
+                    {icon}
+                </Icon>
                 <Typography
                     variant={variant === ButtonsVariant.horizontal ? "button" : "overline"}
                     className={"toolbarButton-Label"}

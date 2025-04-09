@@ -1,22 +1,22 @@
 import loadable from "@loadable/component";
-import LoaderSpinner from "../components/spinner/Spinner";
 import React, { useMemo } from "react";
-import * as Paths from "./paths";
-import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } from "./paths";
 import { createRoutesFromElements, Navigate, Route } from "react-router-dom";
-import Metrics from "./Metrics";
+
+import { RouteErrorFallbackComponent } from "../components/common/error-boundary";
 import { NotFound } from "../components/common/error-boundary/NotFound";
+import LoaderSpinner from "../components/spinner/Spinner";
 import { CustomTab, StarRedirect } from "./CustomTab";
 import { useTabData } from "./CustomTabPage";
+import Metrics from "./Metrics";
 import { NussknackerApp } from "./NussknackerApp";
-import { RouteErrorFallbackComponent } from "../components/common/error-boundary";
+import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } from "./paths";
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
 
 function DefaultRedirect() {
     const rootTab = useTabData("scenarios");
-    const defaultPath = useMemo(() => (rootTab?.type === "Local" ? rootTab.url : Paths.ScenariosBasePath), [rootTab]);
+    const defaultPath = useMemo(() => (rootTab?.type === "Local" ? rootTab.url : ScenariosBasePath), [rootTab]);
     return <Navigate to={defaultPath} replace />;
 }
 

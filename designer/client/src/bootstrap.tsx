@@ -2,6 +2,8 @@ import { css } from "@emotion/css";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
+import { AiAssistantProvider } from "./components/aiAssistant/AiAssistantProvider";
 import { ErrorBoundary } from "./components/common/error-boundary";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 import { BASE_PATH } from "./config";
@@ -27,19 +29,22 @@ const root = createRoot(rootContainer);
 
 const Root = () => (
     <>
-        <NuThemeProvider>
-            <ErrorBoundary>
-                <StoreProvider>
-                    <SettingsProvider>
-                        <NussknackerInitializer>
-                            <BuildInfoProvider>
-                                <RouterProvider router={router} />
-                            </BuildInfoProvider>
-                        </NussknackerInitializer>
-                    </SettingsProvider>
-                </StoreProvider>
-            </ErrorBoundary>
-        </NuThemeProvider>
+        <AiAssistantProvider>
+            <NuThemeProvider>
+                <ErrorBoundary>
+                    <StoreProvider>
+                        <SettingsProvider>
+                            <NussknackerInitializer>
+                                <BuildInfoProvider>
+                                    <RouterProvider router={router} />
+                                </BuildInfoProvider>
+                            </NussknackerInitializer>
+                        </SettingsProvider>
+                    </StoreProvider>
+                </ErrorBoundary>
+            </NuThemeProvider>
+        </AiAssistantProvider>
+
         <GlideGridPortal />
     </>
 );

@@ -24,4 +24,5 @@ export enum WindowKind {
     editProperties,
     remote,
     scenarioTest,
+    aiAssistant,
 }
