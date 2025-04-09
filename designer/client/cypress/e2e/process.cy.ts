@@ -366,12 +366,14 @@ describe("Process", () => {
 
     it("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
-        cy.viewport(1500, 800);
-        cy.layoutScenario();
-
-        cy.contains("a", "More details").click();
-        cy.get("[data-testid=window]").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.contains(/^More details$/i).click();
+        cy.get("[data-testid=window]")
+            .should("be.visible")
+            .within(() => {
+                cy.contains(/^last modified$/i).should("be.visible");
+            })
+            .matchImage({
+                maxDiffThreshold: 0.02,
+            });
     });
 });
