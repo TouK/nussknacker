@@ -47,6 +47,9 @@ trait CollectionUtils extends HideToString {
   )
   @GenericType(typingFunction = classOf[VarargsMapMergeTyping])
   @varargs
+  // TODO_PAWEL to tu jest zdefiniowany merge, a juz tam sam sobie jakos radzi nussknacker
+  // jesli sobie dorobie takie metody tutaj to bedzie spam w designerze
+  // kurcze, a co jak jest obiekt z enrichera, obiekt po prostu, no nie ma mowy by to dziaalo nie? no nie ma
   def merge[K, V](
       @ParamName("map") map: java.util.Map[K, V],
       @ParamName("maps") maps: java.util.Map[K, V]*
