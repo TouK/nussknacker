@@ -1,8 +1,6 @@
-import { css, cx } from "@emotion/css";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
-import React, { useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useCallback, useEffect, useState } from "react";
 
 import type { WindowKind } from "../../../windowManager";
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
@@ -11,6 +9,7 @@ import { AdhocTestingFormContext } from "../AdhocTesting/AdhocTestingFormContext
 import { MarkdownForm } from "../AdhocTesting/MarkdownForm";
 import { useAdhocTestingAction } from "../AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingParametersValidation } from "../AdhocTesting/useAdhocTestingParametersValidation";
+import { useTesting } from "./TestingContext";
 import type { TestingData } from "./TestingDialog";
 
 interface TestWithParametersSingleSourceFormProps {
@@ -19,7 +18,6 @@ interface TestWithParametersSingleSourceFormProps {
 }
 
 export function TestWithParametersSingleSourceForm({ testingData, closeDialog }: TestWithParametersSingleSourceFormProps): JSX.Element {
-    const { t } = useTranslation();
     const {
         meta: { viewParams },
     } = testingData;
@@ -32,6 +30,12 @@ export function TestWithParametersSingleSourceForm({ testingData, closeDialog }:
         onConfirmAction(adhocTestingCurrentValue);
         closeDialog();
     }, [closeDialog, onConfirmAction, adhocTestingCurrentValue]);
+    const { handleSetAction, handleIsValid } = useTesting();
+
+    useEffect(() => {
+        handleIsValid(isValid);
+        handleSetAction(adhocTestingConfirm);
+    }, [adhocTestingConfirm, handleIsValid, handleSetAction, isValid]);
 
     return (
         <Box mt={1.5}>
@@ -46,21 +50,6 @@ export function TestWithParametersSingleSourceForm({ testingData, closeDialog }:
             >
                 <ValidationLabels fieldErrors={getValidationErrorsForField(errors, "testType")} />
                 <MarkdownForm content={viewParams.markdownContent} />
-                <Box sx={(theme) => ({ display: "flex", justifyContent: "flex-end", gap: 1, width: "auto", marginTop: theme.spacing(5) })}>
-                    <Button sx={{ width: "15%" }} size="medium" variant="outlined" onClick={() => closeDialog()}>
-                        {t("testingForm.cancelButton.label", "Cancel")}
-                    </Button>
-                    <Button
-                        sx={{ width: "15%" }}
-                        size="medium"
-                        variant="contained"
-                        onClick={adhocTestingConfirm}
-                        type="submit"
-                        disabled={!isValid}
-                    >
-                        {t("testingForm.testButton.label", "Test")}
-                    </Button>
-                </Box>
             </AdhocTestingFormContext.Provider>
         </Box>
     );
