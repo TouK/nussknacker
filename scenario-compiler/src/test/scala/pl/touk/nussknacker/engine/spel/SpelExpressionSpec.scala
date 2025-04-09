@@ -840,7 +840,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("missing keys in Maps") {
-    // TODO_PAWEL to wyglada dobrze
     val validationCtx = ValidationContext.empty
       .withVariable(
         "map",
