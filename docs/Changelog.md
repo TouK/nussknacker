@@ -145,6 +145,7 @@
   * Use `TapirCustomHttpServiceProvider` to implement custom Tapir based HTTP services. 
     Those endpoints are automatically added to the Nussknacker OpenAPI documentation.
   * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
+* [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
 
 ## 1.18
 
