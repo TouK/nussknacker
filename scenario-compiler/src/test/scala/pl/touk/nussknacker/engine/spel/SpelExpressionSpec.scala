@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
+import org.apache.avro.{Schema, SchemaBuilder}
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.scalacheck.Gen
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -792,6 +792,51 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     parse[String]("#map.key1", withMapVar).validExpression.evaluateSync[String](withMapVar) should equal("value1")
     parse[Integer]("#map.key2", withMapVar).validExpression.evaluateSync[Integer](withMapVar) should equal(20)
+  }
+
+  test("generic record projection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
+    val validationResult = parseV[JInteger]("#genericRecord.![#this.value].get(0)", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult.asInstanceOf[TypedClass].runtimeObjType.klass shouldBe classOf[Integer]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  test("generic record selection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
+    val validationResult = parseV[JInteger]("#genericRecord.?[#this.key == 'foo'].get('foo')", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Unknown
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  private def prepareGenericRecordTest: (ValidationContext, Context) = {
+    val validationCtx = ValidationContext.empty
+      .withVariable(
+        "genericRecord",
+        Typed.record(
+          Map(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int],
+          ),
+          Typed.genericTypeClass(classOf[GenericRecord], List())
+        ),
+        paramName = None
+      )
+      .toOption
+      .get
+    val schema = SchemaBuilder
+      .record("ClientIdentifier")
+      .namespace("com.baeldung.avro.model")
+      .fields()
+      .requiredInt("foo")
+      .requiredInt("bar")
+      .endRecord()
+    val record = new GenericData.Record(schema)
+    record.put("foo", 42)
+    record.put("bar", 43)
+    val ctxWithMap = ctx.withVariable("genericRecord", record)
+    (validationCtx, ctxWithMap)
   }
 
   test("missing keys in Maps") {

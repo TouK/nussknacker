@@ -541,7 +541,9 @@ private[spel] class Typer(
             if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
               tc.runtimeObjType.klass.isArray =>
           tc.withoutValue
-        case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
+        case tc: SingleTypingResult
+            if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]])
+              || classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>
           Typed.record(Map.empty)
         case _ =>
           parentType
@@ -711,9 +713,16 @@ private[spel] class Typer(
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
           tc.runtimeObjType.klass.isArray =>
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult
-        if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) ||
-          classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>
+    case tc: TypedObjectTypingResult if classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>
+      valid(
+        Typed.record(
+          Map(
+            "key"   -> Typed.genericTypeClass(classOf[String], List()),
+            "value" -> superTypeOfTypes(tc.fields.values)
+          )
+        )
+      )
+    case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
       valid(
         Typed.record(
           Map(
