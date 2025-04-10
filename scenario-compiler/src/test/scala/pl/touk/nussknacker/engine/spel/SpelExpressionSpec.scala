@@ -795,7 +795,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("generic record projection typing") {
-    val (validationCtx: ValidationContext, ctxWithMap: Context) = aa
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
     val validationResult = parseV[JInteger]("#genericRecord.![#this.value].get(0)", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
     typingResult.asInstanceOf[TypedClass].runtimeObjType.klass shouldBe classOf[Integer]
@@ -803,14 +803,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("generic record selection typing") {
-    val (validationCtx: ValidationContext, ctxWithMap: Context) = aa
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
     val validationResult = parseV[JInteger]("#genericRecord.?[#this.key == 'foo'].get('foo')", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
     typingResult shouldBe Unknown
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
   }
 
-  private def aa: (ValidationContext, Context) = {
+  private def prepareGenericRecordTest: (ValidationContext, Context) = {
     val validationCtx = ValidationContext.empty
       .withVariable(
         "genericRecord",
