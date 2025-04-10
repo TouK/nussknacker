@@ -951,8 +951,8 @@ class DefaultComponentServiceSpec
   private def hasPermission(loggedUser: LoggedUser, permission: GlobalPermission): Boolean = loggedUser match {
     case user: RealLoggedUser =>
       user match {
-        case CommonUser(_, _, _, globalPermissions) => globalPermissions.contains(permission)
-        case _: AdminUser                           => true
+        case CommonUser(_, _, _, globalPermissions, _) => globalPermissions.contains(permission)
+        case _: AdminUser                              => true
       }
     case ImpersonatedUser(impersonatedUser, _) => hasPermission(impersonatedUser, permission)
   }
