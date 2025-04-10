@@ -97,6 +97,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
     validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
   }
 
+
   test("should not validate not existing topic when validation disabled") {
     val validator = new CachedTopicsExistenceValidator(
       defaultKafkaConfig.copy(
