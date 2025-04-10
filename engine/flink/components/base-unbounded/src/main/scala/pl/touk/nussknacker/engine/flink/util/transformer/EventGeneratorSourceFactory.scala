@@ -65,7 +65,11 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @DefaultValue("T(java.time.Duration).parse('PT1M')")
       schedule: Duration,
       // TODO: @DefaultValue(1) instead of nullable
-      @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
+      @ParamName("count")
+      @Nullable
+      @Min(1)
+      @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
+      nullableCount: Integer,
       @ParamName("value")
       @DefaultValue(
         "{\n\t\"sampleField\": #UTIL.uuid(),\n\t\"dateTime\": #DATE_FORMAT.format(#DATE.now),\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
