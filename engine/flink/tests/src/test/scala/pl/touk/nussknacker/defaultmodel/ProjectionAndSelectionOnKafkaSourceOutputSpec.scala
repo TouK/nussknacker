@@ -1,21 +1,16 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemas
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.jdk.CollectionConverters._
-
-class ProjectionOnKafkaSourceOutputSpec
+class ProjectionAndSelectionOnKafkaSourceOutputSpec
     extends FlinkWithKafkaSuite
     with PatientScalaFutures
     with LazyLogging
@@ -31,7 +26,7 @@ class ProjectionOnKafkaSourceOutputSpec
       |}
       |""".stripMargin
 
-  private val outputMessage =
+  private val outputMessageProject =
     """
       |{
       |  "first": "first_Jan,last_Kowalski",
@@ -39,22 +34,45 @@ class ProjectionOnKafkaSourceOutputSpec
       |}
       |""".stripMargin
 
+  private val outputMessageSelect =
+    """
+      |{
+      |  "first": "Jan",
+      |  "last": "Kowalski"
+      |}
+      |""".stripMargin
+
   test("should perform projection on kafka source output") {
-    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions", RecordSchemas)
+    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions1", RecordSchemas)
     kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
     val sendResult = sendAsJson(inputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")
 
-    run(buildScenario(topicConfig)) {
+    run(buildScenario(topicConfig, s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""")) {
       val consumer = kafkaClient.createConsumer()
       val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
-      result.message() shouldEqual parseJson(outputMessage)
+      result.message() shouldEqual parseJson(outputMessageProject)
     }
   }
 
-  private def buildScenario(topicConfig: TopicConfig): CanonicalProcess =
+  test("should perform selection on kafka source output") {
+    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions2", RecordSchemas)
+    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
+    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
+
+    val sendResult = sendAsJson(inputMessage, topicConfig.input).futureValue
+    logger.info(s"Messages sent successful: $sendResult")
+
+    run(buildScenario(topicConfig, s"""#input.?[#this.key == "first"].get("first")""")) {
+      val consumer = kafkaClient.createConsumer()
+      val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
+      result.message() shouldEqual parseJson(outputMessageSelect)
+    }
+  }
+
+  private def buildScenario(topicConfig: TopicConfig, variableExpression: String): CanonicalProcess =
     ScenarioBuilder
       .streaming("exactly-once-test")
       .parallelism(1)
@@ -67,7 +85,7 @@ class ProjectionOnKafkaSourceOutputSpec
       .buildSimpleVariable(
         "someId",
         "someVarName",
-        s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""".spel
+        variableExpression.spel
       )
       .emptySink(
         "end",
