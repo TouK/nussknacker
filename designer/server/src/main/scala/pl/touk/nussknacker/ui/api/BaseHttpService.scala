@@ -43,10 +43,10 @@ abstract class BaseHttpService(
   ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
     authorizeKnownUser[BUSINESS_ERROR](credentials)
       .map {
-        case right @ Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser)           => securityError(InsufficientPermission)
-        case Right(_: ImpersonatedUser)     => securityError(InsufficientPermission)
-        case error @ Left(_)                => error
+        case right @ Right(_: AdminUser) => right
+        case Right(_: CommonUser)        => securityError(InsufficientPermission)
+        case Right(_: ImpersonatedUser)  => securityError(InsufficientPermission)
+        case error @ Left(_)             => error
       }
   }
 
