@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-class ProjectionAndSelectionOnKafkaSourceOutputSpec
+class ProjectionSelectionAndMergeOnKafkaSourceOutputSpec
     extends FlinkWithKafkaSuite
     with PatientScalaFutures
     with LazyLogging
@@ -42,6 +42,14 @@ class ProjectionAndSelectionOnKafkaSourceOutputSpec
       |}
       |""".stripMargin
 
+  private val outputMessageMerge =
+    """
+      |{
+      |  "first": "Jan",
+      |  "last": "Kowalski"
+      |}
+      |""".stripMargin
+
   test("should perform projection on kafka source output") {
     runVariableEvaluationTest(
       "cash-transactions1",
@@ -55,6 +63,14 @@ class ProjectionAndSelectionOnKafkaSourceOutputSpec
       "cash-transactions2",
       s"""#input.?[#this.key == "first"].get("first")""",
       outputMessageSelect
+    )
+  }
+
+  test("should perform merge on kafka source output") {
+    runVariableEvaluationTest(
+      "cash-transactions3",
+      s"""#COLLECTION.merge(#input, #input).first""",
+      outputMessageMerge
     )
   }
 
