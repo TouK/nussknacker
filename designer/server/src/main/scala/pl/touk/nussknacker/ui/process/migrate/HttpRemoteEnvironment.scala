@@ -18,7 +18,14 @@ import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData
-import pl.touk.nussknacker.ui.security.api.{AuthManager, ImpersonatedUserData, ImpersonationSupport, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{
+  AuthManager,
+  ImpersonatedUser,
+  ImpersonatedUserData,
+  ImpersonationSupport,
+  LoggedUser,
+  RealLoggedUser
+}
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
@@ -138,13 +145,18 @@ class HttpRemoteEnvironment(
     )
   }
 
-  private def impersonationHeader(loggedUser: LoggedUser): List[HttpHeader] =
+  private def impersonationHeader(loggedUser: LoggedUser): List[HttpHeader] = {
+    val roles = loggedUser match {
+      case r: RealLoggedUser   => r.roles
+      case i: ImpersonatedUser => i.impersonatedUser.roles
+    }
     impersonationSupport.toImpersonatedUserIdentityWithSupportCheck(
-      ImpersonatedUserData(loggedUser.id, loggedUser.username, Set.empty)
+      ImpersonatedUserData(loggedUser.id, loggedUser.username, roles)
     ) match {
       case Right(identityString) => List(RawHeader(AuthManager.impersonateHeaderName, identityString))
       case Left(_)               => Nil
     }
+  }
 
   private def invoke[T](
       method: HttpMethod,
