@@ -28,6 +28,7 @@ object SwaggerOpenApiDefinitionDiscovery
             None,
             None,
             None,
+            None,
           ).toAsyncHttpClientConfig(None).build()
         )
       )

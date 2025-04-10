@@ -1,15 +1,18 @@
 package pl.touk.nussknacker.http.backend
 
+import cats.data.NonEmptyList
+import io.netty.handler.codec.http.HttpHeaderNames
 import net.ceedubs.ficus.readers.ValueReader
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import org.asynchttpclient.filter.{FilterContext, FilterException, RequestFilter}
+import org.asynchttpclient.filter.{FilterContext, FilterException, RequestFilter, ResponseFilter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.http.backend.DefaultHttpClientConfig.ClientConfigBuilderExtension
 import pl.touk.nussknacker.http.backend.HttpClientConfig.EffectiveHttpClientConfig
 import sttp.client3.SttpBackendOptions
 
-import java.net.InetAddress
+import java.net.{InetAddress, MalformedURLException, NetworkInterface, SocketException, UnknownHostException, URL}
 import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 case class HttpClientConfig(
     timeout: Option[FiniteDuration],
@@ -20,7 +23,8 @@ case class HttpClientConfig(
     forceShutdown: Option[Boolean],
     // this can be used to tune single scenario
     configForProcess: Option[Map[String, HttpClientConfig]],
-    forbiddenHosts: Option[List[String]],
+    isLocalhostAllowed: Option[Boolean],
+    forbiddenHostRegexes: Option[List[String]],
 ) {
 
   def toAsyncHttpClientConfig(processName: Option[ProcessName]): DefaultAsyncHttpClientConfig.Builder = {
@@ -32,7 +36,9 @@ case class HttpClientConfig(
       .setUseNativeTransport(effectiveConfig.useNative)
       .setFollowRedirect(effectiveConfig.followRedirect)
       .setThreadPoolName(processName.map(_.value + s"-http-pool").getOrElse(s"http-pool"))
-      .setForbiddenHostRequestFilter(effectiveConfig.forbiddeHost)
+      .setForbiddenLocalhostRequestFilter(effectiveConfig.isLocalhostAllowed)
+      .setForbiddenLocalhostResponseFilter(effectiveConfig.isLocalhostAllowed && effectiveConfig.followRedirect)
+      .setForbiddenHostRequestFilter(effectiveConfig.forbiddenHostRegexes)
   }
 
   def toSttpBackendOptions(processName: Option[ProcessName]): SttpBackendOptions = {
@@ -53,7 +59,8 @@ case class HttpClientConfig(
       useNative = extractConfig(_.useNative, false),
       followRedirect = extractConfig(_.followRedirect, false),
       forceShutdown = extractConfig(_.forceShutdown, false),
-      forbiddeHost = extractConfig(_.forbiddenHosts, List.empty),
+      isLocalhostAllowed = extractConfig(_.isLocalhostAllowed, true),
+      forbiddenHostRegexes = extractConfig(_.forbiddenHostRegexes.map(NonEmptyList.fromList), None),
     )
   }
 
@@ -68,7 +75,8 @@ object HttpClientConfig {
       useNative: Boolean,
       followRedirect: Boolean,
       forceShutdown: Boolean,
-      forbiddeHost: List[String],
+      isLocalhostAllowed: Boolean,
+      forbiddenHostRegexes: Option[NonEmptyList[String]],
   )
 
   // ArbitraryTypeReader cannot handle nested option here... :/
@@ -83,7 +91,8 @@ object HttpClientConfig {
       followRedirect = forOption[Boolean]("followRedirect"),
       forceShutdown = forOption[Boolean]("forceShutdown"),
       configForProcess = forOption("configForProcess")(mapValueReader(vr)),
-      forbiddenHosts = forOption[List[String]]("forbiddenHosts"),
+      isLocalhostAllowed = forOption[Boolean]("isLocalhostAllowed"),
+      forbiddenHostRegexes = forOption[List[String]]("forbiddenHostRegexes"),
     )
   })
 
@@ -91,7 +100,7 @@ object HttpClientConfig {
 
 object DefaultHttpClientConfig {
 
-  def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None, None)
+  def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None, None, None)
 
   val maxPoolSize: Int = 20
 
@@ -99,25 +108,64 @@ object DefaultHttpClientConfig {
 
   implicit class ClientConfigBuilderExtension(val builder: DefaultAsyncHttpClientConfig.Builder) extends AnyVal {
 
-    def setForbiddenHostRequestFilter(forbiddenHosts: List[String]): DefaultAsyncHttpClientConfig.Builder =
-      if (forbiddenHosts.nonEmpty) {
-        addForbiddenHostsFilter(forbiddenHosts)
-      } else {
+    def setForbiddenLocalhostRequestFilter(isEnabled: Boolean): DefaultAsyncHttpClientConfig.Builder = {
+      if (isEnabled) {
         builder
+      } else {
+        builder.addRequestFilter(new RequestFilter {
+          override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
+            val hostName = ctx.getRequest.getUri.getHost
+            if (isLocalhost(hostName)) {
+              throw new FilterException(s"Request to $hostName is forbidden")
+            }
+            ctx
+          }
+        })
+      }
+    }
+
+    def setForbiddenLocalhostResponseFilter(isEnabled: Boolean): DefaultAsyncHttpClientConfig.Builder = {
+      if (isEnabled) {
+        builder
+      } else {
+        builder.addResponseFilter(new ResponseFilter {
+          override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
+            val maybeHost = Option(ctx.getResponseHeaders)
+              .flatMap(h => Option(h.get(HttpHeaderNames.LOCATION)))
+              .flatMap(location => Try(new URL(location).getHost).toOption)
+            maybeHost match {
+              case Some(host) if isLocalhost(host) => throw new FilterException(s"Redirect to $host is forbidden")
+              case _                               =>
+            }
+            ctx
+          }
+        })
+      }
+    }
+
+    def setForbiddenHostRequestFilter(forbiddenHostRegex: Option[NonEmptyList[String]]) =
+      forbiddenHostRegex match {
+        case Some(regexes) => addForbiddenHostsFilter(regexes)
+        case None          => builder
       }
 
-    private def addForbiddenHostsFilter(forbiddenHosts: List[String]): DefaultAsyncHttpClientConfig.Builder = {
-      val lowerCaseHosts = forbiddenHosts.map(_.toLowerCase)
-      val lowCaseHostsWithMaybeLoopback = if (lowerCaseHosts.contains("localhost")) {
-        InetAddress.getLoopbackAddress.getHostAddress :: lowerCaseHosts
+    private def isLocalhost(host: String): Boolean = Try {
+      val inetAddress = InetAddress.getByName(host)
+      if (!inetAddress.isLoopbackAddress && !inetAddress.isAnyLocalAddress) {
+        NetworkInterface.getByInetAddress(inetAddress) != null
       } else {
-        lowerCaseHosts
+        true
       }
-      val hostsAsSet = lowCaseHostsWithMaybeLoopback.toSet
+    }.recover { case _: UnknownHostException | _: SocketException | _: MalformedURLException =>
+      false
+    }.get
+
+    private def addForbiddenHostsFilter(forbiddenHostRegexes: NonEmptyList[String]) = {
+      val regexes = forbiddenHostRegexes.toList.map(_.r)
       builder.addRequestFilter(new RequestFilter {
         override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
           val hostName = ctx.getRequest.getUri.getHost.toLowerCase
-          if (hostsAsSet.contains(hostName)) {
+          if (regexes.exists(r => r.matches(hostName))) {
             throw new FilterException(s"Request to $hostName is forbidden")
           }
           ctx
