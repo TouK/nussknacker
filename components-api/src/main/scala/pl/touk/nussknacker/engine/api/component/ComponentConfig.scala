@@ -58,6 +58,7 @@ object ComponentConfig {
         x.docsUrl |+| y.docsUrl,
         x.componentGroup |+| y.componentGroup,
         x.componentId |+| y.componentId,
+        disabled = x.disabled || y.disabled,
         label = x.label |+| y.label
       )
     }
