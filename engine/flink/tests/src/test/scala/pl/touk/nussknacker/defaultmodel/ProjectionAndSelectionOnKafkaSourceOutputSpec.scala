@@ -43,32 +43,37 @@ class ProjectionAndSelectionOnKafkaSourceOutputSpec
       |""".stripMargin
 
   test("should perform projection on kafka source output") {
-    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions1", RecordSchemas)
-    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
-    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
-
-    val sendResult = sendAsJson(inputMessage, topicConfig.input).futureValue
-    logger.info(s"Messages sent successful: $sendResult")
-
-    run(buildScenario(topicConfig, s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""")) {
-      val consumer = kafkaClient.createConsumer()
-      val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
-      result.message() shouldEqual parseJson(outputMessageProject)
-    }
+    runVariableEvaluationTest(
+      "cash-transactions1",
+      s"""#COLLECTION.join(#input.![#this.key + "_" + #this.value], ",")""",
+      outputMessageProject
+    )
   }
 
   test("should perform selection on kafka source output") {
-    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions2", RecordSchemas)
+    runVariableEvaluationTest(
+      "cash-transactions2",
+      s"""#input.?[#this.key == "first"].get("first")""",
+      outputMessageSelect
+    )
+  }
+
+  private def runVariableEvaluationTest(
+      topicName: String,
+      variableExpression: String,
+      expectedOutputMessage: String
+  ): Unit = {
+    val topicConfig = createAndRegisterAvroTopicConfig(topicName, RecordSchemas)
     kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
     val sendResult = sendAsJson(inputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")
 
-    run(buildScenario(topicConfig, s"""#input.?[#this.key == "first"].get("first")""")) {
+    run(buildScenario(topicConfig, variableExpression)) {
       val consumer = kafkaClient.createConsumer()
       val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
-      result.message() shouldEqual parseJson(outputMessageSelect)
+      result.message() shouldEqual parseJson(expectedOutputMessage)
     }
   }
 
