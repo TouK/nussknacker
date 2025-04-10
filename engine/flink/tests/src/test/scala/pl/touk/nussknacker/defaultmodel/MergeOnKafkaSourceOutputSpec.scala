@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class MergeOnKafkaSourceOutputSpec
-  extends FlinkWithKafkaSuite
+    extends FlinkWithKafkaSuite
     with PatientScalaFutures
     with LazyLogging
     with WithKafkaComponentsConfig {
@@ -29,12 +29,12 @@ class MergeOnKafkaSourceOutputSpec
   private val outputMessage =
     """
       |{
-      |  "first": "first_Jan,last_Kowalski",
+      |  "first": "Jan",
       |  "last": "Kowalski"
       |}
       |""".stripMargin
 
-  test("should perform projection on kafka source output") {
+  test("should perform merge on kafka source output") {
     val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions", RecordSchemas)
     kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
@@ -62,7 +62,7 @@ class MergeOnKafkaSourceOutputSpec
       .buildSimpleVariable(
         "someId",
         "someVarName",
-        s"""#COLLECTION.merge(#input, #input)""".spel
+        s"""#COLLECTION.merge(#input, #input).first""".spel
       )
       .emptySink(
         "end",
@@ -74,4 +74,5 @@ class MergeOnKafkaSourceOutputSpec
         "first"                                                         -> "#someVarName".spel,
         "last"                                                          -> "#input.last".spel,
       )
+
 }

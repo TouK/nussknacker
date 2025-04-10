@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
 import cats.implicits.{catsSyntaxValidatedId, _}
+import org.apache.avro.generic.GenericRecord
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -179,18 +180,48 @@ object AssignabilityDeterminer {
           )
       }
     }
-    val givenClass = from.runtimeObjType
 
-    val equalClassesOrCanAssign =
-      condNel(
-        givenClass == to,
-        (),
-        f"${givenClass.display} and ${to.display} are not the same"
-      ) orElse
-        isAssignable(givenClass.klass, to.klass)
+    if (isGenericRecordToMapConversion(from, to, conversionChecker)) {
+      valid(())
+    } else {
+      val givenClass = from.runtimeObjType
 
-    val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, to))
-    canBeSubclass orElse conversionChecker.isConvertable(from, to)
+      val equalClassesOrCanAssign =
+        condNel(
+          givenClass == to,
+          (),
+          f"${givenClass.display} and ${to.display} are not the same"
+        ) orElse
+          isAssignable(givenClass.klass, to.klass)
+
+      val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, to))
+      canBeSubclass orElse conversionChecker.isConvertable(from, to)
+    }
+  }
+
+  private def isGenericRecordToMapConversion(
+      from: SingleTypingResult,
+      to: TypedClass,
+      conversionChecker: ConversionChecker
+  ): Boolean = {
+    if (classOf[GenericRecord].isAssignableFrom(from.runtimeObjType.klass) &&
+      classOf[java.util.Map[_, _]].isAssignableFrom(to.runtimeObjType.klass)) {
+      val genericRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
+      val genericRecordValueParam = from match {
+        case fromCasted: TypedObjectTypingResult => {
+          superTypeOfTypes(fromCasted.fields.values)
+        }
+        case _ => Unknown
+      }
+      val canConvert =
+        isAssignable(genericRecordKeyParam, to.params.headOption.getOrElse(Unknown), conversionChecker).isValid &&
+          isAssignable(
+            genericRecordValueParam,
+            to.params.drop(1).headOption.getOrElse(Unknown),
+            conversionChecker
+          ).isValid
+      canConvert
+    } else false
   }
 
   private def isAnyOfAssignableToAnyOf(

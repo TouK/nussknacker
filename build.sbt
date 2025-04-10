@@ -1579,6 +1579,7 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
+        "org.apache.avro"                % "avro"                          % avroV,
         "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
         "org.typelevel"                 %% "cats-core"                     % catsV,
         "com.beachape"                  %% "enumeratum"                    % enumeratumV,

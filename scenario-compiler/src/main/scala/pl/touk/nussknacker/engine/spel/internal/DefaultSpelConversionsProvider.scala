@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.engine.spel.internal
 
+import org.apache.avro.generic.GenericRecord
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalConverter, Converter, ConverterFactory}
 import org.springframework.core.convert.support.GenericConversionService
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{stringConversions, StringConversion}
+
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, MapHasAsJava}
 
 /**
   * This class creates SpEL's ConversionService. We don't use DefaultConversionService because it has some conversions
@@ -31,6 +34,11 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     service.addConverter(new ObjectToArrayConverter(service))
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
+    service.addConverter(
+      classOf[GenericRecord],
+      classOf[java.util.Map[_, _]],
+      (r: GenericRecord) => r.getSchema.getFields.asScala.map(_.name()).map(n => n -> r.get(n)).toMap.asJava
+    )
     service.addConverter(new ConversionHandler.ArrayToListConverter(service))
     service
   }
