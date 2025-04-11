@@ -63,7 +63,7 @@ object ComponentLinkConfig {
   implicit class LoggedUserOps(val loggedUser: LoggedUser) extends AnyVal {
 
     def hasPermission(permission: GlobalPermission): Boolean = loggedUser match {
-      case CommonUser(_, _, _, globalPermissions) =>
+      case CommonUser(_, _, _, globalPermissions, _) =>
         globalPermissions.contains(permission)
       case _: AdminUser => true
       case ImpersonatedUser(impersonatedUser, _) =>
