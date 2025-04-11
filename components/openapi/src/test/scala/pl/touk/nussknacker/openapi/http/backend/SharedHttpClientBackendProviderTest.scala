@@ -102,7 +102,7 @@ class SharedHttpClientBackendProviderTest
       .send(basicRequest.get(Uri.unsafeParse(s"${wireMock.baseUrl()}/abc")))
 
     intercept[FilterException] {
-      Await.result(responseFuture, 50 seconds)
+      Await.result(responseFuture, 5 seconds)
     }
 
     backendProvider.close()
