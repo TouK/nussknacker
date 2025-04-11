@@ -1750,7 +1750,7 @@ lazy val openapiComponents = (project in component("openapi"))
         ExclusionRule(organization = "jakarta.validation")
       ),
       "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
-      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test",
+      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
     ),
   )
   .dependsOn(

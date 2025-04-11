@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.openapi.http.backend
 
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.asynchttpclient.filter.FilterException
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
@@ -11,7 +9,6 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessAdditionalField
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario
 import pl.touk.nussknacker.http.backend.DefaultHttpClientConfig
-import pl.touk.nussknacker.test.AvailablePortFinder
 import sttp.client3.basicRequest
 import sttp.model.Uri
 
@@ -24,26 +21,6 @@ class SharedHttpClientBackendProviderTest
     with Matchers
     with TableDrivenPropertyChecks
     with BeforeAndAfterAll {
-
-  private val wireMock: WireMockServer = {
-    val server = AvailablePortFinder.withAvailablePortsBlocked(1)(l => {
-      new WireMockServer(
-        WireMockConfiguration
-          .wireMockConfig()
-          .port(l.head)
-      )
-    })
-    server.start()
-    server
-  }
-
-  override protected def afterAll(): Unit = {
-    try {
-      wireMock.stop()
-    } finally {
-      super.afterAll()
-    }
-  }
 
   private val engineRuntimeContext = new EngineRuntimeContext {
     override def jobData: JobData = JobData(
@@ -89,7 +66,7 @@ class SharedHttpClientBackendProviderTest
     backendProvider.open(engineRuntimeContext)
 
     val responseFuture = backendProvider.httpBackendForEc
-      .send(basicRequest.get(Uri.unsafeParse(s"${wireMock.baseUrl()}/abc")))
+      .send(basicRequest.get(Uri.unsafeParse("http://localhost/abc")))
 
     intercept[FilterException] {
       Await.result(responseFuture, 5 seconds)
