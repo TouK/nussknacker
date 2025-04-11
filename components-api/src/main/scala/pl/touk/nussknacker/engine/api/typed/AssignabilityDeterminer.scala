@@ -204,13 +204,14 @@ object AssignabilityDeterminer {
       to: TypedClass,
       conversionChecker: ConversionChecker
   ): Boolean = {
-    if (classOf[GenericRecord].isAssignableFrom(from.runtimeObjType.klass) &&
-      classOf[java.util.Map[_, _]].isAssignableFrom(to.runtimeObjType.klass)) {
+    if (!classOf[GenericRecord].isAssignableFrom(from.runtimeObjType.klass) || !classOf[java.util.Map[_, _]]
+        .isAssignableFrom(to.runtimeObjType.klass)) {
+      false
+    } else {
       val genericRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
       val genericRecordValueParam = from match {
-        case fromCasted: TypedObjectTypingResult => {
+        case fromCasted: TypedObjectTypingResult =>
           superTypeOfTypes(fromCasted.fields.values)
-        }
         case _ => Unknown
       }
       val canConvert =
@@ -221,7 +222,7 @@ object AssignabilityDeterminer {
             conversionChecker
           ).isValid
       canConvert
-    } else false
+    }
   }
 
   private def isAnyOfAssignableToAnyOf(
