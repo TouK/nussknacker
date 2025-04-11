@@ -147,7 +147,10 @@
   * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
 * [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
 * [#7937](https://github.com/TouK/nussknacker/pull/7937) Data sample from Kafka Source as initial input for Ad-Hoc test
-* [#7864](https://github.com/TouK/nussknacker/pull/7864) Add forbidden hosts feature to http client configuration.
+* [#7864](https://github.com/TouK/nussknacker/pull/7864) Add the forbidden hosts feature to the http client configuration,
+  if `followRedirect` is enabled then `Location` response header is also checked:
+  * `forbiddenHostRegexes` - list of regexes for forbidden hosts.
+  * `isLocalhostAllowed` - whether the calling address can be located in the localhost.
 
 ## 1.18
 
