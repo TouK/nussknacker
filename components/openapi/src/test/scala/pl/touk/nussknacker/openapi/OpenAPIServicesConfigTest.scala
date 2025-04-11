@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.openapi
 
-import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
@@ -90,7 +89,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |    }
                                              |  }
                                              |  isLocalhostAllowed: false
-                                             |  forbiddenHostRegexes: ["namespace.service.svc.cluster.local"]
+                                             |  forbiddenHosts: ["namespace.service.svc.cluster.local"]
                                              |}
                                              |  """.stripMargin)
 
@@ -108,7 +107,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
           "someScenario" -> DefaultHttpClientConfig().copy(timeout = Some(3 seconds))
         )
       ),
-      forbiddenHostRegexes = Some(List("namespace.service.svc.cluster.local")),
+      forbiddenHosts = Some(List("namespace.service.svc.cluster.local")),
       isLocalhostAllowed = Some(false),
     )
   }

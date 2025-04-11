@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.openapi.http.backend
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.{get, permanentRedirect, urlEqualTo}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.asynchttpclient.filter.FilterException
 import org.scalatest.BeforeAndAfterAll
@@ -55,17 +54,15 @@ class SharedHttpClientBackendProviderTest
     override def contextIdGenerator(nodeId: String): ContextIdGenerator = ???
   }
 
-  test("should throw exception on forbidden URL") {
+  test("should throw exception when called address is localhost and localhost is not allowd") {
     val httpConfig = DefaultHttpClientConfig().copy(
       isLocalhostAllowed = Some(false),
-      forbiddenHostRegexes = Some(List("namespace.*svc.cluster.local")),
     )
     val backendProvider = new SharedHttpClientBackendProvider(httpConfig)
     backendProvider.open(engineRuntimeContext)
 
     forAll(
       Table(
-        "http://namespace.nussknacker.svc.cluster.local/abc",
         "http://0.0.0.0",
         "http://127.0.0.1",
         "http://127.0.0.1.nip.io",
@@ -83,20 +80,13 @@ class SharedHttpClientBackendProviderTest
     backendProvider.close()
   }
 
-  test("should throw exception on forbidden URL for redirect") {
+  test("should throw exception on forbidden URL") {
     val httpConfig = DefaultHttpClientConfig().copy(
-      followRedirect = Some(true),
       isLocalhostAllowed = Some(true),
-      forbiddenHostRegexes = Some(List("namespace.*svc.cluster.local")),
+      forbiddenHosts = Some(List("localhost")),
     )
     val backendProvider = new SharedHttpClientBackendProvider(httpConfig)
     backendProvider.open(engineRuntimeContext)
-
-    wireMock.stubFor(
-      get(urlEqualTo("/abc")).willReturn(
-        permanentRedirect("http://namespace.nussknacker.svc.cluster.local/abc")
-      )
-    )
 
     val responseFuture = backendProvider.httpBackendForEc
       .send(basicRequest.get(Uri.unsafeParse(s"${wireMock.baseUrl()}/abc")))

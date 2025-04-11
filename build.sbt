@@ -1751,7 +1751,6 @@ lazy val openapiComponents = (project in component("openapi"))
       ),
       "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
       "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test",
-      "org.wiremock"       % "wiremock"             % wireMockV  % Test,
     ),
   )
   .dependsOn(
