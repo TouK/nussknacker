@@ -87,4 +87,48 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
        |  }
        |]""".stripMargin
 
+  override protected def expectedTestParametersJson: String = {
+    s"""
+       |[
+       |  {
+       |    "sourceId": "$exampleScenarioSourceId",
+       |    "parameters": [
+       |      {
+       |        "name": "elements",
+       |        "typ": {
+       |          "display": "List[String]",
+       |          "type": "TypedClass",
+       |          "refClazzName": "java.util.List",
+       |          "params": [
+       |            {
+       |              "display": "String",
+       |              "type": "TypedClass",
+       |              "refClazzName": "java.lang.String",
+       |              "params": []
+       |            }
+       |          ]
+       |        },
+       |        "editors": [
+       |          {
+       |            "type": "SpelParameterEditor"
+       |          }
+       |        ],
+       |        "defaultValue": {
+       |          "language":"spel",
+       |          "expression":"{}"
+       |        },
+       |        "additionalVariables": {},
+       |        "variablesToHide": [],
+       |        "branchParam": false,
+       |        "hintText": null,
+       |        "label": "elements",
+       |        "requiredParam": true,
+       |        "category": "Standard"
+       |      }
+       |    ]
+       |  }
+       |]
+       |""".stripMargin
+  }
+
 }

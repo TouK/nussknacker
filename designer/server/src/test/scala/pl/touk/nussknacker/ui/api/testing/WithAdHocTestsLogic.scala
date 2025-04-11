@@ -80,4 +80,22 @@ trait WithAdHocTestsLogic {
       )
   }
 
+  def shouldProperlyGetTestParameters(): Unit = {
+    val request = exampleScenarioGraph.asJson.noSpaces
+
+    given()
+      .applicationState {
+        createSavedScenario(exampleScenario)
+      }
+      .when()
+      .basicAuthAllPermUser()
+      .jsonBody(request)
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/parameters")
+      .Then()
+      .statusCode(200)
+      .equalsJsonBody(
+        expectedTestParametersJson
+      )
+  }
+
 }
