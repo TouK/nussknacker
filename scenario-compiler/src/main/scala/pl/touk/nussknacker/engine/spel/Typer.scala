@@ -541,9 +541,7 @@ private[spel] class Typer(
             if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
               tc.runtimeObjType.klass.isArray =>
           tc.withoutValue
-        case tc: SingleTypingResult
-            if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]])
-              || classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>
+        case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
           Typed.record(Map.empty)
         case _ =>
           parentType
@@ -713,6 +711,8 @@ private[spel] class Typer(
         if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
           tc.runtimeObjType.klass.isArray =>
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
+    // it would have been caught by the next case, but since GenericRecord does not have type parameters we
+    // extract iterative type in different way
     case tc: TypedObjectTypingResult if classOf[GenericRecord].isAssignableFrom(tc.runtimeObjType.klass) =>
       valid(
         Typed.record(
