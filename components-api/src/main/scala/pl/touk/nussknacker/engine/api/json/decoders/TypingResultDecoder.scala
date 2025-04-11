@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import io.circe._
 import pl.touk.nussknacker.engine.api.json.TypingType
 import pl.touk.nussknacker.engine.api.json.TypingType.{typeField, TypingType}
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.{UnknownDisplayStrategy, _}
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
@@ -18,8 +18,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].flatMap {
-      case TypingType.Unknown                 => Right(Unknown)
-      case TypingType.TypedJson               => Right(TypedJson)
+      case TypingType.Unknown                 => unknown(hcursor)
       case TypingType.TypedNull               => Right(TypedNull)
       case TypingType.TypedUnion              => typedUnion(hcursor)
       case TypingType.TypedDict               => typedDict(hcursor)
@@ -61,6 +60,16 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       .as[Option[Map[String, AdditionalDataValue]]]
       .map(_.getOrElse(Map.empty))
   } yield Typed.record(fields, valueClass, additional)
+
+  private def unknown(obj: HCursor): Decoder.Result[TypingResult] = {
+    for {
+      display <- obj.downField("display").as[String]
+    } yield display match {
+      case UnknownDisplayStrategy.display => Unknown
+      case JsonDisplayStrategy.display    => TypedJson
+      case _ => throw new IllegalStateException("Unrecognized display strategy for Unknown type")
+    }
+  }
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
     val dict = obj.downField("dict")

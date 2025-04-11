@@ -13,7 +13,7 @@ private[json] object TypingType extends Enumeration {
   type TypingType = Value
 
   val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, TypedObjectWithValue, TypedNull,
-      Unknown, TypedJson = Value
+      Unknown = Value
 
   def forType(typingResult: TypingResult): TypingType.Value = typingResult match {
     case _: TypedClass              => TypedClass
@@ -23,8 +23,7 @@ private[json] object TypingType extends Enumeration {
     case _: TypedTaggedValue        => TypedTaggedValue
     case _: TypedObjectWithValue    => TypedObjectWithValue
     case typing.TypedNull           => TypedNull
-    case typing.Unknown             => Unknown
-    case typing.TypedJson           => TypedJson
+    case typing.Unknown(_)          => Unknown
   }
 
 }

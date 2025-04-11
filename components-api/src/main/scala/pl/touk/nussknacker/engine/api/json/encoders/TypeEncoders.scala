@@ -21,8 +21,6 @@ object TypeEncoders {
   private val encodeUnknown =
     JsonObject("refClazzName" -> fromString(classOf[Object].getName), "params" -> fromValues(Nil))
 
-  private val encodeTypedJson = encodeUnknown
-
   // Object class is used because Null can represent any type.
   private val encodeNull =
     JsonObject("refClazzName" -> fromString(classOf[Object].getName), "params" -> fromValues(Nil))
@@ -30,8 +28,7 @@ object TypeEncoders {
   private def encodeTypingResult(result: TypingResult): JsonObject =
     (result match {
       case single: SingleTypingResult => encodeSingleTypingResult(single)
-      case typing.Unknown             => encodeUnknown
-      case typing.TypedJson           => encodeTypedJson
+      case typing.Unknown(_)          => encodeUnknown
       case typing.TypedNull           => encodeNull
       case union: TypedUnion =>
         JsonObject(

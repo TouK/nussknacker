@@ -37,10 +37,8 @@ object AssignabilityDeterminer {
 
   private def isAssignable(from: TypingResult, to: TypingResult, conversionChecker: ConversionChecker) = {
     (from, to) match {
-      case (_, Unknown)       => ().validNel
-      case (Unknown, _)       => ().validNel
-      case (_, TypedJson)     => ().validNel
-      case (TypedJson, _)     => ().validNel
+      case (_, Unknown(_))    => ().validNel
+      case (Unknown(_), _)    => ().validNel
       case (TypedNull, other) => isNullAsignableTo(other)
       case (_, TypedNull)     => s"No type can be subclass of ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, superclass: TypedUnion) =>

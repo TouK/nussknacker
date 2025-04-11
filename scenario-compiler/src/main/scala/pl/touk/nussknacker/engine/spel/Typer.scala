@@ -245,10 +245,8 @@ private[spel] class Typer(
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
-        case Unknown =>
-          withTypedChildren(_ => valid(Unknown))
-        case TypedJson =>
-          withTypedChildren(_ => valid(TypedJson))
+        case u: Unknown =>
+          withTypedChildren(_ => valid(u))
         case _: TypedClass =>
           val w = withTypedChildren(_ => valid(Unknown))
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
@@ -624,15 +622,15 @@ private[spel] class Typer(
   }
 
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
-    case typing @ (Unknown | TypedJson) =>
-      val w = Writer.value[List[ExpressionParseError], TypingResult](typing)
+    case u: Unknown =>
+      val w = Writer.value[List[ExpressionParseError], TypingResult](u)
       if (anyMethodExecutionForUnknownAllowed) {
         w
       } else {
         // we allow some methods to be used on unknown
         unknownPropertyTypeBasedOnMethod(e)
           .map(valid)
-          .getOrElse(w.tell(List(IllegalPropertyAccessError(typing))))
+          .getOrElse(w.tell(List(IllegalPropertyAccessError(u))))
       }
     case TypedNull =>
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)

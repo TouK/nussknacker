@@ -167,22 +167,27 @@ object typing {
     override val display = "Null"
   }
 
+  sealed trait DisplayStrategy {
+    val display: String
+  }
+
+  case object UnknownDisplayStrategy extends DisplayStrategy {
+    override val display: String = "Unknown"
+  }
+
+  case object JsonDisplayStrategy extends DisplayStrategy {
+    override val display: String = "Json"
+  }
+
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult {
-    override def withoutValue: Unknown.type = Unknown
-
-    override val valueOpt: None.type = None
-
-    override val display = "Unknown"
-  }
-
-  case object TypedJson extends TypingResult {
+  case class Unknown(displayStrategy: DisplayStrategy) extends TypingResult {
     override def withoutValue: TypingResult = this
-
-    override val valueOpt: None.type = None
-
-    override val display = "Json"
+    override val valueOpt: None.type        = None
+    override val display: String            = displayStrategy.display
   }
+
+  object Unknown   extends Unknown(UnknownDisplayStrategy)
+  object TypedJson extends Unknown(JsonDisplayStrategy)
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
@@ -417,8 +422,7 @@ object typing {
       //       computing the output type of SPeL's ternary operator - see CommonSupertypeFinder.commonSupertype(nel, nel)
       //       which can generate a long unions of types
       def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
-        case Unknown                    => None
-        case TypedJson                  => None
+        case Unknown(_)                 => None
         case TypedNull                  => Some(Set.empty)
         case single: SingleTypingResult => Some(Set(single))
         case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)

@@ -205,7 +205,7 @@ class SpelExpressionSuggester(
               .queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
               .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil))))
               .getOrElse(successfulNil)
-          case TypingResultWithContext(Unknown | TypedJson, staticContext) =>
+          case TypingResultWithContext(_: Unknown, staticContext) =>
             Future.successful(
               clssDefinitions.unknown
                 .map(c => filterClassMethods(c, p.getName, staticContext))

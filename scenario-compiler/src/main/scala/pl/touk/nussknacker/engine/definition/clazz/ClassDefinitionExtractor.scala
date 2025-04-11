@@ -107,8 +107,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
         !settings.isHidden(str.runtimeObjType.klass) && str.runtimeObjType.params.forall(typeResultVisible)
       case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
       case TypedNull         => true
-      case Unknown           => true
-      case TypedJson         => true
+      case Unknown(_)        => true
     }
     def filterOneMethod(method: MethodDefinition): Boolean = {
       val noVarArgTypes = method.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)

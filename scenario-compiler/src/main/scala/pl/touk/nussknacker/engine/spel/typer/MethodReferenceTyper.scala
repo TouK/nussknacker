@@ -20,15 +20,10 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
         typeFromClazzDefinitions(extractClazzDefinitions(union.possibleTypes))
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
-      case Unknown =>
+      case _: Unknown =>
         typeFromClazzDefinitions(classDefinitionSet.unknown.toList) match {
-          case Right(Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(Unknown))
-          case result @ _                                          => result
-        }
-      case TypedJson =>
-        typeFromClazzDefinitions(classDefinitionSet.typedJson.toList) match {
-          case Right(TypedJson) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(TypedJson))
-          case result @ _                                            => result
+          case Right(u: Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(u))
+          case result @ _                                             => result
         }
     }
   }

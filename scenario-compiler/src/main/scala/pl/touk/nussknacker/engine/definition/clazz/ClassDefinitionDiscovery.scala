@@ -65,9 +65,7 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
       union.possibleTypes.toList.toSet.flatMap(typesFromTypingResult)
     case TypedNull =>
       Set.empty
-    case Unknown =>
-      Set.empty
-    case TypedJson =>
+    case Unknown(_) =>
       Set.empty
   }
 
