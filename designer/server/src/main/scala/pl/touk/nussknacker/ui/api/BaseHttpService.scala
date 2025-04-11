@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
+import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, HttpServiceServerEndpoint}
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.api.SecurityError.InsufficientPermission
+import sttp.capabilities.pekko.PekkoStreams
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
 import java.util.concurrent.atomic.AtomicReference
@@ -17,13 +18,13 @@ abstract class BaseHttpService(
   // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
   type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
 
-  private val allServerEndpoints = new AtomicReference(List.empty[NoRequirementServerEndpoint])
+  private val allServerEndpoints = new AtomicReference(List.empty[HttpServiceServerEndpoint])
 
-  protected def expose(serverEndpoint: NoRequirementServerEndpoint): Unit = {
+  protected def expose(serverEndpoint: HttpServiceServerEndpoint): Unit = {
     expose(List(serverEndpoint))
   }
 
-  protected def expose(serverEndpoints: List[NoRequirementServerEndpoint]): Unit = {
+  protected def expose(serverEndpoints: List[HttpServiceServerEndpoint]): Unit = {
     allServerEndpoints
       .accumulateAndGet(
         serverEndpoints,
@@ -31,21 +32,21 @@ abstract class BaseHttpService(
       )
   }
 
-  protected def expose(when: => Boolean)(serverEndpoint: NoRequirementServerEndpoint): Unit = {
+  protected def expose(when: => Boolean)(serverEndpoint: HttpServiceServerEndpoint): Unit = {
     if (when) expose(serverEndpoint)
   }
 
-  def serverEndpoints: List[NoRequirementServerEndpoint] = allServerEndpoints.get()
+  def serverEndpoints: List[HttpServiceServerEndpoint] = allServerEndpoints.get()
 
   protected def authorizeAdminUser[BUSINESS_ERROR](
       credentials: AuthCredentials
   ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
     authorizeKnownUser[BUSINESS_ERROR](credentials)
       .map {
-        case right @ Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser)           => securityError(InsufficientPermission)
-        case Right(_: ImpersonatedUser)     => securityError(InsufficientPermission)
-        case error @ Left(_)                => error
+        case right @ Right(_: AdminUser) => right
+        case Right(_: CommonUser)        => securityError(InsufficientPermission)
+        case Right(_: ImpersonatedUser)  => securityError(InsufficientPermission)
+        case error @ Left(_)             => error
       }
   }
 
@@ -105,8 +106,7 @@ abstract class BaseHttpService(
 
 object BaseHttpService {
 
-  // we assume that our endpoints have no special requirements (in the Tapir sense)
-  type NoRequirementServerEndpoint = ServerEndpoint[Any, Future]
+  type HttpServiceServerEndpoint = ServerEndpoint[Any with PekkoStreams, Future]
 
   // it's marker interface which simplifies error handling when serverLogicEitherT is used
   trait CustomAuthorizationError

@@ -1,5 +1,7 @@
-import { PropsOf } from "@emotion/react";
-import React, { createContext, PropsWithChildren } from "react";
+import type { PropsOf } from "@emotion/react";
+import type { PropsWithChildren } from "react";
+import React, { createContext } from "react";
+
 import { ToolbarButtonWrapper } from "./ToolbarButtonStyled";
 
 export enum ButtonsVariant {

@@ -8,7 +8,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { Dimensions, ValidationResult } from "../../types";
+import type { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
@@ -35,7 +35,7 @@ const emptyGraphState: GraphState = {
             nodes: [],
             edges: [],
             properties: null,
-            stickyNotes: []
+            stickyNotes: [],
         },
     } as Scenario,
     layout: [],
@@ -74,7 +74,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
-            const newNodeids = sortBy(action.scenarioGraph.nodes.map((n) => n.id));
+            const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
+            const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
@@ -83,7 +84,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    ...action,
+                    ...scenarioWithStickyNotes,
                 },
             };
         }
@@ -97,6 +98,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testFormParameters: action.testFormParameters,
+            };
+        }
+        case "UPDATE_TEST_TYPE": {
+            return {
+                ...state,
+                testType: action.testType,
             };
         }
         case "DISPLAY_PROCESS": {

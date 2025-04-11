@@ -335,7 +335,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("button", "ad hoc").should("be.enabled").click();
+        cy.contains("button", "test").should("be.enabled").click();
         cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type("10");
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
@@ -366,12 +366,14 @@ describe("Process", () => {
 
     it("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
-        cy.viewport(1500, 800);
-        cy.layoutScenario();
-
-        cy.contains("a", "More details").click();
-        cy.get("[data-testid=window]").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.contains(/^More details$/i).click();
+        cy.get("[data-testid=window]")
+            .should("be.visible")
+            .within(() => {
+                cy.contains(/^last modified$/i).should("be.visible");
+            })
+            .matchImage({
+                maxDiffThreshold: 0.02,
+            });
     });
 });

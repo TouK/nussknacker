@@ -141,6 +141,11 @@
   Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
 * [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
 * [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
+* [#7871](https://github.com/TouK/nussknacker/pull/7871) Added Tapir variant of 'Custom HTTP Service' SPI
+  * Use `TapirCustomHttpServiceProvider` to implement custom Tapir based HTTP services. 
+    Those endpoints are automatically added to the Nussknacker OpenAPI documentation.
+  * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
+* [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
 * [#7824](https://github.com/TouK/nussknacker/pull/7824) Add Json type support for schemaless topic data with Json content type.
 
 ## 1.18

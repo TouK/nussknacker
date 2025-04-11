@@ -2,7 +2,7 @@ import type { PropsWithChildren } from "react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Parameter} from "../../../types";
+import type { Parameter } from "../../../types";
 import { ParameterCategory } from "../../../types";
 import { Expandable } from "../../common/Expandable";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";

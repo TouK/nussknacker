@@ -40,6 +40,7 @@ import { Events } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
+import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -329,7 +330,7 @@ export class Graph extends React.Component<Props> {
         }
 
         const cellBelow = this.getCellBelowCell();
-        if (isModelElement(cellBelow)) {
+        if (isModelElement(cellBelow) && node.type != StickyNoteType) {
             const currentNodes = this.props.scenario.scenarioGraph.nodes;
             const { nodes } = prepareNewNodesWithLayout(
                 currentNodes,

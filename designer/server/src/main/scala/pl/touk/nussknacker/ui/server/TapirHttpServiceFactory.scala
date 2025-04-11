@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.server
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.NotificationServiceImpl
@@ -26,7 +27,8 @@ object TapirHttpServiceFactory {
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
-      authManager: AuthManager
+      authManager: AuthManager,
+      customHttpServiceProviders: Map[String, TapirCustomHttpServiceProvider]
   ): NuDesignerExposedApiHttpService = {
     import domainServices._
     import infrastructureServices._
@@ -216,6 +218,9 @@ object TapirHttpServiceFactory {
       )
     }
 
+    val httpServiceExposingTapirCustomProviders =
+      new HttpServiceExposingTapirCustomProviders(customHttpServiceProviders, authManager)
+
     new NuDesignerExposedApiHttpService(
       appApiHttpService,
       componentsApiHttpService,
@@ -231,7 +236,8 @@ object TapirHttpServiceFactory {
       scenarioParametersHttpService,
       userApiHttpService,
       versionControlApiHttpService,
-      statisticsApiHttpService
+      statisticsApiHttpService,
+      httpServiceExposingTapirCustomProviders,
     )
   }
 
