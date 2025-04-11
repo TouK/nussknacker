@@ -1,6 +1,6 @@
+import type { ProcessName } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
-import { ThunkAction } from "../reduxTypes";
-import { ProcessName } from "../../components/Process/types";
+import type { ThunkAction } from "../reduxTypes";
 
 export function importFiles(processName: ProcessName, files: File[]): ThunkAction {
     return (dispatch) => {
@@ -8,7 +8,7 @@ export function importFiles(processName: ProcessName, files: File[]): ThunkActio
             try {
                 dispatch({ type: "PROCESS_LOADING" });
                 const process = await HttpService.importProcess(processName, file);
-                dispatch({ type: "UPDATE_IMPORTED_PROCESS", ...process.data });
+                dispatch({ type: "UPDATE_IMPORTED_PROCESS", scenario: process.data });
             } catch (error) {
                 dispatch({ type: "LOADING_FAILED" });
             }
