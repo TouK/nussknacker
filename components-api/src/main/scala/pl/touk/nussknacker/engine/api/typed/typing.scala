@@ -20,6 +20,7 @@ import scala.reflect.runtime.universe._
 // If changes are made to structure of TypingResult should also change Schemas in NodesApiEndpoints.TypingDtoSchemas for OpenApi
 object typing {
 
+
   object TypingResult {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
     implicit val decoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown) // TODO?
