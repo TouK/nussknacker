@@ -182,7 +182,7 @@ object DefaultHttpClientConfig {
       builder.addRequestFilter(new RequestFilter {
         override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
           val hostName = ctx.getRequest.getUri.getHost.toLowerCase
-          if (regexes.exists(r => r.matches(hostName))) {
+          if (regexes.exists(r => r.pattern.matcher(hostName).matches())) {
             throw new FilterException(s"Request to $hostName is forbidden")
           }
           ctx
@@ -198,7 +198,7 @@ object DefaultHttpClientConfig {
         override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
           val maybeHost = getLocalhostFromLocationHeader(ctx)
           maybeHost match {
-            case Some(host) if regexes.exists(r => r.matches(host)) =>
+            case Some(host) if regexes.exists(r => r.pattern.matcher(host).matches()) =>
               throw new FilterException(s"Redirect to $host is forbidden")
             case _ =>
           }
