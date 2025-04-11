@@ -181,6 +181,7 @@ object AssignabilityDeterminer {
       }
     }
 
+    // this check is done because we have GenericRecord to Map conversion in pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
     if (isGenericRecordToMapConversion(from, to, conversionChecker)) {
       valid(())
     } else {
