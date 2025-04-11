@@ -1,7 +1,8 @@
-import React, { PropsWithChildren, useEffect, useState } from "react";
-import copy from "copy-to-clipboard";
-import { Button, Tooltip } from "@mui/material";
 import { CopyAll, Done } from "@mui/icons-material";
+import { Button, Tooltip } from "@mui/material";
+import copy from "copy-to-clipboard";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useState } from "react";
 
 export function useCopyClipboard(): [boolean, (value: string) => void] {
     const [isCopied, setIsCopied] = useState<boolean>();
