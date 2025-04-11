@@ -271,7 +271,7 @@ class UniversalKafkaSourceFactory(
           .extractParameterForTests(parsedSchema)
           .map(_.toParameters)
           .map { params =>
-            val enrichedParams = params.collect {
+            val enrichedParams = params.map {
               case param if defaultValuesForTestParameters.contains(param.name) =>
                 param.copy(
                   defaultValue = Some(defaultValuesForTestParameters(param.name))
