@@ -62,13 +62,11 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   } yield Typed.record(fields, valueClass, additional)
 
   private def unknown(obj: HCursor): Decoder.Result[TypingResult] = {
-    for {
-      display <- obj.downField("display").as[String]
-    } yield display match {
-      case UnknownDisplayStrategy.display => Unknown
-      case JsonDisplayStrategy.display    => TypedJson
-      case _ => throw new IllegalStateException("Unrecognized display strategy for Unknown type")
-    }
+    obj
+      .downField("display")
+      .as[String]
+      .map(value => if (value == JsonDisplayStrategy.display) Right(TypedJson) else Right(Unknown))
+      .getOrElse(Right(Unknown)) // No display attribute, return Unknown
   }
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {

@@ -27,11 +27,8 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  PatientScalaFutures,
-  RestAssuredVerboseLoggingIfValidationFails
-}
+import pl.touk.nussknacker.test.{PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
+import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, JsonBody}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
@@ -60,7 +57,6 @@ import scala.jdk.CollectionConverters._
 class SchemalessKafkaJsonTypeTests
     extends AnyFreeSpecLike
     with NuItTest
-    with NuRestAssureExtensions
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with RestAssuredVerboseLoggingIfValidationFails
