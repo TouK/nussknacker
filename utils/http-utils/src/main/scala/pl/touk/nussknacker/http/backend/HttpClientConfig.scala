@@ -113,19 +113,18 @@ object DefaultHttpClientConfig {
     def setForbiddenCidrRequestFilter(
         ipSubnetFilterRules: Option[NonEmptyList[IpSubnetFilterRule]]
     ): DefaultAsyncHttpClientConfig.Builder =
-      ipSubnetFilterRules match {
-        case Some(rules) => addForbiddenHostsRequestFilter(rules)
-        case None        => builder
-      }
+      ipSubnetFilterRules
+        .map(addForbiddenHostsRequestFilter)
+        .getOrElse(builder)
 
     def setForbiddenHostResponseFilter(
         followRedirects: Boolean,
         ipSubnetFilterRules: Option[NonEmptyList[IpSubnetFilterRule]]
     ): DefaultAsyncHttpClientConfig.Builder =
-      ipSubnetFilterRules match {
-        case Some(rules) if followRedirects => addForbiddenHostsResponseFilter(rules)
-        case _                              => builder
-      }
+      ipSubnetFilterRules
+        .filter(_ => followRedirects)
+        .map(addForbiddenHostsResponseFilter)
+        .getOrElse(builder)
 
     private def addForbiddenHostsRequestFilter(
         ipSubnetFilterRules: NonEmptyList[IpSubnetFilterRule]
