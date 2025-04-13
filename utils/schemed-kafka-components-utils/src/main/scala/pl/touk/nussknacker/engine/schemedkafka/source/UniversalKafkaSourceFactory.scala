@@ -26,8 +26,8 @@ import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  schemaVersionParamName,
-  sinkValueParamName
+  inputParamName,
+  schemaVersionParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
@@ -231,7 +231,7 @@ class UniversalKafkaSourceFactory(
       if (params.isPresent(dataSampleParamName)) {
         params
           .extract[Json](dataSampleParamName)
-          .map { dataSample => sinkValueParamName -> Expression.json(dataSample.spaces2) }
+          .map { dataSample => inputParamName -> Expression.json(dataSample.spaces2) }
           .toMap
       } else {
         Map.empty

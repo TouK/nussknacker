@@ -273,7 +273,7 @@ object SchemalessKafkaJsonTypeTests {
          |        "variablesToHide": [],
          |        "branchParam": false,
          |        "hintText": null,
-         |        "label": "Value",
+         |        "label": "Input",
          |        "requiredParam": true,
          |        "category": "Standard"
          |      }
