@@ -89,7 +89,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |    }
                                              |  }
                                              |  isLocalhostAllowed: false
-                                             |  forbiddenHosts: ["namespace.service.svc.cluster.local"]
+                                             |  forbiddenCidrs: ["127.0.0.0/8", "::1/128"]
                                              |}
                                              |  """.stripMargin)
 
@@ -107,8 +107,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
           "someScenario" -> DefaultHttpClientConfig().copy(timeout = Some(3 seconds))
         )
       ),
-      forbiddenHosts = Some(List("namespace.service.svc.cluster.local")),
-      isLocalhostAllowed = Some(false),
+      forbiddenCidrs = Some(List("127.0.0.0/8", "::1/128")),
     )
   }
 

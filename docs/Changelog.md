@@ -149,8 +149,7 @@
 * [#7937](https://github.com/TouK/nussknacker/pull/7937) Data sample from Kafka Source as initial input for Ad-Hoc test
 * [#7864](https://github.com/TouK/nussknacker/pull/7864) Add the forbidden hosts feature to the http client configuration,
   if `followRedirect` is enabled then `Location` response header is also checked:
-  * `forbiddenHost` - list of forbidden hosts.
-  * `isLocalhostAllowed` - whether the called address can be located in the localhost.
+  * `forbiddenCidrs` - list of forbidden Cidr.
 
 ## 1.18
 

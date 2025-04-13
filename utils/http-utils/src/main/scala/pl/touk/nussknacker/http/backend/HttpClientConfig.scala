@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.http.backend
 
 import cats.data.NonEmptyList
-import com.typesafe.scalalogging.LazyLogging
 import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.ipfilter.{IpFilterRuleType, IpSubnetFilterRule}
 import net.ceedubs.ficus.readers.ValueReader
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.asynchttpclient.filter.{FilterContext, FilterException, RequestFilter, ResponseFilter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.http.backend.DefaultHttpClientConfig.{hostToInetAddress, ClientConfigBuilderExtension}
+import pl.touk.nussknacker.http.backend.DefaultHttpClientConfig.ClientConfigBuilderExtension
 import pl.touk.nussknacker.http.backend.HttpClientConfig.EffectiveHttpClientConfig
 import sttp.client3.SttpBackendOptions
 
-import java.net.{InetAddress, MalformedURLException, NetworkInterface, SocketException, UnknownHostException, URL}
+import java.net.{InetSocketAddress, URI}
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -24,8 +24,7 @@ case class HttpClientConfig(
     forceShutdown: Option[Boolean],
     // this can be used to tune single scenario
     configForProcess: Option[Map[String, HttpClientConfig]],
-    isLocalhostAllowed: Option[Boolean],
-    forbiddenHosts: Option[List[String]],
+    forbiddenCidrs: Option[List[String]],
 ) {
 
   def toAsyncHttpClientConfig(processName: Option[ProcessName]): DefaultAsyncHttpClientConfig.Builder = {
@@ -37,10 +36,8 @@ case class HttpClientConfig(
       .setUseNativeTransport(effectiveConfig.useNative)
       .setFollowRedirect(effectiveConfig.followRedirect)
       .setThreadPoolName(processName.map(_.value + s"-http-pool").getOrElse(s"http-pool"))
-      .setForbiddenLocalhostRequestFilter(!effectiveConfig.isLocalhostAllowed)
-      .setForbiddenLocalhostResponseFilter(!effectiveConfig.isLocalhostAllowed && effectiveConfig.followRedirect)
-      .setForbiddenHostRequestFilter(effectiveConfig.resolvedForbiddenHosts)
-      .setForbiddenHostResponseFilter(effectiveConfig.followRedirect, effectiveConfig.resolvedForbiddenHosts)
+      .setForbiddenCidrRequestFilter(effectiveConfig.resolvedCidrs)
+      .setForbiddenHostResponseFilter(effectiveConfig.followRedirect, effectiveConfig.resolvedCidrs)
   }
 
   def toSttpBackendOptions(processName: Option[ProcessName]): SttpBackendOptions = {
@@ -61,8 +58,7 @@ case class HttpClientConfig(
       useNative = extractConfig(_.useNative, false),
       followRedirect = extractConfig(_.followRedirect, false),
       forceShutdown = extractConfig(_.forceShutdown, false),
-      isLocalhostAllowed = extractConfig(_.isLocalhostAllowed, true),
-      forbiddenHosts = extractConfig(_.forbiddenHosts.map(NonEmptyList.fromList), None),
+      forbiddenCidr = extractConfig(_.forbiddenCidrs.map(NonEmptyList.fromList), None),
     )
   }
 
@@ -77,19 +73,11 @@ object HttpClientConfig {
       useNative: Boolean,
       followRedirect: Boolean,
       forceShutdown: Boolean,
-      isLocalhostAllowed: Boolean,
-      forbiddenHosts: Option[NonEmptyList[String]],
-  ) extends LazyLogging {
+      forbiddenCidr: Option[NonEmptyList[String]],
+  ) {
 
-    lazy val resolvedForbiddenHosts: Option[NonEmptyList[InetAddress]] = forbiddenHosts.flatMap(hosts => {
-      val resolvedHosts = hosts.toList.flatMap(host =>
-        hostToInetAddress(host).orElse {
-          logger.warn(s"Cannot resolve host: $host - verifying if it's forbidden is skipped")
-          None
-        }
-      )
-      NonEmptyList.fromList(resolvedHosts)
-    })
+    lazy val resolvedCidrs: Option[NonEmptyList[IpSubnetFilterRule]] = forbiddenCidr
+      .map(_.map(cidrString => new IpSubnetFilterRule(cidrString, IpFilterRuleType.REJECT)))
 
   }
 
@@ -105,126 +93,87 @@ object HttpClientConfig {
       followRedirect = forOption[Boolean]("followRedirect"),
       forceShutdown = forOption[Boolean]("forceShutdown"),
       configForProcess = forOption("configForProcess")(mapValueReader(vr)),
-      isLocalhostAllowed = forOption[Boolean]("isLocalhostAllowed"),
-      forbiddenHosts = forOption[List[String]]("forbiddenHosts"),
+      forbiddenCidrs = forOption[List[String]]("forbiddenCidrs"),
     )
   })
 
 }
 
 object DefaultHttpClientConfig {
+  private val httpScheme = "http"
 
-  def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None, None, None)
+  def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None, None)
 
   val maxPoolSize: Int = 20
 
   val timeout: FiniteDuration = 10 seconds
 
-  private[backend] def hostToInetAddress(host: String): Option[InetAddress] =
-    Try(InetAddress.getByName(host)).toOption
-
   implicit class ClientConfigBuilderExtension(val builder: DefaultAsyncHttpClientConfig.Builder) extends AnyVal {
 
-    def setForbiddenLocalhostRequestFilter(isFilterEnabled: Boolean): DefaultAsyncHttpClientConfig.Builder = {
-      if (isFilterEnabled) {
-        builder.addRequestFilter(new RequestFilter {
-          override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
-            val hostName = ctx.getRequest.getUri.getHost
-            if (isLocalhost(hostName)) {
-              throw new FilterException(s"Request to $hostName is forbidden")
-            }
-            ctx
-          }
-        })
-      } else {
-        builder
-      }
-    }
-
-    def setForbiddenLocalhostResponseFilter(isFilterEnabled: Boolean): DefaultAsyncHttpClientConfig.Builder = {
-      if (isFilterEnabled) {
-        builder.addResponseFilter(new ResponseFilter {
-          override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
-            val maybeHost = getHostFromLocationHeader(ctx)
-            maybeHost match {
-              case Some(host) if isLocalhost(host) => throw new FilterException(s"Redirect to $host is forbidden")
-              case _                               =>
-            }
-            ctx
-          }
-        })
-      } else {
-        builder
-      }
-    }
-
-    def setForbiddenHostRequestFilter(
-        forbiddenInetAddresses: Option[NonEmptyList[InetAddress]]
+    def setForbiddenCidrRequestFilter(
+        ipSubnetFilterRules: Option[NonEmptyList[IpSubnetFilterRule]]
     ): DefaultAsyncHttpClientConfig.Builder =
-      forbiddenInetAddresses match {
-        case Some(addresses) => addForbiddenHostsRequestFilter(addresses.toList.toSet)
-        case None            => builder
+      ipSubnetFilterRules match {
+        case Some(rules) => addForbiddenHostsRequestFilter(rules)
+        case None        => builder
       }
 
     def setForbiddenHostResponseFilter(
         followRedirects: Boolean,
-        forbiddenInetAddresses: Option[NonEmptyList[InetAddress]]
+        ipSubnetFilterRules: Option[NonEmptyList[IpSubnetFilterRule]]
     ): DefaultAsyncHttpClientConfig.Builder =
-      forbiddenInetAddresses match {
-        case Some(addresses) if followRedirects => addForbiddenHostsResponseFilter(addresses.toList.toSet)
-        case _                                  => builder
+      ipSubnetFilterRules match {
+        case Some(rules) if followRedirects => addForbiddenHostsResponseFilter(rules)
+        case _                              => builder
       }
-
-    private def isLocalhost(host: String): Boolean = Try {
-      val inetAddress = InetAddress.getByName(host)
-      if (inetAddress.isLoopbackAddress || inetAddress.isAnyLocalAddress) {
-        true
-      } else {
-        NetworkInterface.getByInetAddress(inetAddress) != null
-      }
-    }.recover { case _: UnknownHostException | _: SocketException | _: MalformedURLException =>
-      false
-    }.get
-
-    private def getHostFromLocationHeader(ctx: FilterContext[_]): Option[String] =
-      Option(ctx.getResponseHeaders)
-        .flatMap(h => Option(h.get(HttpHeaderNames.LOCATION)))
-        .flatMap(location => Try(new URL(location).getHost).toOption)
 
     private def addForbiddenHostsRequestFilter(
-        forbiddenInetAddresses: Set[InetAddress]
+        ipSubnetFilterRules: NonEmptyList[IpSubnetFilterRule]
     ): DefaultAsyncHttpClientConfig.Builder = {
       builder.addRequestFilter(new RequestFilter {
         override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
-          val maybeInetAddress = hostToInetAddress(ctx.getRequest.getUri.getHost)
-          checkAddressAllowed(forbiddenInetAddresses, maybeInetAddress)
+          val maybeURI = Try(ctx.getRequest.getUri.toJavaNetURI).toOption
+          checkAddressAllowed(ipSubnetFilterRules, maybeURI)
           ctx
         }
       })
     }
 
     private def addForbiddenHostsResponseFilter(
-        forbiddenInetAddresses: Set[InetAddress]
+        ipSubnetFilterRules: NonEmptyList[IpSubnetFilterRule]
     ): DefaultAsyncHttpClientConfig.Builder = {
       builder.addResponseFilter(new ResponseFilter {
         override def filter[T](ctx: FilterContext[T]): FilterContext[T] = {
-          val maybeInetAddress = getHostFromLocationHeader(ctx).flatMap(hostToInetAddress)
-          checkAddressAllowed(forbiddenInetAddresses, maybeInetAddress)
+          val maybeURI = getURIFromLocationHeader(ctx)
+          checkAddressAllowed(ipSubnetFilterRules, maybeURI)
           ctx
         }
       })
     }
 
-  }
+    private def checkAddressAllowed(
+        ipSubnetFilterRules: NonEmptyList[IpSubnetFilterRule],
+        maybeURI: Option[URI],
+    ): Unit =
+      maybeURI match {
+        case Some(uri) if ipSubnetFilterRules.exists(filter => filter.matches(toInetSocketAddress(uri))) =>
+          throw new FilterException(s"Redirect to ${uri.getHost} is forbidden")
+        case _ =>
+      }
 
-  private def checkAddressAllowed(
-      forbiddenInetAddresses: Set[InetAddress],
-      maybeInetAddress: Option[InetAddress]
-  ): Unit =
-    maybeInetAddress match {
-      case Some(host) if forbiddenInetAddresses.contains(host) =>
-        throw new FilterException(s"Redirect to $host is forbidden")
-      case _ =>
+    private def toInetSocketAddress(uri: URI): InetSocketAddress = {
+      val port = uri.getPort match {
+        case -1 => if (httpScheme.equalsIgnoreCase(uri.getScheme)) 80 else 443
+        case p  => p
+      }
+      new InetSocketAddress(uri.getHost, port)
     }
+
+    private def getURIFromLocationHeader(ctx: FilterContext[_]): Option[URI] =
+      Option(ctx.getResponseHeaders)
+        .flatMap(h => Option(h.get(HttpHeaderNames.LOCATION)))
+        .flatMap(location => Try(new URI(location)).toOption)
+
+  }
 
 }
