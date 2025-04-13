@@ -333,6 +333,7 @@ class UniversalKafkaSourceFactory(
       .optional[Any](dataSampleParamName)
       .withCreator(
         modify = _.copy(
+          typ = TypedJson,
           editors = List(JsonParameterEditor),
           defaultValue = Some(Expression.json("{}")),
           hintText = Some(
