@@ -43,9 +43,9 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2)
+        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2, 10))
         .post(
-          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generate/10"
+          s"$designerServiceUrl/api/scenarioTest/$scenarioName/generatedTestData"
         )
         .Then()
         .statusCode(200)
@@ -68,9 +68,9 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2)
+        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2, 1))
         .post(
-          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generate/1"
+          s"$designerServiceUrl/api/scenarioTest/$scenarioName/generatedTestData"
         )
         .Then()
         .statusCode(200)
@@ -252,5 +252,14 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(in(Array[Integer](201, 400)))
   }
+
+  private def testDataGenerationRequest(
+      scenarioGraphStr: String,
+      numberOfSamples: Int,
+  ) =
+    s"""{
+       |  "scenarioGraph": $scenarioGraphStr,
+       |  "numberOfSamples": $numberOfSamples
+       |}""".stripMargin
 
 }

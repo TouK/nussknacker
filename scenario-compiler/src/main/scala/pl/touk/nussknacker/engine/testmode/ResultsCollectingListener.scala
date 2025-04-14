@@ -75,7 +75,6 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
       processMetaData: MetaData,
       result: Any
   ): Unit = {
-    println(s"XXXXX expressionEvaluated $nodeId $expressionId $expression $context $processMetaData $result")
     updateResults(_.updateExpressionResult(nodeId, context, expressionId, result, variableEncoder))
   }
 
@@ -88,7 +87,6 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
   ): Unit = {}
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit = {
-    println(s"XXXXX exceptionThrown $exceptionInfo")
     updateResults(_.updateExceptionResult(exceptionInfo, variableEncoder))
   }
 
@@ -151,7 +149,6 @@ object ResultsCollectingListenerHolder {
         runId,
         (_: TestRunId, output: TestResults[Any]) => {
           val newValue = action(output)
-          println(s"QQQQQ $newValue")
           newValue
         }
       )

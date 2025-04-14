@@ -27,7 +27,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/validate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -51,7 +51,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/validate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -71,7 +71,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(parametersProvidedForDryRun)
-      .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/test")
       .Then()
       .statusCode(200)
       .body(
@@ -92,12 +92,21 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/parameters")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/capabilities")
       .Then()
       .statusCode(200)
-      .equalsJsonBody(
-        expectedTestParametersJson
-      )
+      .equalsJsonBody(responseWithParameters(expectedTestParametersJson))
   }
+
+  def responseWithParameters(parametersJson: String): String =
+    s"""{
+       |    "testWithParameters": {
+       |      "status": "AVAILABLE",
+       |      "sourceParameters": $parametersJson
+       |    },
+       |    "testWithGeneratedData": {
+       |      "status": "AVAILABLE"
+       |    }
+       |}""".stripMargin
 
 }

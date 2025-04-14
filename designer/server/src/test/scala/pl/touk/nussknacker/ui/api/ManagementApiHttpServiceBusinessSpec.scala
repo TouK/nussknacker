@@ -54,22 +54,25 @@ class ManagementApiHttpServiceBusinessSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-            | "sourceParameters": {
-            |   "sourceId": "1",
-            |   "parameterExpressions": {
-            |     "param1": {
-            |       "language": "spel",
-            |       "expression": "1"
-            |     },
-            |     "param2": {
-            |       "language": "spel",
-            |       "expression": "test"
+            | "testData": {
+            |   "type": "WITH_PARAMETERS",
+            |   "sourceParameters": {
+            |     "sourceId": "1",
+            |     "parameterExpressions": {
+            |       "param1": {
+            |         "language": "spel",
+            |         "expression": "1"
+            |       },
+            |       "param2": {
+            |         "language": "spel",
+            |         "expression": "test"
+            |       }
             |     }
             |   }
             | },
             | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
             |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/test")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -77,6 +80,8 @@ class ManagementApiHttpServiceBusinessSpec
              |{
              |  "results": {
              |    "nodeResults": {},
+             |    "nodeEdgeOutputResults":{},
+             |    "nodeDeadEndOutputResults":{},
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
              |    "exceptions": []
