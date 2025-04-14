@@ -13,7 +13,7 @@ import { ActivityItemComment } from "./ActivityItemComment";
 import ActivityItemHeader from "./ActivityItemHeader";
 import { useActivityItemInfo } from "./ActivityItemProvider";
 
-const humanizeString = (str: string) => upperFirst(lowerCase(str));
+export const humanizeString = (str: string) => upperFirst(lowerCase(str));
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: theme.spacing(0.5, 1.25),
