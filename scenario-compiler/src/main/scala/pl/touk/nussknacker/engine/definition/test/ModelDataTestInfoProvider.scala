@@ -30,8 +30,14 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     if (sources.isEmpty) {
       Left(TestingCapabilitiesError.NoSourcesError)
     } else {
-      val capabilities   = sources.map(getTestingCapabilities(_, jobData))
-      val (_, successes) = capabilities.partitionMap(identity)
+      val capabilities = sources.map(getTestingCapabilities(_, jobData))
+      val (_, rights) = capabilities.foldLeft(
+        (List.empty[TestingCapabilitiesError], List.empty[TestingCapabilities])
+      ) {
+        case ((ls, rs), Left(l))  => (l :: ls, rs)
+        case ((ls, rs), Right(r)) => (ls, r :: rs)
+      }
+      val successes = rights.reverse
       successes match {
         case Nil =>
           if (sources.isEmpty) Left(TestingCapabilitiesError.NoSourcesError)

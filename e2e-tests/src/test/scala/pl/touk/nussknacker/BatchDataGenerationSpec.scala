@@ -68,7 +68,7 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2, 1))
+        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2, 1))
         .post(
           s"$designerServiceUrl/api/scenarioTest/$scenarioName/generatedTestData"
         )
@@ -95,9 +95,17 @@ class BatchDataGenerationSpec
       .when()
       .request()
       .basicAuthAdmin()
-      .jsonBody(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2)
+      .jsonBody(
+        s"""{
+           | "testData": {
+           |   "type": "WITH_GENERATED_DATA",
+           |   "numberOfSamples": 1
+           | },
+           | "scenarioGraph": ${toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2}
+           |}""".stripMargin
+      )
       .post(
-        s"$designerServiceUrl/api/processManagement/generateAndTest/$scenarioName/1"
+        s"$designerServiceUrl/api/scenarioTest/$scenarioName/test"
       )
       .Then()
       .statusCode(200)
@@ -129,7 +137,43 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                "datetime": "2024-01-01T10:00:00",
            |                "client_id": "client1",
-           |                "amount": 100.1,
+           |                "amount": 100.10,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "nodeEdgeOutputResults": {
+           |      "sourceId->end": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.10,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "nodeDeadEndOutputResults": {
+           |      "end": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.10,
            |                "amountDoubled": 200.20,
            |                "file.name": "transactions.ndjson"
            |              }
@@ -188,11 +232,11 @@ class BatchDataGenerationSpec
            |          "variables": {
            |            "input": {
            |              "pretty": {
-           |                 "datetime": "2024-07-19T08:56:08.485",
-           |                 "client_id": "aClientId",
-           |                 "amount": 123123.12,
-           |                 "amountDoubled": 246246.24,
-           |                 "file.name": "foo.ndjson"
+           |                "datetime": "2024-07-19T08:56:08.485",
+           |                "client_id": "aClientId",
+           |                "amount": 123123.12,
+           |                "amountDoubled": 246246.24,
+           |                "file.name": "foo.ndjson"
            |              }
            |            }
            |          }
@@ -209,6 +253,42 @@ class BatchDataGenerationSpec
            |                 "amount": 123123.12,
            |                 "amountDoubled": 246246.24,
            |                 "file.name": "foo.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "nodeEdgeOutputResults": {
+           |      "sourceId->end": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-07-19T08:56:08.485",
+           |                "client_id": "aClientId",
+           |                "amount": 123123.12,
+           |                "amountDoubled": 246246.24,
+           |                "file.name": "foo.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "nodeDeadEndOutputResults": {
+           |      "end": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-07-19T08:56:08.485",
+           |                "client_id": "aClientId",
+           |                "amount": 123123.12,
+           |                "amountDoubled": 246246.24,
+           |                "file.name": "foo.ndjson"
            |              }
            |            }
            |          }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ParametersDefinitionError,
   ScenarioTestDataGenerationError,
@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError
 import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError._
@@ -33,7 +35,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
-import pl.touk.nussknacker.ui.security.api.AuthManager
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 import sttp.model.StatusCode.NotFound
 import sttp.tapir.{oneOfVariant, plainBody, Codec, CodecFormat, EndpointOutput}
@@ -43,6 +45,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestApiHttpService(
     authManager: AuthManager,
+    scenarioAuthorizer: AuthorizeProcess,
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     protected override val scenarioService: ProcessService
@@ -114,6 +117,9 @@ class ScenarioTestApiHttpService(
         { case (scenarioName, request) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT
+              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
+            _ <- isAuthorized(processId, Permission.Deploy)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
@@ -257,6 +263,18 @@ class ScenarioTestApiHttpService(
         TooManySamplesRequested(maxSamples)
     }
   }
+
+  private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, TestingError, Unit] =
+    EitherT(
+      scenarioAuthorizer
+        .check(scenarioId, permission, loggedUser)
+        .map[Either[TestingError, Unit]] {
+          case true  => Right(())
+          case false => Left(noPermissionError)
+        }
+    )
 
 }
 
