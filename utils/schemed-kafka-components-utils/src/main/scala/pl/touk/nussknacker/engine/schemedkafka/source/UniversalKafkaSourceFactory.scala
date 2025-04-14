@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedJson, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
@@ -90,7 +90,7 @@ class UniversalKafkaSourceFactory(
           (
             Some(runtimeDataForJsonSchema),
             // This is the type after it leaves source
-            TypedJson
+            Typed.json
           )
         )
       } else {
@@ -333,7 +333,7 @@ class UniversalKafkaSourceFactory(
       .optional[Any](dataSampleParamName)
       .withCreator(
         modify = _.copy(
-          typ = TypedJson,
+          typ = Typed.json,
           editors = List(JsonParameterEditor),
           defaultValue = Some(Expression.json("{}")),
           hintText = Some(

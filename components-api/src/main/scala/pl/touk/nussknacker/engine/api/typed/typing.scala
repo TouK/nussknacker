@@ -186,8 +186,7 @@ object typing {
     override val display: String            = displayStrategy.display
   }
 
-  object Unknown   extends Unknown(UnknownDisplayStrategy)
-  object TypedJson extends Unknown(JsonDisplayStrategy)
+  object Unknown extends Unknown(UnknownDisplayStrategy)
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
@@ -278,6 +277,8 @@ object typing {
     def apply(klass: Class[_]): TypingResult = {
       if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
+
+    val json: Unknown = new Unknown(JsonDisplayStrategy)
 
     // TODO: how to assert in compile time that T != Any, AnyRef, Object?
     // TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.

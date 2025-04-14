@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedJson, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
@@ -234,7 +234,7 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def extractParameterForTests(schema: ParsedSchema)(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
     val parameter =
-      Parameter(inputParamName, TypedJson).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
+      Parameter(inputParamName, Typed.json).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
     Valid(
       SingleSchemaBasedParameter(
         parameter,

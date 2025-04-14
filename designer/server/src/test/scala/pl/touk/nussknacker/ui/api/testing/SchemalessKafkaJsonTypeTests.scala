@@ -17,7 +17,7 @@ import io.restassured.RestAssured.`given`
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedJson, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -115,10 +115,10 @@ class SchemalessKafkaJsonTypeTests
           .asString()
 
         val typingResult = getTypingResultFromValidationResponse(response)
-        typingResult("input") shouldBe TypedJson
+        typingResult("input") shouldBe Typed.json
         typingResult(variablesNodeName) match {
           case TypedObjectTypingResult(fields, _, _) =>
-            fields(nameVariable) shouldBe TypedJson
+            fields(nameVariable) shouldBe Typed.json
             fields(ageVariable) shouldBe Typed.typedClass[Int]
             fields(isAdultVariable) shouldBe Typed.typedClass[Boolean]
           case _ => fail

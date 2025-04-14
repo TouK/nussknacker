@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import io.circe._
 import pl.touk.nussknacker.engine.api.json.TypingType
 import pl.touk.nussknacker.engine.api.json.TypingType.{typeField, TypingType}
-import pl.touk.nussknacker.engine.api.typed.typing.{UnknownDisplayStrategy, _}
+import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
@@ -42,6 +42,16 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     case e                     => Left(s"$e is not SingleTypingResult")
   }
 
+  private implicit val displayUnknownDecoder: Decoder[Unknown] = Decoder.instance { cursor =>
+    cursor
+      .as[String]
+      .map {
+        case JsonDisplayStrategy.display => Typed.json
+        case _                           => Unknown
+      }
+      .fold(_ => Right(Unknown), Right(_)) // In case of no display attribute, return Unknown
+  }
+
   private def typedTaggedValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
     tag        <- obj.downField("tag").as[String]
@@ -61,13 +71,10 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       .map(_.getOrElse(Map.empty))
   } yield Typed.record(fields, valueClass, additional)
 
-  private def unknown(obj: HCursor): Decoder.Result[TypingResult] = {
+  private def unknown(obj: HCursor): Decoder.Result[TypingResult] =
     obj
       .downField("display")
-      .as[String]
-      .map(value => if (value == JsonDisplayStrategy.display) Right(TypedJson) else Right(Unknown))
-      .getOrElse(Right(Unknown)) // No display attribute, return Unknown
-  }
+      .as[Unknown]
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
     val dict = obj.downField("dict")
