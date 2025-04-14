@@ -100,7 +100,8 @@ object HttpClientConfig {
 }
 
 object DefaultHttpClientConfig {
-  private val httpScheme = "http"
+  private val httpScheme  = "http"
+  private val unknownPort = -1
 
   def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None, None)
 
@@ -162,8 +163,8 @@ object DefaultHttpClientConfig {
 
     private def toInetSocketAddress(uri: URI): InetSocketAddress = {
       val port = uri.getPort match {
-        case -1 => if (httpScheme.equalsIgnoreCase(uri.getScheme)) 80 else 443
-        case p  => p
+        case `unknownPort` => if (httpScheme.equalsIgnoreCase(uri.getScheme)) 80 else 443
+        case p             => p
       }
       new InetSocketAddress(uri.getHost, port)
     }
