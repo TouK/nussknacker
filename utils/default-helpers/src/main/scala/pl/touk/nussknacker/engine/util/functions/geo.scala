@@ -6,6 +6,8 @@ object geo extends GeoUtils
 
 trait GeoUtils extends HideToString {
 
+  import GeoUtils._
+
   @Documentation(description =
     "Calculate distance in kilometers between two points (with decimal coordinates), using the Haversine formula"
   )
@@ -25,10 +27,13 @@ trait GeoUtils extends HideToString {
       lat2.doubleValue().toRadians
     )
     val c = 2 * asin(sqrt(a))
-    // 6371 is recommended by the International Union of Geodesy and Geophysics,
-    // it minimizes the RMS relative error between the great circle and geodesic distance
-    val R = 6371
-    c * R
+    c * EARTH_MEAN_RADIUS
   }
 
+}
+
+object GeoUtils {
+  // 6371 is recommended by the International Union of Geodesy and Geophysics,
+  // it minimizes the RMS relative error between the great circle and geodesic distance
+  val EARTH_MEAN_RADIUS: Long = 6371
 }
