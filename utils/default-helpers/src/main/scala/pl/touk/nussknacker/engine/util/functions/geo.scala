@@ -7,34 +7,28 @@ object geo extends GeoUtils
 trait GeoUtils extends HideToString {
 
   @Documentation(description =
-    "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm"
+    "Calculate distance in kilometers between two points (with decimal coordinates), using the Haversine formula"
   )
   def distanceInKm(
-      @ParamName("first point latitude") currentLat: Number,
-      @ParamName("first point longitude") currentLon: Number,
-      @ParamName("second point latitude") otherLat: Number,
-      @ParamName("first point longitude") otherLon: Number
-  ): Double =
-    distanceInKm(toPoint(currentLat, currentLon), toPoint(otherLat, otherLon))
-
-  @Documentation(description =
-    "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm"
-  )
-  // https://rosettacode.org/wiki/Haversine_formula#Scala
-  def distanceInKm(@ParamName("first point") current: Point, @ParamName("second point") other: Point): Double = {
-    val dLat = (current.lat - other.lat).toRadians
-    val dLon = (current.lon - other.lon).toRadians
-
+      @ParamName("First point - latitude") lat1: Number,
+      @ParamName("First point - longitude") lon1: Number,
+      @ParamName("Second point - latitude") lat2: Number,
+      @ParamName("Second point - longitude") lon2: Number
+  ): Double = {
+    // https://rosettacode.org/wiki/Haversine_formula#Scala
     import scala.math._
 
-    val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(current.lon.toRadians) * cos(other.lat.toRadians)
+    val dLat = (lat1.doubleValue() - lat2.doubleValue()).toRadians
+    val dLon = (lon1.doubleValue() - lon2.doubleValue()).toRadians
+
+    val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(lat1.doubleValue().toRadians) * cos(
+      lat2.doubleValue().toRadians
+    )
     val c = 2 * asin(sqrt(a))
-    val R = 6372.8
+    // 6371 is recommended by the International Union of Geodesy and Geophysics,
+    // it minimizes the RMS relative error between the great circle and geodesic distance
+    val R = 6371
     c * R
   }
 
-  def toPoint(lat: Number, lon: Number): Point = Point(lat.doubleValue(), lon.doubleValue())
-
 }
-
-case class Point(lat: Double, lon: Double)
