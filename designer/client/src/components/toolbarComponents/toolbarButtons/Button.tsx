@@ -1,6 +1,9 @@
 import { styled } from "@mui/material";
 
 export const Button = styled("button")(({ theme }) => ({
+    "--margin": "2px",
+    margin: "calc(var(--margin))",
+    borderRadius: "calc(3 * var(--margin))",
     display: "flex",
     alignItems: "center",
     justifyContent: "start",
@@ -9,7 +12,7 @@ export const Button = styled("button")(({ theme }) => ({
     height: "fit-content",
     outline: "none",
     backgroundColor: "transparent",
-    padding: "4px 0",
+    padding: 0,
     flexDirection: "column",
-    color: theme.palette.text.secondary,
+    color: "inherit",
 }));

@@ -4,14 +4,23 @@ import type { DropEvent } from "react-dropzone";
 import type { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons";
 
 type ButtonProps = React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
-type DivProps = React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
-type ElementProps = ButtonProps & DivProps;
 
-export type ToolbarButtonProps = Omit<ElementProps, "type" | "onDrop"> & {
+type BaseButtonProps = Omit<ButtonProps, "type" | "onDrop"> & {
     name: string;
     icon: React.JSX.Element | string;
     type: BuiltinButtonTypes | CustomButtonTypes;
-    onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
     hasError?: boolean;
     isActive?: boolean;
 };
+
+type FileButtonProps = BaseButtonProps & {
+    onDrop: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
+};
+
+type PresetsButtonProps<Preset = { value: string; label: string }> = BaseButtonProps & {
+    presets: Preset[];
+    selected: Preset | null;
+    onPresetChange: (value: Preset) => void;
+};
+
+export type ToolbarButtonProps = BaseButtonProps | FileButtonProps | PresetsButtonProps;
