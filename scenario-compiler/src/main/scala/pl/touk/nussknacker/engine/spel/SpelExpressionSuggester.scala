@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
@@ -443,8 +444,9 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       validationContext: ValidationContext
   ): Try[Option[(NuSpelNode, Int)]] = {
     val rawExpression = language match {
-      case Language.Spel         => Try(parser.parseExpression(input, null))
-      case Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+      case Language.Spel => Try(parser.parseExpression(input, null))
+      // TODO: LBG check whether it's working
+      case Language.SpelTemplate | JsonTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
       case Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json =>
         Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }

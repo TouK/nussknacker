@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -58,6 +58,7 @@ object JsonParser extends ExpressionParser {
 case class JsonExpressionTypingInfo(json: Json) extends ExpressionTypingInfo {
 
   override val typingResult: TypingResult = {
+    // TODO: For floating point type it is returning Integer and it's ok for now but maybe we should change it in the future.
     Typed.fromInstance(FromJsonSimpleDecoder.jsonToAny(json))
   }
 

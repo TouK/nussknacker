@@ -1,23 +1,25 @@
+import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
+import type React from "react";
+
+import type { VariableTypes } from "../../../../../types";
+import type { FieldError } from "../Validators";
 import { BoolEditor } from "./BoolEditor";
+import { CronEditor } from "./Cron/CronEditor";
+import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
+import { DictParameterEditor } from "./DictParameterEditor";
+import { DurationEditor } from "./Duration/DurationEditor";
+import { PeriodEditor } from "./Duration/PeriodEditor";
+import { FixedValuesEditor } from "./FixedValuesEditor";
+import JsonEditor from "./JsonEditor";
 import { SpelEditor } from "./SpelEditor";
 import { SqlEditor } from "./SqlEditor";
 import { StaticStringEditor } from "./StaticStringEditor";
-import { FixedValuesEditor } from "./FixedValuesEditor";
 import { EditorType, ExpressionLang, ExpressionObj } from "./types";
-import React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
-import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
-
-import { DurationEditor } from "./Duration/DurationEditor";
-import { PeriodEditor } from "./Duration/PeriodEditor";
-import { CronEditor } from "./Cron/CronEditor";
 import { TextareaEditor } from "./TextareaEditor";
-import JsonEditor from "./JsonEditor";
+import { JsonTemplateEditor } from "./JsonTemplateEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
-import { Formatter } from "./Formatter";
-import { VariableTypes } from "../../../../../types";
-import { FieldError } from "../Validators";
+import type { Formatter } from "./Formatter";
 import { TableEditor } from "./Table/TableEditor";
-import { DictParameterEditor } from "./DictParameterEditor";
 
 export type EditorProps = {
     onValueChange: OnValueChange;
@@ -69,6 +71,8 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
+    [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: JsonTemplateEditor,
+    // [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
 };
 
 export type OnValueChange = {

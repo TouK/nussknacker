@@ -23,22 +23,20 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   ): Option[Expression] = {
     // TODO: use classes instead of class names
     Option(className).map(_.getName).collect {
-      case "long" | "short" | "int" | "java.lang.Number" | "java.lang.Long" | "java.lang.Short" | "java.lang.Integer" |
-          "java.math.BigInteger" =>
-        Expression.spel("0")
-      case "float" | "double" | "java.math.BigDecimal" | "java.lang.Float" | "java.lang.Double" =>
-        Expression.spel("0.0")
-      case "boolean" | "java.lang.Boolean" => Expression.spel("true")
-      case "java.lang.String"              => defaultStringExpression(editor)
-      case "java.util.List"                => Expression.spel("{}")
-      case "java.util.Map"                 => Expression.spel("{:}")
+      case className if TypeValueDeterminer.isLikeIntegerNumber(className)       => Expression.spel("0")
+      case className if TypeValueDeterminer.isLikeFloatingPointNumber(className) => Expression.spel("0.0")
+      case className if TypeValueDeterminer.isBoolean(className)                 => Expression.spel("true")
+      case className if TypeValueDeterminer.isString(className)                  => defaultStringExpression(editor)
+      case className if TypeValueDeterminer.isList(className)                    => Expression.spel("{}")
+      case className if TypeValueDeterminer.isMap(className)                     => Expression.spel("{:}")
     }
   }
 
   private def defaultStringExpression(editor: Option[ParameterEditor]): Expression =
     EditorBasedLanguageDeterminer.determineLanguageOf(editor) match {
-      case Language.Spel => Expression.spel("''")
-      case Language.Json => Expression.json("{}")
+      case Language.Spel         => Expression.spel("''")
+      case Language.Json         => Expression.json("{}")
+      case Language.JsonTemplate => Expression.json("{}")
       case language @ (Language.SpelTemplate | Language.DictKeyWithLabel | Language.TabularDataDefinition) =>
         Expression(language, "")
     }
