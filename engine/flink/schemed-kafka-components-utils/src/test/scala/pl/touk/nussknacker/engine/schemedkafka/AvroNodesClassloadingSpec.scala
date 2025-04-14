@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestingCapabilitiesError.SourceCompilationError
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.AvroNodesClassloadingSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
@@ -46,7 +47,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     // we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
       new ModelDataTestInfoProvider(modelData)
-        .getTestingCapabilities(processVersion, scenario) shouldBe TestingCapabilities.Disabled
+        .getTestingCapabilities(processVersion, scenario) shouldBe Left(SourceCompilationError)
     }
   }
 
