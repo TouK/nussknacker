@@ -96,7 +96,7 @@ class SpelExpressionEvaluationException(val expression: String, cause: Throwable
     )
 
 class SpelExpression(
-    parsed: ParsedSpelExpression,
+    val parsed: ParsedSpelExpression,
     expectedReturnType: TypingResult,
     flavour: Flavour,
     evaluationContextPreparer: EvaluationContextPreparer

@@ -58,6 +58,7 @@ object JsonParser extends ExpressionParser {
 case class JsonExpressionTypingInfo(json: Json) extends ExpressionTypingInfo {
 
   override val typingResult: TypingResult = {
+    // TODO: For floating point type it is returning Integer and it's ok for now but maybe we should change it in the future.
     Typed.fromInstance(FromJsonSimpleDecoder.jsonToAny(json))
   }
 
