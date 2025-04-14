@@ -1,4 +1,5 @@
-import { Box, Menu, MenuItem, styled } from "@mui/material";
+import { alpha, decomposeColor, styled } from "@mui/material";
+import { blend } from "@mui/system/colorManipulator";
 import React from "react";
 import Dropzone from "react-dropzone";
 
@@ -28,5 +29,29 @@ function ToolbarButtonComponent(props: ToolbarButtonProps) {
     return <ButtonRoot {...props} />;
 }
 
-const StyledToolbarButton = styled(ToolbarButtonComponent)({});
+function splitAlpha(base: string) {
+    const colorObject = decomposeColor(base);
+    return {
+        alpha: colorObject.values[3] || 1,
+        color: alpha(base, 1),
+    };
+}
+
+const StyledToolbarButton = styled(ToolbarButtonComponent)(({ theme }) => {
+    const normal = theme.palette.background.paper;
+    const base = splitAlpha(theme.palette.action.hover);
+    const highlight = blend(normal, base.color, base.alpha);
+    return {
+        color: alpha(theme.palette.getContrastText(normal), 0.75),
+        ".toolbarButton-Root": {
+            backgroundColor: normal,
+        },
+        "&:hover": {
+            color: alpha(theme.palette.getContrastText(highlight), 0.75),
+            ".toolbarButton-Root, .toolbarButton-MenuExpand": {
+                backgroundColor: highlight,
+            },
+        },
+    };
+});
 export const ToolbarButton = StyledToolbarButton;

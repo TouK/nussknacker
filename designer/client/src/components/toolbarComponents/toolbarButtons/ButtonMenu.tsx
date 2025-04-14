@@ -1,6 +1,6 @@
 import type { PropsOf } from "@emotion/react";
 import { ArrowDropDown } from "@mui/icons-material";
-import { alpha, Menu, MenuItem, styled } from "@mui/material";
+import { Menu, MenuItem, styled } from "@mui/material";
 import React, { useContext } from "react";
 
 import type { Option } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
@@ -23,6 +23,9 @@ const ExpandButton = styled(Button)(({ theme }) => {
         right: 0,
         bottom: 0,
         color: "inherit",
+        ":hover &": {
+            backgroundColor: theme.palette.background.paper,
+        },
     };
 });
 
@@ -38,15 +41,7 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
         <ToolbarButton
             {...buttonProps}
             className={className}
-            sx={(theme) => ({
-                "&:focus-within": {
-                    ".toolbarButton-MenuExpand:not(:focus-within)": {
-                        filter: "brightness(.8)",
-                    },
-                    ".toolbarButton-Root:not(:focus-within)": {
-                        filter: "brightness(.8)",
-                    },
-                },
+            sx={{
                 "&:has(.toolbarButton-MenuExpand:hover)": {
                     ".toolbarButton-Root": {
                         filter: "brightness(.8)",
@@ -63,7 +58,7 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
                 ".toolbarButton-Label": {
                     display: ButtonsVariant.xs === variant ? "inline" : null,
                 },
-            })}
+            }}
         >
             <ExpandButton
                 sx={{

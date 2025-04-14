@@ -18,11 +18,11 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
     return (
         <Box
             className={className}
-            sx={(theme) => ({
-                color: theme.palette.text.secondary,
+            sx={{
+                pointerEvents: props.disabled ? "none" : null,
                 position: "relative",
                 overflow: "hidden",
-            })}
+            }}
         >
             <Button
                 ref={ref}
@@ -47,12 +47,6 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
                     color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
 
                     opacity: props.disabled ? 0.3 : 1,
-                    "&:hover": {
-                        backgroundColor: props.disabled ? "inherit" : theme.palette.action.hover,
-                    },
-                    "&, &:hover": {
-                        cursor: props.disabled ? "inherit" : "pointer",
-                    },
                 })}
             >
                 <Icon
