@@ -1,20 +1,22 @@
-import React, { useCallback, useMemo } from "react";
-import { flatten, sortBy, uniq } from "lodash";
-import { useFilterContext } from "../../common";
-import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
-import { useScenarioLabelsQuery, useScenariosWithCategoryVisible, useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
-import { QuickFilter } from "./quickFilter";
-import { FilterMenu } from "./filterMenu";
-import { SimpleOptionsStack } from "./simpleOptionsStack";
-import { TypeOptionsStack, StatusOptionsStack } from "./typeOptionsStack";
-import { SortOptionsStack } from "./sortOptionsStack";
-import { ActiveFilters } from "./activeFilters";
-import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { processingModeItems } from "../list/processingMode";
-import { ProcessingModeStack } from "./processingModeStack";
+import { flatten, sortBy, uniq } from "lodash";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
+import type { RowType } from "../list/listPart";
+import { processingModeItems } from "../list/processingMode";
+import { useScenarioLabelsQuery, useScenariosWithCategoryVisible, useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
+import { ActiveFilters } from "./activeFilters";
+import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
+import { FilterMenu } from "./filterMenu";
+import { ProcessingModeStack } from "./processingModeStack";
+import { QuickFilter } from "./quickFilter";
+import type { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModelType } from "./scenariosFiltersModel";
+import { SimpleOptionsStack } from "./simpleOptionsStack";
+import { SortOptionsStack } from "./sortOptionsStack";
+import { TypeOptionsStack, StatusOptionsStack } from "./typeOptionsStack";
 
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
@@ -42,7 +44,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
         map[obj.name] = obj.displayableName;
         return map;
     }, {});
-    const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter, setFilter, activeKeys } = useScenariosFilterContext();
 
     const getLabel = useCallback(
         (name: keyof ScenariosFiltersModel, value?: string | number) => {
