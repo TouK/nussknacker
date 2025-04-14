@@ -22,9 +22,9 @@ type Props = {
     variant?: ButtonsVariant;
 } & PropsOf<typeof ToolbarButtonsContainer>;
 
-export function ToolbarButtons({ variant = ButtonsVariant.label, ...props }: PropsWithChildren<Props>): JSX.Element {
+export function ToolbarButtons({ variant, ...props }: PropsWithChildren<Props>): JSX.Element {
     return (
-        <ToolbarButtonsContext.Provider value={{ variant }}>
+        <ToolbarButtonsContext.Provider value={{ variant: variant || ButtonsVariant.label }}>
             <ToolbarButtonsContainer {...props} />
         </ToolbarButtonsContext.Provider>
     );

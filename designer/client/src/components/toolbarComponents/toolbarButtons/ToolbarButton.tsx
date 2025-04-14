@@ -37,7 +37,7 @@ function splitAlpha(base: string) {
     };
 }
 
-const StyledToolbarButton = styled(ToolbarButtonComponent)(({ theme }) => {
+export const ToolbarButton = styled(ToolbarButtonComponent)(({ theme }) => {
     const normal = theme.palette.background.paper;
     const base = splitAlpha(theme.palette.action.hover);
     const highlight = blend(normal, base.color, base.alpha);
@@ -54,4 +54,3 @@ const StyledToolbarButton = styled(ToolbarButtonComponent)(({ theme }) => {
         },
     };
 });
-export const ToolbarButton = StyledToolbarButton;
