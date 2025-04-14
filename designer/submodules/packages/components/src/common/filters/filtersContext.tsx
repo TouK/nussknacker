@@ -63,7 +63,9 @@ export interface ValueLinker<M = any> {
 const FiltersModelContext = createContext<FiltersModelContextType>(null);
 const ValueLinkerContext = createContext<ValueLinker>(null);
 
-export function useFilterContext<M = unknown>(availableFilters: Record<string, unknown>): FiltersContextType<M> {
+export function useFilterContext<M = unknown, T extends Record<string, unknown> = Record<string, unknown>>(
+    availableFilters: T,
+): FiltersContextType<M> {
     const { setModel, model } = useContext<FiltersModelContextType<M>>(FiltersModelContext);
     const getValueLinker = useContext<ValueLinker<M>>(ValueLinkerContext);
 

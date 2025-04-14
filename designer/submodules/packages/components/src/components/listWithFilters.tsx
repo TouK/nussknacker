@@ -192,7 +192,7 @@ export function Components(): JSX.Element {
     return (
         <>
             <FiltersPart isLoading={isLoading} filterableValues={filterableValues} />
-            <ActiveFilters getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== "NAME")} />
+            <ActiveFilters getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== COMPONENTS_FILTER.NAME)} />
             <ComponentTable data={data} isLoading={isLoading} />
         </>
     );

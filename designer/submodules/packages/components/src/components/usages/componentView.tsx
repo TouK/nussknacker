@@ -10,7 +10,7 @@ import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenarios
 import { useComponentUsagesWithStatus } from "../useComponentsQuery";
 import { Breadcrumbs } from "./breadcrumbs";
 import { FiltersPart } from "./filtersPart";
-import { UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
+import { USAGES_FILTER, UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
 import type { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
 import { UsagesTable } from "./usagesTable";
 import { useUsagesFilterContext } from "./useUsagesFilterContext";
@@ -103,7 +103,7 @@ function Component(): JSX.Element {
             <ActiveFilters<UsagesFiltersModel>
                 getLabel={getLabel}
                 getColor={getColor}
-                activeKeys={activeKeys.filter((k) => k !== "TEXT")}
+                activeKeys={activeKeys.filter((k) => k !== USAGES_FILTER.TEXT)}
             />
             <UsagesTable data={data} isLoading={isLoading} />
         </>
