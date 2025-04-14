@@ -100,8 +100,7 @@ object HttpClientConfig {
 }
 
 object DefaultHttpClientConfig {
-  private val httpScheme  = "http"
-  private val unknownPort = -1
+  private val undefinedPort = 0
 
   def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None, None)
 
@@ -163,7 +162,7 @@ object DefaultHttpClientConfig {
         )
 
     private def toInetSocketAddress(uri: URI): Array[InetSocketAddress] =
-      InetAddress.getAllByName(uri.getHost).map { address => new InetSocketAddress(address, 0) }
+      InetAddress.getAllByName(uri.getHost).map { address => new InetSocketAddress(address, undefinedPort) }
 
     private def getURIFromLocationHeader(ctx: FilterContext[_]): Option[URI] =
       Option(ctx.getResponseHeaders)
