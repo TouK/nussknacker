@@ -1,53 +1,95 @@
-package pl.touk.nussknacker.ui.api.description
+package pl.touk.nussknacker.ui.api.description.scenarioTests
 
-import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
+import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationErrors
-}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
+import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
+import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.BadRequestTestingError.{ScenarioGraphValidationError, TooManyCharactersGenerated, TooManySamplesRequested}
+import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.NotFoundTestingError.{NoDataGenerated, NoSourcesWithTestDataGeneration}
+import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioTestingCodecs._
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.BadRequestTestingError.{
-  ScenarioGraphValidationError,
-  TooManyCharactersGenerated,
-  TooManySamplesRequested
-}
-import pl.touk.nussknacker.ui.api.TestingApiHttpService.TestingError.NotFoundTestingError.{
-  NoDataGenerated,
-  NoSourcesWithTestDataGeneration
-}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{ParametersValidationResultDto, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.{CapabilityStatus, ScenarioTestCapabilities}
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.GeneratedTestData.GeneratedTestDataRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.PerformTestRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.PerformTestRequest._
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
+import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
-class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
-  import NodesApiEndpoints.Dtos._
+class ScenarioTestApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  lazy val encoder: Encoder[TypingResult] = TypingResult.encoder
+  import TestResultsCodecs._
+  import Dtos._
 
-  lazy val scenarioTestingAdhocValidateEndpoint: SecuredEndpoint[
-    (ProcessName, AdhocTestParametersRequest),
+  def scenarioTestCapabilitiesEndpoint: SecuredEndpoint[
+    (ProcessName, ScenarioGraph),
+    TestingError,
+    ScenarioTestCapabilities,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Describes available test modes")
+      .tag("Testing")
+      .post
+      .in("scenarioTest" / path[ProcessName]("scenarioName") / "capabilities")
+      .in(
+        jsonBody[ScenarioGraph]
+          .example(simpleGraphExample)
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ScenarioTestCapabilities]
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Valid TestingCapabilities for given scenario"),
+                  value = ScenarioTestCapabilities(
+                    testWithParameters = CapabilityStatus.Available(
+                      TestWithParametersDetails(
+                        List(
+                          UISourceParameters(
+                            "source",
+                            List(
+                              DefinitionsService.createUIParameter(Parameter(ParameterName("name"), Typed[String]))
+                            )
+                          )
+                        )
+                      )
+                    ),
+                    testWithGeneratedData = CapabilityStatus.available,
+                  )
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[TestingError](
+          noScenarioErrorOutput
+        )
+      )
+      .withSecurity(auth)
+
+  def scenarioTestValidationEndpoint: SecuredEndpoint[
+    (ProcessName, ScenarioTestValidationRequest),
     TestingError,
     ParametersValidationResultDto,
     Any
@@ -56,18 +98,20 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       .summary("Validate adhoc parameters")
       .tag("Testing")
       .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "adhoc" / "validate")
+      .in("scenarioTest" / path[ProcessName]("scenarioName") / "validate")
       .in(
-        jsonBody[AdhocTestParametersRequest]
+        jsonBody[ScenarioTestValidationRequest]
           .example(
             Example.of(
               summary = Some("Valid example of minimalistic request"),
-              value = AdhocTestParametersRequest(
-                TestSourceParameters("source", Map(ParameterName("name") -> Expression.spel("'Amadeus'"))),
+              value = ScenarioTestValidationRequest(
                 ScenarioGraph(
                   ProcessProperties(StreamMetaData()),
                   List(),
                   List(),
+                ),
+                ScenarioTestData.WithParameters(
+                  TestSourceParameters("source", Map(ParameterName("name") -> Expression.spel("'Amadeus'")))
                 )
               )
             )
@@ -113,92 +157,38 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       .withSecurity(auth)
   }
 
-  lazy val scenarioTestingCapabilitiesEndpoint
-      : SecuredEndpoint[(ProcessName, ScenarioGraph), TestingError, TestingCapabilities, Any] = {
+  def scenarioTestEndpoint: SecuredEndpoint[
+    (ProcessName, PerformTestRequest),
+    TestingError,
+    ResultsWithCounts,
+    Any
+  ] =
     baseNuApiEndpoint
-      .summary("Describes available testing actions")
+      .summary("Perform test")
       .tag("Testing")
       .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "capabilities")
-      .in(
-        jsonBody[ScenarioGraph]
-          .example(simpleGraphExample)
-      )
-      .out(
-        statusCode(Ok).and(
-          jsonBody[TestingCapabilities]
-            .examples(
-              List(
-                Example.of(
-                  summary = Some("Valid TestingCapabilities for given scenario"),
-                  value = TestingCapabilities(
-                    canBeTested = false,
-                    canGenerateTestData = false,
-                    canTestWithForm = false
-                  )
-                )
-              )
-            )
-        )
-      )
+      .in("scenarioTest" / path[ProcessName]("scenarioName") / "test")
+      .in(jsonBody[PerformTestRequest])
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCounts]))
       .errorOut(
         oneOf[TestingError](
           noScenarioErrorOutput
         )
       )
       .withSecurity(auth)
-  }
 
-  lazy val scenarioTestingParametersEndpoint
-      : SecuredEndpoint[(ProcessName, ScenarioGraph), TestingError, List[UISourceParameters], Any] = {
-    baseNuApiEndpoint
-      .summary("Prepare scenario input parameters")
-      .tag("Testing")
-      .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "parameters")
-      .in(
-        jsonBody[ScenarioGraph]
-          .example(simpleGraphExample)
-      )
-      .out(
-        statusCode(Ok).and(
-          jsonBody[List[UISourceParameters]]
-            .examples(
-              List(
-                Example.of(
-                  summary = Some("Valid TestingCapabilities for given scenario"),
-                  value = List(
-                    UISourceParameters(
-                      "source",
-                      parameters = List(
-                        DefinitionsService.createUIParameter(Parameter(ParameterName("name"), Typed[String]))
-                      )
-                    )
-                  )
-                )
-              )
-            )
-        )
-      )
-      .errorOut(
-        oneOf[TestingError](
-          noScenarioErrorOutput
-        )
-      )
-      .withSecurity(auth)
-  }
-
-  lazy val scenarioTestingGenerateEndpoint
-      : SecuredEndpoint[(ProcessName, Int, ScenarioGraph), TestingError, String, Any] = {
+  def scenarioTestGeneratedDataEndpoint: SecuredEndpoint[
+    (ProcessName, GeneratedTestDataRequest),
+    TestingError,
+    String,
+    Any
+  ] = {
     baseNuApiEndpoint
       .summary("Generate testing data for scenario")
       .tag("Testing")
       .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "generate" / path[Int]("testSampleSize"))
-      .in(
-        jsonBody[ScenarioGraph]
-          .example(simpleGraphExample)
-      )
+      .in("scenarioTest" / path[ProcessName]("scenarioName") / "generatedTestData")
+      .in(jsonBody[GeneratedTestDataRequest])
       .out(
         statusCode(Ok).and(
           stringBody

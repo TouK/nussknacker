@@ -2,139 +2,32 @@ package pl.touk.nussknacker.ui.api
 
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{parser, Decoder, Encoder, Json}
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
+import io.circe.{parser, Decoder, Encoder}
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.server._
 import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
-  ScenarioTestDataGenerationError,
-  TestDataPreparationError
-}
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
-import pl.touk.nussknacker.ui.{BadRequestError, OtherError}
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
-import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError.TooManySamples
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{GenerateTestDataError, PerformTestError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
-
-  import io.circe.syntax._
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
-
-  private implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
-
-    implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
-
-    // TODO: do we want more information here?
-    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
-
-    override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
-        Json.obj(
-          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
-          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId)
-          }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
-        )
-    }
-
-  }
-
-  final case class GenerateTestDataDesignerError(message: String) extends BadRequestError(message)
-
-  private object GenerateTestDataDesignerError {
-
-    def apply(generateTestDataError: ScenarioTestService.GenerateTestDataError): GenerateTestDataDesignerError = {
-      GenerateTestDataDesignerError(generateTestDataError match {
-        case GenerateTestDataError.ScenarioTestDataGenerationError(cause) =>
-          cause match {
-            case ScenarioTestDataGenerationError.ScenarioGraphValidationError(nodesWithErrors) =>
-              ValidationErrors(
-                invalidNodes = nodesWithErrors.toList.toMap.map { case (nodeId, errors) =>
-                  (nodeId.id, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
-                },
-                processPropertiesErrors = List.empty,
-                globalErrors = List.empty
-              ).toHumanReadableMessage
-            case ScenarioTestDataGenerationError.NoDataGenerated =>
-              TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
-            case ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration =>
-              TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
-          }
-        case GenerateTestDataError.ScenarioTestDataSerializationError(cause) =>
-          cause match {
-            case SerializationError.TooManyCharactersGenerated(length, limit) =>
-              TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
-          }
-        case GenerateTestDataError.TooManySamplesRequestedError(maxSamples) =>
-          TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
-      })
-    }
-
-  }
-
   final case class PerformTestDesignerError(message: String) extends BadRequestError(message)
-
-  private object PerformTestDesignerError {
-
-    def apply(performTestError: ScenarioTestService.PerformTestError): PerformTestDesignerError = {
-      PerformTestDesignerError(performTestError match {
-        case PerformTestError.DeserializationError(cause) =>
-          cause match {
-            case DeserializationError.TooManyCharacters(length, limit) =>
-              TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
-            case DeserializationError.TooManySamples(size, limit) =>
-              TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
-            case DeserializationError.NoRecords =>
-              TestingApiErrorMessages.passedTestData.empty
-            case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
-              TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
-          }
-        case PerformTestError.TestDataPreparationError(cause) =>
-          cause match {
-            case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
-              TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
-            case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
-              TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
-          }
-        case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
-          TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
-      })
-    }
-
-  }
-
 }
 
 class ManagementResources(
@@ -151,6 +44,8 @@ class ManagementResources(
     with FailFastCirceSupport
     with AuthorizeProcessDirectives
     with ProcessDirectives {
+
+  import pl.touk.nussknacker.ui.api.description.scenarioTests.TestResultsCodecs._
 
   import ManagementResources._
 
@@ -311,74 +206,12 @@ class ManagementResources(
                             RawScenarioTestData(testDataContent)
                           )
                           .flatMap {
-                            case Left(error)  => Future.failed(PerformTestDesignerError(error))
+                            case Left(error) =>
+                              Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
                             case Right(value) => mapResultsToHttpResponse(value)
                           }
                       case Left(error) =>
                         Future.failed(ProcessUnmarshallingError(error.toString))
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } ~
-        path("generateAndTest" / ProcessNameSegment / IntNumber) { (processName, testSampleSize) =>
-          {
-            (post & entity(as[ScenarioGraph])) { scenarioGraph =>
-              {
-                processDetailsForName(processName)(user) { details =>
-                  canDeploy(details.idWithNameUnsafe) {
-                    complete {
-                      measureTime("generateAndTest", metricRegistry) {
-                        val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(details.processingType)
-                        scenarioTestService.generateData(
-                          scenarioGraph,
-                          details.processVersionUnsafe,
-                          details.isFragment,
-                          testSampleSize
-                        ) match {
-                          case Left(error) => Future.failed(GenerateTestDataDesignerError(error))
-                          case Right(rawScenarioTestData) =>
-                            scenarioTestService
-                              .performTest(
-                                scenarioGraph,
-                                details.processVersionUnsafe,
-                                details.isFragment,
-                                rawScenarioTestData
-                              )
-                              .flatMap {
-                                case Left(error)  => Future.failed(PerformTestDesignerError(error))
-                                case Right(value) => mapResultsToHttpResponse(value)
-                              }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } ~
-        path("testWithParameters" / ProcessNameSegment) { processName =>
-          {
-            (post & processDetailsForName(processName)) { process =>
-              (post & entity(as[AdhocTestParametersRequest])) { testParametersRequest =>
-                {
-                  canDeploy(process.idWithNameUnsafe) {
-                    complete {
-                      scenarioTestServices
-                        .forProcessingTypeUnsafe(process.processingType)
-                        .performTest(
-                          testParametersRequest.scenarioGraph,
-                          process.processVersionUnsafe,
-                          process.isFragment,
-                          testParametersRequest.sourceParameters
-                        )
-                        .flatMap {
-                          case Left(error)  => Future.failed(PerformTestDesignerError(error))
-                          case Right(value) => mapResultsToHttpResponse(value)
-                        }
                     }
                   }
                 }

@@ -432,6 +432,13 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         nodeResults = nodeResults :+ nodeId
       }
 
+      override def nodeExited(
+          nodeId: String,
+          nextNodeId: Option[String],
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = ()
+
       override def endEncountered(
           nodeId: String,
           ref: String,

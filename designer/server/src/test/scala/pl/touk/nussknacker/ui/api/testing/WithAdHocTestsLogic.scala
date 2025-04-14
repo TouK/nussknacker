@@ -7,15 +7,17 @@ import org.hamcrest.Matchers.equalTo
 import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, EqualsJsonBody, JsonBody}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 trait WithAdHocTestsLogic {
   self: WithAdHocTestParameters with WithSimplifiedConfigScenarioHelper with NuItTest =>
 
   def shouldValidateParametersProperly(): Unit = {
-    val request = AdhocTestParametersRequest(
-      validParameters,
-      exampleScenarioGraph
+    val request = ScenarioTestValidationRequest(
+      testData = ScenarioTestData.WithParameters(validParameters),
+      scenarioGraph = toScenarioGraph(exampleScenario)
     ).asJson.toString()
 
     given()
@@ -37,9 +39,9 @@ trait WithAdHocTestsLogic {
   }
 
   def shouldReturnErrorsForInvalidParameters(): Unit = {
-    val request = AdhocTestParametersRequest(
-      invalidParameters,
-      exampleScenarioGraph
+    val request = ScenarioTestValidationRequest(
+      exampleScenarioGraph,
+      ScenarioTestData.WithParameters(invalidParameters),
     ).asJson.toString()
 
     given()

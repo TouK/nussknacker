@@ -3,6 +3,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, getTestResultsLoading, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
@@ -31,7 +32,10 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testFromGeneratedDataIsAvailable =
-        !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canGenerateTestData;
+        !disabled &&
+        processIsLatestVersion &&
+        testCapabilities &&
+        testCapabilities.testWithGeneratedData.status == TestCapabilityStatus.AVAILABLE;
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
 

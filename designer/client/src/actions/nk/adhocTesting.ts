@@ -1,7 +1,8 @@
-import HttpService, { SourceWithParametersTest } from "../../http/HttpService";
-import { Expression, NodeValidationError, ScenarioGraph, TypingResult, VariableTypes } from "../../types";
-
 import { debounce } from "lodash";
+
+import type { SourceWithParametersTest } from "../../http/HttpService";
+import HttpService from "../../http/HttpService";
+import type { Expression, NodeValidationError, ScenarioGraph, TypingResult, VariableTypes } from "../../types";
 
 export interface GenericValidationData {
     validationErrors: NodeValidationError[];
@@ -20,7 +21,10 @@ export interface GenericValidationRequest {
 }
 
 export interface TestAdhocValidationRequest {
-    sourceParameters: SourceWithParametersTest;
+    testData: {
+        type: string;
+        sourceParameters?: SourceWithParametersTest;
+    };
     scenarioGraph: ScenarioGraph;
 }
 

@@ -332,7 +332,7 @@ class ModelDataTestInfoProviderSpec
       .emptySink("end", "dead-end")
     val processVersion = processVersionFor(scenarioWithMultipleParams)
 
-    val result = testInfoProvider.getTestParameters(processVersion, scenarioWithMultipleParams)
+    val result = testInfoProvider.getTestParameters(processVersion, scenarioWithMultipleParams).toOption.get
 
     result.getOrElse("source1", Nil).find(_.name.value == "par1").value.defaultValue shouldBe Some("".spelTemplate)
     result.getOrElse("source1", Nil).find(_.name.value == "a").value.defaultValue shouldBe Some("0".spel)

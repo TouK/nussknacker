@@ -1507,12 +1507,6 @@ object NodesApiEndpoints {
         parameterExpressions: Map[ParameterName, Expression]
     )
 
-    @derive(schema, encoder, decoder)
-    final case class AdhocTestParametersRequest(
-        sourceParameters: TestSourceParameters,
-        scenarioGraph: ScenarioGraph
-    )
-
     @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
         parameters: List[UIValueParameter],
         variableTypes: Map[String, TypingResult]

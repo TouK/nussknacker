@@ -5,10 +5,12 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
-class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
+class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends ScenarioTestApiHttpServiceSpec {
 
   override protected def exampleScenarioSourceId = "sourceId"
 
@@ -19,8 +21,8 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       .emptySink("end", "monitor")
 
   override protected def parametersProvidedForDryRun: String =
-    AdhocTestParametersRequest(
-      sourceParameters = validParameters,
+    ScenarioTestValidationRequest(
+      testData = ScenarioTestData.WithParameters(validParameters),
       scenarioGraph = toScenarioGraph(exampleScenario)
     ).asJson.toString()
 

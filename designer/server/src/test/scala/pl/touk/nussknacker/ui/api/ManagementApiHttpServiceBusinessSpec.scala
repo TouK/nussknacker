@@ -42,6 +42,8 @@ class ManagementApiHttpServiceBusinessSpec
             Map(
               exampleScenario.name.value -> TestResults(
                 nodeResults = Map.empty,
+                nodeEdgeOutputResults = Map.empty,
+                nodeDeadEndOutputResults = Map.empty,
                 invocationResults = Map.empty,
                 externalInvocationResults = Map.empty,
                 exceptions = List.empty,

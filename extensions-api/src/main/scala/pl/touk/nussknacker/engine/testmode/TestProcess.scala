@@ -7,6 +7,8 @@ object TestProcess {
 
   case class TestResults[T](
       nodeResults: Map[String, List[ResultContext[T]]],
+      nodeEdgeOutputResults: Map[Edge, List[ResultContext[T]]],
+      nodeDeadEndOutputResults: Map[String, List[ResultContext[T]]],
       invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]]
@@ -17,6 +19,31 @@ object TestProcess {
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
           .fromContext(context, variableEncoder)))
       )
+
+    def updateNodeOutputResult(
+        nodeId: String,
+        nextNodeIdOpt: Option[String],
+        context: Context,
+        variableEncoder: Any => T
+    ): TestResults[T] = {
+      nextNodeIdOpt match {
+        case Some(nextNodeId) =>
+          copy(nodeEdgeOutputResults =
+            nodeEdgeOutputResults + (Edge(nodeId, nextNodeId) ->
+              (nodeEdgeOutputResults
+                .getOrElse(Edge(nodeId, nextNodeId), List()) :+ ResultContext
+                .fromContext(context, variableEncoder)))
+          )
+        case None =>
+          copy(nodeDeadEndOutputResults =
+            nodeDeadEndOutputResults + (nodeId ->
+              (nodeDeadEndOutputResults
+                .getOrElse(nodeId, List()) :+ ResultContext
+                .fromContext(context, variableEncoder)))
+          )
+      }
+
+    }
 
     def updateExpressionResult(
         nodeId: String,
@@ -60,6 +87,8 @@ object TestProcess {
     ) :+ invocationResult
 
   }
+
+  final case class Edge(sourceNodeId: String, destinationNodeId: String)
 
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
