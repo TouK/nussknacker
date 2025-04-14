@@ -57,31 +57,36 @@ class SharedHttpClientBackendProviderTest
 
   test("should throw exception on every localhost address if localhost is not allowed") {
     val httpConfig = DefaultHttpClientConfig().copy(
-      forbiddenCidrs = Some(List("127.0.0.0/8")),
+      forbiddenCidrs = Some(List("127.0.0.0/8", "::1/128")),
     )
     val backendProvider = new SharedHttpClientBackendProvider(httpConfig)
     backendProvider.open(engineRuntimeContext)
 
     forAll(
       Table(
-        "http://0.0.0.0",
-        "http://127.0.0.1",
-        "http://127.0.0.1.nip.io",
-        "http://127.0.190.1",
+        ("address", "message"),
+        ("http://localhost/", "Request to: [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] is forbidden"),
+        ("http://localhost:8080/", "Request to: [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] is forbidden"),
+        ("http://[::1]", "Request to: [/0:0:0:0:0:0:0:1] is forbidden"),
+        ("http://[::1]:8080", "Request to: [/0:0:0:0:0:0:0:1] is forbidden"),
+        ("http://127.0.0.1/", "Request to: [/127.0.0.1] is forbidden"),
+        ("http://7f000001.nip.io/", "Request to: [7f000001.nip.io/127.0.0.1] is forbidden"),
+        ("http://127.0.190.1/", "Request to: [/127.0.190.1] is forbidden"),
       )
-    ) { host =>
+    ) { (host, message) =>
       val responseFuture = backendProvider.httpBackendForEc
         .send(basicRequest.get(Uri.unsafeParse(host)))
 
-      intercept[FilterException] {
+      val ex = intercept[FilterException] {
         Await.result(responseFuture, 5 seconds)
       }
+      ex.getMessage shouldBe message
     }
 
     backendProvider.close()
   }
 
-  test("should throw exception when redirected on forbidden URL") {
+  test("should throw exception when redirected to forbidden URL") {
     val httpConfig = DefaultHttpClientConfig().copy(
       forbiddenCidrs = Some(List("127.190.0.0/16")),
       followRedirect = Some(true),
@@ -98,9 +103,10 @@ class SharedHttpClientBackendProviderTest
     val responseFuture = backendProvider.httpBackendForEc
       .send(basicRequest.get(Uri.unsafeParse(s"${wireMock.baseUrl()}/abc")))
 
-    intercept[FilterException] {
+    val ex = intercept[FilterException] {
       Await.result(responseFuture, 5 seconds)
     }
+    ex.getMessage shouldBe "Request to: [/127.190.1.1] is forbidden"
 
     backendProvider.close()
   }

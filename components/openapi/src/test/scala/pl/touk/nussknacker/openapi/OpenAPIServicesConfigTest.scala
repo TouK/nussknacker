@@ -88,7 +88,6 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |      timeout: "3 seconds"
                                              |    }
                                              |  }
-                                             |  isLocalhostAllowed: false
                                              |  forbiddenCidrs: ["127.0.0.0/8", "::1/128"]
                                              |}
                                              |  """.stripMargin)

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.http.backend.DefaultHttpClientConfig.ClientConfigBuil
 import pl.touk.nussknacker.http.backend.HttpClientConfig.EffectiveHttpClientConfig
 import sttp.client3.SttpBackendOptions
 
-import java.net.{InetSocketAddress, URI}
+import java.net.{InetAddress, InetSocketAddress, URI}
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -58,7 +58,7 @@ case class HttpClientConfig(
       useNative = extractConfig(_.useNative, false),
       followRedirect = extractConfig(_.followRedirect, false),
       forceShutdown = extractConfig(_.forceShutdown, false),
-      forbiddenCidr = extractConfig(_.forbiddenCidrs.map(NonEmptyList.fromList), None),
+      forbiddenCidrs = extractConfig(_.forbiddenCidrs.map(NonEmptyList.fromList), None),
     )
   }
 
@@ -73,10 +73,10 @@ object HttpClientConfig {
       useNative: Boolean,
       followRedirect: Boolean,
       forceShutdown: Boolean,
-      forbiddenCidr: Option[NonEmptyList[String]],
+      forbiddenCidrs: Option[NonEmptyList[String]],
   ) {
 
-    lazy val resolvedCidrs: Option[NonEmptyList[IpSubnetFilterRule]] = forbiddenCidr
+    lazy val resolvedCidrs: Option[NonEmptyList[IpSubnetFilterRule]] = forbiddenCidrs
       .map(_.map(cidrString => new IpSubnetFilterRule(cidrString, IpFilterRuleType.REJECT)))
 
   }
@@ -155,19 +155,15 @@ object DefaultHttpClientConfig {
         ipSubnetFilterRules: NonEmptyList[IpSubnetFilterRule],
         maybeURI: Option[URI],
     ): Unit =
-      maybeURI match {
-        case Some(uri) if ipSubnetFilterRules.exists(filter => filter.matches(toInetSocketAddress(uri))) =>
-          throw new FilterException(s"Redirect to ${uri.getHost} is forbidden")
-        case _ =>
-      }
+      maybeURI
+        .map(toInetSocketAddress)
+        .filter(addresses => ipSubnetFilterRules.exists(filter => addresses.exists(address => filter.matches(address))))
+        .map(addresses =>
+          throw new FilterException(s"Request to: ${addresses.map(_.getAddress).mkString("[", ", ", "]")} is forbidden")
+        )
 
-    private def toInetSocketAddress(uri: URI): InetSocketAddress = {
-      val port = uri.getPort match {
-        case `unknownPort` => if (httpScheme.equalsIgnoreCase(uri.getScheme)) 80 else 443
-        case p             => p
-      }
-      new InetSocketAddress(uri.getHost, port)
-    }
+    private def toInetSocketAddress(uri: URI): Array[InetSocketAddress] =
+      InetAddress.getAllByName(uri.getHost).map { address => new InetSocketAddress(address, 0) }
 
     private def getURIFromLocationHeader(ctx: FilterContext[_]): Option[URI] =
       Option(ctx.getResponseHeaders)
