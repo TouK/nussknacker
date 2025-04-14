@@ -150,6 +150,7 @@
 * [#7864](https://github.com/TouK/nussknacker/pull/7864) Add the forbidden IPs feature to the HTTP client configuration,
   if `followRedirect` is enabled then `Location` response header is also checked:
   * `forbiddenCidrs` - list of forbidden CIDR.
+* [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
 
 ## 1.18
 
