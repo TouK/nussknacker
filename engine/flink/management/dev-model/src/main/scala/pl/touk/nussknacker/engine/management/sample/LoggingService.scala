@@ -25,7 +25,11 @@ object LoggingService extends EagerService {
       @ParamName("logger") @Nullable loggerName: String,
       @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
+      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String],
+      // TODO: revert
+      @ParamName("testJsonTemplate") @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR) testJsonTemplate: LazyParameter[
+        String
+      ],
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
       private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
@@ -39,7 +43,8 @@ object LoggingService extends EagerService {
           componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         if (isLoggingAllowed(componentUseContext)) {
-          val msg = message.evaluate(context)
+          val json = testJsonTemplate.evaluate(context)
+          val msg  = s"message:${message.evaluate(context)} and rendered json: $json"
           level match {
             case Level.TRACE => logger.trace(msg)
             case Level.DEBUG => logger.debug(msg)

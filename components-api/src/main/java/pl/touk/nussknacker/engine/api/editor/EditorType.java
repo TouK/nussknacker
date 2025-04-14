@@ -16,4 +16,5 @@ public enum EditorType {
     DICT_EDITOR,
     TYPED_TABULAR_DATA_EDITOR,
     SPEL_EDITOR,
+    JSON_TEMPLATE_EDITOR,
 }
