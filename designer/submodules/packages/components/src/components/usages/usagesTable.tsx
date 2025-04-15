@@ -1,18 +1,22 @@
+import { Box } from "@mui/material";
+import { formatDateTime } from "nussknackerUi/DateUtils";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import type { ComponentUsageType, NodeUsageData } from "nussknackerUi/HttpService";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScenarioCell } from "./scenarioCell";
-import { Columns, TableViewData, TableWrapper } from "../tableWrapper";
-import { createFilterRules, Highlight, useFilterContext } from "../../common";
-import { getNodeName, NodesCell } from "./nodesCell";
-import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
 import { useDebouncedValue } from "rooks";
+
+import { createFilterRules, Highlight } from "../../common";
 import { FilterLinkCell } from "../cellRenderers";
-import { UsageWithStatus } from "../useComponentsQuery";
-import { Box } from "@mui/material";
 import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatted";
-import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
-import { formatDateTime } from "nussknackerUi/DateUtils";
+import { TableWrapper } from "../tableWrapper";
+import type { Columns, TableViewData } from "../tableWrapper";
+import type { UsageWithStatus } from "../useComponentsQuery";
+import { getNodeName, NodesCell } from "./nodesCell";
+import { ScenarioCell } from "./scenarioCell";
+import { USAGES_FILTER, UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
+import type { UsagesFiltersModel } from "./usagesFiltersModel";
+import { useUsagesFilterContext } from "./useUsagesFilterContext";
 
 export function nodeFilter(f, u: NodeUsageData) {
     switch (f) {
@@ -27,8 +31,8 @@ export function nodeFilter(f, u: NodeUsageData) {
 export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
-    const filtersContext = useFilterContext<UsagesFiltersModel>();
-    const _filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
+    const filtersContext = useUsagesFilterContext();
+    const _filterText = useMemo(() => filtersContext.getFilter(USAGES_FILTER.TEXT), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
 
     const columns = useMemo(
@@ -67,7 +71,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
 
                     return (
                         <FilterLinkCell
-                            filterKey="STATUS"
+                            filterKey={USAGES_FILTER.STATUS}
                             {...props}
                             value={props.value.status.name}
                             formattedValue={
@@ -86,7 +90,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 field: "processCategory",
                 cellClassName: "stretch",
                 headerName: t("table.usages.title.PROCESS_CATEGORY", "Category"),
-                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CATEGORY" {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey={USAGES_FILTER.CATEGORY} {...props} />,
                 minWidth: 160,
             },
             {
@@ -102,7 +106,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 field: "createdBy",
                 cellClassName: "stretch",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
-                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey={USAGES_FILTER.CREATED_BY} {...props} />,
                 hide: true,
                 minWidth: 100,
             },
@@ -110,7 +114,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 field: "modifiedBy",
                 cellClassName: "stretch",
                 headerName: t("table.usages.title.MODIFIED_BY", "Editor"),
-                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey={USAGES_FILTER.CREATED_BY} {...props} />,
                 minWidth: 100,
             },
             {

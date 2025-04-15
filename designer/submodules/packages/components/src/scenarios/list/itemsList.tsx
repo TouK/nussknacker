@@ -1,23 +1,27 @@
-import { FirstLine, SecondLine } from "./item";
-import React, { CSSProperties, useCallback, useMemo } from "react";
-import { FilterRules, useFilterContext } from "../../common/filters";
-import { ExternalLink, metricsHref, scenarioHref } from "../../common";
-import ListItem from "@mui/material/ListItem";
-import Paper from "@mui/material/Paper";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemButton from "@mui/material/ListItemButton";
-import { ListIteratee, Many, orderBy } from "lodash";
-import { List as VList, WindowScroller } from "react-virtualized";
-import { useScrollParent } from "../../common/hooks";
-import IconButton from "@mui/material/IconButton";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import { ListItemAvatar } from "@mui/material";
-import { ListRowProps } from "react-virtualized/dist/es/List";
-import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
-import { RowType } from "./listPart";
-import { Stats } from "./stats";
-import { ScenarioAvatar } from "./scenarioAvatar";
+import IconButton from "@mui/material/IconButton";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
+import type { ListIteratee, Many } from "lodash";
+import { orderBy } from "lodash";
 import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import type { CSSProperties } from "react";
+import React, { useCallback, useMemo } from "react";
+import { List as VList, WindowScroller } from "react-virtualized";
+import type { ListRowProps } from "react-virtualized/dist/es/List";
+
+import { ExternalLink, metricsHref, scenarioHref } from "../../common";
+import type { FilterRules } from "../../common/filters";
+import { useScrollParent } from "../../common/hooks";
+import { useScenariosFilterContext } from "../filters/common/useScenariosFilterContext";
+import type { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
+import { FirstLine, SecondLine } from "./item";
+import type { RowType } from "./listPart";
+import { ScenarioAvatar } from "./scenarioAvatar";
+import { Stats } from "./stats";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     return (
@@ -127,7 +131,7 @@ export function ItemsList(props: {
     filterRules?: FilterRules<RowType, ScenariosFiltersModel>;
 }): JSX.Element {
     const { data = [], filterRules, isLoading } = props;
-    const { getFilter } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter } = useScenariosFilterContext();
 
     const rows = useMemo<RowType[]>(() => {
         const filtered = data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));

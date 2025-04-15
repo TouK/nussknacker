@@ -1729,6 +1729,7 @@ lazy val httpUtils = (project in utils("http-utils"))
         "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
         "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
+        "io.netty"                       % "netty-handler"                    % nettyV,
       )
     }
   )
@@ -1751,7 +1752,8 @@ lazy val openapiComponents = (project in component("openapi"))
         ExclusionRule(organization = "jakarta.validation")
       ),
       "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
-      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
+      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test",
+      "org.wiremock"       % "wiremock"             % wireMockV  % Test,
     ),
   )
   .dependsOn(

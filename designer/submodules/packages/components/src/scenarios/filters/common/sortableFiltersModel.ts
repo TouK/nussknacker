@@ -1,4 +1,4 @@
-import { SortKey } from "../../list/itemsList";
+import type { SortKey } from "../../list/itemsList";
 
 export interface SortableFiltersModel {
     SORT_BY?: SortKey;

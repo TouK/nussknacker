@@ -1,15 +1,7 @@
-import React, {
-    createContext,
-    Dispatch,
-    PropsWithChildren,
-    SetStateAction,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
-import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy, toNumber } from "lodash";
+import type { __, CurriedFunction1, CurriedFunction2 } from "lodash";
+import { curry, isArray, pickBy, toNumber } from "lodash";
+import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 function serializeToQuery<T>(filterModel: T): [string, string][] {
@@ -71,7 +63,9 @@ export interface ValueLinker<M = any> {
 const FiltersModelContext = createContext<FiltersModelContextType>(null);
 const ValueLinkerContext = createContext<ValueLinker>(null);
 
-export function useFilterContext<M = unknown>(): FiltersContextType<M> {
+export function useFilterContext<M = unknown, T extends Record<string, unknown> = Record<string, unknown>>(
+    availableFilters: T,
+): FiltersContextType<M> {
     const { setModel, model } = useContext<FiltersModelContextType<M>>(FiltersModelContext);
     const getValueLinker = useContext<ValueLinker<M>>(ValueLinkerContext);
 
@@ -117,10 +111,10 @@ export function useFilterContext<M = unknown>(): FiltersContextType<M> {
         () => ({
             getFilter,
             setFilter: curry(setFilter),
-            activeKeys: Object.keys(model || {}) as Array<keyof M>,
+            activeKeys: Object.keys(model || {}).filter((key) => availableFilters && key in availableFilters) as Array<keyof M>,
             resetModel,
         }),
-        [getFilter, setFilter, model, resetModel],
+        [getFilter, setFilter, model, resetModel, availableFilters],
     );
 }
 

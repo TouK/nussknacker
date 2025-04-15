@@ -1,9 +1,12 @@
-import { InputWithClear, useFilterContext } from "../../common";
-import React, { FormEventHandler, PropsWithChildren } from "react";
-import Paper from "@mui/material/Paper";
-import { useTranslation } from "react-i18next";
-import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
 import { Search } from "@mui/icons-material";
+import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
+import Paper from "@mui/material/Paper";
+import type { FormEventHandler, PropsWithChildren } from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import { InputWithClear } from "../../common";
+import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
 
 const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();
 
@@ -17,7 +20,7 @@ export function QuickFilter<F extends Record<string, any>>({
     isLoading?: boolean;
 }>): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<F>();
+    const { getFilter, setFilter } = useScenariosFilterContext<F>();
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
