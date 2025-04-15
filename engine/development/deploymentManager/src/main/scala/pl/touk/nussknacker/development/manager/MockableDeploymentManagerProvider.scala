@@ -143,7 +143,7 @@ object MockableDeploymentManagerProvider {
       Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 
     override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
-      Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty))
+      Resource.pure(EngineScenarioCompilationDependencies.empty)
 
     override def close(): Unit = {
       miniClusterWithServicesOpt.foreach(_.close())

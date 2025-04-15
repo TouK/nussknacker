@@ -113,9 +113,8 @@ object ProcessingTypeData {
           def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
             DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
               modelData,
-              new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies),
               extractComponents
-            )
+            )(new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies))
           }
 
           DynamicComponentsStaticDefinitions(

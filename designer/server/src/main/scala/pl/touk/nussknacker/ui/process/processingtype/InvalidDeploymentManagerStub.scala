@@ -43,7 +43,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
-    Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty))
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
   override def close(): Unit = ()
 }

@@ -34,6 +34,6 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
   }
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
-    Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty))
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
 }

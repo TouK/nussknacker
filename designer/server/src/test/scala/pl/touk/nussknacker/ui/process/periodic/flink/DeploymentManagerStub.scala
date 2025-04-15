@@ -77,7 +77,7 @@ class DeploymentManagerStub extends BaseDeploymentManager {
     }
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
-    Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty))
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
     case _: DMValidateScenarioCommand => Future.successful(())

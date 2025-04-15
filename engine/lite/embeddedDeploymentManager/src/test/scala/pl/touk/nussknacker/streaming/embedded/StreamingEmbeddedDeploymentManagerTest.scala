@@ -192,7 +192,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     val FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
     val testInfoProvider =
-      new ModelDataTestInfoProvider(modelData, Resource.eval(SyncIO(EngineScenarioCompilationDependencies.empty)))
+      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
 
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 

@@ -63,7 +63,7 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
   override def close(): Unit = {}
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
-    Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty))
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
 }
 

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.test.base.it
 
 import cats.data.Validated.Valid
-import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
@@ -28,7 +27,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -72,7 +70,6 @@ import java.net.URI
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.Success
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -260,7 +257,7 @@ trait NuResourcesTest
 
   protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
     createScenarioTestService(
-      new ModelDataTestInfoProvider(modelData, Resource.eval(SyncIO(EngineScenarioCompilationDependencies.empty)))
+      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
     )
 
   protected def createScenarioTestService(

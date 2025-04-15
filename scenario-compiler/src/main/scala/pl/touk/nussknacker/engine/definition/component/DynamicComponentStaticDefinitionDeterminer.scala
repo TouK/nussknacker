@@ -81,8 +81,9 @@ object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies,
       extractComponentsDefinitions: Components => List[ComponentDefinitionWithImplementation]
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
@@ -92,9 +93,7 @@ object DynamicComponentStaticDefinitionDeterminer {
     modelDataForType.withThisAsContextClassLoader {
       extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
-          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)(
-            scenarioCompilationDependencies
-          )
+          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap
     }
   }

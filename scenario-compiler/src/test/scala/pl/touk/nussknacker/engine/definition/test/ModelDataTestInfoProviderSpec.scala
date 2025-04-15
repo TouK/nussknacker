@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition.test
 
 import cats.data.NonEmptyList
-import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
@@ -9,7 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.{process, CirceUtil, MetaData, NodeId, Params, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
@@ -92,7 +91,7 @@ class ModelDataTestInfoProviderSpec
   }
 
   private val testInfoProvider: TestInfoProvider =
-    new ModelDataTestInfoProvider(modelData, Resource.eval(SyncIO(EngineScenarioCompilationDependencies.empty)))
+    new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
 
   test("should detect capabilities for empty scenario") {
     val scenario     = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)

@@ -111,16 +111,16 @@ class FlinkMiniClusterWithServices(
     Resource.fromAutoCloseable(Applicative[F].pure(streamExecutionEnvironmentFactory(false)))
   }
 
-  // This method is used only by external project. It should be used with caution because action on StreamExecutionEnvironment
-  // can be blocking and it can cause thread pool starvation or deadlock. As an alternative, we recommend to use withDetachedStreamExecutionEnvironment
+  // This method should be used with caution because action on StreamExecutionEnvironment can be blocking and it can cause
+  // thread pool starvation or deadlock. As an alternative, we recommend to use withDetachedStreamExecutionEnvironment
   // combined with MiniClusterJobStatusCheckingOps
   def withAttachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
     // We use SyncIO, because passed actions sometimes uses ThreadLocal and we don't want to change the Thread which run this action
     createAttachedStreamExecutionEnvironment[SyncIO].use(env => SyncIO.pure(action(env))).unsafeRunSync()
   }
 
-  // This method is used only by external project. It should be used with caution because action on StreamExecutionEnvironment
-  // can be blocking and it can cause thread pool starvation or deadlock. As an alternative, we recommend to use createDetachedStreamExecutionEnvironment
+  // This method should be used with caution because action on StreamExecutionEnvironment can be blocking and it can cause
+  // thread pool starvation or deadlock. As an alternative, we recommend to use createDetachedStreamExecutionEnvironment
   // combined with MiniClusterJobStatusCheckingOps
   def createAttachedStreamExecutionEnvironment[F[_]: Sync]: Resource[F, StreamExecutionEnvironment] = {
     Resource.fromAutoCloseable(Applicative[F].pure(streamExecutionEnvironmentFactory(true)))

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
-import cats.effect.{Resource, SyncIO}
+import cats.effect.Resource
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import org.scalatest.Inside.inside
@@ -24,15 +24,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseContext,
-  EmptyProcessConfigCreator,
-  ExpressionConfig,
-  ProcessingType,
-  ProcessName,
-  ProcessObjectDependencies,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -47,7 +39,6 @@ import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -1680,8 +1671,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-      engineScenarioCompilationDependenciesResource =
-        Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
@@ -1741,8 +1731,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-      engineScenarioCompilationDependenciesResource =
-        Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
@@ -2722,8 +2711,7 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-    engineScenarioCompilationDependenciesResource =
-      Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
+    engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
     scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
@@ -2758,8 +2746,7 @@ private object UIProcessValidatorSpec {
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),
-      engineScenarioCompilationDependenciesResource =
-        Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List(SampleCustomProcessValidator),
       fragmentResolver = new FragmentResolver(

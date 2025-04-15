@@ -380,7 +380,7 @@ class FlinkDeploymentManager(
       )
       .getOrElse {
         // TODO: always create share minicluster
-        Resource.eval(SyncIO(EngineScenarioCompilationDependencies.empty))
+        Resource.pure(EngineScenarioCompilationDependencies.empty)
       }
   }
 
