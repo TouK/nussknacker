@@ -1258,6 +1258,13 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
         "org.apache.flink"            % "flink-statebackend-rocksdb" % flinkV,
+        // Below is a list of standard connectors and formats availabled in flink distribution
+        // We want to make flink minicluster as featured as standard flink distribution
+        "org.apache.flink"            % "flink-connector-files"      % flinkV,
+        "org.apache.flink"            % "flink-csv"                  % flinkV,
+        "org.apache.flink"            % "flink-json"                 % flinkV,
+        "org.apache.flink"            % "flink-table-api-java-uber"  % flinkV,
+        // end of list
         "org.scala-lang.modules"     %% "scala-collection-compat"    % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"              % scalaLoggingV           % Provided,
         "com.softwaremill.retry"     %% "retry"                      % retryV,
@@ -1864,11 +1871,6 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-flink-base-components-tests",
-    libraryDependencies ++= Seq(
-      "org.apache.flink" % "flink-connector-files" % flinkV % Test,
-      "org.apache.flink" % "flink-csv"             % flinkV % Test,
-      "org.apache.flink" % "flink-json"            % flinkV % Test
-    )
   )
   .dependsOn(
     flinkComponentsTestkit  % Test,
@@ -1905,9 +1907,6 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
         "org.apache.flink"   % "flink-table-runtime"         % flinkV,
         "org.apache.flink"   % "flink-clients"               % flinkV,
         "org.apache.flink"   % "flink-sql-parser"            % flinkV,
-        "org.apache.flink"   % "flink-connector-files"       % flinkV, // needed for testing data generation
-        "org.apache.flink"   % "flink-json"                  % flinkV, // needed for testing data generation
-        "org.apache.flink"   % "flink-csv"                   % flinkV              % Test,
         "org.apache.flink"   % "flink-connector-jdbc"        % jdbcFlinkConnectorV % Test,
       )
     }

@@ -67,7 +67,9 @@ class DynamicNodeValidator(
 
     private val definition = component.contextTransformation(
       inputContext,
-      scenarioCompilationDependencies.nodeDependencies ::: outputVariableDependency.toList
+      TypedNodeDependencyValue(nodeId) ::
+        scenarioCompilationDependencies.nodeDependencies :::
+        outputVariableDependency.toList
     )
 
     @tailrec

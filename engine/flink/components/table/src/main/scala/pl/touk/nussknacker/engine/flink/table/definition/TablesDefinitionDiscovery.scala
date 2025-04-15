@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, toFunctorOps}
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
@@ -49,12 +49,8 @@ object TablesDefinitionDiscovery extends LazyLogging {
         databaseName <- catalog.listDatabases.asScala.toList
         tableName    <- env.listTables(catalogName, databaseName).toList
       } yield {
-        env.useCatalog(catalogName)
-        env.useDatabase(databaseName)
-        env.executeSql(s"DROP TABLE `$tableName`")
+        env.executeSql(s"DROP TABLE `$catalogName`.`$databaseName`.`$tableName`")
       }
-      env.useCatalog("default_catalog")
-      env.useDatabase("default_database")
     }
   }
 
@@ -99,8 +95,10 @@ object TablesDefinitionDiscovery extends LazyLogging {
         tableName: String,
         env: StreamTableEnvironment
     ): ValidatedNel[FlinkDataDefinitionDiscoveryError, Unit] = {
+      val classloader = Thread.currentThread().getContextClassLoader
+      logger.debug(s"Classloader that will be used for DynamicTableFactory verification: $classloader")
       val tableFactory = Try {
-        FactoryUtil.discoverFactory(getClass.getClassLoader, classOf[DynamicTableFactory], connector)
+        FactoryUtil.discoverFactory(classloader, classOf[DynamicTableFactory], connector)
       }.fold(ex => ConnectorDiscoveryProblem(connector, ex).invalidNel, factory => factory.validNel)
 
       tableFactory.andThen { factory =>

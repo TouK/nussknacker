@@ -36,8 +36,6 @@ trait StreamExecutionEnvPreparer {
       deploymentData: DeploymentData
   ): Unit
 
-  def flinkClassLoaderSimulation: ClassLoader
-
   def sideOutputGetter[T](
       singleOutputStreamOperator: SingleOutputStreamOperator[_],
       outputTag: OutputTag[T]
@@ -128,18 +126,6 @@ class DefaultStreamExecutionEnvPreparer(
       case ExecutionMode.Streaming => env.setRuntimeMode(RuntimeExecutionMode.STREAMING)
       case ExecutionMode.Batch     => env.setRuntimeMode(RuntimeExecutionMode.BATCH)
     }
-  }
-
-  override def flinkClassLoaderSimulation: ClassLoader = {
-    wrapInLambda(() =>
-      FlinkUserCodeClassLoaders.childFirst(
-        Array.empty,
-        Thread.currentThread().getContextClassLoader,
-        Array.empty,
-        (t: Throwable) => throw t,
-        true
-      )
-    )
   }
 
   override def sideOutputGetter[T](
