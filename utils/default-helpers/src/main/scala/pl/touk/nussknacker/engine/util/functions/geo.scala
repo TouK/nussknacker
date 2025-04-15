@@ -12,19 +12,19 @@ trait GeoUtils extends HideToString {
     "Calculate distance in kilometers between two points (with decimal coordinates), using the Haversine formula"
   )
   def distanceInKm(
-      @ParamName("First point - latitude") lat1: Number,
-      @ParamName("First point - longitude") lon1: Number,
-      @ParamName("Second point - latitude") lat2: Number,
-      @ParamName("Second point - longitude") lon2: Number
+      @ParamName("latitude1") latitude1: Number,
+      @ParamName("longitude1") longitude1: Number,
+      @ParamName("latitude2") latitude2: Number,
+      @ParamName("longitude2") longitude2: Number
   ): Double = {
     // https://rosettacode.org/wiki/Haversine_formula#Scala
     import scala.math._
 
-    val dLat = (lat1.doubleValue() - lat2.doubleValue()).toRadians
-    val dLon = (lon1.doubleValue() - lon2.doubleValue()).toRadians
+    val dLat = (latitude1.doubleValue() - latitude2.doubleValue()).toRadians
+    val dLon = (longitude1.doubleValue() - longitude2.doubleValue()).toRadians
 
-    val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(lat1.doubleValue().toRadians) * cos(
-      lat2.doubleValue().toRadians
+    val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(latitude1.doubleValue().toRadians) * cos(
+      latitude2.doubleValue().toRadians
     )
     val c = 2 * asin(sqrt(a))
     c * EARTH_MEAN_RADIUS

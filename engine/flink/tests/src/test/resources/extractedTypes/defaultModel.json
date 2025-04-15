@@ -17426,10 +17426,10 @@
           "name": "distanceInKm",
           "signature": {
             "noVarArgs": [
-              {"name": "First point - latitude", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "First point - longitude", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "Second point - latitude", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "Second point - longitude", "refClazz": {"refClazzName": "java.lang.Number"}}
+              {"name": "latitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "latitude2", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "java.lang.Double"}
           }
