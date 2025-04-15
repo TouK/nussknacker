@@ -6,7 +6,7 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.{EngineNodeCompilationDependencies, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -31,7 +31,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     commonModelDataInfoProvider
       .collectAllSources(scenario)
       .map(getTestingCapabilities(_, scenarioCompilationDependencies)) match {
@@ -75,7 +75,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     commonModelDataInfoProvider
       .collectAllSources(scenario)
       .map(source => source.id -> getTestParametersWithDefaults(source, scenarioCompilationDependencies))
@@ -125,7 +125,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     for {
       generators <- prepareTestDataGenerators(scenario, scenarioCompilationDependencies)
       result <- createPreliminaryTestData(generators, size)
@@ -141,7 +141,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val jobData = JobData(metaData, ProcessVersion.empty)
     // FIXME abr
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val nodeId = NodeId(sourceNodeData.id)
     for {
       compiledSource <- commonModelDataInfoProvider

@@ -4,15 +4,18 @@ import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreatorDeps
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
+import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -46,9 +49,15 @@ class FlinkProcessCompilerData(
     compilerData.lifecycle(nodesToUse).foreach(_.close())
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
+  def compileSubPart(
+      node: SplittedNode[_],
+      validationContext: ValidationContext,
+      engineCompilationDeps: EngineScenarioCompilationDependencies
+  ): Node = {
     validateOrFail(
-      compilerData.subPartCompiler.compile(node, validationContext)(scenarioCompilationDependencies).result
+      compilerData.subPartCompiler
+        .compile(node, validationContext)(new ScenarioCompilationDependencies(jobData, engineCompilationDeps))
+        .result
     )
   }
 
@@ -57,22 +66,27 @@ class FlinkProcessCompilerData(
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  def jobData: JobData = scenarioCompilationDependencies.jobData
-
-  def scenarioCompilationDependencies: ScenarioCompilationDependencies = compilerData.scenarioCompilationDependencies
+  def jobData: JobData = compilerData.jobData
 
   def interpreter: Interpreter = compilerData.interpreter
 
   def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
     compilerData.expressionCompiler,
     compilerData.expressionEvaluator,
-    scenarioCompilationDependencies.jobData
+    jobData
   )
 
-  def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
-    compilerData.compile(process)
+  def compileProcess(
+      process: CanonicalProcess
+  )(
+      implicit engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
+  ): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = compilerData.compile(process)
 
-  def compileProcessOrFail(process: CanonicalProcess): CompiledProcessParts = validateOrFail(compileProcess(process))
+  def compileProcessOrFail(
+      process: CanonicalProcess
+  )(
+      implicit engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
+  ): CompiledProcessParts = validateOrFail(compileProcess(process))
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 

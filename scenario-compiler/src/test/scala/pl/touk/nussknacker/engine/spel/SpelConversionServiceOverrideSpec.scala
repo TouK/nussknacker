@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.component.{
   NodeComponentInfo,
   NodesDeploymentData
 }
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
@@ -115,10 +115,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       )
     val jobData: JobData =
       JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
-    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     val compilerData = ProcessCompilerData.prepare(
-      scenarioCompilationDependencies,
+      jobData,
       modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
       Seq.empty,
@@ -128,6 +126,10 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       CustomProcessValidatorLoader.emptyCustomProcessValidator,
       NodesDeploymentData.empty,
     )
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
     val parts  = compilerData.compile(process).value
     val source = parts.sources.head
     val compiledNode =

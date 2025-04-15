@@ -63,7 +63,7 @@ class DefaultStreamExecutionEnvPreparer(
     val streamMetaData =
       MetaDataExtractor
         .extractTypeSpecificDataOrDefault[StreamMetaData](
-          compilerData.scenarioCompilationDependencies.metaData,
+          compilerData.jobData.metaData,
           StreamMetaData()
         )
     env.setRestartStrategy(compilerData.restartStrategy)

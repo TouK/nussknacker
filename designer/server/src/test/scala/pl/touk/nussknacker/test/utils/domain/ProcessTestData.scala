@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.test.utils.domain
 
+import cats.effect.{Resource, SyncIO}
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.Comment
@@ -169,6 +170,8 @@ object ProcessTestData {
     validator = validator,
     scenarioProperties = scenarioProperties,
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
+    engineScenarioCompilationDependenciesResource =
+      Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
     fragmentResolver = fragmentResolver,

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   AdditionalVariableWithFixedValue,
-  EngineNodeCompilationDependencies,
+  EngineScenarioCompilationDependencies,
   NodeDependency,
   Parameter
 }
@@ -55,7 +55,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     val metaData         = MetaData("scenario", StreamMetaData())
     val jobData          = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val result = new NodeDataValidator(modelData).validate(
       node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''".spel) :: Nil)),
       ValidationContext.empty,

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import org.scalatest.Inside.inside
@@ -1679,6 +1680,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      engineScenarioCompilationDependenciesResource =
+        Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
@@ -1738,6 +1741,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      engineScenarioCompilationDependenciesResource =
+        Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
@@ -2717,6 +2722,8 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+    engineScenarioCompilationDependenciesResource =
+      Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
     scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
@@ -2751,6 +2758,8 @@ private object UIProcessValidatorSpec {
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),
+      engineScenarioCompilationDependenciesResource =
+        Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty)),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List(SampleCustomProcessValidator),
       fragmentResolver = new FragmentResolver(

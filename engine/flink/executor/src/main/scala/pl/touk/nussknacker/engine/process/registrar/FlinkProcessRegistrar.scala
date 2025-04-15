@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -128,7 +129,7 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData                     = compilerData.scenarioCompilationDependencies.jobData
+      val jobData                     = compilerData.jobData
       val componentUseContextProvider = compilerData.runtimeMode
 
       FlinkCustomNodeContext(
@@ -155,7 +156,7 @@ class FlinkProcessRegistrar(
     {
       // it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
       compilerData
-        .compileProcessOrFail(process)
+        .compileProcessOrFail(process)(new FlinkScenarioCompilationDependencies(env))
         .sources
         .toList
         .foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
@@ -338,7 +339,7 @@ class FlinkProcessRegistrar(
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
         case _                       => Map.empty
       })
-      val metaData                      = compilerData.scenarioCompilationDependencies.metaData
+      val metaData                      = compilerData.jobData.metaData
       val asyncExecutionContextPreparer = compilerData.asyncExecutionContextPreparer
       val streamMetaData =
         MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())

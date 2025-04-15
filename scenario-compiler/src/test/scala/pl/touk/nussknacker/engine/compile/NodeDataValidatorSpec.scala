@@ -1524,7 +1524,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val metaData         = MetaData("id", StreamMetaData())
     val jobData          = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     new NodeDataValidator(aModelData).validate(nodeData, ctx, branchCtxs, outgoingEdges, fragmentResolver)
   }
 

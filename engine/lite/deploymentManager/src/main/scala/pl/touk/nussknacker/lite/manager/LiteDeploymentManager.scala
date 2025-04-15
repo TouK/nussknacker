@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.lite.manager
 
+import cats.effect.{Resource, SyncIO}
 import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, DMTestScenarioCommand}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.testmode.TestProcess
@@ -30,5 +32,8 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
       }
     }
   }
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.eval(SyncIO.pure(EngineScenarioCompilationDependencies.empty))
 
 }

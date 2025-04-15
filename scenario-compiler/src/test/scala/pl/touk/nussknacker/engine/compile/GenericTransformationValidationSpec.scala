@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   WrongParameters
 }
 import pl.touk.nussknacker.engine.api.definition.{
-  EngineNodeCompilationDependencies,
+  EngineScenarioCompilationDependencies,
   Parameter,
   SpelParameterEditor,
   SpelTemplateParameterEditor
@@ -80,7 +80,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     val jobData: JobData =
       JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     validator.validate(process, isFragment = false)
   }
 

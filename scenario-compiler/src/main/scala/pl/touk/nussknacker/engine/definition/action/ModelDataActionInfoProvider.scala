@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, StaticParameterConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -25,7 +25,7 @@ class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvid
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     commonModelDataInfoProvider
       .compileAllCustomNodes(scenario)(scenarioCompilationDependencies)
       .map(nodes => extractParametersFromCustomNodes(nodes))

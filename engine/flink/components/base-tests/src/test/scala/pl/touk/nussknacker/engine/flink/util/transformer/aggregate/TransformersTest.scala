@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -329,7 +329,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val jobData = jobDataFor(testScenario)
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val result = processValidator.validate(testScenario, isFragment = false)(scenarioCompilationDependencies)
 
     inside(result.result) {
@@ -891,7 +891,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
     val jobData  = jobDataFor(scenario)
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     processValidator.validate(scenario, isFragment = false)(scenarioCompilationDependencies)
   }
 

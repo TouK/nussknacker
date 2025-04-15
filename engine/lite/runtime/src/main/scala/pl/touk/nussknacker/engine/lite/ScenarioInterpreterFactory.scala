@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ServiceExecutionContext, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -80,10 +80,8 @@ object ScenarioInterpreterFactory {
       )
       val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
-      val scenarioCompilationDependencies =
-        new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
       val compilerData = ProcessCompilerData.prepare(
-        scenarioCompilationDependencies,
+        jobData,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
@@ -94,6 +92,8 @@ object ScenarioInterpreterFactory {
         nodesDeploymentData,
       )
 
+      implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+        EngineScenarioCompilationDependencies.empty
       compilerData.compile(process).andThen { compiledProcess =>
         val components = extractComponents(compiledProcess.sources.toList)
         val sources    = collectSources(components)
@@ -105,8 +105,7 @@ object ScenarioInterpreterFactory {
           compiledProcess,
           compilerData,
           runtimeMode,
-          capabilityTransformer,
-          scenarioCompilationDependencies
+          capabilityTransformer
         ).compile
           .map(_.run)
           .map { case (sinkTypes, invoker) =>
@@ -167,7 +166,6 @@ object ScenarioInterpreterFactory {
       processCompilerData: ProcessCompilerData,
       runtimeMode: RuntimeMode,
       capabilityTransformer: CapabilityTransformer[F],
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
     // we collect errors and also typing results of sinks
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
@@ -251,7 +249,11 @@ object ScenarioInterpreterFactory {
         node: SplittedNode[_],
         validationContext: ValidationContext,
     ): ValidatedNel[ProcessCompilationError, Node] =
-      processCompilerData.subPartCompiler.compile(node, validationContext)(scenarioCompilationDependencies).result
+      processCompilerData.subPartCompiler
+        .compile(node, validationContext)(
+          new ScenarioCompilationDependencies(processCompilerData.jobData, EngineScenarioCompilationDependencies.empty)
+        )
+        .result
 
     private def customComponentContext(nodeId: String) =
       CustomComponentContext[F](nodeId, capabilityTransformer)
@@ -327,7 +329,7 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       processCompilerData.interpreter
-        .interpret[F](node, scenarioCompilationDependencies.jobData, ctx, ServiceExecutionContext(ec))
+        .interpret[F](node, processCompilerData.jobData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value

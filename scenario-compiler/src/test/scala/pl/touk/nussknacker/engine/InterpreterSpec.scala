@@ -114,19 +114,17 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     NameDictService.clear()
 
     val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
-    val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     val processCompilerData =
-      prepareCompilerData(scenarioCompilationDependencies, additionalComponents, listeners)
+      prepareCompilerData(jobData, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts       = failOnErrors(processCompilerData.compile(scenario))
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+    val parts = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(
-        processCompilerData.subPartCompiler
-          .compile(part.node, part.validationContext)(scenarioCompilationDependencies)
-          .result
-      )
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
@@ -179,7 +177,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   }
 
   def prepareCompilerData(
-      scenarioCompilationDependencies: ScenarioCompilationDependencies,
+      jobData: JobData,
       additionalComponents: List[ComponentDefinition],
       listeners: Seq[ProcessListener]
   ): ProcessCompilerData = {
@@ -202,7 +200,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
-      scenarioCompilationDependencies,
+      jobData,
       definitionsWithTypes,
       new SimpleDictRegistry(
         Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))

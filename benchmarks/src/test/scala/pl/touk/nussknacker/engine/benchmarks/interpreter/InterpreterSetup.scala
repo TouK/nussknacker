@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.component.{
   UnboundedStreamComponent
 }
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -45,12 +45,18 @@ class InterpreterSetup[T: ClassTag] {
     val jobData      = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     val compilerData = prepareCompilerData(jobData, additionalComponents)
     val interpreter  = compilerData.interpreter
-    val parts        = failOnErrors(compilerData.compile(process))
+
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+
+    val parts = failOnErrors(compilerData.compile(process))
 
     def compileNode(part: ProcessPart) =
       failOnErrors(
         compilerData.subPartCompiler
-          .compile(part.node, part.validationContext)(compilerData.scenarioCompilationDependencies)
+          .compile(part.node, part.validationContext)
           .result
       )
 
@@ -81,11 +87,8 @@ class InterpreterSetup[T: ClassTag] {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
-    val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
-
     ProcessCompilerData.prepare(
-      scenarioCompilationDependencies,
+      jobData,
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       List.empty,

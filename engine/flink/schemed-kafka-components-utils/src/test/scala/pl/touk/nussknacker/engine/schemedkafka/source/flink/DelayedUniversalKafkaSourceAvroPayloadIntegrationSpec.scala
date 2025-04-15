@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
-  EngineNodeCompilationDependencies,
+  EngineScenarioCompilationDependencies,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   SpelParameterEditor,
@@ -155,7 +155,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     val process     = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
     val jobData     = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val nodeValidator = new NodeDataValidator(modelData)
 
     val result = nodeValidator.validate(

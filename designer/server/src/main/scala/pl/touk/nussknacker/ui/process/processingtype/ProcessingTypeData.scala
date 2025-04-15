@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtype
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
@@ -110,7 +110,7 @@ object ProcessingTypeData {
     val jobData      = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
     // FIXME abr
     val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
 
     def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
       DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(

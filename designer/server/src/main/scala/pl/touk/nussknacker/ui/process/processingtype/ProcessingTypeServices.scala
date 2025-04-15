@@ -80,14 +80,17 @@ object ProcessingTypeServices {
   )(implicit ec: ExecutionContext): ProcessingTypeServices = {
     val nodeValidator = new NodeValidator(processingTypeData.designerModelData.modelData, fragmentRepository)
     val scenarioValidator = new UIProcessValidator(
-      processingTypeData.processingType,
-      ProcessValidator.default(processingTypeData.designerModelData.modelData),
-      processingTypeData.designerModelData.scenarioPropertiesConfig,
-      new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
-      new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
-      processingTypeData.deploymentData.additionalValidators,
-      fragmentResolver,
-      designerConfig.stickyNotesSettings
+      processingType = processingTypeData.processingType,
+      validator = ProcessValidator.default(processingTypeData.designerModelData.modelData),
+      scenarioProperties = processingTypeData.designerModelData.scenarioPropertiesConfig,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
+      engineScenarioCompilationDependenciesResource =
+        processingTypeData.deploymentData.validDeploymentManagerOrStub.scenarioCompilationDependenciesResource,
+      scenarioLabelsValidator = new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
+      additionalValidators = processingTypeData.deploymentData.additionalValidators,
+      fragmentResolver = fragmentResolver,
+      stickyNotesSettings = designerConfig.stickyNotesSettings
     )
     val substitutor =
       ProcessDictSubstitutor(processingTypeData.designerModelData.modelData.designerDictServices.dictRegistry)

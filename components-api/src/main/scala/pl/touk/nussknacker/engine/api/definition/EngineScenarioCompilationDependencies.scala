@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.api.definition
 
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 
-trait EngineNodeCompilationDependencies {
+trait EngineScenarioCompilationDependencies {
   def nodeCompilationDependencies: List[NodeDependencyValue]
 }
 
-object EngineNodeCompilationDependencies {
+object EngineScenarioCompilationDependencies {
 
-  val empty: EngineNodeCompilationDependencies = new EngineNodeCompilationDependencies {
+  val empty: EngineScenarioCompilationDependencies = new EngineScenarioCompilationDependencies {
     override val nodeCompilationDependencies: List[NodeDependencyValue] = List.empty
   }
 

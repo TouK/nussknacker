@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.{
   CustomProcessValidatorLoader,
   ModelData,
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
-import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.compile._
@@ -90,12 +91,9 @@ class FlinkProcessCompilerDataFactory(
     val (definitionWithTypes, dictRegistry) = definitions(modelDependencies, userCodeClassLoader)
 
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
-    // FIXME abr
-    val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(JobData(metaData, processVersion), EngineNodeCompilationDependencies.empty)
     val compilerData =
       ProcessCompilerData.prepare(
-        scenarioCompilationDependencies,
+        JobData(metaData, processVersion),
         definitionWithTypes,
         dictRegistry,
         listenersToUse,

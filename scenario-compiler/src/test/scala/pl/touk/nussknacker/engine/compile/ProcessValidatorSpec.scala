@@ -1741,7 +1741,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   ): CompilationResult[Unit] = {
     val jobData: JobData = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),

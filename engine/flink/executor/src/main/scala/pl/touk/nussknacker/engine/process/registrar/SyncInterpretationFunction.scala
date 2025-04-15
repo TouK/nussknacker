@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ServiceExecutionContext
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -28,7 +29,14 @@ private[registrar] class SyncInterpretationFunction(
 ) extends RichFlatMapFunction[Context, InterpretationResult]
     with ProcessPartFunction {
 
-  private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
+  private lazy val compiledNode =
+    compilerData.compileSubPart(
+      node = node,
+      validationContext = validationContext,
+      // nodes compiled for interpreter purpose don't have access to stream execution environment
+      engineCompilationDeps = EngineScenarioCompilationDependencies.empty
+    )
+
   private lazy val serviceExecutionContext: ServiceExecutionContext = ServiceExecutionContext(syncEc)
 
   import SynchronousExecutionContextAndIORuntime._
