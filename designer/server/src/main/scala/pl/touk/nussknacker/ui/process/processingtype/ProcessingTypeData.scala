@@ -3,9 +3,13 @@ package pl.touk.nussknacker.ui.process.processingtype
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
-import pl.touk.nussknacker.engine.compile.EngineNodeDependencies
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components, DynamicComponentStaticDefinitionDeterminer}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.compile.EngineNodeCompilationDependencies
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  Components,
+  DynamicComponentStaticDefinitionDeterminer
+}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
@@ -101,16 +105,17 @@ object ProcessingTypeData {
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): DynamicComponentsStaticDefinitions = {
     // We assume that this information is not important for determining initial parameters of dynamic nodes, so we pass fake values
-    val scenarioName              = ProcessName("fakeScenarioName")
-    val metaData                  = metaDataInitializer.create(scenarioName, Map.empty)
-    val jobData = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
+    val scenarioName = ProcessName("fakeScenarioName")
+    val metaData     = metaDataInitializer.create(scenarioName, Map.empty)
+    val jobData      = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
     // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
 
     def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
       DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
         modelData,
-        jobRuntimeData,
+        scenarioCompilationDependencies,
         extractComponents
       )
     }

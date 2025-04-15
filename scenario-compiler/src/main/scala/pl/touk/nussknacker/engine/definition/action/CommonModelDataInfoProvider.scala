@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, ProcessCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.compiledgraph.{node => compiledNode, CompiledNodesCollector}
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart, SourcePart}
-import pl.touk.nussknacker.engine.compiledgraph.{CompiledNodesCollector, node => compiledNode}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
+import pl.touk.nussknacker.engine.graph.node.{asFragmentInputDefinition, asSource, SourceNodeData}
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{JobRuntimeData, ModelData, RuntimeMode}
 
 class CommonModelDataInfoProvider(modelData: ModelData) {
 
@@ -52,7 +52,10 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
 
   def compileSourceNode(
       source: SourceNodeData
-  )(implicit jobRuntimeData: JobRuntimeData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
+      nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, Source] = {
     // We have to wrap this block with model's class loader because it invokes node compilation
     modelData.withThisAsContextClassLoader {
       nodeCompiler.compileSource(source).compiledObject
@@ -61,7 +64,9 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
 
   def compileAllCustomNodes(
       scenario: CanonicalProcess
-  )(implicit jobRuntimeData: JobRuntimeData): ValidatedNel[ProcessCompilationError, Map[NodeComponentInfo, Any]] =
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): ValidatedNel[ProcessCompilationError, Map[NodeComponentInfo, Any]] =
     // We have to wrap this block with model's class loader because it invokes node compilation
     modelData.withThisAsContextClassLoader {
       scenarioCompiler
@@ -72,7 +77,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
 
   private def extractCustomComponents(
       parts: List[ProcessPart]
-  )(implicit jobRuntimeData: JobRuntimeData): Map[NodeComponentInfo, Any] =
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): Map[NodeComponentInfo, Any] =
     parts.foldLeft(Map.empty[NodeComponentInfo, Any]) { (acc, part) =>
       val nodeComponentInfo = NodeComponentInfoExtractor.fromScenarioNode(part.node.data)
       part match {
@@ -89,7 +94,9 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
       }
     }
 
-  private def compilePartsAllCustomNodes(part: ProcessPart)(implicit jobRuntimeData: JobRuntimeData): Map[NodeComponentInfo, Any] =
+  private def compilePartsAllCustomNodes(
+      part: ProcessPart
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): Map[NodeComponentInfo, Any] =
     subGraphCompiler
       .compile(part.node, part.validationContext)
       .result

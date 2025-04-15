@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.compile.{
   CompilationResult,
-  EngineNodeDependencies,
+  EngineNodeCompilationDependencies,
   FragmentResolver,
   ProcessValidator
 }
@@ -331,9 +331,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testScenario =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val jobData        = jobDataFor(testScenario)
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    val result         = processValidator.validate(testScenario, isFragment = false)(jobRuntimeData)
+    val jobData = jobDataFor(testScenario)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    val result = processValidator.validate(testScenario, isFragment = false)(scenarioCompilationDependencies)
 
     inside(result.result) {
       case Invalid(
@@ -891,10 +892,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    val scenario       = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
-    val jobData        = jobDataFor(scenario)
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    processValidator.validate(scenario, isFragment = false)(jobRuntimeData)
+    val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
+    val jobData  = jobDataFor(scenario)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    processValidator.validate(scenario, isFragment = false)(scenarioCompilationDependencies)
   }
 
   private def tumbling(

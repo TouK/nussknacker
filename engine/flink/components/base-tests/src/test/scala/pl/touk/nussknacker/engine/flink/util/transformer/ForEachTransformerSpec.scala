@@ -5,14 +5,14 @@ import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, ProcessValidator}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
@@ -64,7 +64,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
         aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
       val processValidator = ProcessValidator.default(model)
       val jobData = JobData(testScenario.metaData, ProcessVersion.empty.copy(processName = testScenario.metaData.name))
-      implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+      implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+        new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
       val forEachResultValidationContext =
         processValidator.validate(testScenario, isFragment = false).typing(forEachNodeResultId)
       forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])

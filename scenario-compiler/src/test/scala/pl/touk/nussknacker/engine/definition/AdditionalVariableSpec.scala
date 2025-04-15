@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.definition
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, FragmentResolver}
+import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, FragmentResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -54,7 +53,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     val fragmentResolver = FragmentResolver(List.empty)
     val metaData         = MetaData("scenario", StreamMetaData())
     val jobData          = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     val result = new NodeDataValidator(modelData).validate(
       node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''".spel) :: Nil)),
       ValidationContext.empty,

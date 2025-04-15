@@ -10,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, JobRuntimeData, RuntimeMode}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, ProcessCompilerData}
+import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, ProcessCompilerData}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -114,9 +114,10 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       )
     val jobData: JobData =
       JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     val compilerData = ProcessCompilerData.prepare(
-      jobRuntimeData,
+      scenarioCompilationDependencies,
       modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
       Seq.empty,

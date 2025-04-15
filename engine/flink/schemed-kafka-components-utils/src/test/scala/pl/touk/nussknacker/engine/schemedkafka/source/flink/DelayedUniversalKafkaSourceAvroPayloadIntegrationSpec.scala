@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.avro.Schema
 import org.scalatest.LoneElement
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, FragmentResolver}
+import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, FragmentResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.schema._
@@ -150,11 +150,12 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
   }
 
   private def prepareTestForTimestampField(topicName: String, schema: Schema) = {
-    val topicConfig    = createAndRegisterTopicConfig(topicName, schema)
-    val process        = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
-    val jobData        = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    val nodeValidator  = new NodeDataValidator(modelData)
+    val topicConfig = createAndRegisterTopicConfig(topicName, schema)
+    val process     = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
+    val jobData     = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    val nodeValidator = new NodeDataValidator(modelData)
 
     val result = nodeValidator.validate(
       process.nodes.head.data,
@@ -162,7 +163,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
       Map.empty,
       List.empty,
       FragmentResolver(_ => None)
-    )(jobRuntimeData)
+    )(scenarioCompilationDependencies)
 
     result
       .asInstanceOf[ValidationPerformed]

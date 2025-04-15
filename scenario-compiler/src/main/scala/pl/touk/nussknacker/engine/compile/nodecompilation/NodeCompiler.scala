@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
-import pl.touk.nussknacker.engine.{api, compiledgraph, JobRuntimeData, RuntimeMode}
+import pl.touk.nussknacker.engine.{api, compiledgraph, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
-  EngineNodeDependencies,
+  EngineNodeCompilationDependencies,
   ExpressionCompiler,
   FragmentSourceWithTestWithParametersSupportFactory,
   NodeValidationExceptionHandler
@@ -107,8 +107,11 @@ class NodeCompiler(
 
   def compileSource(
       nodeData: SourceNodeData
-  )(implicit jobRuntimeData: JobRuntimeData, nodeId: NodeId): NodeCompilationResult[Source] = {
-    import jobRuntimeData._
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
+      nodeId: NodeId
+  ): NodeCompilationResult[Source] = {
+    import scenarioCompilationDependencies._
     nodeData match {
       case a @ Source(_, ref, _) =>
         definitions.getComponent(ComponentType.Source, ref.typ) match {
@@ -233,10 +236,10 @@ class NodeCompiler(
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
-      implicit jobRuntimeData: JobRuntimeData,
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[AnyRef] = {
-    import jobRuntimeData._
+    import scenarioCompilationDependencies._
 
     val outputVar       = data.outputVar.map(OutputVar.customNode)
     val defaultCtx      = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
@@ -266,7 +269,10 @@ class NodeCompiler(
   def compileSink(
       sink: Sink,
       ctx: ValidationContext
-  )(implicit nodeId: NodeId, jobRuntimeData: JobRuntimeData): NodeCompilationResult[api.process.Sink] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
 
     definitions.getComponent(ComponentType.Sink, ref.typ) match {
@@ -359,22 +365,25 @@ class NodeCompiler(
   def compileProcessor(
       n: Processor,
       ctx: ValidationContext
-  )(implicit nodeId: NodeId, jobRuntimeData: JobRuntimeData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, None)
   }
 
   def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
       implicit nodeId: NodeId,
-      jobRuntimeData: JobRuntimeData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, Some(outputVar))
   }
 
   private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
       implicit nodeId: NodeId,
-      jobRuntimeData: JobRuntimeData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    import jobRuntimeData._
+    import scenarioCompilationDependencies._
 
     definitions.getComponent(ComponentType.Service, n.id) match {
       case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
@@ -404,7 +413,10 @@ class NodeCompiler(
       componentDefinition: ComponentDefinitionWithImplementation,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
-  )(implicit nodeId: NodeId, jobRuntimeData: JobRuntimeData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     val defaultCtxForMethodBasedCreatedComponentExecutor
         : Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = returnTypeOpt =>
       outputVar match {
@@ -483,10 +495,10 @@ class NodeCompiler(
         ValidationContext
       ]
   )(
-      implicit jobRuntimeData: JobRuntimeData,
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
-    import jobRuntimeData._
+    import scenarioCompilationDependencies._
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
         val afterValidation =
@@ -568,9 +580,9 @@ class NodeCompiler(
       additionalDependencies: Seq[AnyRef]
   )(
       implicit nodeId: NodeId,
-      jobRuntimeData: JobRuntimeData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ComponentExecutor]) = {
-    import jobRuntimeData._
+    import scenarioCompilationDependencies._
     val ctx            = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
     val branchContexts = ctxOrBranches.getOrElse(Map.empty)
 
@@ -647,7 +659,7 @@ class NodeCompiler(
       outputVar: Option[String],
       dynamicDefinition: DynamicComponentDefinitionWithImplementation
   )(
-      implicit jobRuntimeData: JobRuntimeData,
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (dynamicDefinition.component, eitherSingleOrJoin) match {

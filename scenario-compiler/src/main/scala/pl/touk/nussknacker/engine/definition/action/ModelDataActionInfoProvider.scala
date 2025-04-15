@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{JobRuntimeData, ModelData}
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, StaticParameterConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.EngineNodeDependencies
+import pl.touk.nussknacker.engine.compile.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvider with LazyLogging {
@@ -22,10 +22,12 @@ class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvid
     ProcessCompilationError,
     Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, StaticParameterConfig]]]
   ] = {
-    val jobData = JobData(scenario.metaData, processVersion) // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val jobData = JobData(scenario.metaData, processVersion)
+    // FIXME abr
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     commonModelDataInfoProvider
-      .compileAllCustomNodes(scenario)(jobRuntimeData)
+      .compileAllCustomNodes(scenario)(scenarioCompilationDependencies)
       .map(nodes => extractParametersFromCustomNodes(nodes))
 
   }

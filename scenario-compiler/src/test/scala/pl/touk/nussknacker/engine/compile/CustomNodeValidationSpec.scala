@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, JobRuntimeData}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -71,7 +71,8 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   private def validate(process: CanonicalProcess) = {
     val jobData: JobData =
       JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     validator.validate(process, isFragment = false)
   }
 

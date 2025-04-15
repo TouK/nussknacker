@@ -4,7 +4,7 @@ import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.{Interpreter, JobRuntimeData, RuntimeMode}
+import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
@@ -47,7 +47,9 @@ class FlinkProcessCompilerData(
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobRuntimeData).result)
+    validateOrFail(
+      compilerData.subPartCompiler.compile(node, validationContext)(scenarioCompilationDependencies).result
+    )
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -55,16 +57,16 @@ class FlinkProcessCompilerData(
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  def jobData: JobData = jobRuntimeData.jobData
+  def jobData: JobData = scenarioCompilationDependencies.jobData
 
-  def jobRuntimeData: JobRuntimeData = compilerData.jobRuntimeData
+  def scenarioCompilationDependencies: ScenarioCompilationDependencies = compilerData.scenarioCompilationDependencies
 
   def interpreter: Interpreter = compilerData.interpreter
 
   def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
     compilerData.expressionCompiler,
     compilerData.expressionEvaluator,
-    jobRuntimeData.jobData
+    scenarioCompilationDependencies.jobData
   )
 
   def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =

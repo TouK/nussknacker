@@ -62,7 +62,10 @@ class DefaultStreamExecutionEnvPreparer(
 
     val streamMetaData =
       MetaDataExtractor
-        .extractTypeSpecificDataOrDefault[StreamMetaData](compilerData.jobRuntimeData.metaData, StreamMetaData())
+        .extractTypeSpecificDataOrDefault[StreamMetaData](
+          compilerData.scenarioCompilationDependencies.metaData,
+          StreamMetaData()
+        )
     env.setRestartStrategy(compilerData.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 

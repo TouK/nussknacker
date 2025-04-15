@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.engine.{JobRuntimeData, ModelData}
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, FragmentResolver}
+import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, FragmentResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
   ValidationNotPerformed,
@@ -28,7 +28,8 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
     implicit val jobData: JobData =
       JobData(nodeData.processProperties.toMetaData(processVersion.processName), processVersion)
     // FIXME abr
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
 
     val nodeDataValidator = new NodeDataValidator(modelData)
 

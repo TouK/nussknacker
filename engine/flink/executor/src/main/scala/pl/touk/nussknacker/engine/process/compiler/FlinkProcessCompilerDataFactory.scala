@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, JobRuntimeData, ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.{
+  CustomProcessValidatorLoader,
+  ModelData,
+  RuntimeMode,
+  ScenarioCompilationDependencies
+}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
@@ -85,10 +90,11 @@ class FlinkProcessCompilerDataFactory(
 
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
     // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(JobData(metaData, processVersion), EngineNodeDependencies.empty)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(JobData(metaData, processVersion), EngineNodeCompilationDependencies.empty)
     val compilerData =
       ProcessCompilerData.prepare(
-        jobRuntimeData,
+        scenarioCompilationDependencies,
         definitionWithTypes,
         dictRegistry,
         listenersToUse,

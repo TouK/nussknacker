@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.compile.{CompilationResult, EngineNodeDependencies, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{CompilationResult, EngineNodeCompilationDependencies, ProcessValidator}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
@@ -83,9 +83,10 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     )
     val jobData: JobData =
       JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    val validator                               = ProcessValidator.default(modelData)
-    val validationResult                        = validator.validate(scenario, isFragment = false)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    val validator        = ProcessValidator.default(modelData)
+    val validationResult = validator.validate(scenario, isFragment = false)
     validationResult
   }
 

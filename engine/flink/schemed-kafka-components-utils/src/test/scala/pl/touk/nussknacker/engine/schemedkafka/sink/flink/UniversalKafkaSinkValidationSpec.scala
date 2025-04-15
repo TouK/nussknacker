@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.compile.EngineNodeDependencies
+import pl.touk.nussknacker.engine.compile.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -35,9 +35,10 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val metaData  = MetaData("processId", StreamMetaData())
 
     val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    implicit val nodeId: NodeId                 = NodeId("id")
-    val paramsList                              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    implicit val nodeId: NodeId = NodeId("id")
+    val paramsList              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
     validator
       .validateNode(
         universalSinkFactory,

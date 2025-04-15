@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, RuntimeMode, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, JobRuntimeData, RuntimeMode}
 
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, JobRunti
 object ProcessCompilerData {
 
   def prepare(
-      jobRuntimeData: JobRuntimeData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies,
       definitionWithTypes: ModelDefinitionWithClasses,
       dictRegistry: EngineDictRegistry,
       listeners: Seq[ProcessListener],
@@ -80,7 +80,7 @@ object ProcessCompilerData {
       expressionEvaluator,
       interpreter,
       listeners,
-      jobRuntimeData,
+      scenarioCompilationDependencies,
       servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap
     )
 
@@ -95,7 +95,7 @@ final class ProcessCompilerData(
     val expressionEvaluator: ExpressionEvaluator,
     val interpreter: Interpreter,
     val listeners: Seq[ProcessListener],
-    val jobRuntimeData: JobRuntimeData,
+    val scenarioCompilationDependencies: ScenarioCompilationDependencies,
     services: Map[String, Lifecycle]
 ) {
 
@@ -112,5 +112,5 @@ final class ProcessCompilerData(
   }
 
   def compile(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
-    compiler.compile(process)(jobRuntimeData).result
+    compiler.compile(process)(scenarioCompilationDependencies).result
 }

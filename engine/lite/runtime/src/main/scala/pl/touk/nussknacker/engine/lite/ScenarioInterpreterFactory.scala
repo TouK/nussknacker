@@ -79,9 +79,10 @@ object ScenarioInterpreterFactory {
       )
       val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
-      val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+      val scenarioCompilationDependencies =
+        new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
       val compilerData = ProcessCompilerData.prepare(
-        jobRuntimeData,
+        scenarioCompilationDependencies,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
@@ -104,7 +105,7 @@ object ScenarioInterpreterFactory {
           compilerData,
           runtimeMode,
           capabilityTransformer,
-          jobRuntimeData
+          scenarioCompilationDependencies
         ).compile
           .map(_.run)
           .map { case (sinkTypes, invoker) =>
@@ -165,7 +166,7 @@ object ScenarioInterpreterFactory {
       processCompilerData: ProcessCompilerData,
       runtimeMode: RuntimeMode,
       capabilityTransformer: CapabilityTransformer[F],
-      jobRuntimeData: JobRuntimeData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
     // we collect errors and also typing results of sinks
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
@@ -249,7 +250,7 @@ object ScenarioInterpreterFactory {
         node: SplittedNode[_],
         validationContext: ValidationContext,
     ): ValidatedNel[ProcessCompilationError, Node] =
-      processCompilerData.subPartCompiler.compile(node, validationContext)(jobRuntimeData).result
+      processCompilerData.subPartCompiler.compile(node, validationContext)(scenarioCompilationDependencies).result
 
     private def customComponentContext(nodeId: String) =
       CustomComponentContext[F](nodeId, capabilityTransformer)
@@ -325,7 +326,7 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       processCompilerData.interpreter
-        .interpret[F](node, jobRuntimeData.jobData, ctx, ServiceExecutionContext(ec))
+        .interpret[F](node, scenarioCompilationDependencies.jobData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value

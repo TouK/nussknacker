@@ -3,7 +3,13 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{api, CustomProcessValidatorLoader, InterpretationResult, JobRuntimeData, RuntimeMode}
+import pl.touk.nussknacker.engine.{
+  api,
+  CustomProcessValidatorLoader,
+  InterpretationResult,
+  RuntimeMode,
+  ScenarioCompilationDependencies
+}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -16,7 +22,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{EngineNodeDependencies, ProcessCompilerData}
+import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, ProcessCompilerData}
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -42,7 +48,9 @@ class InterpreterSetup[T: ClassTag] {
 
     def compileNode(part: ProcessPart) =
       failOnErrors(
-        compilerData.subPartCompiler.compile(part.node, part.validationContext)(compilerData.jobRuntimeData).result
+        compilerData.subPartCompiler
+          .compile(part.node, part.validationContext)(compilerData.scenarioCompilationDependencies)
+          .result
       )
 
     val compiled = compileNode(parts.sources.head)
@@ -72,10 +80,11 @@ class InterpreterSetup[T: ClassTag] {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
 
     ProcessCompilerData.prepare(
-      jobRuntimeData,
+      scenarioCompilationDependencies,
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       List.empty,

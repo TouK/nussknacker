@@ -1,17 +1,22 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DynamicComponent, JoinDynamicComponent, SingleInputDynamicComponent, WithStaticParameters}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DynamicComponent,
+  JoinDynamicComponent,
+  SingleInputDynamicComponent,
+  WithStaticParameters
+}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.{JobRuntimeData, ModelData}
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
 // It is necessary to provide them, because:
@@ -24,7 +29,7 @@ class DynamicComponentStaticDefinitionDeterminer(
 
   private def determineStaticDefinition(
       dynamic: DynamicComponentDefinitionWithImplementation
-  )(implicit jobRuntimeData: JobRuntimeData): ComponentStaticDefinition = {
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ComponentStaticDefinition = {
     val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
       parameters,
@@ -34,7 +39,7 @@ class DynamicComponentStaticDefinitionDeterminer(
 
   private def determineInitialParameters(
       dynamic: DynamicComponentDefinitionWithImplementation
-  )(implicit jobRuntimeData: JobRuntimeData): List[Parameter] = {
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): List[Parameter] = {
     def inferParameters(
         transformer: DynamicComponent[_]
     )(inputContext: transformer.InputContext) = {
@@ -76,7 +81,7 @@ object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
-      jobRuntimeData: JobRuntimeData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies,
       extractComponentsDefinitions: Components => List[ComponentDefinitionWithImplementation]
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
@@ -87,7 +92,9 @@ object DynamicComponentStaticDefinitionDeterminer {
     modelDataForType.withThisAsContextClassLoader {
       extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
-          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)(jobRuntimeData)
+          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)(
+            scenarioCompilationDependencies
+          )
       }.toMap
     }
   }

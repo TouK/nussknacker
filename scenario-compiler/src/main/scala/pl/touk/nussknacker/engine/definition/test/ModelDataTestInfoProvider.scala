@@ -4,18 +4,22 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.EngineNodeDependencies
+import pl.touk.nussknacker.engine.compile.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{ScenarioTestDataGenerationError, SourceTestDataGenerationError, TestDataPreparationError}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ScenarioTestDataGenerationError,
+  SourceTestDataGenerationError,
+  TestDataPreparationError
+}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
-import pl.touk.nussknacker.engine.{JobRuntimeData, ModelData}
 import shapeless.syntax.typeable._
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
@@ -27,8 +31,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): TestingCapabilities = {
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    commonModelDataInfoProvider.collectAllSources(scenario).map(getTestingCapabilities(_, jobRuntimeData)) match {
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    commonModelDataInfoProvider
+      .collectAllSources(scenario)
+      .map(getTestingCapabilities(_, scenarioCompilationDependencies)) match {
       case Nil => TestingCapabilities.Disabled
       case s =>
         s.reduce((tc1, tc2) =>
@@ -42,9 +49,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     }
   }
 
-  private def getTestingCapabilities(source: SourceNodeData, jobRuntimeData: JobRuntimeData): TestingCapabilities = {
+  private def getTestingCapabilities(
+      source: SourceNodeData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): TestingCapabilities = {
     val testingCapabilities = for {
-      sourceObj <- commonModelDataInfoProvider.compileSourceNode(source)(jobRuntimeData, NodeId(source.id))
+      sourceObj <- commonModelDataInfoProvider.compileSourceNode(source)(
+        scenarioCompilationDependencies,
+        NodeId(source.id)
+      )
       canTest         = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
       canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
@@ -62,16 +75,20 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): Map[String, List[Parameter]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     commonModelDataInfoProvider
       .collectAllSources(scenario)
-      .map(source => source.id -> getTestParametersWithDefaults(source, jobRuntimeData))
+      .map(source => source.id -> getTestParametersWithDefaults(source, scenarioCompilationDependencies))
       .toMap
 
   }
 
-  private def getTestParametersWithDefaults(source: SourceNodeData, jobRuntimeData: JobRuntimeData): List[Parameter] = {
-    val testParameters = getTestParameters(source, jobRuntimeData)
+  private def getTestParametersWithDefaults(
+      source: SourceNodeData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): List[Parameter] = {
+    val testParameters = getTestParameters(source, scenarioCompilationDependencies)
     val testParametersEnrichedWithDefaults =
       StandardParameterEnrichment.enrichParameterDefinitions(testParameters, Map.empty)
     testParametersEnrichedWithDefaults
@@ -83,8 +100,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   // TODO: This assumption is wrong. Every endpoint should be treated separately. Currently from time to time
   //       users got error notification because this endpoint is called without checking canTestWithForm = true.
   //       We can go even further and merge both endpoints
-  private def getTestParameters(source: SourceNodeData, jobRuntimeData: JobRuntimeData): List[Parameter] = {
-    commonModelDataInfoProvider.compileSourceNode(source)(jobRuntimeData, NodeId(source.id)) match {
+  private def getTestParameters(
+      source: SourceNodeData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): List[Parameter] = {
+    commonModelDataInfoProvider.compileSourceNode(source)(scenarioCompilationDependencies, NodeId(source.id)) match {
       case Valid(s: TestWithParametersSupport[_]) => s.testParametersDefinition
       case Valid(sourceWithoutTestWithParametersSupport) =>
         throw new UnsupportedOperationException(
@@ -105,9 +125,10 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData] = {
     val jobData = JobData(scenario.metaData, processVersion)
     // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     for {
-      generators <- prepareTestDataGenerators(scenario, jobRuntimeData)
+      generators <- prepareTestDataGenerators(scenario, scenarioCompilationDependencies)
       result <- createPreliminaryTestData(generators, size)
         .toRight(ScenarioTestDataGenerationError.NoDataGenerated)
     } yield result
@@ -120,11 +141,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   ): Either[SourceTestDataGenerationError, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     // FIXME abr
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
-    val nodeId         = NodeId(sourceNodeData.id)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
+    val nodeId = NodeId(sourceNodeData.id)
     for {
       compiledSource <- commonModelDataInfoProvider
-        .compileSourceNode(sourceNodeData)(jobRuntimeData, nodeId)
+        .compileSourceNode(sourceNodeData)(scenarioCompilationDependencies, nodeId)
         .toEither
         .left
         .map(errors => SourceTestDataGenerationError.SourceCompilationError(nodeId, errors))
@@ -150,7 +172,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private def prepareTestDataGenerators(
       scenario: CanonicalProcess,
-      jobRuntimeData: JobRuntimeData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Either[
     ScenarioTestDataGenerationError,
     NonEmptyList[(NodeId, TestDataGenerator)]
@@ -160,7 +182,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .map { source =>
         val nodeId = NodeId(source.id)
         commonModelDataInfoProvider
-          .compileSourceNode(source)(jobRuntimeData, nodeId)
+          .compileSourceNode(source)(scenarioCompilationDependencies, nodeId)
           .leftMap { compilationErrors =>
             NonEmptyList.one(nodeId -> compilationErrors)
           }

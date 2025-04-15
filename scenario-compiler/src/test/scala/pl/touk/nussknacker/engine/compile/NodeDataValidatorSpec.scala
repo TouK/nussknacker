@@ -6,7 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
-import pl.touk.nussknacker.engine.JobRuntimeData
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -1523,7 +1523,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
     val metaData         = MetaData("id", StreamMetaData())
     val jobData          = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    implicit val jobRuntimeData: JobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     new NodeDataValidator(aModelData).validate(nodeData, ctx, branchCtxs, outgoingEdges, fragmentResolver)
   }
 

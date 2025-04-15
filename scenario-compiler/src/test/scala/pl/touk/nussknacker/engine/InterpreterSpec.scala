@@ -113,16 +113,19 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     AccountService.clear()
     NameDictService.clear()
 
-    val jobData        = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
-    val jobRuntimeData = new JobRuntimeData(jobData, EngineNodeDependencies.empty)
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineNodeCompilationDependencies.empty)
     val processCompilerData =
-      prepareCompilerData(jobRuntimeData, additionalComponents, listeners)
+      prepareCompilerData(scenarioCompilationDependencies, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
     val parts       = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
       failOnErrors(
-        processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobRuntimeData).result
+        processCompilerData.subPartCompiler
+          .compile(part.node, part.validationContext)(scenarioCompilationDependencies)
+          .result
       )
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
@@ -176,7 +179,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   }
 
   def prepareCompilerData(
-      jobRuntimeData: JobRuntimeData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies,
       additionalComponents: List[ComponentDefinition],
       listeners: Seq[ProcessListener]
   ): ProcessCompilerData = {
@@ -199,7 +202,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
-      jobRuntimeData,
+      scenarioCompilationDependencies,
       definitionsWithTypes,
       new SimpleDictRegistry(
         Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
