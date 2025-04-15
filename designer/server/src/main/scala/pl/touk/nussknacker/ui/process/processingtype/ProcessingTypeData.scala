@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.effect.SyncIO
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
@@ -53,8 +54,7 @@ object ProcessingTypeData {
     val designerModelData =
       createDesignerModelData(
         modelData,
-        deploymentData.metaDataInitializer,
-        deploymentData.deploymentScenarioPropertiesConfig,
+        deploymentData,
         processingType,
         componentDefinitionExtractionMode
       )
@@ -68,13 +68,12 @@ object ProcessingTypeData {
 
   private def createDesignerModelData(
       modelData: ModelData,
-      metaDataInitializer: MetaDataInitializer,
-      deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+      deploymentData: DeploymentData,
       processingType: ProcessingType,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
     // TODO: consider using ParameterName for property names instead of String (for scenario and fragment properties)
-    val scenarioProperties = deploymentScenarioPropertiesConfig ++ modelData.modelConfig
+    val scenarioProperties = deploymentData.deploymentScenarioPropertiesConfig ++ modelData.modelConfig
       .getOrElse[Map[String, ScenarioPropertyConfig]](
         "scenarioPropertiesConfig",
         Map.empty
@@ -83,7 +82,7 @@ object ProcessingTypeData {
       .getOrElse[Map[String, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     val staticDefinitionForDynamicComponents =
-      createDynamicComponentsStaticDefinitions(modelData, metaDataInitializer, componentDefinitionExtractionMode)
+      createDynamicComponentsStaticDefinitions(modelData, deploymentData, componentDefinitionExtractionMode)
 
     val singleProcessingMode =
       ScenarioParametersDeterminer.determineProcessingMode(
@@ -101,33 +100,34 @@ object ProcessingTypeData {
 
   private def createDynamicComponentsStaticDefinitions(
       modelData: ModelData,
-      metaDataInitializer: MetaDataInitializer,
+      deploymentData: DeploymentData,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): DynamicComponentsStaticDefinitions = {
     // We assume that this information is not important for determining initial parameters of dynamic nodes, so we pass fake values
     val scenarioName = ProcessName("fakeScenarioName")
-    val metaData     = metaDataInitializer.create(scenarioName, Map.empty)
+    val metaData     = deploymentData.metaDataInitializer.create(scenarioName, Map.empty)
     val jobData      = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
-    // FIXME abr
-    val scenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    deploymentData.validDeploymentManagerOrStub.scenarioCompilationDependenciesResource.use {
+      engineScenarioCompilationDependencies =>
+        SyncIO {
+          def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
+            DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
+              modelData,
+              new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies),
+              extractComponents
+            )
+          }
 
-    def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
-      DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
-        modelData,
-        scenarioCompilationDependencies,
-        extractComponents
-      )
+          DynamicComponentsStaticDefinitions(
+            finalDefinitions = createStaticDefinitions(_.components),
+            basicDefinitions = componentDefinitionExtractionMode match {
+              case ComponentDefinitionExtractionMode.FinalDefinition => None
+              case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
+                Some(createStaticDefinitions(_.basicComponentsUnsafe))
+            }
+          )
+        }
     }
-
-    DynamicComponentsStaticDefinitions(
-      finalDefinitions = createStaticDefinitions(_.components),
-      basicDefinitions = componentDefinitionExtractionMode match {
-        case ComponentDefinitionExtractionMode.FinalDefinition => None
-        case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
-          Some(createStaticDefinitions(_.basicComponentsUnsafe))
-      }
-    )
-  }
+  }.unsafeRunSync()
 
 }

@@ -78,15 +78,20 @@ object ProcessingTypeServices {
       counter: ProcessCounter,
       processingTypeData: ProcessingTypeData
   )(implicit ec: ExecutionContext): ProcessingTypeServices = {
-    val nodeValidator = new NodeValidator(processingTypeData.designerModelData.modelData, fragmentRepository)
+    val scenarioCompilationDependenciesResource =
+      processingTypeData.deploymentData.validDeploymentManagerOrStub.scenarioCompilationDependenciesResource
+    val nodeValidator = new NodeValidator(
+      processingTypeData.designerModelData.modelData,
+      scenarioCompilationDependenciesResource,
+      fragmentRepository
+    )
     val scenarioValidator = new UIProcessValidator(
       processingType = processingTypeData.processingType,
       validator = ProcessValidator.default(processingTypeData.designerModelData.modelData),
       scenarioProperties = processingTypeData.designerModelData.scenarioPropertiesConfig,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
-      engineScenarioCompilationDependenciesResource =
-        processingTypeData.deploymentData.validDeploymentManagerOrStub.scenarioCompilationDependenciesResource,
+      engineScenarioCompilationDependenciesResource = scenarioCompilationDependenciesResource,
       scenarioLabelsValidator = new ScenarioLabelsValidator(designerConfig.scenarioLabelConfig),
       additionalValidators = processingTypeData.deploymentData.additionalValidators,
       fragmentResolver = fragmentResolver,
@@ -98,7 +103,10 @@ object ProcessingTypeServices {
     val scenarioResolver  = new ScenarioResolver(fragmentResolver, processingTypeData.processingType)
     val deploymentManager = processingTypeData.deploymentData.validDeploymentManagerOrStub
     val scenarioTestService = new ScenarioTestService(
-      new ModelDataTestInfoProvider(processingTypeData.designerModelData.modelData),
+      new ModelDataTestInfoProvider(
+        processingTypeData.designerModelData.modelData,
+        scenarioCompilationDependenciesResource
+      ),
       processResolver,
       designerConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
@@ -106,7 +114,10 @@ object ProcessingTypeServices {
       new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
     )
     val actionInfoService = new ActionInfoService(
-      new ModelDataActionInfoProvider(processingTypeData.designerModelData.modelData),
+      new ModelDataActionInfoProvider(
+        processingTypeData.designerModelData.modelData,
+        scenarioCompilationDependenciesResource
+      ),
       processResolver,
       scenarioResolver
     )

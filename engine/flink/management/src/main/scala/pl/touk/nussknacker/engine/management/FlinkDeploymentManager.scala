@@ -373,10 +373,15 @@ class FlinkDeploymentManager(
   }
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] = {
-    // FIXME abr .get
-    miniClusterWithServicesOpt.get
-      .createAttachedStreamExecutionEnvironment[SyncIO]
-      .map(new FlinkScenarioCompilationDependencies(_))
+    miniClusterWithServicesOpt
+      .map(
+        _.createAttachedStreamExecutionEnvironment[SyncIO]
+          .map(new FlinkScenarioCompilationDependencies(_))
+      )
+      .getOrElse {
+        // TODO: always create share minicluster
+        Resource.eval(SyncIO(EngineScenarioCompilationDependencies.empty))
+      }
   }
 
 }
