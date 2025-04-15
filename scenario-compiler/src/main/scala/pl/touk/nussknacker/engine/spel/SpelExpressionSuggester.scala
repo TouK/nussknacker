@@ -158,13 +158,13 @@ class SpelExpressionSuggester(
         .collect {
           case TypingResultWithContext(tc: TypedClass, staticContext) =>
             Future.successful(
-              clssDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+              clssDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext, tc)).getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectWithValue, staticContext) =>
             Future.successful(
               clssDefinitions
                 .get(to.underlying.klass)
-                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .map(c => filterClassMethods(c, p.getName, staticContext, to))
                 .getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
@@ -182,7 +182,7 @@ class SpelExpressionSuggester(
               }
             val suggestionsFromClass = clssDefinitions
               .get(to.runtimeObjType.klass)
-              .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
+              .map(c => filterClassMethods(c, p.getName, staticContext = false, to, fromClass = true))
               .getOrElse(Nil)
             val applicableSuggestions = if (collectSuggestionsFromClass) {
               suggestionsFromFields
@@ -196,7 +196,10 @@ class SpelExpressionSuggester(
                 .map(_.runtimeObjType.klass)
                 .toList
                 .flatMap(klass =>
-                  clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+                  clssDefinitions
+                    .get(klass)
+                    .map(c => filterClassMethods(c, p.getName, staticContext, tu))
+                    .getOrElse(Nil)
                 )
                 .distinct
             )
@@ -205,10 +208,10 @@ class SpelExpressionSuggester(
               .queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
               .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil))))
               .getOrElse(successfulNil)
-          case TypingResultWithContext(Unknown(_), staticContext) =>
+          case TypingResultWithContext(u: Unknown, staticContext) =>
             Future.successful(
               clssDefinitions.unknown
-                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .map(c => filterClassMethods(c, p.getName, staticContext, u))
                 .getOrElse(Nil)
             )
         }
@@ -219,6 +222,7 @@ class SpelExpressionSuggester(
         classDefinition: ClassDefinition,
         name: String,
         staticContext: Boolean,
+        invocationTarget: TypingResult,
         fromClass: Boolean = false
     ): List[ExpressionSuggestion] = {
       val methods = filterMapByName(if (staticContext) classDefinition.staticMethods else classDefinition.methods, name)
@@ -226,9 +230,10 @@ class SpelExpressionSuggester(
       methods.values.flatten.map { method =>
         // TODO: present all overloaded methods, not only one with most parameters.
         val signature = method.signatures.toList.maxBy(_.parametersToList.length)
+        val typing = classDefinition.getPropertyOrFieldType(invocationTarget, method.name).getOrElse(signature.result)
         ExpressionSuggestion(
           method.name,
-          signature.result,
+          typing,
           fromClass = fromClass,
           method.description,
           (signature.noVarArgs ::: signature.varArg.toList).map(p => Parameter(p.name, p.refClazz))

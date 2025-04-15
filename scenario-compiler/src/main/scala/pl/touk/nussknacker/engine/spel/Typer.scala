@@ -628,7 +628,7 @@ private[spel] class Typer(
         w
       } else {
         // we allow some methods to be used on unknown
-        unknownPropertyTypeBasedOnMethod(e)
+        unknownPropertyTypeBasedOnMethod(e, u)
           .map(valid)
           .getOrElse(w.tell(List(IllegalPropertyAccessError(u))))
       }
@@ -702,8 +702,8 @@ private[spel] class Typer(
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
 
-  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference): Option[TypingResult] =
-    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(Unknown, e.getName))
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference, u: Unknown): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(u, e.getName))
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult
