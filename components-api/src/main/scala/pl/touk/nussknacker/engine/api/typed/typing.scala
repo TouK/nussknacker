@@ -174,7 +174,7 @@ object typing {
   }
 
   object DisplayStrategy extends Enum[DisplayStrategy] {
-    override def values: IndexedSeq[DisplayStrategy] = findValues
+    override def values = findValues
 
     case object DefaultDisplayStrategy extends DisplayStrategy {
       override val display: String = "Unknown"
