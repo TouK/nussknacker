@@ -9,9 +9,9 @@ import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdh
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import { ButtonProgress } from "./ButtonProgress";
 
 export type ScenarioTestButtonProps = {
+    type: CustomButtonTypes.scenarioTest;
     name?: string;
     title?: string;
     docs?: TestingViewParams["docs"];
@@ -41,7 +41,11 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             isResizable: true,
             kind: WindowKind.scenarioTest,
             meta: {
-                viewParams: { Icon: TestingIcon, docs, markdownContent },
+                viewParams: {
+                    Icon: TestingIcon,
+                    docs,
+                    markdownContent,
+                },
             },
         });
     }, [docs, markdownContent, open, t]);
@@ -61,16 +65,15 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         : title;
 
     return (
-        <ButtonProgress enabled={isLoading}>
-            <ToolbarButton
-                name={name || t("panels.actions.scenarioTest.button.name", "test")}
-                title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
-                icon={<TestingIcon />}
-                disabled={!atLeastOneTypeOfTestIsAvailable}
-                onClick={openDialog}
-                type={type}
-            />
-        </ButtonProgress>
+        <ToolbarButton
+            name={name || t("panels.actions.scenarioTest.button.name", "test")}
+            title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
+            icon={<TestingIcon />}
+            isLoading={isLoading}
+            disabled={!atLeastOneTypeOfTestIsAvailable}
+            onClick={openDialog}
+            type={type}
+        />
     );
 }
 
