@@ -15,17 +15,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
-import pl.touk.nussknacker.engine.compile.{
-  CompilationResult,
-  EngineNodeCompilationDependencies,
-  FragmentResolver,
-  ProcessValidator
-}
+import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec

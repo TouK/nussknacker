@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
+import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.compile._

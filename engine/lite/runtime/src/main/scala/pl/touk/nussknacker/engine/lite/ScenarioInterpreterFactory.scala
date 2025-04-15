@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
+import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ServiceExecutionContext, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext

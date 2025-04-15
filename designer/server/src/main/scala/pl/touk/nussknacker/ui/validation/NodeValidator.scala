@@ -4,8 +4,9 @@ import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
+import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, FragmentResolver}
+import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
   ValidationNotPerformed,

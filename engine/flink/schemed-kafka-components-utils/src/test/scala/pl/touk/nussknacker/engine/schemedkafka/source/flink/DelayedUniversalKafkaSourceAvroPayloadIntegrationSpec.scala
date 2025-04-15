@@ -6,13 +6,14 @@ import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
+  EngineNodeCompilationDependencies,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   SpelParameterEditor,
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, FragmentResolver}
+import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.schema._

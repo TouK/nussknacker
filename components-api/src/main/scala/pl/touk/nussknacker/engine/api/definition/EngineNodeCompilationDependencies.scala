@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.engine.compile
+package pl.touk.nussknacker.engine.api.definition
 
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 
 trait EngineNodeCompilationDependencies {
-  val nodeCompilationDependencies: List[NodeDependencyValue]
+  def nodeCompilationDependencies: List[NodeDependencyValue]
 }
 
 object EngineNodeCompilationDependencies {

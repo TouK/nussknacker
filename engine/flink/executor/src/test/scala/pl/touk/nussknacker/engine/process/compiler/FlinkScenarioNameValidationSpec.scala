@@ -8,8 +8,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioNameValidationError
+import pl.touk.nussknacker.engine.api.definition.EngineNodeCompilationDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.compile.{EngineNodeCompilationDependencies, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, ProcessTestHelpersConfigCreator}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 

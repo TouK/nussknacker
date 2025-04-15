@@ -642,6 +642,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   )
   .dependsOn(
     deploymentManagerApi % Provided,
+    scenarioCompilerFlinkDeps,
     flinkMiniCluster,
     commonUtils          % Provided,
     utilsInternal        % Provided,
@@ -814,6 +815,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     }.toList,
   )
   .dependsOn(
+    scenarioCompilerFlinkDeps,
     flinkComponentsUtils,
     flinkExtensionsApi,
     scenarioCompiler,
@@ -824,6 +826,19 @@ lazy val flinkExecutor = (project in flink("executor"))
     httpUtils,
     flinkTestUtils % Test,
   )
+
+lazy val scenarioCompilerFlinkDeps = (project in flink("scenario-compiler-deps"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-flink-scenario-compiler-deps",
+    libraryDependencies ++= {
+      Seq(
+        // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
+      )
+    }
+  )
+  .dependsOn(componentsApi % Provided)
 
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
   .settings(commonSettings)
@@ -2254,6 +2269,7 @@ lazy val modules = List[ProjectReference](
   utilsInternal,
   testUtils,
   flinkExecutor,
+  scenarioCompilerFlinkDeps,
   flinkSchemedKafkaComponentsUtils,
   flinkKafkaComponentsUtils,
   flinkComponentsUtils,

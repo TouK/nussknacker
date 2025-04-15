@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
-  EngineNodeCompilationDependencies,
   ExpressionCompiler,
   FragmentSourceWithTestWithParametersSupportFactory,
   NodeValidationExceptionHandler

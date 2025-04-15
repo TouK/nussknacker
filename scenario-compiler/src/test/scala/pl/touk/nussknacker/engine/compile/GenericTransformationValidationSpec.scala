@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   WrongParameters
 }
-import pl.touk.nussknacker.engine.api.definition.{Parameter, SpelParameterEditor, SpelTemplateParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  EngineNodeCompilationDependencies,
+  Parameter,
+  SpelParameterEditor,
+  SpelTemplateParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
