@@ -11,7 +11,6 @@ import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTest
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import { ButtonProgress } from "./ButtonProgress";
 
 export type AdhocTestingButtonProps = {
     type: CustomButtonTypes.adhocTesting;
@@ -44,7 +43,11 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
             isResizable: true,
             kind: WindowKind.adhocTesting,
             meta: {
-                view: { Icon: AdhocTestingIcon, docs, markdownContent },
+                view: {
+                    Icon: AdhocTestingIcon,
+                    docs,
+                    markdownContent,
+                },
                 action,
             },
         });
@@ -53,24 +56,23 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
     const nodeContext = useContext(NodeContext);
 
     return (
-        <ButtonProgress enabled={isLoading}>
-            <ToolbarButton
-                name={name || t("panels.actions.adhoc-testing.button.name", "ad hoc")}
-                title={title || t("panels.actions.adhoc-testing.button.title", "run test on ad hoc data")}
-                icon={<AdhocTestingIcon />}
-                disabled={!isAvailable || isLoading}
-                onClick={(e) => {
-                    if (sourcesFound > 1) {
-                        return multipleSourcesTest();
-                    }
-                    if (action.previousTestData && Boolean(nodeContext) != e.shiftKey) {
-                        return action.onConfirmAction(action.previousTestData);
-                    }
-                    return oneSourceTest();
-                }}
-                type={type}
-            />
-        </ButtonProgress>
+        <ToolbarButton
+            name={name || t("panels.actions.adhoc-testing.button.name", "ad hoc")}
+            title={title || t("panels.actions.adhoc-testing.button.title", "run test on ad hoc data")}
+            icon={<AdhocTestingIcon />}
+            isLoading={isLoading}
+            disabled={!isAvailable || isLoading}
+            onClick={(e) => {
+                if (sourcesFound > 1) {
+                    return multipleSourcesTest();
+                }
+                if (action.previousTestData && Boolean(nodeContext) != e.shiftKey) {
+                    return action.onConfirmAction(action.previousTestData);
+                }
+                return oneSourceTest();
+            }}
+            type={type}
+        />
     );
 }
 

@@ -106,6 +106,7 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
                     </MenuItem>
                 ))}
             </Menu>
+            {buttonProps.children}
         </ToolbarButton>
     );
 };

@@ -1,3 +1,4 @@
+import type { LinearProgressProps } from "@mui/material";
 import type React from "react";
 import type { DropEvent } from "react-dropzone";
 
@@ -13,6 +14,12 @@ type BaseButtonProps = Omit<ButtonProps, "type" | "onDrop"> & {
     isActive?: boolean;
 };
 
+type LoadingButtonProps = BaseButtonProps & {
+    isLoading?: boolean;
+    loadingVariant: LinearProgressProps["variant"];
+    loadingProgress: LinearProgressProps["value"];
+};
+
 type FileButtonProps = BaseButtonProps & {
     onDrop: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
 };
@@ -23,4 +30,4 @@ type PresetsButtonProps<Preset = { value: string; label: string }> = BaseButtonP
     onPresetChange: (value: Preset) => void;
 };
 
-export type ToolbarButtonProps = BaseButtonProps | FileButtonProps | PresetsButtonProps;
+export type ToolbarButtonProps = BaseButtonProps | LoadingButtonProps | FileButtonProps | PresetsButtonProps;
