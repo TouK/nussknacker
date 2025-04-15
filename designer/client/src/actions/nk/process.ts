@@ -8,9 +8,22 @@ import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
 
-export type ScenarioActions =
-    | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
-    | { type: "DISPLAY_PROCESS"; scenario: Scenario };
+export type ScenarioActions = CorrectInvalidScenarioAction | DisplayProcessAction | UpdateImportedProcessAction;
+
+type CorrectInvalidScenarioAction = {
+    type: "CORRECT_INVALID_SCENARIO";
+    processDefinitionData: ProcessDefinitionData;
+};
+
+type DisplayProcessAction = {
+    type: "DISPLAY_PROCESS";
+    scenario: Scenario;
+};
+
+type UpdateImportedProcessAction = {
+    type: "UPDATE_IMPORTED_PROCESS";
+    scenario: Scenario;
+};
 
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {

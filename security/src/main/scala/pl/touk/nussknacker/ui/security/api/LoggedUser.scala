@@ -79,13 +79,20 @@ object LoggedUser {
 
 }
 
-sealed trait RealLoggedUser extends LoggedUser
+sealed trait RealLoggedUser extends LoggedUser {
+  val roles: Set[String]
+}
 
 object RealLoggedUser {
 
   def apply(authenticatedUser: AuthenticatedUser, rules: List[ConfigRule]): RealLoggedUser = {
     val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
-    RealLoggedUser(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
+    RealLoggedUser(
+      id = authenticatedUser.id,
+      username = authenticatedUser.username,
+      rulesSet = rulesSet,
+      roles = authenticatedUser.roles
+    )
   }
 
   def apply(
@@ -93,24 +100,26 @@ object RealLoggedUser {
       username: String,
       categoryPermissions: Map[String, Set[Permission]] = Map.empty,
       globalPermissions: List[GlobalPermission] = Nil,
-      isAdmin: Boolean = false
+      isAdmin: Boolean = false,
+      roles: Set[String] = Set.empty
   ): RealLoggedUser = {
     if (isAdmin) {
-      AdminUser(id, username)
+      AdminUser(id, username, roles)
     } else {
-      CommonUser(id, username, categoryPermissions, globalPermissions)
+      CommonUser(id, username, categoryPermissions, globalPermissions, roles)
     }
   }
 
-  private def apply(id: String, username: String, rulesSet: RulesSet): RealLoggedUser = {
+  private def apply(id: String, username: String, rulesSet: RulesSet, roles: Set[String]): RealLoggedUser = {
     if (rulesSet.isAdmin) {
-      RealLoggedUser(id = id, username = username, isAdmin = true)
+      RealLoggedUser(id = id, username = username, isAdmin = true, roles = roles)
     } else {
       RealLoggedUser(
         id = id,
         username = username,
         categoryPermissions = rulesSet.permissions,
-        globalPermissions = rulesSet.globalPermissions
+        globalPermissions = rulesSet.globalPermissions,
+        roles = roles
       )
     }
   }
@@ -121,7 +130,8 @@ final case class CommonUser(
     id: String,
     username: String,
     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-    globalPermissions: List[GlobalPermission] = Nil
+    globalPermissions: List[GlobalPermission] = Nil,
+    override val roles: Set[String] = Set.empty
 ) extends RealLoggedUser {
 
   override def can(category: String, permission: Permission): Boolean = {
@@ -134,7 +144,8 @@ final case class CommonUser(
 
 }
 
-final case class AdminUser(id: String, username: String) extends RealLoggedUser {
+final case class AdminUser(id: String, username: String, override val roles: Set[String] = Set.empty)
+    extends RealLoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
 }
 

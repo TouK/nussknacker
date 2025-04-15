@@ -344,6 +344,12 @@ trait TestingApiHttpServiceSpec
     }
   }
 
+  "The endpoint for adhoc test parameters should" - {
+    "return test parameters" in {
+      shouldProperlyGetTestParameters()
+    }
+  }
+
   private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =

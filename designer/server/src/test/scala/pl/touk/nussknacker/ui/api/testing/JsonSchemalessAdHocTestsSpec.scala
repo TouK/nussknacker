@@ -7,7 +7,7 @@ import com.dimafeng.testcontainers.{
   MultipleContainers,
   SchemaRegistryContainer
 }
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromMap
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.syntax.EncoderOps
@@ -70,6 +70,12 @@ class JsonSchemalessAdHocTestsSpec
     }
   }
 
+  "The endpoint for adhoc test parameters should" - {
+    "return test parameters" in {
+      shouldProperlyGetTestParameters()
+    }
+  }
+
   protected val kafkaContainer: KafkaContainer =
     KafkaContainer().configure { self =>
       self.setNetwork(network)
@@ -89,6 +95,10 @@ class JsonSchemalessAdHocTestsSpec
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
       fromMap(Map("bootstrap.servers" -> "localhost:8070", "schema.registry.url" -> "http://localhost:8069").asJava)
+    )
+    .withValue(
+      "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
+      ConfigValueFactory.fromAnyRef(true)
     )
 
   lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
@@ -110,9 +120,9 @@ object JsonSchemalessAdHocTestsSpec {
 
   private[JsonSchemalessAdHocTestsSpec] trait WithSchemalessAdHocTestParameters extends WithAdHocTestParameters {
 
-    protected def exampleScenarioSourceId: String = "start"
+    override protected def exampleScenarioSourceId: String = "start"
 
-    protected def exampleScenario: CanonicalProcess = {
+    override protected def exampleScenario: CanonicalProcess = {
       ScenarioBuilder
         .streaming("without-schema")
         .parallelism(1)
@@ -120,7 +130,8 @@ object JsonSchemalessAdHocTestsSpec {
           exampleScenarioSourceId,
           "kafka",
           "Topic"        -> s"'$sourceTopicName'".spel,
-          "Content type" -> "'JSON'".spel
+          "Content type" -> "'JSON'".spel,
+          "Data sample"  -> Expression.json("{\"name\": \"Tom\"}")
         )
         .emptySink(
           "end",
@@ -134,18 +145,18 @@ object JsonSchemalessAdHocTestsSpec {
         )
     }
 
-    protected def validParameters: TestSourceParameters =
+    override protected def validParameters: TestSourceParameters =
       TestSourceParameters(exampleScenarioSourceId, Map(inputParameterName -> Expression.json(validJson)))
 
-    protected def invalidParameters: TestSourceParameters =
+    override protected def invalidParameters: TestSourceParameters =
       TestSourceParameters(exampleScenarioSourceId, Map(inputParameterName -> Expression.json(invalidJson)))
 
-    protected def parametersProvidedForDryRun: String = AdhocTestParametersRequest(
+    override protected def parametersProvidedForDryRun: String = AdhocTestParametersRequest(
       sourceParameters = validParameters,
       scenarioGraph = toScenarioGraph(exampleScenario)
     ).asJson.toString()
 
-    protected def expectedValidationErrorsOnInvalidParametersJson: String =
+    override protected def expectedValidationErrorsOnInvalidParametersJson: String =
       s"""
          |[
          |  {
@@ -157,6 +168,43 @@ object JsonSchemalessAdHocTestsSpec {
          |    "details": null
          |  }
          |]""".stripMargin
+
+    override protected def expectedTestParametersJson: String = {
+      s"""
+         |[
+         |  {
+         |    "sourceId": "$exampleScenarioSourceId",
+         |    "parameters": [
+         |      {
+         |        "name": "Value",
+         |        "typ": {
+         |          "display": "Unknown",
+         |          "type": "Unknown",
+         |          "refClazzName": "java.lang.Object",
+         |          "params": []
+         |        },
+         |        "editors": [
+         |          {
+         |            "type": "JsonParameterEditor"
+         |          }
+         |        ],
+         |        "defaultValue": {
+         |          "language": "json",
+         |          "expression": "{\\n  \\"name\\" : \\"Tom\\"\\n}"
+         |        },
+         |        "additionalVariables": {},
+         |        "variablesToHide": [],
+         |        "branchParam": false,
+         |        "hintText": null,
+         |        "label": "Value",
+         |        "requiredParam": true,
+         |        "category": "Standard"
+         |      }
+         |    ]
+         |  }
+         |]
+         |""".stripMargin
+    }
 
     private val validJson = """|[
                                |  {

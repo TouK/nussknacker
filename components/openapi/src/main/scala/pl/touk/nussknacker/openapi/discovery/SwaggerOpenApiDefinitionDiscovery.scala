@@ -2,7 +2,6 @@ package pl.touk.nussknacker.openapi.discovery
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.FileUtils
 import org.asynchttpclient.DefaultAsyncHttpClient
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.http.backend.HttpClientConfig
@@ -13,7 +12,6 @@ import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.model.Uri
 
 import java.io.File
-import java.nio.charset.StandardCharsets
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
@@ -28,7 +26,8 @@ object SwaggerOpenApiDefinitionDiscovery
             None,
             None,
             None,
-            None
+            None,
+            None,
           ).toAsyncHttpClientConfig(None).build()
         )
       )

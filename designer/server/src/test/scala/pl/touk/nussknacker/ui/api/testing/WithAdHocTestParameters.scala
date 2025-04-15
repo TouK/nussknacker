@@ -19,6 +19,8 @@ trait WithAdHocTestParameters {
 
   protected def expectedValidationErrorsOnInvalidParametersJson: String
 
+  protected def expectedTestParametersJson: String
+
   protected def exampleScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
 }
