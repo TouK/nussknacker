@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
-import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
@@ -34,8 +34,8 @@ import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCo
 import pl.touk.nussknacker.engine.splittedgraph.{splittednode, SplittedNodesCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
 import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import shapeless.syntax.typeable.typeableOps
 
@@ -76,7 +76,7 @@ class FlinkProcessRegistrar(
       deploymentData: DeploymentData,
       resultCollector: ResultCollector
   ): Unit = {
-    usingRightClassloader(env) { userClassLoader =>
+    usingRightClassloader { userClassLoader =>
       val compilerDataForUsedNodesAndClassloader =
         prepareCompilerData(process.metaData, processVersion, resultCollector)
       val compilerData = compilerDataForUsedNodesAndClassloader(UsedNodes.empty, userClassLoader)
@@ -93,18 +93,15 @@ class FlinkProcessRegistrar(
         resultCollector,
         deploymentData
       )
-      streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
   }
 
-  protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.isInstanceOf[RemoteStreamEnvironment]
-
-  protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: ClassLoader => Unit): Unit = {
+  private def usingRightClassloader(action: ClassLoader => Unit): Unit = {
     val userLoader = getClass.getClassLoader
     action(userLoader)
   }
 
-  protected def createInterpreter(
+  private def createInterpreter(
       compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
   ): RuntimeContext => ToEvaluateFunctionConverterWithLifecycle =
     (runtimeContext: RuntimeContext) =>
@@ -155,10 +152,12 @@ class FlinkProcessRegistrar(
 
     {
       // it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
-      compilerData
+      val compiledScenarioParts = compilerData
         .compileProcessOrFail(process)(new FlinkScenarioCompilationDependencies(env))
-        .sources
-        .toList
+
+      streamExecutionEnvPreparer.postScenarioCompilation(env, compilerData, deploymentData)
+
+      compiledScenarioParts.sources.toList
         .foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
           case (branchEnds, next: SourcePart)         => branchEnds ++ registerSourcePart(next)
           case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)

@@ -30,7 +30,7 @@ trait StreamExecutionEnvPreparer {
       deploymentData: DeploymentData
   ): Unit
 
-  def postRegistration(
+  def postScenarioCompilation(
       env: StreamExecutionEnvironment,
       compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
@@ -70,7 +70,6 @@ class DefaultStreamExecutionEnvPreparer(
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
-    configureExecutionMode(env, jobConfig.executionMode.getOrElse(ExecutionMode.default))
 
     (jobConfig.rocksDB, streamMetaData.spillStateToDisk) match {
       case (Some(config), Some(true)) if config.enable =>
@@ -84,28 +83,12 @@ class DefaultStreamExecutionEnvPreparer(
     }
   }
 
-  private def configureExecutionMode(
-      env: StreamExecutionEnvironment,
-      executionModeConfig: ExecutionMode
-  ): Unit = {
-    executionModeConfig match {
-      case ExecutionMode.Streaming => env.setRuntimeMode(RuntimeExecutionMode.STREAMING)
-      case ExecutionMode.Batch     => env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-    }
-  }
-
   @silent("deprecated")
-  protected def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
+  private def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
 
-  override def postRegistration(
-      env: StreamExecutionEnvironment,
-      compilerData: FlinkProcessCompilerData,
-      deploymentData: DeploymentData
-  ): Unit = {}
-
-  protected def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
+  private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
     val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
     val checkpointIntervalToSet =
       processSpecificCheckpointIntervalDuration
@@ -125,6 +108,25 @@ class DefaultStreamExecutionEnvPreparer(
       jobConfig.checkpointConfig
         .flatMap(_.tolerableCheckpointFailureNumber)
         .foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
+    }
+  }
+
+  override def postScenarioCompilation(
+      env: StreamExecutionEnvironment,
+      compilerData: FlinkProcessCompilerData,
+      deploymentData: DeploymentData
+  ): Unit = {
+    // We have to setup execution mode after scenario compilation, because batch execution mode doesn't support compilation plan checking (FLIP-456)
+    configureExecutionMode(env, jobConfig.executionMode.getOrElse(ExecutionMode.default))
+  }
+
+  private def configureExecutionMode(
+      env: StreamExecutionEnvironment,
+      executionModeConfig: ExecutionMode
+  ): Unit = {
+    executionModeConfig match {
+      case ExecutionMode.Streaming => env.setRuntimeMode(RuntimeExecutionMode.STREAMING)
+      case ExecutionMode.Batch     => env.setRuntimeMode(RuntimeExecutionMode.BATCH)
     }
   }
 
