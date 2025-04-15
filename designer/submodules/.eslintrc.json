@@ -16,8 +16,33 @@
         "project": "tsconfig.json",
         "sourceType": "module"
     },
-    "plugins": ["@typescript-eslint", "i18next"],
+    "plugins": ["@typescript-eslint", "i18next", "import"],
     "rules": {
-        "@typescript-eslint/no-inferrable-types": "off"
+        "@typescript-eslint/no-inferrable-types": "off",
+        "import/order": [
+            "warn",
+            {
+                "groups": ["builtin", "external", ["internal", "parent", "sibling", "index"]],
+                "newlines-between": "always",
+                "alphabetize": {
+                    "order": "asc",
+                    "caseInsensitive": true
+                }
+            }
+        ],
+        "no-restricted-syntax": [
+            "warn",
+            {
+                "selector": "ImportNamespaceSpecifier",
+                "message": "Wildcard imports are not allowed."
+            }
+        ],
+        "@typescript-eslint/consistent-type-imports": [
+            "warn",
+            {
+                "prefer": "type-imports",
+                "disallowTypeAnnotations": false
+            }
+        ]
     }
 }

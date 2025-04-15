@@ -1,12 +1,12 @@
-import React, { useCallback, useMemo } from "react";
 import { Button, Typography } from "@mui/material";
-import { FiltersContextType } from "../../common/filters/filtersContext";
-import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import i18next from "i18next";
-import Streaming from "../../assets/icons/streaming.svg";
+import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
 import Batch from "../../assets/icons/batch.svg";
 import RequestResponse from "../../assets/icons/request-response.svg";
-import { useTranslation } from "react-i18next";
+import Streaming from "../../assets/icons/streaming.svg";
+import type { FiltersContextType } from "../../common/filters/filtersContext";
 
 export enum ProcessingMode {
     "streaming" = "Unbounded-Stream",
@@ -34,7 +34,7 @@ export const processingModeItems = [
 
 interface Props {
     processingMode: ProcessingMode;
-    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+    filtersContext: FiltersContextType;
 }
 export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) => {
     const { t } = useTranslation();

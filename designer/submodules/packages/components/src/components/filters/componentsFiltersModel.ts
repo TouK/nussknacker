@@ -1,4 +1,4 @@
-import { ProcessingMode } from "../../scenarios/list/processingMode";
+import type { ProcessingMode } from "../../scenarios/list/processingMode";
 
 export interface ComponentsFiltersModel {
     NAME?: string;
@@ -8,3 +8,14 @@ export interface ComponentsFiltersModel {
     USAGES?: number[];
     PROCESSING_MODE: ProcessingMode[];
 }
+
+export type ComponentsFilterKey = keyof Required<ComponentsFiltersModel>;
+
+export const COMPONENTS_FILTER: { [K in ComponentsFilterKey]: K } = {
+    NAME: "NAME",
+    GROUP: "GROUP",
+    CATEGORY: "CATEGORY",
+    SHOW_ARCHIVED: "SHOW_ARCHIVED",
+    USAGES: "USAGES",
+    PROCESSING_MODE: "PROCESSING_MODE",
+} as const;

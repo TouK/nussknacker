@@ -1,19 +1,21 @@
-import { useFilterContext } from "../../common";
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
-import { FilterListItem, FilterListItemSwitch } from "./filterListItem";
-import { OptionsStack } from "./optionsStack";
 import { Divider, Stack } from "@mui/material";
 import { xor } from "lodash";
-import { FilterListItemLabel } from "./filterListItemLabel";
-import ScanarioIcon from "../../assets/icons/scenario.svg";
-import FragmentIcon from "../../assets/icons/fragment.svg";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import FragmentIcon from "../../assets/icons/fragment.svg";
+import ScanarioIcon from "../../assets/icons/scenario.svg";
+import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
+import { FilterListItem, FilterListItemSwitch } from "./filterListItem";
+import { FilterListItemLabel } from "./filterListItemLabel";
+import { OptionsStack } from "./optionsStack";
+import { ScenariosFiltersModelType } from "./scenariosFiltersModel";
+import type { ScenariosFiltersModel } from "./scenariosFiltersModel";
 
 export function TypeOptionsStack(): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter, setFilter } = useScenariosFilterContext();
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["TYPE"];
     const getTypeFilter = () => getFilter("TYPE", true);
 
@@ -69,7 +71,7 @@ interface StatusFiltersParams {
 export function StatusOptionsStack(props: StatusFiltersParams): JSX.Element {
     const { options = [], withArchived, ...passProps } = props;
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter, setFilter } = useScenariosFilterContext();
     const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "STATUS"];
 
     const value = getFilter("STATUS", true);
