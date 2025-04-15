@@ -205,7 +205,7 @@ class SpelExpressionSuggester(
               .queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
               .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil))))
               .getOrElse(successfulNil)
-          case TypingResultWithContext(_: Unknown, staticContext) =>
+          case TypingResultWithContext(Unknown(_), staticContext) =>
             Future.successful(
               clssDefinitions.unknown
                 .map(c => filterClassMethods(c, p.getName, staticContext))
@@ -296,7 +296,7 @@ class SpelExpressionSuggester(
                 }
               case m: MethodReference if CastOrConversionExt.isCastOrConversionMethod(m.getName) =>
                 parentPrevNodeTyping.withoutValue match {
-                  case t @ Unknown =>
+                  case t @ Unknown(_) =>
                     castOrConversionMethodsSuggestions(classOf[Object], t)
                   case t @ TypedClass(klass, _) =>
                     castOrConversionMethodsSuggestions(klass, t)

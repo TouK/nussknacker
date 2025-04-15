@@ -11,7 +11,7 @@ object TypingResultFromJsonSampleTypeDeterminer {
     // empty record does not provide any value for the users; they cannot access any fields. Typed.json, on the other hand, allows a dynamic navigation
     typingResult.withoutValue match {
       case obj: TypedObjectTypingResult if obj.fields.isEmpty => Typed.json
-      case Unknown                                            => Typed.json
+      case Unknown(_)                                         => Typed.json
       case `typeClassListUnknown`                             => Typed.json
       case other                                              => other
     }

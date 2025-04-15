@@ -69,9 +69,9 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
           GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
         case TypedClass(_, List(TypedClass(klass, _))) if klass.isAOrChildOf(mapClass) =>
           Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case TypedClass(_, List(Unknown)) => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case Unknown                      => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case _                            => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+        case TypedClass(_, List(Unknown(_))) => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case Unknown(_)                      => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case _                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
   @tailrec

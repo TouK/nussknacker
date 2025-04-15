@@ -3,10 +3,12 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
+import enumeratum._
 import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.{ToJsonEncoderWithFallback, TypeEncoders}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
@@ -167,16 +169,25 @@ object typing {
     override val display = "Null"
   }
 
-  sealed trait DisplayStrategy {
+  sealed trait DisplayStrategy extends EnumEntry {
     val display: String
   }
 
-  case object UnknownDisplayStrategy extends DisplayStrategy {
-    override val display: String = "Unknown"
-  }
+  object DisplayStrategy extends Enum[DisplayStrategy] {
+    override def values: IndexedSeq[DisplayStrategy] = findValues
 
-  case object JsonDisplayStrategy extends DisplayStrategy {
-    override val display: String = "Json"
+    case object DefaultDisplayStrategy extends DisplayStrategy {
+      override val display: String = "Unknown"
+    }
+
+    case object JsonDisplayStrategy extends DisplayStrategy {
+      override val display: String = "Json"
+    }
+
+    def valueOfDisplay(display: String): Option[DisplayStrategy] = {
+      values.find(_.display == display)
+    }
+
   }
 
   // Unknown is representation of TypedUnion of all possible types
@@ -186,7 +197,7 @@ object typing {
     override val display: String            = displayStrategy.display
   }
 
-  object Unknown extends Unknown(UnknownDisplayStrategy)
+  object Unknown extends Unknown(DefaultDisplayStrategy)
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
