@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
-class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends ScenarioTestApiHttpServiceSpec {
+class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends ScenarioTestingApiHttpServiceSpec {
 
   override protected def exampleScenarioSourceId = "sourceId"
 

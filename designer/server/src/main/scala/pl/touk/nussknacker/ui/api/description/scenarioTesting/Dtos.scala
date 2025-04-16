@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.description.scenarioTests
+package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -13,12 +13,12 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{TestSourceParameters, _}
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.TestCapabilityDetails.{
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
   EmptyDetails,
   TestWithParametersDetails
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema

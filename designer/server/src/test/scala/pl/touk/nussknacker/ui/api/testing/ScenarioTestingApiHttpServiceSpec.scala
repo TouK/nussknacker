@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
-trait ScenarioTestApiHttpServiceSpec
+trait ScenarioTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithTestHttpClient

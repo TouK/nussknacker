@@ -14,21 +14,21 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErro
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError._
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.BadRequestTestingError._
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.NotFoundTestingError._
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError._
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError._
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.NotFoundTestingError._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.{ResultsWithCountsDto, ScenarioTestData}
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.{
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ResultsWithCountsDto, ScenarioTestData}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
   ScenarioTestCapabilities,
   TestCapabilityDetails
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
-import pl.touk.nussknacker.ui.api.description.scenarioTests.ScenarioTestApiEndpoints
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.ScenarioTestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -44,7 +44,7 @@ import sttp.tapir.EndpointIO.Example
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ScenarioTestApiHttpService(
+class ScenarioTestingApiHttpService(
     authManager: AuthManager,
     scenarioAuthorizer: AuthorizeProcess,
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
@@ -59,10 +59,10 @@ class ScenarioTestApiHttpService(
   override protected def noScenarioError(scenarioName: ProcessName): TestingError      = NoScenario(scenarioName)
   override protected def noPermissionError: TestingError with CustomAuthorizationError = NoPermission
 
-  private val scenarioTestApiEndpoints = new ScenarioTestApiEndpoints(authManager.authenticationEndpointInput())
+  private val scenarioTestingApiEndpoints = new ScenarioTestingApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
-    scenarioTestApiEndpoints.scenarioTestCapabilitiesEndpoint
+    scenarioTestingApiEndpoints.scenarioTestCapabilitiesEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, scenarioGraph) =>
@@ -112,7 +112,7 @@ class ScenarioTestApiHttpService(
   }
 
   expose {
-    scenarioTestApiEndpoints.scenarioTestEndpoint
+    scenarioTestingApiEndpoints.scenarioTestEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
@@ -169,7 +169,7 @@ class ScenarioTestApiHttpService(
   }
 
   expose {
-    scenarioTestApiEndpoints.scenarioTestValidationEndpoint
+    scenarioTestingApiEndpoints.scenarioTestValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request) =>
@@ -209,7 +209,7 @@ class ScenarioTestApiHttpService(
   }
 
   expose {
-    scenarioTestApiEndpoints.scenarioTestGeneratedDataEndpoint
+    scenarioTestingApiEndpoints.scenarioTestGeneratedDataEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request) =>
@@ -283,7 +283,7 @@ class ScenarioTestApiHttpService(
 
 }
 
-object ScenarioTestApiHttpService {
+object ScenarioTestingApiHttpService {
 
   sealed trait TestingError
 

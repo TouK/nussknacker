@@ -4579,7 +4579,7 @@ paths:
       tags:
       - Testing
       summary: Describes available test modes
-      operationId: postApiScenariotestScenarionameCapabilities
+      operationId: postApiScenariotestingScenarionameCapabilities
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -4706,7 +4706,7 @@ paths:
       tags:
       - Testing
       summary: Perform test
-      operationId: postApiScenariotestScenarionameTest
+      operationId: postApiScenariotestingScenarionamePerformtest
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -4720,6 +4720,20 @@ paths:
         required: true
         schema:
           type: string
+      - name: skipResultsPerNode
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
+      - name: skipResultsPerTransition
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
       requestBody:
         content:
           application/json:
@@ -4732,10 +4746,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResultsWithCounts'
+                $ref: '#/components/schemas/ResultsWithCountsDto'
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+            value for: body, Invalid value for: query parameter skipResultsPerNode,
+            Invalid value for: query parameter skipResultsPerTransition'
           content:
             text/plain:
               schema:
@@ -4792,7 +4807,7 @@ paths:
       tags:
       - Testing
       summary: Generate testing data for scenario
-      operationId: postApiScenariotestScenarionameGeneratedtestdata
+      operationId: postApiScenariotestingScenarionameGeneratedtestdata
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -4905,7 +4920,7 @@ paths:
       tags:
       - Testing
       summary: Validate adhoc parameters
-      operationId: postApiScenariotestScenarionameValidate
+      operationId: postApiScenariotestingScenarionameValidate
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -5834,13 +5849,6 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
-    Map_Edge_List_ResultContext_Json:
-      title: Map_Edge_List_ResultContext_Json
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/ResultContext_Json'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6393,6 +6401,22 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
+    NodeTransitionResult:
+      title: NodeTransitionResult
+      type: object
+      required:
+      - sourceNodeId
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultContext_Json'
     NodeTypes:
       title: NodeTypes
       type: string
@@ -6849,15 +6873,15 @@ components:
           type: string
         variables:
           $ref: '#/components/schemas/Map_Json'
-    ResultsWithCounts:
-      title: ResultsWithCounts
+    ResultsWithCountsDto:
+      title: ResultsWithCountsDto
       type: object
       required:
       - results
       - counts
       properties:
         results:
-          $ref: '#/components/schemas/TestResults_Json'
+          $ref: '#/components/schemas/TestResultsDto'
         counts:
           $ref: '#/components/schemas/Map_NodeCount'
     RunDeploymentRequest:
@@ -7347,22 +7371,23 @@ components:
     TabularTypedDataEditor:
       title: TabularTypedDataEditor
       type: object
-    TestResults_Json:
-      title: TestResults_Json
+    TestResultsDto:
+      title: TestResultsDto
       type: object
       required:
-      - nodeResults
-      - nodeEdgeOutputResults
-      - nodeDeadEndOutputResults
       - invocationResults
       - externalInvocationResults
       properties:
         nodeResults:
-          $ref: '#/components/schemas/Map_List_ResultContext_Json'
-        nodeEdgeOutputResults:
-          $ref: '#/components/schemas/Map_Edge_List_ResultContext_Json'
-        nodeDeadEndOutputResults:
-          $ref: '#/components/schemas/Map_List_ResultContext_Json'
+          anyOf:
+          - $ref: '#/components/schemas/Map_List_ResultContext_Json'
+          - type: 'null'
+        nodeTransitionResults:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/NodeTransitionResult'
         invocationResults:
           $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
         externalInvocationResults:

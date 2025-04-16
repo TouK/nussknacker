@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ResultsWithCountsDto
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ResultsWithCountsDto
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
@@ -47,7 +47,7 @@ class ManagementResources(
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import pl.touk.nussknacker.ui.api.description.scenarioTests.TestResultsCodecs._
+  import pl.touk.nussknacker.ui.api.description.scenarioTesting.TestResultsCodecs._
 
   import ManagementResources._
 

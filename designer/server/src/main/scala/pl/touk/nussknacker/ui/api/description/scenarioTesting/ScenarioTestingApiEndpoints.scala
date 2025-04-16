@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.description.scenarioTests
+package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
@@ -18,15 +18,15 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors
 }
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.BadRequestTestingError.{
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError.{
   ScenarioGraphValidationError,
   TooManyCharactersGenerated,
   TooManySamplesRequested
 }
-import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.NotFoundTestingError.{
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.NotFoundTestingError.{
   NoDataGenerated,
   NoSourcesWithTestDataGeneration
 }
@@ -35,26 +35,26 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationResultDto,
   TestSourceParameters
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.{
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   ScenarioTestCapabilities
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.GeneratedTestData.GeneratedTestDataRequest
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.GeneratedTestData.GeneratedTestDataRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestRequest,
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.PerformTestRequest._
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestRequest._
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.tapir.{EndpointInput, _}
+import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
 
-class ScenarioTestApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
+class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import Dtos._
   import TestResultsCodecs._

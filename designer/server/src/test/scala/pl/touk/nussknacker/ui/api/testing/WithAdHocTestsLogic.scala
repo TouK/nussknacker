@@ -7,8 +7,8 @@ import org.hamcrest.Matchers.equalTo
 import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, EqualsJsonBody, JsonBody}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 trait WithAdHocTestsLogic {

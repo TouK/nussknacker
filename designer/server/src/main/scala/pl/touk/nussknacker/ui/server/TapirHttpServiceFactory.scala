@@ -111,7 +111,7 @@ object TapirHttpServiceFactory {
       scenarioService = processService,
     )
 
-    val testingApiHttpService = new ScenarioTestApiHttpService(
+    val testingApiHttpService = new ScenarioTestingApiHttpService(
       authManager = authManager,
       scenarioAuthorizer = processAuthorizer,
       processingTypeToParametersValidator = processingTypeServicesProvider.mapValues(_.parametersValidator),

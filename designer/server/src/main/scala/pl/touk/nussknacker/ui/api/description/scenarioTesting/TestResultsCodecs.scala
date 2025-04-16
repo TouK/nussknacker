@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.description.scenarioTests
+package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExternalInvocationResult,
   ResultContext
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.{
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{
   NodeTransitionResult,
   ResultsWithCountsDto,
   TestResultsDto
