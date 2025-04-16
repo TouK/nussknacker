@@ -1003,6 +1003,16 @@ class HttpService {
         }
     }
 
+    async generateNewEndpoint(body: { nodeId: string }) {
+        try {
+            return await api.post("/newEndpoint", body, {});
+        } catch (error) {
+            return await Promise.reject(
+                this.#addError(i18next.t("notification.error.generateNewEndpoint", "Failed to generated new endpoint"), error),
+            );
+        }
+    }
+
     #addInfo(message: string) {
         if (this.#notificationActions) {
             this.#notificationActions.success(message);

@@ -1,5 +1,6 @@
 import { styled } from "@mui/material";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
 import { setTestData } from "../../../actions/nk/displayTestResults";
@@ -19,6 +20,7 @@ interface Props {
 }
 export const SendRequestButton = ({ expression, disabled, nodeId }: Props) => {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
 
     const handleSendHttpRequest = useCallback(async () => {
         try {
@@ -34,5 +36,5 @@ export const SendRequestButton = ({ expression, disabled, nodeId }: Props) => {
         }
     }, [dispatch, expression, nodeId]);
 
-    return <StyledLoadingButton disabled={disabled} title={"Send Request"} action={handleSendHttpRequest} />;
+    return <StyledLoadingButton disabled={disabled} title={t("node.actions.sendRequest", "Send Request")} action={handleSendHttpRequest} />;
 };
