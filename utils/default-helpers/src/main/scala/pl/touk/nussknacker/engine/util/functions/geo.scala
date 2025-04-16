@@ -27,13 +27,13 @@ trait GeoUtils extends HideToString {
       latitude2.doubleValue().toRadians
     )
     val c = 2 * asin(sqrt(a))
-    c * EARTH_MEAN_RADIUS
+    c * EarthMeanRadius
   }
 
 }
 
-object GeoUtils {
+private object GeoUtils {
   // 6371 is recommended by the International Union of Geodesy and Geophysics,
   // it minimizes the RMS relative error between the great circle and geodesic distance
-  val EARTH_MEAN_RADIUS: Long = 6371
+  private val EarthMeanRadius: Long = 6371
 }
