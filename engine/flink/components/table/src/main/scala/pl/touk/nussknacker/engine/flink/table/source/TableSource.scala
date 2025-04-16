@@ -101,7 +101,6 @@ class TableSource(
         .build()
     }
     (testRecords: List[TestRecord]) =>
-      // TODO: clean up env if necessary
       new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
         .parseTestRecords(testRecords, tableDataParserSchema)
   }
@@ -111,7 +110,6 @@ class TableSource(
       val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
       Schema.newBuilder().fromRowDataType(dataType).build()
     }
-    // TODO: clean up env if necessary
     val tableOps = new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
@@ -123,7 +121,6 @@ class TableSource(
         tableOps.generateLiveTestData(
           limit = size,
           schema = generateDataSchema,
-          flinkDataDefinition = flinkDataDefinition,
           tableId = tableDefinition.tableId
         )
     }

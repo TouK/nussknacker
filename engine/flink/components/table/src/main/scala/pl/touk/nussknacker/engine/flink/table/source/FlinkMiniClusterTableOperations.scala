@@ -10,8 +10,6 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.ObjectIdentifier
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
@@ -35,12 +33,11 @@ class FlinkMiniClusterTableOperations(env: StreamTableEnvironment) extends LazyL
   def generateLiveTestData(
       limit: Int,
       schema: Schema,
-      flinkDataDefinition: FlinkDataDefinition,
       tableId: ObjectIdentifier
   ): TestData = generateTestData(
     limit = limit,
     schema = schema,
-    sourceTable = createLiveDataGeneratorTable(flinkDataDefinition, tableId, schema)
+    sourceTable = createLiveDataGeneratorTable(tableId, schema)
   )
 
   def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
@@ -110,11 +107,9 @@ class FlinkMiniClusterTableOperations(env: StreamTableEnvironment) extends LazyL
   }
 
   private def createLiveDataGeneratorTable(
-      flinkDataDefinition: FlinkDataDefinition,
       tableId: ObjectIdentifier,
       schema: Schema
   ): Table = {
-    flinkDataDefinition.registerIn(env).orFail
     env.from(tableId.toString).select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
   }
 

@@ -64,7 +64,7 @@ class TableSourceFactory(
           case ((errs, tables), Validated.Valid(table)) =>
             (errs, table :: tables)
         }
-      errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
+      errors.foreach(logger.warn("A validation error occurred when trying to use configured tables", _))
 
       val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
       NextParameters(
@@ -74,13 +74,13 @@ class TableSourceFactory(
       )
     case TransformationStep(
           (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
-          Some(AvailableTables(tableDefinitions, discovery))
+          Some(AvailableTables(tableDefinitions, streamTableEnv))
         ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
       val initializer = new BasicContextInitializer(
         selectedTable.schema.toSourceRowDataType.getLogicalType.toTypingResult
       )
-      FinalResults.forValidation(context, Nil, Some(SelectedTable(selectedTable, discovery)))(
+      FinalResults.forValidation(context, Nil, Some(SelectedTable(selectedTable, streamTableEnv)))(
         initializer.validationContext
       )
   }

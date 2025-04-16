@@ -28,30 +28,15 @@ class TablesDefinitionDiscovery(env: StreamTableEnvironment) extends LazyLogging
 
   import scala.jdk.CollectionConverters._
 
-  // TODO: Check if this works without:
-  //  1. Setting ModelClassLoader as context classloader
-  //  2. Setting ModelClassLoader on EnvironmnentSettings for StreamTableEnv (this may be redundant anyways)
   def discoverTables(
       flinkDataDefinition: FlinkDataDefinition,
   ): List[ValidatedNel[FlinkDataDefinitionError, TableDefinition]] = {
-    try {
-      flinkDataDefinition
-        .registerIn(env)
-        .fold(
-          e => List(e.invalid),
-          _ => listTables
-        )
-    } finally {
-      // TODO: check if its enough
-      for {
-        catalogName  <- env.listCatalogs().toList
-        catalog      <- env.getCatalog(catalogName).toScala.toList
-        databaseName <- catalog.listDatabases.asScala.toList
-        tableName    <- env.listTables(catalogName, databaseName).toList
-      } yield {
-        env.executeSql(s"DROP TABLE `$catalogName`.`$databaseName`.`$tableName`")
-      }
-    }
+    flinkDataDefinition
+      .registerIn(env)
+      .fold(
+        e => List(e.invalid),
+        _ => listTables
+      )
   }
 
   private def listTables: List[ValidatedNel[FlinkDataDefinitionError, TableDefinition]] = for {
@@ -91,10 +76,8 @@ class TablesDefinitionDiscovery(env: StreamTableEnvironment) extends LazyLogging
       tableName: String,
       env: StreamTableEnvironment
   ): ValidatedNel[FlinkDataDefinitionDiscoveryError, Unit] = {
-    val classloader = Thread.currentThread().getContextClassLoader
-    logger.debug(s"Classloader that will be used for DynamicTableFactory verification: $classloader")
     val tableFactory = Try {
-      FactoryUtil.discoverFactory(classloader, classOf[DynamicTableFactory], connector)
+      FactoryUtil.discoverFactory(Thread.currentThread().getContextClassLoader, classOf[DynamicTableFactory], connector)
     }.fold(ex => ConnectorDiscoveryProblem(connector, ex).invalidNel, factory => factory.validNel)
 
     tableFactory.andThen { factory =>

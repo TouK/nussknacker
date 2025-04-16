@@ -120,7 +120,8 @@ object FlinkDataDefinition {
         throw new IllegalStateException(
           errors.toList
             .map(_.getMessage)
-            .mkString("Errors occurred when data definition registration in TableEnvironment: ", ", ", "")
+            .mkString("Errors occurred when data definition registration in TableEnvironment: ", ", ", ""),
+          errors.head
         )
       }
     }

@@ -379,7 +379,7 @@ class FlinkDeploymentManager(
           .map(new FlinkScenarioCompilationDependencies(_))
       )
       .getOrElse {
-        // TODO: always create share minicluster
+        // TODO: always create shared minicluster
         Resource.pure(EngineScenarioCompilationDependencies.empty)
       }
   }
