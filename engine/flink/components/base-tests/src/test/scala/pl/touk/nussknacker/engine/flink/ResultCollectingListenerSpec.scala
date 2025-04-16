@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.transformer
+package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
@@ -10,16 +10,16 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.FragmentResolver
-import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, TestResults}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -285,7 +285,7 @@ class ResultCollectingListenerSpec
       .nodeTransitionResults(NodeTransition(fromNodeId, toNodeId))
       .map(_.variables)
       .toSet[Map[String, Any]]
-      .map(_.mapValues(scalaMap))
+      .map(_.map { case (key, value) => (key, scalaMap(value)) })
 
   private def scalaMap(value: Any): Any = {
     value match {
