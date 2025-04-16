@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.util.config.DocsConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.{Duration, Instant}
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 
 class ResultCollectingListenerSpec
     extends AnyFunSuite
