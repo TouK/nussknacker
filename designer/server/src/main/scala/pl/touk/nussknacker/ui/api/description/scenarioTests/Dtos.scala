@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.Te
   EmptyDetails,
   TestWithParametersDetails
 }
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
@@ -126,6 +127,10 @@ object Dtos {
         testData: ScenarioTestData,
     )
 
+    final case class SkipResultsPerNode(value: Boolean)
+
+    final case class SkipResultsPerTransition(value: Boolean)
+
   }
 
   object Validate {
@@ -190,17 +195,60 @@ object Dtos {
 
   }
 
+  final case class ResultsWithCountsDto(results: TestResultsDto, counts: Map[String, NodeCount])
+
+  object ResultsWithCountsDto {
+
+    def from(
+        resultsWithCounts: ResultsWithCounts,
+        skipResultsPerNode: SkipResultsPerNode,
+        skipResultsPerTransition: SkipResultsPerTransition
+    ): ResultsWithCountsDto = ResultsWithCountsDto(
+      results = TestResultsDto(
+        nodeResults = when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
+        nodeTransitionResults =
+          when(!skipResultsPerTransition.value)(resultsWithCounts.results.nodeTransitionResults.map { result =>
+            NodeTransitionResult(
+              sourceNodeId = result._1.sourceNodeId,
+              destinationNodeId = result._1.destinationNodeId,
+              results = result._2,
+            )
+          }.toList),
+        invocationResults = resultsWithCounts.results.invocationResults,
+        externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
+        exceptions = resultsWithCounts.results.exceptions,
+      ),
+      counts = resultsWithCounts.counts,
+    )
+
+  }
+
+  private def when[T](condition: Boolean)(value: => T) = if (condition) Some(value) else None
+
+  final case class TestResultsDto(
+      nodeResults: Option[Map[String, List[ResultContext[Json]]]],
+      nodeTransitionResults: Option[List[NodeTransitionResult]],
+      invocationResults: Map[String, List[ExpressionInvocationResult[Json]]],
+      externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
+      exceptions: List[ExceptionResult[Json]]
+  )
+
+  final case class NodeTransitionResult(
+      sourceNodeId: String,
+      destinationNodeId: Option[String],
+      results: List[ResultContext[Json]]
+  )
+
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
   implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
   implicit def throwableSchema: Schema[Throwable]                                         = Schema.string
   implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                       = Schema.derived
-  implicit def edgeOutputSchema: Schema[Map[Edge, List[ResultContext[Json]]]] =
-    Schema.schemaForMap[Edge, List[ResultContext[Json]]](edge => edge.sourceNodeId + "->" + edge.destinationNodeId)
-  implicit def testResultsSchema: Schema[TestResults[Json]]       = Schema.derived
-  implicit def nodeCountSchema: Schema[NodeCount]                 = Schema.anyObject
-  implicit def resultsWithCountsSchema: Schema[ResultsWithCounts] = Schema.derived
-  implicit def typingResultDecoder: Decoder[TypingResult]         = Decoder.decodeJson.map(_ => typing.Unknown)
-  implicit def scenarioGraphSchema: Schema[ScenarioGraph]         = Schema.anyObject
+  implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
+  implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
+  implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
+  implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
+  implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
+  implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
 
 }

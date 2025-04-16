@@ -53,12 +53,16 @@ private class InterpreterInternal[F[_]: Monad](
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
-  private def onExitFromNode(node: Node, nextNode: Option[Next], ctx: Context): Unit = {
-    val nextNodeIdOpt = nextNode.map {
+  private def onTransitionToNextNode(node: Node, nextNode: Next, ctx: Context): Unit = {
+    val nextNodeId = nextNode match {
       case NextNode(BranchEnd(definition)) => definition.joinId
       case other                           => other.id
     }
-    listeners.foreach(_.nodeExited(node.id, nextNodeIdOpt, ctx, jobData.metaData))
+    listeners.foreach(_.transitionToNextNode(node.id, nextNodeId, ctx, jobData.metaData))
+  }
+
+  private def onProcessingFinishedInNode(node: Node, ctx: Context): Unit = {
+    listeners.foreach(_.processingFinishedInNode(node.id, ctx, jobData.metaData))
   }
 
   @silent("deprecated")
@@ -200,7 +204,7 @@ private class InterpreterInternal[F[_]: Monad](
       reference: PartReference,
       ctx: Context
   ): F[List[Result[InterpretationResult]]] = {
-    onExitFromNode(node, None, ctx)
+    onProcessingFinishedInNode(node, ctx)
     Monad[F].pure(List(Left(InterpretationResult(reference, ctx))))
   }
 
@@ -219,7 +223,7 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def interpretNext(node: Node, next: Next, ctx: Context): F[List[Result[InterpretationResult]]] = {
-    onExitFromNode(node, Some(next), ctx)
+    onTransitionToNextNode(node, next, ctx)
     next match {
       case NextNode(node) => interpret(node, ctx)
       case pr @ PartRef(ref) => {

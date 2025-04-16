@@ -1134,13 +1134,20 @@ object SampleNodes {
     override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit =
       checkValidState("nodeEntered")
 
-    override def nodeExited(
+    override def transitionToNextNode(
         nodeId: String,
-        nextNodeId: Option[String],
+        nextNodeId: String,
         context: Context,
         processMetaData: MetaData
     ): Unit =
-      checkValidState("nodeExited")
+      checkValidState("transitionToNextNode")
+
+    override def processingFinishedInNode(
+        nodeId: String,
+        context: Context,
+        processMetaData: MetaData,
+    ): Unit =
+      checkValidState("processingFinishedInNode")
 
     override def endEncountered(
         nodeId: String,

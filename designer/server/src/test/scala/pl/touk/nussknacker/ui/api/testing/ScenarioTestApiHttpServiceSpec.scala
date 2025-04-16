@@ -89,7 +89,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/capabilities")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -114,7 +114,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthNoPermUser()
         .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/capabilities")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(403)
     }
@@ -129,7 +129,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, 3))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/generatedTestData")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(200)
         .equalsPlainBody(expectedTestDataJson)
@@ -142,7 +142,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, 100))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/generatedTestData")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
         .equalsPlainBody(
@@ -160,7 +160,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/capabilities")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -236,7 +236,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(canonicalGraphStr(fragment))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${fragment.name}/capabilities")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/capabilities")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -304,7 +304,7 @@ trait ScenarioTestApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(canonicalGraphStr(fragment))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${fragment.name}/capabilities")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/capabilities")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -332,7 +332,7 @@ trait ScenarioTestApiHttpServiceSpec
               |  "scenarioGraph": $exampleScenarioGraphStr,
               |  "numberOfSamples": 100
               |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/$notExistingScenarioName/generatedTestData")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/$notExistingScenarioName/generatedTestData")
         .Then()
         .statusCode(StatusCodes.NotFound.intValue)
         .equalsPlainBody(s"No scenario $notExistingScenarioName found")

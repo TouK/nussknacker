@@ -45,7 +45,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2, 10))
         .post(
-          s"$designerServiceUrl/api/scenarioTest/$scenarioName/generatedTestData"
+          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
         )
         .Then()
         .statusCode(200)
@@ -70,7 +70,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2, 1))
         .post(
-          s"$designerServiceUrl/api/scenarioTest/$scenarioName/generatedTestData"
+          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
         )
         .Then()
         .statusCode(200)
@@ -105,7 +105,7 @@ class BatchDataGenerationSpec
            |}""".stripMargin
       )
       .post(
-        s"$designerServiceUrl/api/scenarioTest/$scenarioName/test"
+        s"$designerServiceUrl/api/scenarioTesting/$scenarioName/performTest"
       )
       .Then()
       .statusCode(200)
@@ -146,8 +146,11 @@ class BatchDataGenerationSpec
            |        }
            |      ]
            |    },
-           |    "nodeEdgeOutputResults": {
-           |      "sourceId->end": [
+           |    "nodeTransitionResults": [
+           |      {
+           |        "sourceNodeId": "sourceId",
+           |        "destinationNodeId": "end",
+           |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "variables": {
@@ -162,10 +165,12 @@ class BatchDataGenerationSpec
            |            }
            |          }
            |        }
-           |      ]
-           |    },
-           |    "nodeDeadEndOutputResults": {
-           |      "end": [
+           |        ]
+           |      },
+           |      {
+           |        "sourceNodeId": "end",
+           |        "destinationNodeId": null,
+           |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "variables": {
@@ -180,8 +185,9 @@ class BatchDataGenerationSpec
            |            }
            |          }
            |        }
-           |      ]
-           |    },
+           |        ]
+           |      }
+           |    ],
            |    "invocationResults": {},
            |    "externalInvocationResults": {},
            |    "exceptions": []
@@ -259,8 +265,11 @@ class BatchDataGenerationSpec
            |        }
            |      ]
            |    },
-           |    "nodeEdgeOutputResults": {
-           |      "sourceId->end": [
+           |    "nodeTransitionResults": [
+           |      {
+           |        "sourceNodeId": "sourceId",
+           |        "destinationNodeId": "end",
+           |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "variables": {
@@ -275,10 +284,12 @@ class BatchDataGenerationSpec
            |            }
            |          }
            |        }
-           |      ]
-           |    },
-           |    "nodeDeadEndOutputResults": {
-           |      "end": [
+           |        ]
+           |      },
+           |      {
+           |        "sourceNodeId": "end",
+           |        "destinationNodeId": null,
+           |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "variables": {
@@ -293,8 +304,9 @@ class BatchDataGenerationSpec
            |            }
            |          }
            |        }
-           |      ]
-           |    },
+           |        ]
+           |      }
+           |    ],
            |    "invocationResults": {},
            |    "externalInvocationResults": {},
            |    "exceptions": []

@@ -40,11 +40,17 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.name.value, nodeId), s"Node entered. Context: $context")
   }
 
-  override def nodeExited(
+  override def transitionToNextNode(
       nodeId: String,
-      nextNodeId: Option[String],
+      nextNodeId: String,
       context: Context,
       processMetaData: MetaData
+  ): Unit = ()
+
+  override def processingFinishedInNode(
+      nodeId: String,
+      context: Context,
+      processMetaData: MetaData,
   ): Unit = ()
 
   override def endEncountered(

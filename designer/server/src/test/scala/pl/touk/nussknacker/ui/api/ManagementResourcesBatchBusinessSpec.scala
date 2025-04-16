@@ -63,7 +63,7 @@ class ManagementResourcesBatchBusinessSpec
                      | },
                      | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
                      |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/test")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .body(

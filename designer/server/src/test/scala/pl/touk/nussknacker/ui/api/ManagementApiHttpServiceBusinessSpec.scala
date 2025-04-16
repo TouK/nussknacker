@@ -42,8 +42,7 @@ class ManagementApiHttpServiceBusinessSpec
             Map(
               exampleScenario.name.value -> TestResults(
                 nodeResults = Map.empty,
-                nodeEdgeOutputResults = Map.empty,
-                nodeDeadEndOutputResults = Map.empty,
+                nodeTransitionResults = Map.empty,
                 invocationResults = Map.empty,
                 externalInvocationResults = Map.empty,
                 exceptions = List.empty,
@@ -72,7 +71,7 @@ class ManagementApiHttpServiceBusinessSpec
             | },
             | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
             |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/test")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -80,8 +79,7 @@ class ManagementApiHttpServiceBusinessSpec
              |{
              |  "results": {
              |    "nodeResults": {},
-             |    "nodeEdgeOutputResults":{},
-             |    "nodeDeadEndOutputResults":{},
+             |    "nodeTransitionResults": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
              |    "exceptions": []

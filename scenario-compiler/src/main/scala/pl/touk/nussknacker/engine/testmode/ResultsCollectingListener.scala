@@ -45,13 +45,21 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
     updateResults(_.updateNodeResult(nodeId, context, variableEncoder))
   }
 
-  override def nodeExited(
+  override def transitionToNextNode(
       nodeId: String,
-      nextNodeId: Option[String],
+      nextNodeId: String,
       context: Context,
-      processMetaData: MetaData
+      processMetaData: MetaData,
   ): Unit = {
-    updateResults(_.updateNodeOutputResult(nodeId, nextNodeId, context, variableEncoder))
+    updateResults(_.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder))
+  }
+
+  override def processingFinishedInNode(
+      nodeId: String,
+      context: Context,
+      processMetaData: MetaData,
+  ): Unit = {
+    updateResults(_.updateNodeOutputResult(nodeId, None, context, variableEncoder))
   }
 
   override def endEncountered(
@@ -98,7 +106,7 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
 
 private object NoopResultsCollectingListener extends ResultsCollectingListener[Any] with EmptyProcessListener {
   override def results: TestResults[Any] =
-    TestResults(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
+    TestResults(Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
 
   override def clean(): Unit = {}
 
@@ -139,7 +147,7 @@ object ResultsCollectingListenerHolder {
 
   private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = {
     val runId = TestRunId.generate
-    results.put(runId, TestResults(Map(), Map(), Map(), Map(), Map(), List()))
+    results.put(runId, TestResults(Map(), Map(), Map(), Map(), List()))
     ResultsCollectingListenerImpl(getClass.getCanonicalName, runId, variableEncoder)
   }
 

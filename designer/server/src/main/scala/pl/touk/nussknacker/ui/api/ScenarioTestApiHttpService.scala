@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError._
 import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.ScenarioTestApiHttpService.TestingError.NotFoundTestingError._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.{ResultsWithCountsDto, ScenarioTestData}
 import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
@@ -26,7 +27,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.{
   TestCapabilityDetails
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
-import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.description.scenarioTests.ScenarioTestApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
@@ -114,7 +115,7 @@ class ScenarioTestApiHttpService(
     scenarioTestApiEndpoints.scenarioTestEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (scenarioName, request) =>
+        { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             processId <- EitherT
@@ -158,7 +159,11 @@ class ScenarioTestApiHttpService(
                     }
                 }
             }
-          } yield resultWithCounts
+          } yield ResultsWithCountsDto.from(
+            resultWithCounts,
+            skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
+            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
+          )
         }
       }
   }

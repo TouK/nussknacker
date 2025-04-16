@@ -4574,7 +4574,7 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTest/{scenarioName}/capabilities:
+  /api/scenarioTesting/{scenarioName}/capabilities:
     post:
       tags:
       - Testing
@@ -4701,7 +4701,7 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTest/{scenarioName}/test:
+  /api/scenarioTesting/{scenarioName}/performTest:
     post:
       tags:
       - Testing
@@ -4787,7 +4787,7 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTest/{scenarioName}/generatedTestData:
+  /api/scenarioTesting/{scenarioName}/generatedTestData:
     post:
       tags:
       - Testing
@@ -4900,7 +4900,7 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTest/{scenarioName}/validate:
+  /api/scenarioTesting/{scenarioName}/validate:
     post:
       tags:
       - Testing

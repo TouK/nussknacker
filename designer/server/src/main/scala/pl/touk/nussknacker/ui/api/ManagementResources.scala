@@ -16,12 +16,14 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.ResultsWithCountsDto
+import pl.touk.nussknacker.ui.api.description.scenarioTests.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -190,33 +192,43 @@ class ManagementResources(
         } ~
         // TODO: maybe Write permission is enough here?
         path("test" / ProcessNameSegment) { processName =>
-          (post & processDetailsForName(processName)) { details =>
-            canDeploy(details.idWithNameUnsafe) {
-              formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
-                complete {
-                  measureTime("test", metricRegistry) {
-                    parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
-                      case Right(scenarioGraph) =>
-                        scenarioTestServices
-                          .forProcessingTypeUnsafe(details.processingType)
-                          .performTest(
-                            scenarioGraph,
-                            details.processVersionUnsafe,
-                            details.isFragment,
-                            RawScenarioTestData(testDataContent)
-                          )
-                          .flatMap {
-                            case Left(error) =>
-                              Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
-                            case Right(value) => mapResultsToHttpResponse(value)
-                          }
-                      case Left(error) =>
-                        Future.failed(ProcessUnmarshallingError(error.toString))
+          (post & processDetailsForName(
+            processName
+          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam) {
+            (details, skipResultsPerTransition, skipResultsPerNode) =>
+              canDeploy(details.idWithNameUnsafe) {
+                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
+                  complete {
+                    measureTime("test", metricRegistry) {
+                      parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
+                        case Right(scenarioGraph) =>
+                          scenarioTestServices
+                            .forProcessingTypeUnsafe(details.processingType)
+                            .performTest(
+                              scenarioGraph,
+                              details.processVersionUnsafe,
+                              details.isFragment,
+                              RawScenarioTestData(testDataContent)
+                            )
+                            .flatMap {
+                              case Left(error) =>
+                                Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
+                              case Right(value) =>
+                                mapResultsToHttpResponse(
+                                  ResultsWithCountsDto.from(
+                                    resultsWithCounts = value,
+                                    skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
+                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition)
+                                  )
+                                )
+                            }
+                        case Left(error) =>
+                          Future.failed(ProcessUnmarshallingError(error.toString))
+                      }
                     }
                   }
                 }
               }
-            }
           }
         } ~ path(("runOffSchedule" | "performSingleExecution") / ProcessNameSegment) {
           processName => // backward compatibility purpose
@@ -240,12 +252,18 @@ class ManagementResources(
         }
     }
 
-  private def mapResultsToHttpResponse: ResultsWithCounts => Future[HttpResponse] = { results =>
+  private def mapResultsToHttpResponse: ResultsWithCountsDto => Future[HttpResponse] = { results =>
     Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
   }
 
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
+
+  private def skipResultsPerNodeQueryParam =
+    parameters(Symbol("skipResultsPerNode").as[Boolean].withDefault(false))
+
+  private def skipResultsPerTransitionQueryParam =
+    parameters(Symbol("skipResultsPerTransition").as[Boolean].withDefault(false))
 
   private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future

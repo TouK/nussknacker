@@ -27,7 +27,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/validate")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/validate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -51,7 +51,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/validate")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/validate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -71,7 +71,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(parametersProvidedForDryRun)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/test")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
       .Then()
       .statusCode(200)
       .body(
@@ -92,7 +92,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTest/${exampleScenario.name}/capabilities")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
       .Then()
       .statusCode(200)
       .equalsJsonBody(responseWithParameters(expectedTestParametersJson))
