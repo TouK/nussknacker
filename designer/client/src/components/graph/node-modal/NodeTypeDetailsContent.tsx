@@ -136,12 +136,9 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         }
     }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
 
-    useEffect(() => {
-        setEditedNode((node) => {
-            const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, node) ? node : adjustedNode;
-        });
-    }, [adjustNode, setEditedNode]);
+    const adjustedNode = useMemo(() => {
+        return adjustNode(node);
+    }, [adjustNode, node]);
 
     return {
         ...props,
@@ -155,6 +152,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         removeElement,
         addElement,
         setProperty,
+        node: adjustedNode,
     };
 }
 
