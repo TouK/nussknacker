@@ -442,6 +442,7 @@ object typing {
 
       val flattenedTypes = possibleTypes.toList.map(flattenType).sequence.map(_.flatten.distinct)
       flattenedTypes match {
+        case None if possibleTypes.toList.contains(json)           => json
         case None                                                  => Unknown
         case Some(Nil) if possibleTypes.toList.contains(TypedNull) => TypedNull
         case Some(Nil)                                             =>

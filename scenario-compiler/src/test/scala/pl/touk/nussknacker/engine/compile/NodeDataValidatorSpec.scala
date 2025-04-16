@@ -1197,7 +1197,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       ("#input[0]['products'][1]['id']", Typed.json),
       ("#input[0]['products'][1]['id'].toInteger()", Typed.typedClass[Int]),
       ("#input.toList()", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
-      ("#input.toMap()", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed.json, Typed.json)))
+      ("#input.toMap()", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed.json))),
+      ("#input.toList().get(0)", Typed.json)
     )
     expressionsWithExpectedTypes.foreach { case (expression, expectedType) =>
       inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) {
