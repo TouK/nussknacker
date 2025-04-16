@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
 import cats.implicits.toTraverseOps
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.scalatest.LoneElement
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{LoneElement, Outcome}
+import org.scalatest.funspec.FixtureAnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases.allColumnTypesTable
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.definition.{
@@ -19,27 +21,47 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import scala.jdk.CollectionConverters._
 
 class TableSourceDataGenerationTest
-    extends AnyFunSuite
+    extends FixtureAnyFunSpec
     with Matchers
     with LoneElement
     with ValidatedValuesDetailedMessage
-    with ModelClassLoaderSimulationSuite {
+    with ModelClassLoaderSimulationSuite
+    with LazyLogging {
 
-  private val tableSource = {
-    val flinkDataDefinition =
-      FlinkDataDefinition.applyUnsafe(FlinkDdlParser.parseUnsafe(allColumnTypesTable), None)
-    val env =
-      StreamTableEnvironment.create(StreamExecutionEnvironment.getExecutionEnvironment)
-    val discovery = TablesDefinitionDiscovery
-      .discoverTables(flinkDataDefinition, env)
-      .sequence
+  override type FixtureParam = TableSource
 
-    new TableSource(
-      tableDefinition = discovery.validValue.loneElement,
-      flinkDataDefinition = flinkDataDefinition,
-      testDataGenerationMode = TestDataGenerationMode.Random,
-      env
-    )
+  private val miniClusterWithServices =
+    FlinkMiniClusterFactory
+      .createMiniClusterWithServices(
+        simulatedModelClassloader,
+        new Configuration,
+      )
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    miniClusterWithServices.close()
+  }
+
+  def withFixture(test: OneArgTest): Outcome = {
+    miniClusterWithServices.withAttachedStreamExecutionEnvironment { env =>
+      val tableSource = {
+        val flinkDataDefinition =
+          FlinkDataDefinition.applyUnsafe(FlinkDdlParser.parseUnsafe(allColumnTypesTable), None)
+        val tableEnvironment = StreamTableEnvironment.create(env)
+        val tableDefinitions = new TablesDefinitionDiscovery(tableEnvironment)
+          .discoverTables(flinkDataDefinition)
+          .sequence
+          .validValue
+
+        new TableSource(
+          tableDefinition = tableDefinitions.loneElement,
+          flinkDataDefinition = flinkDataDefinition,
+          testDataGenerationMode = TestDataGenerationMode.Random,
+          tableEnvironment
+        )
+      }
+      test(tableSource)
+    }
   }
 
   /*
@@ -48,7 +70,7 @@ class TableSourceDataGenerationTest
         Minicluster which relies on proper classloader setup, which is hard to do in simple tests. These tests below
         are useful for checking the output of these methods, but if they pass it doesn't mean that it works e2e.
    */
-  test("table source should generate random records with given schema") {
+  it("should generate random records with given schema") { tableSource =>
     val records = tableSource.generateTestData(1)
 
     val mapRecord = records.testRecords.loneElement.json.asObject.get.toMap
@@ -60,7 +82,7 @@ class TableSourceDataGenerationTest
     mapRecord("file.name").isString shouldBe true
   }
 
-  test("table source should parse json records") {
+  it("should parse json records") { tableSource =>
     val testData = tableSource.generateTestData(1).testRecords
     val result   = tableSource.testRecordParser.parse(testData).loneElement
 

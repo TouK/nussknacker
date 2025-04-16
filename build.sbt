@@ -1251,23 +1251,34 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
     name := "nussknacker-flink-minicluster",
     libraryDependencies ++= {
       Seq(
-        ("org.apache.flink"           % "flink-streaming-java"       % flinkV)
+        ("org.apache.flink"           % "flink-streaming-java"        % flinkV)
           .excludeAll(
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
-        "org.apache.flink"            % "flink-statebackend-rocksdb" % flinkV,
-        // Below is a list of standard connectors and formats availabled in flink distribution
+        "org.apache.flink"            % "flink-statebackend-rocksdb"  % flinkV,
+        // Below is a list of libs that are available in flink distribution
         // We want to make flink minicluster as featured as standard flink distribution
-        "org.apache.flink"            % "flink-connector-files"      % flinkV,
-        "org.apache.flink"            % "flink-csv"                  % flinkV,
-        "org.apache.flink"            % "flink-json"                 % flinkV,
-        "org.apache.flink"            % "flink-table-api-java-uber"  % flinkV,
+        "org.apache.flink"            % "flink-connector-files"       % flinkV,
+        "org.apache.flink"            % "flink-csv"                   % flinkV,
+        "org.apache.flink"            % "flink-json"                  % flinkV,
+        ("org.apache.flink"           % "flink-table-api-java-bridge" % flinkV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded")
+          ),
+        ("org.apache.flink"           % "flink-table-runtime"         % flinkV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded")
+          ),
+        ("org.apache.flink"           % "flink-table-planner-loader"  % flinkV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded")
+          ),
         // end of list
-        "org.scala-lang.modules"     %% "scala-collection-compat"    % scalaCollectionsCompatV % Provided,
-        "com.typesafe.scala-logging" %% "scala-logging"              % scalaLoggingV           % Provided,
-        "com.softwaremill.retry"     %% "retry"                      % retryV,
+        "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
+        "com.typesafe.scala-logging" %% "scala-logging"               % scalaLoggingV           % Provided,
+        "com.softwaremill.retry"     %% "retry"                       % retryV,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
@@ -1871,6 +1882,9 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-flink-base-components-tests",
+    libraryDependencies ++= Seq(
+      "org.apache.flink" % "flink-connector-jdbc" % jdbcFlinkConnectorV % Test,
+    )
   )
   .dependsOn(
     flinkComponentsTestkit  % Test,
@@ -1900,13 +1914,11 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.calcite" % "calcite-linq4j"              % calciteV, // required by fliink-sql-parser
-        "org.apache.flink"   % "flink-table-api-java"        % flinkV,
-        "org.apache.flink"   % "flink-table-api-java-bridge" % flinkV,
-        "org.apache.flink"   % "flink-table-planner-loader"  % flinkV,
-        "org.apache.flink"   % "flink-table-runtime"         % flinkV,
-        "org.apache.flink"   % "flink-clients"               % flinkV,
         "org.apache.flink"   % "flink-sql-parser"            % flinkV,
+        "org.apache.calcite" % "calcite-linq4j"              % calciteV, // required by fliink-sql-parser
+        "org.apache.flink"   % "flink-streaming-java"        % flinkV              % Provided,
+        "org.apache.flink"   % "flink-table-api-java"        % flinkV              % Provided,
+        "org.apache.flink"   % "flink-table-api-java-bridge" % flinkV              % Provided,
         "org.apache.flink"   % "flink-connector-jdbc"        % jdbcFlinkConnectorV % Test,
       )
     }
@@ -1918,8 +1930,8 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     componentsUtils        % Provided,
     flinkComponentsUtils   % Provided,
     jsonUtils              % Provided,
-    flinkMiniCluster       % Provided,
     extensionsApi          % Provided,
+    flinkMiniCluster       % Test,
     testUtils              % Test,
     flinkComponentsTestkit % Test,
   )

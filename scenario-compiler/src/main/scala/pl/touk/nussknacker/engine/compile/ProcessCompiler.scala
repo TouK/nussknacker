@@ -113,7 +113,7 @@ protected trait ProcessCompilerBase {
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[CompiledProcessParts] = {
-    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+    ThreadUtils.withContextClassLoader(classLoader) {
       val compilationResultWithArtificial =
         ProcessCanonizer.uncanonizeArtificial(process).map(ProcessSplitter.split).map(compile)
       compilationResultWithArtificial.extract

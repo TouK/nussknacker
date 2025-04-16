@@ -21,7 +21,7 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
   protected def testScenario(command: DMTestScenarioCommand): Future[TestProcess.TestResults[Json]] = {
     Future {
       val currentModelData = modelDataProvider.getCurrentModelData().asInvokableModelData
-      currentModelData.withThisAsContextClassLoader {
+      currentModelData.withModelClassloaderAsContextClassLoader {
         // TODO: handle scenario testing in RR as well
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(
           currentModelData,

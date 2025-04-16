@@ -207,7 +207,7 @@ class ModelDataTestInfoProvider(
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
     // method TestDataGenerator.generateTestData has to be called within ModelClassLoader context
-    modelData.withThisAsContextClassLoader {
+    modelData.withModelClassloaderAsContextClassLoader {
       val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
         val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
         sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))

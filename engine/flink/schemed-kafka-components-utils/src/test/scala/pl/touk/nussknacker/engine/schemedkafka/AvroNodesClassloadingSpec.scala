@@ -30,7 +30,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
       MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
-  private def withFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
+  private def withFailingLoader[T] = ThreadUtils.withContextClassLoader[T](new FailingContextClassloader) _
 
   private val scenario = ScenarioBuilder
     .streaming("test")

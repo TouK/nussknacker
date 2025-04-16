@@ -66,7 +66,7 @@ object ScenarioInterpreterFactory {
       shape: InterpreterShape[F],
       capabilityTransformer: CapabilityTransformer[F]
   ): ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] =
-    modelData.withThisAsContextClassLoader {
+    modelData.withModelClassloaderAsContextClassLoader {
 
       val creator           = modelData.configCreator
       val modelDependencies = ProcessObjectDependencies.withConfig(modelData.modelConfig)
@@ -142,7 +142,7 @@ object ScenarioInterpreterFactory {
       with Lifecycle {
 
     def invoke(contexts: ScenarioInputBatch[Input]): F[ResultType[EndResult[Res]]] =
-      modelData.withThisAsContextClassLoader {
+      modelData.withModelClassloaderAsContextClassLoader {
         invoker(contexts).map { result =>
           result.map(_.map {
             case e: EndPartResult[Res @unchecked] => EndResult(NodeId(e.nodeId), e.context, e.result)
@@ -151,11 +151,11 @@ object ScenarioInterpreterFactory {
         }
       }
 
-    override def open(context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
+    override def open(context: EngineRuntimeContext): Unit = modelData.withModelClassloaderAsContextClassLoader {
       lifecycle.foreach(_.open(context))
     }
 
-    override def close(): Unit = modelData.withThisAsContextClassLoader {
+    override def close(): Unit = modelData.withModelClassloaderAsContextClassLoader {
       lifecycle.foreach(_.close())
     }
 

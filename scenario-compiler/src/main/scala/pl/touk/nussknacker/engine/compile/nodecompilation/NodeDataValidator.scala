@@ -67,7 +67,7 @@ class NodeDataValidator(modelData: ModelData) {
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ValidationResponse = {
     import scenarioCompilationDependencies._
 
-    modelData.withThisAsContextClassLoader {
+    modelData.withModelClassloaderAsContextClassLoader {
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       val compilationErrors = nodeData match {

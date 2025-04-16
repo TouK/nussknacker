@@ -4,8 +4,6 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.parse
 import org.apache.commons.io.FileUtils
-import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptions}
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api._
 import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
@@ -15,7 +13,6 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 
-import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
 import java.util.UUID
@@ -154,20 +151,5 @@ class FlinkMiniClusterTableOperations(env: StreamTableEnvironment) extends LazyL
   }
 
   private def generateTableName: TableName = s"testDataInputTable_${UUID.randomUUID().toString.replaceAll("-", "")}"
-
-}
-
-object MiniClusterEnvBuilder extends LazyLogging {
-
-  def buildStreamTableEnv(
-      baseStreamExecutionEnv: StreamExecutionEnvironment
-  ): StreamTableEnvironment =
-    StreamTableEnvironment.create(
-      baseStreamExecutionEnv,
-      EnvironmentSettings
-        .newInstance()
-        .withConfiguration(Configuration.fromMap(baseStreamExecutionEnv.getConfiguration.toMap))
-        .build()
-    )
 
 }

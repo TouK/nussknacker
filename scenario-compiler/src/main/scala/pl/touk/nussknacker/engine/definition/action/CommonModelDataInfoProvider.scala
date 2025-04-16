@@ -57,7 +57,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
       nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Source] = {
     // We have to wrap this block with model's class loader because it invokes node compilation
-    modelData.withThisAsContextClassLoader {
+    modelData.withModelClassloaderAsContextClassLoader {
       nodeCompiler.compileSource(source).compiledObject
     }
   }
@@ -68,7 +68,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[ProcessCompilationError, Map[NodeComponentInfo, Any]] =
     // We have to wrap this block with model's class loader because it invokes node compilation
-    modelData.withThisAsContextClassLoader {
+    modelData.withModelClassloaderAsContextClassLoader {
       scenarioCompiler
         .compile(scenario)
         .result

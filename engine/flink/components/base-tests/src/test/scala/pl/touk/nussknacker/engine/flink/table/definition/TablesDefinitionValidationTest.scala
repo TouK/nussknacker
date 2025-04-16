@@ -1,30 +1,48 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.scalatest.{Inside, LoneElement}
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{Inside, LoneElement, Outcome}
+import org.scalatest.funspec.FixtureAnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionCreationError.FlinkDdlParseError.ParseError
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionDiscoveryError.{
   CatalogDiscoveryProblem,
   CatalogNonTransientValidationError
 }
 import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class TablesDefinitionValidationTest
-    extends AnyFunSuite
+    extends FixtureAnyFunSpec
     with Matchers
     with LoneElement
     with ModelClassLoaderSimulationSuite
-    with Inside {
+    with Inside
+    with ValidatedValuesDetailedMessage {
 
-  private val env = StreamTableEnvironment.create(StreamExecutionEnvironment.getExecutionEnvironment)
-  private def validate(sql: String) =
-    TablesDefinitionValidation.validateWithoutExternalConnections(sql, env, simulatedModelClassloader)
+  override protected type FixtureParam = TablesDefinitionValidation
 
-  test("should not return external calls reliant validation errors") {
+  private val miniClusterWithServices =
+    FlinkMiniClusterFactory
+      .createMiniClusterWithServices(
+        simulatedModelClassloader,
+        new Configuration,
+      )
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    miniClusterWithServices.close()
+  }
+
+  override protected def withFixture(test: OneArgTest): Outcome = {
+    miniClusterWithServices.withAttachedStreamExecutionEnvironment { env =>
+      test(new TablesDefinitionValidation(StreamTableEnvironment.create(env), simulatedModelClassloader))
+    }
+  }
+
+  it("should not return external calls reliant validation errors") { validation =>
     val sql =
       """|CREATE CATALOG test_catalog WITH (
          |    'type' = 'jdbc',
@@ -33,21 +51,21 @@ class TablesDefinitionValidationTest
          |    'password' = 'password',
          |    'base-url' = 'jdbc:postgresql://localhost:5432'
          |)""".stripMargin
-    validate(sql) shouldBe Symbol("valid")
+    validation.validateWithoutExternalConnections(sql) shouldBe Symbol("valid")
   }
 
-  test("should return error if catalog cannot be found on classpath") {
+  it("should return error if catalog cannot be found on classpath") { validation =>
     val sql =
       """|CREATE CATALOG test_catalog WITH (
          |    'type' = 'non-existant-catalog'
          |)""".stripMargin
-    val error = validate(sql).invalidValue.toList.loneElement
+    val error = validation.validateWithoutExternalConnections(sql).invalidValue.toList.loneElement
     inside(error) { case e: CatalogDiscoveryProblem =>
       e.getMessage should startWith("Could not find matching catalog: [non-existant-catalog]")
     }
   }
 
-  test("should return error for missing required catalog option") {
+  it("should return error for missing required catalog option") { validation =>
     val sql =
       """|CREATE CATALOG test_catalog WITH (
          |    'type' = 'jdbc',
@@ -55,7 +73,7 @@ class TablesDefinitionValidationTest
          |    'password' = 'password',
          |    'base-url' = 'jdbc:postgresql://localhost:5432'
          |)""".stripMargin
-    val error = validate(sql).invalidValue.toList.loneElement
+    val error = validation.validateWithoutExternalConnections(sql).invalidValue.toList.loneElement
     inside(error) { case e: CatalogNonTransientValidationError =>
       e.getMessage shouldBe
         """|One or more required options are missing.
@@ -66,27 +84,27 @@ class TablesDefinitionValidationTest
     }
   }
 
-  test("return error for empty flink data definition") {
-    val error = validate("").invalidValue.toList.loneElement
+  it("return error for empty flink data definition") { validation =>
+    val error = validation.validateWithoutExternalConnections("").invalidValue.toList.loneElement
     inside(error) { case e: ParseError =>
       e.getMessage should startWith("""Could not parse SQL statements: Encountered "<EOF>" at line 0, column 0.""")
     }
   }
 
-  test("should return Flink SQL parsing error") {
+  it("should return Flink SQL parsing error") { validation =>
     val sql =
       s"""|CREATE TABLE `test_table` (
           |  `someString` STRING
           |) WITH (
           |  'connector' = 'not-on-classpath-connector',
           |)""".stripMargin
-    val error = validate(sql).invalidValue.toList.loneElement
+    val error = validation.validateWithoutExternalConnections(sql).invalidValue.toList.loneElement
     inside(error) { case e: FlinkDataDefinitionCreationError =>
       e.getMessage should startWith("""Could not parse SQL statements: Encountered ")" at line 5, column 1""")
     }
   }
 
-  test("returns error from data definition registration (statement execution)") {
+  it("returns error from data definition registration (statement execution)") { validation =>
     val sql =
       """|CREATE TABLE somedb.testTable
          |(
@@ -94,14 +112,14 @@ class TablesDefinitionValidationTest
          |) WITH (
          |    'connector' = 'datagen'
          |);""".stripMargin
-    val error = validate(sql).invalidValue.toList.loneElement
+    val error = validation.validateWithoutExternalConnections(sql).invalidValue.toList.loneElement
 
     inside(error) { case e: FlinkDataDefinitionRegistrationError =>
       e.getMessage should include("Cause: Could not execute CreateTable in path `default_catalog`.`somedb`.`testTable`")
     }
   }
 
-  test("should return table environment runtime validation error") {
+  it("should return table environment runtime validation error") { validation =>
     val sql =
       s"""|CREATE TABLE testTable (
           |    `file.name` STRING
@@ -111,7 +129,7 @@ class TablesDefinitionValidationTest
           |    'format' = 'csv',
           |    'redundant' = '123'
           |);""".stripMargin
-    val error = validate(sql).invalidValue.toList
+    val error = validation.validateWithoutExternalConnections(sql).invalidValue.toList
     inside(error) { case List(e1: FlinkDataDefinitionDiscoveryError, e2) =>
       val expectedMessage =
         """|Unsupported options found for 'filesystem'.

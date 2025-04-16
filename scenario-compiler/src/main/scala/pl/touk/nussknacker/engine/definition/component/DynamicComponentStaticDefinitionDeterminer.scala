@@ -90,7 +90,7 @@ object DynamicComponentStaticDefinitionDeterminer {
       new DynamicComponentStaticDefinitionDeterminer(nodeValidator)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
-    modelDataForType.withThisAsContextClassLoader {
+    modelDataForType.withModelClassloaderAsContextClassLoader {
       extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
           dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)

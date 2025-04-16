@@ -6,7 +6,6 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.factories.{CatalogFactory, FactoryUtil}
 import org.apache.flink.table.factories.FactoryUtil.DefaultCatalogContext
-import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement.{
   CreateCatalog,
   CreateTable
@@ -16,17 +15,14 @@ import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionDisc
   CatalogNonTransientValidationError
 }
 
-import java.net.URLClassLoader
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 // This is used by external project
-object TablesDefinitionValidation {
+class TablesDefinitionValidation(env: StreamTableEnvironment, classLoader: ClassLoader) {
 
   def validateWithoutExternalConnections(
       sqlDdlStatements: String,
-      env: StreamTableEnvironment,
-      classLoader: URLClassLoader
   ): ValidatedNel[FlinkDataDefinitionError, Unit] = {
     FlinkDdlParser.parse(sqlDdlStatements).andThen { statements =>
       val createTableStatements = statements.collect { case ct: CreateTable => ct }
@@ -36,7 +32,7 @@ object TablesDefinitionValidation {
         FlinkDataDefinition
           .apply(createTableStatements, None)
           .andThen { definition =>
-            TablesDefinitionDiscovery.discoverTables(definition, env).sequence
+            new TablesDefinitionDiscovery(env).discoverTables(definition).sequence
           }
           .void
       }
@@ -45,7 +41,7 @@ object TablesDefinitionValidation {
       val createCatalogValidationResult = if (createCatalogStatements.isEmpty) {
         ().validNel
       } else {
-        createCatalogStatements.map(cc => validateCatalogWithoutExternalCalls(cc, classLoader)).sequence.void
+        createCatalogStatements.map(cc => validateCatalogWithoutExternalCalls(cc)).sequence.void
       }
 
       createTableValidationResult.combine(createCatalogValidationResult)
@@ -53,8 +49,7 @@ object TablesDefinitionValidation {
   }
 
   private def validateCatalogWithoutExternalCalls(
-      createCatalog: CreateCatalog,
-      classLoader: URLClassLoader
+      createCatalog: CreateCatalog
   ): ValidatedNel[FlinkDataDefinitionDiscoveryError, Unit] = {
     val catalogFactory = Try {
       FactoryUtil.discoverFactory(

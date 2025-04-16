@@ -4,9 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalid, valid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.EnvironmentSettings
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
@@ -68,20 +66,11 @@ class TableSinkFactory(
 
   private def prepareInitialParameters(dependencies: List[NodeDependencyValue]): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val streamEnv = streamEnvDependency.extract(dependencies)
-      val streamTableEnv = StreamTableEnvironment.create(
-        streamEnv,
-        EnvironmentSettings
-          .newInstance()
-          .withConfiguration(Configuration.fromMap(streamEnv.getConfiguration.toMap))
-          .build()
-      )
+      val streamEnv      = streamEnvDependency.extract(dependencies)
+      val streamTableEnv = StreamTableEnvironment.create(streamEnv)
 
-      val (errors, tableDefinitions) = TablesDefinitionDiscovery
-        .discoverTables(
-          flinkDataDefinition,
-          streamTableEnv
-        )
+      val (errors, tableDefinitions) = new TablesDefinitionDiscovery(streamTableEnv)
+        .discoverTables(flinkDataDefinition)
         .foldLeft((List.empty[FlinkDataDefinitionError], List.empty[TableDefinition])) {
           case ((errs, tables), Validated.Invalid(errsNel)) =>
             (errs ++ errsNel.toList, tables)

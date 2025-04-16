@@ -20,7 +20,7 @@ class MetaDataProviderFactory {
     dbPoolConfig.dataSourceProperties.foreach { case (k, v) =>
       props.put(k, v)
     }
-    val ds = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+    val ds = ThreadUtils.withContextClassLoader(getClass.getClassLoader) {
       new DriverDataSource(
         dbPoolConfig.url,
         dbPoolConfig.driverClassName,

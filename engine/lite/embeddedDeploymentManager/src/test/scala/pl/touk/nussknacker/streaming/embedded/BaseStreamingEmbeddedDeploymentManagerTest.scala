@@ -82,7 +82,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       |}
       |""".stripMargin
 
-  protected def wrapInFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
+  protected def wrapInFailingLoader[T] = ThreadUtils.withContextClassLoader[T](new FailingContextClassloader) _
 
   protected def prepareFixture(
       inputTopic: TopicName.ForSource = generateInputTopicName,

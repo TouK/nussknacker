@@ -74,7 +74,7 @@ object FlinkMiniClusterFactory extends LazyLogging {
     // We have to setup classloader that contains flink-runtime as a context classloader,
     // because otherwise sometimes MiniCluster couldn't load any RpcSystemLoader
     // On the same classpath, there should be extensions such as MetricReporterFactory
-    val miniCluster = ThreadUtils.withThisAsContextClassLoader(modelClassLoader) {
+    val miniCluster = ThreadUtils.withContextClassLoader(modelClassLoader) {
       val mc = createMiniCluster(miniClusterConfig)
       mc.start()
       mc
