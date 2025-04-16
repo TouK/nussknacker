@@ -1,6 +1,6 @@
-import { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer/FooterButton";
-import React, { useCallback, useState } from "react";
 import { LoadingButton as MuiLoadingButton } from "@mui/lab";
+import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer/FooterButton";
+import React, { useCallback, useState } from "react";
 
 export enum LoadingButtonTypes {
     "primaryButton" = "primary-button",
@@ -23,6 +23,7 @@ export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
 
     return (
         <MuiLoadingButton
+            className={className}
             color={
                 className === LoadingButtonTypes.secondaryButton || className === LoadingButtonTypes.tertiaryButton ? "inherit" : "primary"
             }

@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import type { TextContentPart } from "@assistant-ui/react";
 import type { AxiosError, AxiosResponse } from "axios";
+import axios from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
@@ -990,6 +991,16 @@ class HttpService {
             body: JSON.stringify({ message, threadId }),
             signal: abortSignal,
         });
+    }
+
+    async sendHttpRequest(body: string) {
+        try {
+            return await api.post("/sendRequest", body, {});
+        } catch (error) {
+            return await Promise.reject(
+                this.#addError(i18next.t("notification.error.failedToSendHttpRequest", "Failed to send HTTP request"), error),
+            );
+        }
     }
 
     #addInfo(message: string) {

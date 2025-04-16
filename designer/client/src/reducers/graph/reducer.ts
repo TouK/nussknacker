@@ -352,6 +352,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testResultsLoading: false,
             };
         }
+        case "SET_TEST_DATA": {
+            return {
+                ...state,
+                testData: {
+                    ...state.testData,
+                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                },
+            };
+        }
         case "HIDE_RUN_PROCESS_DETAILS": {
             return {
                 ...state,

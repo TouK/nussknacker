@@ -71,3 +71,15 @@ function displayTestResults(testResults: TestProcessResponse, testData?: SourceW
         dispatch(displayProcessCounts(testResults.counts));
     };
 }
+
+export interface SetTestData {
+    type: "SET_TEST_DATA";
+    testData: SourceWithParametersTest;
+}
+
+export function setTestData(testData: SourceWithParametersTest): SetTestData {
+    return {
+        type: "SET_TEST_DATA",
+        testData,
+    };
+}
