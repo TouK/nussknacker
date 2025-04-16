@@ -1,4 +1,5 @@
 import { styled } from "@mui/material";
+
 import { PANEL_BUTTON_SIZE } from "../../../stylesheets/variables";
 
 export const Icon = styled("div")({
@@ -11,9 +12,3 @@ export const Icon = styled("div")({
         width: PANEL_BUTTON_SIZE / 2,
     },
 });
-
-export const ToolbarButtonWrapper = styled("div")(() => ({
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-}));

@@ -1,16 +1,19 @@
-import React, { useCallback, useMemo } from "react";
-import { useParams } from "react-router-dom";
-import { UsagesTable } from "./usagesTable";
-import { useComponentUsagesWithStatus } from "../useComponentsQuery";
-import { FiltersContextProvider, useFilterContext } from "../../common";
-import { Breadcrumbs } from "./breadcrumbs";
-import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType, UsagesFiltersValues } from "./usagesFiltersModel";
-import { ActiveFilters, getColorForName } from "../../scenarios/filters/activeFilters";
-import { sortBy, uniq } from "lodash";
-import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
-import { FiltersPart } from "./filtersPart";
-import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material";
+import { sortBy, uniq } from "lodash";
+import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
+
+import { FiltersContextProvider } from "../../common";
+import { ActiveFilters, getColorForName } from "../../scenarios/filters/activeFilters";
+import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
+import { useComponentUsagesWithStatus } from "../useComponentsQuery";
+import { Breadcrumbs } from "./breadcrumbs";
+import { FiltersPart } from "./filtersPart";
+import { USAGES_FILTER, UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
+import type { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
+import { UsagesTable } from "./usagesTable";
+import { useUsagesFilterContext } from "./useUsagesFilterContext";
 
 export function ComponentView(): JSX.Element {
     return (
@@ -42,7 +45,7 @@ function Component(): JSX.Element {
         map[obj.name] = obj.displayableName;
         return map;
     }, {});
-    const { activeKeys } = useFilterContext<UsagesFiltersModel>();
+    const { activeKeys } = useUsagesFilterContext();
 
     const getLabel = useCallback(
         (name: keyof UsagesFiltersModel, value?: string | number) => {
@@ -100,7 +103,7 @@ function Component(): JSX.Element {
             <ActiveFilters<UsagesFiltersModel>
                 getLabel={getLabel}
                 getColor={getColor}
-                activeKeys={activeKeys.filter((k) => k !== "TEXT")}
+                activeKeys={activeKeys.filter((k) => k !== USAGES_FILTER.TEXT)}
             />
             <UsagesTable data={data} isLoading={isLoading} />
         </>
