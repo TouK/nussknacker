@@ -151,6 +151,10 @@
   if `followRedirect` is enabled then `Location` response header is also checked:
   * `forbiddenCidrs` - list of forbidden CIDR.
 * [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
+* [#7959](https://github.com/TouK/nussknacker/pull/7959) Scenario testing API changes:
+  * Scenario testing API (on path prefix `/scenarioTesting`) is refactored - incompatible change, please check the Migration Guide for details
+  * test endpoints moved from Process Management API to Scenario Testing API
+  * introduced new representation of test results
 
 ## 1.18
 
