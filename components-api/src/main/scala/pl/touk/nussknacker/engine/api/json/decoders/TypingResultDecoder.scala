@@ -43,17 +43,8 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     case e                     => Left(s"$e is not SingleTypingResult")
   }
 
-  private implicit val displayUnknownDecoder: Decoder[Unknown] = Decoder.instance { cursor =>
-    cursor
-      .as[String]
-      .map { displayStr =>
-        DisplayStrategy.valueOfDisplay(displayStr) match {
-          case Some(JsonDisplayStrategy)    => Typed.json
-          case Some(DefaultDisplayStrategy) => Unknown
-          case None =>
-            throw new IllegalStateException(s"Unrecognized display value: '$displayStr'")
-        }
-      }
+  private implicit val displayStrategyDecoder: Decoder[DisplayStrategy] = Decoder.decodeString.emap { displayStr =>
+    DisplayStrategy.valueOfDisplay(displayStr).toRight(s"Unrecognized display value: '$displayStr'")
   }
 
   private def typedTaggedValue(obj: HCursor): Decoder.Result[TypingResult] = for {
@@ -76,9 +67,14 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   } yield Typed.record(fields, valueClass, additional)
 
   private def unknown(obj: HCursor): Decoder.Result[TypingResult] = {
-    val displayAttribute = obj.downField("display")
-    if (displayAttribute.succeeded) displayAttribute.as[Unknown]
-    else Right(Unknown) // In case of no display attribute, return Unknown
+    obj.downField("display") match {
+      case field if field.succeeded =>
+        field.as[DisplayStrategy].map {
+          case JsonDisplayStrategy    => Typed.json
+          case DefaultDisplayStrategy => Unknown
+        }
+      case _ => Right(Unknown) // In case of no display attribute, return Unknown
+    }
   }
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
