@@ -68,8 +68,8 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def unknown(obj: HCursor): Decoder.Result[TypingResult] = {
     obj.downField("display") match {
-      case field if field.succeeded =>
-        field.as[DisplayStrategy].map {
+      case displayAttribute if displayAttribute.succeeded =>
+        displayAttribute.as[DisplayStrategy].map {
           case JsonDisplayStrategy    => Typed.json
           case DefaultDisplayStrategy => Unknown
         }
