@@ -1,14 +1,18 @@
 /* eslint-disable i18next/no-literal-string */
-import { SerializedStyles } from "@emotion/react";
+import type { SerializedStyles } from "@emotion/react";
 import { Box } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
-import React, { ForwardedRef, forwardRef, ReactNode, useMemo } from "react";
-import ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
-import { ICommand } from "react-ace/lib/types";
-import { IAceOptions, IEditorProps } from "react-ace/src/types";
+import type { ForwardedRef, ReactNode } from "react";
+import React, { forwardRef, useMemo } from "react";
+import type { IAceEditorProps } from "react-ace/lib/ace";
+import type ReactAce from "react-ace/lib/ace";
+import type { ICommand } from "react-ace/lib/types";
+import type { IAceOptions, IEditorProps } from "react-ace/src/types";
+
 import AceEditor from "./ace";
-import { EditorMode, ExpressionLang } from "./types";
+import type { EditorMode } from "./types";
+import { ExpressionLang } from "./types";
 
 export type AceWrapperInputProps = {
     language: string;
@@ -128,7 +132,7 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     if (editorMode) {
         return editorMode.valueOf();
     }
-    if (language === ExpressionLang.TabularDataDefinition) {
+    if (language === ExpressionLang.TabularDataDefinition || language === ExpressionLang.JsonTemplate) {
         return ExpressionLang.JSON;
     }
     return language;

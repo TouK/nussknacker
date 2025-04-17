@@ -96,7 +96,7 @@ class SpelExpressionEvaluationException(val expression: String, cause: Throwable
     )
 
 class SpelExpression(
-    val parsed: ParsedSpelExpression,
+    parsed: ParsedSpelExpression,
     expectedReturnType: TypingResult,
     flavour: Flavour,
     evaluationContextPreparer: EvaluationContextPreparer
@@ -106,6 +106,8 @@ class SpelExpression(
   override val original: String = parsed.original
 
   override val language: Language = flavour.languageId
+
+  val parsedSpringExpression: Expression = parsed.parsed
 
   private val expectedClass =
     expectedReturnType match {

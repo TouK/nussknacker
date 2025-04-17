@@ -1,4 +1,4 @@
-import type { ForwardedRef, ReactNode} from "react";
+import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
@@ -98,6 +98,10 @@ Use autocompletion to explore available options. To read more see [Documentation
                     )}
                 />
             );
+        }
+
+        if (editorMode === EditorMode.SpELTemplate && !readOnly) {
+            // properties.
         }
 
         return properties;
