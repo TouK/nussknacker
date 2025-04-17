@@ -33,7 +33,7 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
       override def prepareResponse: LazyParameter[ProducerRecord[Array[Byte], Array[Byte]]] = {
         keyParam.product(valueParam).map { case (key, value) =>
           // FIXME: we have to make sure ContextClassLoader is set to model classloader in lite
-          ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+          ThreadUtils.withContextClassLoader(getClass.getClassLoader) {
             // TODO: timestamp, override topic, clientId, what about other props from KafkaSink?
             serializationSchema.serialize(KeyedValue(key, encode(value)), System.currentTimeMillis())
           }

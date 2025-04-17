@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.effect.{Resource, SyncIO}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -39,6 +41,9 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
     NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
   override def close(): Unit = ()
 }

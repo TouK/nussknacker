@@ -3,6 +3,9 @@ package pl.touk.nussknacker.engine.flink.table.sink
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalid, valid}
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
@@ -13,12 +16,15 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDependency, Parameter, ParameterDeclaration}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.definition.{
+  FlinkDataDefinition,
+  FlinkDataDefinitionError,
+  TablesDefinitionDiscovery
+}
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
@@ -34,38 +40,53 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-class TableSinkFactory(flinkDataDefinition: FlinkDataDefinition)
-    extends SingleInputDynamicComponent[Sink]
-    with SinkFactory {
+class TableSinkFactory(
+    flinkDataDefinition: FlinkDataDefinition
+) extends SingleInputDynamicComponent[Sink]
+    with SinkFactory
+    with LazyLogging {
 
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
-
-  @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail
 
   override type State = TableSinkFactoryState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
-    prepareInitialParameters orElse
+    prepareInitialParameters(dependencies) orElse
       rawModePrepareValueParameter orElse
       rawModeFinalStep(context) orElse
       nonRawModePrepareValueParameters(context) orElse
       nonRawModeValidateValueParametersFinalStep(context)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List.empty
+  private val streamEnvDependency                     = TypedNodeDependency[StreamExecutionEnvironment]
+  override def nodeDependencies: List[NodeDependency] = List(streamEnvDependency)
 
-  private lazy val prepareInitialParameters: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    val tableDefinitions          = tablesDiscovery.listTables
-    val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
-    NextParameters(
-      parameters = tableNameParamDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
-      errors = List.empty,
-      state = Some(AvailableTables(tableDefinitions))
-    )
+  private def prepareInitialParameters(dependencies: List[NodeDependencyValue]): ContextTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      val streamEnv      = streamEnvDependency.extract(dependencies)
+      val streamTableEnv = StreamTableEnvironment.create(streamEnv)
+
+      val (errors, tableDefinitions) = new TablesDefinitionDiscovery(streamTableEnv)
+        .discoverTables(flinkDataDefinition)
+        .foldLeft((List.empty[FlinkDataDefinitionError], List.empty[TableDefinition])) {
+          case ((errs, tables), Validated.Invalid(errsNel)) =>
+            (errs ++ errsNel.toList, tables)
+          case ((errs, tables), Validated.Valid(table)) =>
+            (errs, table :: tables)
+        }
+
+      errors.foreach(logger.warn("A validation error occured when trying to use configured tables", _))
+
+      val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
+      NextParameters(
+        parameters =
+          tableNameParamDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
+        errors = List.empty,
+        state = Some(AvailableTables(tableDefinitions))
+      )
   }
 
   private lazy val rawModePrepareValueParameter: ContextTransformationDefinition = {

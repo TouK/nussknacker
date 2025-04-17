@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.engine.ModelData
+import cats.effect.SyncIO
+import cats.effect.kernel.Resource
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
@@ -20,7 +23,11 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository) {
+class NodeValidator(
+    modelData: ModelData,
+    engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
+    fragmentRepository: FragmentRepository
+) {
 
   def validate(processVersion: ProcessVersion, nodeData: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
@@ -39,39 +46,47 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
     val fragmentResolver =
       FragmentResolver(fragmentName => fragmentRepository.fetchLatestFragmentSync(fragmentName))
 
-    nodeDataValidator.validate(
-      nodeData.nodeData,
-      validationContext,
-      branchCtxs,
-      edges,
-      fragmentResolver
-    ) match {
-      case ValidationNotPerformed =>
-        NodeValidationResult(
-          parameters = None,
-          expressionType = None,
-          validationErrors = Nil,
-          validationPerformed = false
-        )
-      case ValidationPerformed(errors, parameters, expressionType) =>
-        val uiParams = parameters.map(_.map(DefinitionsService.createUIParameter))
+    engineScenarioCompilationDependenciesResource
+      .use { engineScenarioCompilationDependencies =>
+        SyncIO {
+          implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+            new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+          nodeDataValidator.validate(
+            nodeData.nodeData,
+            validationContext,
+            branchCtxs,
+            edges,
+            fragmentResolver
+          ) match {
+            case ValidationNotPerformed =>
+              NodeValidationResult(
+                parameters = None,
+                expressionType = None,
+                validationErrors = Nil,
+                validationPerformed = false
+              )
+            case ValidationPerformed(errors, parameters, expressionType) =>
+              val uiParams = parameters.map(_.map(DefinitionsService.createUIParameter))
 
-        // We don't return MissingParameter error when we are returning those missing parameters to be added - since
-        // it's not really exception ATM
-        def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
-          case MissingParameters(params, _) =>
-            params.forall(missing => uiParams.exists(_.exists(_.name == missing.value)))
-          case _ => false
+              // We don't return MissingParameter error when we are returning those missing parameters to be added - since
+              // it's not really exception ATM
+              def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
+                case MissingParameters(params, _) =>
+                  params.forall(missing => uiParams.exists(_.exists(_.name == missing.value)))
+                case _ => false
+              }
+
+              val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
+              NodeValidationResult(
+                parameters = uiParams,
+                expressionType = expressionType,
+                validationErrors = uiErrors,
+                validationPerformed = true
+              )
+          }
         }
-
-        val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
-        NodeValidationResult(
-          parameters = uiParams,
-          expressionType = expressionType,
-          validationErrors = uiErrors,
-          validationPerformed = true
-        )
-    }
+      }
+      .unsafeRunSync()
   }
 
   private def prepareValidationContext(

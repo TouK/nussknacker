@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.streaming.embedded
 
+import cats.effect.SyncIO
+import cats.effect.kernel.Resource
 import io.circe.Json
 import io.circe.Json.{fromInt, fromString, obj}
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -188,7 +191,8 @@ class StreamingEmbeddedDeploymentManagerTest
         |""".stripMargin
 
     val FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
-    val testInfoProvider                                          = new ModelDataTestInfoProvider(modelData)
+    val testInfoProvider =
+      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
 
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 

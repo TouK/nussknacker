@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.table.definition.StubbedCatalogFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSource.SQL_EXPRESSION_PARAMETER_NAME
+import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -24,7 +25,8 @@ class TableSourceTest
     with PatientScalaFutures
     with LoneElement
     with ValidatedValuesDetailedMessage
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with ModelClassLoaderSimulationSuite {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._

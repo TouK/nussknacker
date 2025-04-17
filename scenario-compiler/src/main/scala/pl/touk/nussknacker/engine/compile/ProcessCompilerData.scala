@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, RuntimeMode}
+import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
@@ -111,6 +112,13 @@ final class ProcessCompilerData(
     listeners ++ servicesToUse
   }
 
-  def compile(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
-    compiler.compile(process)(jobData).result
+  def compile(
+      process: CanonicalProcess,
+  )(
+      implicit engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
+  ): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+    compiler
+      .compile(process)(new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies))
+      .result
+
 }
