@@ -3,10 +3,10 @@ import React from "react";
 
 import type { Parameter } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { GenerateNewEndpoint } from "./GenerateNewEndpoint";
+import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
+import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
 import { ParameterExpressionField } from "./ParameterExpressionField";
-import { SendRequestButton } from "./SendRequestButton";
 
 type ParametersListItemProps = Omit<ParameterExpressionFieldProps, "listFieldPath" | "parameter">;
 
@@ -35,7 +35,7 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                     />
                     {paramWithIndex.param.name === "Endpoint" && (
                         <Box display={"flex"} justifyContent={"flex-end"}>
-                            <GenerateNewEndpoint nodeId={props.node.id} />
+                            <GenerateNewEndpoint node={node} />
                         </Box>
                     )}
                     {paramWithIndex.param.name === "Data sample" && (
@@ -43,7 +43,7 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                             <SendRequestButton
                                 disabled={getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0}
                                 expression={paramWithIndex.param.expression.expression}
-                                nodeId={node.id}
+                                node={node}
                             />
                         </Box>
                     )}

@@ -1,7 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import type { TextContentPart } from "@assistant-ui/react";
 import type { AxiosError, AxiosResponse } from "axios";
-import axios from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
@@ -993,22 +992,12 @@ class HttpService {
         });
     }
 
-    async sendHttpRequest(body: string) {
+    async nodeActions(scenarioName: string, actionName: "send-sample-request" | "generate-endpoint", nodeData: NodeType) {
         try {
-            return await api.post("/sendRequest", body, {});
+            return await api.post(`nodes/${scenarioName}/actions`, { actionName, nodeData });
         } catch (error) {
             return await Promise.reject(
-                this.#addError(i18next.t("notification.error.failedToSendHttpRequest", "Failed to send HTTP request"), error),
-            );
-        }
-    }
-
-    async generateNewEndpoint(body: { nodeId: string }) {
-        try {
-            return await api.post("/newEndpoint", body, {});
-        } catch (error) {
-            return await Promise.reject(
-                this.#addError(i18next.t("notification.error.generateNewEndpoint", "Failed to generated new endpoint"), error),
+                this.#addError(i18next.t("notification.error.failedToSendHttpRequest", `Failed to send ${actionName} action`), error),
             );
         }
     }
