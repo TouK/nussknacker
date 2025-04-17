@@ -43,7 +43,7 @@ class TableSourceDataGenerationTest
   }
 
   def withFixture(test: OneArgTest): Outcome = {
-    miniClusterWithServices.withAttachedStreamExecutionEnvironment { env =>
+    miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
       val tableSource = {
         val flinkDataDefinition =
           FlinkDataDefinition.applyUnsafe(FlinkDdlParser.parseUnsafe(allColumnTypesTable), None)

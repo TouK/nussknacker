@@ -37,7 +37,7 @@ class TablesDefinitionValidationTest
   }
 
   override protected def withFixture(test: OneArgTest): Outcome = {
-    miniClusterWithServices.withAttachedStreamExecutionEnvironment { env =>
+    miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
       test(new TablesDefinitionValidation(StreamTableEnvironment.create(env), simulatedModelClassloader))
     }
   }

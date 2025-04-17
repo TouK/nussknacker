@@ -52,7 +52,7 @@ class TablesDefinitionDiscoveryTest
   }
 
   override protected def withFixture(test: OneArgTest): Outcome = {
-    miniClusterWithServices.withAttachedStreamExecutionEnvironment { env =>
+    miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
       test(new TablesDefinitionDiscovery(StreamTableEnvironment.create(env)))
     }
   }

@@ -375,7 +375,7 @@ class FlinkDeploymentManager(
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] = {
     miniClusterWithServicesOpt
       .map(
-        _.createAttachedStreamExecutionEnvironment[SyncIO]
+        _.createDetachedStreamExecutionEnvironment[SyncIO]
           .map(new FlinkScenarioCompilationDependencies(_))
       )
       .getOrElse {

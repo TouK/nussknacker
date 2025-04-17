@@ -119,10 +119,7 @@ class FlinkMiniClusterWithServices(
     createAttachedStreamExecutionEnvironment[SyncIO].use(env => SyncIO.pure(action(env))).unsafeRunSync()
   }
 
-  // This method should be used with caution because action on StreamExecutionEnvironment can be blocking and it can cause
-  // thread pool starvation or deadlock. As an alternative, we recommend to use createDetachedStreamExecutionEnvironment
-  // combined with MiniClusterJobStatusCheckingOps
-  def createAttachedStreamExecutionEnvironment[F[_]: Sync]: Resource[F, StreamExecutionEnvironment] = {
+  private def createAttachedStreamExecutionEnvironment[F[_]: Sync]: Resource[F, StreamExecutionEnvironment] = {
     Resource.fromAutoCloseable(Applicative[F].pure(streamExecutionEnvironmentFactory(true)))
   }
 
