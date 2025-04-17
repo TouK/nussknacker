@@ -9,6 +9,7 @@ import { reducerWithUndo as graphReducer } from "./graph";
 import { reducer as httpErrorHandler } from "./httpErrorHandler";
 import type { NodeDetailsState } from "./nodeDetailsState";
 import { reducer as nodeDetails } from "./nodeDetailsState";
+import { nodeWindowIdMap } from "./nodeWindowIdMap";
 import type { BackendNotificationState } from "./notifications";
 import { backendNotifications } from "./notifications";
 import type { ProcessActivityState } from "./processActivity";
@@ -38,6 +39,7 @@ export const reducer = combineReducers<RootState>({
     scenarioState,
     cloudData,
     scenarios,
+    nodeWindowIdMap,
 });
 
 export type RootState = {
@@ -54,6 +56,7 @@ export type RootState = {
     scenarioState: ProcessStateType;
     cloudData: ReturnType<typeof cloudData>;
     scenarios: ReturnType<typeof scenarios>;
+    nodeWindowIdMap: ReturnType<typeof nodeWindowIdMap>;
 };
 
 export default reducer;

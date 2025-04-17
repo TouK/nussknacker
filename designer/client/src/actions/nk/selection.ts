@@ -1,14 +1,23 @@
 import NodeUtils from "../../components/graph/NodeUtils";
-import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { ThunkAction } from "../reduxTypes";
-import { deleteNodes } from "./node";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
+import type { ThunkAction } from "../reduxTypes";
+import { deleteNodes } from "./node";
 
 type Callback = () => void;
 
-type ToggleSelectionAction = { type: "TOGGLE_SELECTION"; nodeIds: string[] };
-type ExpandSelectionAction = { type: "EXPAND_SELECTION"; nodeIds: string[] };
-type ResetSelectionAction = { type: "RESET_SELECTION"; nodeIds: string[] };
+type ToggleSelectionAction = {
+    type: "TOGGLE_SELECTION";
+    nodeIds: string[];
+};
+type ExpandSelectionAction = {
+    type: "EXPAND_SELECTION";
+    nodeIds: string[];
+};
+type ResetSelectionAction = {
+    type: "RESET_SELECTION";
+    nodeIds: string[];
+};
 
 export type SelectionActions = ToggleSelectionAction | ExpandSelectionAction | ResetSelectionAction;
 
@@ -56,19 +65,29 @@ export function deleteSelection(selectionState: string[]): ThunkAction {
 //remove browser text selection to avoid interference with "copy"
 const clearTextSelection = () => window.getSelection().removeAllRanges();
 
-export function toggleSelection(...nodeIds: string[]): ThunkAction {
+export function toggleSelection(nodeIds: string | string[], quiet?: boolean): ThunkAction {
     return (dispatch) => {
-        batchGroupBy.end();
-        clearTextSelection();
-        dispatch({ type: "TOGGLE_SELECTION", nodeIds });
+        if (!quiet) {
+            batchGroupBy.end();
+            clearTextSelection();
+        }
+        dispatch({
+            type: "TOGGLE_SELECTION",
+            nodeIds: typeof nodeIds === "string" ? [nodeIds] : nodeIds,
+        });
     };
 }
 
-export function expandSelection(...nodeIds: string[]): ThunkAction {
+export function expandSelection(nodeIds: string | string[], quiet?: boolean): ThunkAction {
     return (dispatch) => {
-        batchGroupBy.end();
-        clearTextSelection();
-        dispatch({ type: "EXPAND_SELECTION", nodeIds });
+        if (!quiet) {
+            batchGroupBy.end();
+            clearTextSelection();
+        }
+        dispatch({
+            type: "EXPAND_SELECTION",
+            nodeIds: typeof nodeIds === "string" ? [nodeIds] : nodeIds,
+        });
     };
 }
 
@@ -76,7 +95,10 @@ export function resetSelection(...nodeIds: string[]): ThunkAction {
     return (dispatch) => {
         batchGroupBy.end();
         clearTextSelection();
-        dispatch({ type: "RESET_SELECTION", nodeIds });
+        dispatch({
+            type: "RESET_SELECTION",
+            nodeIds,
+        });
     };
 }
 

@@ -5,7 +5,8 @@ import type { Scenario } from "src/components/Process/types";
 import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ScenarioLabelValidationError } from "../components/Labels/types";
 import type { RootState } from "../reducers";
-import { getHistoryPast, getScenario, isProcessRenamed } from "../reducers/selectors/graph";
+import { getHistoryPast } from "../reducers/selectors/getHistory";
+import { getScenario, isProcessRenamed } from "../reducers/selectors/graph";
 import type {
     ComponentDefinition,
     NodeId,

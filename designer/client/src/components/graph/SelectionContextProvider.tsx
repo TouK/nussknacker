@@ -22,6 +22,7 @@ import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
+import { getHistoryCounts } from "../../reducers/selectors/getHistory";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
@@ -113,6 +114,17 @@ export const useSelectionActions = (): UserActions => {
     }
     return selectionActions;
 };
+
+function useUndoRedoActions() {
+    const dispatch = useDispatch();
+    const [past, future] = useSelector(getHistoryCounts);
+    return useMemo(() => {
+        return {
+            undo: past <= 0 ? null : () => dispatch(UndoActionCreators.undo()),
+            redo: future <= 0 ? null : () => dispatch(UndoActionCreators.redo()),
+        };
+    }, [past, future, dispatch]);
+}
 
 export default function SelectionContextProvider(
     props: PropsWithChildren<{
@@ -212,19 +224,30 @@ export default function SelectionContextProvider(
     );
 
     const canAccessClipboard = useClipboardPermission();
+    const undoRedoActions = useUndoRedoActions();
     const userActions: UserActions = useMemo(
         () => ({
+            ...undoRedoActions,
             copy: canModifySelected && !hasSelection && (() => dispatch(copySelection(copy))),
             canPaste: !!canAccessClipboard,
             paste: capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
             cut: canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
             delete: canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
-            undo: () => dispatch(UndoActionCreators.undo()),
-            redo: () => dispatch(UndoActionCreators.redo()),
             selectAll: () => dispatch(selectAll()),
             deselectAll: () => dispatch(resetSelection()),
         }),
-        [copy, cut, paste, selectionState, hasSelection, canAccessClipboard, canModifySelected, capabilities.editFrontend, dispatch],
+        [
+            undoRedoActions,
+            canModifySelected,
+            hasSelection,
+            canAccessClipboard,
+            capabilities.editFrontend,
+            dispatch,
+            copy,
+            paste,
+            cut,
+            selectionState,
+        ],
     );
 
     useDocumentListeners(
