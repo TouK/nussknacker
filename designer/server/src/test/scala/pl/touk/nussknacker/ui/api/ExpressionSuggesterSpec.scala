@@ -860,7 +860,7 @@ class ExpressionSuggesterSpec
       Nil
     )
     val variables = Map(
-      "list"  -> Typed[java.util.List[String]],
+      "list"  -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
       "array" -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
     )
     val listSpelExpression  = Expression.spel("#list.")

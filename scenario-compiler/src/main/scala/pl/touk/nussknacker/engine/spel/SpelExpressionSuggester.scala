@@ -231,7 +231,7 @@ class SpelExpressionSuggester(
         // TODO: present all overloaded methods, not only one with most parameters.
         val signature = method.signatures.toList.maxBy(_.parametersToList.length)
         // We need to compute method result type as signature.result comes from ClassDefinition
-        // where we don't have information about displayStrategy for Unknown type
+        // where we don't have information enough information to type the result of a method
         val typing = method
           .computeResultType(invocationTarget, signature.noVarArgs.map(_.refClazz))
           .getOrElse(signature.result)
