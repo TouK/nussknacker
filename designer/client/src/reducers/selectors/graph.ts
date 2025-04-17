@@ -38,8 +38,6 @@ export const getScenarioLabelsErrors = createSelector(getScenario, (p) => Proces
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-export const getHistoryPast = (state: RootState) => state.graphReducer.past;
-export const getHistoryFuture = (state: RootState) => state.graphReducer.future;
 
 export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
     return unsavedNewName || currentName;
