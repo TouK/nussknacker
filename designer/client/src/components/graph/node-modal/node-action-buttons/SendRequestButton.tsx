@@ -1,5 +1,5 @@
-import { styled } from "@mui/material";
-import React, { useCallback } from "react";
+import { Alert, Box, styled } from "@mui/material";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -23,6 +23,7 @@ interface Props {
     expression: string;
 }
 export const SendRequestButton = ({ disabled, node, expression }: Props) => {
+    const [showInfoAfterSendData, setShowInfoAfterSendData] = useState<boolean>(false);
     const scenarioName = useSelector(getProcessName);
     const dispatch = useDispatch();
     const { t } = useTranslation();
@@ -36,10 +37,27 @@ export const SendRequestButton = ({ disabled, node, expression }: Props) => {
                     parameterExpressions: { expression: { expression, language: ExpressionLang.JSON } },
                 }),
             );
+            setShowInfoAfterSendData(true);
         } catch (error) {
             console.error("Error sending request:", error);
         }
     }, [dispatch, expression, node, scenarioName]);
 
-    return <StyledLoadingButton disabled={disabled} title={t("node.actions.sendRequest", "Send Request")} action={handleSendHttpRequest} />;
+    return (
+        <Box display={"flex"} alignItems={"flex-end"} flexDirection={"column"} width={"100%"}>
+            <StyledLoadingButton disabled={disabled} title={t("node.actions.sendRequest", "Send Request")} action={handleSendHttpRequest} />
+            {showInfoAfterSendData && (
+                <Alert
+                    icon={false}
+                    severity="success"
+                    sx={{ width: "80%" }}
+                    onClose={() => {
+                        setShowInfoAfterSendData(false);
+                    }}
+                >
+                    TODO
+                </Alert>
+            )}
+        </Box>
+    );
 };
