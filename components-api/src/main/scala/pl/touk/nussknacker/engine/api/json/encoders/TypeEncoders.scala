@@ -28,7 +28,7 @@ object TypeEncoders {
   private def encodeTypingResult(result: TypingResult): JsonObject =
     (result match {
       case single: SingleTypingResult => encodeSingleTypingResult(single)
-      case typing.Unknown             => encodeUnknown
+      case typing.Unknown(_)          => encodeUnknown
       case typing.TypedNull           => encodeNull
       case union: TypedUnion =>
         JsonObject(

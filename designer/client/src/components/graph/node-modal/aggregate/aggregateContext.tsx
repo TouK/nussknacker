@@ -1,12 +1,12 @@
 import { get, uniqBy } from "lodash";
-import type { PropsWithChildren} from "react";
+import type { PropsWithChildren } from "react";
 import React, { createContext, useCallback, useMemo, useState } from "react";
 
 import type { NodeValidationError } from "../../../../types";
 import { useParameterPath } from "../parameterHelpers";
 import type { ParametersListProps } from "../parametersList";
 import { useDiffMark } from "../PathsToMark";
-import type { AggregateValue, AggRow} from "./aggregatorField";
+import type { AggregateValue, AggRow } from "./aggregatorField";
 import { appendUuid } from "./aggregatorField";
 import { useAggParamsSerializer, useGroupByParamsSerializer } from "./useAggParamsSerializer";
 

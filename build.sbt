@@ -1033,6 +1033,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
   .dependsOn(
     componentsApi        % Provided,
     kafkaComponentsUtils,
+    schemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     flinkExtensionsApi   % Provided,
     componentsUtils      % Provided,

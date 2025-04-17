@@ -103,8 +103,8 @@ object ToListConversion extends Conversion[JList[_]] {
               )
             )
             .validNel
-        case Unknown => Typed.genericTypeClass[JList[_]](List(Unknown)).validNel
-        case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+        case u: Unknown => Typed.genericTypeClass[JList[_]](List(u)).validNel
+        case _          => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
   // We could leave underlying method using convertEither as well but this implementation is faster

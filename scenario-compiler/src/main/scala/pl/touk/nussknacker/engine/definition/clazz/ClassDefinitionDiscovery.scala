@@ -65,7 +65,7 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
       union.possibleTypes.toList.toSet.flatMap(typesFromTypingResult)
     case TypedNull =>
       Set.empty
-    case Unknown =>
+    case Unknown(_) =>
       Set.empty
   }
 
@@ -95,8 +95,8 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
           definitionsFromMethods(classDefinition)(collectedSoFar, path) + classDefinition
         }
         definitionsForClass ++ definitionsFromGenericParameters(e)(collectedSoFar, path)
-      case Unknown => Set(extractDefinitionWithLogging(classOf[Any])(path))
-      case _       => Set.empty[ClassDefinition]
+      case Unknown(_) => Set(extractDefinitionWithLogging(classOf[Any])(path))
+      case _          => Set.empty[ClassDefinition]
     }
   }
 

@@ -1657,7 +1657,7 @@ object TypingDtoSchemas {
         ),
         None
       ) {
-        case Unknown                              => Some(SchemaWithValue(unknownSchema, Unknown))
+        case u: Unknown                           => Some(SchemaWithValue(unknownSchema, u))
         case TypedNull                            => Some(SchemaWithValue(typedNullSchema, TypedNull))
         case typedObject: TypedObjectTypingResult => Some(SchemaWithValue(typedObjectTypingResultSchema, typedObject))
         case typedDict: TypedDict                 => Some(SchemaWithValue(typedDictSchema, typedDict))
@@ -1854,7 +1854,7 @@ object TypingDtoSchemas {
 
   }
 
-  implicit lazy val unknownSchema: Schema[Unknown.type] =
+  implicit lazy val unknownSchema: Schema[Unknown] =
     Schema(
       SchemaType.SProduct(
         List(

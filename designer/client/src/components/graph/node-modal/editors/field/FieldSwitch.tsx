@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import { Box, Tabs, Tab, styled } from "@mui/material";
-import type { ReactNode} from "react";
+import type { ReactNode } from "react";
 import React, { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 

@@ -78,7 +78,7 @@ object ToTableTypeSchemaBasedEncoder {
   def alignTypingResult(typingResult: TypingResult, targetType: LogicalType): TypingResult = {
     (typingResult.withoutValue, targetType) match {
       // TODO: this should behave different depending on ValidationMode - currently we are lax
-      case (TypedNull | Unknown, _) =>
+      case (TypedNull | Unknown(_), _) =>
         targetType.toTypingResult
       // We don't know what is the precision of decimal so we have to assume that it will fit the target type to not block the user
       case (typ: SingleTypingResult, _)

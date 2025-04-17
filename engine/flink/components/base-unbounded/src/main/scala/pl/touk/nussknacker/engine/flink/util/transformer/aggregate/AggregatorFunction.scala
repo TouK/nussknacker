@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 import pl.touk.nussknacker.engine.util
 import pl.touk.nussknacker.engine.util.KeyedValue
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import scala.language.higherKinds
 

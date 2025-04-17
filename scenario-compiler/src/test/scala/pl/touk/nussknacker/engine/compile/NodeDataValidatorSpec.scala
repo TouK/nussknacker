@@ -1191,6 +1191,24 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should properly validate Json type parameters") {
+    val ctx = ValidationContext(Map("input" -> Typed.json))
+    val expressionsWithExpectedTypes = List(
+      ("#input", Typed.json),
+      ("#input[0]['products'][1]['id']", Typed.json),
+      ("#input[0]['products'][1]['id'].toInteger()", Typed.typedClass[Int]),
+      ("#input.toList()", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
+      ("#input.toMap()", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed.json))),
+      ("#input.toList().get(0)", Typed.json)
+    )
+    expressionsWithExpectedTypes.foreach { case (expression, expectedType) =>
+      inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) {
+        case ValidationPerformed(Nil, None, expressionType) =>
+          expressionType shouldBe Some(expectedType)
+      }
+    }
+  }
+
   test("shouldn't fail on valid validation expression") {
     val nodeId: String = "in"
     val paramName      = "param1"
