@@ -36,6 +36,6 @@ export const editorsParameters: Record<EditorType, { displayName: string; langua
     [EditorType.TABLE_EDITOR]: { displayName: "Table", language: ExpressionLang.TabularDataDefinition },
     [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: {
         displayName: "Json Template",
-        language: ExpressionLang.JSONTemplate,
+        language: ExpressionLang.JsonTemplate,
     },
 };

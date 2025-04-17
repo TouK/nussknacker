@@ -23,7 +23,7 @@ export const SpelTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEdi
             {...passProps}
             expressionObj={value}
             rows={rows}
-            editorMode={EditorMode.SpELTemplate}
+            editorMode={EditorMode.JsonTemplate}
             language={editorsParameters.SpelTemplateParameterEditor.language}
         />
     );

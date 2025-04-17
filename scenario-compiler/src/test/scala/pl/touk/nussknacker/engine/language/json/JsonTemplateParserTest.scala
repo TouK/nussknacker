@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.parse.TypedExpression
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.JsonParsingError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -98,6 +98,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       )
     ) { dataSample: String =>
       parse[String](dataSample, ctxWithVariables).map(_.returnType) shouldBe Valid(Typed.typedClass[String])
+      parseWithoutContextValidation[String](dataSample).isValid shouldBe true
     }
   }
 
@@ -163,9 +164,12 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
                          |  "products": [
                          |}""".stripMargin
 
-    val parsingErrors = parse[String](invalidJson).invalidValue
+    val parsingErrors               = parse[String](invalidJson).invalidValue
+    val parsingErrorsWithoutContext = parseWithoutContextValidation[String](invalidJson).invalidValue
 
     parsingErrors shouldBe NonEmptyList.of(JsonParsingError("expected json value got '}' (line 3, column 1)"))
+    parsingErrorsWithoutContext shouldBe
+      NonEmptyList.of(JsonParsingError("expected json value got '}' (line 3, column 1)"))
   }
 
   test("should return error when complex variable type is not in quotes") {
@@ -191,6 +195,12 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       ctx: ValidationContext = ValidationContext.empty,
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     sut.parse(jsonString, ctx, Typed.fromDetailedType[T])
+  }
+
+  private def parseWithoutContextValidation[T: TypeTag](
+      jsonString: String
+  ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = {
+    sut.parseWithoutContextValidation(jsonString, Typed.fromDetailedType[T])
   }
 
 }

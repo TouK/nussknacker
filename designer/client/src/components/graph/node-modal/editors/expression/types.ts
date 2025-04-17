@@ -7,7 +7,8 @@ export enum ExpressionLang {
     TabularDataDefinition = "tabularDataDefinition",
     DictKeyWithLabel = "dictKeyWithLabel",
     MD = "markdown",
-    JSONTemplate = "jsonTemplate",
+    // JSONTemplate = "jsonTemplate",
+    JsonTemplate = "jsonTemplate",
 }
 
 export type ExpressionObj = {
@@ -19,7 +20,7 @@ export enum EditorMode {
     SpEL = "spel",
     SpELTemplate = "spelTemplate",
     // JSONTemplate = "json", // TODO: lbg is needed?
-    JSONTemplate = "jsonTemplate", // TODO: lbg is needed?
+    JsonTemplate = "jsonTemplate", // TODO: lbg is needed?
     SQL = "sql",
 }
 
