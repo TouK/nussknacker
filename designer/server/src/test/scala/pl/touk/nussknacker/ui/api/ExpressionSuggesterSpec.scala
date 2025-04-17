@@ -139,6 +139,14 @@ class ExpressionSuggesterSpec
     List("scenarioProperty")
   )
 
+  private val expressionSuggesterWithExtensions = new ExpressionSuggester(
+    expressionConfig,
+    ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
+    dictServices,
+    getClass.getClassLoader,
+    Nil
+  )
+
   private val localVariables: Map[String, TypingResult] = Map(
     "input"      -> Typed[A],
     "other"      -> Typed[C],
@@ -852,13 +860,6 @@ class ExpressionSuggesterSpec
   }
 
   test("should suggest the same methods for list and array") {
-    val suggester = new ExpressionSuggester(
-      expressionConfig,
-      ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
-      dictServices,
-      getClass.getClassLoader,
-      Nil
-    )
     val variables = Map(
       "list"  -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
       "array" -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
@@ -866,19 +867,44 @@ class ExpressionSuggesterSpec
     val listSpelExpression  = Expression.spel("#list.")
     val arraySpelExpression = Expression.spel("#array.")
 
-    def suggestion(expression: Expression): List[ExpressionSuggestion] =
-      suggester
-        .expressionSuggestions(
-          expression,
-          CaretPosition2d(0, expression.expression.length),
-          variables
-        )(ExecutionContext.global)
-        .futureValue
-
-    val listMethodsSuggestion  = suggestion(listSpelExpression)
-    val arrayMethodsSuggestion = suggestion(arraySpelExpression)
+    val listMethodsSuggestion  = suggestions(expressionSuggesterWithExtensions, variables, listSpelExpression)
+    val arrayMethodsSuggestion = suggestions(expressionSuggesterWithExtensions, variables, arraySpelExpression)
     arrayMethodsSuggestion should contain allElementsOf listMethodsSuggestion
   }
+
+  test("should suggest correct type for get method on collections") {
+    val variables = Map(
+      "list"     -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
+      "array"    -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
+      "jsonList" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.json)),
+      "jsonMap"  -> Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed.json))
+    )
+    val data = List(
+      (Expression.spel("#list.get"), Typed[String]),
+      (Expression.spel("#array.get"), Typed[String]),
+      (Expression.spel("#jsonList.get"), Typed.json),
+      (Expression.spel("#jsonMap.get"), Typed.json),
+    )
+
+    data.foreach { case (expression, expectedTypingResult) =>
+      val getSuggestion = suggestions(expressionSuggesterWithExtensions, variables, expression).head
+      getSuggestion.refClazz shouldBe expectedTypingResult
+    }
+
+  }
+
+  private def suggestions(
+      suggester: ExpressionSuggester,
+      localVariables: Map[String, TypedClass],
+      expression: Expression
+  ): List[ExpressionSuggestion] =
+    suggester
+      .expressionSuggestions(
+        expression,
+        CaretPosition2d(0, expression.expression.length),
+        localVariables
+      )(ExecutionContext.global)
+      .futureValue
 
 }
 
