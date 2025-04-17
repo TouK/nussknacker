@@ -26,9 +26,8 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
     return (
         <>
             {parameters.map((paramWithIndex) => (
-                <>
+                <React.Fragment key={node.id + paramWithIndex.param.name + paramWithIndex.index}>
                     <ParameterExpressionField
-                        key={node.id + paramWithIndex.param.name + paramWithIndex.index}
                         listFieldPath={getListFieldPath(paramWithIndex.index)}
                         parameter={paramWithIndex.param}
                         {...props}
@@ -47,7 +46,7 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                             />
                         </Box>
                     )}
-                </>
+                </React.Fragment>
             ))}
         </>
     );
