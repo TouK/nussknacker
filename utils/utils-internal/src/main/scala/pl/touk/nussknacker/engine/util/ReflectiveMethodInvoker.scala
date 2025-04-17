@@ -26,7 +26,7 @@ final class ReflectiveMethodInvoker[Result](classLoader: ClassLoader, className:
   }
 
   // we have to use context loader, as in UI we have don't have e.g. nussknacker-process or user model on classpath...
-  def invokeStaticMethod(args: Any*): Result = ThreadUtils.withThisAsContextClassLoader(classLoader) {
+  def invokeStaticMethod(args: Any*): Result = ThreadUtils.withContextClassLoader(classLoader) {
     try {
       invoker(args: _*).asInstanceOf[Result]
     } catch {

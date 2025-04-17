@@ -118,6 +118,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       editor.
 * [#7711](https://github.com/TouK/nussknacker/pull/7711)
   * `TypingResult` API changes - `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
+* [#7768](https://github.com/TouK/nussknacker/pull/7768)
+  * `ModelData.withThisAsContextClassLoader` was renamed to `withModelClassloaderAsContextClassLoader`
+  * New, `DeploymentManager.scenarioCompilationDependenciesResource` method was added. For flink-based DMs it should be
+    implemented as `miniClusterWithServices.createDetachedStreamExecutionEnvironment[SyncIO].map(new FlinkScenarioCompilationDependencies(_))`
 
 ### Other changes
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.{
   BaseModelDataProvider,
@@ -60,6 +61,9 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
   override def close(): Unit = {}
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
 }
 

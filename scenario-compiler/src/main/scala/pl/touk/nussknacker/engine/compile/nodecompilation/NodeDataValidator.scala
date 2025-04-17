@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalidNel, valid}
 import cats.implicits.catsSyntaxTuple2Semigroupal
-import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -64,8 +64,10 @@ class NodeDataValidator(modelData: ModelData) {
       branchContexts: Map[String, ValidationContext],
       outgoingEdges: List[OutgoingEdge],
       fragmentResolver: FragmentResolver
-  )(implicit jobData: JobData): ValidationResponse = {
-    modelData.withThisAsContextClassLoader {
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ValidationResponse = {
+    import scenarioCompilationDependencies._
+
+    modelData.withModelClassloaderAsContextClassLoader {
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       val compilationErrors = nodeData match {

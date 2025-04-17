@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.process.periodic
 
 import cats.data.OptionT
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
@@ -258,4 +260,8 @@ class PeriodicDeploymentManager private[periodic] (
   } yield ()
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    delegate.scenarioCompilationDependenciesResource
+
 }

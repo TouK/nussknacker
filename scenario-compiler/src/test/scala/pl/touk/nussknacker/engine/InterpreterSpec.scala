@@ -117,10 +117,14 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val processCompilerData =
       prepareCompilerData(jobData, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts       = failOnErrors(processCompilerData.compile(scenario))
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+    val parts = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)

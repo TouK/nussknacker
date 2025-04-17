@@ -50,7 +50,7 @@ class EvictableStateTest
 
       jobID = {
         // We need to set context loader to avoid forking in sbt
-        ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+        ThreadUtils.withContextClassLoader(getClass.getClassLoader) {
           env.execute().getJobID
         }
       }

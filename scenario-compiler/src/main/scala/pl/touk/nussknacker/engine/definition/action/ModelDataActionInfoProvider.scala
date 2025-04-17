@@ -1,17 +1,24 @@
 package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
+import cats.effect.SyncIO
+import cats.effect.kernel.Resource
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, StaticParameterConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvider with LazyLogging {
+class ModelDataActionInfoProvider(
+    modelData: ModelData,
+    engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
+) extends ActionInfoProvider
+    with LazyLogging {
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
 
   override def getActionParameters(
@@ -21,11 +28,18 @@ class ModelDataActionInfoProvider(modelData: ModelData) extends ActionInfoProvid
     ProcessCompilationError,
     Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, StaticParameterConfig]]]
   ] = {
-    val jobData = JobData(scenario.metaData, processVersion)
-    commonModelDataInfoProvider
-      .compileAllCustomNodes(scenario)(jobData)
-      .map(nodes => extractParametersFromCustomNodes(nodes))
-
+    engineScenarioCompilationDependenciesResource
+      .use { engineScenarioCompilationDependencies =>
+        val jobData = JobData(scenario.metaData, processVersion)
+        implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+          new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+        SyncIO {
+          commonModelDataInfoProvider
+            .compileAllCustomNodes(scenario)
+            .map(nodes => extractParametersFromCustomNodes(nodes))
+        }
+      }
+      .unsafeRunSync()
   }
 
   private def extractParametersFromCustomNodes(

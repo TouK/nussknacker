@@ -5,8 +5,10 @@ import cats.data.Validated.Invalid
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioNameValidationError
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, ProcessTestHelpersConfigCreator}
@@ -28,9 +30,12 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
         processWithInvalidName.metaData,
         ProcessVersion.empty.copy(processName = processWithInvalidName.metaData.name)
       )
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val processValidator = ProcessValidator.default(modelData)
 
-    val validationResult = processValidator.validate(processWithInvalidName, isFragment = false)(jobData)
+    val validationResult =
+      processValidator.validate(processWithInvalidName, isFragment = false)(scenarioCompilationDependencies)
 
     validationResult.result should matchPattern { case Invalid(NonEmptyList(ScenarioNameValidationError(_, _), _)) =>
     }

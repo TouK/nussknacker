@@ -5,9 +5,11 @@ import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -80,8 +82,10 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       ConfigFactory.empty(),
       ComponentDefinition("typed-source", TypedSourceFactory) :: LiteBaseComponentProvider.Components
     )
-    implicit val jobData: JobData =
+    val jobData: JobData =
       JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val validator        = ProcessValidator.default(modelData)
     val validationResult = validator.validate(scenario, isFragment = false)
     validationResult

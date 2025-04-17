@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, FlinkDdlParser}
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 
@@ -25,7 +25,8 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
     val sqlStatements                   = parsedConfig.tableDefinition
     val catalogConfigurationOpt         = parsedConfig.catalogConfiguration.map(_.asJava).map(Configuration.fromMap)
-    val flinkDataDefinition             = FlinkDataDefinition.applyUnsafe(sqlStatements, catalogConfigurationOpt)
+    val parsedSqlStatements             = sqlStatements.map(FlinkDdlParser.parseUnsafe).toList.flatten
+    val flinkDataDefinition             = FlinkDataDefinition.applyUnsafe(parsedSqlStatements, catalogConfigurationOpt)
 
     List(
       ComponentDefinition(

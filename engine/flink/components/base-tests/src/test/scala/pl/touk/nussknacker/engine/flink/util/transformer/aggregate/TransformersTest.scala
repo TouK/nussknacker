@@ -8,12 +8,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -335,7 +337,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testScenario =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = processValidator.validate(testScenario, isFragment = false)(jobDataFor(testScenario))
+    val jobData = jobDataFor(testScenario)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val result = processValidator.validate(testScenario, isFragment = false)(scenarioCompilationDependencies)
 
     inside(result.result) {
       case Invalid(
@@ -1028,7 +1033,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
     val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
-    processValidator.validate(scenario, isFragment = false)(jobDataFor(scenario))
+    val jobData  = jobDataFor(scenario)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    processValidator.validate(scenario, isFragment = false)(scenarioCompilationDependencies)
   }
 
   private def tumbling(

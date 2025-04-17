@@ -20,7 +20,7 @@ private[loader] class DeploymentManagerProviderCorrectClassloaderHandler(
     deploymentManagersClassLoader: DeploymentManagersClassLoader
 ) extends DeploymentManagerProvider {
 
-  override def name: String = ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.name }
+  override def name: String = ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) { delegate.name }
 
   override def createDeploymentManager(
       modelDataProvider: BaseModelDataProvider,
@@ -28,30 +28,30 @@ private[loader] class DeploymentManagerProviderCorrectClassloaderHandler(
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) {
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) {
       delegate.createDeploymentManager(modelDataProvider, dependencies, deploymentConfig, scenarioStateCacheTTL)
     }
   }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.metaDataInitializer(config) }
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) { delegate.metaDataInitializer(config) }
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) {
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) {
       delegate.scenarioPropertiesConfig(config)
     }
 
   override def additionalValidators(config: Config): List[CustomProcessValidator] =
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.additionalValidators(config) }
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) { delegate.additionalValidators(config) }
 
   override def defaultEngineSetupName: EngineSetupName =
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.defaultEngineSetupName }
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) { delegate.defaultEngineSetupName }
 
   override def engineSetupIdentity(config: Config): Any =
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.engineSetupIdentity(config) }
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) { delegate.engineSetupIdentity(config) }
 
   override def jobsRecoverySettings(config: Config): JobsRecoverySettings = {
-    ThreadUtils.withThisAsContextClassLoader(deploymentManagersClassLoader) { delegate.jobsRecoverySettings(config) }
+    ThreadUtils.withContextClassLoader(deploymentManagersClassLoader) { delegate.jobsRecoverySettings(config) }
   }
 
 }

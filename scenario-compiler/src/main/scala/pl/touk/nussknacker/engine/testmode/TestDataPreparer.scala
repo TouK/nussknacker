@@ -62,7 +62,7 @@ class TestDataPreparer(
         source match {
           case s: SourceTestSupport[T @unchecked] =>
             val parser = s.testRecordParser
-            ThreadUtils.withThisAsContextClassLoader(classloader) {
+            ThreadUtils.withContextClassLoader(classloader) {
               parser.parse(jsonRecordList.map(_.record))
             }
           case other =>
