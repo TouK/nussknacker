@@ -27,21 +27,27 @@ export function useAggParamsSerializer(): [
     return [parseToObject, serialize];
 }
 
-export function useGroupByParamsSerializer(): [(text: string) => string[], (paramName: string, arr: string[]) => string] {
-    const serialize = useCallback((paramName: string, arr: string[]): string => {
+export function useGroupByParamsSerializer(): [(text: string) => string[], (arr: string[]) => string] {
+    const serialize = useCallback((arr: string[]): string => {
         const entries = arr.map((value) => {
             return value?.trim();
         });
-
         const content = entries.join(", ");
 
         if (!content) return "";
 
-        switch (paramName) {
-            case "groupBy":
-                return `{ ${content} }.toString`;
+        if (entries.length > 1) {
+            return `{ ${content} }`;
+        } else {
+            return `${content}`;
         }
     }, []);
 
-    return [parseToList, serialize];
+    const deserialize = useCallback((input: string) => {
+        const parsed = parseToList(input);
+        if (parsed !== null) return parsed;
+        return [input];
+    }, []);
+
+    return [deserialize, serialize];
 }

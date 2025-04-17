@@ -1,13 +1,17 @@
-import type { SetStateAction } from "react";
+import { isEqual } from "lodash";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useDebounce, useDebounceFn } from "rooks";
 
 import { editNode } from "../../../../actions/nk";
+import { PendingPromise } from "../../../../common/PendingPromise";
+import { useUserSettings } from "../../../../common/userSettings";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import type { Edge, NodeType } from "../../../../types";
 import type { Scenario } from "../../../Process/types";
+import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { applyIdFromFakeName } from "../IdField";
 import type { NodeDetailsMeta } from "./NodeDetails";
@@ -16,14 +20,16 @@ export function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
 }
 
-type NodeState = {
+export type EditState = "idle" | "processing" | "pending" | "error";
+export type NodeState = {
     scenario: Scenario;
     node: NodeType;
     editedNode: EditedNode;
     outputEdges: Edge[];
     onChange: (node: React.SetStateAction<EditedNode>, edges?: React.SetStateAction<Edge[]>) => void;
-    performNodeEdit: () => Promise<void>;
+    performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
     isTouched: boolean;
+    editState: EditState;
 };
 
 export function getEdgesForNode(scenario: Scenario, node: NodeType) {
@@ -32,35 +38,102 @@ export function getEdgesForNode(scenario: Scenario, node: NodeType) {
 
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useDispatch();
-    const scenarioFromGlobalStore = useSelector(getScenario);
+    const [nodeId, setNodeId] = useState<string>(data.node.id);
+    const [settings] = useUserSettings();
+    const autoApply = settings["node.autoApply"];
 
-    const { node, scenario = scenarioFromGlobalStore } = data;
+    const scenarioFromGlobalStore = useSelector(getScenario);
+    const nodeFromGlobalStore = useMemo(
+        () => NodeUtils.getNodeById(nodeId, scenarioFromGlobalStore.scenarioGraph),
+        [nodeId, scenarioFromGlobalStore.scenarioGraph],
+    );
+
+    const scenario = useMemo(() => scenarioFromGlobalStore || data.scenario, [data.scenario, scenarioFromGlobalStore]);
+    const node = useMemo(() => nodeFromGlobalStore || data.node, [data.node, nodeFromGlobalStore]);
+
     const [editedNode, setEditedNode] = useState<EditedNode>(node);
     const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
 
-    const onChange = useCallback((node: SetStateAction<EditedNode>, edges: SetStateAction<Edge[]> = (v) => v) => {
-        setEditedNode(node);
-        setOutputEdges(edges);
-    }, []);
+    useEffect(() => {
+        setEditedNode((currentNode) => (isEqual(currentNode, node) ? currentNode : node));
+        setNodeId(node.id);
+    }, [node]);
+
+    useEffect(() => {
+        mergeQuery(parseWindowsQueryParams({ nodeId: nodeId }));
+        return () => {
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: nodeId }));
+        };
+    }, [nodeId]);
+
+    useEffect(() => {
+        setOutputEdges((currentOutputEdges) => {
+            const edgesForNode = getEdgesForNode(scenario, node);
+            return isEqual(currentOutputEdges, edgesForNode) ? currentOutputEdges : edgesForNode;
+        });
+    }, [node, scenario]);
+
+    const [status, setStatus] = useState<EditState>("idle");
+    const performNodeEdit = useCallback(
+        async (editedNode: EditedNode, outputEdges: Edge[]) => {
+            setStatus("processing");
+            try {
+                const after = applyIdFromFakeName(editedNode);
+                // Webpack yield that awaits is unnecessary,
+                // but in fact without this await,
+                // we don't wait to editNode finish and the dialog is closed before resolve of the call,
+                // which causes a bug with a form update
+                await dispatch(editNode(scenario, node, after, outputEdges));
+                if (autoApply) {
+                    setNodeId(after.id);
+                }
+                setStatus("idle");
+            } catch (e) {
+                console.error(e);
+                setStatus("error");
+            }
+        },
+        [dispatch, scenario, node, autoApply],
+    );
+    const performNodeEditDebounced = useDebounce(performNodeEdit, 750);
 
     const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
 
-    const performNodeEdit = useCallback(async () => {
-        try {
-            //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+    const onChange = useCallback(
+        (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = (e) => e) => {
+            const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
+            const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
-            // Webpack yield that awaits is unnecessary,
-            // but in fact without this await,
-            // we don't wait to editNode finish and the dialog is closed before resolve of the call,
-            // which causes a bug with a form update
-            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-        } catch (e) {
-            console.error(e);
-            //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
-            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
-        }
-    }, [node, dispatch, scenario, editedNode, outputEdges]);
+            setEditedNode((currentEditedNode) => {
+                let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
+                const equal = isEqual(currentEditedNode, nextEditedNode);
+                if (equal) {
+                    nextEditedNode = currentEditedNode;
+                }
+                editedNode$.resolve([nextEditedNode, !equal]);
+                return nextEditedNode;
+            });
+
+            setOutputEdges((currentOutputEdges) => {
+                let nextOutputEdges = typeof edgesChange === "function" ? edgesChange(currentOutputEdges) : edgesChange;
+                const equal = isEqual(currentOutputEdges, nextOutputEdges);
+                if (equal) {
+                    nextOutputEdges = currentOutputEdges;
+                }
+                outputEdges$.resolve([nextOutputEdges, !equal]);
+                return nextOutputEdges;
+            });
+
+            Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
+                if (!autoApply) return;
+                if (!nodeChanged && !edgesChanged) return;
+
+                setStatus("pending");
+                performNodeEditDebounced(node, edges);
+            });
+        },
+        [autoApply, performNodeEditDebounced],
+    );
 
     return {
         scenario,
@@ -70,5 +143,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         onChange,
         performNodeEdit,
         isTouched,
+        editState: status,
     };
 }

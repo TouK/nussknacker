@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
+import { removeHistorySnapshot, takeHistorySnapshot } from "../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, NodeValidationError } from "../../../types";
@@ -121,13 +122,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     );
 
     useEffect(() => {
-        dispatch(nodeDetailsOpened(node.id));
-        return () => {
-            dispatch(nodeDetailsClosed(node.id));
-        };
-    }, [dispatch, node.id]);
-
-    useEffect(() => {
         if (showValidation) {
             dispatch(
                 validateNodeData(processName, {
@@ -142,12 +136,9 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         }
     }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
 
-    useEffect(() => {
-        setEditedNode((node) => {
-            const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, node) ? node : adjustedNode;
-        });
-    }, [adjustNode, setEditedNode]);
+    const adjustedNode = useMemo(() => {
+        return adjustNode(node);
+    }, [adjustNode, node]);
 
     return {
         ...props,
@@ -161,6 +152,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         removeElement,
         addElement,
         setProperty,
+        node: adjustedNode,
     };
 }
 
