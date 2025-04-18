@@ -1,7 +1,6 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
-import { useMemo } from "react";
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { WindowKind } from "../../../windowManager";
@@ -10,7 +9,8 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
-import { TestingProvider, useTesting } from "./TestingContext";
+import type { TestingContextState } from "./TestingContext";
+import { TestingContext, useTestingContext, useTestingState } from "./TestingContext";
 import { TestingForm } from "./TestingForm";
 
 type DocsLink = {
@@ -27,6 +27,7 @@ export type TestingViewParams = {
 
 export interface TestingData {
     viewParams: TestingViewParams;
+    storeAction: TestingContextState["handleSetAction"];
 }
 
 function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
@@ -36,7 +37,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         meta: { viewParams },
         kind,
     } = data;
-    const { isValid, action } = useTesting();
+    const { isValid, action } = useTestingContext();
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
@@ -60,9 +61,25 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     );
 }
 
-const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, TestingData>) => (
-    <TestingProvider>
-        <TestingDialog {...props} />
-    </TestingProvider>
-);
+const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, TestingData>) => {
+    const { storeAction } = props.data.meta;
+    const { handleSetAction, ...context } = useTestingState();
+
+    return (
+        <TestingContext.Provider
+            value={{
+                ...context,
+                handleSetAction: (action) => {
+                    const nextAction = () => {
+                        storeAction(nextAction);
+                        action();
+                    };
+                    handleSetAction(nextAction);
+                },
+            }}
+        >
+            <TestingDialog {...props} />
+        </TestingContext.Provider>
+    );
+};
 export default TestingDialogWithProvider;
