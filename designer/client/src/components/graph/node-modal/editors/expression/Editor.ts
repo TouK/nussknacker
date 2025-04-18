@@ -10,16 +10,17 @@ import { DictParameterEditor } from "./DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
+import type { Formatter } from "./Formatter";
 import JsonEditor from "./JsonEditor";
+import { JsonTemplateEditor } from "./JsonTemplateEditor";
 import { SpelEditor } from "./SpelEditor";
+import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { SqlEditor } from "./SqlEditor";
 import { StaticStringEditor } from "./StaticStringEditor";
-import { EditorType, ExpressionLang, ExpressionObj } from "./types";
-import { TextareaEditor } from "./TextareaEditor";
-import { JsonTemplateEditor } from "./JsonTemplateEditor";
-import { SpelTemplateEditor } from "./SpelTemplateEditor";
-import type { Formatter } from "./Formatter";
 import { TableEditor } from "./Table/TableEditor";
+import { TextareaEditor } from "./TextareaEditor";
+import type { ExpressionLang, ExpressionObj } from "./types";
+import { EditorType } from "./types";
 
 export type EditorProps = {
     onValueChange: OnValueChange;
@@ -72,7 +73,6 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
     [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: JsonTemplateEditor,
-    // [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
 };
 
 export type OnValueChange = {

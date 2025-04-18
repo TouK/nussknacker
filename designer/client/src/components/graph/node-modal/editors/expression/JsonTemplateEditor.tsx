@@ -7,7 +7,7 @@ import { SpelEditor } from "./SpelEditor";
 import { EditorMode } from "./types";
 
 export const JsonTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
-    const { expressionObj, rows = 1, ...passProps } = props;
+    const { expressionObj, rows = 5, ...passProps } = props;
 
     const value = useMemo(
         () => ({

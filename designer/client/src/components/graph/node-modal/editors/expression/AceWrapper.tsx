@@ -24,6 +24,7 @@ export type AceWrapperInputProps = {
     cols?: number;
     placeholder?: string;
     InputAdornmentEnd?: ReactNode;
+    useAceWorker?: boolean;
 };
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
@@ -132,7 +133,7 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     if (editorMode) {
         return editorMode.valueOf();
     }
-    if (language === ExpressionLang.TabularDataDefinition || language === ExpressionLang.JsonTemplate) {
+    if (language === ExpressionLang.TabularDataDefinition) {
         return ExpressionLang.JSON;
     }
     return language;
@@ -150,7 +151,7 @@ export default forwardRef(function AceWrapper(
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
-    const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd } = inputProps;
+    const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [
@@ -203,6 +204,7 @@ export default forwardRef(function AceWrapper(
                     ...DEFAULT_OPTIONS,
                     enableLiveAutocompletion,
                     showLineNumbers,
+                    useWorker: useAceWorker,
                 }}
                 enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
                 commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
