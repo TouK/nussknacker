@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 
 import { ButtonsVariant } from "../../components/toolbarComponents/toolbarButtons";
-import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons";
+import { BuiltinButtonTypes, CustomButtonTypes } from "../../components/toolbarSettings/buttons";
 import { fallbackToolbarsConfig } from "../../components/toolbarSettings/fallbackToolbarsConfig";
 import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import type { WithId } from "../../types/common";
@@ -18,6 +18,16 @@ const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }:
     [ToolbarsSide.RightTop]: [{ id: "survey-panel" }, ...topRight],
     [ToolbarsSide.RightBottom]: [
         ...bottomRight,
+        {
+            id: "user-settings-panel1",
+            buttonsVariant: ButtonsVariant.xs,
+            buttons: [
+                { type: BuiltinButtonTypes.processSave },
+                { type: CustomButtonTypes.scenarioTest },
+                { type: BuiltinButtonTypes.processDeploy },
+                { type: BuiltinButtonTypes.processCancel },
+            ],
+        },
         {
             id: "user-settings-panel",
             buttonsVariant: ButtonsVariant.horizontal,

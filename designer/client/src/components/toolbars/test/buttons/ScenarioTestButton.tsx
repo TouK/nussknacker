@@ -1,16 +1,19 @@
 import loadable from "@loadable/component";
-import React, { useCallback, useContext } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import { getTestCapabilities, getTestResultsLoading, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestResultsLoading, getTestType, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
+import { useTestingState } from "../../../modals/Testing/TestingContext";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
+import { TestType } from "../../../modals/Testing/TestingForm";
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import type { Preset } from "../../types";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -26,6 +29,35 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const { t } = useTranslation();
     const { open } = useWindows();
 
+    const testingState = useTestingState();
+    const presets: Preset[] = useMemo(
+        () => [
+            {
+                value: TestType.withParameters,
+                label: TestType.withParameters,
+            },
+            {
+                value: TestType.withGeneratedData,
+                label: TestType.withGeneratedData,
+            },
+            {
+                value: "rerunPrevious",
+                label: "rerunPrevious",
+                isDisabled: !testingState.action,
+            },
+        ],
+        [testingState.action],
+    );
+    const [preset, setPreset] = useState<Preset>();
+    const predefinedTestType = useSelector(getTestType);
+    useEffect(() => {
+        setPreset(() => {
+            return presets.find((p) => {
+                return p.value === predefinedTestType;
+            });
+        });
+    }, [predefinedTestType, presets, testingState.action]);
+
     // Availability of adhoc testing
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
 
@@ -37,20 +69,38 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
 
-    const openDialog = useCallback(() => {
-        open<TestingData>({
-            title: t("dialog.title.scenarioTest", "Scenario test"),
-            isResizable: true,
-            kind: WindowKind.scenarioTest,
-            meta: {
-                viewParams: {
-                    Icon: TestingIcon,
-                    docs,
-                    markdownContent,
-                },
-            },
-        });
-    }, [docs, markdownContent, open, t]);
+    const dispatch = useDispatch();
+    const openDialog = useCallback(
+        (preset?: Preset) => {
+            setPreset((previous) => preset ?? previous);
+            if (preset?.value === "rerunPrevious") {
+                testingState.action();
+            } else {
+                if (preset?.value) {
+                    dispatch({
+                        type: "UPDATE_TEST_TYPE",
+                        testType: preset.value,
+                    });
+                }
+                open<TestingData>({
+                    id: "scenarioTest",
+                    title: t("dialog.title.scenarioTest", "Scenario test"),
+                    isResizable: true,
+                    isModal: true,
+                    kind: WindowKind.scenarioTest,
+                    meta: {
+                        viewParams: {
+                            Icon: TestingIcon,
+                            docs,
+                            markdownContent,
+                        },
+                        testingState,
+                    },
+                });
+            }
+        },
+        [dispatch, docs, markdownContent, open, t, testingState],
+    );
 
     const isLoading = useSelector(getTestResultsLoading);
 
@@ -71,7 +121,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     return (
         <ToolbarButton
-            name={name || t("panels.actions.scenarioTest.button.name", "test")}
+            name={`${name || t("panels.actions.scenarioTest.button.name", "Test scenario")} ${preset?.label || ""}`}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={<TestingIcon />}
             sx={(theme) => {
@@ -105,8 +155,11 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             }}
             isLoading={isLoading}
             disabled={!atLeastOneTypeOfTestIsAvailable}
-            onClick={openDialog}
+            onClick={() => openDialog(preset)}
             type={type}
+            presets={presets}
+            selected={preset}
+            onPresetChange={(value) => openDialog(value)}
         />
     );
 }

@@ -1,12 +1,11 @@
 import type { PropsWithChildren } from "react";
-import { useCallback } from "react";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-interface TestingContextProps {
+export interface TestingContextState {
     isValid: boolean;
     handleIsValid: (isValid: boolean) => void;
     action: () => void;
-    handleSetAction: (action: TestingContextProps["action"]) => void;
+    handleSetAction: (action: TestingContextState["action"]) => void;
 }
 
 /**
@@ -14,28 +13,41 @@ interface TestingContextProps {
  * The child component sets the button action and state, which are then passed to the WindowContent buttons
  */
 
-const TestingContext = createContext<TestingContextProps>(null);
+export const TestingContext = createContext<TestingContextState>(null);
 
-export const TestingProvider = ({ children }: PropsWithChildren) => {
+export function useTestingState(): TestingContextState {
     const [isValid, setIsValid] = useState<boolean>(false);
-    const [action, setAction] = useState<TestingContextProps["action"]>();
+    const [action, setAction] = useState<TestingContextState["action"]>();
 
     const handleIsValid = useCallback((isValid: boolean) => {
         setIsValid(isValid);
     }, []);
 
-    const handleSetAction = useCallback((action: TestingContextProps["action"]) => {
+    const handleSetAction = useCallback((action: TestingContextState["action"]) => {
         setAction(() => action);
     }, []);
 
-    return <TestingContext.Provider value={{ isValid, handleIsValid, action, handleSetAction }}>{children}</TestingContext.Provider>;
+    return useMemo(
+        () => ({
+            isValid,
+            handleIsValid,
+            action,
+            handleSetAction,
+        }),
+        [action, handleIsValid, handleSetAction, isValid],
+    );
+}
+
+export const TestingProvider = ({ children }: PropsWithChildren) => {
+    const context = useTestingState();
+    return <TestingContext.Provider value={context}>{children}</TestingContext.Provider>;
 };
 
-export const useTesting = () => {
+export const useTestingContext = () => {
     const context = useContext(TestingContext);
 
     if (!context) {
-        throw new Error(`${useTesting.name} was used outside of its ${TestingContext.displayName} provider`);
+        throw new Error(`${useTestingContext.name} was used outside of its ${TestingContext.displayName} provider`);
     }
 
     return context;
