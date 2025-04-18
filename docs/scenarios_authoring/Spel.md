@@ -190,23 +190,20 @@ To obtain the last matching element, the syntax is `.$`.
 ### Transforming lists
 
 Special variable `#this` is used to operate on single element of list.
-            
-Examples below assume following structure:
-```Person: {name: String, age: Integer }
-listOfPersons: List[Person]
-person1 = name: "Alex"; age: 42
-person2 = name: "John"; age: 24
-listOfPersons = {person1, person2}
-```
 
-| Expression                                                      | Result               | Type                 |
-|-----------------------------------------------------------------|----------------------|----------------------|
-| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
-| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
-| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
-| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
-| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
+For the examples in the table below, let's assume that the `#listOfPersons` contains the following data:  
+`{{"name":"Alex", "age": 42}, {"name": "John", "age": 24}}` - it is a list of records. 
 
+| Expression                                                      | Result                                                       | Type                 |
+|-----------------------------------------------------------------|--------------------------------------------------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}                                                 | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}                                             | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}                                                     | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}                                                       | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}]`         | {{"key": "Alex", "value": 42}, {"key": "John", "value": 24}} | List[Record]         |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24}                                         | Map[String, Integer] |
+
+Note, that `toMap()` method can be applied to lists of records, if each record contains two properties: `key` and `value`. 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
 ### Safe navigation
