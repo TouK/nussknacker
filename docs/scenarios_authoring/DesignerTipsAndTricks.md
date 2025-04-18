@@ -105,7 +105,7 @@ The expression to use is as follows:
 
 **Convert a list to map**
 
-[See example in Spel Cheatsheet](./Spel.md#transforming-lists).
+[See example in Spel Cheat Sheet](./Spel.md#transforming-lists).
 
 **Not trivial list transformations**
 
