@@ -3,7 +3,7 @@ import type { SerializedStyles } from "@emotion/react";
 import { Box } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
-import type { ForwardedRef, ReactNode } from "react";
+import type { ForwardedRef, ReactNode} from "react";
 import React, { forwardRef, useMemo } from "react";
 import type { IAceEditorProps } from "react-ace/lib/ace";
 import type ReactAce from "react-ace/lib/ace";
@@ -11,7 +11,7 @@ import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 
 import AceEditor from "./ace";
-import type { EditorMode } from "./types";
+import type { EditorMode} from "./types";
 import { ExpressionLang } from "./types";
 
 export type AceWrapperInputProps = {
@@ -132,7 +132,7 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     if (editorMode) {
         return editorMode.valueOf();
     }
-    if (language === ExpressionLang.TabularDataDefinition || language === ExpressionLang.JsonTemplate) {
+    if (language === ExpressionLang.TabularDataDefinition) {
         return ExpressionLang.JSON;
     }
     return language;
