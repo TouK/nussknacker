@@ -8,12 +8,10 @@ import org.apache.calcite.sql.parser.{SqlParser => CalciteSqlParser}
 import org.apache.flink.sql.parser.ddl.{SqlCreateCatalog, SqlCreateTable, SqlCreateTableAs, SqlTableOption}
 import org.apache.flink.sql.parser.impl.FlinkSqlParserImpl
 import org.apache.flink.sql.parser.validate.FlinkSqlConformance
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.{
-  FlinkDataDefinitionCreationError,
-  FlinkSqlDdlStatement
-}
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement._
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDdlParseError._
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionCreationError.FlinkDdlParseError
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionCreationError.FlinkDdlParseError._
 
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -23,6 +21,7 @@ import scala.util.Try
    It does the following:
    - parses the string as a statement list, assuming a semicolon separator
    - returns errors for basic syntax errors like unescaped keywords, trailing commas, missing closing quotes
+   - returns errors for missing `connector` option for CREATE TABLE and `type` option for CREATE CATALOG statements
    - allows only 3 types of statements:
     - CREATE CATALOG https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/table/sql/create/#create-catalog
     - CREATE TABLE https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/table/sql/create/#create-table
@@ -43,6 +42,9 @@ object FlinkDdlParser {
   def parse(sqlStatements: String): ValidatedNel[FlinkDdlParseError, List[FlinkSqlDdlStatement]] =
     parseSql(sqlStatements).andThen(extractDefinitions)
 
+  def parseUnsafe(sqlStatements: String): List[FlinkSqlDdlStatement] =
+    parse(sqlStatements).fold(e => throw e.head, identity)
+
   private def parseSql(sql: String): ValidatedNel[FlinkDdlParseError, List[SqlNode]] = {
     val parser = CalciteSqlParser.create(sql, sqlParserConfig)
     Try(parser.parseStmtList()).toEither.left
@@ -53,18 +55,36 @@ object FlinkDdlParser {
 
   private def extractDefinitions(sql: List[SqlNode]): ValidatedNel[FlinkDdlParseError, List[FlinkSqlDdlStatement]] = {
     sql.traverse {
-      case catalog: SqlCreateCatalog =>
-        CreateCatalog(
-          name = CatalogName(catalog.catalogName()),
-          options = extractOptions(catalog.getPropertyList)
-        ).validNel
+      case catalog: SqlCreateCatalog => {
+        val options = extractOptions(catalog.getPropertyList)
+        options
+          .find(_.key == "type")
+          .toValidNel(MissingCatalogTypeOption(catalog.catalogName(), options))
+          .map(_.value)
+          .map { catalogType =>
+            CreateCatalog(
+              name = CatalogName(catalog.catalogName()),
+              options = extractOptions(catalog.getPropertyList),
+              catalogType = CatalogType(catalogType)
+            )
+          }
+      }
       // Create Table As (CTAS) performs an insert from another table.
       // Doc: https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#as-select_statement
       // Since these definitions are meant only for data source declarations, inserts are not allowed.
       // To achieve similar functionality, users should run a separate insert statement.
       case ctas: SqlCreateTableAs => UnallowedStatement(SqlString(ctas.toString)).invalidNel
-      case table: SqlCreateTable  => CreateTable(SqlString(table.toString)).validNel
-      case other                  => UnallowedStatement(SqlString(other.toString)).invalidNel
+      case table: SqlCreateTable => {
+        val sqlString = SqlString(table.toString)
+        extractOptions(table.getPropertyList)
+          .find(_.key == "connector")
+          .toValidNel(MissingConnectorOption(sqlString))
+          .map(_.value)
+          .map { connector =>
+            CreateTable(sqlString, Connector(connector))
+          }
+      }
+      case other => UnallowedStatement(SqlString(other.toString)).invalidNel
     }
   }
 
@@ -81,21 +101,5 @@ object FlinkDdlParser {
     .withConformance(FlinkSqlConformance.DEFAULT)
     .withLex(Lex.JAVA)
     .withIdentifierMaxLength(256);
-
-}
-
-sealed trait FlinkDdlParseError extends FlinkDataDefinitionCreationError
-
-object FlinkDdlParseError {
-
-  final case class ParseError(cause: Throwable) extends FlinkDdlParseError {
-    override def getCause: Throwable = cause
-    override def getMessage: String  = "Could not parse SQL statements"
-  }
-
-  final case class UnallowedStatement(sql: SqlString) extends FlinkDdlParseError {
-    override def getMessage: String =
-      "Found invalid SQL statement. Only `CREATE TABLE` and `CREATE CATALOG` statements are allowed"
-  }
 
 }

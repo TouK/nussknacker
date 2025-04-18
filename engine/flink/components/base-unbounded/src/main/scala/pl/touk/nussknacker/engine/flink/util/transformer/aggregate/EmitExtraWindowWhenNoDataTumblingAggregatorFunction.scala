@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.state.StateHolder
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.language.higherKinds
 
@@ -31,14 +32,14 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
     protected override val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
 )(implicit override val rangeMap: FlinkRangeMap[MapT])
-    extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
+    extends KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
 
   type FlinkCtx =
-    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
+    KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx =
-    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
+    KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
   @transient
   protected var state: ValueState[MapT[Long, AnyRef]] = _
@@ -54,7 +55,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis
 
   override def processElement(
-      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {

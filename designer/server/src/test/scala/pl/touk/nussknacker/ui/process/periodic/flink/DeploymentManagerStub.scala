@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
+import cats.effect.{Resource, SyncIO}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentId
@@ -73,6 +75,9 @@ class DeploymentManagerStub extends BaseDeploymentManager {
         Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toMap))
 
     }
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
     case _: DMValidateScenarioCommand => Future.successful(())

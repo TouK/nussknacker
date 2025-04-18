@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.management
 
 import cats.data.NonEmptyList
+import cats.effect.{Resource, SyncIO}
 import cats.implicits._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
@@ -14,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
   FlinkMiniClusterScenarioStateVerifier,
@@ -387,6 +390,18 @@ class FlinkDeploymentManager(
   override def close(): Unit = {
     logger.info("Closing Flink Deployment Manager")
     miniClusterWithServicesOpt.foreach(_.close())
+  }
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] = {
+    miniClusterWithServicesOpt
+      .map(
+        _.createDetachedStreamExecutionEnvironment[SyncIO]
+          .map(new FlinkScenarioCompilationDependencies(_))
+      )
+      .getOrElse {
+        // TODO: always create shared minicluster
+        Resource.pure(EngineScenarioCompilationDependencies.empty)
+      }
   }
 
 }

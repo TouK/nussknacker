@@ -118,6 +118,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       editor.
 * [#7711](https://github.com/TouK/nussknacker/pull/7711)
   * `TypingResult` API changes - `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
+* [#7768](https://github.com/TouK/nussknacker/pull/7768)
+  * `ModelData.withThisAsContextClassLoader` was renamed to `withModelClassloaderAsContextClassLoader`
+  * New, `DeploymentManager.scenarioCompilationDependenciesResource` method was added. For flink-based DMs it should be
+    implemented as `miniClusterWithServices.createDetachedStreamExecutionEnvironment[SyncIO].map(new FlinkScenarioCompilationDependencies(_))`
+* [#7824](https://github.com/TouK/nussknacker/pull/7824) Introduced Json display for `Unknown` type.
+  * `Unknown` is a case class now and it has `DisplayStrategy` field. It affects how the type is displayed.
+  * There is `Unknown` object which extends the case class with `DefaultDisplayStrategy` for compatibility.
+  * When introducing new pattern matches regarding types `Unknown(_)` should be used so all display strategies are targeted.
 
 ### Other changes
 
@@ -175,6 +183,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   was removed to temporarily disable consumer group namespacing.
 * [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels will be auto-generated for all components that don't have `label` defined in `ComponentDefinition`. Labels will be visible in components palette and in components list.
   Auto-generated label is created by formating component's name into Title Case, e.g. for component with name `aggregate-session`, label will be `Aggregate Session`. If component provider has `componentPrefix` set, it'll be included in auto-generated label.
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
+  To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`
 
 ## In version 1.18.0
 

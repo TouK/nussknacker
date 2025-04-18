@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.test.base.it
 
 import cats.data.Validated.Valid
+import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigFactory}
@@ -19,6 +20,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
@@ -261,7 +263,9 @@ trait NuResourcesTest
     )
 
   protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
-    createScenarioTestService(new ModelDataTestInfoProvider(modelData))
+    createScenarioTestService(
+      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
+    )
 
   protected def createScenarioTestService(
       testInfoProvider: TestInfoProvider

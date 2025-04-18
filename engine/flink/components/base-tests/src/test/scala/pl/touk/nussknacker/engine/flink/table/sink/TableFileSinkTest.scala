@@ -16,7 +16,10 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.utils.NotConvertibleResultOfAlignmentException
+import pl.touk.nussknacker.engine.flink.table.utils.{
+  ModelClassLoaderSimulationSuite,
+  NotConvertibleResultOfAlignmentException
+}
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -34,28 +37,29 @@ class TableFileSinkTest
     with PatientScalaFutures
     with LoneElement
     with ValidatedValuesDetailedMessage
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with ModelClassLoaderSimulationSuite {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val basicPingPongInputTableName    = "basic-ping-pong-input"
-  private val basicPingPongOutputTableName   = "basic-ping-pong-output"
-  private val basicExpressionOutputTableName = "basic-expression-output"
+  private val basicPingPongInputTableName    = "basic_ping_pong_input"
+  private val basicPingPongOutputTableName   = "basic_ping_pong_output"
+  private val basicExpressionOutputTableName = "basic_expression_output"
 
-  private val advancedPingPongInputTableName    = "advanced-ping-pong-input"
-  private val advancedPingPongOutputTableName   = "advanced-ping-pong-output"
-  private val advancedExpressionOutputTableName = "advanced-expression-output"
+  private val advancedPingPongInputTableName    = "advanced_ping_pong_input"
+  private val advancedPingPongOutputTableName   = "advanced_ping_pong_output"
+  private val advancedExpressionOutputTableName = "advanced_expression_output"
 
-  private val datetimePingPongInputTableName    = "datetime-ping-pong-input"
-  private val datetimePingPongOutputTableName   = "datetime-ping-pong-output"
-  private val datetimeExpressionOutputTableName = "datetime-expression-output"
+  private val datetimePingPongInputTableName    = "datetime_ping_pong_input"
+  private val datetimePingPongOutputTableName   = "datetime_ping_pong_output"
+  private val datetimeExpressionOutputTableName = "datetime_expression_output"
 
-  private val virtualColumnInputTableName  = "virtual-column-input"
-  private val virtualColumnOutputTableName = "virtual-column-output"
+  private val virtualColumnInputTableName  = "virtual_column_input"
+  private val virtualColumnOutputTableName = "virtual_column_output"
 
-  private val oneColumnOutputTableName = "one-column-output"
-  private val genericsOutputTableName  = "generics-output"
+  private val oneColumnOutputTableName = "one_column_output"
+  private val genericsOutputTableName  = "generics_output"
 
   private lazy val basicPingPongInputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$basicPingPongInputTableName")

@@ -1,31 +1,68 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
-import org.scalatest.LoneElement
-import org.scalatest.funsuite.AnyFunSuite
+import cats.implicits.toTraverseOps
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.scalatest.{LoneElement, Outcome}
+import org.scalatest.funspec.FixtureAnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases.allColumnTypesTable
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
-import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.definition.{
+  FlinkDataDefinition,
+  FlinkDdlParser,
+  TablesDefinitionDiscovery
+}
+import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
 class TableSourceDataGenerationTest
-    extends AnyFunSuite
+    extends FixtureAnyFunSpec
     with Matchers
     with LoneElement
-    with ValidatedValuesDetailedMessage {
+    with ValidatedValuesDetailedMessage
+    with ModelClassLoaderSimulationSuite
+    with LazyLogging {
 
-  private val flinkDataDefinition =
-    FlinkDataDefinition.applyUnsafe(Some(FlinkSqlTableTestCases.allColumnTypesTable), None)
+  override type FixtureParam = TableSource
 
-  private val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
+  private val miniClusterWithServices =
+    FlinkMiniClusterFactory
+      .createMiniClusterWithServices(
+        simulatedModelClassloader,
+        new Configuration,
+      )
 
-  private val tableSource = new TableSource(
-    tableDefinition = discovery.listTables.loneElement,
-    flinkDataDefinition = flinkDataDefinition,
-    testDataGenerationMode = TestDataGenerationMode.Random
-  )
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    miniClusterWithServices.close()
+  }
+
+  def withFixture(test: OneArgTest): Outcome = {
+    miniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
+      val tableSource = {
+        val flinkDataDefinition =
+          FlinkDataDefinition.applyUnsafe(FlinkDdlParser.parseUnsafe(allColumnTypesTable), None)
+        val tableEnvironment = StreamTableEnvironment.create(env)
+        val tableDefinitions = new TablesDefinitionDiscovery(tableEnvironment)
+          .discoverTables(flinkDataDefinition)
+          .sequence
+          .validValue
+
+        new TableSource(
+          tableDefinition = tableDefinitions.loneElement,
+          flinkDataDefinition = flinkDataDefinition,
+          testDataGenerationMode = TestDataGenerationMode.Random,
+          tableEnvironment
+        )
+      }
+      test(tableSource)
+    }
+  }
 
   /*
   Note: Testing features like data generation or scenario testing (like ad hoc test) requires a full e2e test where
@@ -33,7 +70,7 @@ class TableSourceDataGenerationTest
         Minicluster which relies on proper classloader setup, which is hard to do in simple tests. These tests below
         are useful for checking the output of these methods, but if they pass it doesn't mean that it works e2e.
    */
-  test("table source should generate random records with given schema") {
+  it("should generate random records with given schema") { tableSource =>
     val records = tableSource.generateTestData(1)
 
     val mapRecord = records.testRecords.loneElement.json.asObject.get.toMap
@@ -45,7 +82,7 @@ class TableSourceDataGenerationTest
     mapRecord("file.name").isString shouldBe true
   }
 
-  test("table source should parse json records") {
+  it("should parse json records") { tableSource =>
     val testData = tableSource.generateTestData(1).testRecords
     val result   = tableSource.testRecordParser.parse(testData).loneElement
 

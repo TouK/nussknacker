@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.test.utils.domain
 
+import cats.effect.Resource
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
@@ -169,6 +169,7 @@ object ProcessTestData {
     validator = validator,
     scenarioProperties = scenarioProperties,
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
+    engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
     fragmentResolver = fragmentResolver,

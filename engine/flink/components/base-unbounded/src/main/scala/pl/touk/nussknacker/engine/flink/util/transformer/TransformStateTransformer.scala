@@ -71,7 +71,7 @@ class TransformStateFunction[T](
     transformWhenParam: LazyParameter[java.lang.Boolean],
     newValueParam: LazyParameter[AnyRef],
     stateTimeout: FiniteDuration
-) extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], GenericState]
+) extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], GenericState, String]
     with LazyParameterInterpreterFunction {
 
   override protected def stateDescriptor: ValueStateDescriptor[GenericState] =

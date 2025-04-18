@@ -2,6 +2,7 @@ package pl.touk.nussknacker.development.manager
 
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
+import cats.effect.{Resource, SyncIO}
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
 import io.circe.Json
@@ -9,6 +10,7 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
@@ -151,6 +153,9 @@ object MockableDeploymentManagerProvider {
         after: Option[Instant],
     ): Future[List[ScenarioActivity]] =
       Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
+
+    override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+      Resource.pure(EngineScenarioCompilationDependencies.empty)
 
     override def close(): Unit = {
       miniClusterWithServicesOpt.foreach(_.close())
