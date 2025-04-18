@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useTesting } from "./TestingContext";
+import { useTestingContext } from "./TestingContext";
 
 interface TestWithParametersMultipleSourcesFormProps {
     numberOfSources: number;
@@ -10,7 +10,7 @@ interface TestWithParametersMultipleSourcesFormProps {
 
 export function TestWithParametersMultipleSourcesForm({ numberOfSources }: TestWithParametersMultipleSourcesFormProps): JSX.Element {
     const { t } = useTranslation();
-    const { handleSetAction, handleIsValid } = useTesting();
+    const { handleSetAction, handleIsValid } = useTestingContext();
 
     useEffect(() => {
         handleIsValid(false);

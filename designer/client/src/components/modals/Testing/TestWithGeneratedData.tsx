@@ -19,7 +19,7 @@ import {
 import { nodeInput, nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getProcessName } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import ValidationLabels from "../../modals/ValidationLabels";
-import { useTesting } from "./TestingContext";
+import { useTestingContext } from "./TestingContext";
 
 interface TestWithGeneratedDataFormProps {
     closeDialog: () => void;
@@ -29,7 +29,7 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
     const { t } = useTranslation();
     const dispatch = useDispatch();
 
-    const { handleSetAction, handleIsValid } = useTesting();
+    const { handleSetAction, handleIsValid } = useTestingContext();
 
     const processName = useSelector(getProcessName);
     const scenarioGraph = useSelector(getScenarioGraph);

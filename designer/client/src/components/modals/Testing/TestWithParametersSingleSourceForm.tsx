@@ -9,7 +9,7 @@ import { AdhocTestingFormContext } from "../AdhocTesting/AdhocTestingFormContext
 import { MarkdownForm } from "../AdhocTesting/MarkdownForm";
 import { useAdhocTestingAction } from "../AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingParametersValidation } from "../AdhocTesting/useAdhocTestingParametersValidation";
-import { useTesting } from "./TestingContext";
+import { useTestingContext } from "./TestingContext";
 import type { TestingData } from "./TestingDialog";
 
 interface TestWithParametersSingleSourceFormProps {
@@ -30,7 +30,7 @@ export function TestWithParametersSingleSourceForm({ testingData, closeDialog }:
         onConfirmAction(adhocTestingCurrentValue);
         closeDialog();
     }, [closeDialog, onConfirmAction, adhocTestingCurrentValue]);
-    const { handleSetAction, handleIsValid } = useTesting();
+    const { handleSetAction, handleIsValid } = useTestingContext();
 
     useEffect(() => {
         handleIsValid(isValid);

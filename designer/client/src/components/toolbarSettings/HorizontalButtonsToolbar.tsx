@@ -1,5 +1,4 @@
-import { DragIndicator } from "@mui/icons-material";
-import { Divider, Stack } from "@mui/material";
+import { alpha, Stack } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
@@ -7,26 +6,33 @@ import { useDragHandler } from "../common/dndItems/DragHandle";
 import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons";
 import type { ToolbarConfig } from "./types";
 
-export const HorizontalToolbar = ({ children }: PropsWithChildren) => {
+type Props = PropsWithChildren;
+
+export const HorizontalToolbar = ({ children }: Props) => {
     const handleProps = useDragHandler();
     return (
         <Stack
             direction="row"
             sx={(theme) => ({
                 alignItems: "center",
-                background: theme.palette.background.paper,
-                boxShadow: theme.shadows[3],
-                borderRadius: theme.spacing(0.5),
+                position: "relative",
+                "::before": {
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: -1,
+                    borderRadius: theme.spacing(0.75),
+                    boxShadow: "0 0 2px rgba(0,0,0,0.8),0 2px 20px rgba(0,0,0,0.8)",
+                },
+                ">*": {
+                    borderRadius: theme.spacing(0.75),
+                    padding: 0.3,
+                    background: alpha(theme.palette.primary.main, 0.25),
+                    backdropFilter: "blur(20px)",
+                },
             })}
             {...handleProps}
         >
-            <DragIndicator
-                sx={(theme) => ({
-                    color: theme.palette.action.disabled,
-                    width: "12px",
-                })}
-            />
-            <Divider orientation="vertical" flexItem />
             {children}
         </Stack>
     );

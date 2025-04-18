@@ -3,6 +3,7 @@ import type { BuiltinButtonTypes, CustomButtonTypes } from "../toolbarSettings/b
 export type Preset = {
     value: string;
     label: string;
+    isDisabled?: boolean;
 };
 
 export type ToolbarButtonProps = {

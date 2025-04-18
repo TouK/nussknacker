@@ -1,22 +1,16 @@
-import loadable from "@loadable/component";
 import { Box, FormGroup, FormLabel, Link, Typography } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
-import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import { CustomRadio } from "../../customRadio/CustomRadio";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { useTestingContext } from "./TestingContext";
 import type { TestingData } from "./TestingDialog";
 import { TestVariantForm } from "./TestVariantForm";
-
-export enum TestType {
-    withParameters = "withParameters",
-    withGeneratedData = "withGeneratedData",
-}
 
 export type FormValue = { testType: string };
 
@@ -27,34 +21,19 @@ interface TestingFormProps {
     closeDialog: () => void;
 }
 
-const DryRunTestingIcon = loadable(() => import("../../../assets/img/icons/test-dry-run.svg"));
-const GenerateAndTestIcon = loadable(() => import("../../../assets/img/icons/test-using-generated-data.svg"));
-
 export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
 
-    const testCapabilities = useSelector(getTestCapabilities);
-    const testWithParametersIsAvailable = useMemo(() => testCapabilities.canTestWithForm, [testCapabilities]);
-    const testWithGeneratedDataIsAvailable = useMemo(
-        () => testCapabilities.canGenerateTestData && testCapabilities.canBeTested,
-        [testCapabilities],
+    const { options, testType } = useTestingContext();
+
+    const formValue = useMemo<FormValue>(
+        () => ({
+            testType,
+        }),
+        [testType],
     );
 
-    const availabilityMap: Record<TestType, boolean> = useMemo(() => {
-        return {
-            [TestType.withParameters]: testWithParametersIsAvailable,
-            [TestType.withGeneratedData]: testWithGeneratedDataIsAvailable,
-        };
-    }, [testWithParametersIsAvailable, testWithGeneratedDataIsAvailable]);
-    const availableTestTypes = Object.entries(availabilityMap)
-        .filter(([_, isAvailable]) => isAvailable)
-        .map(([key]) => key as TestType);
-
-    const predefinedTestType = useSelector(getTestType);
-    const formValue = useMemo<FormValue>(() => {
-        return { testType: predefinedTestType ?? availableTestTypes[0] };
-    }, [predefinedTestType, availableTestTypes]);
     const [touched, setTouched] = useState<TouchedValue>({
         testType: false,
     });
@@ -101,36 +80,14 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                             onBlurChange("testType", true);
                         }}
                     >
-                        <CustomRadio
-                            label={t("testingForm.label.withParameters", "Form")}
-                            title={
-                                testWithParametersIsAvailable
-                                    ? null
-                                    : t(
-                                          "testingForm.label.withParametersNotAvailable",
-                                          "Currently configured scenario sources do not support testing with form",
-                                      )
-                            }
-                            value={TestType.withParameters}
-                            Icon={DryRunTestingIcon}
-                            active={formValue.testType === TestType.withParameters}
-                            disabled={!testWithParametersIsAvailable}
-                        />
-                        <CustomRadio
-                            label={t("testingForm.label.withGeneratedData", "Live samples")}
-                            title={
-                                testWithGeneratedDataIsAvailable
-                                    ? null
-                                    : t(
-                                          "testingForm.label.withGeneratedDataNotAvailable",
-                                          "Currently configured scenario sources do not support testing with live samples",
-                                      )
-                            }
-                            value={TestType.withGeneratedData}
-                            Icon={GenerateAndTestIcon}
-                            active={formValue.testType === TestType.withGeneratedData}
-                            disabled={!testWithGeneratedDataIsAvailable}
-                        />
+                        {options.map(({ disableReason, ...props }) => (
+                            <CustomRadio
+                                key={props.value}
+                                title={props.disabled ? disableReason : props.label}
+                                active={formValue.testType === props.value}
+                                {...props}
+                            />
+                        ))}
                     </FormGroup>
                     <Typography component={"div"} variant={"overline"} mt={1}>
                         <Trans i18nKey={"testingForm.helperText.testType"}>

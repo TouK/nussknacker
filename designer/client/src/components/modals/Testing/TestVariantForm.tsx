@@ -1,15 +1,14 @@
 import type { WindowType } from "@touk/window-manager";
 import React, { useMemo } from "react";
-import { useErrorBoundary } from "react-error-boundary";
 import { useSelector } from "react-redux";
 
 import { getTestParameters } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import type { TestingData } from "./TestingDialog";
-import { TestType } from "./TestingForm";
 import { TestWithGeneratedDataForm } from "./TestWithGeneratedData";
 import { TestWithParametersMultipleSourcesForm } from "./TestWithParametersMultipleSourcesForm";
 import { TestWithParametersSingleSourceForm } from "./TestWithParametersSingleSourceForm";
+import { TestType } from "./useTestOptions";
 
 interface TestVariantFormProps {
     testType: string;
@@ -20,7 +19,6 @@ interface TestVariantFormProps {
 export function TestVariantForm({ testType, testingData, closeDialog }: TestVariantFormProps): JSX.Element {
     const testParameters = useSelector(getTestParameters);
     const sourcesFound = testParameters.length;
-    const { showBoundary } = useErrorBoundary();
 
     return useMemo(() => {
         switch (testType) {
@@ -38,7 +36,7 @@ export function TestVariantForm({ testType, testingData, closeDialog }: TestVari
             case TestType.withGeneratedData:
                 return <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm>;
             default:
-                showBoundary(`There is no form available for test type ${testType}`);
+                throw `There is no form available for test type ${testType}`;
         }
-    }, [testType, sourcesFound, closeDialog, testingData, showBoundary]);
+    }, [testType, sourcesFound, closeDialog, testingData]);
 }

@@ -1,14 +1,18 @@
 import loadable from "@loadable/component";
-import React, { useCallback } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import { getTestCapabilities, getTestResultsLoading, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestResultsLoading, getTestType, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
+import { useTestingState } from "../../../modals/Testing/TestingContext";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import type { Preset } from "../../types";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -20,9 +24,36 @@ export type ScenarioTestButtonProps = {
 
 const TestingIcon = loadable(() => import("../../../../assets/img/toolbarButtons/test.svg"));
 
+const RERUN_PREVIOUS = "rerunPrevious";
+
 function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type }: PropsOfButton<CustomButtonTypes.scenarioTest>) {
     const { t } = useTranslation();
     const { open } = useWindows();
+
+    const testingState = useTestingState();
+
+    const presets: Preset[] = useMemo(() => {
+        const retest = {
+            label: t("testingForm.retest.menu.label", "Retest scenario"),
+            value: RERUN_PREVIOUS,
+            isDisabled: !testingState.action,
+        };
+        const options = testingState.options.map(({ value, menuLabel, disabled }) => ({
+            value,
+            label: menuLabel,
+            isDisabled: disabled,
+        }));
+        return [...options, retest];
+    }, [t, testingState.action, testingState.options]);
+
+    const storedTestType = useSelector(getTestType);
+    const [preset, setPreset] = useState<Preset>();
+    useEffect(() => {
+        setPreset((prev) => {
+            const expected = testingState.action && storedTestType === prev.value ? RERUN_PREVIOUS : storedTestType;
+            return presets.find((p) => p.value === expected);
+        });
+    }, [storedTestType, presets, testingState.action]);
 
     // Availability of adhoc testing
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
@@ -35,22 +66,42 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
 
-    const openDialog = useCallback(() => {
-        open<TestingData>({
-            title: t("dialog.title.scenarioTest", "Scenario test"),
-            isResizable: true,
-            kind: WindowKind.scenarioTest,
-            meta: {
-                viewParams: {
-                    Icon: TestingIcon,
-                    docs,
-                    markdownContent,
-                },
-            },
-        });
-    }, [docs, markdownContent, open, t]);
+    const dispatch = useDispatch();
+    const openDialog = useCallback(
+        (preset?: Preset) => {
+            if (preset?.value === RERUN_PREVIOUS) {
+                testingState.action();
+            } else {
+                if (preset?.value) {
+                    dispatch({
+                        type: "UPDATE_TEST_TYPE",
+                        testType: preset.value,
+                    });
+                }
+                open<TestingData>({
+                    id: "scenarioTest",
+                    title: t("dialog.title.scenarioTest", "Scenario test"),
+                    isResizable: true,
+                    isModal: true,
+                    kind: WindowKind.scenarioTest,
+                    meta: {
+                        storeAction: testingState.handleSetAction,
+                        viewParams: {
+                            Icon: TestingIcon,
+                            docs,
+                            markdownContent,
+                        },
+                    },
+                });
+            }
+        },
+        [dispatch, docs, markdownContent, open, t, testingState],
+    );
 
     const isLoading = useSelector(getTestResultsLoading);
+
+    const { variant } = useContext(ToolbarButtonsContext);
+    const side = useContext(ToolbarSideContext);
 
     const tooltip: string = disabled
         ? t(
@@ -66,13 +117,44 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     return (
         <ToolbarButton
-            name={name || t("panels.actions.scenarioTest.button.name", "test")}
+            name={preset?.label || name || t("panels.actions.scenarioTest.button.name", "Test scenario")}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={<TestingIcon />}
+            sx={(theme) => {
+                const normal = theme.palette.primary.main;
+                const highlight = theme.palette.primary.light;
+                const isHorizontal = variant === ButtonsVariant.xs && [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom].includes(side);
+                return {
+                    color: theme.palette.getContrastText(normal),
+                    ".toolbarButton-Root": {
+                        backgroundColor: normal,
+                    },
+                    "&:hover": {
+                        color: theme.palette.getContrastText(highlight),
+                        ".toolbarButton-Root, .toolbarButton-MenuExpand": {
+                            backgroundColor: highlight,
+                        },
+                    },
+                    "button:focus-within": {
+                        color: theme.palette.getContrastText(highlight),
+                        outlineColor: theme.palette.background.paper,
+                        backgroundColor: highlight,
+                    },
+                    ".toolbarButton-Label": isHorizontal
+                        ? {
+                              minWidth: "12em",
+                              display: "inline",
+                          }
+                        : null,
+                };
+            }}
             isLoading={isLoading}
             disabled={!atLeastOneTypeOfTestIsAvailable}
-            onClick={openDialog}
+            onClick={() => openDialog(preset)}
             type={type}
+            presets={presets}
+            selected={preset}
+            onPresetChange={(value) => openDialog(value)}
         />
     );
 }
