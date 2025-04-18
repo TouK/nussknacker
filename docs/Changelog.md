@@ -155,6 +155,7 @@
 * [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
   Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
 * [#7824](https://github.com/TouK/nussknacker/pull/7824) Add Json type support for schemaless topic data with Json content type.
+* [#7970](https://github.com/TouK/nussknacker/pull/7970) Added "activeScenariosLimit" setting defined per processing type. 
 
 ## 1.18
 

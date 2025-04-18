@@ -88,32 +88,12 @@ class FlinkDeploymentManager(
   private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
     import command._
     for {
-      _ <- validateRunningScenariosLimits(processVersion.processName)
       oldJobs <- command.updateStrategy match {
         case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) => oldJobsToStop(processVersion)
         case DeploymentUpdateStrategy.DontReplaceDeployment                    => Future.successful(List.empty)
       }
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJobs.map(_.jid))
     } yield ()
-  }
-
-  private def validateRunningScenariosLimits(scenarioToBeDeployed: ProcessName) = {
-    val ll: Option[Int] = Some(10)
-    // flinkConfig.limitOfRunningScenarios
-    ll match {
-      case Some(limitOfRunningScenarios) =>
-        implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-        getAllJobsStatusesFromFlink()
-          .map(_.value.keySet.filterNot(_ != scenarioToBeDeployed))
-          .map {
-            _.size match {
-              case s if s < limitOfRunningScenarios => Future.successful(())
-              case s                                => activeScenariosLimitExceeded(s)
-            }
-          }
-      case None =>
-        Future.successful(())
-    }
   }
 
   protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {

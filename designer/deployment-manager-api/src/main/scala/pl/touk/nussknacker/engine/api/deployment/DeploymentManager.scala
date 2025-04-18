@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import cats.effect.{IO, Resource, SyncIO}
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
@@ -35,9 +35,6 @@ trait DeploymentManager extends AutoCloseable {
 
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
-
-  protected final def activeScenariosLimitExceeded(limit: Int): Future[Nothing] =
-    Future.failed(new ActiveScenariosLimitExceeded(limit))
 }
 
 trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
