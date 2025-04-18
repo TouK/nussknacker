@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -69,7 +69,6 @@ import java.net.URI
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.Success
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -83,6 +82,9 @@ trait NuResourcesTest
     with BeforeAndAfterEach
     with LazyLogging {
   self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
+
+  private val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(executor)
 
   protected val adminUser: LoggedUser = TestFactory.adminUser("user")
 
@@ -124,7 +126,7 @@ trait NuResourcesTest
   )
 
   protected val deploymentsStatusesProvider =
-    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)
+    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)(executionContextWithIORuntime)
 
   protected val scenarioStatusProvider: ScenarioStatusProvider = new ScenarioStatusProvider(
     deploymentsStatusesProvider,
@@ -148,11 +150,13 @@ trait NuResourcesTest
 
   protected val deploymentService: DeploymentService =
     new DeploymentService(
-      dmDispatcher,
-      processValidatorByProcessingType,
-      scenarioResolverByProcessingType,
-      actionService,
-      mapProcessingTypeDataProvider(),
+      dispatcher = dmDispatcher,
+      processValidator = processValidatorByProcessingType,
+      scenarioResolver = scenarioResolverByProcessingType,
+      actionService = actionService,
+      additionalComponentConfigs = mapProcessingTypeDataProvider(),
+      scenarioStatusProvider = scenarioStatusProvider,
+      activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> None)
     )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
@@ -186,11 +190,12 @@ trait NuResourcesTest
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
-        Streaming.stringify,
-        modelData,
-        deploymentData,
-        processingTypeConfig.category,
-        modelDependencies.componentDefinitionExtractionMode
+        processingType = Streaming.stringify,
+        modelData = modelData,
+        deploymentData = deploymentData,
+        category = processingTypeConfig.category,
+        activeScenariosLimit = None,
+        componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       )
     )
 
@@ -291,6 +296,7 @@ trait NuResourcesTest
   override protected def afterAll(): Unit = {
     super.afterAll()
     closeDeploymentManagers.unsafeRunSync()
+    executionContextWithIORuntime.close()
   }
 
   protected def saveCanonicalProcessAndAssertSuccess(

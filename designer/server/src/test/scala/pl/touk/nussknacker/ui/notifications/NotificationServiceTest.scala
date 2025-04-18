@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -41,7 +42,6 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 
 import java.time.{Clock, Duration, Instant, ZoneId}
 import java.time.temporal.ChronoUnit
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
@@ -57,7 +57,10 @@ class NotificationServiceTest
     with DBIOActionValues
     with BeforeAndAfterAll {
 
-  private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
+  private implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
+  private implicit val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(system.dispatcher)
+
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
   private var currentInstant: Instant    = Instant.ofEpochMilli(0)
@@ -88,6 +91,7 @@ class NotificationServiceTest
   override protected def afterAll(): Unit = {
     super.afterAll()
     system.terminate().futureValue
+    executionContextWithIORuntime.close()
   }
 
   test("Should return only events for user in given time") {
@@ -100,7 +104,7 @@ class NotificationServiceTest
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
         .futureValue
 
     def deployProcess(
@@ -151,12 +155,12 @@ class NotificationServiceTest
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                                       = mock[DeploymentManager]
-    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
+    val deploymentManager                           = mock[DeploymentManager]
+    val (deploymentService, _, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName))
         .futureValue
 
     def deployProcess(
@@ -188,7 +192,7 @@ class NotificationServiceTest
     val notifications = notificationsFor(secondUser)
     notifications shouldBe List(
       Notification(
-        notifications(0).id,
+        notifications.head.id,
         Some(processName),
         "Deployment finished",
         None,
@@ -254,7 +258,7 @@ class NotificationServiceTest
     deployProcess(Success(None), user)
     val notificationsAfterDeploy =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
         .futureValue
 
     notificationsAfterDeploy should have length 1
@@ -265,7 +269,7 @@ class NotificationServiceTest
       .futureValue
     val notificationAfterExecutionFinished =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
         .futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
@@ -312,6 +316,8 @@ class NotificationServiceTest
       TestFactory.scenarioResolverByProcessingType,
       actionService,
       TestFactory.additionalComponentConfigsByProcessingType,
+      scenarioStatusProvider,
+      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> None)
     ) {
       override protected def validateBeforeDeploy(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
@@ -342,11 +348,9 @@ class NotificationServiceTest
 
   private def clockForInstant(currentInstant: () => Instant): Clock = {
     new Clock {
-      override def getZone: ZoneId = ZoneId.systemDefault()
-
+      override def getZone: ZoneId               = ZoneId.systemDefault()
       override def withZone(zone: ZoneId): Clock = ???
-
-      override def instant(): Instant = currentInstant()
+      override def instant(): Instant            = currentInstant()
     }
   }
 

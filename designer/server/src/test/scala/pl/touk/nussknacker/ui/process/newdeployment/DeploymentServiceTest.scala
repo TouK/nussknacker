@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
-import cats.effect.unsafe.IORuntime
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,13 +9,17 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeplo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{newActionProcessRepository, newFetchingProcessRepository}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -35,8 +38,9 @@ class DeploymentServiceTest
     with EitherValuesDetailedMessage
     with BeforeAndAfterEach {
 
-  private implicit val ec: ExecutionContext = ExecutionContext.global
-  private implicit val ioRuntime: IORuntime = IORuntime.global
+  private implicit val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(ExecutionContext.global)
+  import executionContextWithIORuntime.ioRuntime
 
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
@@ -45,23 +49,34 @@ class DeploymentServiceTest
   private val service = {
     val clock                      = Clock.fixed(Instant.ofEpochMilli(0), ZoneOffset.UTC)
     val scenarioMetadataRepository = TestFactory.newScenarioMetadataRepository(testDbRef)
+    val deploymentManager          = new MockableDeploymentManager(modelDataProviderOpt = None)
+    val deploymentManagerDispatcher = new DeploymentManagerDispatcher(
+      TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
+        Map(Streaming.stringify -> ValueWithRestriction.anyUser(deploymentManager))
+      ),
+      TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+    )
+
+    val scenarioStatusProvider = {
+      new ScenarioStatusProvider(
+        new EngineSideDeploymentStatusesProvider(deploymentManagerDispatcher, scenarioStateTimeout = None),
+        deploymentManagerDispatcher,
+        newFetchingProcessRepository(testDbRef),
+        newActionProcessRepository(testDbRef),
+        dbioRunner
+      )
+    }
+
     new DeploymentService(
       scenarioMetadataRepository,
       TestFactory.newScenarioGraphVersionService(testDbRef),
       TestFactory.newDeploymentRepository(testDbRef, clock),
-      new DeploymentManagerDispatcher(
-        TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-          Map(
-            Streaming.stringify -> ValueWithRestriction.anyUser(
-              new MockableDeploymentManager(modelDataProviderOpt = None)
-            )
-          )
-        ),
-        TestFactory.newFutureFetchingScenarioRepository(testDbRef)
-      ),
+      deploymentManagerDispatcher,
       dbioRunner,
       clock,
-      TestFactory.additionalComponentConfigsByProcessingType
+      TestFactory.additionalComponentConfigsByProcessingType,
+      scenarioStatusProvider,
+      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> None)
     )
   }
 
@@ -123,6 +138,11 @@ class DeploymentServiceTest
   override def beforeEach(): Unit = {
     MockableDeploymentManager.clean()
     super.beforeEach()
+  }
+
+  override def afterAll(): Unit = {
+    executionContextWithIORuntime.close()
+    super.afterAll()
   }
 
 }

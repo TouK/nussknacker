@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, Des
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, DeploymentManagersClassLoaderFactory}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
@@ -172,7 +171,7 @@ object DomainServices extends LazyLogging {
         new EngineSideDeploymentStatusesProvider(
           dmDispatcher,
           alreadyLoadedConfig.scenarioStateTimeout
-        )(actorSystem)
+        )
       processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       scenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,

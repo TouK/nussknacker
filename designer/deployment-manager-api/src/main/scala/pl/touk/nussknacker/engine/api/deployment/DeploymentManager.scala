@@ -32,6 +32,8 @@ trait DeploymentManager extends AutoCloseable {
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
 
+  protected final def activeScenariosLimitExceeded(limit: Int): Future[Nothing] =
+    Future.failed(new ActiveScenariosLimitExceeded(limit))
 }
 
 trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
@@ -86,3 +88,8 @@ trait SchedulingSupported extends SchedulingSupport {
 }
 
 case object NoSchedulingSupport extends SchedulingSupport
+
+class ActiveScenariosLimitExceeded(activeScenariosCount: Int)
+    extends IllegalArgumentException(
+      s"Cannot deploy scenario. Active scenarios count is $activeScenariosCount"
+    )

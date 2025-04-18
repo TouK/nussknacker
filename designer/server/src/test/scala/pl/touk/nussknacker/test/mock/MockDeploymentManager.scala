@@ -29,7 +29,7 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success}
+import scala.util.Success
 import scala.util.control.NonFatal
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
@@ -104,7 +104,6 @@ class MockDeploymentManager private (
 
   override protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
-
     deployResult
       .getOrDefault(
         processVersion.processName,
@@ -184,10 +183,12 @@ object MockDeploymentManager {
       actorSystem,
       SttpBackendStub.asynchronousFuture
     )
+
     def closeCreatedDeps(): Unit = {
       closeDeploymentManagerClassLoader.unsafeRunSync()(IORuntime.global)
       actorSystem.terminate()
     }
+
     new MockDeploymentManager(
       modelData,
       deploymentManagerDependencies,

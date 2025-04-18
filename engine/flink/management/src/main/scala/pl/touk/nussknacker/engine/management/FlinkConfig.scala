@@ -34,7 +34,8 @@ final case class FlinkConfig(
     jobConfigsCacheSize: Int = 1000,
     miniCluster: FlinkMiniClusterConfig = FlinkMiniClusterConfig(),
     scenarioTesting: ScenarioTestingConfig = ScenarioTestingConfig(),
-    scenarioStateVerification: ScenarioStateVerificationConfig = ScenarioStateVerificationConfig()
+    scenarioStateVerification: ScenarioStateVerificationConfig = ScenarioStateVerificationConfig(),
+    limitOfRunningScenarios: Option[Int] = None
 ) extends LazyLogging {
 
   def parseHttpClientConfig(

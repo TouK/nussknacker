@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -195,7 +194,7 @@ class PeriodicDeploymentManagerTest
     state shouldEqual SimpleStateStatus.NotDeployed
   }
 
-  test("getScenarioStatuss - should be scheduled when scenario scheduled and no job on Flink") {
+  test("getScenarioStatus - should be scheduled when scenario scheduled and no job on Flink") {
     val f = new Fixture
 
     val version = f.saveScenario()

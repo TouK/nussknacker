@@ -74,7 +74,9 @@ object PekkoRoutesFactory {
         processingTypeServicesProvider.mapValues(_.scenarioValidator),
         processingTypeServicesProvider.mapValues(_.scenarioResolver),
         actionService,
-        processingTypeServicesProvider.mapValues(_.additionalComponentConfigs)
+        processingTypeServicesProvider.mapValues(_.additionalComponentConfigs),
+        scenarioStatusProvider,
+        processingTypeServicesProvider.mapValues(_.activeScenariosLimit)
       )
       new ManagementResources(
         processAuthorizer,

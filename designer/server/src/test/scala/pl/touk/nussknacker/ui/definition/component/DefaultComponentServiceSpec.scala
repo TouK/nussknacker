@@ -888,6 +888,7 @@ class DefaultComponentServiceSpec
           modelData,
           deploymentData,
           category = category,
+          activeScenariosLimit = None,
           ComponentDefinitionExtractionMode.FinalDefinition
         )
     }

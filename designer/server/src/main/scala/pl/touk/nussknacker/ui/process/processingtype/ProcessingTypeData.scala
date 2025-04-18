@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.{
@@ -19,6 +20,7 @@ final class ProcessingTypeData private (
     //       to fully split deployment managers from model
     val deploymentData: DeploymentData,
     val category: String,
+    val activeScenariosLimit: Option[ActiveScenariosLimit]
 ) {
 
   // TODO: We should allow to have >1 processing mode configured inside one model and return a List here
@@ -46,6 +48,7 @@ object ProcessingTypeData {
       modelData: ModelData,
       deploymentData: DeploymentData,
       category: String,
+      activeScenariosLimit: Option[ActiveScenariosLimit],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ProcessingTypeData = {
     val designerModelData =
@@ -60,7 +63,8 @@ object ProcessingTypeData {
       processingType,
       designerModelData,
       deploymentData,
-      category
+      category,
+      activeScenariosLimit
     )
   }
 

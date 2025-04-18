@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
@@ -15,7 +16,12 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{actorSystem, clock, ec, processingType}
+import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{
+  actorSystem,
+  clock,
+  executionContextWithIORuntime,
+  processingType
+}
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
@@ -25,7 +31,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import sttp.client3.testing.SttpBackendStub
 
 import java.time.Clock
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 class TestDeploymentServiceFactory(dbRef: DbRef) {
@@ -38,8 +44,8 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   val listener                                       = new TestProcessChangeListener
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
-    ec,
-    IORuntime.global,
+    executionContextWithIORuntime,
+    executionContextWithIORuntime.ioRuntime,
     actorSystem,
     SttpBackendStub.asynchronousFuture
   )
@@ -48,7 +54,8 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       deploymentManager: DeploymentManager,
       modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
       scenarioStateTimeout: Option[FiniteDuration] = None,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None
+      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
+      activeScenariosLimit: Option[ActiveScenariosLimit] = None
   ): TestDeploymentServiceServices = {
     val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
@@ -112,6 +119,8 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       TestFactory.scenarioResolverByProcessingType,
       actionService,
       additionalComponentConfigsByProcessingType,
+      scenarioStatusProvider,
+      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> activeScenariosLimit)
     )
     TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, deploymentsReconciler)
   }
@@ -128,8 +137,10 @@ case class TestDeploymentServiceServices(
 object TestDeploymentServiceFactory {
 
   implicit val actorSystem: ActorSystem = ActorSystem("TestDeploymentServiceFactory")
-  implicit val ec: ExecutionContext     = actorSystem.dispatcher
-  val clock: Clock                      = Clock.systemUTC()
+  implicit val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(actorSystem.dispatcher)
+
+  val clock: Clock = Clock.systemUTC()
 
   val processingType: TestProcessingType = TestProcessingType.Streaming
 

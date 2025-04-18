@@ -5,8 +5,9 @@ import cats.instances.list._
 import db.util.DBIOActionInstances.DB
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement._
-import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService.ActiveScenariosLimitExceededError
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.FragmentStateException
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
@@ -40,7 +42,7 @@ import java.util.UUID
 import scala.concurrent.duration._
 
 class DeploymentServiceSpec
-    extends AnyFunSuite
+    extends AnyWordSpec
     with Matchers
     with PatientScalaFutures
     with DBIOActionValues
@@ -69,7 +71,7 @@ class DeploymentServiceSpec
   private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
-    deploymentServiceFactory.create(deploymentManager)
+    deploymentServiceFactory.create(deploymentManager, activeScenariosLimit = Some(ActiveScenariosLimit(2)))
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
   private def createDeploymentServiceWithCommentSettings = {
@@ -79,7 +81,7 @@ class DeploymentServiceSpec
       .deploymentService
   }
 
-  test("should return error when trying to deploy without comment when comment is required") {
+  "should return error when trying to deploy without comment when comment is required" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -107,7 +109,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should not deploy without comment when comment is required") {
+  "should not deploy without comment when comment is required" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -137,7 +139,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should pass when having an ok comment") {
+  "should pass when having an ok comment" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -158,7 +160,7 @@ class DeploymentServiceSpec
       .futureValue
   }
 
-  test("should not cancel a deployed process without cancel comment when comment is required") {
+  "should not cancel a deployed process without cancel comment when comment is required" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -185,7 +187,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should return state correctly when state is deployed") {
+  "should return state correctly when state is deployed" in {
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
@@ -209,7 +211,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should return state correctly when state is cancelled") {
+  "should return state correctly when state is cancelled" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -221,7 +223,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should mark Action ExecutionFinished and publish an event as finished") {
+  "should mark Action ExecutionFinished and publish an event as finished" in {
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
@@ -235,7 +237,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should mark finished process as finished") {
+  "Should mark finished process as finished" in {
     val processName: ProcessName    = generateProcessName
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 
@@ -274,7 +276,7 @@ class DeploymentServiceSpec
     scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.Finished
   }
 
-  test("Should finish deployment only after DeploymentManager finishes") {
+  "Should finish deployment only after DeploymentManager finishes" in {
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
@@ -324,7 +326,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should skip notifications and deployment on validation errors") {
+  "Should skip notifications and deployment on validation errors" in {
     val processName: ProcessName = generateProcessName
     val requestedParallelism     = FlinkClientStub.maxParallelism + 1
     val processIdWithName =
@@ -357,7 +359,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return properly state when state is canceled and process is canceled") {
+  "Should return properly state when state is canceled and process is canceled" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
@@ -366,7 +368,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return canceled status for canceled process with empty state - cleaned state") {
+  "Should return canceled status for canceled process with empty state - cleaned state" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
@@ -385,7 +387,7 @@ class DeploymentServiceSpec
     processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
-  test("Should return canceled status for canceled process with not founded state - cleaned state") {
+  "Should return canceled status for canceled process with not founded state - cleaned state" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
@@ -404,7 +406,7 @@ class DeploymentServiceSpec
     processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
-  test("Should return state with warning when state is running and process is canceled") {
+  "Should return state with warning when state is running and process is canceled" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
@@ -417,7 +419,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return not deployed when engine returns any state and process hasn't action") {
+  "Should return not deployed when engine returns any state and process hasn't action" in {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
 
@@ -427,7 +429,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return DuringCancel state when is during canceled and process has CANCEL action") {
+  "Should return DuringCancel state when is during canceled and process has CANCEL action" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
@@ -438,7 +440,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return state with status Restarting when process has been deployed and is restarting") {
+  "Should return state with status Restarting when process has been deployed and is restarting" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -457,7 +459,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return state with error when state is not running and process is deployed") {
+  "Should return state with error when state is not running and process is deployed" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -470,7 +472,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return state with error when state is null and process is deployed") {
+  "Should return state with error when state is null and process is deployed" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -483,7 +485,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return error state when state is running and process is deployed with mismatch versions") {
+  "Should return error state when state is running and process is deployed with mismatch versions" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
     val version                  = Some(VersionId(2))
@@ -497,7 +499,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should always return process manager failure, even if some other verifications return invalid") {
+  "Should always return process manager failure, even if some other verifications return invalid" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
     val version                  = Some(VersionId(2))
@@ -511,7 +513,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return warning state when state is running with empty version and process is deployed") {
+  "Should return warning state when state is running with empty version and process is deployed" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -524,7 +526,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return error state when failed to get state") {
+  "Should return error state when failed to get state" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -538,7 +540,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return not deployed status for process with empty state - not deployed state") {
+  "Should return not deployed status for process with empty state - not deployed state" in {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
     fetchingScenarioDBIORepository
@@ -559,7 +561,7 @@ class DeploymentServiceSpec
     processDetails.lastAction shouldBe None
   }
 
-  test("Should return not deployed status for process with not found state - not deployed state") {
+  "Should return not deployed status for process with not found state - not deployed state" in {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
     fetchingScenarioDBIORepository
@@ -578,7 +580,7 @@ class DeploymentServiceSpec
     processDetails.lastAction shouldBe None
   }
 
-  test("Should return not deployed status for process without actions and with state (it should never happen) ") {
+  "Should return not deployed status for process without actions and with state (it should never happen)" in {
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
     fetchingScenarioDBIORepository
@@ -599,7 +601,7 @@ class DeploymentServiceSpec
     processDetails.lastAction shouldBe None
   }
 
-  test("Should return not deployed state for archived never deployed process") {
+  "Should return not deployed state for archived never deployed process" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
@@ -607,9 +609,7 @@ class DeploymentServiceSpec
     state shouldBe SimpleStateStatus.NotDeployed
   }
 
-  test(
-    "Should return not deployed state for archived never deployed process with running state (it should never happen)"
-  ) {
+  "Should return not deployed state for archived never deployed process with running state (it should never happen)" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
@@ -619,7 +619,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return canceled status for archived canceled process") {
+  "Should return canceled status for archived canceled process" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
@@ -627,7 +627,7 @@ class DeploymentServiceSpec
     state shouldBe SimpleStateStatus.Canceled
   }
 
-  test("Should return canceled status for archived canceled process with running state (it should never happen)") {
+  "Should return canceled status for archived canceled process with running state (it should never happen)" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
@@ -637,7 +637,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return not deployed state for unarchived never deployed process") {
+  "Should return not deployed state for unarchived never deployed process" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
 
@@ -645,7 +645,7 @@ class DeploymentServiceSpec
     state shouldBe SimpleStateStatus.NotDeployed
   }
 
-  test("Should return during deploy for process in deploy in progress") {
+  "Should return during deploy for process in deploy in progress" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
     val _ = actionRepository
@@ -656,7 +656,7 @@ class DeploymentServiceSpec
     state shouldBe SimpleStateStatus.DuringDeploy
   }
 
-  test("Should getScenariosStatuses bulk with the same result as for single scenario") {
+  "Should getScenariosStatuses bulk with the same result as for single scenario" in {
     val (_, _, runningScenarioId) = prepareScenariosInVariousStates
 
     val processesDetails = fetchingScenarioDBIORepository
@@ -691,9 +691,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test(
-    "Should return not deployed status for archived never deployed process with running state (it should never happen)"
-  ) {
+  "Should return not deployed status for archived never deployed process with running state (it should never happen)" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
@@ -703,7 +701,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return problem status for archived deployed process (last action deployed instead of cancel)") {
+  "Should return problem status for archived deployed process (last action deployed instead of cancel)" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
 
@@ -711,7 +709,7 @@ class DeploymentServiceSpec
     state shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
   }
 
-  test("Should return canceled status for unarchived process") {
+  "Should return canceled status for unarchived process" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
@@ -721,7 +719,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("Should return problem status for unarchived process with running state (it should never happen)") {
+  "Should return problem status for unarchived process with running state (it should never happen)" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
@@ -733,7 +731,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should invalidate in progress processes") {
+  "should invalidate in progress processes" in {
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
@@ -758,7 +756,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should return problem after occurring timeout during waiting on DM response") {
+  "should return problem after occurring timeout during waiting on DM response" in {
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
@@ -775,7 +773,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should fail when trying to get state for fragment") {
+  "should fail when trying to get state for fragment" in {
     val processName: ProcessName = generateProcessName
     val id                       = prepareFragment(processName).dbioActionValues
 
@@ -785,7 +783,7 @@ class DeploymentServiceSpec
   }
 
   // TODO: add tests for more advanced things such as changes in model api
-  test("should recover jobs") {
+  "should recover jobs" in {
     val processName = generateProcessName
     prepareDeployedProcess(processName).dbioActionValues
 
@@ -795,6 +793,97 @@ class DeploymentServiceSpec
 
     eventually {
       deploymentManager.successfulDeploys should contain(processName)
+    }
+  }
+
+  "should allow to deploy scenario when active scenarios count is less than the limit" when {
+    "1st scenario is running, and the 2nd scenario is not deployed" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.NotDeployed) {
+          deployExampleScenario()
+        }
+      }
+    }
+    "1st scenario is running, and the 2nd scenario is cancelled" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Canceled) {
+          deployExampleScenario()
+        }
+      }
+    }
+    "1st scenario is running, and the 2nd scenario is during cancel" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.DuringCancel) {
+          deployExampleScenario()
+        }
+      }
+    }
+    "1st scenario is running, and the 2nd scenario is finished" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Finished) {
+          deployExampleScenario()
+        }
+      }
+    }
+    "1st scenario is running, and the 2nd scenario is problem" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, StateStatus("PROBLEM")) {
+          deployExampleScenario()
+        }
+      }
+    }
+  }
+
+  "should not allow more scenarios than active scenario limits to be used" when {
+    "1st scenario is running, and the 2nd scenario is running, and the 3rd scenario is not deployed" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+          deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.NotDeployed) {
+            assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+              deployExampleScenario()
+            }
+          }
+        }
+      }
+    }
+    "1st scenario is running, and the 2nd scenario is during deploy, and the 3rd scenario is not deployed" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.DuringDeploy) {
+          deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.NotDeployed) {
+            assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+              deployExampleScenario()
+            }
+          }
+        }
+      }
+    }
+    "1st scenario is running, and the 2nd scenario is restarting, and the 3rd scenario is not deployed" in {
+      deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Running) {
+        deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.Restarting) {
+          deploymentManager.withProcessStateStatus(generateProcessName, SimpleStateStatus.NotDeployed) {
+            assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+              deployExampleScenario()
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  private def deployExampleScenario() = {
+    val processName       = generateProcessName
+    val processIdWithName = prepareProcess(processName).dbioActionValues
+    deploymentManager.withWaitForDeployFinish(processName) {
+      deploymentService
+        .processCommand(
+          RunDeploymentCommand(
+            CommonCommandData(processIdWithName, None, user),
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            NodesDeploymentData.empty
+          )
+        )
+        .futureValue
     }
   }
 

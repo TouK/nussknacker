@@ -63,7 +63,8 @@ class ProcessingTypeDataProviderAccessRestrictionTest
         classPath = modelClasspath,
         deploymentConfig = ConfigFactory.empty(),
         modelConfig = ConfigWithUnresolvedVersion(ConfigFactory.empty()),
-        category = s"${processingType}Category"
+        category = s"${processingType}Category",
+        activeScenariosLimit = None
       )
     }.toMap)
     TestProcessingTypeDataProviderFactory.create(

@@ -78,6 +78,20 @@ class ScenarioStatusProvider(
     )
   }
 
+  def getActiveScenariosCountFor(processingType: ProcessingType)(implicit user: LoggedUser): Future[Int] = {
+    implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    deploymentStatusesProvider
+      .getBulkQueriedDeploymentStatusesForSupportedManagers(processingType :: Nil)
+      .map { statuses =>
+        statuses.getAllDeploymentStatuses
+          .count { status =>
+            status.status == SimpleStateStatus.DuringDeploy ||
+            status.status == SimpleStateStatus.Running ||
+            status.status == SimpleStateStatus.Restarting
+          }
+      }
+  }
+
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
       actionsInProgress: Map[ProcessId, Set[ScenarioActionName]],
       prefetchedDeploymentStatuses: BulkQueriedDeploymentStatuses,

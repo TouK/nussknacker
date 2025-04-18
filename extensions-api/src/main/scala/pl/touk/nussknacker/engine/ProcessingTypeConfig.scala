@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{ActiveScenariosLimit, DeploymentManagerType}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 case class ProcessingTypeConfig(
@@ -10,7 +10,8 @@ case class ProcessingTypeConfig(
     classPath: List[String],
     deploymentConfig: Config,
     modelConfig: ConfigWithUnresolvedVersion,
-    category: String
+    category: String,
+    activeScenariosLimit: Option[ActiveScenariosLimit]
 )
 
 object ProcessingTypeConfig {
@@ -24,10 +25,12 @@ object ProcessingTypeConfig {
       config.resolved.as[List[String]]("modelConfig.classPath"),
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig"),
-      config.resolved.as[String]("category")
+      config.resolved.as[String]("category"),
+      config.resolved.getAs[Int]("activeScenariosLimit").map(ActiveScenariosLimit.apply),
     )
   }
 
-  case class DeploymentManagerType(value: String)
+  final case class DeploymentManagerType(value: String) extends AnyVal
+  final case class ActiveScenariosLimit(value: Int)     extends AnyVal
 
 }

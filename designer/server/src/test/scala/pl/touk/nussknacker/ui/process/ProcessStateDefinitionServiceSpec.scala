@@ -207,7 +207,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       ),
       deploymentData,
       category = category,
-      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
+      activeScenariosLimit = None,
+      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode,
     )
   }
 

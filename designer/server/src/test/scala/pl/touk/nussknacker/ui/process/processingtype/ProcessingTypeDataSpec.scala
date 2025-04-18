@@ -86,7 +86,8 @@ class ProcessingTypeDataSpec extends AnyFunSuite with Matchers {
       ),
       deploymentData,
       category = "dummy category",
-      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
+      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode,
+      activeScenariosLimit = None
     )
   }
 
