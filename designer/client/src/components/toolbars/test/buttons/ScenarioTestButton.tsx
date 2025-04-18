@@ -1,13 +1,15 @@
 import loadable from "@loadable/component";
-import React, { useCallback } from "react";
+import React, { useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { getTestCapabilities, getTestResultsLoading, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
 
 export type ScenarioTestButtonProps = {
@@ -52,6 +54,9 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     const isLoading = useSelector(getTestResultsLoading);
 
+    const { variant } = useContext(ToolbarButtonsContext);
+    const side = useContext(ToolbarSideContext);
+
     const tooltip: string = disabled
         ? t(
               "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
@@ -69,6 +74,35 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             name={name || t("panels.actions.scenarioTest.button.name", "test")}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={<TestingIcon />}
+            sx={(theme) => {
+                const normal = theme.palette.primary.main;
+                const highlight = theme.palette.primary.light;
+                const isHorizontal = variant === ButtonsVariant.xs && [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom].includes(side);
+                return {
+                    color: theme.palette.getContrastText(normal),
+                    ".toolbarButton-Root": {
+                        backgroundColor: normal,
+                    },
+                    "&:hover": {
+                        color: theme.palette.getContrastText(highlight),
+                        ".toolbarButton-Root, .toolbarButton-MenuExpand": {
+                            backgroundColor: highlight,
+                        },
+                    },
+                    "button:focus-within": {
+                        color: theme.palette.getContrastText(highlight),
+                        outlineColor: theme.palette.background.paper,
+                        backgroundColor: highlight,
+                    },
+                    ".toolbarButton-Label": isHorizontal
+                        ? {
+                              minWidth: "12em",
+                              textAlign: "left",
+                              display: ButtonsVariant.xs === variant ? "inline" : null,
+                          }
+                        : null,
+                };
+            }}
             isLoading={isLoading}
             disabled={!atLeastOneTypeOfTestIsAvailable}
             onClick={openDialog}

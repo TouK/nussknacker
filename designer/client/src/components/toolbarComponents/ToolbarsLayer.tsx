@@ -77,7 +77,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     m={0.5}
                     sx={(theme) => ({
                         transition: theme.transitions.create("top"),
-                        top: windowOpened ? 10 : 45,
+                        top: windowOpened ? 5 : 45,
                         justifyItems: "center",
                         overflow: "auto",
                     })}
