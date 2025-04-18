@@ -54,7 +54,7 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
 object MockableDeploymentManagerProvider {
 
-  type ScenarioName = String
+  private type ScenarioName = String
 
   class MockableDeploymentManager(modelDataProviderOpt: Option[BaseModelDataProvider])(
       implicit executionContext: ExecutionContext,
@@ -127,10 +127,22 @@ object MockableDeploymentManagerProvider {
       }
     }
 
-    override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+    override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-    override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
-      NoDeploymentsStatusesQueryForAllScenariosSupport
+    override val deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+      new DeploymentsStatusesQueryForAllScenariosSupported {
+        override def getAllScenariosDeploymentsStatuses()(
+            implicit freshnessPolicy: DataFreshnessPolicy
+        ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
+          Future {
+            WithDataFreshnessStatus.fresh(
+              MockableDeploymentManager.scenarioStatuses.get().map { case (k, v) =>
+                (ProcessName(k), DeploymentStatusDetails(v.status, None, v.version) :: Nil)
+              }
+            )
+          }
+        }
+      }
 
     override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
@@ -182,4 +194,4 @@ object MockableDeploymentManagerProvider {
 
 }
 
-case class BasicStatusDetails(status: StateStatus, version: Option[VersionId])
+final case class BasicStatusDetails(status: StateStatus, version: Option[VersionId])
