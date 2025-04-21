@@ -15,8 +15,7 @@ data from many sources is needed. But those algorithms often change: we have a n
 learn that some strange activity is not really a fraud. That requires changes in the code that would have to be made 
 by developers.
 
-Instead, such decision algorithms can be run by Nussknacker, where business experts can define and change them, 
-without the need to trouble IT.
+Instead, such decision algorithms can be run by Nussknacker, where business experts can define and change them, without the need to involve IT.
 
 Nussknacker can make those decisions by processing event streams or in a request-response model, providing horizontal 
 scalability and high availability. That way it fits various use cases in microservice and/or event driven architectures.
