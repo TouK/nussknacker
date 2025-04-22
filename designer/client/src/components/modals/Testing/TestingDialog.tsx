@@ -27,7 +27,7 @@ export type TestingViewParams = {
 
 export interface TestingData {
     viewParams: TestingViewParams;
-    testingState: TestingContextState;
+    storeAction: TestingContextState["handleSetAction"];
 }
 
 function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
@@ -62,6 +62,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
 }
 
 const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, TestingData>) => {
+    const { storeAction } = props.data.meta;
     const { handleSetAction, ...context } = useTestingState();
 
     return (
@@ -69,11 +70,11 @@ const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, Testing
             value={{
                 ...context,
                 handleSetAction: (action) => {
-                    const action1 = () => {
-                        props.data.meta.testingState.handleSetAction(action1);
+                    const nextAction = () => {
+                        storeAction(nextAction);
                         action();
                     };
-                    handleSetAction(action1);
+                    handleSetAction(nextAction);
                 },
             }}
         >

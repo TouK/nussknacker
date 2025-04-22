@@ -1,5 +1,4 @@
-import type { PropsWithChildren } from "react";
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 import type { TestingOption, TestType } from "./useTestOptions";
 import { useTestOptions } from "./useTestOptions";
@@ -47,16 +46,11 @@ export function useTestingState(): TestingContextState {
     );
 }
 
-export const TestingProvider = ({ children }: PropsWithChildren) => {
-    const context = useTestingState();
-    return <TestingContext.Provider value={context}>{children}</TestingContext.Provider>;
-};
-
 export const useTestingContext = () => {
     const context = useContext(TestingContext);
 
     if (!context) {
-        throw new Error(`${useTestingContext.name} was used outside of its ${TestingContext.displayName} provider`);
+        throw new Error(`${useTestingContext.name} was used outside of ${TestingContext.displayName} provider`);
     }
 
     return context;

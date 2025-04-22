@@ -49,11 +49,9 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const storedTestType = useSelector(getTestType);
     const [preset, setPreset] = useState<Preset>();
     useEffect(() => {
-        setPreset(() => {
-            return presets.find((p) => {
-                const expected = testingState.action ? RERUN_PREVIOUS : storedTestType;
-                return p.value === expected;
-            });
+        setPreset((prev) => {
+            const expected = testingState.action && storedTestType === prev.value ? RERUN_PREVIOUS : storedTestType;
+            return presets.find((p) => p.value === expected);
         });
     }, [storedTestType, presets, testingState.action]);
 
@@ -71,7 +69,6 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const dispatch = useDispatch();
     const openDialog = useCallback(
         (preset?: Preset) => {
-            setPreset((previous) => preset ?? previous);
             if (preset?.value === RERUN_PREVIOUS) {
                 testingState.action();
             } else {
@@ -88,12 +85,12 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                     isModal: true,
                     kind: WindowKind.scenarioTest,
                     meta: {
+                        storeAction: testingState.handleSetAction,
                         viewParams: {
                             Icon: TestingIcon,
                             docs,
                             markdownContent,
                         },
-                        testingState,
                     },
                 });
             }
