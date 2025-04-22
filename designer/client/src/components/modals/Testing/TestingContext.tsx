@@ -1,11 +1,16 @@
 import type { PropsWithChildren } from "react";
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
+import type { TestingOption, TestType } from "./useTestOptions";
+import { useTestOptions } from "./useTestOptions";
+
 export interface TestingContextState {
     isValid: boolean;
     handleIsValid: (isValid: boolean) => void;
     action: () => void;
     handleSetAction: (action: TestingContextState["action"]) => void;
+    options: TestingOption[];
+    testType: TestType;
 }
 
 /**
@@ -27,14 +32,18 @@ export function useTestingState(): TestingContextState {
         setAction(() => action);
     }, []);
 
+    const { options, testType } = useTestOptions();
+
     return useMemo(
         () => ({
             isValid,
             handleIsValid,
             action,
             handleSetAction,
+            options,
+            testType,
         }),
-        [action, handleIsValid, handleSetAction, isValid],
+        [action, handleIsValid, handleSetAction, isValid, options, testType],
     );
 }
 

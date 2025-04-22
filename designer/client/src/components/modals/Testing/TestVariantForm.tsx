@@ -5,10 +5,10 @@ import { useSelector } from "react-redux";
 import { getTestParameters } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import type { TestingData } from "./TestingDialog";
-import { TestType } from "./TestingForm";
 import { TestWithGeneratedDataForm } from "./TestWithGeneratedData";
 import { TestWithParametersMultipleSourcesForm } from "./TestWithParametersMultipleSourcesForm";
 import { TestWithParametersSingleSourceForm } from "./TestWithParametersSingleSourceForm";
+import { TestType } from "./useTestOptions";
 
 interface TestVariantFormProps {
     testType: string;

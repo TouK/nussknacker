@@ -9,7 +9,6 @@ import { useWindows, WindowKind } from "../../../../windowManager";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import { useTestingState } from "../../../modals/Testing/TestingContext";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
-import { TestType } from "../../../modals/Testing/TestingForm";
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
@@ -25,38 +24,38 @@ export type ScenarioTestButtonProps = {
 
 const TestingIcon = loadable(() => import("../../../../assets/img/toolbarButtons/test.svg"));
 
+const RERUN_PREVIOUS = "rerunPrevious";
+
 function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type }: PropsOfButton<CustomButtonTypes.scenarioTest>) {
     const { t } = useTranslation();
     const { open } = useWindows();
 
     const testingState = useTestingState();
-    const presets: Preset[] = useMemo(
-        () => [
-            {
-                value: TestType.withParameters,
-                label: TestType.withParameters,
-            },
-            {
-                value: TestType.withGeneratedData,
-                label: TestType.withGeneratedData,
-            },
-            {
-                value: "rerunPrevious",
-                label: "rerunPrevious",
-                isDisabled: !testingState.action,
-            },
-        ],
-        [testingState.action],
-    );
+
+    const presets: Preset[] = useMemo(() => {
+        const retest = {
+            label: t("testingForm.retest.menu.label", "Retest scenario"),
+            value: RERUN_PREVIOUS,
+            isDisabled: !testingState.action,
+        };
+        const options = testingState.options.map(({ value, menuLabel, disabled }) => ({
+            value,
+            label: menuLabel,
+            isDisabled: disabled,
+        }));
+        return [...options, retest];
+    }, [t, testingState.action, testingState.options]);
+
+    const storedTestType = useSelector(getTestType);
     const [preset, setPreset] = useState<Preset>();
-    const predefinedTestType = useSelector(getTestType);
     useEffect(() => {
         setPreset(() => {
             return presets.find((p) => {
-                return p.value === predefinedTestType;
+                const expected = testingState.action ? RERUN_PREVIOUS : storedTestType;
+                return p.value === expected;
             });
         });
-    }, [predefinedTestType, presets, testingState.action]);
+    }, [storedTestType, presets, testingState.action]);
 
     // Availability of adhoc testing
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
@@ -73,7 +72,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const openDialog = useCallback(
         (preset?: Preset) => {
             setPreset((previous) => preset ?? previous);
-            if (preset?.value === "rerunPrevious") {
+            if (preset?.value === RERUN_PREVIOUS) {
                 testingState.action();
             } else {
                 if (preset?.value) {
@@ -121,7 +120,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     return (
         <ToolbarButton
-            name={`${name || t("panels.actions.scenarioTest.button.name", "Test scenario")} ${preset?.label || ""}`}
+            name={preset?.label || name || t("panels.actions.scenarioTest.button.name", "Test scenario")}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={<TestingIcon />}
             sx={(theme) => {
@@ -147,8 +146,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                     ".toolbarButton-Label": isHorizontal
                         ? {
                               minWidth: "12em",
-                              textAlign: "left",
-                              display: ButtonsVariant.xs === variant ? "inline" : null,
+                              display: "inline",
                           }
                         : null,
                 };
