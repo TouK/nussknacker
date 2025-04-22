@@ -104,7 +104,7 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                     </Typography>
                 </span>
                 <Box pt={1.5}>
-                    <TestVariantForm testType={formValue.testType} testingData={testingData} closeDialog={closeDialog}></TestVariantForm>
+                    <TestVariantForm testType={formValue.testType} testingData={testingData} closeDialog={closeDialog} />
                 </Box>
             </NodeTable>
         </Box>

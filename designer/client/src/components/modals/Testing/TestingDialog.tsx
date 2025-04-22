@@ -63,21 +63,29 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
 
 const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, TestingData>) => {
     const { storeAction } = props.data.meta;
-    const { handleSetAction, ...context } = useTestingState();
+    const { handleSetAction: _handleSetAction, ...context } = useTestingState();
+
+    const handleSetAction = useMemo(
+        () => (action) => {
+            const nextAction = () => {
+                storeAction(nextAction);
+                action();
+            };
+            _handleSetAction(nextAction);
+        },
+        [_handleSetAction, storeAction],
+    );
+
+    const value = useMemo(
+        () => ({
+            ...context,
+            handleSetAction,
+        }),
+        [context, handleSetAction],
+    );
 
     return (
-        <TestingContext.Provider
-            value={{
-                ...context,
-                handleSetAction: (action) => {
-                    const nextAction = () => {
-                        storeAction(nextAction);
-                        action();
-                    };
-                    handleSetAction(nextAction);
-                },
-            }}
-        >
+        <TestingContext.Provider value={value}>
             <TestingDialog {...props} />
         </TestingContext.Provider>
     );

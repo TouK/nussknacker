@@ -1,5 +1,5 @@
 import type { WindowType } from "@touk/window-manager";
-import React, { useMemo } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 
 import { getTestParameters } from "../../../reducers/selectors/graph";
@@ -20,23 +20,21 @@ export function TestVariantForm({ testType, testingData, closeDialog }: TestVari
     const testParameters = useSelector(getTestParameters);
     const sourcesFound = testParameters.length;
 
-    return useMemo(() => {
-        switch (testType) {
-            case TestType.withParameters:
-                if (sourcesFound > 1) {
-                    return <TestWithParametersMultipleSourcesForm numberOfSources={sourcesFound}></TestWithParametersMultipleSourcesForm>;
-                } else {
-                    return (
-                        <TestWithParametersSingleSourceForm
-                            testingData={testingData}
-                            closeDialog={closeDialog}
-                        ></TestWithParametersSingleSourceForm>
-                    );
-                }
-            case TestType.withGeneratedData:
-                return <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm>;
-            default:
-                throw `There is no form available for test type ${testType}`;
-        }
-    }, [testType, sourcesFound, closeDialog, testingData]);
+    switch (testType) {
+        case TestType.withParameters:
+            if (sourcesFound > 1) {
+                return <TestWithParametersMultipleSourcesForm numberOfSources={sourcesFound}></TestWithParametersMultipleSourcesForm>;
+            } else {
+                return (
+                    <TestWithParametersSingleSourceForm
+                        testingData={testingData}
+                        closeDialog={closeDialog}
+                    ></TestWithParametersSingleSourceForm>
+                );
+            }
+        case TestType.withGeneratedData:
+            return <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm>;
+        default:
+            throw `There is no form available for test type ${testType}`;
+    }
 }

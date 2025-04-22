@@ -51,7 +51,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const [preset, setPreset] = useState<Preset>();
     useEffect(() => {
         setPreset((prev) => {
-            const expected = testingState.action && storedTestType === prev.value ? RERUN_PREVIOUS : storedTestType;
+            const expected = testingState.action && storedTestType === prev?.value ? RERUN_PREVIOUS : storedTestType;
             return presets.find((p) => p.value === expected);
         });
     }, [storedTestType, presets, testingState.action]);
