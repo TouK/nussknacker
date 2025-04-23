@@ -790,8 +790,7 @@ scenarioTypes {
     modelConfig {
       (...)
     }
-    category: "Fraud Detection",
-    activeScenariosLimit: 5
+    category: "Fraud Detection"
   }
 }
 ```
@@ -800,7 +799,6 @@ Scenario type configuration consists of parts:
 - `deploymentConfig` - [scenario deployment configuration](./ScenarioDeploymentConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
 - `category` - category handled by given scenario type
-- `activeScenariosLimit` (optional) - it's the maximum count of active scenarios for the scenario type
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components
