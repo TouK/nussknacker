@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import org.springframework.util.StringUtils
+import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
-import java.math.BigInteger
 import java.nio.charset.Charset
 import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
@@ -18,7 +17,10 @@ import scala.util.Try
   * This class handle conversion logic which is done in SpEL's org.springframework.expression.TypeConverter.
   * See pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider for full conversion list
   */
-object TypeConversionHandler {
+private[engine] object TypeConversionHandler {
+
+  private val javaListClass      = classOf[java.util.List[_]]
+  private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -65,32 +67,28 @@ object TypeConversionHandler {
     StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
-  def canBeLooselyConvertedTo(from: SingleTypingResult, to: TypedClass): Boolean =
-    canBeConvertedToAux(from, to)
-
-  def canBeStrictlyConvertedTo(from: SingleTypingResult, to: TypedClass): Boolean =
-    canBeConvertedToAux(from, to, strict = true)
-
-  private def canBeConvertedToAux(from: SingleTypingResult, to: TypedClass, strict: Boolean = false) = {
+  def canBeConverted(from: SingleTypingResult, to: TypedClass)(
+      implicit conversionStrategy: NonEmptyConversionStrategy
+  ): Boolean = {
     handleStringToValueClassConversions(from, to) ||
-    handleNumberConversion(from.runtimeObjType, to, strict)
+    handleArrayToListConversions(from.runtimeObjType, to) ||
+    handleNumberConversion(from.runtimeObjType, to)
   }
 
-  private def handleNumberConversion(from: SingleTypingResult, to: TypedClass, strict: Boolean) = {
-    val boxedGivenClass          = ClassUtils.primitiveToWrapper(from.runtimeObjType.klass)
-    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(to.klass)
-
-    if (strict)
-      handleStrictNumberConversions(boxedGivenClass, boxedSuperclassCandidate)
-    else
-      handleLooseNumberConversion(boxedGivenClass, boxedSuperclassCandidate)
+  private def handleNumberConversion(from: SingleTypingResult, to: TypedClass)(
+      implicit conversionStrategy: NonEmptyConversionStrategy
+  ) = {
+    conversionStrategy match {
+      case Strict => handleStrictNumberConversions(from.runtimeObjType.klass, to.klass)
+      case Loose  => handleLooseNumberConversion(from.runtimeObjType.klass, to.klass)
+    }
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
-  private def handleLooseNumberConversion(
-      boxedGivenClass: Class[_],
-      boxedSuperclassCandidate: Class[_]
-  ): Boolean = {
+  private def handleLooseNumberConversion(from: Class[_], to: Class[_]): Boolean = {
+    val boxedGivenClass          = ClassUtils.primitiveToWrapper(from)
+    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(to)
+
     // We can't check precision here so we need to be loose here
     if (NumberTypesPromotionStrategy
         .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
@@ -103,25 +101,47 @@ object TypeConversionHandler {
   }
 
   private def handleStrictNumberConversions(givenClass: Class[_], to: Class[_]): Boolean = {
-    (givenClass, to) match {
-      case (bigInteger, t)
-          if (bigInteger == classOf[BigInteger] && (t == classOf[BigDecimal] || t == classOf[BigInteger])) =>
-        true
-      case (f, t) if (AllNumbers.contains(f) && AllNumbers.contains(t)) =>
-        AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
-      case _ => false
-
+    (Option(ClassUtils.wrapperToPrimitive(givenClass)), Option(ClassUtils.wrapperToPrimitive(to))) match {
+      case (Some(givenPrimitive), Some(toPrimitive)) => ClassUtils.isAssignable(givenPrimitive, toPrimitive)
+      case (_, _)                                    => false
     }
   }
 
   private def handleStringToValueClassConversions(
       from: SingleTypingResult,
       to: TypedClass
-  ): Boolean =
+  )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean =
     from match {
-      case TypedObjectWithValue(_, str: String) =>
+      case TypedObjectWithValue(_, str: String) if conversionStrategy == ConversionStrategy.Loose =>
         stringConversions.exists(_.canConvert(str, to))
       case _ => false
     }
+
+  // See pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
+  private def handleArrayToListConversions(from: TypedClass, to: TypedClass)(
+      implicit conversionStrategy: NonEmptyConversionStrategy
+  ): Boolean = {
+    (from, to) match {
+      case (TypedClass(`arrayOfAnyRefClass`, _), TypedClass(`javaListClass`, _))
+          if conversionStrategy == ConversionStrategy.Loose =>
+        true
+      case _ =>
+        false
+    }
+  }
+
+}
+
+private[engine] sealed trait ConversionStrategy
+
+private[engine] sealed trait NonEmptyConversionStrategy extends ConversionStrategy
+
+private[engine] object ConversionStrategy {
+
+  object NoConversion extends ConversionStrategy
+
+  object Strict extends NonEmptyConversionStrategy
+
+  object Loose extends NonEmptyConversionStrategy
 
 }

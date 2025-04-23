@@ -116,8 +116,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Renamed a `SimpleEditor` to the `Editor` in components API.
     * For now on, you can add multiple editors on a single param. The first editor annotation is treated as a default
       editor.
-* [#7711](https://github.com/TouK/nussknacker/pull/7711)
-  * `TypingResult` API changes - `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
+* [#7711](https://github.com/TouK/nussknacker/pull/7711) [#7984](https://github.com/TouK/nussknacker/pull/7984) `TypingResult` API changes:
+  * `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
+  * `canBeConvertedTo` renamed to `canBeLooselyAssignedTo`
+  * `canBeStrictlyConvertedTo` renamed to `canBeStrictlyAssignedTo`
 * [#7768](https://github.com/TouK/nussknacker/pull/7768)
   * `ModelData.withThisAsContextClassLoader` was renamed to `withModelClassloaderAsContextClassLoader`
   * New, `DeploymentManager.scenarioCompilationDependenciesResource` method was added. For flink-based DMs it should be

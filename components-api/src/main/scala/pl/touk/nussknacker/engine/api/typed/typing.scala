@@ -7,6 +7,7 @@ import enumeratum._
 import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.{ToJsonEncoderWithFallback, TypeEncoders}
+import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
@@ -31,23 +32,31 @@ object typing {
   sealed trait TypingResult {
 
     /**
-     * Checks if there exists a conversion to a given typingResult, with possible loss of precision, e.g. long to int.
-     * If you need to retain conversion precision, use canBeStrictlyConvertedTo
+     * Checks if given type is a target type or given type can be converted to target type without loss of precision
+     * e.g. int to long
      */
-    final def canBeConvertedTo(typingResult: TypingResult): Boolean =
-      AssignabilityDeterminer.isAssignableLoose(this, typingResult).isValid
+    final def canBeStrictlyAssignedTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignable(this, typingResult)(Strict).isValid
+
+    // TODO: We should remove this method and instead, use variant with ConversionStrategy parameter
+    //       Thanks to that we can have one, simple method using Strict ConversionStrategy in components API
+    //       Before we do this, we should verify if canBeLooselyAssignedTo was correctly used - in some places
+    //       canBeStrictlyAssignedTo was probly the better choice
+    /**
+     * Checks if given type is a target type or there exists a conversion to target type, with possible
+     * loss of precision, e.g. long to int. If you need to retain conversion precision, use canBeStrictlyAssignedTo
+     */
+    final def canBeLooselyAssignedTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignable(this, typingResult)(Loose).isValid
 
     /**
-     * Checks if the conversion to a given typingResult can be made without loss of precision
+     * Checks if the given type is a target type or can be converted to target type with custom conversion strategy.
+     * This method is package protected, because it is designed for internal, Nussknacker usage.
      */
-    final def canBeStrictlyConvertedTo(typingResult: TypingResult): Boolean =
-      AssignabilityDeterminer.isAssignableStrict(this, typingResult).isValid
-
-    /**
-     * Checks if the conversion to a given typingResult can be made without any conversion.
-     */
-    final def canBeConvertedWithoutConversionTo(typingResult: TypingResult): Boolean =
-      AssignabilityDeterminer.isAssignableWithoutConversion(this, typingResult).isValid
+    private[engine] final def canBeAssignedTo(typingResult: TypingResult)(
+        implicit conversionStrategy: ConversionStrategy
+    ): Boolean =
+      AssignabilityDeterminer.isAssignable(this, typingResult)(conversionStrategy).isValid
 
     def valueOpt: Option[Any]
 
@@ -506,7 +515,7 @@ object typing {
 
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
       Option(typingResult)
-        .filter(_.canBeConvertedTo(Typed.fromDetailedType[T]))
+        .filter(_.canBeLooselyAssignedTo(Typed.fromDetailedType[T]))
         .map(new TypingResultTypedValue(_))
     }
 

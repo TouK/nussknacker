@@ -141,7 +141,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 
         methodsForParams
           .find { case (_, method) =>
-            methodsForParams.forall(mi => method.signature.result.canBeConvertedTo(mi._2.signature.result))
+            methodsForParams.forall(mi => method.signature.result.canBeLooselyAssignedTo(mi._2.signature.result))
           }
           .getOrElse(methodsForParams.minBy(_._2.signature.result.display))
       }
@@ -273,7 +273,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
               )
               reflectionBasedDefinition.result
             }
-            if (returnedResultType.canBeConvertedTo(returnedResultType)) {
+            if (returnedResultType.canBeLooselyAssignedTo(returnedResultType)) {
               returnedResultType
             } else {
               logger.warn(

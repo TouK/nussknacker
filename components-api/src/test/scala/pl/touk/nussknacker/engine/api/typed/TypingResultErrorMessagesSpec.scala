@@ -5,7 +5,7 @@ import cats.implicits._
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer.isAssignableLoose
+import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.Loose
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
@@ -18,7 +18,7 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
 
   test("determine if can be subclass for simple typed objects") {
 
-    isAssignableLoose(
+    isAssignable(
       typeMap(
         "field1" -> Typed[String],
         "field2" -> Typed[Int],
@@ -31,7 +31,7 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
         "field4" -> Typed[String],
         "field5" -> list(typeMap("field2" -> Typed[String]))
       )
-    ) shouldBe NonEmptyList
+    )(Loose) shouldBe NonEmptyList
       .of(
         "Field 'field2' is of the wrong type. Expected: Integer, actual: String",
         "Field 'field3' is of the wrong type. Expected: List[Record{field2a: String, field3: Integer}], actual: String",
@@ -41,10 +41,10 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
   }
 
   test("determine if can be subclass for map of typed objects") {
-    isAssignableLoose(
+    isAssignable(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
-    ) shouldBe NonEmptyList
+    )(Loose) shouldBe NonEmptyList
       .of(
         "Map[String,List[Record{field2a: String, field3: Integer}]] cannot be converted to Map[String,List[Record{field2: String}]]"
       )
@@ -52,30 +52,30 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
   }
 
   test("determine if can be subclass for class") {
-    isAssignableLoose(Typed.fromDetailedType[Set[BigDecimal]], Typed.fromDetailedType[Set[String]]) shouldBe
+    isAssignable(Typed.fromDetailedType[Set[BigDecimal]], Typed.fromDetailedType[Set[String]])(Loose) shouldBe
       "Set[BigDecimal] cannot be converted to Set[String]".invalidNel
   }
 
   test("determine if can be subclass for tagged value") {
-    isAssignableLoose(
+    isAssignable(
       Typed.tagged(Typed.typedClass[String], "tag1"),
       Typed.tagged(Typed.typedClass[String], "tag2")
-    ) shouldBe
+    )(Loose) shouldBe
       "Tagged values have unequal tags: tag1 and tag2".invalidNel
 
-    isAssignableLoose(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe
+    isAssignable(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1"))(Loose) shouldBe
       "The type is not a tagged value".invalidNel
   }
 
   test("determine if can be subclass for object with value") {
-    isAssignableLoose(Typed.fromInstance(2), Typed.fromInstance(3)) shouldBe
+    isAssignable(Typed.fromInstance(2), Typed.fromInstance(3))(Loose) shouldBe
       "Types with value have different values: 2 and 3".invalidNel
   }
 
   test("determine if can be subclass for null") {
-    isAssignableLoose(Typed[String], TypedNull) shouldBe
+    isAssignable(Typed[String], TypedNull)(Loose) shouldBe
       "No type can be subclass of Null".invalidNel
-    isAssignableLoose(TypedNull, Typed.fromInstance(1)) shouldBe
+    isAssignable(TypedNull, Typed.fromInstance(1))(Loose) shouldBe
       "Null cannot be subclass of type with value".invalidNel
   }
 
