@@ -36,7 +36,7 @@ class FlinkDeploymentManager(
     modelDataProvider: BaseModelDataProvider,
     dependencies: DeploymentManagerDependencies,
     flinkConfig: FlinkConfig,
-    miniClusterWithServicesOpt: Option[FlinkMiniClusterWithServices],
+    miniClusterWithServices: FlinkMiniClusterWithServices,
     client: FlinkClient,
     jobRunner: FlinkScenarioJobRunner
 ) extends DeploymentManager
@@ -48,16 +48,14 @@ class FlinkDeploymentManager(
 
   private val testRunner = new FlinkMiniClusterScenarioTestRunner(
     modelDataProvider,
-    miniClusterWithServicesOpt
-      .filter(_ => flinkConfig.scenarioTesting.reuseSharedMiniCluster),
+    miniClusterWithServices,
     flinkConfig.scenarioTesting.parallelism,
     flinkConfig.scenarioTesting.timeout.toPausePolicy
   )
 
   private val verification = new FlinkMiniClusterScenarioStateVerifier(
     modelDataProvider,
-    miniClusterWithServicesOpt
-      .filter(_ => flinkConfig.scenarioStateVerification.reuseSharedMiniCluster),
+    miniClusterWithServices,
     flinkConfig.scenarioStateVerification.timeout.toPausePolicy
   )
 
@@ -369,19 +367,13 @@ class FlinkDeploymentManager(
 
   override def close(): Unit = {
     logger.info("Closing Flink Deployment Manager")
-    miniClusterWithServicesOpt.foreach(_.close())
+    miniClusterWithServices.close()
   }
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] = {
-    miniClusterWithServicesOpt
-      .map(
-        _.createDetachedStreamExecutionEnvironment[SyncIO]
-          .map(new FlinkScenarioCompilationDependencies(_))
-      )
-      .getOrElse {
-        // TODO: always create shared minicluster
-        Resource.pure(EngineScenarioCompilationDependencies.empty)
-      }
+    miniClusterWithServices
+      .createDetachedStreamExecutionEnvironment[SyncIO]
+      .map(new FlinkScenarioCompilationDependencies(_))
   }
 
 }

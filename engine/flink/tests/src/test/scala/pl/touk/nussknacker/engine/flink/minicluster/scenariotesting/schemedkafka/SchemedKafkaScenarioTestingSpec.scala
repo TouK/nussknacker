@@ -86,7 +86,7 @@ class SchemedKafkaScenarioTestingSpec
   private val testRunner =
     new FlinkMiniClusterScenarioTestRunner(
       modelData.toModelDataProvider,
-      Some(miniClusterWithServices),
+      miniClusterWithServices,
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy =
         DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.seconds, patienceConfig.interval * 2)
