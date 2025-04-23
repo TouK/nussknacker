@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
+import scala.collection.compat._
 import scala.collection.immutable
 
 object Dtos {
@@ -203,27 +204,28 @@ object Dtos {
         resultsWithCounts: ResultsWithCounts,
         skipResultsPerNode: SkipResultsPerNode,
         skipResultsPerTransition: SkipResultsPerTransition
-    ): ResultsWithCountsDto = ResultsWithCountsDto(
-      results = TestResultsDto(
-        nodeResults = when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
-        nodeTransitionResults =
-          when(!skipResultsPerTransition.value)(resultsWithCounts.results.nodeTransitionResults.map { result =>
-            NodeTransitionResult(
-              sourceNodeId = result._1.sourceNodeId,
-              destinationNodeId = result._1.destinationNodeId,
-              results = result._2,
-            )
-          }.toList),
-        invocationResults = resultsWithCounts.results.invocationResults,
-        externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
-        exceptions = resultsWithCounts.results.exceptions,
-      ),
-      counts = resultsWithCounts.counts,
-    )
+    ): ResultsWithCountsDto = {
+      lazy val nodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
+        case (nodeTransition, results) =>
+          NodeTransitionResult(
+            sourceNodeId = nodeTransition.sourceNodeId,
+            destinationNodeId = nodeTransition.destinationNodeId,
+            results = results,
+          )
+      }.toList
+      ResultsWithCountsDto(
+        results = TestResultsDto(
+          nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
+          nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
+          invocationResults = resultsWithCounts.results.invocationResults,
+          externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
+          exceptions = resultsWithCounts.results.exceptions,
+        ),
+        counts = resultsWithCounts.counts,
+      )
+    }
 
   }
-
-  private def when[T](condition: Boolean)(value: => T) = if (condition) Some(value) else None
 
   final case class TestResultsDto(
       nodeResults: Option[Map[String, List[ResultContext[Json]]]],

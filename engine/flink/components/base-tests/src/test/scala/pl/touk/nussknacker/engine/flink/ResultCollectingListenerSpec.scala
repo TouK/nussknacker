@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWind
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, TestResults}
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, TestResults}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -305,11 +305,8 @@ class ResultCollectingListenerSpec
       val model = modelData(collectingListener)
       flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
         val executionResult = new FlinkScenarioUnitTestJob(model).run(canonicalProcess, env)
-        flinkMiniCluster.withRunningJob(executionResult.getJobID) {
-          eventually {
-            assertions(collectingListener.results)
-          }
-        }
+        flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
+        assertions(collectingListener.results)
       }
     }
   }
