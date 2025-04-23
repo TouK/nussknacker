@@ -68,6 +68,7 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
                         color: "inherit",
                         display: [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? "none" : null,
                         whiteSpace: variant === ButtonsVariant.horizontal ? "nowrap" : null,
+                        textTransform: variant === ButtonsVariant.label ? "lowercase" : null,
                         marginLeft: variant === ButtonsVariant.horizontal ? 1 : null,
                     }}
                 >
